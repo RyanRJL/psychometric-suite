@@ -997,30 +997,7 @@ function updateApaColumnControls(outId, columns, renderFn){
 }
 function buildApaTableFromColumns(outId, columns, rows, groupLabelFn){
   const visible = getApaVisibleColumns(outId, columns);
-  const groups = [];
-  visible.forEach(c => {
-    const label = c.group || '';
-    const last = groups[groups.length - 1];
-    if (last && last.label === label){ last.span += 1; last.cols.push(c); }
-    else groups.push({ label, span: 1, cols: [c] });
-  });
-  const hasSupra = groups.some(g => g.span > 1);
-  let header;
-  if (!hasSupra){
-    header = `<tr>${visible.map(c => `<th${c.num ? ' class="num"' : ''}>${c.label}</th>`).join('')}</tr>`;
-  } else {
-    let supraCells = '', subCells = '';
-    groups.forEach(g => {
-      if (g.span > 1){
-        supraCells += `<th colspan="${g.span}" class="apa-spanner">${escapeHtml(g.label)}</th>`;
-        g.cols.forEach(c => { subCells += `<th${c.num ? ' class="num"' : ''}>${c.label}</th>`; });
-      } else {
-        const c = g.cols[0];
-        supraCells += `<th rowspan="2"${c.num ? ' class="num"' : ''}>${c.label}</th>`;
-      }
-    });
-    header = `<tr>${supraCells}</tr><tr>${subCells}</tr>`;
-  }
+  const header = `<tr>${visible.map(c => `<th${c.num ? ' class="num"' : ''}>${c.label}</th>`).join('')}</tr>`;
   let body = '';
   let lastGroup = null;
   let inGroup = false;
@@ -1419,8 +1396,7 @@ function renderSdiApa(){
     <div class="apa-table-title">${escapeHtml(title)}</div>
     <table class="apa-table">
       <thead>
-        <tr><th rowspan="2">Subtest</th><th colspan="${raw ? 3 : 2}" class="apa-spanner">Scores</th><th colspan="3" class="apa-spanner">Results</th></tr>
-        <tr><th class="num">${raw ? 'Test raw' : 'Test'}</th><th class="num">${raw ? 'Retest raw' : 'Retest'}</th>${raw ? '<th class="num">SD</th>' : ''}<th class="num">SD Δ</th><th class="num"><i>p</i></th><th>Significance</th></tr>
+        <tr><th>Subtest</th><th class="num">${raw ? 'Test raw' : 'Test'}</th><th class="num">${raw ? 'Retest raw' : 'Retest'}</th>${raw ? '<th class="num">SD</th>' : ''}<th class="num">SD Δ</th><th class="num"><i>p</i></th><th>Significance</th></tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
@@ -2458,8 +2434,7 @@ function renderPreEstimatesApa(){
     <div class="apa-table-title">${escapeHtml(title)}</div>
     <table class="apa-table">
       <thead>
-        <tr><th rowspan="2">Model</th><th class="num" rowspan="2">FSIQ</th><th colspan="2" class="apa-spanner">Confidence interval</th><th colspan="2" class="apa-spanner">Model fit</th></tr>
-        <tr><th class="num">Lower ${ciPct}</th><th class="num">Upper ${ciPct}</th><th class="num"><i>r</i></th><th class="num">SEE</th></tr>
+        <tr><th>Model</th><th class="num">FSIQ</th><th class="num">Lower ${ciPct}</th><th class="num">Upper ${ciPct}</th><th class="num"><i>r</i></th><th class="num">SEE</th></tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
@@ -2508,8 +2483,7 @@ function renderPrePredictApa(){
     <div class="apa-table-title">ToPF-predicted versus achieved index scores</div>
     <table class="apa-table">
       <thead>
-        <tr><th rowspan="2">Index</th><th class="num" rowspan="2">Predicted score</th><th colspan="2" class="apa-spanner">Confidence interval</th><th class="num" rowspan="2">Achieved score</th><th colspan="2" class="apa-spanner">Discrepancy</th></tr>
-        <tr><th class="num">Lower ${ciPct}</th><th class="num">Upper ${ciPct}</th><th class="num">Difference</th><th class="num">Base Rate</th></tr>
+        <tr><th>Index</th><th class="num">Predicted score</th><th class="num">Lower ${ciPct}</th><th class="num">Upper ${ciPct}</th><th class="num">Achieved score</th><th class="num">Difference</th><th class="num">Base Rate</th></tr>
       </thead>
       <tbody>${body}</tbody>
     </table>
@@ -2527,11 +2501,9 @@ function getOpiePredictions(){
   const age = preNum('pre-age');
   const sex = preStr('pre-sex');
   const sexC_opie = sex === 'Female' ? 0 : sex === 'Male' ? 1 : null;
-  if (age == null) return [];
 
   const sexEffect = sexC_opie != null ? sexC_opie : 0;
   const hasVC = vc != null, hasMR = mr != null;
-  if (!hasVC && !hasMR) return [];
 
   function predict(c){
     let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexEffect;
@@ -2541,30 +2513,20 @@ function getOpiePredictions(){
   }
 
   const list = [];
-
-  // FSIQ models — show whichever are computable
-  if (hasVC && hasMR){
-    const c = OPIE_PRORATED_FSIQ.VC_MR;
-    list.push({ key:'FSIQ_VC_MR', label:'Prorated FSIQ — Vocab + Matrix', val:predict(c), see:c.see, r:c.r, tipKey:'opiePredFSIQ_VCMR' });
-  }
-  if (hasVC){
-    const c = OPIE_PRORATED_FSIQ.VC;
-    list.push({ key:'FSIQ_VC', label:'Prorated FSIQ — Vocab only', val:predict(c), see:c.see, r:c.r, tipKey:'opiePredFSIQ_VC' });
-  }
-  if (hasMR){
-    const c = OPIE_PRORATED_FSIQ.MR;
-    list.push({ key:'FSIQ_MR', label:'Prorated FSIQ — Matrix only', val:predict(c), see:c.see, r:c.r, tipKey:'opiePredFSIQ_MR' });
+  const canUseAge = age != null;
+  function pushModel(key, label, c, needVC, needMR, tipKey){
+    const canPredict = canUseAge && (!needVC || hasVC) && (!needMR || hasMR);
+    list.push({ key, label, val: canPredict ? predict(c) : null, see: c.see, r: c.r, tipKey });
   }
 
-  // GAI models — only the two available equations
-  if (hasVC && hasMR){
-    const c = OPIE_PRORATED_GAI.VC_MR;
-    list.push({ key:'GAI_VC_MR', label:'Prorated GAI — Vocab + Matrix', val:predict(c), see:c.see, r:c.r, tipKey:'opiePredGAI_VCMR' });
-  }
-  if (hasVC){
-    const c = OPIE_PRORATED_GAI.VC;
-    list.push({ key:'GAI_VC', label:'Prorated GAI — Vocab only', val:predict(c), see:c.see, r:c.r, tipKey:'opiePredGAI_VC' });
-  }
+  // FSIQ models
+  pushModel('FSIQ_VC_MR', 'Prorated FSIQ — Vocab + Matrix', OPIE_PRORATED_FSIQ.VC_MR, true, true, 'opiePredFSIQ_VCMR');
+  pushModel('FSIQ_VC', 'Prorated FSIQ — Vocab only', OPIE_PRORATED_FSIQ.VC, true, false, 'opiePredFSIQ_VC');
+  pushModel('FSIQ_MR', 'Prorated FSIQ — Matrix only', OPIE_PRORATED_FSIQ.MR, false, true, 'opiePredFSIQ_MR');
+
+  // GAI models
+  pushModel('GAI_VC_MR', 'Prorated GAI — Vocab + Matrix', OPIE_PRORATED_GAI.VC_MR, true, true, 'opiePredGAI_VCMR');
+  pushModel('GAI_VC', 'Prorated GAI — Vocab only', OPIE_PRORATED_GAI.VC, true, false, 'opiePredGAI_VC');
 
   return list;
 }
@@ -2594,12 +2556,6 @@ function calcOpiePredict(){
   preState.opieRows = rows;
   preState.ciPct = ciPct;
 
-  if (rows.length === 0){
-    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--faint);font-style:italic;text-align:center;padding:18px">Enter age plus Vocabulary and/or Matrix Reasoning to populate the table.</td></tr>';
-    renderOpiePredictApa();
-    return;
-  }
-
   // Group: FSIQ rows, then GAI rows
   const fsiq = rows.filter(r => r.key.startsWith('FSIQ_'));
   const gai  = rows.filter(r => r.key.startsWith('GAI_'));
@@ -2612,11 +2568,12 @@ function calcOpiePredict(){
   function rowHtml(row){
     const ach = preState.opieAchieved[row.key];
     const achVal = (ach != null && ach !== '') ? parseFloat(ach) : null;
-    const lo = fmtIntOrDash(row.val - mult * row.see);
-    const hi = fmtIntOrDash(row.val + mult * row.see);
+    const hasPred = row.val != null && Number.isFinite(row.val);
+    const lo = hasPred ? fmtIntOrDash(row.val - mult * row.see) : '—';
+    const hi = hasPred ? fmtIntOrDash(row.val + mult * row.see) : '—';
     let diffHtml = '<td class="num diff">—</td>';
     let brHtml = '<td class="num opie-base-rate">—</td>';
-    if (achVal != null && !isNaN(achVal)){
+    if (hasPred && achVal != null && !isNaN(achVal)){
       const diff = Math.round(achVal - row.val);
       const sign = diff > 0 ? '+' : '';
       const cls = diff < 0 ? 'neg' : (diff > 0 ? 'pos' : '');
@@ -2626,7 +2583,7 @@ function calcOpiePredict(){
     const achInputVal = ach != null ? escapeAttr(ach) : '';
     return `<tr>
       ${modelCell(row)}
-      <td class="num">${fmtIntOrDash(row.val)}</td>
+      <td class="num">${hasPred ? fmtIntOrDash(row.val) : '—'}</td>
       <td class="num">${lo}</td>
       <td class="num">${hi}</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-opie-ach="${row.key}" value="${achInputVal}"></td>
@@ -2662,11 +2619,16 @@ function calcOpiePredict(){
         diffCell.textContent = '—';
         if (brCell) brCell.textContent = '—';
       } else {
-        const diff = Math.round(achVal - row.val);
-        diffCell.textContent = (diff > 0 ? '+' : '') + diff;
-        if (diff < 0) diffCell.classList.add('neg');
-        else if (diff > 0) diffCell.classList.add('pos');
-        if (brCell) brCell.textContent = opieBaseRateFor(row.key, diff);
+        if (row.val == null || !Number.isFinite(row.val)){
+          diffCell.textContent = '—';
+          if (brCell) brCell.textContent = '—';
+        } else {
+          const diff = Math.round(achVal - row.val);
+          diffCell.textContent = (diff > 0 ? '+' : '') + diff;
+          if (diff < 0) diffCell.classList.add('neg');
+          else if (diff > 0) diffCell.classList.add('pos');
+          if (brCell) brCell.textContent = opieBaseRateFor(row.key, diff);
+        }
       }
       renderOpiePredictApa();
     });
@@ -2683,17 +2645,8 @@ function renderOpiePredictApa(){
   const mult = preCiMult();
   const rows = preState.opieRows || [];
 
-  const withAch = rows.filter(r => {
-    const a = preState.opieAchieved[r.key];
-    return a != null && a !== '' && !isNaN(parseFloat(a));
-  });
-  if (withAch.length === 0){
-    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter age plus a subtest to generate predictions, then add an Achieved score.</div>';
-    return;
-  }
-
   const byGroup = { FSIQ:[], GAI:[] };
-  withAch.forEach(r => {
+  rows.forEach(r => {
     if (r.key.startsWith('FSIQ_')) byGroup.FSIQ.push(r);
     else if (r.key.startsWith('GAI_')) byGroup.GAI.push(r);
   });
@@ -2703,13 +2656,17 @@ function renderOpiePredictApa(){
     if (!byGroup[group].length) return;
     body += `<tr><td colspan="7" style="font-style:italic;padding-top:6px;padding-bottom:2px">Prorated ${group}</td></tr>`;
     byGroup[group].forEach(r => {
-      const ach = parseFloat(preState.opieAchieved[r.key]);
-      const lo = Math.round(r.val - mult * r.see);
-      const hi = Math.round(r.val + mult * r.see);
-      const diff = Math.round(ach - r.val);
-      const sign = diff > 0 ? '+' : '';
-      const br = opieBaseRateFor(r.key, diff);
-      body += `<tr><td>&nbsp;&nbsp;${escapeHtml(r.label)}</td><td class="num">${Math.round(r.val)}</td><td class="num">${lo}</td><td class="num">${hi}</td><td class="num">${ach}</td><td class="num">${sign}${diff}</td><td class="num">${br}</td></tr>`;
+      const achRaw = preState.opieAchieved[r.key];
+      const ach = achRaw != null && achRaw !== '' && !isNaN(parseFloat(achRaw)) ? parseFloat(achRaw) : null;
+      const hasPred = r.val != null && Number.isFinite(r.val);
+      const lo = hasPred ? Math.round(r.val - mult * r.see) : '—';
+      const hi = hasPred ? Math.round(r.val + mult * r.see) : '—';
+      const diff = (!hasPred || ach == null) ? null : Math.round(ach - r.val);
+      const diffText = diff == null ? '—' : `${diff > 0 ? '+' : ''}${diff}`;
+      const br = diff == null ? '—' : opieBaseRateFor(r.key, diff);
+      const achText = ach == null ? '—' : String(ach);
+      const predText = hasPred ? String(Math.round(r.val)) : '—';
+      body += `<tr><td>&nbsp;&nbsp;${escapeHtml(r.label)}</td><td class="num">${predText}</td><td class="num">${lo}</td><td class="num">${hi}</td><td class="num">${achText}</td><td class="num">${diffText}</td><td class="num">${br}</td></tr>`;
     });
   });
 
@@ -2718,12 +2675,11 @@ function renderOpiePredictApa(){
     <div class="apa-table-title">OPIE-4-predicted versus achieved prorated index scores</div>
     <table class="apa-table">
       <thead>
-        <tr><th rowspan="2">Model</th><th class="num" rowspan="2">Predicted score</th><th colspan="2" class="apa-spanner">Confidence interval</th><th class="num" rowspan="2">Achieved score</th><th colspan="2" class="apa-spanner">Discrepancy</th></tr>
-        <tr><th class="num">Lower ${ciPct}</th><th class="num">Upper ${ciPct}</th><th class="num">Difference</th><th class="num">Base Rate</th></tr>
+        <tr><th>Model</th><th class="num">Predicted score</th><th class="num">Lower ${ciPct}</th><th class="num">Upper ${ciPct}</th><th class="num">Achieved score</th><th class="num">Difference</th><th class="num">Base Rate</th></tr>
       </thead>
       <tbody>${body}</tbody>
     </table>
-    <div class="apa-note"><strong>Note.</strong> OPIE-4 prorated FSIQ and GAI predictions (Schoenberg et al., 2011, Table eA5.8). UK adaptation: US education, region and ethnicity terms omitted; sex term retained (F=0, M=1). CI based on ${ciPct === '95%' ? '1.96' : '1.645'} × SEE. Difference = Achieved − Predicted; achieved scores should be the patient's prorated index calculated excluding the predictor subtest(s) per WAIS-IV manual procedures. Base rates are from the WAIS-IV / WMS-IV / ACS prorated actual-versus-predicted base-rate table.</div>
+    <div class="apa-note"><strong>Note.</strong> OPIE-4 prorated FSIQ/GAI predictions are adapted for UK use by omitting US education, region, and ethnicity terms (sex retained). Interpret cautiously in UK settings because equations are based on US normative regression data. CI uses ${ciPct === '95%' ? '1.96' : '1.645'} × SEE; base rates use WAIS-IV/WMS-IV/ACS prorated tables.</div>
   `;
 }
 
