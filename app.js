@@ -1,0 +1,3085 @@
+﻿/* ============================================================
+   PSYCHOMETRIC CALCULATORS · Clinical Suite
+   ============================================================ */
+
+/* ---------- STATISTICS ---------- */
+// Standard normal CDF using Abramowitz & Stegun erf approximation
+function erf(x){
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const t = 1 / (1 + p * x);
+  const y = 1 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t * Math.exp(-x*x);
+  return sign * y;
+}
+function normCDF(z){ return 0.5 * (1 + erf(z / Math.SQRT2)); }
+function normPDF(z){ return Math.exp(-0.5*z*z) / Math.sqrt(2*Math.PI); }
+
+/* ---- Student's t-distribution helpers (used by Crawford RCI) ---- */
+// log-gamma via Lanczos approximation
+function logGamma(z){
+  const g = 7;
+  const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+             -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+             9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (z < 0.5){
+    return Math.log(Math.PI / Math.sin(Math.PI*z)) - logGamma(1 - z);
+  }
+  z -= 1;
+  let x = c[0];
+  for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
+  const t = z + g + 0.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+// regularised incomplete beta I_x(a,b) — continued-fraction form (Numerical Recipes-style)
+function _betacf(x, a, b){
+  const MAXIT = 200, EPS = 3e-7, FPMIN = 1e-30;
+  const qab = a + b, qap = a + 1, qam = a - 1;
+  let c = 1, d = 1 - qab*x/qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN;
+  d = 1/d;
+  let h = d;
+  for (let m = 1; m <= MAXIT; m++){
+    const m2 = 2*m;
+    let aa = m*(b-m)*x / ((qam+m2)*(a+m2));
+    d = 1 + aa*d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa/c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1/d; h *= d*c;
+    aa = -(a+m)*(qab+m)*x / ((a+m2)*(qap+m2));
+    d = 1 + aa*d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa/c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1/d;
+    const del = d*c; h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  return h;
+}
+function ibeta(x, a, b){
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const lnBT = logGamma(a+b) - logGamma(a) - logGamma(b) + a*Math.log(x) + b*Math.log(1-x);
+  if (x < (a+1)/(a+b+2)) return Math.exp(lnBT) * _betacf(x, a, b) / a;
+  return 1 - Math.exp(lnBT) * _betacf(1-x, b, a) / b;
+}
+// CDF of Student's t with df degrees of freedom
+function tCDF(t, df){
+  if (df <= 0 || !isFinite(df)) return NaN;
+  const x = df / (df + t*t);
+  const ib = ibeta(x, df/2, 0.5);
+  return t >= 0 ? 1 - 0.5*ib : 0.5*ib;
+}
+// inverse CDF (quantile) of Student's t — bisection
+function tInv(p, df){
+  if (p <= 0 || p >= 1 || df <= 0) return NaN;
+  if (p === 0.5) return 0;
+  // bracket: |t| <= 50 covers any practical df
+  let lo = -50, hi = 50;
+  for (let i = 0; i < 80; i++){
+    const mid = 0.5*(lo+hi);
+    if (tCDF(mid, df) < p) lo = mid; else hi = mid;
+  }
+  return 0.5*(lo+hi);
+}
+// Acklam's inverse normal CDF
+function normInv(p){
+  if (p <= 0 || p >= 1) return p <= 0 ? -Infinity : Infinity;
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+  const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  const plow = 0.02425, phigh = 1 - plow;
+  let q, r;
+  if (p < plow){
+    q = Math.sqrt(-2*Math.log(p));
+    return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+  if (p <= phigh){
+    q = p - 0.5; r = q*q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  }
+  q = Math.sqrt(-2*Math.log(1-p));
+  return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+}
+
+/* ---------- SCORE CONVERSIONS ---------- */
+// Convert any input score type to z
+function toZ(value, type){
+  if (value === '' || value == null || isNaN(value)) return null;
+  const v = parseFloat(value);
+  switch(type){
+    case 'z': return v;
+    case 't': return (v - 50) / 10;
+    case 'standard': return (v - 100) / 15;
+    case 'scaled': return (v - 10) / 3;
+    case 'percentile':
+      if (v <= 0 || v >= 100) return null;
+      return normInv(v / 100);
+    default: return null;
+  }
+}
+function fromZ(z, type){
+  if (z == null || isNaN(z)) return null;
+  switch(type){
+    case 'z': return z;
+    case 't': return 50 + 10*z;
+    case 'standard': return 100 + 15*z;
+    case 'scaled': return 10 + 3*z;
+    case 'percentile': return normCDF(z) * 100;
+    default: return null;
+  }
+}
+function fmt(n, dp = 2){
+  if (n == null || isNaN(n)) return '—';
+  if (Math.abs(n) < 0.0001 && n !== 0) return n.toExponential(2);
+  return n.toFixed(dp);
+}
+function fmtPct(p){
+  if (p == null || isNaN(p)) return '—';
+  if (p < 0.1) return p.toFixed(2);
+  if (p > 99.9) return p.toFixed(2);
+  if (p < 1 || p > 99) return p.toFixed(1);
+  return Math.round(p).toString();
+}
+function fmtP(p){
+  if (p == null || isNaN(p)) return '—';
+  if (p < 0.001) return '< .001';
+  return p.toFixed(3).replace(/^0\./, '.');
+}
+
+/* ---------- DESCRIPTORS ---------- */
+// Wechsler classification (based on Standard Score)
+function wechslerDesc(ss){
+  if (ss == null) return '—';
+  if (ss >= 130) return 'Very Superior';
+  if (ss >= 120) return 'Superior';
+  if (ss >= 110) return 'High Average';
+  if (ss >= 90)  return 'Average';
+  if (ss >= 80)  return 'Low Average';
+  if (ss >= 70)  return 'Borderline';
+  return 'Extremely Low';
+}
+// AACN classification (Guilmette et al., 2020)
+function aanDesc(ss){
+  if (ss == null) return '—';
+  if (ss >= 130) return 'Exceptionally High';
+  if (ss >= 120) return 'Above Average';
+  if (ss >= 110) return 'High Average';
+  if (ss >= 90)  return 'Average';
+  if (ss >= 80)  return 'Low Average';
+  if (ss >= 70)  return 'Below Average';
+  return 'Exceptionally Low';
+}
+
+// Descriptor carousel ───────────────────────────────────────────────────────
+const WECHSLER_LEVELS = [
+  { label:'Extremely Low', range:'< 70'    },
+  { label:'Borderline',    range:'70–79'   },
+  { label:'Low Average',   range:'80–89'   },
+  { label:'Average',       range:'90–109'  },
+  { label:'High Average',  range:'110–119' },
+  { label:'Superior',      range:'120–129' },
+  { label:'Very Superior', range:'≥ 130'   }
+];
+const AACN_LEVELS = [
+  { label:'Exceptionally Low',  range:'< 70'    },
+  { label:'Below Average',      range:'70–79'   },
+  { label:'Low Average',        range:'80–89'   },
+  { label:'Average',            range:'90–109'  },
+  { label:'High Average',       range:'110–119' },
+  { label:'Above Average',      range:'120–129' },
+  { label:'Exceptionally High', range:'≥ 130'   }
+];
+const DESC_PILL_W = 116; // must match CSS flex-basis on .conv-desc-pill
+const DESC_MID    = 3;   // index of the middle pill (0-based, 7 items → index 3)
+// Red → neutral → green scale across the 7 descriptor bands
+const DESC_COLOURS = [
+  '#9C3D2A', // Extremely Low   — deep red
+  '#B5631C', // Borderline      — burnt orange
+  '#A88818', // Low Average     — amber
+  '#6B7A5C', // Average         — olive/neutral
+  '#3D7550', // High Average    — muted green
+  '#2A6640', // Superior        — medium green
+  '#1A5430', // Very Superior   — deep green
+];
+function ssToDescIndex(ss){
+  if (ss < 70)  return 0;
+  if (ss < 80)  return 1;
+  if (ss < 90)  return 2;
+  if (ss < 110) return 3;
+  if (ss < 120) return 4;
+  if (ss < 130) return 5;
+  return 6;
+}
+function buildDescCarousels(){
+  buildDescCarousel('conv-wechsler-block', WECHSLER_LEVELS);
+  buildDescCarousel('conv-aan-block', AACN_LEVELS);
+}
+function buildDescCarousel(id, levels){
+  const block = document.getElementById(id);
+  if (!block) return;
+  const track = document.createElement('div');
+  track.className = 'desc-carousel-track';
+  levels.forEach(l => {
+    const pill = document.createElement('div');
+    pill.className = 'conv-desc-pill';
+    pill.innerHTML = `<span class="pill-label">${l.label}</span><span class="pill-range">${l.range}</span>`;
+    track.appendChild(pill);
+  });
+  block.innerHTML = '';
+  block.appendChild(track);
+}
+function updateDescCarousel(id, activeIdx){
+  const block = document.getElementById(id);
+  if (!block) return;
+  const track = block.querySelector('.desc-carousel-track');
+  if (!track) return;
+  track.querySelectorAll('.conv-desc-pill').forEach((p, i) => {
+    const d = Math.abs(i - activeIdx);
+    p.className = 'conv-desc-pill' + (d === 0 ? ' active' : d === 1 ? ' adj-1' : d === 2 ? ' adj-2' : '');
+    p.style.color = d === 0 ? (DESC_COLOURS[activeIdx] || '') : '';
+  });
+  // Track starts centred (CSS justify-content:center); shift so activeIdx pill lands at centre
+  track.style.transform = `translateX(${(DESC_MID - activeIdx) * DESC_PILL_W}px)`;
+}
+
+/* ---------- NAVIGATION ---------- */
+function setNavGroupOpen(group, isOpen){
+  if (!group) return;
+  group.classList.toggle('is-collapsed', !isOpen);
+  const label = group.querySelector('.nav-label');
+  if (label) label.setAttribute('aria-expanded', String(isOpen));
+}
+
+function openOnlyNavGroup(group){
+  document.querySelectorAll('.nav-group').forEach(g => setNavGroupOpen(g, g === group));
+}
+
+const activeNavGroup = document.querySelector('.nav-item.active')?.closest('.nav-group');
+if (activeNavGroup) openOnlyNavGroup(activeNavGroup);
+
+document.querySelectorAll('.nav-label').forEach(label => {
+  label.addEventListener('click', () => {
+    const group = label.closest('.nav-group');
+    const willOpen = group.classList.contains('is-collapsed');
+    if (willOpen) {
+      openOnlyNavGroup(group);
+    } else {
+      setNavGroupOpen(group, false);
+    }
+  });
+});
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => {
+    const target = el.dataset.target;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    const targetSection = document.getElementById(target);
+    if (targetSection) targetSection.classList.add('active');
+    openOnlyNavGroup(el.closest('.nav-group'));
+    document.querySelector('.main').scrollTop = 0;
+  });
+});
+
+/* ---------- TOAST ---------- */
+let toastTimer;
+function showToast(msg, isError){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 2200);
+}
+
+/* ---------- COPY TO CLIPBOARD (rich HTML) ---------- */
+async function copyApaTable(containerId){
+  const container = document.getElementById(containerId);
+  if (!container || !container.innerHTML.trim()){
+    showToast('No table to copy yet — fill in some data first', true);
+    return;
+  }
+  // Build standalone HTML with inline styles for Word/Docs paste
+  const html = buildStandaloneHtml(container);
+  const plain = htmlToPlain(container);
+  try {
+    if (navigator.clipboard && window.ClipboardItem){
+      const item = new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([plain], { type: 'text/plain' })
+      });
+      await navigator.clipboard.write([item]);
+    } else {
+      await navigator.clipboard.writeText(plain);
+    }
+    showToast('✓ Table copied — ready to paste into your report');
+  } catch(e){
+    console.error(e);
+    showToast('Copy failed — try selecting and copying manually', true);
+  }
+}
+function buildStandaloneHtml(container){
+  // Inline styles so Word/Docs render APA formatting
+  const clone = container.cloneNode(true);
+  // Title block
+  clone.querySelectorAll('.apa-table-num').forEach(el => {
+    el.setAttribute('style', "font-family:'Times New Roman',serif;font-size:11pt;font-style:italic;font-weight:normal;color:#000;margin:0 0 2pt 0;");
+  });
+  clone.querySelectorAll('.apa-table-title').forEach(el => {
+    el.setAttribute('style', "font-family:'Times New Roman',serif;font-size:11pt;font-weight:normal;font-style:italic;color:#000;margin:0 0 8pt 0;line-height:1.4;");
+  });
+  // Table
+  clone.querySelectorAll('.apa-table').forEach(t => {
+    t.setAttribute('style', "border-collapse:collapse;font-family:'Times New Roman',serif;font-size:11pt;color:#000;width:auto;");
+    t.setAttribute('cellpadding', '6');
+    t.setAttribute('cellspacing', '0');
+  });
+  // Header rows: top double rule via top border, single bottom rule under header
+  clone.querySelectorAll('.apa-table thead tr').forEach((tr, i, arr) => {
+    if (i === 0){
+      tr.querySelectorAll('th').forEach(th => {
+        th.setAttribute('style', "border-top:1.5pt solid #000;padding:6pt 10pt;font-weight:normal;text-align:left;font-family:'Times New Roman',serif;");
+      });
+    }
+    if (i === arr.length - 1){
+      tr.querySelectorAll('th').forEach(th => {
+        const existing = th.getAttribute('style') || '';
+        th.setAttribute('style', existing + 'border-bottom:0.5pt solid #000;padding:6pt 10pt;font-weight:normal;text-align:left;font-family:\'Times New Roman\',serif;');
+      });
+    }
+  });
+  // Numeric headers center
+  clone.querySelectorAll('.apa-table th.num').forEach(th => {
+    const existing = th.getAttribute('style') || '';
+    th.setAttribute('style', existing + 'text-align:center;');
+  });
+  // Body cells
+  clone.querySelectorAll('.apa-table tbody td').forEach(td => {
+    td.setAttribute('style', "padding:5pt 10pt;border:none;font-family:'Times New Roman',serif;color:#000;");
+  });
+  clone.querySelectorAll('.apa-table tbody td.num').forEach(td => {
+    const existing = td.getAttribute('style') || '';
+    td.setAttribute('style', existing + 'text-align:center;');
+  });
+  // Group separator rows (bold italic, no border)
+  clone.querySelectorAll('.apa-table tbody tr.apa-group td').forEach(td => {
+    td.setAttribute('style', "padding:8pt 10pt 4pt;border:none;font-family:'Times New Roman',serif;color:#000;font-style:italic;font-weight:bold;");
+  });
+  // Indent the first cell of grouped subtest rows
+  clone.querySelectorAll('.apa-table tbody tr.apa-grouped-row td:first-child').forEach(td => {
+    const existing = td.getAttribute('style') || '';
+    td.setAttribute('style', existing + 'padding-left:24pt;');
+  });
+  // Bottom border on last body row
+  const lastRows = clone.querySelectorAll('.apa-table tbody tr:last-child td');
+  lastRows.forEach(td => {
+    const existing = td.getAttribute('style') || '';
+    td.setAttribute('style', existing + 'border-bottom:1.5pt solid #000;padding-bottom:7pt;');
+  });
+  // Preserve premorbid/extremely-low red text in copied APA table
+  clone.querySelectorAll('.bat-class-below-expected, .bat-class-extreme').forEach(el => {
+    const existing = el.getAttribute('style') || '';
+    el.setAttribute('style', existing + 'color:#9C3D2A;font-weight:bold;background:transparent;');
+  });
+  // Note
+  clone.querySelectorAll('.apa-note').forEach(n => {
+    n.setAttribute('style', "font-family:'Times New Roman',serif;font-size:10pt;font-style:italic;color:#000;margin-top:8pt;line-height:1.4;");
+  });
+  // Wrap
+  return `<html><head><meta charset="utf-8"></head><body>${clone.innerHTML}</body></html>`;
+}
+function htmlToPlain(container){
+  // Tab-separated, with title on first lines
+  const out = [];
+  const num = container.querySelector('.apa-table-num');
+  const title = container.querySelector('.apa-table-title');
+  if (num) out.push(num.textContent);
+  if (title) out.push(title.textContent);
+  out.push('');
+  const table = container.querySelector('.apa-table');
+  if (table){
+    table.querySelectorAll('tr').forEach(tr => {
+      const cells = [...tr.querySelectorAll('th,td')].map(c => c.textContent.trim().replace(/\s+/g,' '));
+      out.push(cells.join('\t'));
+    });
+  }
+  const note = container.querySelector('.apa-note');
+  if (note){ out.push(''); out.push(note.textContent); }
+  return out.join('\n');
+}
+function csvEscape(value){
+  const s = String(value ?? '').replace(/\s+/g, ' ').trim();
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+function slugifyFilename(value, fallback){
+  const slug = String(value || fallback || 'apa-table')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 72);
+  return slug || fallback || 'apa-table';
+}
+function buildApaCsv(container){
+  const rows = [];
+  const num = container.querySelector('.apa-table-num');
+  const title = container.querySelector('.apa-table-title');
+  if (num) rows.push([num.textContent]);
+  if (title) rows.push([title.textContent]);
+  if (rows.length) rows.push([]);
+
+  const table = container.querySelector('.apa-table');
+  if (table){
+    table.querySelectorAll('tr').forEach(tr => {
+      rows.push([...tr.querySelectorAll('th,td')].map(c => c.textContent));
+    });
+  }
+
+  const note = container.querySelector('.apa-note');
+  if (note){
+    rows.push([]);
+    rows.push([note.textContent]);
+  }
+  return '\ufeff' + rows.map(row => row.map(csvEscape).join(',')).join('\r\n');
+}
+function downloadApaTableCsv(containerId){
+  const container = document.getElementById(containerId);
+  if (!container || !container.querySelector('.apa-table')){
+    showToast('No table to download yet — fill in some data first', true);
+    return;
+  }
+  const title = container.querySelector('.apa-table-title')?.textContent || containerId;
+  const blob = new Blob([buildApaCsv(container)], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${slugifyFilename(title, containerId)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('✓ CSV downloaded — opens in Excel');
+}
+function enhanceApaToolbars(){
+  document.querySelectorAll('[data-copy]').forEach(btn => {
+    const outId = btn.dataset.copy;
+    btn.classList.add('apa-action-btn');
+    btn.childNodes.forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent.includes('Copy table')){
+        node.textContent = ' Copy table';
+      }
+    });
+    if (!document.querySelector(`[data-download="${outId}"]`)){
+      const dl = document.createElement('button');
+      dl.type = 'button';
+      dl.className = 'btn apa-action-btn';
+      dl.dataset.download = outId;
+      dl.title = 'Download CSV for Excel';
+      dl.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        Download CSV
+      `;
+      btn.insertAdjacentElement('afterend', dl);
+    }
+  });
+}
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-copy]');
+  if (btn) copyApaTable(btn.dataset.copy);
+  const dl = e.target.closest('[data-download]');
+  if (dl) downloadApaTableCsv(dl.dataset.download);
+});
+
+const examples = {
+  'rci-basic': {name:'Example index score',sd:'15',r:'0.90',t1:'100',t2:'89'},
+  'rci-practice': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89'},
+  'rci-srb': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89'},
+  'rci-crawford': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',n:'100',t1:'100',t2:'89'}
+};
+function renderConverter(){
+  const type = document.getElementById('conv-type').value;
+  const val = document.getElementById('conv-value').value;
+  const out = document.getElementById('conv-output');
+  if (val === '' || isNaN(val)){ out.style.display = 'none'; return; }
+  out.style.display = 'block';
+  const z = toZ(val, type);
+  if (z == null){ out.style.display = 'none'; return; }
+  // Sync slider and readout
+  const slider = document.getElementById('conv-slider');
+  if (slider) slider.value = Math.max(-3, Math.min(3, z)).toFixed(2);
+  const pct = normCDF(z) * 100;
+  const pctStr = pct < 0.1 ? '<0.1' : pct > 99.9 ? '>99.9' : pct.toFixed(1);
+  const zEl = document.getElementById('conv-z-display');
+  const pEl = document.getElementById('conv-pct-display');
+  if (zEl) zEl.textContent = z.toFixed(2);
+  if (pEl) pEl.textContent = pctStr;
+  const convTypes = [
+    { key:'z',          label:'Z-Score',       v: fmt(fromZ(z,'z'),2) },
+    { key:'t',          label:'T-Score',        v: fmt(fromZ(z,'t'),1) },
+    { key:'scaled',     label:'Scaled Score',   v: fmt(fromZ(z,'scaled'),1) },
+    { key:'standard',   label:'Standard Score', v: fmt(fromZ(z,'standard'),1) },
+    { key:'percentile', label:'Percentile',     v: fmtPct(fromZ(z,'percentile')) }
+  ];
+  document.getElementById('conv-grid').innerHTML = convTypes.map(c => {
+    const active = c.key === type;
+    return `<div class="conv-score-item${active ? ' conv-score-active' : ''}">
+      <span class="conv-score-label">${c.label}</span>
+      <span class="conv-score-value">${c.v}</span>
+    </div>`;
+  }).join('');
+  const ss = fromZ(z, 'standard');
+  const activeIdx = ssToDescIndex(ss);
+  updateDescCarousel('conv-wechsler-block', activeIdx);
+  updateDescCarousel('conv-aan-block', activeIdx);
+
+  drawCurve(z, type);
+}
+function drawCurve(z, scoreType){
+  const svg = document.getElementById('conv-curve');
+  const W = 640, H = 408, padL = 94, padR = 48;
+  const bottomPad = 124;
+  const topPad = 76;
+  const curveH = H - topPad - bottomPad;
+  const xMin = -3.5, xMax = 3.5;
+  const xScale = x => padL + (x - xMin) / (xMax - xMin) * (W - padL - padR);
+  const yMax = 0.42;
+  const base = H - bottomPad;
+  const yScale = y => base - y / yMax * curveH;
+  const zClamp = Math.max(xMin, Math.min(xMax, z));
+
+  // Subtle band fills aligned to ±1 / ±2 SD
+  function bandPath(z1, z2) {
+    const za = Math.max(xMin, z1), zb = Math.min(xMax, z2);
+    if (za >= zb) return '';
+    let d = `M${xScale(za).toFixed(1)},${base} `;
+    for (let i = 0; i <= 80; i++) {
+      const x = za + (zb - za) * i / 80;
+      d += `L${xScale(x).toFixed(1)},${yScale(normPDF(x)).toFixed(1)} `;
+    }
+    return d + `L${xScale(zb).toFixed(1)},${base} Z`;
+  }
+  const bands = [
+    { z1:-4, z2:-2, fill:'rgba(156,61,42,0.09)'  },
+    { z1:-2, z2:-1, fill:'rgba(195,95,40,0.07)'  },
+    { z1:-1, z2: 0, fill:'rgba(190,155,45,0.06)' },
+    { z1: 0, z2: 1, fill:'rgba(65,115,70,0.05)'  },
+    { z1: 1, z2: 2, fill:'rgba(50,95,175,0.07)'  },
+    { z1: 2, z2: 4, fill:'rgba(75,45,158,0.09)'  },
+  ];
+  const bandsSvg = bands.map(b => {
+    const d = bandPath(b.z1, b.z2);
+    return d ? `<path d="${d}" fill="${b.fill}" stroke="none"/>` : '';
+  }).join('');
+
+  // Left-tail shading
+  let area = `M${xScale(xMin)},${base} `;
+  for (let i = 0; i <= 200; i++){
+    const x = xMin + (zClamp - xMin) * (i / 200);
+    area += `L${xScale(x).toFixed(1)},${yScale(normPDF(x)).toFixed(1)} `;
+  }
+  area += `L${xScale(zClamp)},${base} Z`;
+
+  // Vertical SD lines with labels above
+  const sdConfig = [
+    { z:-2, label:'−2 SD', bold:false },
+    { z:-1, label:'−1 SD', bold:false },
+    { z: 0, label:'Mean',  bold:true  },
+    { z: 1, label:'+1 SD', bold:false },
+    { z: 2, label:'+2 SD', bold:false },
+  ];
+  let sdLineSegs = '', sdLabelTexts = '';
+  sdConfig.forEach(({ z: zv, label, bold }) => {
+    const lx = xScale(zv);
+    const curveY = yScale(normPDF(zv));
+    sdLineSegs += `<line x1="${lx}" y1="${curveY.toFixed(1)}" x2="${lx}" y2="${base}"
+      stroke="${bold ? '#555' : '#999'}" stroke-width="${bold ? 1.2 : 0.8}" opacity="0.55"/>`;
+    sdLabelTexts += `<text x="${lx}" y="${(curveY - 9).toFixed(1)}"
+      font-family="IBM Plex Sans" font-size="${bold ? 10 : 9}" fill="${bold ? '#444' : '#777'}"
+      text-anchor="middle" font-weight="${bold ? '600' : '400'}">${label}</text>`;
+  });
+  // Short ticks at ±3
+  [-3, 3].forEach(zv => {
+    const lx = xScale(zv);
+    sdLineSegs += `<line x1="${lx}" y1="${base}" x2="${lx}" y2="${base+4}" stroke="#B0A89E" stroke-width="0.6"/>`;
+  });
+
+  // Bell curve
+  let path = '';
+  for (let i = 0; i <= 260; i++){
+    const x = xMin + (xMax - xMin) * (i / 260);
+    path += (i===0?'M':'L') + xScale(x).toFixed(1) + ',' + yScale(normPDF(x)).toFixed(1) + ' ';
+  }
+
+  // Band percentage labels
+  const bandPcts = [
+    { zMid:-2.5, pct:'2.14%'  },
+    { zMid:-1.5, pct:'13.59%' },
+    { zMid:-0.5, pct:'34.13%' },
+    { zMid: 0.5, pct:'34.13%' },
+    { zMid: 1.5, pct:'13.59%' },
+    { zMid: 2.5, pct:'2.14%'  },
+  ];
+  let pctLabels = '';
+  bandPcts.forEach(({ zMid, pct: p }) => {
+    const bx = xScale(zMid);
+    const curveY = yScale(normPDF(zMid));
+    const labelY = curveY + (base - curveY) * 0.45;
+    pctLabels += `<text x="${bx.toFixed(1)}" y="${labelY.toFixed(1)}"
+      font-family="IBM Plex Mono" font-size="8.5" fill="#888" text-anchor="middle" opacity="0.85">${p}</text>`;
+  });
+
+  // Score scale rows
+  const scaleRows = [
+    { key:'standard',     label:'Standard Score', vals:[55,70,85,100,115,130,145], fmt:v=>String(v) },
+    { key:'scaled',       label:'Scaled Score',   vals:[1,4,7,10,13,16,19],        fmt:v=>String(v) },
+    { key:'t',            label:'T-Score',        vals:[20,30,40,50,60,70,80],     fmt:v=>String(v) },
+    { key:'z',            label:'z-Score',        vals:[-3,-2,-1,0,1,2,3],         fmt:v=>v===0?'0':(v>0?'+':'')+v },
+    { key:'percentile',   label:'Percentile',     vals:[-3,-2,-1,0,1,2,3],
+      fmt:v=>{const p=normCDF(v)*100; return p<0.5?'<1':p>99.5?'>99':String(Math.round(p));} },
+    { key:'descriptor',   label:'Classification', vals:[-3,-2,-1,0,1,2,3], isDesc:true,
+      fmt:v=>{const ss=v*15+100; if(ss>=130)return 'V.Superior'; if(ss>=120)return 'Superior'; if(ss>=110)return 'High Avg'; if(ss>=90)return 'Average'; if(ss>=80)return 'Low Avg'; if(ss>=70)return 'Borderline'; return 'Ext.Low';} },
+  ];
+  let rowsSvg = '';
+  scaleRows.forEach((row, i) => {
+    const rowY = base + 22 + i * 15;
+    const active = !row.isDesc && row.key === scoreType;
+    const col = row.isDesc ? '#909090' : (active ? '#9C3D2A' : '#A8A29E');
+    const wt  = active ? '600' : '400';
+    if (i > 0) rowsSvg += `<line x1="${padL}" y1="${base+22+i*15-9}" x2="${W-padR}" y2="${base+22+i*15-9}" stroke="#EAE4D8" stroke-width="0.5"/>`;
+    rowsSvg += `<text x="${padL-6}" y="${rowY}" font-family="IBM Plex Mono" font-size="7.5" fill="${col}" text-anchor="end" font-weight="${wt}">${row.label}</text>`;
+    row.vals.forEach((v, j) => {
+      rowsSvg += `<text x="${xScale(j-3).toFixed(1)}" y="${rowY}" font-family="IBM Plex Mono" font-size="${row.isDesc?'8':'9'}" fill="${col}" text-anchor="middle" font-weight="${active?'500':'400'}">${row.fmt(v)}</text>`;
+    });
+  });
+
+  // Position marker
+  const yAtZ = yScale(normPDF(zClamp));
+  const cx   = xScale(zClamp);
+  const zLine  = `<line x1="${cx}" y1="${yAtZ}" x2="${cx}" y2="${base}" stroke="#9C3D2A" stroke-width="1.8" stroke-dasharray="4,3" opacity="0.85"/>`;
+  const zDot   = `<circle cx="${cx}" cy="${yAtZ}" r="5.5" fill="#9C3D2A"/>`;
+  const zInner = `<circle cx="${cx}" cy="${yAtZ}" r="2.2" fill="#fff"/>`;
+
+  // Classification & percentile
+  const pct = normCDF(z) * 100;
+  const ss  = z * 15 + 100;
+  let classification = 'Average';
+  if      (ss >= 130) classification = 'Very Superior';
+  else if (ss >= 120) classification = 'Superior';
+  else if (ss >= 110) classification = 'High Average';
+  else if (ss >= 90)  classification = 'Average';
+  else if (ss >= 80)  classification = 'Low Average';
+  else if (ss >= 70)  classification = 'Borderline';
+  else                classification = 'Extremely Low';
+
+  const pctRound = Math.round(pct);
+  const pctOrd = (() => {
+    if (pct < 0.5) return '<1st';
+    if (pct > 99.5) return '>99th';
+    const sfx = (pctRound>=11&&pctRound<=13)?'th':pctRound%10===1?'st':pctRound%10===2?'nd':pctRound%10===3?'rd':'th';
+    return pctRound + sfx;
+  })();
+
+  // Callout box
+  const boxW = 152, boxH = 52;
+  let bx = cx - boxW / 2;
+  bx = Math.max(padL, Math.min(W - padR - boxW, bx));
+  const by = Math.max(4, yAtZ - boxH - 18);
+  const stemX = Math.max(bx + 10, Math.min(bx + boxW - 10, cx));
+  const callout = `
+    <rect x="${bx}" y="${by}" width="${boxW}" height="${boxH}" rx="5"
+      fill="#FAF7F1" stroke="#DDD6CC" stroke-width="1" filter="url(#cshadow)"/>
+    <line x1="${stemX}" y1="${by+boxH}" x2="${cx}" y2="${yAtZ-7}" stroke="#CEC8BE" stroke-width="1"/>
+    <text x="${bx+boxW/2}" y="${by+20}" font-family="Source Serif 4,serif"
+      font-style="italic" font-size="14.5" font-weight="500" fill="#9C3D2A" text-anchor="middle">${classification}</text>
+    <text x="${bx+boxW/2}" y="${by+38}" font-family="IBM Plex Mono"
+      font-size="9" fill="#6B6B6B" text-anchor="middle">${pctOrd} percentile</text>`;
+
+  // Two-tail annotation
+  const belowN = pct < 1 ? '<1' : pct > 99 ? '>99' : String(pctRound);
+  const aboveN = (100-pct) < 1 ? '<1' : (100-pct) > 99 ? '>99' : String(100-pctRound);
+  let twoTail = '';
+  if (cx > padL + 70)
+    twoTail += `<text x="${cx-10}" y="${base-8}" font-family="IBM Plex Mono" font-size="8" fill="#BFB2A5" text-anchor="end">${belowN}% scored below ◂</text>`;
+  if (cx < W - padR - 70)
+    twoTail += `<text x="${cx+10}" y="${base-8}" font-family="IBM Plex Mono" font-size="8" fill="#BFB2A5" text-anchor="start">▸ ${aboveN}% scored above</text>`;
+
+  const baseLine = `<line x1="${padL}" y1="${base}" x2="${W-padR}" y2="${base}" stroke="#2A2A2A" stroke-width="0.8"/>`;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="tail-grad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"  stop-color="#9C3D2A" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="#9C3D2A" stop-opacity="0.04"/>
+      </linearGradient>
+      <filter id="cshadow" x="-20%" y="-30%" width="140%" height="160%">
+        <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="rgba(60,40,20,0.12)"/>
+      </filter>
+    </defs>
+    ${bandsSvg}
+    <path d="${area}" fill="url(#tail-grad)" stroke="none"/>
+    ${sdLineSegs}
+    <path d="${path}" fill="none" stroke="#2A2A2A" stroke-width="1.8"/>
+    ${sdLabelTexts}
+    ${baseLine}
+    ${pctLabels}
+    ${twoTail}
+    ${rowsSvg}
+    ${zLine}${zDot}${zInner}${callout}
+  `;
+}
+function updateSliderTicks(type) {
+  const scaleParams = {
+    standard: { mean:100, sd:15, fmt: v => Math.round(v) },
+    t:        { mean:50,  sd:10, fmt: v => Math.round(v) },
+    scaled:   { mean:10,  sd:3,  fmt: v => Math.round(v) },
+    z:        { mean:0,   sd:1,  fmt: v => (v > 0 ? '+' : '') + v.toFixed(1) }
+  };
+  const zVals = [-3, -2, -1, 0, 1, 2, 3];
+  zVals.forEach((z, i) => {
+    const el = document.getElementById('conv-tick-' + i);
+    if (!el) return;
+    let label;
+    if (type === 'percentile') {
+      const p = normCDF(z) * 100;
+      label = p < 0.5 ? '<1%' : p > 99.5 ? '>99%' : Math.round(p) + '%';
+    } else {
+      const s = scaleParams[type] || scaleParams.standard;
+      label = s.fmt(s.mean + z * s.sd);
+    }
+    el.textContent = label;
+    el.className = z === 0 ? 'conv-slider-center' : '';
+  });
+}
+
+document.getElementById('conv-type').addEventListener('change', function() {
+  updateSliderTicks(this.value);
+  renderConverter();
+});
+document.getElementById('conv-value').addEventListener('input', renderConverter);
+
+// Slider — syncs back to the value input and re-renders
+document.getElementById('conv-slider').addEventListener('input', function(){
+  const z = parseFloat(this.value);
+  const type = document.getElementById('conv-type').value;
+  let displayVal;
+  if (type === 'percentile') {
+    displayVal = (normCDF(z) * 100).toFixed(1);
+  } else {
+    const scaleParams = {standard:{mean:100,sd:15},t:{mean:50,sd:10},scaled:{mean:10,sd:3},z:{mean:0,sd:1}};
+    const s = scaleParams[type] || scaleParams.standard;
+    const raw = s.mean + z * s.sd;
+    displayVal = (type === 'z') ? raw.toFixed(2) : Math.round(raw * 10) / 10;
+  }
+  document.getElementById('conv-value').value = displayVal;
+  renderConverter();
+});
+
+// Initialise slider ticks for default score type
+updateSliderTicks(document.getElementById('conv-type').value);
+
+// Slider tick marks
+(function initSliderMarks(){
+  const wrap = document.getElementById('conv-slider-marks');
+  if (!wrap) return;
+  let html = '';
+  for (let v = -3; v <= 3; v += 0.5){
+    const pct = ((v + 3) / 6) * 100;
+    const major = Number.isInteger(v);
+    html += `<div class="mark${major ? ' major' : ''}" style="left:${pct}%"></div>`;
+  }
+  wrap.innerHTML = html;
+})();
+
+/* ============================================================
+   02 · BATTERY TABLE
+   ============================================================ */
+let batteryRows = [];
+function batteryAddRow(initial){
+  batteryRows.push(initial || { name:'', raw:'', score:'' });
+  renderBattery();
+}
+function batteryRemove(i){ batteryRows.splice(i, 1); renderBattery(); }
+function batteryRemoveGroup(group){
+  batteryRows = batteryRows.filter(r => r.group !== group);
+  renderBattery();
+}
+window.batteryRemove = batteryRemove;
+window.batteryRemoveGroup = batteryRemoveGroup;
+
+// Infer score type from a family name in the database.
+// "Indices" / "Index Scores" / "IQ" → standard. Otherwise → scaled.
+function inferScoreType(familyName){
+  const n = (familyName || '').toLowerCase();
+  if (n.includes('indic') || /\bindex\b/.test(n) || /\biq\b/.test(n)) return 'standard';
+  return 'scaled';
+}
+// Strip age-band suffixes for compact group labels in editable and APA tables.
+function stripAgeRange(name){
+  if (!name) return name;
+  return name
+    .replace(/\s*·\s*Ages?\s+[\d–\-–]+\s*$/i, '')
+    .replace(/\s*·\s*All\s+Ages\s*$/i, '')
+    .replace(/\s*\(all ages\)\s*$/i, '');
+}
+function scoreTypeLabel(type){
+  return {scaled:'Scaled Score', standard:'Standard Score', t:'T-Score', z:'Z-Score'}[type] || 'Score';
+}
+function rowScoreType(r){
+  return r.scoreType || document.getElementById('bat-type').value;
+}
+
+function batteryPremorbidThresholdLabel(v){
+  const n = parseFloat(v);
+  return Number.isInteger(n) ? String(n) : String(n).replace(/0+$/,'').replace(/\.$/,'');
+}
+function syncBatteryPremorbidControls(){
+  const enabled = document.getElementById('bat-prem-enable')?.checked;
+  ['bat-prem-score','bat-prem-threshold'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !enabled;
+  });
+}
+function getBatteryPremorbidComparison(){
+  const enabled = document.getElementById('bat-prem-enable')?.checked;
+  const scoreEl = document.getElementById('bat-prem-score');
+  const thresholdEl = document.getElementById('bat-prem-threshold');
+  const estimate = parseFloat(scoreEl?.value);
+  const threshold = parseFloat(thresholdEl?.value || '1.5');
+  if (!enabled || isNaN(estimate) || isNaN(threshold)) return null;
+  return { estimate, threshold, thresholdLabel:batteryPremorbidThresholdLabel(threshold), cutoff:estimate - (threshold * 15) };
+}
+function batteryClassificationDetails(r, cls){
+  const z = toZ(r.score, rowScoreType(r));
+  if (z == null) return { text:'', html:'', className:'' };
+  const ss = fromZ(z, 'standard');
+  const desc = cls === 'wechsler' ? wechslerDesc(ss) : aanDesc(ss);
+  const prem = getBatteryPremorbidComparison();
+  const extreme = ss < 70;
+  const belowExpected = !!prem && ss <= prem.cutoff;
+  const className = `${extreme ? ' bat-class-extreme' : ''}${belowExpected ? ' bat-class-below-expected' : ''}`.trim();
+  return {
+    text: desc,
+    html: className ? `<span class="${className}">${escapeHtml(desc)}</span>` : escapeHtml(desc),
+    className,
+    ss,
+    prem
+  };
+}
+function setupBatteryContextualTabbing(tbody){
+  if (!tbody) return;
+
+  tbody.querySelectorAll('input[data-f]').forEach(el => {
+    el.addEventListener('keydown', e => {
+      if (e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;
+
+      const currentField = el.dataset.f;
+      if (!currentField) return;
+
+      const focusables = Array.from(tbody.querySelectorAll(`input[data-f="${currentField}"]`))
+        .filter(input =>
+          input.offsetParent !== null &&
+          !input.disabled
+        );
+
+      const idx = focusables.indexOf(el);
+      if (idx === -1 || focusables.length < 2) return;
+
+      e.preventDefault();
+
+      const nextIdx = e.shiftKey
+        ? (idx - 1 + focusables.length) % focusables.length
+        : (idx + 1) % focusables.length;
+
+      focusables[nextIdx].focus();
+
+      if (typeof focusables[nextIdx].select === 'function') {
+        focusables[nextIdx].select();
+      }
+    });
+  });
+}
+function renderBattery(){
+  syncBatteryPremorbidControls();
+  const cls = document.getElementById('bat-class').value;
+  const tbody = document.querySelector('#bat-table tbody');
+  tbody.innerHTML = '';
+  let lastGroup = null;
+  batteryRows.forEach((r, i) => {
+    // Inject a group header when group changes
+    if (r.group && r.group !== lastGroup){
+      const ghr = document.createElement('tr');
+      ghr.className = 'group-header';
+      const stLabel = scoreTypeLabel(r.scoreType || inferScoreType(r.group));
+      ghr.innerHTML = `<td colspan="7">${escapeHtml(stripAgeRange(r.group))} <span class="type-badge">· ${stLabel}</span><button class="group-remove" data-rm-group="${escapeAttr(r.group)}" title="Remove group">×</button></td>`;
+      tbody.appendChild(ghr);
+      lastGroup = r.group;
+    } else if (!r.group){
+      lastGroup = null;
+    }
+    const rowType = rowScoreType(r);
+    const z = toZ(r.score, rowType);
+    const pct = z == null ? '' : fmtPct(normCDF(z) * 100);
+    const details = batteryClassificationDetails(r, cls);
+    const tr = document.createElement('tr');
+    if (r.group) tr.className = 'in-group';
+    tr.innerHTML = `
+      <td class="row-num">${i+1}</td>
+      <td><input type="text" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Subtest name"></td>
+      <td><input type="number" step="any" data-r="${i}" data-f="raw" value="${escapeAttr(r.raw)}"></td>
+      <td><input type="number" step="any" data-r="${i}" data-f="score" value="${escapeAttr(r.score)}"></td>
+      <td class="computed">${pct}</td>
+      <td class="computed ${details.className}">${details.html}</td>
+      <td class="row-actions"><button onclick="batteryRemove(${i})" title="Remove">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  // Wire group-remove buttons
+  tbody.querySelectorAll('[data-rm-group]').forEach(b => {
+    b.addEventListener('click', () => batteryRemoveGroup(b.dataset.rmGroup));
+  });
+  // In-place updates while typing
+  tbody.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.r, f = e.target.dataset.f;
+      batteryRows[i][f] = e.target.value;
+      const tr = e.target.closest('tr');
+      const rowType = rowScoreType(batteryRows[i]);
+      const z = toZ(batteryRows[i].score, rowType);
+      const cells = tr.querySelectorAll('.computed');
+      cells[0].textContent = z == null ? '' : fmtPct(normCDF(z) * 100);
+      const details = batteryClassificationDetails(batteryRows[i], cls);
+      cells[1].className = `computed ${details.className}`.trim();
+      cells[1].innerHTML = details.html;
+      renderBatteryApa();
+    });
+  });
+    setupBatteryContextualTabbing(tbody);
+  renderBatteryApa();
+}
+
+
+const apaColumnState = {};
+function getApaVisibleColumns(outId, columns){
+  const allKeys = columns.map(c => c.key);
+  const defaultKeys = columns.filter(c => c.defaultVisible !== false).map(c => c.key);
+  if (!apaColumnState[outId]) apaColumnState[outId] = new Set(defaultKeys.length ? defaultKeys : allKeys);
+  apaColumnState[outId] = new Set([...apaColumnState[outId]].filter(k => allKeys.includes(k)));
+  if (apaColumnState[outId].size === 0) apaColumnState[outId] = new Set(allKeys);
+  return columns.filter(c => apaColumnState[outId].has(c.key));
+}
+function updateApaColumnControls(outId, columns, renderFn){
+  const btn = document.querySelector(`[data-copy="${outId}"]`);
+  if (!btn) return;
+  let controls = document.querySelector(`.apa-column-controls[data-for="${outId}"]`);
+  if (!controls){
+    const disclosure = document.createElement('details');
+    disclosure.className = 'apa-column-disclosure';
+    disclosure.innerHTML = '<summary>Toggle columns</summary>';
+    controls = document.createElement('div');
+    controls.className = 'apa-column-controls';
+    controls.dataset.for = outId;
+    disclosure.appendChild(controls);
+    btn.parentNode.insertBefore(disclosure, btn);
+  }
+  const visible = new Set(getApaVisibleColumns(outId, columns).map(c => c.key));
+  controls.innerHTML = columns.map(c => `
+    <label><input type="checkbox" value="${escapeAttr(c.key)}" ${visible.has(c.key) ? 'checked' : ''}>${escapeHtml(c.label.replace(/<[^>]*>/g,''))}</label>
+  `).join('');
+  controls.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      let next = new Set([...controls.querySelectorAll('input[type="checkbox"]:checked')].map(x => x.value));
+      if (next.size === 0){ cb.checked = true; next.add(cb.value); }
+      apaColumnState[outId] = next;
+      renderFn();
+    });
+  });
+}
+function buildApaTableFromColumns(outId, columns, rows, groupLabelFn){
+  const visible = getApaVisibleColumns(outId, columns);
+  const groups = [];
+  visible.forEach(c => {
+    const label = c.group || '';
+    const last = groups[groups.length - 1];
+    if (last && last.label === label){ last.span += 1; last.cols.push(c); }
+    else groups.push({ label, span: 1, cols: [c] });
+  });
+  const hasSupra = groups.some(g => g.span > 1);
+  let header;
+  if (!hasSupra){
+    header = `<tr>${visible.map(c => `<th${c.num ? ' class="num"' : ''}>${c.label}</th>`).join('')}</tr>`;
+  } else {
+    let supraCells = '', subCells = '';
+    groups.forEach(g => {
+      if (g.span > 1){
+        supraCells += `<th colspan="${g.span}" class="apa-spanner">${escapeHtml(g.label)}</th>`;
+        g.cols.forEach(c => { subCells += `<th${c.num ? ' class="num"' : ''}>${c.label}</th>`; });
+      } else {
+        const c = g.cols[0];
+        supraCells += `<th rowspan="2"${c.num ? ' class="num"' : ''}>${c.label}</th>`;
+      }
+    });
+    header = `<tr>${supraCells}</tr><tr>${subCells}</tr>`;
+  }
+  let body = '';
+  let lastGroup = null;
+  let inGroup = false;
+  rows.forEach(r => {
+    const group = groupLabelFn ? groupLabelFn(r) : '';
+    if (group && group !== lastGroup){
+      body += `<tr class="apa-group"><td colspan="${visible.length}">${escapeHtml(stripAgeRange(group))}</td></tr>`;
+      lastGroup = group;
+      inGroup = true;
+    } else if (!group){
+      lastGroup = null;
+      inGroup = false;
+    }
+    const cls = inGroup ? ' class="apa-grouped-row"' : '';
+    body += `<tr${cls}>${visible.map(c => `<td${c.num ? ' class="num"' : ''}>${c.render(r)}</td>`).join('')}</tr>`;
+  });
+  return `<table class="apa-table"><thead>${header}</thead><tbody>${body}</tbody></table>`;
+}
+
+function renderBatteryApa(){
+  const cls = document.getElementById('bat-class').value;
+  const title = document.getElementById('bat-title').value || 'Test scores';
+  const out = document.getElementById('bat-apa');
+  const valid = batteryRows.filter(r => r.name);
+  const completed = valid.filter(r => r.score !== '' && !isNaN(r.score));
+  const types = new Set((completed.length ? completed : valid).map(r => rowScoreType(r)));
+  const headerLabel = types.size === 1 ? scoreTypeLabel([...types][0]) : 'Score';
+  const columns = [
+    { key:'subtest', label:'Subtest', num:false, render:r => escapeHtml(r.name) },
+    { key:'raw', label:'Raw Score', group:'Scores', num:true, render:r => escapeHtml(r.raw || '—') },
+    { key:'score', label:headerLabel, group:'Scores', num:true, render:r => escapeHtml(r.score || '') },
+    { key:'percentile', label:'Percentile', group:'Scores', num:true, render:r => { const z = toZ(r.score, rowScoreType(r)); return z == null ? '' : fmtPct(normCDF(z) * 100); }},
+    { key:'classification', label:'Classification', group:'Interpretation', num:false, render:r => batteryClassificationDetails(r, cls).html }
+  ];
+  updateApaColumnControls('bat-apa', columns, renderBatteryApa);
+  if (valid.length === 0){
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Add or select at least one subtest to preview the APA table.</div>';
+    return;
+  }
+  const prem = getBatteryPremorbidComparison();
+  const premNote = prem ? ` Scores shown in red are extremely low and/or at least ${prem.thresholdLabel} SD below the entered premorbid estimate (SS = ${fmt(prem.estimate, 1)}).` : '';
+  out.innerHTML = `
+    <div class="apa-table-num">Table 1</div>
+    <div class="apa-table-title">${escapeHtml(title)}</div>
+    ${buildApaTableFromColumns('bat-apa', columns, valid, r => r.group)}
+    <div class="apa-note"><strong>Note.</strong> Classification follows ${cls === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.${types.size > 1 ? ' Subtest scores are reported in their native standardised metric (scaled-score subtests vs. standard-score indices).' : ''}${premNote}</div>
+  `;
+}
+
+// Auto-fill: append subtest names from a family as a new group
+function loadFamilyIntoBattery(family){
+  const db = getMergedDB();
+  if (!db[family]) return;
+  // Avoid duplicating an already-loaded group
+  if (batteryRows.some(r => r.group === family)){
+    showToast(`${family} is already loaded`, true);
+    return;
+  }
+  const inferredType = inferScoreType(family);
+  const names = Object.keys(db[family]);
+  names.forEach(name => {
+    batteryRows.push({ name, raw:'', score:'', group:family, scoreType:inferredType });
+  });
+  renderBattery();
+  showToast(`✓ Added ${names.length} subtests from ${family}`);
+}
+function clearBattery(){
+  batteryRows.length = 0;
+  document.getElementById('bat-family-input').value = '';
+  renderBattery();
+}
+
+// Wire up the battery family combobox (after DOM nodes exist)
+function wireBatteryAutofill(){
+  const inp = document.getElementById('bat-family-input');
+  const list = document.getElementById('bat-family-list');
+  if (!inp || !list) return;
+  inp.addEventListener('focus', () => { list.classList.add('show'); filterFamilyListEl(list, ''); });
+  inp.addEventListener('input', () => { list.classList.add('show'); filterFamilyListEl(list, inp.value); });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Escape') list.classList.remove('show');
+    if (e.key === 'Enter') {
+      const add = list.querySelector('.combo-add:not([disabled])');
+      if (add){ e.preventDefault(); add.click(); }
+    }
+  });
+  inp.addEventListener('blur', () => setTimeout(() => {
+    if (!list.matches(':hover')) list.classList.remove('show');
+  }, 180));
+}
+
+function comboCustomTag(isCustom){
+  return isCustom ? ' <span class="combo-custom-tag">custom</span>' : '';
+}
+function comboFooterHtml(){
+  return '<div class="combo-footer"><span class="combo-count">0 selected</span><button class="btn btn-ghost combo-clear" type="button">Clear</button><button class="btn btn-primary combo-add" type="button" disabled>Add selected tests</button></div>';
+}
+function comboAgeBandNoteHtml(){
+  return '<div class="combo-ageband-note"><span class="combo-ageband-note-icon">ℹ</span><span><strong>Specific age bands</strong> offer greater normative precision but rest on smaller samples, which reduces the stability of <em>r</em>. <strong>All Ages</strong> norms draw on larger <em>N</em>, yielding a more robust <em>r</em>, at the cost of age specificity.</span></div>';
+}
+function comboCheckboxItemHtml(f, isCustom, indented){
+  const cls = 'combo-item combo-check' + (indented ? ' combo-indented' : '');
+  const label = indented ? ageBandLabel(f) : escapeHtml(f);
+  return `<label class="${cls}" data-family="${escapeAttr(f)}"><input type="checkbox" value="${escapeAttr(f)}"><span class="combo-check-text">${label}${comboCustomTag(isCustom)}</span></label>`;
+}
+function comboOptionsHtml(itemsHtml){
+  return `<div class="combo-options">${itemsHtml}</div>`;
+}
+function updateComboSelectionState(list){
+  const selected = list.querySelectorAll('.combo-check input:checked').length;
+  const count = list.querySelector('.combo-count');
+  const add = list.querySelector('.combo-add');
+  if (count) count.textContent = `${selected} selected`;
+  if (add) add.disabled = selected === 0;
+}
+function selectedComboFamilies(list){
+  return Array.from(list.querySelectorAll('.combo-check input:checked')).map(cb => cb.value);
+}
+function clearComboSelections(list){
+  list.querySelectorAll('.combo-check input:checked').forEach(cb => { cb.checked = false; });
+  updateComboSelectionState(list);
+}
+function wireMultiSelectFamilyList(list, onAdd){
+  list.classList.add('is-multiselect');
+  if (list.dataset.multiselectReady === 'true'){
+    list._comboOnAdd = onAdd;
+    updateComboSelectionState(list);
+    return;
+  }
+  list.dataset.multiselectReady = 'true';
+  list._comboOnAdd = onAdd;
+
+  // Keep footer clicks from blurring/closing the dropdown before the action runs.
+  // Checkbox rows are deliberately left alone so the browser can handle native
+  // checkbox and label-click behaviour reliably.
+  list.addEventListener('mousedown', e => {
+    if (e.target.closest('.combo-footer')) e.preventDefault();
+  });
+
+  // Update the selected count/Add button after native checkbox toggling.
+  list.addEventListener('change', e => {
+    if (e.target.matches('.combo-check input[type="checkbox"]')) {
+      updateComboSelectionState(list);
+    }
+  });
+
+  list.addEventListener('click', e => {
+    const clear = e.target.closest('.combo-clear');
+    if (clear){
+      e.preventDefault();
+      clearComboSelections(list);
+      return;
+    }
+
+    const add = e.target.closest('.combo-add');
+    if (add){
+      e.preventDefault();
+      const families = selectedComboFamilies(list);
+      if (!families.length) return;
+      if (typeof list._comboOnAdd === 'function') list._comboOnAdd(families);
+      clearComboSelections(list);
+      list.classList.remove('show');
+      return;
+    }
+  });
+
+  updateComboSelectionState(list);
+}
+function rebuildBatteryFamilyList(){
+  const list = document.getElementById('bat-family-list');
+  if (!list) return;
+  const db = getMergedDB();
+  const families = Object.keys(db).sort();
+  list.innerHTML = comboFooterHtml() + comboAgeBandNoteHtml() + buildFamilyListHtml(families);
+  wireMultiSelectFamilyList(list, families => {
+    families.forEach(loadFamilyIntoBattery);
+    const inp = document.getElementById('bat-family-input');
+    if (inp){ inp.value = ''; inp.focus(); }
+  });
+}
+
+document.getElementById('bat-add').addEventListener('click', () => batteryAddRow());
+document.getElementById('bat-type').addEventListener('change', renderBattery);
+document.getElementById('bat-class').addEventListener('change', renderBattery);
+document.getElementById('bat-title').addEventListener('input', renderBatteryApa);
+document.getElementById('bat-prem-enable').addEventListener('change', renderBattery);
+document.getElementById('bat-prem-score').addEventListener('input', renderBattery);
+document.getElementById('bat-prem-threshold').addEventListener('change', renderBattery);
+document.getElementById('bat-clear').addEventListener('click', clearBattery);
+
+/* ============================================================
+   03 · SDI
+   ============================================================ */
+let sdiRows = [];
+function sdiAddRow(initial){ sdiRows.push(initial || { name:'', t1:'', t2:'', sd:'' }); renderSdi(); }
+function sdiRemove(i){ sdiRows.splice(i, 1); renderSdi(); }
+function sdiRemoveGroup(group){
+  sdiRows = sdiRows.filter(r => r.group !== group);
+  renderSdi();
+}
+window.sdiRemoveGroup = sdiRemoveGroup;
+function sdiSdUnit(type){ return {scaled:3, standard:15, t:10, z:1}[type]; }
+function sdiMode(){ return document.getElementById('sdi-mode').value; }
+function sdiCvHit(change, cv){
+  if (cv === 0.90) return Math.abs(change) >= 1.645;
+  if (cv === 0.95) return Math.abs(change) >= 1.96;
+  return Math.abs(change) >= cv;
+}
+function sdiComputeChange(r){
+  if (r.t1 === '' || r.t2 === '' || isNaN(r.t1) || isNaN(r.t2)) return null;
+  if (sdiMode() === 'raw'){
+    if (r.sd === '' || isNaN(r.sd) || parseFloat(r.sd) <= 0) return null;
+    return (parseFloat(r.t2) - parseFloat(r.t1)) / parseFloat(r.sd);
+  }
+  return (parseFloat(r.t2) - parseFloat(r.t1)) / sdiSdUnit(document.getElementById('sdi-type').value);
+}
+function renderSdiHead(){
+  const raw = sdiMode() === 'raw';
+  document.getElementById('sdi-table-head').innerHTML = `
+    <tr class="table-group-row">
+      <th colspan="2"></th>
+      <th colspan="${raw ? 3 : 2}">Scores</th>
+      <th colspan="3">Results</th>
+      <th></th>
+    </tr>
+    <tr>
+      <th class="row-num">#</th>
+      <th style="min-width:200px">Subtest</th>
+      <th style="width:100px">${raw ? 'Test raw' : 'Test'}</th>
+      <th style="width:100px">${raw ? 'Retest raw' : 'Retest'}</th>
+      ${raw ? '<th style="width:100px;text-align:right">SD</th>' : ''}
+      <th style="width:90px;text-align:right">SD Δ</th>
+      <th style="width:90px;text-align:right"><i>p</i></th>
+      <th style="width:160px">Significance</th>
+      <th class="row-actions"></th>
+    </tr>`;
+}function setupSdiContextualTabbing(tbody){
+  if (!tbody) return;
+
+  function fieldsFor(field){
+    const raw = sdiMode() === 'raw';
+
+    if (field === 'name') {
+      return ['name'];
+    }
+
+    if (field === 't1' || field === 't2' || field === 'sd') {
+      return raw ? ['t1', 't2', 'sd'] : ['t1', 't2'];
+    }
+
+    return [];
+  }
+
+  tbody.querySelectorAll('input[data-f]').forEach(el => {
+    el.addEventListener('keydown', e => {
+      if (e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;
+
+      const allowed = fieldsFor(el.dataset.f);
+      if (!allowed.length) return;
+
+      const focusables = Array.from(tbody.querySelectorAll('input[data-f]'))
+        .filter(input =>
+          allowed.includes(input.dataset.f) &&
+          input.offsetParent !== null &&
+          !input.disabled
+        );
+
+      const idx = focusables.indexOf(el);
+      if (idx === -1 || focusables.length < 2) return;
+
+      e.preventDefault();
+
+      const nextIdx = e.shiftKey
+        ? (idx - 1 + focusables.length) % focusables.length
+        : (idx + 1) % focusables.length;
+
+      focusables[nextIdx].focus();
+
+      if (typeof focusables[nextIdx].select === 'function') {
+        focusables[nextIdx].select();
+      }
+    });
+  });
+}
+function renderSdi(){
+  const raw = sdiMode() === 'raw';
+  const cv = parseFloat(document.getElementById('sdi-cv').value);
+  document.getElementById('sdi-type-field').classList.toggle('is-hidden', raw);
+  document.getElementById('sdi-raw-help').style.display = raw ? 'block' : 'none';
+  renderSdiHead();
+  const tbody = document.querySelector('#sdi-table tbody');
+  tbody.innerHTML = '';
+  let lastGroup = null;
+  sdiRows.forEach((r, i) => {
+    if (r.group && r.group !== lastGroup){
+      const ghr = document.createElement('tr');
+      ghr.className = 'group-header';
+      const colspan = raw ? 9 : 8;
+      ghr.innerHTML = `<td colspan="${colspan}">${escapeHtml(stripAgeRange(r.group))}<button class="group-remove" data-rm-sdi-group="${escapeAttr(r.group)}" title="Remove group">×</button></td>`;
+      tbody.appendChild(ghr);
+      lastGroup = r.group;
+    } else if (!r.group){
+      lastGroup = null;
+    }
+    let sdChange = '', pStr = '', sigStr = '', sigCls = '';
+    const change = sdiComputeChange(r);
+    if (change === null){
+      sigStr = sdiProblem(r);
+      sigCls = sigStr === 'Awaiting values' ? 'status-awaiting' : 'status-check';
+    }
+    if (change !== null){
+      sdChange = fmt(change, 2);
+      const p = 2 * (1 - normCDF(Math.abs(change)));
+      pStr = fmtP(p);
+      const sig = sdiCvHit(change, cv);
+      sigStr = sig ? 'Significant change' : 'No significant change';
+      sigCls = sig ? 'sig-yes' : 'sig-no';
+    }
+    const tr = document.createElement('tr');
+    if (r.group) tr.className = 'in-group';
+    if (change === null && hasAnyRowValue(r)) tr.classList.add('row-check');
+    else if (change === null) tr.classList.add('row-awaiting');
+    tr.innerHTML = `
+      <td class="row-num">${i+1}</td>
+      <td><input type="text" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Subtest name"></td>
+      <td><input type="number" step="any" data-r="${i}" data-f="t1" value="${escapeAttr(r.t1)}"></td>
+      <td><input type="number" step="any" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
+      ${raw ? `<td><input type="number" min="0" step="any" data-r="${i}" data-f="sd" value="${escapeAttr(r.sd || '')}" placeholder="SD"></td>` : ''}
+      <td class="computed">${sdChange}</td>
+      <td class="computed">${pStr}</td>
+      <td class="computed ${sigCls}">${sigStr}</td>
+      <td class="row-actions"><button onclick="sdiRemove(${i})">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('[data-rm-sdi-group]').forEach(b => {
+    b.addEventListener('click', () => sdiRemoveGroup(b.dataset.rmSdiGroup));
+  });
+  tbody.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.r, f = e.target.dataset.f;
+      sdiRows[i][f] = e.target.value;
+      updateSdiRow(i, e.target.closest('tr'));
+      renderSdiApa();
+    });
+  });
+  setupSdiContextualTabbing(tbody);
+  renderSdiApa();
+  addColumnTitles();
+}
+
+function updateSdiRow(i, tr){
+  const r = sdiRows[i];
+  const cv = parseFloat(document.getElementById('sdi-cv').value);
+  const cells = tr.querySelectorAll('.computed');
+  cells.forEach(c => { c.className = 'computed'; });
+  const change = sdiComputeChange(r);
+  tr.classList.remove('row-awaiting','row-check');
+  if (change === null){
+    const status = sdiProblem(r);
+    cells.forEach(c => c.textContent = '');
+    setOutcomeStatus(cells[cells.length - 1], status, status === 'Awaiting values' ? 'awaiting' : 'check');
+    tr.classList.add(status === 'Awaiting values' && !hasAnyRowValue(r) ? 'row-awaiting' : 'row-check');
+    return;
+  }
+  if (change !== null){
+    const p = 2 * (1 - normCDF(Math.abs(change)));
+    const sig = sdiCvHit(change, cv);
+    cells[0].textContent = fmt(change, 2);
+    cells[1].textContent = fmtP(p);
+    cells[2].textContent = sig ? 'Significant change' : 'No significant change';
+    cells[2].classList.add(sig ? 'sig-yes' : 'sig-no');
+  } else {
+    cells.forEach(c => c.textContent = '');
+  }
+}
+function renderSdiApa(){
+  const raw = sdiMode() === 'raw';
+  const cv = parseFloat(document.getElementById('sdi-cv').value);
+  const title = document.getElementById('sdi-title').value || 'Test–retest comparison';
+  const out = document.getElementById('sdi-apa');
+  const named = sdiRows.filter(r => r.name);
+  if (named.length === 0){ out.innerHTML = '<div class="apa-empty"><strong>APA-formatted output</strong>Add or select at least one test to preview the report-ready table.</div>'; return; }
+  const cvDesc = cv === 0.90 ? '90% critical value (1.645)' : cv === 0.95 ? '95% critical value (1.96)' : `${cv} SD threshold`;
+  const rows = named.map(r => {
+    const change = sdiComputeChange(r);
+    if (change === null){
+      return `<tr><td>${escapeHtml(r.name)}</td><td class="num">${escapeHtml(r.t1 || '')}</td><td class="num">${escapeHtml(r.t2 || '')}</td>${raw ? `<td class="num">${escapeHtml(r.sd || '')}</td>` : ''}<td class="num"></td><td class="num"></td><td></td></tr>`;
+    }
+    const p = 2 * (1 - normCDF(Math.abs(change)));
+    const sig = sdiCvHit(change, cv);
+    return `<tr><td>${escapeHtml(r.name)}</td><td class="num">${escapeHtml(r.t1)}</td><td class="num">${escapeHtml(r.t2)}</td>${raw ? `<td class="num">${escapeHtml(r.sd)}</td>` : ''}<td class="num">${fmt(change, 2)}</td><td class="num">${fmtP(p)}</td><td>${sig ? 'Significant' : 'Not Significant'}</td></tr>`;
+  }).join('');
+  out.innerHTML = `
+    <div class="apa-table-num">Table 1</div>
+    <div class="apa-table-title">${escapeHtml(title)}</div>
+    <table class="apa-table">
+      <thead>
+        <tr><th rowspan="2">Subtest</th><th colspan="${raw ? 3 : 2}" class="apa-spanner">Scores</th><th colspan="3" class="apa-spanner">Results</th></tr>
+        <tr><th class="num">${raw ? 'Test raw' : 'Test'}</th><th class="num">${raw ? 'Retest raw' : 'Retest'}</th>${raw ? '<th class="num">SD</th>' : ''}<th class="num">SD Δ</th><th class="num"><i>p</i></th><th>Significance</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="apa-note"><strong>Note.</strong> SD Δ = standard-deviation change between assessments${raw ? ', calculated as (retest raw score − test raw score) ÷ SD' : ''}. <i>p</i>-values are two-tailed assuming normality. Significance threshold = ${cvDesc}.</div>
+  `;
+}
+function sdiNormSd(p){
+  const sd = p && p.sd1 != null ? Number(p.sd1) : NaN;
+  return Number.isFinite(sd) && sd > 0 ? String(sd) : '';
+}
+function loadFamilyIntoSdi(family){
+  const db = getMergedDB();
+  if (!db[family]) return;
+  if (sdiRows.some(r => r.group === family)){
+    showToast(`${family} is already loaded`, true);
+    return;
+  }
+  const raw = sdiMode() === 'raw';
+  const subtests = Object.entries(db[family]);
+  subtests.forEach(([name, p]) => {
+    sdiRows.push({ name, t1:'', t2:'', sd: raw ? sdiNormSd(p) : '', group:family });
+  });
+  renderSdi();
+  showToast(`✓ Added ${subtests.length} subtests from ${family}${raw ? ' with SD₁ values' : ''}`);
+}
+function clearSdi(){
+  sdiRows = [];
+  const inp = document.getElementById('sdi-family-input');
+  if (inp) inp.value = '';
+  renderSdi();
+}
+function rebuildSdiFamilyList(){
+  const list = document.getElementById('sdi-family-list');
+  if (!list) return;
+  const db = getMergedDB();
+  const families = Object.keys(db).sort();
+  list.innerHTML = comboFooterHtml() + buildFamilyListHtml(families);
+  wireMultiSelectFamilyList(list, families => {
+    families.forEach(loadFamilyIntoSdi);
+    const inp = document.getElementById('sdi-family-input');
+    if (inp){ inp.value = ''; inp.focus(); }
+  });
+}
+function wireSdiAutofill(){
+  const inp = document.getElementById('sdi-family-input');
+  const list = document.getElementById('sdi-family-list');
+  if (!inp || !list) return;
+  inp.addEventListener('focus', () => { list.classList.add('show'); filterFamilyListEl(list, ''); });
+  inp.addEventListener('input', () => { list.classList.add('show'); filterFamilyListEl(list, inp.value); });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Escape') list.classList.remove('show');
+    if (e.key === 'Enter') {
+      const add = list.querySelector('.combo-add:not([disabled])');
+      if (add){ e.preventDefault(); add.click(); }
+    }
+  });
+  inp.addEventListener('blur', () => setTimeout(() => {
+    if (!list.matches(':hover')) list.classList.remove('show');
+  }, 180));
+}
+document.getElementById('sdi-add').addEventListener('click', () => sdiAddRow());
+document.getElementById('sdi-mode').addEventListener('change', renderSdi);
+document.getElementById('sdi-cv').addEventListener('change', renderSdi);
+document.getElementById('sdi-type').addEventListener('change', renderSdi);
+document.getElementById('sdi-title').addEventListener('input', renderSdiApa);
+document.getElementById('sdi-clear').addEventListener('click', clearSdi);
+
+/* ============================================================
+   04-07 · RCI CALCULATORS (Basic / Practice / SRB / Crawford)
+   ============================================================ */
+const rciState = {
+  'rci-basic':    { rows:[], cv:0.95, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  'rci-practice': { rows:[], cv:0.90, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  'rci-srb':      { rows:[], cv:0.95, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  'rci-crawford': { rows:[], cv:0.95, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' }
+};
+function newRciRow(method){
+  if (method === 'rci-basic') return { name:'', sd:'', r:'', t1:'', t2:'' };
+  if (method === 'rci-crawford') return { name:'', m1:'', sd1:'', m2:'', sd2:'', r:'', n:'', t1:'', t2:'' };
+  return { name:'', m1:'', sd1:'', m2:'', sd2:'', r:'', t1:'', t2:'' };
+}
+function rciAddRow(method){ rciState[method].rows.push(newRciRow(method)); renderRci(method); }
+function rciRemove(method, i){ rciState[method].rows.splice(i, 1); renderRci(method); }
+function rciRemoveGroup(method, group){
+  rciState[method].rows = rciState[method].rows.filter(r => r.group !== group);
+  renderRci(method);
+}
+window.rciRemove = rciRemove;
+window.rciRemoveGroup = rciRemoveGroup;
+
+function calcBasicRow(r){
+  const sd = parseFloat(r.sd), rel = parseFloat(r.r), t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
+  if (isNaN(sd) || isNaN(rel) || isNaN(t1) || isNaN(t2) || rel < 0 || rel >= 1 || sd <= 0) return null;
+  const sem = sd * Math.sqrt(1 - rel);
+  const sed = Math.sqrt(2 * sem * sem);
+  const rci = (t2 - t1) / sed;
+  const p = 2 * (1 - normCDF(Math.abs(rci)));
+  return { sem, sed, rci, p };
+}
+function calcPracticeRow(r){
+  const m1 = parseFloat(r.m1), sd1 = parseFloat(r.sd1), m2 = parseFloat(r.m2), sd2 = parseFloat(r.sd2);
+  const rel = parseFloat(r.r), t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
+  if ([m1,sd1,m2,sd2,rel,t1,t2].some(isNaN) || rel < 0 || rel >= 1 || sd1 <= 0 || sd2 <= 0) return null;
+  const sem1 = sd1 * Math.sqrt(1 - rel);
+  const sem2 = sd2 * Math.sqrt(1 - rel);
+  const sdiff = Math.sqrt(sem1*sem1 + sem2*sem2);
+  const rci = ((t2 - t1) - (m2 - m1)) / sdiff;
+  const p = 2 * (1 - normCDF(Math.abs(rci)));
+  return { sem1, sem2, sdiff, rci, p };
+}
+function calcSrbRow(r){
+  const m1 = parseFloat(r.m1), sd1 = parseFloat(r.sd1), m2 = parseFloat(r.m2), sd2 = parseFloat(r.sd2);
+  const rel = parseFloat(r.r), t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
+  if ([m1,sd1,m2,sd2,rel,t1,t2].some(isNaN) || rel < 0 || rel >= 1 || sd1 <= 0 || sd2 <= 0) return null;
+  const slope = rel * (sd2 / sd1);
+  const intercept = m2 - slope * m1;
+  const predicted = intercept + slope * t1;
+  const see = sd2 * Math.sqrt(1 - rel*rel);
+  const rci = (t2 - predicted) / see;
+  const p = 2 * (1 - normCDF(Math.abs(rci)));
+  return { slope, intercept, predicted, see, rci, p };
+}
+function calcCrawfordRow(r){
+  const m1 = parseFloat(r.m1), sd1 = parseFloat(r.sd1), m2 = parseFloat(r.m2), sd2 = parseFloat(r.sd2);
+  const rel = parseFloat(r.r), n = parseFloat(r.n), t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
+  if ([m1,sd1,m2,sd2,rel,n,t1,t2].some(isNaN) || rel < 0 || rel >= 1 || sd1 <= 0 || sd2 <= 0 || n < 3) return null;
+  const slope = rel * (sd2 / sd1);
+  const intercept = m2 - slope * m1;
+  const predicted = intercept + slope * t1;
+  const see = sd2 * Math.sqrt(1 - rel*rel);
+  // Crawford & Garthwaite (2007) sample-size-adjusted standard error of prediction
+  const sePred = see * Math.sqrt(1 + 1/n + Math.pow(t1 - m1, 2) / ((n - 1) * sd1 * sd1));
+  const df = n - 2;
+  const tStat = (t2 - predicted) / sePred;
+  const p = 2 * (1 - tCDF(Math.abs(tStat), df));
+  return { slope, intercept, predicted, see, sePred, df, rci: tStat, p };
+}
+function rciOutcome(rci, cv, df){
+  // For t-distributed RCIs (Crawford method), use t-quantile with df; otherwise z
+  let crit;
+  if (df != null && isFinite(df) && df > 0){
+    crit = tInv(cv === 0.95 ? 0.975 : 0.95, df);
+  } else {
+    crit = cv === 0.95 ? 1.96 : 1.645;
+  }
+  if (Math.abs(rci) < crit) return { label:'No reliable change', cls:'sig-no' };
+  return rci > 0
+    ? { label:'Reliable improvement', cls:'sig-improve' }
+    : { label:'Reliable decline', cls:'sig-decline' };
+}
+
+
+
+// Make keyboard entry match the user's current task.
+// If the cursor is in Date 1/Date 2, Tab stays within the patient-score cells.
+// If the cursor is in the test/normative fields, Tab stays within those fields.
+function setupRciContextualTabbing(tbody){
+  if (!tbody) return;
+  const fieldsFor = current => (current === 't1' || current === 't2')
+    ? ['t1','t2']
+    : ['name','sd','r','m1','sd1','m2','sd2','n'];
+
+  tbody.querySelectorAll('input[data-f]').forEach(el => {
+    const field = el.dataset.f;
+    el.tabIndex = 0;
+    if (field === 't1' || field === 't2'){
+      el.classList.add('patient-score-tab-target');
+      el.title = 'Fast entry: Tab moves between Date 1 and Date 2 score cells.';
+      el.setAttribute('aria-label', field === 't1' ? 'Date 1 score' : 'Date 2 score');
+    } else {
+      el.classList.add('norm-tab-target');
+      el.title = 'Norm entry: Tab moves through the test and normative fields.';
+    }
+
+    el.addEventListener('keydown', e => {
+      if (e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;
+      const allowed = fieldsFor(field);
+      const focusables = Array.from(tbody.querySelectorAll('input[data-f]'))
+        .filter(input => allowed.includes(input.dataset.f) && input.offsetParent !== null && !input.disabled);
+      const idx = focusables.indexOf(el);
+      if (idx === -1 || focusables.length < 2) return;
+      e.preventDefault();
+      const nextIdx = e.shiftKey
+        ? (idx - 1 + focusables.length) % focusables.length
+        : (idx + 1) % focusables.length;
+      focusables[nextIdx].focus();
+      if (typeof focusables[nextIdx].select === 'function') focusables[nextIdx].select();
+    });
+  });
+}
+
+function renderRci(method){
+  const st = rciState[method];
+  const cv = st.cv;
+  const tbody = document.querySelector(`#${method}-table tbody`);
+  tbody.innerHTML = '';
+  // Update header labels
+  document.querySelectorAll(`.rci-d1[data-target="${method}"]`).forEach(el => el.value = st.d1);
+  document.querySelectorAll(`.rci-d2[data-target="${method}"]`).forEach(el => el.value = st.d2);
+  document.querySelectorAll(`#${method}-table .d1-head`).forEach(th => th.textContent = st.d1);
+  document.querySelectorAll(`#${method}-table .d2-head`).forEach(th => th.textContent = st.d2);
+
+  const colCount = document.querySelector(`#${method}-table thead tr:last-child`)?.children.length || 10;
+  let lastGroup = null;
+  st.rows.forEach((r, i) => {
+    if (r.group && r.group !== lastGroup){
+      const ghr = document.createElement('tr');
+      ghr.className = 'group-header';
+      ghr.innerHTML = `<td colspan="${colCount}">${escapeHtml(stripAgeRange(r.group))}<button class="group-remove" data-rm-rci-group="${escapeAttr(r.group)}" data-method="${method}" title="Remove group">×</button></td>`;
+      tbody.appendChild(ghr);
+      lastGroup = r.group;
+    } else if (!r.group){
+      lastGroup = null;
+    }
+    let calc = null;
+    if (method === 'rci-basic') calc = calcBasicRow(r);
+    else if (method === 'rci-practice') calc = calcPracticeRow(r);
+    else if (method === 'rci-srb') calc = calcSrbRow(r);
+    else if (method === 'rci-crawford') calc = calcCrawfordRow(r);
+
+    const rciStr = calc ? fmt(calc.rci, 2) : '';
+    const pStr = calc ? fmtP(calc.p) : '';
+    const status = !calc ? numericProblem(r, method) : '';
+    const outcome = calc ? rciOutcome(calc.rci, cv, calc.df) : { label: status, cls: (status === 'Awaiting values' ? 'status-awaiting' : 'status-check') };
+    const predStr = calc ? fmt(calc.predicted, 2) : '';
+
+    const tr = document.createElement('tr');
+    if (r.group) tr.className = 'in-group';
+    if (!calc && hasAnyRowValue(r)) tr.classList.add('row-check');
+    else if (!calc) tr.classList.add('row-awaiting');
+    if (method === 'rci-basic'){
+      tr.innerHTML = `
+        <td class="row-num">${i+1}</td>
+        <td><input type="text" data-m="${method}" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Test name"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd" value="${escapeAttr(r.sd)}"></td>
+        <td><input type="number" step="0.01" min="0" max="1" data-m="${method}" data-r="${i}" data-f="r" value="${escapeAttr(r.r)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t1" value="${escapeAttr(r.t1)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
+        <td class="computed">${rciStr}</td>
+        <td class="computed">${pStr}</td>
+        <td class="computed ${outcome.cls}">${outcome.label}</td>
+        <td class="row-actions"><button onclick="rciRemove('${method}',${i})">×</button></td>
+      `;
+    } else if (method === 'rci-practice'){
+      tr.innerHTML = `
+        <td class="row-num">${i+1}</td>
+        <td><input type="text" data-m="${method}" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Test name"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="m1" value="${escapeAttr(r.m1)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd1" value="${escapeAttr(r.sd1)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="m2" value="${escapeAttr(r.m2)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd2" value="${escapeAttr(r.sd2)}"></td>
+        <td><input type="number" step="0.01" min="0" max="1" data-m="${method}" data-r="${i}" data-f="r" value="${escapeAttr(r.r)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t1" value="${escapeAttr(r.t1)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
+        <td class="computed">${rciStr}</td>
+        <td class="computed">${pStr}</td>
+        <td class="computed ${outcome.cls}">${outcome.label}</td>
+        <td class="row-actions"><button onclick="rciRemove('${method}',${i})">×</button></td>
+      `;
+    } else if (method === 'rci-srb'){
+      tr.innerHTML = `
+        <td class="row-num">${i+1}</td>
+        <td><input type="text" data-m="${method}" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Test name"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="m1" value="${escapeAttr(r.m1)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd1" value="${escapeAttr(r.sd1)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="m2" value="${escapeAttr(r.m2)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd2" value="${escapeAttr(r.sd2)}"></td>
+        <td><input type="number" step="0.01" min="0" max="1" data-m="${method}" data-r="${i}" data-f="r" value="${escapeAttr(r.r)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t1" value="${escapeAttr(r.t1)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
+        <td class="computed">${predStr}</td>
+        <td class="computed">${rciStr}</td>
+        <td class="computed">${pStr}</td>
+        <td class="computed ${outcome.cls}">${outcome.label}</td>
+        <td class="row-actions"><button onclick="rciRemove('${method}',${i})">×</button></td>
+      `;
+    } else if (method === 'rci-crawford'){
+      tr.innerHTML = `
+        <td class="row-num">${i+1}</td>
+        <td><input type="text" data-m="${method}" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Test name"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="m1" value="${escapeAttr(r.m1)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd1" value="${escapeAttr(r.sd1)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="m2" value="${escapeAttr(r.m2)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd2" value="${escapeAttr(r.sd2)}"></td>
+        <td><input type="number" step="0.01" min="0" max="1" data-m="${method}" data-r="${i}" data-f="r" value="${escapeAttr(r.r)}"></td>
+        <td><input type="number" step="1" min="3" data-m="${method}" data-r="${i}" data-f="n" value="${escapeAttr(r.n)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t1" value="${escapeAttr(r.t1)}"></td>
+        <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
+        <td class="computed">${predStr}</td>
+        <td class="computed">${rciStr}</td>
+        <td class="computed">${pStr}</td>
+        <td class="computed ${outcome.cls}">${outcome.label}</td>
+        <td class="row-actions"><button onclick="rciRemove('${method}',${i})">×</button></td>
+      `;
+    }
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('[data-rm-rci-group]').forEach(b => {
+    b.addEventListener('click', () => rciRemoveGroup(b.dataset.method, b.dataset.rmRciGroup));
+  });
+  tbody.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const m = e.target.dataset.m, i = +e.target.dataset.r, f = e.target.dataset.f;
+      rciState[m].rows[i][f] = e.target.value;
+      // Update only this row's computed cells (don't destroy focus)
+      updateRciRow(m, i, e.target.closest('tr'));
+      renderRciApa(m);
+    });
+  });
+  setupRciContextualTabbing(tbody);
+  applyRciGroupedHeaders();
+  addColumnTitles();
+  renderRciApa(method);
+}
+
+function updateRciRow(method, i, tr){
+  const r = rciState[method].rows[i];
+  const cv = rciState[method].cv;
+  let calc = null;
+  if (method === 'rci-basic') calc = calcBasicRow(r);
+  else if (method === 'rci-practice') calc = calcPracticeRow(r);
+  else if (method === 'rci-srb') calc = calcSrbRow(r);
+  else if (method === 'rci-crawford') calc = calcCrawfordRow(r);
+  const cells = tr.querySelectorAll('.computed');
+  cells.forEach(c => { c.className = 'computed'; });
+  tr.classList.remove('row-awaiting','row-check');
+  if (!calc){
+    const status = numericProblem(r, method);
+    const outcomeCell = cells[cells.length - 1];
+    cells.forEach(c => c.textContent = '');
+    setOutcomeStatus(outcomeCell, status, status === 'Awaiting values' ? 'awaiting' : 'check');
+    tr.classList.add(status === 'Awaiting values' && !hasAnyRowValue(r) ? 'row-awaiting' : 'row-check');
+    return;
+  }
+  if (method === 'rci-srb' || method === 'rci-crawford'){
+    // Cells: predicted, RCI/t, p, outcome
+    if (calc){
+      cells[0].textContent = fmt(calc.predicted, 2);
+      cells[1].textContent = fmt(calc.rci, 2);
+      cells[2].textContent = fmtP(calc.p);
+      const oc = rciOutcome(calc.rci, cv, calc.df);
+      cells[3].textContent = oc.label;
+      if (oc.cls) cells[3].classList.add(oc.cls);
+    } else {
+      cells.forEach(c => c.textContent = '');
+    }
+  } else {
+    // basic / practice — cells: RCI, p, outcome
+    if (calc){
+      cells[0].textContent = fmt(calc.rci, 2);
+      cells[1].textContent = fmtP(calc.p);
+      const oc = rciOutcome(calc.rci, cv);
+      cells[2].textContent = oc.label;
+      if (oc.cls) cells[2].classList.add(oc.cls);
+    } else {
+      cells.forEach(c => c.textContent = '');
+    }
+  }
+}
+
+function renderRciApa(method){
+  const st = rciState[method];
+  const outId = `${method}-apa`;
+  const out = document.getElementById(outId);
+  const valid = st.rows.filter(r => r.name);
+  const cvLabel = st.cv === 0.95 ? '95%' : '90%';
+  const cvLabelZ = st.cv === 0.95 ? '95% (z = 1.96)' : '90% (z = 1.645)';
+  const methodNote = {
+    'rci-basic':    `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Jacobson and Truax (1991). Reliable change threshold = ${cvLabelZ}.`,
+    'rci-practice': `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Iverson (2001) and adjusted for practice effects. Reliable change threshold = ${cvLabelZ}.`,
+    'rci-srb':      `Standardised Regression-Based RCI (z) per McSweeney et al. (1993). Ŷ₂ = predicted retest score from the regression model; RCI (z) tests whether Date 2 differs reliably from Ŷ₂. Reliable change threshold = ${cvLabelZ}.`,
+    'rci-crawford': `<i>t</i>(RB) is the Crawford regression-based reliable-change statistic, which accounts for uncertainty around the predicted retest score due to normative sample size. Ŷ₂ = predicted retest score from the regression model. Reliable change threshold = ${cvLabel} CI.`
+  }[method];
+  const safe = (calc, prop, digits=2) => calc ? fmt(calc[prop], digits) : '';
+  const safeP = calc => calc ? fmtP(calc.p) : '';
+  const safeOutcome = calc => calc ? escapeHtml(rciOutcome(calc.rci, st.cv, calc.df).label) : '';
+  const baseColumns = [
+    { key:'subtest', label:'Subtest', num:false, render:r => escapeHtml(r.name) },
+    { key:'d1', label:escapeHtml(st.d1), group:'Scores', num:true, render:r => escapeHtml(r.t1 || '') },
+    { key:'d2', label:escapeHtml(st.d2), group:'Scores', num:true, render:r => escapeHtml(r.t2 || '') }
+  ];
+  let columns;
+  if (method === 'rci-basic'){
+    columns = baseColumns.concat([
+      { key:'rci', label:'RCI (z)', group:'Results', num:true, render:r => safe(calcBasicRow(r), 'rci') },
+      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcBasicRow(r)) },
+      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcBasicRow(r)) }
+    ]);
+  } else if (method === 'rci-practice'){
+    columns = baseColumns.concat([
+      { key:'delta', label:'Δ', group:'Results', num:true, defaultVisible:false, render:r => (r.t1 !== '' && r.t2 !== '' && !isNaN(r.t1) && !isNaN(r.t2)) ? fmt(parseFloat(r.t2) - parseFloat(r.t1), 1) : '' },
+      { key:'rci', label:'RCI (z)', group:'Results', num:true, render:r => safe(calcPracticeRow(r), 'rci') },
+      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcPracticeRow(r)) },
+      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcPracticeRow(r)) }
+    ]);
+  } else if (method === 'rci-srb'){
+    columns = baseColumns.concat([
+      { key:'predicted', label:'Ŷ₂', group:'Results', num:true, render:r => safe(calcSrbRow(r), 'predicted') },
+      { key:'rci', label:'RCI (z)', group:'Results', num:true, render:r => safe(calcSrbRow(r), 'rci') },
+      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcSrbRow(r)) },
+      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcSrbRow(r)) }
+    ]);
+  } else {
+    columns = baseColumns.concat([
+      { key:'predicted', label:'Ŷ₂', group:'Results', num:true, render:r => safe(calcCrawfordRow(r), 'predicted') },
+      { key:'trb', label:'<i>t</i>(RB)', group:'Results', num:true, render:r => safe(calcCrawfordRow(r), 'rci') },
+      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcCrawfordRow(r)) },
+      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcCrawfordRow(r)) }
+    ]);
+  }
+  updateApaColumnControls(outId, columns, () => renderRciApa(method));
+  if (valid.length === 0){
+    out.innerHTML = '<div class="apa-empty"><strong>APA-formatted output</strong>Add or select at least one test to preview the report-ready table.</div>';
+    return;
+  }
+  out.innerHTML = `
+    <div class="apa-table-num">Table 1</div>
+    <div class="apa-table-title">${escapeHtml(st.title)}</div>
+    ${buildApaTableFromColumns(outId, columns, valid, r => r.group)}
+    <div class="apa-note"><strong>Note.</strong> ${methodNote} <i>p</i>-values are two-tailed.</div>
+  `;
+}
+
+// Wire up RCI controls
+document.querySelectorAll('.rci-cv').forEach(sel => {
+  sel.addEventListener('change', e => { rciState[e.target.dataset.target].cv = parseFloat(e.target.value); renderRci(e.target.dataset.target); });
+});
+document.querySelectorAll('.rci-d1').forEach(inp => {
+  inp.addEventListener('input', e => { rciState[e.target.dataset.target].d1 = e.target.value; renderRci(e.target.dataset.target); });
+});
+document.querySelectorAll('.rci-d2').forEach(inp => {
+  inp.addEventListener('input', e => { rciState[e.target.dataset.target].d2 = e.target.value; renderRci(e.target.dataset.target); });
+});
+document.querySelectorAll('.rci-title').forEach(inp => {
+  inp.addEventListener('input', e => { rciState[e.target.dataset.target].title = e.target.value; renderRciApa(e.target.dataset.target); });
+});
+document.querySelectorAll('[data-add]').forEach(btn => {
+  btn.addEventListener('click', () => rciAddRow(btn.dataset.add));
+});
+
+/* ============================================================
+   PER-METHOD AUTO-FILL FROM NORMATIVE DATABASE
+   ============================================================ */
+
+function getMergedDB(){
+  const custom = JSON.parse(localStorage.getItem('customTests') || '{}');
+  // Merge: built-in first, then custom (custom overrides on conflict)
+  return { ...normDB, ...custom };
+}
+// Age-band helpers ─────────────────────────────────────────────────────────
+// Strip "· Ages X-Y" or "· All Ages" suffix to get the base test name
+function familyBaseName(f){
+  return f.replace(/\s+·\s+(Ages\s+[\d–\-]+|All\s+Ages)\s*$/i, '').trim();
+}
+// True for entries that carry any age-band suffix (All Ages or Ages X-Y)
+function hasAgeBandSuffix(f){
+  return /·\s*(All\s+Ages|Ages\s+[\d–\-]+)\s*$/i.test(f);
+}
+// Return just the age-band portion for display in indented items
+function ageBandLabel(f){
+  const m = f.match(/·\s*((?:All\s+Ages|Ages\s+[\d–\-]+))\s*$/i);
+  return m ? escapeHtml(m[1]) : escapeHtml(f);
+}
+// Build grouped HTML: group header + indented items for age-banded families,
+// plain items for everything else
+function buildFamilyListHtml(families){
+  const isCustom = f => !normDB[f];
+  // Group families by base name, preserving sorted order of first appearance
+  const order = [];
+  const groups = {};
+  families.forEach(f => {
+    const base = hasAgeBandSuffix(f) ? familyBaseName(f) : f;
+    if (!groups[base]){ groups[base] = []; order.push(base); }
+    groups[base].push(f);
+  });
+  let html = '';
+  order.forEach(base => {
+    const members = groups[base];
+    if (members.length === 1 && !hasAgeBandSuffix(members[0])){
+      // Single entry with no age band — plain item
+      html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false);
+    } else {
+      // Multiple entries or explicitly age-banded — render group heading + indented items
+      html += `<div class="combo-group-heading">${escapeHtml(base)}</div>`;
+      members.forEach(f => {
+        html += comboCheckboxItemHtml(f, isCustom(f), true);
+      });
+    }
+  });
+  return comboOptionsHtml(html);
+}
+function rebuildAllFamilyLists(){
+  document.querySelectorAll('.rci-family-list').forEach(list => populateFamilyList(list));
+}
+// Returns true iff every subtest in the family carries a valid numeric N (≥3)
+function familyHasN(familyEntries){
+  if (!familyEntries || Object.keys(familyEntries).length === 0) return false;
+  return Object.values(familyEntries).every(p => {
+    const n = (p && p.n != null) ? Number(p.n) : NaN;
+    return Number.isFinite(n) && n >= 3;
+  });
+}
+function populateFamilyList(list){
+  const db = getMergedDB();
+  const method = list.dataset.method;
+  let families = Object.keys(db).sort();
+  // Crawford method requires N for the t-distributed test statistic — hide families without it
+  if (method === 'rci-crawford'){
+    families = families.filter(f => familyHasN(db[f]));
+  }
+  list.innerHTML = comboFooterHtml() + comboAgeBandNoteHtml() + buildFamilyListHtml(families);
+  wireMultiSelectFamilyList(list, families => {
+    families.forEach(family => loadFamilyIntoMethod(method, family));
+    const inp = document.querySelector(`.rci-family-input[data-method="${method}"]`);
+    if (inp){ inp.value = ''; inp.focus(); }
+  });
+}
+function loadFamilyIntoMethod(method, family){
+  const db = getMergedDB();
+  if (!db[family]) return;
+  const subtests = Object.entries(db[family]);
+  let newRows;
+  if (method === 'rci-basic'){
+    newRows = subtests.map(([name, p]) => ({
+      name, group:family, sd: String(p.sd1), r: String(p.r), t1:'', t2:''
+    }));
+  } else if (method === 'rci-crawford'){
+    newRows = subtests.map(([name, p]) => ({
+      name,
+      group:family,
+      m1: String(p.m1), sd1: String(p.sd1),
+      m2: String(p.m2), sd2: String(p.sd2),
+      r: String(p.r),
+      n: (p.n != null ? String(p.n) : ''),
+      t1:'', t2:''
+    }));
+  } else { // rci-practice or rci-srb
+    newRows = subtests.map(([name, p]) => ({
+      name,
+      group:family,
+      m1: String(p.m1), sd1: String(p.sd1),
+      m2: String(p.m2), sd2: String(p.sd2),
+      r: String(p.r),
+      t1:'', t2:''
+    }));
+  }
+  // Append new auto-filled tests rather than replacing any tests already entered.
+  rciState[method].rows = rciState[method].rows.concat(newRows);
+  renderRci(method);
+  showToast(`✓ Added ${subtests.length} subtests from ${family}`);
+}
+function clearMethodRows(method){
+  rciState[method].rows = [];
+  renderRci(method);
+  const inp = document.querySelector(`.rci-family-input[data-method="${method}"]`);
+  if (inp) inp.value = '';
+}
+// Wire up the comboboxes
+document.querySelectorAll('.rci-family-input').forEach(inp => {
+  const method = inp.dataset.method;
+  const list = document.querySelector(`.rci-family-list[data-method="${method}"]`);
+  inp.addEventListener('focus', () => { list.classList.add('show'); filterFamilyListEl(list, ''); });
+  inp.addEventListener('input', e => { list.classList.add('show'); filterFamilyListEl(list, e.target.value); });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Escape') list.classList.remove('show');
+    if (e.key === 'Enter') {
+      const add = list.querySelector('.combo-add:not([disabled])');
+      if (add){ e.preventDefault(); add.click(); }
+    }
+  });
+  inp.addEventListener('blur', () => setTimeout(() => {
+    if (!list.matches(':hover')) list.classList.remove('show');
+  }, 180));
+});
+function filterFamilyListEl(list, q){
+  const ql = q.toLowerCase().trim();
+  // Show/hide individual items; also match against the full family value (base name + age band)
+  list.querySelectorAll('.combo-item').forEach(it => {
+    const familyVal = (it.dataset.family || '').toLowerCase();
+    it.style.display = !ql || familyVal.includes(ql) ? '' : 'none';
+  });
+  // Show a group heading only when at least one of its sibling items is visible
+  list.querySelectorAll('.combo-group-heading').forEach(heading => {
+    let sibling = heading.nextElementSibling;
+    let anyVisible = false;
+    while (sibling && !sibling.classList.contains('combo-group-heading')){
+      if (sibling.style.display !== 'none') anyVisible = true;
+      sibling = sibling.nextElementSibling;
+    }
+    heading.style.display = anyVisible ? '' : 'none';
+  });
+}
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('.combo')) {
+    document.querySelectorAll('.combo-list.show').forEach(list => list.classList.remove('show'));
+  }
+});
+// Wire up clear buttons
+document.querySelectorAll('[data-clear]').forEach(btn => {
+  btn.addEventListener('click', () => clearMethodRows(btn.dataset.clear));
+});
+
+/* ============================================================
+   08 · CUSTOM TESTS DATABASE MANAGEMENT
+   ============================================================ */
+function getCustom(){ return JSON.parse(localStorage.getItem('customTests') || '{}'); }
+function saveCustom(c){ localStorage.setItem('customTests', JSON.stringify(c)); }
+
+function refreshFamilySelect(){
+  const sel = document.getElementById('ct-family-select');
+  const merged = getMergedDB();
+  const custom = getCustom();
+  // Allow adding subtests to any family (built-in or custom). Built-in additions become custom overrides.
+  sel.innerHTML = Object.keys(merged).sort().map(f =>
+    `<option value="${escapeAttr(f)}">${escapeHtml(f)}${custom[f] ? ' (custom)' : ''}</option>`
+  ).join('');
+}
+function renderDbList(){
+  const search = document.getElementById('ct-search').value.toLowerCase().trim();
+  const merged = getMergedDB();
+  const custom = getCustom();
+  const list = document.getElementById('db-list');
+  const families = Object.keys(merged).sort();
+  list.innerHTML = '';
+  families.forEach(family => {
+    const isCustom = !!custom[family];
+    const subtests = merged[family];
+    const familyMatch = !search || family.toLowerCase().includes(search);
+    const matchedSubs = Object.entries(subtests).filter(([n]) => familyMatch || n.toLowerCase().includes(search));
+    if (!familyMatch && matchedSubs.length === 0) return;
+    const subsToShow = familyMatch ? Object.entries(subtests) : matchedSubs;
+    const fam = document.createElement('div');
+    fam.className = 'db-test-family';
+    fam.innerHTML = `
+      <div class="db-test-family-header">
+        <span>${escapeHtml(family)} ${isCustom ? '<span class="custom-tag">Custom</span>' : ''}</span>
+        ${isCustom ? `<button class="btn btn-ghost" data-del-family="${escapeAttr(family)}">Delete family</button>` : ''}
+      </div>
+      <div class="db-subtests">
+        <div class="db-subtest-row" style="font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid var(--border-soft);padding-bottom:6px">
+          <span>Subtest</span><span class="num-label">M₁</span><span class="num-label">SD₁</span><span class="num-label">M₂</span><span class="num-label">SD₂</span><span class="num-label">r</span><span></span>
+        </div>
+        ${subsToShow.map(([name, p]) => `
+          <div class="db-subtest-row">
+            <span class="name">${escapeHtml(name)}</span>
+            <span class="num">${fmt(p.m1, 2)}</span>
+            <span class="num">${fmt(p.sd1, 2)}</span>
+            <span class="num">${fmt(p.m2, 2)}</span>
+            <span class="num">${fmt(p.sd2, 2)}</span>
+            <span class="num">${fmt(p.r, 2)}</span>
+            ${isCustom ? `<button class="btn btn-ghost btn-icon" data-del-sub="${escapeAttr(family)}::${escapeAttr(name)}" title="Remove subtest">×</button>` : '<span></span>'}
+          </div>
+        `).join('')}
+      </div>
+    `;
+    list.appendChild(fam);
+  });
+  list.querySelectorAll('[data-del-family]').forEach(b => b.addEventListener('click', () => {
+    if (!confirm(`Delete custom family "${b.dataset.delFamily}" and all its subtests?`)) return;
+    const c = getCustom(); delete c[b.dataset.delFamily]; saveCustom(c);
+    refreshAll();
+  }));
+  list.querySelectorAll('[data-del-sub]').forEach(b => b.addEventListener('click', () => {
+    const [family, sub] = b.dataset.delSub.split('::');
+    const c = getCustom();
+    if (c[family]){ delete c[family][sub]; if (Object.keys(c[family]).length === 0) delete c[family]; saveCustom(c); }
+    refreshAll();
+  }));
+}
+function refreshAll(){
+  refreshFamilySelect();
+  renderDbList();
+  rebuildAllFamilyLists();
+  rebuildBatteryFamilyList();
+  rebuildSdiFamilyList();
+}
+document.getElementById('ct-add-family').addEventListener('click', () => {
+  const name = document.getElementById('ct-family').value.trim();
+  if (!name) return showToast('Enter a family name', true);
+  const c = getCustom();
+  if (c[name] || normDB[name]) return showToast('A family with that name already exists', true);
+  c[name] = {}; saveCustom(c);
+  document.getElementById('ct-family').value = '';
+  showToast(`✓ Added family "${name}"`);
+  refreshAll();
+});
+document.getElementById('ct-add-subtest').addEventListener('click', () => {
+  const family = document.getElementById('ct-family-select').value;
+  const subtest = document.getElementById('ct-subtest').value.trim();
+  const m1 = parseFloat(document.getElementById('ct-m1').value);
+  const sd1 = parseFloat(document.getElementById('ct-sd1').value);
+  const m2 = parseFloat(document.getElementById('ct-m2').value);
+  const sd2 = parseFloat(document.getElementById('ct-sd2').value);
+  const r = parseFloat(document.getElementById('ct-r').value);
+  const nRaw = document.getElementById('ct-n').value;
+  const n = nRaw === '' ? null : parseInt(nRaw, 10);
+  if (!family || !subtest) return showToast('Family and subtest name required', true);
+  if ([m1,sd1,m2,sd2,r].some(isNaN)) return showToast('All numeric fields are required', true);
+  if (r < 0 || r >= 1) return showToast('Reliability must be between 0 and 1', true);
+  if (sd1 <= 0 || sd2 <= 0) return showToast('SDs must be positive', true);
+  if (n !== null && (!Number.isFinite(n) || n < 3)) return showToast('N must be a whole number ≥ 3 (or leave blank)', true);
+  const c = getCustom();
+  // If user is adding to a built-in family, clone it first into custom (so we don't lose built-ins on conflict)
+  if (!c[family]){
+    if (normDB[family]) c[family] = { ...normDB[family] };
+    else c[family] = {};
+  }
+  const entry = { m1, sd1, m2, sd2, r };
+  if (n !== null) entry.n = n;
+  c[family][subtest] = entry;
+  saveCustom(c);
+  ['ct-subtest','ct-m1','ct-sd1','ct-m2','ct-sd2','ct-r','ct-n'].forEach(id => document.getElementById(id).value = '');
+  showToast(`✓ Added "${subtest}" to ${family}`);
+  refreshAll();
+});
+document.getElementById('ct-search').addEventListener('input', renderDbList);
+document.getElementById('ct-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(getCustom(), null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'custom-tests.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+document.getElementById('ct-import').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (typeof data !== 'object') throw 0;
+      // Merge with existing custom
+      const c = getCustom();
+      Object.entries(data).forEach(([fam, subs]) => {
+        c[fam] = { ...(c[fam] || {}), ...subs };
+      });
+      saveCustom(c);
+      showToast('✓ Imported custom tests');
+      refreshAll();
+    } catch (err) {
+      showToast('Invalid JSON file', true);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* ============================================================
+   08 · PREMORBID ESTIMATE
+   Ports the user's reference implementation. All formulas/data
+   from WAIS-IV/WMS-IV manuals + Crawford & Allan (2001) + OPIE-4.
+   ============================================================ */
+
+function preModelCell(label, tipKey){
+  const tip = PRE_MODEL_TOOLTIPS[tipKey] || 'Hover information is not available for this model.';
+  return `<td class="model model-has-tip">${escapeHtml(label)}<span class="model-info-dot" data-tooltip="${escapeAttr(tip)}" aria-label="${escapeAttr(label + '. ' + tip)}">?</span></td>`;
+}
+
+// Premorbid state — separate from the input fields so we can re-render APA reliably
+const preState = { achieved: {}, opieAchieved: {} }; // achieved[idx] = string; opieAchieved[modelKey] = string
+
+function preGet(id){ return document.getElementById(id); }
+function preNum(id){
+  const el = preGet(id);
+  if (!el || el.value === '' || el.value == null) return null;
+  const n = parseFloat(el.value);
+  return isNaN(n) ? null : n;
+}
+function preStr(id){
+  const el = preGet(id);
+  return el && el.value ? el.value : null;
+}
+function preCiMult(){
+  const ci = preStr('pre-ci');
+  return ci === '0.95' ? 1.96 : 1.645;
+}
+function fmtIntOrDash(v){
+  if (v == null || isNaN(v)) return '—';
+  return Math.round(v).toString();
+}
+function fmtPctBr(v){
+  if (v == null || isNaN(v)) return '—';
+  return (v*100).toFixed(2) + '%';
+}
+
+// Tab switching for premorbid section
+function setupPreTabs(){
+  document.querySelectorAll('[data-pre-tab]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('[data-pre-tab]').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.pre-tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      preGet('pre-' + tab.dataset.preTab).classList.add('active');
+    });
+  });
+}
+
+// Build the achieved-input table for ToPF Predicted vs Actual
+function buildPredictTable(){
+  const tbody = document.querySelector('#pre-predict-table tbody');
+  tbody.innerHTML = '';
+
+  // WAIS-IV header
+  const waisH = document.createElement('tr');
+  waisH.className = 'group-row';
+  waisH.innerHTML = '<td colspan="7">WAIS-IV</td>';
+  tbody.appendChild(waisH);
+  WAIS_COEF.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      ${preModelCell(c.label, 'predictWais')}
+      <td class="num" id="pred-${c.idx}">—</td>
+      <td class="num" id="pred-${c.idx}-lo">—</td>
+      <td class="num" id="pred-${c.idx}-hi">—</td>
+      <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="${c.idx}" value="${escapeAttr(preState.achieved[c.idx] || '')}"></td>
+      <td class="num diff" id="diff-${c.idx}">—</td>
+      <td class="num" id="br-${c.idx}">—</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // WMS-IV header
+  const wmsH = document.createElement('tr');
+  wmsH.className = 'group-row';
+  wmsH.innerHTML = '<td colspan="7">WMS-IV</td>';
+  tbody.appendChild(wmsH);
+  WMS_COEF.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      ${preModelCell(c.label, 'predictWms')}
+      <td class="num" id="pred-${c.idx}">—</td>
+      <td class="num" id="pred-${c.idx}-lo">—</td>
+      <td class="num" id="pred-${c.idx}-hi">—</td>
+      <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="${c.idx}" value="${escapeAttr(preState.achieved[c.idx] || '')}"></td>
+      <td class="num diff" id="diff-${c.idx}">—</td>
+      <td class="num" id="br-${c.idx}">—</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Wire achieved inputs
+  document.querySelectorAll('[data-pre-ach]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      preState.achieved[e.target.dataset.preAch] = e.target.value;
+      calcPredict();
+    });
+  });
+}
+
+// === Premorbid Estimates calculation ===
+function calcPremorbid(){
+  const topf = preNum('pre-topf');
+  const vc   = preNum('pre-vc');
+  const mr   = preNum('pre-mr');
+  const sex  = preStr('pre-sex');
+  const edu  = preNum('pre-edu');
+  const age  = preNum('pre-age');
+  const occ  = preStr('pre-occ');
+  const ci   = preStr('pre-ci') || '0.90';
+  // Sex coding differs between models:
+  //   TOPF / WAIS-IV manual demographic equations:  Female = 1, Male = 2
+  //   OPIE-4 (Schoenberg et al., 2011):             Female = 0, Male = 1
+  const sexC_topf = sex === 'Female' ? 1 : sex === 'Male' ? 2 : null;
+  const sexC_opie = sex === 'Female' ? 0 : sex === 'Male' ? 1 : null;
+  const occC = occ ? OCC_CODE[occ] : null;
+  const mult = preCiMult();
+  const ciPct = ci === '0.95' ? '95%' : '90%';
+
+  preGet('pre-ci-lo-hdr').textContent = `Lower ${ciPct}`;
+  preGet('pre-ci-hi-hdr').textContent = `Upper ${ciPct}`;
+
+  // Build four model rows
+  const rows = [];
+
+  // 1. ToPF Raw Only (lookup)
+  let v1 = null;
+  if (topf != null && topf >= 0 && topf <= 70 && Number.isFinite(topf)){
+    v1 = TOPF_TO_FSIQ[Math.round(topf)];
+  }
+  rows.push({ name:'ToPF Raw Score Only', val:v1, see:9.867, r:0.72, tipKey:'topfRaw' });
+
+  // 2. ToPF + Demographics  (uses TOPF sex coding F=1, M=2)
+  let v2 = null;
+  if (topf != null && edu != null && sexC_topf != null){
+    v2 = 29.991 + 2.09426*topf + (-0.0404559)*topf*topf
+       + 0.000340705*Math.pow(topf,3) + 1.4617126*edu + 4.925*sexC_topf;
+  }
+  rows.push({ name:'ToPF with Demographic Adjustment', val:v2, see:8.441, r:0.81, tipKey:'topfDemo' });
+
+  // 3. Crawford & Allan (2001)
+  let v3 = null;
+  if (occC != null && edu != null && age != null){
+    v3 = 87.14 - 5.21*occC + 1.78*edu + 0.18*age;
+  }
+  rows.push({ name:'Crawford & Allan (2001) Demographic', val:v3, see:9.11, r:0.73, tipKey:'crawfordAllan' });
+
+  // 4. OPIE-4 — prorated FSIQ, uses OPIE sex coding F=0, M=1
+  // Label, R and SEE update as soon as subtest inputs are present (branch alone).
+  // FSIQ computation also requires age; sex term contributes 0 if not entered.
+  const sexEffect = sexC_opie != null ? sexC_opie : 0;
+  const hasVC = vc != null, hasMR = mr != null;
+  let branch = null;
+  if (hasVC && hasMR) branch = 'VC_MR';
+  else if (hasVC) branch = 'VC';
+  else if (hasMR) branch = 'MR';
+
+  let v4 = null, s4 = null, name4 = 'OPIE-4 (prorated FSIQ): Vocab and/or Matrix', tipKey4 = 'opieDefault';
+  if (branch != null){
+    const c = OPIE_PRORATED_FSIQ[branch];
+    // Update label, tooltip and R/SEE from the branch alone (no age required)
+    s4 = { see: c.see, r: c.r };
+    if (branch === 'VC_MR'){ name4 = 'OPIE-4 (prorated FSIQ): Vocab + Matrix'; tipKey4 = 'opieVCMR'; }
+    else if (branch === 'VC') { name4 = 'OPIE-4 (prorated FSIQ): Vocab only';  tipKey4 = 'opieVC'; }
+    else if (branch === 'MR') { name4 = 'OPIE-4 (prorated FSIQ): Matrix only'; tipKey4 = 'opieMR'; }
+    // Compute prediction only once age is also available
+    if (age != null){
+      let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexEffect;
+      if (c.vc != null && hasVC) pred += c.vc * vc;
+      if (c.mr != null && hasMR) pred += c.mr * mr;
+      v4 = pred;
+    }
+  }
+  rows.push({ name:name4, val:v4, see:s4 ? s4.see : null, r:s4 ? s4.r : null, tipKey:tipKey4 });
+
+  // Render results table
+  const tbody = document.querySelector('#pre-results-table tbody');
+  tbody.innerHTML = rows.map(row => {
+    const fsiq = fmtIntOrDash(row.val);
+    const lo   = (row.val == null || row.see == null) ? '—' : fmtIntOrDash(row.val - mult*row.see);
+    const hi   = (row.val == null || row.see == null) ? '—' : fmtIntOrDash(row.val + mult*row.see);
+    const rStr = row.r != null ? row.r.toFixed(2) : '—';
+    const seeStr = row.see != null ? row.see.toFixed(2) : '—';
+    return `<tr>
+      ${preModelCell(row.name, row.tipKey)}
+      <td class="fsiq">${fsiq}</td>
+      <td class="num">${lo}</td>
+      <td class="num">${hi}</td>
+      <td class="psy">${rStr}</td>
+      <td class="psy">${seeStr}</td>
+    </tr>`;
+  }).join('');
+
+  preState.estimateRows = rows; // cache for APA
+  preState.ciMult = mult;
+  preState.ciPct = ciPct;
+  renderPreEstimatesApa();
+}
+
+// === Predicted vs Actual calculation (ToPF-based) ===
+function calcPredict(){
+  const topf = preNum('pre-topf');
+  const sex  = preStr('pre-sex');
+  const edu  = preNum('pre-edu');
+  const age  = preNum('pre-age');
+  const ci   = preStr('pre-ci') || '0.90';
+  // ToPF-predicted WAIS-IV indices use the WAIS-IV manual sex coding: F = 1, M = 2.
+  const sexC_topf = sex === 'Female' ? 1 : sex === 'Male' ? 2 : null;
+  const mult = preCiMult();
+  const ciPct = ci === '0.95' ? '95%' : '90%';
+
+  document.querySelectorAll('.pre-ci-lo-hdr-2').forEach(e => e.textContent = `Lower ${ciPct}`);
+  document.querySelectorAll('.pre-ci-hi-hdr-2').forEach(e => e.textContent = `Upper ${ciPct}`);
+
+  // WAIS-IV predictions
+  WAIS_COEF.forEach(c => {
+    let pred = null;
+    if (topf != null && edu != null && sexC_topf != null){
+      pred = c.intercept + c.b1*topf + c.b2*topf*topf + c.b3*Math.pow(topf,3) + c.edu*edu + c.sex*sexC_topf;
+    }
+    updatePredictRow(c.idx, pred, mult, c.see);
+  });
+  // WMS-IV predictions
+  WMS_COEF.forEach(c => {
+    let pred = null;
+    if (topf != null && age != null){
+      pred = c.intercept + c.b1*topf + c.age*age;
+    }
+    updatePredictRow(c.idx, pred, mult, c.see);
+  });
+
+  preState.ciPct = ciPct;
+  renderPrePredictApa();
+}
+
+function updatePredictRow(idx, pred, mult, see){
+  const predEl = preGet('pred-'+idx);
+  const loEl = preGet('pred-'+idx+'-lo');
+  const hiEl = preGet('pred-'+idx+'-hi');
+  if (!predEl) return;
+  predEl.textContent = pred == null ? '—' : fmtIntOrDash(pred);
+  loEl.textContent = pred == null ? '—' : fmtIntOrDash(pred - mult*see);
+  hiEl.textContent = pred == null ? '—' : fmtIntOrDash(pred + mult*see);
+
+  const ach = preState.achieved[idx];
+  const achNum = (ach != null && ach !== '') ? parseFloat(ach) : null;
+  const diffEl = preGet('diff-'+idx);
+  const brEl = preGet('br-'+idx);
+  diffEl.className = 'num diff';
+  if (pred == null || achNum == null || isNaN(achNum)){
+    diffEl.textContent = '—';
+    brEl.textContent = '—';
+    return;
+  }
+  const diff = Math.round(achNum - pred);
+  diffEl.textContent = (diff > 0 ? '+' : '') + diff;
+  if (diff < 0) diffEl.classList.add('neg');
+  else if (diff > 0) diffEl.classList.add('pos');
+  // Base rate only meaningful for negative discrepancies
+  const row = BASE_RATES[String(diff)];
+  if (row && row[idx] != null) brEl.textContent = fmtPctBr(row[idx]);
+  else brEl.textContent = diff < 0 ? '< 0.01%' : '—';
+}
+
+// === APA Output: Premorbid Estimates ===
+function renderPreEstimatesApa(){
+  const out = preGet('pre-estimates-apa');
+  if (!preState.estimateRows){ out.innerHTML = ''; return; }
+  const valid = preState.estimateRows.filter(r => r.val != null);
+  if (valid.length === 0){
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least the ToPF raw score to generate estimates.</div>';
+    return;
+  }
+  const title = preStr('pre-title') || 'Premorbid cognitive estimate';
+  const ciPct = preState.ciPct || '90%';
+  const mult = preState.ciMult || 1.645;
+  const rows = valid.map(r => {
+    const lo = (r.see != null) ? Math.round(r.val - mult*r.see) : '—';
+    const hi = (r.see != null) ? Math.round(r.val + mult*r.see) : '—';
+    const rStr = r.r != null ? r.r.toFixed(2) : '—';
+    const seeStr = r.see != null ? r.see.toFixed(2) : '—';
+    return `<tr><td>${escapeHtml(r.name)}</td><td class="num">${Math.round(r.val)}</td><td class="num">${lo}</td><td class="num">${hi}</td><td class="num">${rStr}</td><td class="num">${seeStr}</td></tr>`;
+  }).join('');
+  out.innerHTML = `
+    <div class="apa-table-num">Table 1</div>
+    <div class="apa-table-title">${escapeHtml(title)}</div>
+    <table class="apa-table">
+      <thead>
+        <tr><th rowspan="2">Model</th><th class="num" rowspan="2">FSIQ</th><th colspan="2" class="apa-spanner">Confidence interval</th><th colspan="2" class="apa-spanner">Model fit</th></tr>
+        <tr><th class="num">Lower ${ciPct}</th><th class="num">Upper ${ciPct}</th><th class="num"><i>r</i></th><th class="num">SEE</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="apa-note"><strong>Note.</strong> FSIQ = Full Scale IQ estimate. CI = confidence interval based on ${ciPct === '95%' ? '1.96' : '1.645'} × SEE. <i>r</i> = correlation between predictor(s) and criterion. SEE = standard error of estimate.</div>
+  `;
+}
+
+// === APA Output: ToPF Predicted vs Actual ===
+function renderPrePredictApa(){
+  const out = preGet('pre-predict-apa');
+  if (!out) return;
+  const title = preStr('pre-title') || 'Premorbid cognitive estimate';
+  const ciPct = preState.ciPct || '90%';
+
+  // Filter to indices where the patient has provided an Achieved score
+  const allCoef = [...WAIS_COEF.map(c => ({...c, family:'WAIS-IV'})), ...WMS_COEF.map(c => ({...c, family:'WMS-IV'}))];
+  const withAch = allCoef.filter(c => {
+    const a = preState.achieved[c.idx];
+    return a != null && a !== '' && !isNaN(parseFloat(a));
+  });
+  if (withAch.length === 0){
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least one Achieved score to generate the discrepancy table.</div>';
+    return;
+  }
+
+  // Group by family
+  const byFamily = {};
+  withAch.forEach(c => { (byFamily[c.family] = byFamily[c.family] || []).push(c); });
+
+  let body = '';
+  Object.entries(byFamily).forEach(([fam, items]) => {
+    body += `<tr><td colspan="7" style="font-style:italic;padding-top:6px;padding-bottom:2px">${fam}</td></tr>`;
+    items.forEach(c => {
+      const pred = preGet('pred-'+c.idx).textContent;
+      const lo = preGet('pred-'+c.idx+'-lo').textContent;
+      const hi = preGet('pred-'+c.idx+'-hi').textContent;
+      const ach = preState.achieved[c.idx];
+      const diff = preGet('diff-'+c.idx).textContent;
+      const br = preGet('br-'+c.idx).textContent;
+      body += `<tr><td>&nbsp;&nbsp;${escapeHtml(c.label)}</td><td class="num">${pred}</td><td class="num">${lo}</td><td class="num">${hi}</td><td class="num">${ach}</td><td class="num">${diff}</td><td class="num">${br}</td></tr>`;
+    });
+  });
+
+  out.innerHTML = `
+    <div class="apa-table-num">Table 2</div>
+    <div class="apa-table-title">ToPF-predicted versus achieved index scores</div>
+    <table class="apa-table">
+      <thead>
+        <tr><th rowspan="2">Index</th><th class="num" rowspan="2">Predicted score</th><th colspan="2" class="apa-spanner">Confidence interval</th><th class="num" rowspan="2">Achieved score</th><th colspan="2" class="apa-spanner">Discrepancy</th></tr>
+        <tr><th class="num">Lower ${ciPct}</th><th class="num">Upper ${ciPct}</th><th class="num">Difference</th><th class="num">Base Rate</th></tr>
+      </thead>
+      <tbody>${body}</tbody>
+    </table>
+    <div class="apa-note"><strong>Note.</strong> WAIS-IV indices predicted from ToPF, education, and sex; WMS-IV indices predicted from ToPF and age. Difference = Achieved − Predicted. Base rate = % of standardisation sample with discrepancy ≤ this value (negative discrepancies only).</div>
+  `;
+}
+
+// === OPIE-4 Predicted vs Actual calculation ===
+// Builds a list of OPIE-4 prediction rows for whichever combinations of inputs are available,
+// then renders them into the third premorbid tab. Achieved values are kept in preState.opieAchieved
+// keyed by a stable model key (e.g. "FSIQ_VC_MR").
+function getOpiePredictions(){
+  const vc  = preNum('pre-vc');
+  const mr  = preNum('pre-mr');
+  const age = preNum('pre-age');
+  const sex = preStr('pre-sex');
+  const sexC_opie = sex === 'Female' ? 0 : sex === 'Male' ? 1 : null;
+  if (age == null) return [];
+
+  const sexEffect = sexC_opie != null ? sexC_opie : 0;
+  const hasVC = vc != null, hasMR = mr != null;
+  if (!hasVC && !hasMR) return [];
+
+  function predict(c){
+    let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexEffect;
+    if (c.vc != null && hasVC) pred += c.vc * vc;
+    if (c.mr != null && hasMR) pred += c.mr * mr;
+    return pred;
+  }
+
+  const list = [];
+
+  // FSIQ models — show whichever are computable
+  if (hasVC && hasMR){
+    const c = OPIE_PRORATED_FSIQ.VC_MR;
+    list.push({ key:'FSIQ_VC_MR', label:'Prorated FSIQ — Vocab + Matrix', val:predict(c), see:c.see, r:c.r, tipKey:'opiePredFSIQ_VCMR' });
+  }
+  if (hasVC){
+    const c = OPIE_PRORATED_FSIQ.VC;
+    list.push({ key:'FSIQ_VC', label:'Prorated FSIQ — Vocab only', val:predict(c), see:c.see, r:c.r, tipKey:'opiePredFSIQ_VC' });
+  }
+  if (hasMR){
+    const c = OPIE_PRORATED_FSIQ.MR;
+    list.push({ key:'FSIQ_MR', label:'Prorated FSIQ — Matrix only', val:predict(c), see:c.see, r:c.r, tipKey:'opiePredFSIQ_MR' });
+  }
+
+  // GAI models — only the two available equations
+  if (hasVC && hasMR){
+    const c = OPIE_PRORATED_GAI.VC_MR;
+    list.push({ key:'GAI_VC_MR', label:'Prorated GAI — Vocab + Matrix', val:predict(c), see:c.see, r:c.r, tipKey:'opiePredGAI_VCMR' });
+  }
+  if (hasVC){
+    const c = OPIE_PRORATED_GAI.VC;
+    list.push({ key:'GAI_VC', label:'Prorated GAI — Vocab only', val:predict(c), see:c.see, r:c.r, tipKey:'opiePredGAI_VC' });
+  }
+
+  return list;
+}
+
+function opieBaseRateFor(rowKey, diff){
+  if (!diff) return '—';
+  const key = diff > 0 ? `+${diff}` : String(diff);
+  const row = OPIE_BASE_RATES[key];
+  if (row && row[rowKey] != null) return fmtPctBr(row[rowKey]);
+  // Beyond the range of the published table — for negative discrepancies this means
+  // the base rate is smaller than the minimum tabulated value (< 0.1%)
+  if (diff < 0) return '< 0.1%';
+  return '—';
+}
+
+function calcOpiePredict(){
+  const tbody = preGet('pre-opiepredict-tbody');
+  if (!tbody) return;
+
+  const ci = preStr('pre-ci') || '0.90';
+  const mult = preCiMult();
+  const ciPct = ci === '0.95' ? '95%' : '90%';
+  document.querySelectorAll('.pre-ci-lo-hdr-3').forEach(e => e.textContent = `Lower ${ciPct}`);
+  document.querySelectorAll('.pre-ci-hi-hdr-3').forEach(e => e.textContent = `Upper ${ciPct}`);
+
+  const rows = getOpiePredictions();
+  preState.opieRows = rows;
+  preState.ciPct = ciPct;
+
+  if (rows.length === 0){
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--faint);font-style:italic;text-align:center;padding:18px">Enter age plus Vocabulary and/or Matrix Reasoning to populate the table.</td></tr>';
+    renderOpiePredictApa();
+    return;
+  }
+
+  // Group: FSIQ rows, then GAI rows
+  const fsiq = rows.filter(r => r.key.startsWith('FSIQ_'));
+  const gai  = rows.filter(r => r.key.startsWith('GAI_'));
+
+  function modelCell(row){
+    const tip = PRE_MODEL_TOOLTIPS[row.tipKey] || '';
+    return `<td class="model model-has-tip">${escapeHtml(row.label)}<span class="model-info-dot" data-tooltip="${escapeAttr(tip)}" aria-label="${escapeAttr(row.label + '. ' + tip)}">?</span></td>`;
+  }
+
+  function rowHtml(row){
+    const ach = preState.opieAchieved[row.key];
+    const achVal = (ach != null && ach !== '') ? parseFloat(ach) : null;
+    const lo = fmtIntOrDash(row.val - mult * row.see);
+    const hi = fmtIntOrDash(row.val + mult * row.see);
+    let diffHtml = '<td class="num diff">—</td>';
+    let brHtml = '<td class="num opie-base-rate">—</td>';
+    if (achVal != null && !isNaN(achVal)){
+      const diff = Math.round(achVal - row.val);
+      const sign = diff > 0 ? '+' : '';
+      const cls = diff < 0 ? 'neg' : (diff > 0 ? 'pos' : '');
+      diffHtml = `<td class="num diff ${cls}">${sign}${diff}</td>`;
+      brHtml = `<td class="num opie-base-rate">${opieBaseRateFor(row.key, diff)}</td>`;
+    }
+    const achInputVal = ach != null ? escapeAttr(ach) : '';
+    return `<tr>
+      ${modelCell(row)}
+      <td class="num">${fmtIntOrDash(row.val)}</td>
+      <td class="num">${lo}</td>
+      <td class="num">${hi}</td>
+      <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-opie-ach="${row.key}" value="${achInputVal}"></td>
+      ${diffHtml}
+      ${brHtml}
+    </tr>`;
+  }
+
+  let html = '';
+  if (fsiq.length){
+    html += '<tr class="group-row"><td colspan="7">FSIQ predictions</td></tr>';
+    html += fsiq.map(rowHtml).join('');
+  }
+  if (gai.length){
+    html += '<tr class="group-row"><td colspan="7">GAI predictions</td></tr>';
+    html += gai.map(rowHtml).join('');
+  }
+  tbody.innerHTML = html;
+
+  // Wire the achieved inputs (re-wired each render because rows are rebuilt)
+  tbody.querySelectorAll('[data-pre-opie-ach]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      preState.opieAchieved[e.target.dataset.preOpieAch] = e.target.value;
+      const tr = e.target.closest('tr');
+      if (!tr) return;
+      const row = (preState.opieRows || []).find(r => r.key === e.target.dataset.preOpieAch);
+      if (!row) return;
+      const diffCell = tr.querySelector('.diff');
+      const brCell = tr.querySelector('.opie-base-rate');
+      const achVal = e.target.value !== '' ? parseFloat(e.target.value) : null;
+      diffCell.className = 'num diff';
+      if (achVal == null || isNaN(achVal)){
+        diffCell.textContent = '—';
+        if (brCell) brCell.textContent = '—';
+      } else {
+        const diff = Math.round(achVal - row.val);
+        diffCell.textContent = (diff > 0 ? '+' : '') + diff;
+        if (diff < 0) diffCell.classList.add('neg');
+        else if (diff > 0) diffCell.classList.add('pos');
+        if (brCell) brCell.textContent = opieBaseRateFor(row.key, diff);
+      }
+      renderOpiePredictApa();
+    });
+  });
+
+  renderOpiePredictApa();
+}
+
+// === APA Output: OPIE-4 Predicted vs Actual ===
+function renderOpiePredictApa(){
+  const out = preGet('pre-opiepredict-apa');
+  if (!out) return;
+  const ciPct = preState.ciPct || '90%';
+  const mult = preCiMult();
+  const rows = preState.opieRows || [];
+
+  const withAch = rows.filter(r => {
+    const a = preState.opieAchieved[r.key];
+    return a != null && a !== '' && !isNaN(parseFloat(a));
+  });
+  if (withAch.length === 0){
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter age plus a subtest to generate predictions, then add an Achieved score.</div>';
+    return;
+  }
+
+  const byGroup = { FSIQ:[], GAI:[] };
+  withAch.forEach(r => {
+    if (r.key.startsWith('FSIQ_')) byGroup.FSIQ.push(r);
+    else if (r.key.startsWith('GAI_')) byGroup.GAI.push(r);
+  });
+
+  let body = '';
+  ['FSIQ','GAI'].forEach(group => {
+    if (!byGroup[group].length) return;
+    body += `<tr><td colspan="7" style="font-style:italic;padding-top:6px;padding-bottom:2px">Prorated ${group}</td></tr>`;
+    byGroup[group].forEach(r => {
+      const ach = parseFloat(preState.opieAchieved[r.key]);
+      const lo = Math.round(r.val - mult * r.see);
+      const hi = Math.round(r.val + mult * r.see);
+      const diff = Math.round(ach - r.val);
+      const sign = diff > 0 ? '+' : '';
+      const br = opieBaseRateFor(r.key, diff);
+      body += `<tr><td>&nbsp;&nbsp;${escapeHtml(r.label)}</td><td class="num">${Math.round(r.val)}</td><td class="num">${lo}</td><td class="num">${hi}</td><td class="num">${ach}</td><td class="num">${sign}${diff}</td><td class="num">${br}</td></tr>`;
+    });
+  });
+
+  out.innerHTML = `
+    <div class="apa-table-num">Table 3</div>
+    <div class="apa-table-title">OPIE-4-predicted versus achieved prorated index scores</div>
+    <table class="apa-table">
+      <thead>
+        <tr><th rowspan="2">Model</th><th class="num" rowspan="2">Predicted score</th><th colspan="2" class="apa-spanner">Confidence interval</th><th class="num" rowspan="2">Achieved score</th><th colspan="2" class="apa-spanner">Discrepancy</th></tr>
+        <tr><th class="num">Lower ${ciPct}</th><th class="num">Upper ${ciPct}</th><th class="num">Difference</th><th class="num">Base Rate</th></tr>
+      </thead>
+      <tbody>${body}</tbody>
+    </table>
+    <div class="apa-note"><strong>Note.</strong> OPIE-4 prorated FSIQ and GAI predictions (Schoenberg et al., 2011, Table eA5.8). UK adaptation: US education, region and ethnicity terms omitted; sex term retained (F=0, M=1). CI based on ${ciPct === '95%' ? '1.96' : '1.645'} × SEE. Difference = Achieved − Predicted; achieved scores should be the patient's prorated index calculated excluding the predictor subtest(s) per WAIS-IV manual procedures. Base rates are from the WAIS-IV / WMS-IV / ACS prorated actual-versus-predicted base-rate table.</div>
+  `;
+}
+
+// Wire all premorbid input listeners
+function setupPremorbidListeners(){
+  ['pre-topf','pre-vc','pre-mr','pre-sex','pre-edu','pre-age','pre-occ','pre-ci'].forEach(id => {
+    const el = preGet(id);
+    if (!el) return;
+    el.addEventListener('input', () => { calcPremorbid(); calcPredict(); calcOpiePredict(); });
+    el.addEventListener('change', () => { calcPremorbid(); calcPredict(); calcOpiePredict(); });
+  });
+  const titleEl = preGet('pre-title');
+  if (titleEl){
+    titleEl.addEventListener('input', () => { renderPreEstimatesApa(); renderPrePredictApa(); renderOpiePredictApa(); });
+  }
+}
+
+
+function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+function escapeAttr(s){ return escapeHtml(s); }
+
+
+function applyCalculatorPolish(){
+  ['sdi','rci-basic','rci-practice','rci-srb','rci-crawford'].forEach(id => {
+    const sec = document.getElementById(id);
+    if (!sec) return;
+    const firstPanel = sec.querySelector('.panel:not(.autofill-panel)');
+    if (firstPanel && !firstPanel.classList.contains('settings-panel')){
+      firstPanel.classList.add('settings-panel');
+      if (!firstPanel.querySelector('.panel-kicker')){
+        const kicker = document.createElement('div');
+        kicker.className = 'panel-kicker';
+        kicker.textContent = id === 'sdi' ? 'Analysis settings' : 'Analysis settings & output labels';
+        firstPanel.insertBefore(kicker, firstPanel.firstChild);
+      }
+    }
+    const table = sec.querySelector('.input-table');
+    if (table) table.classList.add('calculator-table');
+  });
+  applyRciGroupedHeaders();
+}
+function applyRciGroupedHeaders(){
+  const specs = {
+    'rci-basic-table':    [{t:'',c:2},{t:'Norms',c:2},{t:'Scores',c:2},{t:'Results',c:3},{t:'',c:1}],
+    'rci-practice-table': [{t:'',c:2},{t:'Norms',c:5},{t:'Scores',c:2},{t:'Results',c:3},{t:'',c:1}],
+    'rci-srb-table':      [{t:'',c:2},{t:'Norms',c:5},{t:'Scores',c:2},{t:'Results',c:4},{t:'',c:1}],
+    'rci-crawford-table': [{t:'',c:2},{t:'Norms',c:6},{t:'Scores',c:2},{t:'Results',c:4},{t:'',c:1}]
+  };
+  Object.entries(specs).forEach(([id, groups]) => {
+    const table = document.getElementById(id);
+    if (!table || !table.tHead || table.tHead.querySelector('.table-group-row')) return;
+    const row = document.createElement('tr');
+    row.className = 'table-group-row';
+    row.innerHTML = groups.map(g => `<th colspan="${g.c}">${g.t}</th>`).join('');
+    table.tHead.insertBefore(row, table.tHead.firstChild);
+  });
+}
+
+
+function hasAnyRowValue(row){
+  return Object.keys(row || {}).some(k => String(row[k] ?? '').trim() !== '');
+}
+function numericProblem(row, method){
+  const req = method === 'rci-basic' ? ['sd','r','t1','t2'] : method === 'rci-crawford' ? ['m1','sd1','m2','sd2','r','n','t1','t2'] : ['m1','sd1','m2','sd2','r','t1','t2'];
+  for (const k of req){
+    if (String(row[k] ?? '').trim() === '') return 'Awaiting values';
+    const v = Number(row[k]);
+    if (!Number.isFinite(v)) return 'Check values';
+  }
+  const r = Number(row.r);
+  if (r < 0 || r >= 1) return 'Reliability must be 0–.99';
+  if (method === 'rci-basic' && Number(row.sd) <= 0) return 'SD must be > 0';
+  if (method !== 'rci-basic' && (Number(row.sd1) <= 0 || Number(row.sd2) <= 0)) return 'SD must be > 0';
+  if (method === 'rci-crawford' && Number(row.n) < 3) return 'N must be ≥ 3';
+  return 'Check values';
+}
+function sdiProblem(row){
+  const raw = sdiMode && sdiMode() === 'raw';
+  const req = raw ? ['t1','t2','sd'] : ['t1','t2'];
+  for (const k of req){
+    if (String(row[k] ?? '').trim() === '') return 'Awaiting values';
+    const v = Number(row[k]);
+    if (!Number.isFinite(v)) return 'Check values';
+  }
+  if (raw && Number(row.sd) <= 0) return 'SD must be > 0';
+  return 'Check values';
+}
+function clearOutcomeStatus(td){
+  td.classList.remove('status-awaiting','status-check');
+}
+function setOutcomeStatus(td, label, mode){
+  td.textContent = label;
+  td.classList.add(mode === 'check' ? 'status-check' : 'status-awaiting');
+}
+function insertStepBefore(el, num, title, copy){
+  // Workflow step labels removed to keep calculator pages visually lighter.
+  return;
+}
+
+function buildColumnGuide(method){
+  return '';
+}
+function enhanceCalculatorWorkflow(){
+  ['sdi','rci-basic','rci-practice','rci-srb','rci-crawford'].forEach((id) => {
+    const sec = document.getElementById(id);
+    if (!sec) return;
+    const firstPanel = sec.querySelector('.panel');
+    insertStepBefore(firstPanel, 1, 'Configure analysis', 'Set the confidence threshold and report labels before entering patient scores.');
+    if (firstPanel) firstPanel.classList.add('settings-panel');
+    const tableTitle = Array.from(sec.querySelectorAll('h2.block-title')).find(h => /Test data|patient scores/i.test(h.textContent));
+    if (tableTitle){
+      insertStepBefore(tableTitle, 2, 'Enter scores', 'Use auto-fill when normative values are available, or enter values manually.');
+    }
+    const apa = sec.querySelector('.apa-wrap');
+    insertStepBefore(apa, 3, 'Review and copy output', 'The report-ready APA table updates once at least one valid row is complete.');
+    const add = sec.querySelector('.add-row-btn');
+    if (add){
+      let wrap = add.parentElement;
+      if (!wrap.classList.contains('add-row-actions')){
+        wrap = document.createElement('div');
+        wrap.className = 'add-row-actions';
+        add.parentNode.insertBefore(wrap, add);
+        wrap.appendChild(add);
+      }
+      if (!wrap.querySelector(`[data-example="${id}"]`)){
+        const ex = document.createElement('button');
+        ex.type = 'button'; ex.className = 'add-row-btn btn-example';
+        ex.dataset.example = id;
+        ex.textContent = '+ Load example row';
+        const clear = wrap.querySelector('.btn-clear');
+        wrap.insertBefore(ex, clear || null);
+      }
+    }
+  });
+  document.querySelectorAll('[data-example]').forEach(btn => {
+    if (btn.dataset.wired) return;
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', () => loadExampleRow(btn.dataset.example));
+  });
+  addColumnTitles();
+}
+function addColumnTitles(){
+  const titleMap = {
+    'M₁':'Normative mean at baseline / Date 1', 'SD₁':'Normative standard deviation at baseline / Date 1',
+    'M₂':'Normative mean at retest / Date 2', 'SD₂':'Normative standard deviation at retest / Date 2',
+    'r':'Test–retest reliability coefficient', 'R':'Test–retest reliability coefficient', 'N':'Normative sample size',
+    'Ŷ₂':'Predicted Date 2 score', 't(RB)':'Regression-based t statistic', 'RCI':'Reliable Change Index', 'RCI (z)':'Reliable Change Index as a z statistic',
+    'p':'Two-tailed p value', 'Outcome':'Clinical interpretation of reliable change', 'SD':'Standard deviation', 'SD Δ':'Standard-deviation change'
+  };
+  document.querySelectorAll('.input-table th').forEach(th => {
+    const txt = th.textContent.trim().replace(/\s+/g,' ');
+    const key = txt.replace(/[()]/g, m=>m);
+    const plain = txt.replace(/[^A-Za-z0-9₁₂ŶΔ]/g,'');
+    if (titleMap[txt]) th.title = titleMap[txt];
+    else if (txt === 'RCI (z)') th.title = titleMap['RCI (z)'];
+    else if (txt.toLowerCase() === 'p') th.title = titleMap.p;
+    else if (txt.includes('t') && txt.includes('RB')) th.title = titleMap['t(RB)'];
+  });
+}
+function loadExampleRow(method){
+  if (method === 'sdi'){
+    const example = sdiMode() === 'raw' ? {name:'Example memory score',t1:'42',t2:'36',sd:'8'} : {name:'Example memory score',t1:'9',t2:'6'};
+    sdiRows.push(example); renderSdi(); showToast('Example row added'); return;
+  }
+  if (method === 'battery'){
+    const example = {name:'Example subtest', raw:'25', score:'10'};
+    batteryRows.push(example); renderBattery(); showToast('Example row added'); return;
+  }
+  const examples = {
+    'rci-basic': {name:'Example index score',sd:'15',r:'0.90',t1:'100',t2:'89'},
+    'rci-practice': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89'},
+    'rci-srb': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89'},
+    'rci-crawford': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',n:'100',t1:'100',t2:'89'}
+  };
+  if (rciState[method]){ rciState[method].rows.push(examples[method]); renderRci(method); showToast('Example row added'); }
+}
+
+/* ---------- INITIAL POPULATION ---------- */
+// Add a starter example row and one blank row to each editable table
+batteryRows = [{name:'Example subtest', raw:'25', score:'10'}, {name:'', raw:'', score:''}];
+sdiRows = [sdiMode() === 'raw' ? {name:'Example memory score',t1:'42',t2:'36',sd:'8'} : {name:'Example memory score',t1:'9',t2:'6'}, {}];
+['rci-basic', 'rci-practice', 'rci-srb', 'rci-crawford'].forEach(m => { rciState[m].rows = [examples[m], {}]; renderRci(m); });
+renderBattery();
+renderSdi();
+applyCalculatorPolish();
+enhanceCalculatorWorkflow();
+enhanceApaToolbars();
+
+buildDescCarousels();
+renderConverter();
+
+// Premorbid setup
+setupPreTabs();
+buildPredictTable();
+setupPremorbidListeners();
+calcPremorbid();
+calcPredict();
+calcOpiePredict();
+
+// Battery autofill input wiring (combobox listeners)
+wireBatteryAutofill();
+wireSdiAutofill();
+
+// Final initialization
+refreshAll();
+
+
+/* ============================================================
+   AUTH OVERLAY · prototype-ready login/register behaviour
+   ============================================================ */
+(function(){
+  const overlay = document.getElementById('auth-overlay');
+  if (!overlay) return;
+
+  const SESSION_KEY = 'paAuthPrototypeSession';
+  const USER_KEY = 'paAuthPrototypeUser';
+
+  const loginForm = document.getElementById('auth-login-form');
+  const registerForm = document.getElementById('auth-register-form');
+  const loginFeedback = document.getElementById('auth-login-feedback');
+  const registerFeedback = document.getElementById('auth-register-feedback');
+
+  function isValidEmail(value){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+  }
+
+  function setFeedback(el, message, type){
+    if (!el) return;
+    el.textContent = message || '';
+    el.className = 'auth-feedback' + (type ? ' ' + type : '');
+  }
+
+  function hideOverlay(){
+    overlay.classList.add('is-hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+
+  function showOverlay(){
+    overlay.classList.remove('is-hidden');
+    overlay.removeAttribute('aria-hidden');
+  }
+
+  function getUser(){
+    try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); }
+    catch(e){ return null; }
+  }
+
+  function activateHomePage(){
+    const homeNav = document.querySelector('.nav-item[data-target="home"]');
+    const homeSection = document.getElementById('home');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    if (homeNav) {
+      homeNav.classList.add('active');
+      if (typeof openOnlyNavGroup === 'function') openOnlyNavGroup(homeNav.closest('.nav-group'));
+    }
+    if (homeSection) homeSection.classList.add('active');
+    const main = document.querySelector('.main');
+    if (main) main.scrollTop = 0;
+  }
+
+  function setSession(user){
+    localStorage.setItem(SESSION_KEY, 'true');
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+    activateHomePage();
+    hideOverlay();
+    renderAuthChip();
+    if (typeof showToast === 'function') showToast('✓ Prototype access granted');
+  }
+
+  function clearSession(){
+    localStorage.removeItem(SESSION_KEY);
+    activateHomePage();
+    showOverlay();
+    renderAuthChip();
+  }
+
+  function renderAuthChip(){
+    let chip = document.getElementById('auth-user-chip');
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    if (!chip){
+      chip = document.createElement('div');
+      chip.id = 'auth-user-chip';
+      chip.className = 'auth-user-chip';
+      sidebar.appendChild(chip);
+    }
+
+    const active = localStorage.getItem(SESSION_KEY) === 'true';
+    const user = getUser();
+    if (!active){
+      chip.classList.remove('show');
+      chip.innerHTML = '';
+      return;
+    }
+
+    const label = user && user.email ? user.email : 'Demo mode';
+    chip.classList.add('show');
+    chip.innerHTML = `
+      <span>Signed in as <strong>${escapeHtml(label)}</strong></span>
+      <button class="btn btn-ghost" type="button" id="auth-logout">Log out</button>
+    `;
+    const logout = document.getElementById('auth-logout');
+    if (logout) logout.addEventListener('click', clearSession);
+  }
+
+  document.querySelectorAll('[data-auth-tab]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.authTab;
+      document.querySelectorAll('[data-auth-tab]').forEach(t => t.classList.toggle('active', t === tab));
+      loginForm.classList.toggle('active', target === 'login');
+      registerForm.classList.toggle('active', target === 'register');
+      setFeedback(loginFeedback, '');
+      setFeedback(registerFeedback, '');
+    });
+  });
+
+  loginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const email = document.getElementById('auth-login-email').value.trim();
+    const password = document.getElementById('auth-login-password').value;
+    if (!isValidEmail(email)) return setFeedback(loginFeedback, 'Enter a valid email address.', 'error');
+    if (!password) return setFeedback(loginFeedback, 'Enter your password.', 'error');
+
+    // TODO later:
+    // Replace this local prototype action with your provider call, for example:
+    // await supabase.auth.signInWithPassword({ email, password });
+    setSession({ email, name: email.split('@')[0], mode: 'prototype-login' });
+  });
+
+  registerForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('auth-register-name').value.trim();
+    const email = document.getElementById('auth-register-email').value.trim();
+    const password = document.getElementById('auth-register-password').value;
+    if (!name) return setFeedback(registerFeedback, 'Enter your name.', 'error');
+    if (!isValidEmail(email)) return setFeedback(registerFeedback, 'Enter a valid email address.', 'error');
+    if (password.length < 8) return setFeedback(registerFeedback, 'Use at least 8 characters for the password.', 'error');
+
+    // TODO later:
+    // Replace this local prototype action with your provider call, for example:
+    // await supabase.auth.signUp({ email, password, options:{ data:{ full_name:name } } });
+    setSession({ email, name, mode: 'prototype-register' });
+  });
+
+  document.getElementById('auth-demo').addEventListener('click', () => {
+    setSession({ email: 'Demo mode', name: 'Demo user', mode: 'demo' });
+  });
+
+  document.getElementById('auth-forgot').addEventListener('click', () => {
+    setFeedback(loginFeedback, 'Password reset is not connected yet. This link is ready to wire to a real provider later.', 'success');
+  });
+
+  renderAuthChip();
+  activateHomePage();
+  if (localStorage.getItem(SESSION_KEY) === 'true') hideOverlay();
+  else showOverlay();
+})();

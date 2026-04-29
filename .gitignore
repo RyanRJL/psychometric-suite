@@ -1,0 +1,5 @@
+.claude/
+fix_encoding*
+temp_opie_*
+*.ipynb
+*.ps1
