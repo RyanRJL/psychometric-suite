@@ -362,6 +362,11 @@
         <span class="es-preloaded-pill">Preloaded example</span>
         <span>UK male vs female height is loaded in the group-data fields from Option B (above). Edit the values or use Clear all inputs to start fresh.</span>
       </div>
+      <div class="es-d-slider-row">
+        <label for="es-d-slider">Quick effect size slider</label>
+        <input type="range" id="es-d-slider" min="-3" max="3" step="0.1" value="0">
+        <span id="es-d-slider-val">0.0</span>
+      </div>
 
       <!-- Mode A: from a statistic -->
       <div class="es-mode-pane is-active" data-pane="stat">
@@ -434,17 +439,26 @@
           <div class="es-pooled-item"><span class="es-pooled-label">Pooled SD</span><span class="es-pooled-val" id="es-pooled-sd">—</span></div>
           <div class="es-pooled-item"><span class="es-pooled-label">Pooled SE</span><span class="es-pooled-val" id="es-pooled-se">—</span></div>
           <div class="es-pooled-item"><span class="es-pooled-label">Mean Diff</span><span class="es-pooled-val" id="es-pooled-md">—</span></div>
+          <button class="btn btn-secondary" id="es-apply-groups" type="button">Apply group data</button>
           <button class="btn btn-clear es-clear-btn es-reset-btn" id="es-clear" type="button">Clear all inputs</button>
         </div>
       </div>
     </div>
     <div class="es-method-warning" id="es-method-warning" role="status" aria-live="polite"></div>
 
-    <!-- ===== Results + Curve side-by-side ===== -->
-    <div class="es-output-row">
-      <div class="panel panel-emphasis es-results-panel">
-        <div class="panel-kicker">Effect-size results</div>
-        <div class="es-results-grid">
+    <!-- ===== Tabbed workspace + persistent visual ===== -->
+    <div class="es-output-row es-workspace-row">
+      <div class="panel panel-emphasis es-left-panel">
+        <div class="es-view-tabs" role="tablist" aria-label="Effect size workspace tabs">
+          <button class="es-view-tab is-active" type="button" data-view="conversion">Effect-size conversion</button>
+          <button class="es-view-tab" type="button" data-view="comparison">Group comparison</button>
+          <button class="es-view-tab" type="button" data-view="reference">Reference values</button>
+          <button class="es-view-tab" type="button" data-view="common-language">Common language description</button>
+        </div>
+
+        <div class="es-view-pane is-active" data-view-pane="conversion">
+          <div class="panel-kicker">Effect-size results</div>
+          <div class="es-results-grid">
           <div class="es-result-card es-result-primary" data-tooltip="Standardized mean difference in SD units. Rough convention: 0.2 small, 0.5 medium, 0.8 large.">
             <div class="es-result-label">Cohen's d</div>
             <div class="es-result-value" id="es-out-d">—</div>
@@ -466,6 +480,57 @@
           <div class="es-result-card" data-tooltip="Approximate Number Needed to Treat derived from CLES under normality assumptions."><div class="es-result-label">Kraemer's NNT</div><div class="es-result-value" id="es-out-nnt">—</div></div>
           <div class="es-result-card es-result-similar" data-tooltip="Closest reference benchmark by absolute Cohen's d. Use as a rough anchor, not as a clinical equivalence statement."><div class="es-result-label">Similar to</div><div class="es-result-value es-result-similar-value" id="es-out-similar">—</div></div>
         </div>
+        </div>
+
+        <div class="es-view-pane" data-view-pane="comparison">
+          <div class="panel-kicker">Group comparison at a target value</div>
+          <div class="es-target-body">
+            <div class="es-target-intro">
+              <div>
+                <strong>Quick compare.</strong> Enter a target value to see how each group performs at or above that point.
+              </div>
+              <button class="btn btn-ghost es-target-explain-btn" id="es-target-explain-toggle" type="button" aria-expanded="false" aria-controls="es-target-explain">Explainer</button>
+            </div>
+            <div class="es-target-explain" id="es-target-explain" hidden>
+              <strong>Preloaded height example.</strong> Use this to compare the two normal distributions at a chosen value. The target is set to <strong>175.9 cm</strong>, approximately the average male height in the example. The readouts show how much of each group is at or above that value, and how likely that exact value is to come from each group under the normal-distribution model.
+            </div>
+            <div class="es-target-grid">
+              <div class="field"><label>Target value</label><input type="number" id="es-target" step="any" placeholder="e.g. 175.9" value="175.9"></div>
+              <div class="field"><label>Group 1 at or above target</label><div class="es-ci-readout" id="es-tgt-g1-above">—</div></div>
+              <div class="field"><label>Group 2 at or above target</label><div class="es-ci-readout" id="es-tgt-g2-above">—</div></div>
+              <div class="field"><label>Of people at this value: Group 1</label><div class="es-ci-readout" id="es-tgt-share-g1">—</div></div>
+              <div class="field"><label>Of people at this value: Group 2</label><div class="es-ci-readout" id="es-tgt-share-g2">—</div></div>
+              <div class="field"><label>Smaller-to-larger likelihood ratio</label><div class="es-ci-readout" id="es-tgt-ratio">—</div></div>
+            </div>
+            <div class="es-target-help">Requires means and standard deviations. If standard errors are entered above, the app converts them to SDs using each group's sample size.</div>
+          </div>
+        </div>
+
+        <div class="es-view-pane" data-view-pane="reference">
+          <div class="panel-kicker">Reference values (Cohen's d)</div>
+          <p style="margin-bottom:8px;font-size:11.5px;color:var(--muted);font-style:italic;line-height:1.4">Use these published effect sizes to anchor your results. The values below span small to huge magnitudes so you can compare your finding against familiar clinical and epidemiological benchmarks.</p>
+          <table class="es-examples-table">
+            <tbody>
+              <tr><td>30+ daily vs never smokers, lung cancer (Pesch et al., 2011)</td><td>2.60</td></tr>
+              <tr><td>Smoking vs never, lung cancer (Pesch et al., 2011)</td><td>1.75</td></tr>
+              <tr><td>Male vs female height, UK (Health Survey, 2021)</td><td>1.37</td></tr>
+              <tr><td>Former vs never smoker, lung cancer (Pesch et al., 2011)</td><td>1.10</td></tr>
+              <tr><td>Clozapine vs placebo, schizophrenia (Cuijpers et al., 2016)</td><td>0.89</td></tr>
+              <tr><td>CBT vs care as usual, social anxiety (Cuijpers et al., 2016)</td><td>0.44</td></tr>
+              <tr><td>CBT vs care as usual, depression (Cuijpers et al., 2016)</td><td>0.43</td></tr>
+              <tr><td>Paracetamol vs placebo, headache (Alnasser et al., 2023)</td><td>0.26</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="es-view-pane" data-view-pane="common-language">
+          <div class="panel-kicker">Common language description</div>
+          <div class="info-box" style="margin-top:8px">
+            <strong>Interpretation summary.</strong>
+            <div id="es-cl-summary" style="margin-top:6px">Enter a valid effect size to generate a plain-English interpretation.</div>
+            <div id="es-cl-u3line" style="margin-top:8px">The average person in Group 1 is above about — of Group 2 (Cohen's U₃).</div>
+          </div>
+        </div>
       </div>
       <div class="panel es-curve-panel">
         <div class="panel-kicker">Visual</div>
@@ -478,53 +543,6 @@
           <div class="es-curve-caption" id="es-curve-caption">Curves shifted by current Cohen's <em>d</em>.</div>
         </div>
       </div>
-    </div>
-
-    <!-- ===== Group comparison + Examples (side-by-side) ===== -->
-    <div class="es-bottom-row">
-      <details class="panel es-target-panel" open>
-        <summary><span class="panel-kicker" style="margin:0;display:inline">Group comparison at a target value</span></summary>
-        <div class="es-target-body">
-          <div class="es-target-intro">
-            <div>
-              <strong>Preloaded height example.</strong> Use this to compare the two normal distributions at a chosen value. The target is set to <strong>175.9 cm</strong>, approximately the average male height in the example. The readouts show how much of each group is at or above that value, and how likely that exact value is to come from each group under the normal-distribution model.
-            </div>
-            <button class="btn btn-clear es-target-clear" id="es-clear-target" type="button">Clear target</button>
-          </div>
-          <div class="es-target-grid">
-            <div class="field"><label>Target value</label><input type="number" id="es-target" step="any" placeholder="e.g. 175.9" value="175.9"></div>
-            <div class="field"><label>Group 1 at or above target</label><div class="es-ci-readout" id="es-tgt-g1-above">—</div></div>
-            <div class="field"><label>Group 2 at or above target</label><div class="es-ci-readout" id="es-tgt-g2-above">—</div></div>
-            <div class="field"><label>Of people at this value: Group 1</label><div class="es-ci-readout" id="es-tgt-share-g1">—</div></div>
-            <div class="field"><label>Of people at this value: Group 2</label><div class="es-ci-readout" id="es-tgt-share-g2">—</div></div>
-            <div class="field"><label>Smaller-to-larger likelihood ratio</label><div class="es-ci-readout" id="es-tgt-ratio">—</div></div>
-          </div>
-          <div class="es-target-help">Requires means and standard deviations. If standard errors are entered above, the app converts them to SDs using each group&apos;s sample size.</div>
-        </div>
-      </details>
-
-      <details class="panel es-examples" open>
-        <summary><span class="panel-kicker" style="margin:0;display:inline">Reference values (Cohen's d)</span></summary>
-        <p style="margin-bottom:8px;font-size:11.5px;color:var(--muted);font-style:italic;line-height:1.4">Use these published effect sizes to anchor your results. The values below span small to huge magnitudes so you can compare your finding against familiar clinical and epidemiological benchmarks.</p>
-        <div class="es-worked-example">
-          <div>
-            <div class="es-worked-example-title">Worked example: UK male vs female height</div>
-          </div>
-          <button class="btn btn-secondary" id="es-load-height-example" type="button">Load example</button>
-        </div>
-        <table class="es-examples-table">
-          <tbody>
-            <tr><td>30+ daily vs never smokers, lung cancer (Pesch et al., 2011)</td><td>2.60</td></tr>
-            <tr><td>Smoking vs never, lung cancer (Pesch et al., 2011)</td><td>1.75</td></tr>
-            <tr><td>Male vs female height, UK (Health Survey, 2021)</td><td>1.37</td></tr>
-            <tr><td>Former vs never smoker, lung cancer (Pesch et al., 2011)</td><td>1.10</td></tr>
-            <tr><td>Clozapine vs placebo, schizophrenia (Cuijpers et al., 2016)</td><td>0.89</td></tr>
-            <tr><td>CBT vs care as usual, social anxiety (Cuijpers et al., 2016)</td><td>0.44</td></tr>
-            <tr><td>CBT vs care as usual, depression (Cuijpers et al., 2016)</td><td>0.43</td></tr>
-            <tr><td>Paracetamol vs placebo, headache (Alnasser et al., 2023)</td><td>0.26</td></tr>
-          </tbody>
-        </table>
-      </details>
     </div>
 
   </section>

@@ -20,16 +20,17 @@
   ['es-stat-type','es-stat-value','es-stat-aux','es-stat-aux-field','es-stat-aux-label',
    'es-g1-n','es-g1-mean','es-g1-disp','es-g1-disp-val','es-g1-disp-label','es-g1-ci',
    'es-g2-n','es-g2-mean','es-g2-disp','es-g2-disp-val','es-g2-disp-label','es-g2-ci',
-   'es-pooled-n','es-pooled-mean','es-pooled-sd','es-pooled-se','es-pooled-md','es-clear','es-reset-all','es-load-height-example',
+   'es-pooled-n','es-pooled-mean','es-pooled-sd','es-pooled-se','es-pooled-md','es-clear','es-reset-all','es-apply-groups',
    'es-out-d','es-out-d-desc','es-out-g','es-out-g-desc','es-out-r','es-out-r2',
    'es-out-f','es-out-z','es-out-or','es-out-ovl','es-out-u3','es-out-cles','es-out-nnt',
    'es-out-r-desc','es-out-r2-desc','es-out-f-desc','es-out-similar','es-method-warning',
    'es-curve','es-curve-caption',
-   'es-target','es-clear-target','es-tgt-g1-above','es-tgt-g2-above','es-tgt-share-g1','es-tgt-share-g2','es-tgt-ratio'
+   'es-target','es-tgt-g1-above','es-tgt-g2-above','es-tgt-share-g1','es-tgt-share-g2','es-tgt-ratio','es-target-explain-toggle','es-target-explain',
+   'es-cl-summary','es-cl-u3line','es-d-slider','es-d-slider-val'
   ].forEach(id => els[id] = $(id));
 
   if (!els['es-stat-type']) return;
-  const esState = { statTouched: false, statAutoFilled: false };
+  const esState = { statTouched: false, statAutoFilled: false, source: 'stat' };
   const SIMILAR_EFFECTS = [
     { label: 'Heavy smokers vs never (lung cancer)', d: 2.60 },
     { label: 'Smokers vs never (lung cancer)', d: 1.75 },
@@ -225,29 +226,15 @@
       esState.statAutoFilled = false;
     }
 
-    const activeMode = (document.querySelector('#effectsize .es-tab.is-active') || {}).dataset?.mode || 'stat';
     const dStat = statToD(els['es-stat-type'].value, els['es-stat-value'].value, els['es-stat-aux'].value);
     const hasStat = dStat != null && !isNaN(dStat) && isFinite(dStat);
     let d = null;
-    if (activeMode === 'groups'){
-      d = hasGroup ? dGroup : (hasStat ? dStat : null);
+    if (esState.source === 'groups'){
+      d = hasGroup ? dGroup : null;
     } else {
-      d = hasStat ? dStat : (hasGroup ? dGroup : null);
+      d = hasStat ? dStat : null;
     }
-
-    const source = hasGroup && (!hasStat || activeMode === 'groups') ? 'group data' : 'entered statistic';
-    if (esState.statTouched && hasStat && hasGroup){
-      const gap = Math.abs(dStat - dGroup);
-      if (gap > 0.05){
-        setMethodMessage('error', 'These inputs do not match: the entered statistic gives Cohen&apos;s <em>d</em> = <strong>' + dStat.toFixed(3) + '</strong>, but the Compute from Group Data tab gives <strong>' + dGroup.toFixed(3) + '</strong>. Check or remove the group-data values, or clear everything to start again.<span class="es-warning-actions"><button type="button" class="btn btn-secondary" data-es-action="open-groups">Check group data</button><button type="button" class="btn btn-clear" data-es-action="clear-groups">Remove group data</button><button type="button" class="btn btn-clear" data-es-action="clear-all">Clear all inputs</button></span>');
-      } else {
-        setMethodMessage('', 'Both input methods are populated and agree closely. Results are currently based on the ' + source + '.');
-      }
-    } else if (d != null && ((activeMode === 'groups' && !hasGroup && hasStat) || (activeMode === 'stat' && !hasStat && hasGroup))){
-      setMethodMessage('', 'Showing the last valid result from the ' + source + ' because the active tab does not yet contain enough information.');
-    } else {
-      setMethodMessage('', '');
-    }
+    setMethodMessage('', '');
 
     if (d == null || isNaN(d) || !isFinite(d)){
       ['es-out-d','es-out-g','es-out-r','es-out-r2','es-out-f','es-out-z','es-out-or',
@@ -256,6 +243,8 @@
         .forEach(k => applyDesc(els[k], null));
       drawCurve(0, true);
       computeTarget(grp, null);
+      renderCommonLanguage(null);
+      if (els['es-d-slider-val']) els['es-d-slider-val'].textContent = '—';
       return;
     }
 
@@ -300,6 +289,29 @@
 
     drawCurve(d, false);
     computeTarget(grp, d);
+    renderCommonLanguage({ d, cles, u3, ovl, r });
+    if (els['es-d-slider']) els['es-d-slider'].value = String(Math.max(-3, Math.min(3, d)));
+    if (els['es-d-slider-val']) els['es-d-slider-val'].textContent = d.toFixed(1);
+  }
+
+  function renderCommonLanguage(payload){
+    const summaryEl = els['es-cl-summary'];
+    const u3LineEl = els['es-cl-u3line'];
+    if (!summaryEl || !u3LineEl) return;
+
+    if (!payload){
+      summaryEl.textContent = 'Enter a valid effect size to generate a plain-English interpretation.';
+      u3LineEl.textContent = 'The average person in Group 1 is above about — of Group 2 (Cohen\'s U₃).';
+      return;
+    }
+
+    const d = payload.d;
+    const direction = d >= 0 ? 'Group 1' : 'Group 2';
+    const other = d >= 0 ? 'Group 2' : 'Group 1';
+    const clesPct = (payload.cles * 100);
+    const u3Pct = (payload.u3 * 100);
+    summaryEl.innerHTML = `At this effect size (<strong>d = ${d.toFixed(3)}</strong>), a randomly selected person from <strong>${direction}</strong> is likely to score higher than a randomly selected person from <strong>${other}</strong> about <strong>${clesPct.toFixed(1)}%</strong> of the time.`;
+    u3LineEl.innerHTML = `The average person in <strong>${direction}</strong> is above about <strong>${u3Pct.toFixed(1)}%</strong> of <strong>${other}</strong> (Cohen's U\u2083).`;
   }
 
   function drawCurve(d, blank){
@@ -390,6 +402,7 @@
       if (id === 'es-stat-type' || id === 'es-stat-value' || id === 'es-stat-aux'){
         esState.statTouched = true;
         esState.statAutoFilled = false;
+        esState.source = 'stat';
       }
       compute();
     });
@@ -397,6 +410,7 @@
       if (id === 'es-stat-type' || id === 'es-stat-value' || id === 'es-stat-aux'){
         esState.statTouched = true;
         esState.statAutoFilled = false;
+        esState.source = 'stat';
       }
       compute();
     });
@@ -406,6 +420,12 @@
     if (!tab) return;
     document.querySelectorAll('#effectsize .es-tab').forEach(b => b.classList.toggle('is-active', b === tab));
     document.querySelectorAll('#effectsize .es-mode-pane').forEach(p => p.classList.toggle('is-active', p.dataset.pane === mode));
+  }
+  function switchWorkspaceView(view){
+    const tab = document.querySelector('#effectsize .es-view-tab[data-view="' + view + '"]');
+    if (!tab) return;
+    document.querySelectorAll('#effectsize .es-view-tab').forEach(b => b.classList.toggle('is-active', b === tab));
+    document.querySelectorAll('#effectsize .es-view-pane').forEach(p => p.classList.toggle('is-active', p.dataset.viewPane === view));
   }
 
   function clearGroupData(){
@@ -428,10 +448,6 @@
 
   els['es-clear'].addEventListener('click', clearGroupData);
   els['es-reset-all'].addEventListener('click', clearAllInputs);
-  els['es-clear-target'].addEventListener('click', () => {
-    els['es-target'].value = '';
-    compute();
-  });
   els['es-method-warning'].addEventListener('click', e => {
     const action = e.target.closest('[data-es-action]')?.dataset.esAction;
     if (!action) return;
@@ -439,20 +455,36 @@
     if (action === 'clear-groups') clearGroupData();
     if (action === 'clear-all') clearAllInputs();
   });
-  if (els['es-load-height-example']){
-    els['es-load-height-example'].addEventListener('click', () => {
+  if (els['es-apply-groups']){
+    els['es-apply-groups'].addEventListener('click', () => {
+      esState.source = 'groups';
       switchEffectMode('groups');
-      els['es-g1-n'].value = '2829';
-      els['es-g1-mean'].value = '175.9';
-      els['es-g1-disp'].value = 'se';
-      els['es-g1-disp-val'].value = '0.22';
-      els['es-g2-n'].value = '3115';
-      els['es-g2-mean'].value = '162.4';
-      els['es-g2-disp'].value = 'se';
-      els['es-g2-disp-val'].value = '0.14';
-      els['es-target'].value = '175.9';
       compute();
     });
+  }
+  if (els['es-target-explain-toggle'] && els['es-target-explain']){
+    els['es-target-explain-toggle'].addEventListener('click', () => {
+      const isHidden = els['es-target-explain'].hasAttribute('hidden');
+      if (isHidden) els['es-target-explain'].removeAttribute('hidden');
+      else els['es-target-explain'].setAttribute('hidden', '');
+      els['es-target-explain-toggle'].setAttribute('aria-expanded', String(isHidden));
+    });
+  }
+  if (els['es-d-slider']){
+    const onSlide = () => {
+      const d = Number(els['es-d-slider'].value);
+      els['es-stat-type'].value = 'd';
+      els['es-stat-value'].value = d.toFixed(1);
+      els['es-stat-aux'].value = '';
+      esState.statTouched = true;
+      esState.statAutoFilled = false;
+      esState.source = 'stat';
+      if (els['es-d-slider-val']) els['es-d-slider-val'].textContent = d.toFixed(1);
+      switchEffectMode('stat');
+      compute();
+    };
+    els['es-d-slider'].addEventListener('input', onSlide);
+    els['es-d-slider'].addEventListener('change', onSlide);
   }
 
   // Tab wiring
@@ -461,6 +493,9 @@
       switchEffectMode(btn.dataset.mode);
       compute();
     });
+  });
+  document.querySelectorAll('#effectsize .es-view-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchWorkspaceView(btn.dataset.view));
   });
 
   refreshAuxField();
