@@ -1018,7 +1018,10 @@ function updateApaColumnControls(outId, columns, renderFn){
 }
 function buildApaTableFromColumns(outId, columns, rows, groupLabelFn){
   const visible = getApaVisibleColumns(outId, columns);
-  const header = `<tr>${visible.map(c => `<th${c.num ? ' class="num"' : ''}>${c.label}</th>`).join('')}</tr>`;
+  const header = `<tr>${visible.map(c => {
+    const cls = `${c.num ? 'num ' : ''}col-${c.key}`.trim();
+    return `<th class="${cls}">${c.label}</th>`;
+  }).join('')}</tr>`;
   let body = '';
   let lastGroup = null;
   let inGroup = false;
@@ -1033,7 +1036,10 @@ function buildApaTableFromColumns(outId, columns, rows, groupLabelFn){
       inGroup = false;
     }
     const cls = inGroup ? ' class="apa-grouped-row"' : '';
-    body += `<tr${cls}>${visible.map(c => `<td${c.num ? ' class="num"' : ''}>${c.render(r)}</td>`).join('')}</tr>`;
+    body += `<tr${cls}>${visible.map(c => {
+      const tdCls = `${c.num ? 'num ' : ''}col-${c.key}`.trim();
+      return `<td class="${tdCls}">${c.render(r)}</td>`;
+    }).join('')}</tr>`;
   });
   return `<table class="apa-table"><thead>${header}</thead><tbody>${body}</tbody></table>`;
 }

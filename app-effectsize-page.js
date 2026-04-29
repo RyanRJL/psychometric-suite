@@ -31,14 +31,14 @@
   if (!els['es-stat-type']) return;
   const esState = { statTouched: false, statAutoFilled: false };
   const SIMILAR_EFFECTS = [
-    { label: '30+ daily vs never smokers, lung cancer', d: 2.60 },
-    { label: 'Smoking vs never, lung cancer', d: 1.75 },
+    { label: 'Heavy smokers vs never (lung cancer)', d: 2.60 },
+    { label: 'Smokers vs never (lung cancer)', d: 1.75 },
     { label: 'UK male vs female height', d: 1.37 },
-    { label: 'Former vs never smoker, lung cancer', d: 1.10 },
-    { label: 'Clozapine vs placebo, schizophrenia', d: 0.89 },
-    { label: 'CBT vs care as usual, social anxiety', d: 0.44 },
-    { label: 'CBT vs care as usual, depression', d: 0.43 },
-    { label: 'Paracetamol vs placebo, headache', d: 0.26 }
+    { label: 'Former vs never smoker (lung cancer)', d: 1.10 },
+    { label: 'Clozapine vs placebo (schizophrenia)', d: 0.89 },
+    { label: 'CBT vs usual care (social anxiety)', d: 0.44 },
+    { label: 'CBT vs usual care (depression)', d: 0.43 },
+    { label: 'Paracetamol vs placebo (headache)', d: 0.26 }
   ];
 
   // Aux field per statistic (some conversions need N or pooled SD)
@@ -188,6 +188,7 @@
   function similarEffect(d){
     if (d == null || isNaN(d) || !isFinite(d)) return '—';
     const ad = Math.abs(d);
+    if (ad > 3) return '—';
     const closest = SIMILAR_EFFECTS.reduce((best, item) => {
       const gap = Math.abs(item.d - ad);
       return !best || gap < best.gap ? { ...item, gap } : best;

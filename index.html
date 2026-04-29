@@ -346,12 +346,12 @@
     <!-- ===== Input mode tabs (clear OR) ===== -->
     <div class="es-tabs-wrap">
       <div class="es-tabs" role="tablist">
-        <button class="es-tab" type="button" data-mode="stat" role="tab">
+        <button class="es-tab is-active" type="button" data-mode="stat" role="tab">
           <span class="es-tab-num">A</span>
           <span class="es-tab-text"><span class="es-tab-title">Convert from a Statistic</span><span class="es-tab-sub">I already have an effect size or test value</span></span>
         </button>
         <div class="es-tabs-or"><span>OR</span></div>
-        <button class="es-tab is-active" type="button" data-mode="groups" role="tab">
+        <button class="es-tab" type="button" data-mode="groups" role="tab">
           <span class="es-tab-num">B</span>
           <span class="es-tab-text"><span class="es-tab-title">Compute from Group Data</span><span class="es-tab-sub">I have means &amp; SDs for two groups</span></span>
         </button>
@@ -360,11 +360,11 @@
     <div class="panel es-input-panel">
       <div class="es-preloaded-note">
         <span class="es-preloaded-pill">Preloaded example</span>
-        <span>UK male vs female height is loaded in the group-data fields below. Edit the values or use Clear all inputs to start fresh.</span>
+        <span>UK male vs female height is loaded in the group-data fields from Option B (above). Edit the values or use Clear all inputs to start fresh.</span>
       </div>
 
       <!-- Mode A: from a statistic -->
-      <div class="es-mode-pane" data-pane="stat">
+      <div class="es-mode-pane is-active" data-pane="stat">
         <div class="es-stat-row">
           <div class="field"><label>Statistic</label>
             <select id="es-stat-type">
@@ -381,7 +381,7 @@
             </select>
           </div>
           <div class="field"><label>Value</label>
-            <input type="number" id="es-stat-value" step="any" placeholder="e.g. 0.5">
+            <input type="number" id="es-stat-value" step="0.1" placeholder="e.g. 0.5">
           </div>
           <div class="field" id="es-stat-aux-field" style="display:none"><label id="es-stat-aux-label">Sample N</label>
             <input type="number" id="es-stat-aux" step="any" placeholder="N">
@@ -393,7 +393,7 @@
       </div>
 
       <!-- Mode B: from group data -->
-      <div class="es-mode-pane is-active" data-pane="groups">
+      <div class="es-mode-pane" data-pane="groups">
         <div class="es-groups">
           <div class="es-group">
             <div class="es-group-title">Intervention (Group 1)</div>
@@ -402,8 +402,8 @@
               <div class="field"><label>Mean</label><input type="number" id="es-g1-mean" step="any" placeholder="M" value="175.9"></div>
               <div class="field"><label>Dispersion</label>
                 <select id="es-g1-disp">
-                  <option value="sd">SD</option>
-                  <option value="se" selected>SE</option>
+                  <option value="sd">Standard Deviation</option>
+                  <option value="se" selected>Standard Error</option>
                   <option value="ciu">95% CI Upper</option>
                 </select>
               </div>
@@ -418,8 +418,8 @@
               <div class="field"><label>Mean</label><input type="number" id="es-g2-mean" step="any" placeholder="M" value="162.4"></div>
               <div class="field"><label>Dispersion</label>
                 <select id="es-g2-disp">
-                  <option value="sd">SD</option>
-                  <option value="se" selected>SE</option>
+                  <option value="sd">Standard Deviation</option>
+                  <option value="se" selected>Standard Error</option>
                   <option value="ciu">95% CI Upper</option>
                 </select>
               </div>

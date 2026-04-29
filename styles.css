@@ -318,13 +318,25 @@ input[type="text"], input[type="number"], input[type="date"], select, textarea{
 }
 input:focus, select:focus, textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint-strong)}
 input[type="number"]{font-family:var(--mono)}
-/* Hide number input spinner controls so values are not obscured */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button{
+/* Keep native number spinners by default; hide only on change-analysis pages */
+#sdi input[type="number"]::-webkit-outer-spin-button,
+#sdi input[type="number"]::-webkit-inner-spin-button,
+#rci-basic input[type="number"]::-webkit-outer-spin-button,
+#rci-basic input[type="number"]::-webkit-inner-spin-button,
+#rci-practice input[type="number"]::-webkit-outer-spin-button,
+#rci-practice input[type="number"]::-webkit-inner-spin-button,
+#rci-srb input[type="number"]::-webkit-outer-spin-button,
+#rci-srb input[type="number"]::-webkit-inner-spin-button,
+#rci-crawford input[type="number"]::-webkit-outer-spin-button,
+#rci-crawford input[type="number"]::-webkit-inner-spin-button{
   -webkit-appearance:none;
   margin:0;
 }
-input[type="number"]{
+#sdi input[type="number"],
+#rci-basic input[type="number"],
+#rci-practice input[type="number"],
+#rci-srb input[type="number"],
+#rci-crawford input[type="number"]{
   -moz-appearance:textfield;
   appearance:textfield;
 }
@@ -489,6 +501,8 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 .apa-table th.num{text-align:center}
 .apa-table td{padding:5px 12px;border:none;color:#000;line-height:1.5}
 .apa-table td.num{font-family:var(--serif);font-variant-numeric:tabular-nums;text-align:center}
+.apa-table th.col-classification,.apa-table td.col-classification{text-align:left}
+.apa-table th.col-outcome,.apa-table td.col-outcome{text-align:left}
 .apa-table tbody tr:last-child td{border-bottom:1.5px solid #000;padding-bottom:8px}
 .apa-table tbody tr:first-child td{padding-top:8px}
 .apa-note{font-family:var(--serif);font-size:12.5px;font-style:italic;color:#000;margin-top:10px;line-height:1.45}
@@ -1491,9 +1505,11 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 #effectsize .es-result-similar{background:var(--paper)}
 #effectsize .es-result-similar-value{
   font-family:var(--sans);
-  font-size:12px;
-  line-height:1.25;
-  color:var(--ink-2);
+  font-size:10.5px;
+  font-weight:700;
+  letter-spacing:0.01em;
+  line-height:1.35;
+  color:var(--muted);
   white-space:normal;
 }
 #effectsize .es-result-desc{display:inline-block;justify-self:start;margin-top:0;font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 0;border-radius:0;background:transparent;color:var(--muted);line-height:1.3}
