@@ -887,7 +887,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .db-subtests{padding:8px 16px}
 .db-subtest-row{
-  display:grid;grid-template-columns:2fr repeat(5,1fr) auto;gap:8px;
+  display:grid;grid-template-columns:2fr repeat(6,1fr) auto;gap:8px;
   padding:6px 0;font-size:12.5px;align-items:center;
   border-bottom:1px dashed var(--border-soft);
 }
@@ -895,6 +895,11 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .db-subtest-row .name{color:var(--ink)}
 .db-subtest-row .num{font-family:var(--mono);color:var(--ink-2);text-align:right}
 .db-subtest-row .num-label{font-size:10px;color:var(--faint);text-align:right}
+.ct-entry-table th,.ct-entry-table td{text-align:center}
+.ct-entry-table th:nth-child(2),.ct-entry-table td:nth-child(2){text-align:left}
+.ct-entry-table input{width:100%;min-width:72px}
+.ct-entry-table .ct-subtest-name{min-width:220px}
+.ct-entry-table .ct-row-num{color:var(--muted);font-family:var(--mono)}
 
 /* SEARCHABLE COMBOBOX */
 .combo{position:relative}

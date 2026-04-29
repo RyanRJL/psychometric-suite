@@ -1249,10 +1249,29 @@
 
     <div class="panel panel-emphasis">
       <h3 class="sub-title" style="margin-top:0">Add a test family</h3>
-      <div class="field-row">
+      <div class="field-row-3">
         <div class="field">
-          <label>Test family name <span class="hint">e.g., RAVLT Age 50–69</span></label>
+          <label>Test family name <span class="hint">e.g., RAVLT</span></label>
           <input type="text" id="ct-family" placeholder="Test family name">
+        </div>
+        <div class="field">
+          <label>Age band</label>
+          <select id="ct-family-age-mode">
+            <option value="none">None</option>
+            <option value="all">All Ages</option>
+            <option value="range">Specific range</option>
+          </select>
+        </div>
+        <div class="field-row-3" id="ct-family-age-range" style="display:none;grid-column:1 / -1">
+          <div class="field">
+            <label>Min age</label>
+            <input type="number" id="ct-family-age-min" min="0" step="1" placeholder="e.g., 65">
+          </div>
+          <div class="field">
+            <label>Max age</label>
+            <input type="number" id="ct-family-age-max" min="0" step="1" placeholder="e.g., 90">
+          </div>
+          <div class="field"></div>
         </div>
         <div class="field" style="display:flex;align-items:end;gap:8px">
           <button class="btn btn-primary" id="ct-add-family">Add family</button>
@@ -1261,27 +1280,22 @@
     </div>
 
     <div class="panel">
-      <h3 class="sub-title" style="margin-top:0">Add a subtest to an existing family</h3>
-      <div class="field-row-3">
-        <div class="field">
-          <label>Family</label>
-          <select id="ct-family-select"><option value="CVLT-3 Indices · Ages 16-44">CVLT-3 Indices · Ages 16-44</option><option value="CVLT-3 Indices · Ages 45-90">CVLT-3 Indices · Ages 45-90</option><option value="CVLT-3 Trials · Ages 16-44">CVLT-3 Trials · Ages 16-44</option><option value="CVLT-3 Trials · Ages 45-90">CVLT-3 Trials · Ages 45-90</option><option value="D-KEFS Colour-Word Interference · Ages 20-49">D-KEFS Colour-Word Interference · Ages 20-49</option><option value="D-KEFS Colour-Word Interference · Ages 50-89">D-KEFS Colour-Word Interference · Ages 50-89</option><option value="D-KEFS Colour-Word Interference · Ages 8-19">D-KEFS Colour-Word Interference · Ages 8-19</option><option value="D-KEFS Colour-Word Interference · All Ages">D-KEFS Colour-Word Interference · All Ages</option><option value="D-KEFS Design Fluency · Ages 20-49">D-KEFS Design Fluency · Ages 20-49</option><option value="D-KEFS Design Fluency · Ages 50-89">D-KEFS Design Fluency · Ages 50-89</option><option value="D-KEFS Design Fluency · Ages 8-19">D-KEFS Design Fluency · Ages 8-19</option><option value="D-KEFS Design Fluency · All Ages">D-KEFS Design Fluency · All Ages</option><option value="D-KEFS Sorting Test · Ages 20-49">D-KEFS Sorting Test · Ages 20-49</option><option value="D-KEFS Sorting Test · Ages 50-89">D-KEFS Sorting Test · Ages 50-89</option><option value="D-KEFS Sorting Test · Ages 8-19">D-KEFS Sorting Test · Ages 8-19</option><option value="D-KEFS Sorting Test · All Ages">D-KEFS Sorting Test · All Ages</option><option value="D-KEFS Tower Test · Ages 20-49">D-KEFS Tower Test · Ages 20-49</option><option value="D-KEFS Tower Test · Ages 50-89">D-KEFS Tower Test · Ages 50-89</option><option value="D-KEFS Tower Test · Ages 8-19">D-KEFS Tower Test · Ages 8-19</option><option value="D-KEFS Tower Test · All Ages">D-KEFS Tower Test · All Ages</option><option value="D-KEFS Trail Making Test · Ages 20-49">D-KEFS Trail Making Test · Ages 20-49</option><option value="D-KEFS Trail Making Test · Ages 50-89">D-KEFS Trail Making Test · Ages 50-89</option><option value="D-KEFS Trail Making Test · Ages 8-19">D-KEFS Trail Making Test · Ages 8-19</option><option value="D-KEFS Trail Making Test · All Ages">D-KEFS Trail Making Test · All Ages</option><option value="D-KEFS Verbal Fluency · Ages 20-49">D-KEFS Verbal Fluency · Ages 20-49</option><option value="D-KEFS Verbal Fluency · Ages 50-89">D-KEFS Verbal Fluency · Ages 50-89</option><option value="D-KEFS Verbal Fluency · Ages 8-19">D-KEFS Verbal Fluency · Ages 8-19</option><option value="D-KEFS Verbal Fluency · All Ages">D-KEFS Verbal Fluency · All Ages</option><option value="D-KEFS Word Context Test · Ages 20-49">D-KEFS Word Context Test · Ages 20-49</option><option value="D-KEFS Word Context Test · Ages 50-89">D-KEFS Word Context Test · Ages 50-89</option><option value="D-KEFS Word Context Test · Ages 8-19">D-KEFS Word Context Test · Ages 8-19</option><option value="D-KEFS Word Context Test · All Ages">D-KEFS Word Context Test · All Ages</option><option value="D-KEFS Word Proverb Test · Ages 20-49">D-KEFS Word Proverb Test · Ages 20-49</option><option value="D-KEFS Word Proverb Test · Ages 50-89">D-KEFS Word Proverb Test · Ages 50-89</option><option value="D-KEFS Word Proverb Test · Ages 8-19">D-KEFS Word Proverb Test · Ages 8-19</option><option value="D-KEFS Word Proverb Test · All Ages">D-KEFS Word Proverb Test · All Ages</option><option value="RBANS Indices · Ages 12-19">RBANS Indices · Ages 12-19</option><option value="RBANS Indices · Ages 20-89">RBANS Indices · Ages 20-89</option><option value="RBANS Subtests · Ages 12-19">RBANS Subtests · Ages 12-19</option><option value="RBANS Subtests · Ages 20-89">RBANS Subtests · Ages 20-89</option><option value="WAIS-IV Core Subtests · Ages 16-29">WAIS-IV Core Subtests · Ages 16-29</option><option value="WAIS-IV Core Subtests · Ages 30-54">WAIS-IV Core Subtests · Ages 30-54</option><option value="WAIS-IV Core Subtests · Ages 55-69">WAIS-IV Core Subtests · Ages 55-69</option><option value="WAIS-IV Core Subtests · Ages 70-90">WAIS-IV Core Subtests · Ages 70-90</option><option value="WAIS-IV Core Subtests · All Ages">WAIS-IV Core Subtests · All Ages</option><option value="WAIS-IV Indices · Ages 16-29">WAIS-IV Indices · Ages 16-29</option><option value="WAIS-IV Indices · Ages 30-54">WAIS-IV Indices · Ages 30-54</option><option value="WAIS-IV Indices · Ages 55-69">WAIS-IV Indices · Ages 55-69</option><option value="WAIS-IV Indices · Ages 70-90">WAIS-IV Indices · Ages 70-90</option><option value="WAIS-IV Indices · All Ages">WAIS-IV Indices · All Ages</option><option value="WISC-V Indices · All Ages">WISC-V Indices · All Ages</option><option value="WISC-V Subtests · All Ages">WISC-V Subtests · All Ages</option><option value="WMS-IV Indices · Ages 16-69">WMS-IV Indices · Ages 16-69</option><option value="WMS-IV Indices · Ages 65-90">WMS-IV Indices · Ages 65-90</option><option value="WMS-IV Subtests · Ages 16-69">WMS-IV Subtests · Ages 16-69</option><option value="WMS-IV Subtests · Ages 65-90">WMS-IV Subtests · Ages 65-90</option></select>
-        </div>
-        <div class="field">
-          <label>Subtest name</label>
-          <input type="text" id="ct-subtest" placeholder="e.g. Trial 1">
-        </div>
+      <h3 class="sub-title" style="margin-top:0">Add subtests/trials to a family</h3>
+      <div class="field" style="max-width:420px;margin-bottom:10px">
+        <label>Family</label>
+        <select id="ct-family-select"></select>
       </div>
-      <div class="field-row-4" style="margin-top:6px">
-        <div class="field"><label>M₁ (Test)</label><input type="number" step="any" id="ct-m1"></div>
-        <div class="field"><label>SD₁ (Test)</label><input type="number" step="any" id="ct-sd1"></div>
-        <div class="field"><label>M₂ (Retest)</label><input type="number" step="any" id="ct-m2"></div>
-        <div class="field"><label>SD₂ (Retest)</label><input type="number" step="any" id="ct-sd2"></div>
-      </div>
-      <div class="field-row" style="margin-top:6px">
-        <div class="field"><label>Reliability r <span class="hint">(0–1)</span></label><input type="number" step="0.01" min="0" max="1" id="ct-r"></div>
-        <div class="field"><label>Sample size N <span class="hint">(optional, required for Crawford method)</span></label><input type="number" step="1" min="3" id="ct-n"></div>
-        <div class="field" style="display:flex;align-items:end"><button class="btn btn-primary" id="ct-add-subtest">Add subtest</button></div>
+      <table class="input-table ct-entry-table">
+        <thead>
+          <tr><th style="width:40px">#</th><th>Subtest</th><th>M₁</th><th>SD₁</th><th>M₂</th><th>SD₂</th><th>R</th><th>N</th><th style="width:44px"></th></tr>
+        </thead>
+        <tbody id="ct-entry-body"></tbody>
+      </table>
+      <div class="controls-row" style="margin-top:10px">
+        <button class="btn btn-ghost" id="ct-add-row">+ Add test row</button>
+        <button class="btn btn-ghost" id="ct-load-example">+ Load example row</button>
+        <button class="btn" id="ct-clear-rows">Clear all rows</button>
+        <button class="btn btn-primary" id="ct-add-subtest">Add rows to family</button>
       </div>
     </div>
 
@@ -4953,13 +4967,16 @@
 
     <h2 class="block-title">Methods &amp; conventions</h2>
     <p class="section-body-text">
-      Score conversions assume a normally-distributed reference population. Wechsler descriptors follow the WAIS-IV/WMS-IV manual conventions; AACN descriptors follow Guilmette et al. (2020). RCI <em>p</em>-values are two-tailed; the Crawford &amp; Garthwaite (2007) method uses a Student's <i>t</i>-distribution with <i>N</i>−2 degrees of freedom, while the Jacobson &amp; Truax (1991), Iverson (2001), and McSweeney et al. (1993) methods use the standard normal distribution.
+      This tool supports score conversion/equating, effect-size conversion, SDI, four RCI approaches (basic, practice-adjusted, standardised regression-based, and Crawford/Garthwaite), and premorbid estimation workflows. All calculations run locally in-browser; no patient data is transmitted off-device.
     </p>
     <p class="section-body-text">
-      The auto-fill normative database includes published test–retest data for the D-KEFS, WAIS-IV, WMS-IV, CVLT-3, RBANS, and WISC-V across age bands, including normative sample sizes (<i>N</i>) where reported. <i>N</i> values are required for the Crawford &amp; Garthwaite (2007) regression-based change method and may be entered manually for tests where they are not in the auto-fill database. Always verify normative parameters against the most recent technical manual for your specific patient population.
+      Score conversions assume an approximately normal reference distribution. Wechsler descriptor bands follow WAIS-IV/WMS-IV manual conventions; AACN descriptor labels follow Guilmette et al. (2020). SDI and RCI <em>p</em>-values are two-tailed. Jacobson &amp; Truax (1991), Iverson (2001), and McSweeney et al. (1993) implementations use the standard normal distribution; Crawford &amp; Garthwaite (2007) uses the Student <i>t</i> distribution with <i>N</i>−2 degrees of freedom.
     </p>
     <p class="section-body-text">
-      Premorbid estimates use the WAIS-IV ToPF demographic regression equations, the OPIE-4 equations (Holdnack et al., 2013), and the Crawford &amp; Allan (2001) UK demographic equation. The ToPF and OPIE-4 Predicted vs Actual base rates are taken from the WAIS-IV / WMS-IV / ACS technical tables.
+      The auto-fill normative database includes published retest parameters for major batteries (including D-KEFS, WAIS-IV, WMS-IV, CVLT-3, RBANS, and WISC-V), with normative <i>N</i> where reported. <i>N</i> is required for Crawford/Garthwaite calculations and may need manual entry when unavailable. Clinicians should verify all imported parameters against the latest manual and local service standards before interpretation.
+    </p>
+    <p class="section-body-text">
+      Premorbid estimates combine ToPF-based and demographic equations with OPIE-4 prorated models, and include predicted-versus-achieved discrepancy outputs with confidence intervals, base-rate lookups, and APA-formatted export tables. OPIE-4 regression terms are adapted for UK use by omitting US-specific education, region, and ethnicity terms; interpretation in UK settings should remain cautious because underlying normative regression data are US-derived.
     </p>
 
     <div class="references">

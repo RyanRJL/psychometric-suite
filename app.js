@@ -258,6 +258,23 @@ function openOnlyNavGroup(group){
 const activeNavGroup = document.querySelector('.nav-item.active')?.closest('.nav-group');
 if (activeNavGroup) openOnlyNavGroup(activeNavGroup);
 
+const CUSTOM_TESTS_PASSWORD = 'unlock';
+const CUSTOM_TESTS_UNLOCK_KEY = 'customTestsUnlocked';
+function isCustomTestsUnlocked(){
+  return sessionStorage.getItem(CUSTOM_TESTS_UNLOCK_KEY) === 'true';
+}
+function requestCustomTestsUnlock(){
+  const entered = window.prompt('Custom Tests is password-protected. Enter password:');
+  if (entered == null) return false;
+  if (entered === CUSTOM_TESTS_PASSWORD){
+    sessionStorage.setItem(CUSTOM_TESTS_UNLOCK_KEY, 'true');
+    showToast('✓ Custom Tests unlocked for this session');
+    return true;
+  }
+  showToast('Incorrect password', true);
+  return false;
+}
+
 document.querySelectorAll('.nav-label').forEach(label => {
   label.addEventListener('click', () => {
     const group = label.closest('.nav-group');
@@ -273,6 +290,10 @@ document.querySelectorAll('.nav-label').forEach(label => {
 document.querySelectorAll('.nav-item').forEach(el => {
   el.addEventListener('click', () => {
     const target = el.dataset.target;
+    if (target === 'custom-tests' && !isCustomTestsUnlocked()){
+      const ok = requestCustomTestsUnlock();
+      if (!ok) return;
+    }
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     el.classList.add('active');
@@ -1090,7 +1111,7 @@ function wireBatteryAutofill(){
 }
 
 function comboCustomTag(isCustom){
-  return isCustom ? ' <span class="combo-custom-tag">custom</span>' : '';
+  return '';
 }
 function comboFooterHtml(){
   return '<div class="combo-footer"><span class="combo-count">0 selected</span><button class="btn btn-ghost combo-clear" type="button">Clear</button><button class="btn btn-primary combo-add" type="button" disabled>Add selected tests</button></div>';
@@ -1098,10 +1119,11 @@ function comboFooterHtml(){
 function comboAgeBandNoteHtml(){
   return '<div class="combo-ageband-note"><span class="combo-ageband-note-icon">ℹ</span><span><strong>Specific age bands</strong> offer greater normative precision but rest on smaller samples, which reduces the stability of <em>r</em>. <strong>All Ages</strong> norms draw on larger <em>N</em>, yielding a more robust <em>r</em>, at the cost of age specificity.</span></div>';
 }
-function comboCheckboxItemHtml(f, isCustom, indented){
+function comboCheckboxItemHtml(f, isCustom, indented, groupKey){
   const cls = 'combo-item combo-check' + (indented ? ' combo-indented' : '');
   const label = indented ? ageBandLabel(f) : escapeHtml(f);
-  return `<label class="${cls}" data-family="${escapeAttr(f)}"><input type="checkbox" value="${escapeAttr(f)}"><span class="combo-check-text">${label}${comboCustomTag(isCustom)}</span></label>`;
+  const groupAttr = groupKey ? ` data-group="${escapeAttr(groupKey)}"` : '';
+  return `<label class="${cls}" data-family="${escapeAttr(f)}"${groupAttr}><input type="checkbox" value="${escapeAttr(f)}"><span class="combo-check-text">${label}${comboCustomTag(isCustom)}</span></label>`;
 }
 function comboOptionsHtml(itemsHtml){
   return `<div class="combo-options">${itemsHtml}</div>`;
@@ -1872,17 +1894,19 @@ function buildFamilyListHtml(families){
     if (!groups[base]){ groups[base] = []; order.push(base); }
     groups[base].push(f);
   });
+
   let html = '';
   order.forEach(base => {
     const members = groups[base];
+    const groupKey = `grp:${base}`;
     if (members.length === 1 && !hasAgeBandSuffix(members[0])){
       // Single entry with no age band — plain item
-      html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false);
+      html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false, groupKey);
     } else {
       // Multiple entries or explicitly age-banded — render group heading + indented items
-      html += `<div class="combo-group-heading">${escapeHtml(base)}</div>`;
+      html += `<div class="combo-group-heading" data-group="${escapeAttr(groupKey)}">${escapeHtml(base)}</div>`;
       members.forEach(f => {
-        html += comboCheckboxItemHtml(f, isCustom(f), true);
+        html += comboCheckboxItemHtml(f, isCustom(f), true, groupKey);
       });
     }
   });
@@ -1980,12 +2004,10 @@ function filterFamilyListEl(list, q){
   });
   // Show a group heading only when at least one of its sibling items is visible
   list.querySelectorAll('.combo-group-heading').forEach(heading => {
-    let sibling = heading.nextElementSibling;
-    let anyVisible = false;
-    while (sibling && !sibling.classList.contains('combo-group-heading')){
-      if (sibling.style.display !== 'none') anyVisible = true;
-      sibling = sibling.nextElementSibling;
-    }
+    const groupKey = heading.dataset.group;
+    const anyVisible = Array.from(list.querySelectorAll('.combo-item'))
+      .filter(it => it.dataset.group === groupKey)
+      .some(it => it.style.display !== 'none');
     heading.style.display = anyVisible ? '' : 'none';
   });
 }
@@ -2005,14 +2027,35 @@ document.querySelectorAll('[data-clear]').forEach(btn => {
 function getCustom(){ return JSON.parse(localStorage.getItem('customTests') || '{}'); }
 function saveCustom(c){ localStorage.setItem('customTests', JSON.stringify(c)); }
 
-function refreshFamilySelect(){
+function refreshFamilySelect(selectedFamily){
   const sel = document.getElementById('ct-family-select');
+  const current = selectedFamily || sel.value;
   const merged = getMergedDB();
   const custom = getCustom();
   // Allow adding subtests to any family (built-in or custom). Built-in additions become custom overrides.
-  sel.innerHTML = Object.keys(merged).sort().map(f =>
+  const families = Object.keys(merged).sort();
+  sel.innerHTML = families.map(f =>
     `<option value="${escapeAttr(f)}">${escapeHtml(f)}${custom[f] ? ' (custom)' : ''}</option>`
   ).join('');
+  if (current && families.includes(current)){
+    sel.value = current;
+  }
+}
+function makeFamilyName(baseName, ageMode, ageMinRaw, ageMaxRaw){
+  const base = String(baseName || '').trim();
+  if (!base) return '';
+  const mode = String(ageMode || 'none');
+  if (mode === 'all'){
+    return `${base} · All Ages`;
+  }
+  if (mode === 'range'){
+    const min = parseInt(ageMinRaw, 10);
+    const max = parseInt(ageMaxRaw, 10);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return '';
+    if (min < 0 || max < 0 || min > max) return '';
+    return `${base} · Ages ${min}-${max}`;
+  }
+  return base;
 }
 function renderDbList(){
   const search = document.getElementById('ct-search').value.toLowerCase().trim();
@@ -2037,7 +2080,7 @@ function renderDbList(){
       </div>
       <div class="db-subtests">
         <div class="db-subtest-row" style="font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid var(--border-soft);padding-bottom:6px">
-          <span>Subtest</span><span class="num-label">M₁</span><span class="num-label">SD₁</span><span class="num-label">M₂</span><span class="num-label">SD₂</span><span class="num-label">r</span><span></span>
+          <span>Subtest</span><span class="num-label">M₁</span><span class="num-label">SD₁</span><span class="num-label">M₂</span><span class="num-label">SD₂</span><span class="num-label">r</span><span class="num-label">N</span><span></span>
         </div>
         ${subsToShow.map(([name, p]) => `
           <div class="db-subtest-row">
@@ -2047,6 +2090,7 @@ function renderDbList(){
             <span class="num">${fmt(p.m2, 2)}</span>
             <span class="num">${fmt(p.sd2, 2)}</span>
             <span class="num">${fmt(p.r, 2)}</span>
+            <span class="num">${p.n == null ? '—' : escapeHtml(String(p.n))}</span>
             ${isCustom ? `<button class="btn btn-ghost btn-icon" data-del-sub="${escapeAttr(family)}::${escapeAttr(name)}" title="Remove subtest">×</button>` : '<span></span>'}
           </div>
         `).join('')}
@@ -2066,53 +2110,159 @@ function renderDbList(){
     refreshAll();
   }));
 }
-function refreshAll(){
-  refreshFamilySelect();
+function refreshAll(selectedFamily){
+  refreshFamilySelect(selectedFamily);
   renderDbList();
   rebuildAllFamilyLists();
   rebuildBatteryFamilyList();
   rebuildSdiFamilyList();
 }
+function ctEntryRowHtml(i, seed){
+  const row = seed || {};
+  return `<tr>
+    <td class="ct-row-num">${i + 1}</td>
+    <td><input class="ct-subtest-name" type="text" data-k="name" placeholder="Test name" value="${escapeAttr(row.name || '')}"></td>
+    <td><input type="number" step="any" data-k="m1" value="${row.m1 != null ? escapeAttr(row.m1) : ''}"></td>
+    <td><input type="number" step="any" data-k="sd1" value="${row.sd1 != null ? escapeAttr(row.sd1) : ''}"></td>
+    <td><input type="number" step="any" data-k="m2" value="${row.m2 != null ? escapeAttr(row.m2) : ''}"></td>
+    <td><input type="number" step="any" data-k="sd2" value="${row.sd2 != null ? escapeAttr(row.sd2) : ''}"></td>
+    <td><input type="number" step="0.01" min="0" max="0.99" data-k="r" value="${row.r != null ? escapeAttr(row.r) : ''}"></td>
+    <td><input type="number" step="1" min="3" data-k="n" value="${row.n != null ? escapeAttr(row.n) : ''}"></td>
+    <td><button type="button" class="btn btn-ghost btn-icon" data-ct-del-row title="Delete row">×</button></td>
+  </tr>`;
+}
+function ctRenumberRows(){
+  const body = document.getElementById('ct-entry-body');
+  if (!body) return;
+  body.querySelectorAll('tr').forEach((tr, i) => {
+    const num = tr.querySelector('.ct-row-num');
+    if (num) num.textContent = String(i + 1);
+  });
+}
+function ctRenderRows(rows){
+  const body = document.getElementById('ct-entry-body');
+  if (!body) return;
+  body.innerHTML = rows.map((r, i) => ctEntryRowHtml(i, r)).join('');
+}
+function ctReadRows(){
+  const body = document.getElementById('ct-entry-body');
+  if (!body) return [];
+  const out = [];
+  body.querySelectorAll('tr').forEach(tr => {
+    const get = k => tr.querySelector(`[data-k="${k}"]`)?.value?.trim() || '';
+    const name = get('name');
+    const m1s = get('m1'), sd1s = get('sd1'), m2s = get('m2'), sd2s = get('sd2'), rs = get('r'), ns = get('n');
+    const any = [name,m1s,sd1s,m2s,sd2s,rs,ns].some(v => v !== '');
+    if (!any) return;
+    out.push({ name, m1s, sd1s, m2s, sd2s, rs, ns });
+  });
+  return out;
+}
+function ctInitEntryRows(){
+  ctRenderRows([{ name:'Example index score', m1:100, sd1:15, m2:103, sd2:15, r:0.90, n:100 }, {}]);
+  const body = document.getElementById('ct-entry-body');
+  const addBlankRow = () => {
+    const rows = ctReadRows().map(r => ({ name:r.name, m1:r.m1s, sd1:r.sd1s, m2:r.m2s, sd2:r.sd2s, r:r.rs, n:r.ns }));
+    rows.push({});
+    ctRenderRows(rows);
+  };
+  document.getElementById('ct-add-row')?.addEventListener('click', () => {
+    addBlankRow();
+  });
+  document.getElementById('ct-load-example')?.addEventListener('click', () => {
+    const rows = ctReadRows().map(r => ({ name:r.name, m1:r.m1s, sd1:r.sd1s, m2:r.m2s, sd2:r.sd2s, r:r.rs, n:r.ns }));
+    rows.push({ name:'Example trial', m1:10, sd1:3, m2:11, sd2:3, r:0.80, n:100 });
+    ctRenderRows(rows);
+  });
+  document.getElementById('ct-clear-rows')?.addEventListener('click', () => ctRenderRows([{}]));
+  body?.addEventListener('click', e => {
+    const del = e.target.closest('[data-ct-del-row]');
+    if (!del) return;
+    const tr = del.closest('tr');
+    if (!tr) return;
+    tr.remove();
+    if (!body.querySelector('tr')){
+      ctRenderRows([{}]);
+    } else {
+      ctRenumberRows();
+    }
+  });
+  body?.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || e.shiftKey) return;
+    const target = e.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    const tr = target.closest('tr');
+    if (!tr) return;
+    const rows = Array.from(body.querySelectorAll('tr'));
+    if (rows[rows.length - 1] !== tr) return;
+    const inputs = Array.from(tr.querySelectorAll('input'));
+    if (inputs[inputs.length - 1] !== target) return;
+    e.preventDefault();
+    addBlankRow();
+    const nextRows = body.querySelectorAll('tr');
+    const newLast = nextRows[nextRows.length - 1];
+    const firstInput = newLast?.querySelector('input[data-k="name"]');
+    if (firstInput) firstInput.focus();
+  });
+}
 document.getElementById('ct-add-family').addEventListener('click', () => {
-  const name = document.getElementById('ct-family').value.trim();
-  if (!name) return showToast('Enter a family name', true);
+  const base = document.getElementById('ct-family').value.trim();
+  const ageMode = document.getElementById('ct-family-age-mode')?.value || 'none';
+  const ageMin = document.getElementById('ct-family-age-min')?.value || '';
+  const ageMax = document.getElementById('ct-family-age-max')?.value || '';
+  const name = makeFamilyName(base, ageMode, ageMin, ageMax);
+  if (!base) return showToast('Enter a family name', true);
+  if (!name) return showToast('Check age-band fields (use valid min/max ages)', true);
   const c = getCustom();
   if (c[name] || normDB[name]) return showToast('A family with that name already exists', true);
   c[name] = {}; saveCustom(c);
   document.getElementById('ct-family').value = '';
+  if (document.getElementById('ct-family-age-mode')) document.getElementById('ct-family-age-mode').value = 'none';
+  if (document.getElementById('ct-family-age-min')) document.getElementById('ct-family-age-min').value = '';
+  if (document.getElementById('ct-family-age-max')) document.getElementById('ct-family-age-max').value = '';
   showToast(`✓ Added family "${name}"`);
-  refreshAll();
+  refreshAll(name);
 });
 document.getElementById('ct-add-subtest').addEventListener('click', () => {
   const family = document.getElementById('ct-family-select').value;
-  const subtest = document.getElementById('ct-subtest').value.trim();
-  const m1 = parseFloat(document.getElementById('ct-m1').value);
-  const sd1 = parseFloat(document.getElementById('ct-sd1').value);
-  const m2 = parseFloat(document.getElementById('ct-m2').value);
-  const sd2 = parseFloat(document.getElementById('ct-sd2').value);
-  const r = parseFloat(document.getElementById('ct-r').value);
-  const nRaw = document.getElementById('ct-n').value;
-  const n = nRaw === '' ? null : parseInt(nRaw, 10);
-  if (!family || !subtest) return showToast('Family and subtest name required', true);
-  if ([m1,sd1,m2,sd2,r].some(isNaN)) return showToast('All numeric fields are required', true);
-  if (r < 0 || r >= 1) return showToast('Reliability must be between 0 and 1', true);
-  if (sd1 <= 0 || sd2 <= 0) return showToast('SDs must be positive', true);
-  if (n !== null && (!Number.isFinite(n) || n < 3)) return showToast('N must be a whole number ≥ 3 (or leave blank)', true);
+  const rows = ctReadRows();
+  if (!family) return showToast('Select a family first', true);
+  if (rows.length === 0) return showToast('Add at least one row', true);
   const c = getCustom();
   // If user is adding to a built-in family, clone it first into custom (so we don't lose built-ins on conflict)
   if (!c[family]){
     if (normDB[family]) c[family] = { ...normDB[family] };
     else c[family] = {};
   }
-  const entry = { m1, sd1, m2, sd2, r };
-  if (n !== null) entry.n = n;
-  c[family][subtest] = entry;
+  let added = 0;
+  for (const r of rows){
+    const subtest = r.name;
+    const m1 = parseFloat(r.m1s), sd1 = parseFloat(r.sd1s), m2 = parseFloat(r.m2s), sd2 = parseFloat(r.sd2s), rel = parseFloat(r.rs);
+    const n = r.ns === '' ? null : parseInt(r.ns, 10);
+    if (!subtest) return showToast('Each used row needs a subtest name', true);
+    if ([m1, sd1, m2, sd2, rel].some(isNaN)) return showToast(`Fill all numeric fields for "${subtest}"`, true);
+    if (rel < 0 || rel >= 1) return showToast(`Reliability out of range for "${subtest}"`, true);
+    if (sd1 <= 0 || sd2 <= 0) return showToast(`SD must be positive for "${subtest}"`, true);
+    if (n !== null && (!Number.isFinite(n) || n < 3)) return showToast(`N must be ≥ 3 for "${subtest}"`, true);
+    const entry = { m1, sd1, m2, sd2, r: rel };
+    if (n !== null) entry.n = n;
+    c[family][subtest] = entry;
+    added += 1;
+  }
   saveCustom(c);
-  ['ct-subtest','ct-m1','ct-sd1','ct-m2','ct-sd2','ct-r','ct-n'].forEach(id => document.getElementById(id).value = '');
-  showToast(`✓ Added "${subtest}" to ${family}`);
+  ctRenderRows([{}]);
+  showToast(`✓ Added ${added} row${added === 1 ? '' : 's'} to ${family}`);
   refreshAll();
 });
 document.getElementById('ct-search').addEventListener('input', renderDbList);
+const ctAgeMode = document.getElementById('ct-family-age-mode');
+const ctAgeRange = document.getElementById('ct-family-age-range');
+if (ctAgeMode && ctAgeRange){
+  const syncCtAgeRange = () => { ctAgeRange.style.display = ctAgeMode.value === 'range' ? 'grid' : 'none'; };
+  ctAgeMode.addEventListener('change', syncCtAgeRange);
+  syncCtAgeRange();
+}
+ctInitEntryRows();
 document.getElementById('ct-export').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(getCustom(), null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
