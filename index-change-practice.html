@@ -7,37 +7,36 @@
 <link rel="stylesheet" href="styles.css">
 
 <style>
-  /* Consolidated Change Analysis workspace. */
+  /* Temporary consolidation prototype. The original index.html is untouched. */
   #change-analysis.section{
     max-width:none;
     width:100%;
     padding:44px 50px 80px;
-    font-size:13.5px;
-  }
-  #change-main-title{
-    display:flex;
-    align-items:baseline;
-    gap:14px;
-    flex-wrap:wrap;
-  }
-  #change-main-title .change-title-model{
-    font-family:var(--sans);
-    font-size:16px;
-    font-weight:600;
-    letter-spacing:0.06em;
-    text-transform:uppercase;
-    color:var(--ink-2);
-  }
-  #change-main-title .change-title-model::before{
-    content:"";
-    display:inline-block;
-    width:1px;
-    height:20px;
-    background:var(--border);
-    margin-right:14px;
-    vertical-align:-4px;
   }
   #change-analysis .section-desc{max-width:880px;margin-bottom:16px}
+  .change-practice-banner{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border-top:1px solid var(--border);
+    border-bottom:1px solid var(--border-soft);
+    border-left:0;
+    border-right:0;
+    background:transparent;
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.4;
+    padding:8px 0;
+    margin:0 0 20px;
+  }
+  .change-practice-banner::before{
+    content:"";
+    width:7px;
+    height:7px;
+    border-radius:999px;
+    background:var(--good);
+    flex:0 0 7px;
+  }
   .change-flow-shell{
     display:block;
     width:100%;
@@ -47,6 +46,7 @@
     margin-bottom:14px;
   }
   .change-context-panel,
+  .change-flow-note,
   .change-setup-grid > .autofill-panel{
     border:1px solid var(--border-soft);
     background:transparent;
@@ -56,7 +56,7 @@
     grid-template-columns:minmax(470px,0.72fr) minmax(620px,1.03fr);
     gap:16px;
     align-items:stretch;
-    margin:10px 0 28px;
+    margin:26px 0 34px;
   }
   .change-context-panel{
     padding:16px 18px 15px!important;
@@ -71,7 +71,7 @@
   .change-context-panel::before{content:none}
   .change-panel-title{
     font-family:var(--sans);
-    font-size:10px;
+    font-size:11px;
     font-weight:700;
     letter-spacing:0.14em;
     text-transform:uppercase;
@@ -111,7 +111,7 @@
   }
   .change-context-panel .field{margin-bottom:0}
   .change-context-panel label{
-    font-size:11px;
+    font-size:12px;
     letter-spacing:0;
     text-transform:none;
     color:var(--muted);
@@ -124,10 +124,19 @@
     min-height:34px;
     padding-top:5px;
     padding-bottom:5px;
-    font-size:12px;
+    font-size:13px;
   }
   .change-context-panel select{
     padding-right:32px;
+  }
+  .change-flow-note{
+    padding:8px 2px 0;
+    border:0;
+    border-top:0;
+    background:transparent;
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.45;
   }
   .change-method-tabs{
     display:grid;
@@ -147,7 +156,7 @@
     background:var(--paper);
     color:var(--ink-2);
     font-family:var(--sans);
-    padding:13px 12px 12px;
+    padding:12px 12px 11px;
     cursor:pointer;
     text-align:left;
     display:grid;
@@ -155,7 +164,7 @@
     grid-template-rows:auto auto;
     gap:2px 10px;
     align-items:start;
-    min-height:70px;
+    min-height:66px;
     position:relative;
     transition:background 140ms ease,border-color 140ms ease,box-shadow 140ms ease;
   }
@@ -164,13 +173,13 @@
   .change-method-tab:last-child{border-right:0}
   .change-method-tab:hover{
     background:var(--paper);
-    box-shadow:inset 0 1px 0 rgba(156,61,42,0.13);
+    box-shadow:inset 0 2px 0 rgba(156,61,42,0.18);
   }
   .change-method-tab.active{
-    background:rgba(156,61,42,0.035);
+    background:var(--accent-tint);
     border-color:transparent;
     border-right-color:var(--border-soft);
-    box-shadow:inset 0 1px 0 var(--accent);
+    box-shadow:inset 0 2px 0 var(--accent);
   }
   .change-method-num{
     font-family:var(--mono);
@@ -183,63 +192,17 @@
   .change-method-label{
     display:block;
     font-family:var(--sans);
-    font-size:12px;
+    font-size:13px;
     font-weight:600;
     color:var(--ink);
     line-height:1.08;
   }
   .change-method-meta{
     display:block;
-    margin-top:3px;
-    font-size:10.25px;
+    margin-top:4px;
+    font-size:10.5px;
     color:var(--muted);
     line-height:1.25;
-  }
-  .change-method-stack{
-    display:flex;
-    flex-wrap:wrap;
-    gap:3px;
-    margin-top:5px;
-  }
-  .change-stack-pill{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    min-width:22px;
-    height:16px;
-    padding:0 4px;
-    border:1px solid var(--border);
-    color:var(--muted);
-    background:rgba(250,247,241,0.66);
-    font-family:var(--mono);
-    font-size:8px;
-    line-height:1;
-    letter-spacing:0.04em;
-  }
-  .change-method-tab.active .change-stack-pill{
-    border-color:rgba(156,61,42,0.28);
-    color:var(--accent);
-    background:rgba(156,61,42,0.055);
-  }
-  .change-adjustment-key{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px 12px;
-    align-items:center;
-    padding:8px 2px 0;
-    color:var(--muted);
-    font-size:10.5px;
-    line-height:1.3;
-  }
-  .change-adjustment-key-title{
-    font-family:var(--mono);
-    font-size:9px;
-    letter-spacing:0.1em;
-    text-transform:uppercase;
-    color:var(--faint);
-  }
-  .change-adjustment-key span:not(.change-adjustment-key-title){
-    white-space:nowrap;
   }
   .change-method-pill{
     display:none;
@@ -263,64 +226,51 @@
     display:none;
     max-width:none!important;
     margin:0!important;
-    padding:24px 0 0!important;
+    padding:28px 0 0!important;
     animation:none!important;
   }
   .change-method-panel.active{display:block}
   .change-active-head{
-    display:none;
+    display:block;
     border-bottom:0;
-    margin:0 0 20px;
+    margin:0 0 18px;
     padding-bottom:0;
   }
-  .change-active-kicker,
-  .change-active-title{display:none}
+  .change-active-kicker{
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .change-active-kicker::before{
+    content:"\00A7";
+    font-family:var(--serif);
+    font-size:14px;
+    letter-spacing:0;
+    color:var(--accent);
+  }
+  .change-active-title{
+    display:none;
+    font-family:var(--serif);
+    font-size:38px;
+    line-height:1.08;
+    color:var(--ink);
+    margin:0;
+    letter-spacing:-0.02em;
+  }
+  .change-active-title .accent-title{color:var(--accent)}
   .change-active-copy{
     color:var(--ink-2);
-    font-size:14.5px;
+    font-size:14px;
     line-height:1.55;
-    max-width:980px;
+    max-width:860px;
     margin-top:0;
   }
   .change-active-method{display:none}
-  #change-analysis .formula-disclosure{
-    display:none;
-    align-items:flex-start;
-    gap:8px;
-    margin:7px 0 8px;
-    max-width:100%;
-  }
-  #change-analysis .formula-disclosure summary{
-    flex:0 0 auto;
-    min-height:26px;
-    padding:4px 10px;
-    border-color:rgba(156,61,42,0.22);
-    background:transparent;
-    color:var(--accent);
-    box-shadow:none;
-    font-size:11px;
-  }
-  #change-analysis .formula-disclosure summary:hover{
-    background:var(--accent-tint);
-    border-color:rgba(156,61,42,0.32);
-  }
-  #change-analysis .formula-disclosure[open] summary{
-    margin-bottom:0;
-  }
-  #change-analysis .formula-disclosure .info-box{
-    flex:1 1 auto;
-    max-width:none;
-    margin:0;
-    padding:5px 9px;
-    min-height:26px;
-    border-color:var(--border-soft);
-    background:rgba(250,247,241,0.42);
-    font-size:10.5px;
-    line-height:1.35;
-    white-space:nowrap;
-    overflow-x:auto;
-    overflow-y:hidden;
-  }
   .change-method-panel > .panel,
   .change-method-panel > .autofill-panel,
   .change-method-panel > .apa-wrap{
@@ -328,7 +278,7 @@
     border-color:var(--border-soft);
   }
   .change-setup-grid > .autofill-panel{
-    background:rgba(244,240,232,0.82);
+    background:rgba(250,247,241,0.28);
     border:1px solid var(--border-soft)!important;
     border-radius:6px;
     padding:16px 18px!important;
@@ -341,7 +291,7 @@
     align-items:baseline;
     gap:8px;
     font-family:var(--sans);
-    font-size:12px;
+    font-size:13.5px;
     font-weight:600;
     color:var(--ink);
     letter-spacing:0;
@@ -351,7 +301,7 @@
   }
   #change-analysis .autofill-panel .hint{
     font-family:var(--sans);
-    font-size:9.75px;
+    font-size:10.5px;
     color:var(--muted);
     font-weight:400;
   }
@@ -366,7 +316,7 @@
     background:var(--paper);
     border-color:var(--border);
     box-shadow:none;
-    font-size:12px;
+    font-size:13.5px;
   }
   #change-analysis .autofill-panel .combo-input:focus{
     border-color:var(--accent);
@@ -5509,83 +5459,75 @@
   const methods = [
     {
       id:'sdi',
-      label:'Standard Deviation',
+      label:'SDI',
       title:'Standard Deviation Index',
       homeLabel:'Standard Deviation Index',
-      meta:'Level 1 · SD discrepancy',
-      stack:['SD'],
+      meta:'Descriptive discrepancy',
       badge:'Lean',
-      copy:'Quantifies abnormality of test-retest discrepancy in standard-deviation units. Useful when reliability data are unavailable or for descriptive comparison.',
-      source:'Descriptive standard-deviation discrepancy: SD Δ = (X₂ − X₁) / SD; no reliability correction is applied.'
+      copy:'Quantifies abnormality of test-retest discrepancy in standard-deviation units. Useful when reliability data are unavailable or for descriptive comparison.'
     },
     {
       id:'rci-basic',
-      label:'Simple Reliable Change',
+      label:'Simple RCI',
       title:'Simple Reliable Change',
       homeLabel:'Simple Reliable Change',
-      meta:'Level 2 · Measurement error',
-      stack:['SD','ME'],
+      meta:'Reliability and SD',
       badge:'Classic',
-      copy:'Jacobson & Truax (1991). Computes whether observed change exceeds measurement error, using the test reliability coefficient and standard deviation.',
-      source:'Jacobson & Truax (1991): RCI = (X₂ − X₁) / Sdiff, where Sdiff = √(2 · SEM²) and SEM = SD · √(1 − r).'
+      copy:'Jacobson & Truax (1991). Computes whether observed change exceeds measurement error, using the test reliability coefficient and standard deviation.'
     },
     {
       id:'rci-practice',
-      label:'Practice-Adjusted',
+      label:'Practice Adjusted',
       title:'Practice Effect-Adjusted Change',
       homeLabel:'Practice Effect-Adjusted',
-      meta:'Level 3 · Practice effect adjusted',
-      stack:['SD','ME','PE'],
+      meta:'Controls average retest gain',
       badge:'Retest',
-      copy:'Iverson (2001). Adjusts the standard RCI to control for the average improvement observed between assessments in the normative sample.',
-      source:'Iverson (2001): RCI = [(X₂ − X₁) − (M₂ − M₁)] / Sdiff, where Sdiff = √(SEM₁² + SEM₂²).'
+      copy:'Iverson (2001). Adjusts the standard RCI to control for the average improvement observed between assessments in the normative sample.'
     },
     {
       id:'rci-srb',
-      label:'Regression-Based',
+      label:'SRB',
       title:'Standardised Regression-Based Change',
       homeLabel:'Standardised Regression-Based',
-      meta:'Level 4 · Baseline-predicted retest',
-      stack:['REG','RTM','PE'],
+      meta:'Predicts retest score',
       badge:'Model',
-      copy:'McSweeney et al. (1993). Predicts expected retest performance from baseline and standardises the residual against the standard error of estimate.',
-      source:'McSweeney et al. (1993): RCI = (X₂ − Ŷ₂) / SEE, where Ŷ₂ = a + b · X₁ and b = r · (SD₂ / SD₁).'
+      copy:'McSweeney et al. (1993). Predicts expected retest performance from baseline and standardises the residual against the standard error of estimate.'
     },
     {
       id:'rci-crawford',
-      label:'Crawford Regression-Based',
+      label:'Crawford',
       title:'Crawford Regression-Based Change',
       homeLabel:'Crawford Regression-Based',
-      meta:'Level 5 · Sample-size adjusted',
-      stack:['REG','RTM','PE','N'],
+      meta:'Recommended where norms fit',
       badge:'Preferred',
-      copy:'Crawford & Garthwaite (2007). Extends the standardised regression-based approach to use a t-distributed test statistic that incorporates the normative sample size (N), correctly accounting for uncertainty in the regression parameters when N is modest. Returns a sample-size-adjusted standard error of prediction.',
-      source:'Crawford & Garthwaite (2007): t(RB) = (X₂ − Ŷ₂) / SEpred, where SEpred adjusts SEE for normative N and baseline distance from M₁.'
+      copy:'Crawford & Garthwaite (2007). Extends the standardised regression-based approach to use a t-distributed test statistic that incorporates the normative sample size (N), correctly accounting for uncertainty in the regression parameters when N is modest. Returns a sample-size-adjusted standard error of prediction.'
     }
   ];
   const main = document.querySelector('main.main');
   const firstMethod = document.getElementById(methods[0].id);
   if (!main || !firstMethod) return;
 
+  function methodTitleHtml(title){
+    if (title === 'Crawford Regression-Based Change') return '<span class="accent-title">Crawford Regression-Based</span> Reliable Change Index';
+    if (title === 'Standardised Regression-Based Change') return '<span class="accent-title">Standardised Regression-Based</span> Reliable Change Index';
+    if (title === 'Practice Effect-Adjusted Change') return '<span class="accent-title">Practice Effect-Adjusted</span> Reliable Change Index';
+    if (title === 'Simple Reliable Change') return '<span class="accent-title">Simple</span> Reliable Change Index';
+    if (title === 'Standard Deviation Index') return '<span class="accent-title">Standard Deviation</span> Index';
+    return title;
+  }
+
   const consolidated = document.createElement('section');
   consolidated.className = 'section';
   consolidated.id = 'change-analysis';
   consolidated.innerHTML = `
-    <div class="eyebrow" id="change-main-eyebrow">Standard Deviation Index</div>
+    <div class="eyebrow" id="change-main-eyebrow">Reliable Change · Consolidated Practice Page</div>
     <h1 class="section-title" id="change-main-title">Change <em>Analysis</em></h1>
-    <p class="section-desc" id="change-main-desc">Formula basis: descriptive standard-deviation discrepancy, SD Δ = (X₂ − X₁) / SD; no reliability correction is applied.</p>
+    <p class="section-desc">One continuous workspace for selecting a change model, entering retest data, reviewing results, and copying the APA table.</p>
+    <div class="change-practice-banner">Practice file only: this page is for trying the consolidated layout without changing the live index file.</div>
     <div class="change-flow-shell">
       <aside class="change-flow-side">
         <div class="change-method-tabs" role="tablist" aria-label="Change analysis method"></div>
-        <div class="change-adjustment-key">
-          <span class="change-adjustment-key-title">Features Key</span>
-          <span><strong>SD</strong> = descriptive SD discrepancy</span>
-          <span><strong>ME</strong> = measurement error adjustment</span>
-          <span><strong>PE</strong> = practice/retest mean adjustment</span>
-          <span><strong>REG</strong> = regression-based prediction</span>
-          <span><strong>RTM</strong> = regression to the mean</span>
-          <span><strong>N</strong> = sample-size/prediction uncertainty adjustment</span>
-        </div>
+        <div class="change-flow-note">Select a method, then complete the shared context and test rows in one continuous workflow.</div>
       </aside>
       <div class="change-method-body"></div>
     </div>
@@ -5596,7 +5538,6 @@
   const body = consolidated.querySelector('.change-method-body');
   const mainTitle = consolidated.querySelector('#change-main-title');
   const mainEyebrow = consolidated.querySelector('#change-main-eyebrow');
-  const mainDesc = consolidated.querySelector('#change-main-desc');
 
   methods.forEach((method, index) => {
     const panel = document.getElementById(method.id);
@@ -5613,7 +5554,6 @@
       <span class="change-method-main">
         <span class="change-method-label">${method.label}</span>
         <span class="change-method-meta">${method.meta}</span>
-        <span class="change-method-stack">${method.stack.map(item => `<span class="change-stack-pill">${item}</span>`).join('')}</span>
       </span>
       <span class="change-method-pill">${method.badge}</span>
     `;
@@ -5623,6 +5563,8 @@
     head.className = 'change-active-head';
     head.innerHTML = `
       <div>
+        <div class="change-active-kicker">${method.title}</div>
+        <h2 class="change-active-title">${methodTitleHtml(method.title)}</h2>
         <p class="change-active-copy">${method.copy}</p>
       </div>
       <div class="change-active-method">${method.badge}</div>
@@ -5703,12 +5645,11 @@
     });
     const method = methods.find(item => item.id === id);
     if (mainTitle && method){
-      mainTitle.innerHTML = `Change <em>Analysis</em><span class="change-title-model">${method.title}</span>`;
+      mainTitle.innerHTML = `Change <em>Analysis</em>: <span class="ink">${method.label}</span>`;
     }
     if (mainEyebrow && method){
       mainEyebrow.textContent = method.title;
     }
-    if (mainDesc && method) mainDesc.innerHTML = method.source;
     if (opts.updateHash !== false && window.location.hash !== `#${id}`){
       history.replaceState(null, '', `#${id}`);
     }
