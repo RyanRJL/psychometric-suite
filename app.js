@@ -4511,11 +4511,12 @@ function renderReportTestOptions(){
         <div class="report-role-band-head">${escapeHtml(REPORT_ROLE_LABELS[role] || 'Measures')}</div>
         ${opts.map(option => {
           const isAdded = reportOptionAlreadyAdded(section, option.key);
-          const checked = reportState.selectedOptionKeys.has(option.key) && !isAdded;
+          // Checkbox now reflects "in this section?" — tick to add, untick to remove
+          const checked = isAdded || reportState.selectedOptionKeys.has(option.key);
           const badge = isAdded ? 'Added' : coreKeySet.has(option.key) ? 'Core' : '';
           return `
-            <label class="report-test-option ${isAdded ? 'is-added' : ''} ${checked ? 'is-selected' : ''}">
-              <input type="checkbox" data-rw-option="${escapeAttr(option.key)}" ${checked ? 'checked' : ''} ${isAdded ? 'disabled' : ''}>
+            <label class="report-test-option ${isAdded ? 'is-added' : ''} ${checked && !isAdded ? 'is-selected' : ''}">
+              <input type="checkbox" data-rw-option="${escapeAttr(option.key)}" ${checked ? 'checked' : ''}>
               <span>
                 <span class="report-test-name">${escapeHtml(option.displayName)}</span>
                 <span class="report-test-family">${escapeHtml(option.construct)}</span>
@@ -5121,10 +5122,23 @@ function setupReportWriter(){
   document.getElementById('rw-test-list')?.addEventListener('change', e => {
     const checkbox = e.target.closest('[data-rw-option]');
     if (!checkbox) return;
+    const section = reportActiveSection();
+    if (!section){
+      checkbox.checked = false;
+      return showToast('Add a report section first', true);
+    }
     const key = checkbox.dataset.rwOption;
-    if (checkbox.checked) reportState.selectedOptionKeys.add(key);
-    else reportState.selectedOptionKeys.delete(key);
-    renderReportTestOptions();
+    if (checkbox.checked){
+      // Tick → add immediately to the active section
+      const option = reportOptionsForKeys([key])[0];
+      reportState.selectedOptionKeys.delete(key);
+      if (option) reportAddOption(option); // calls renderReportWriter
+    } else {
+      // Untick → remove all rows in this section that came from this option
+      section.rows = section.rows.filter(row => row.sourceKey !== key);
+      reportState.selectedOptionKeys.delete(key);
+      renderReportWriter();
+    }
   });
   document.getElementById('rw-test-list')?.addEventListener('click', e => {
     const section = reportActiveSection();

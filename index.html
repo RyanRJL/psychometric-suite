@@ -6099,7 +6099,7 @@
   overviewPanel.innerHTML = `
     <p class="change-overview-intro">Five methods for evaluating test–retest change, ranging from descriptive to fully model-based. Pick the model that best matches the data you have available and the inferential rigour required. The Crawford regression-based method is generally preferred when suitable normative test–retest data are available.</p>
     <div class="change-overview-cards">
-      <article class="change-overview-card">
+      <article class="change-overview-card" data-target-method="sdi" tabindex="0" role="button" aria-label="Open Standard Deviation Index method">
         <div class="change-overview-meta"><span class="change-overview-num">01</span><span class="change-overview-level">Level 1 · Descriptive</span></div>
         <h3>Standard Deviation Index</h3>
         <p>Quantifies the difference between two scores in standard-deviation units (SDΔ). Useful as a transparent, distribution-free index of magnitude when test–retest reliability data are unavailable, or when a quick descriptive summary is sufficient. <strong>Caveat:</strong> does not control for measurement error, practice effects, or regression to the mean — should not be used alone to claim "reliable change".</p>
@@ -6108,7 +6108,7 @@
           <span class="change-overview-feature is-none">Descriptive only — no statistical adjustments</span>
         </div>
       </article>
-      <article class="change-overview-card">
+      <article class="change-overview-card" data-target-method="rci-basic" tabindex="0" role="button" aria-label="Open Simple Reliable Change method">
         <div class="change-overview-meta"><span class="change-overview-num">02</span><span class="change-overview-level">Level 2 · Measurement error</span></div>
         <h3>Simple Reliable Change</h3>
         <p class="change-overview-cite">Jacobson &amp; Truax (1991)</p>
@@ -6118,7 +6118,7 @@
           <span class="change-overview-feature is-on" title="Tests whether change exceeds the standard error of measurement, derived from the test's reliability coefficient.">Measurement error</span>
         </div>
       </article>
-      <article class="change-overview-card">
+      <article class="change-overview-card" data-target-method="rci-practice" tabindex="0" role="button" aria-label="Open Practice Effect-Adjusted method">
         <div class="change-overview-meta"><span class="change-overview-num">03</span><span class="change-overview-level">Level 3 · Practice-adjusted</span></div>
         <h3>Practice Effect-Adjusted</h3>
         <p class="change-overview-cite">Iverson (2001)</p>
@@ -6129,7 +6129,7 @@
           <span class="change-overview-feature is-on" title="Subtracts the average retest improvement seen in the normative sample.">Practice effect</span>
         </div>
       </article>
-      <article class="change-overview-card">
+      <article class="change-overview-card" data-target-method="rci-srb" tabindex="0" role="button" aria-label="Open Standardised Regression-Based method">
         <div class="change-overview-meta"><span class="change-overview-num">04</span><span class="change-overview-level">Level 4 · Regression-based</span></div>
         <h3>Standardised Regression-Based</h3>
         <p class="change-overview-cite">McSweeney et al. (1993)</p>
@@ -6141,7 +6141,7 @@
           <span class="change-overview-feature is-on" title="Predicts retest from baseline, automatically correcting for regression to the mean at extreme baseline scores.">Regression to the mean</span>
         </div>
       </article>
-      <article class="change-overview-card change-overview-card-recommended">
+      <article class="change-overview-card change-overview-card-recommended" data-target-method="rci-crawford" tabindex="0" role="button" aria-label="Open Crawford Regression-Based method">
         <div class="change-overview-meta"><span class="change-overview-num">05</span><span class="change-overview-level">Level 5 · Sample-size adjusted</span></div>
         <h3>Crawford Regression-Based <span class="change-overview-badge">Recommended</span></h3>
         <p class="change-overview-cite">Crawford &amp; Garthwaite (2007)</p>
@@ -6196,6 +6196,18 @@
 
   // Set initial state to overview
   activateMethod('overview', { updateHash: false });
+
+  // Make the overview description cards clickable — each opens its method tab
+  overviewPanel.querySelectorAll('.change-overview-card[data-target-method]').forEach(card => {
+    const go = () => {
+      const id = card.dataset.targetMethod;
+      if (id) activateMethod(id);
+    };
+    card.addEventListener('click', go);
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); }
+    });
+  });
 
   function showChangeSection(navItem){
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));

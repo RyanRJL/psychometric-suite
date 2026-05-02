@@ -4756,11 +4756,18 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   padding:14px 16px 14px;
   display:flex;
   flex-direction:column;
-  transition:box-shadow var(--t-base) var(--ease), transform var(--t-base) var(--ease);
+  cursor:pointer;
+  transition:box-shadow var(--t-base) var(--ease), transform var(--t-base) var(--ease), border-color var(--t-base) var(--ease);
 }
 #change-analysis .change-overview-card:hover{
   box-shadow:var(--shadow-2);
   transform:translateY(-1px);
+  border-color:rgba(20,15,5,0.14);
+}
+#change-analysis .change-overview-card:active{transform:translateY(0)}
+#change-analysis .change-overview-card:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
 }
 #change-analysis .change-overview-card-recommended{
   background:linear-gradient(180deg, #FAF7F0 0%, #FFFFFF 35%);
@@ -5194,6 +5201,12 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 /* Build/Scores grid — compact */
 #report-writer .rw-build-grid{
   margin-bottom:18px!important;
+}
+
+/* Shrink the test-picker browser so the whole Build tab fits without
+   page-scrolling — internal scroll handles overflow within the box. */
+#report-writer .report-test-browser{
+  max-height:300px!important;
 }
 
 /* Hide the redundant "Options" kicker on the Setup tab — the field labels
