@@ -27,7 +27,10 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-body{display:flex;min-height:100vh;overflow:hidden}
+/* Global 10% downscale — compensates for 100% browser zoom and tightens the
+   layout for minimal scrolling. Uses `zoom` (better than transform: scale —
+   it preserves layout flow, scrollbars, and click targets). */
+body{display:flex;min-height:100vh;overflow:hidden;zoom:0.9}
 
 /* SIDEBAR */
 .sidebar{
