@@ -1882,14 +1882,14 @@ function renderRciApa(method){
     ]);
   } else if (method === 'rci-srb'){
     columns = baseColumns.concat([
-      { key:'predicted', label:'Ŷ₂', group:'Results', num:true, defaultVisible:false, render:r => safe(calcSrbRow(r), 'predicted') },
+      { key:'predicted', label:'Ŷ₂', group:'Results', num:true, render:r => safe(calcSrbRow(r), 'predicted') },
       { key:'rci', label:'RCI (z)', group:'Results', num:true, render:r => safe(calcSrbRow(r), 'rci') },
       { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcSrbRow(r)) },
       { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcSrbRow(r)) }
     ]);
   } else {
     columns = baseColumns.concat([
-      { key:'predicted', label:'Ŷ₂', group:'Results', num:true, defaultVisible:false, render:r => safe(calcCrawfordRow(r), 'predicted') },
+      { key:'predicted', label:'Ŷ₂', group:'Results', num:true, render:r => safe(calcCrawfordRow(r), 'predicted') },
       { key:'trb', label:'<i>t</i>(RB)', group:'Results', num:true, render:r => safe(calcCrawfordRow(r), 'rci') },
       { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcCrawfordRow(r)) },
       { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcCrawfordRow(r)) }
@@ -2400,83 +2400,15 @@ function fmtPctBr(v){
 }
 
 // Tab switching for premorbid section
-const PRE_TAB_ORDER = ['inputs', 'estimates', 'predict', 'opiepredict'];
-const PRE_TAB_LABELS = {
-  inputs: 'Inputs',
-  estimates: 'Premorbid Estimates',
-  predict: 'ToPF Predicted vs Actual',
-  opiepredict: 'OPIE-4 Predicted vs Actual'
-};
-
-function switchPreTab(tabId){
-  document.querySelectorAll('[data-pre-tab]').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.pre-tab-content').forEach(c => c.classList.remove('active'));
-  const tabBtn = document.querySelector(`[data-pre-tab="${tabId}"]`);
-  if (tabBtn) tabBtn.classList.add('active');
-  const content = document.getElementById('pre-' + tabId);
-  if (content) content.classList.add('active');
-  updatePreNav(tabId);
-
-  // Smart scroll: only scroll the tab strip into view if it's currently NOT visible.
-  // This prevents the page from jumping when the user is already looking at the tabs,
-  // but ensures they see the new content if they were scrolled far below.
-  const tabsStrip = document.querySelector('#premorbid .pre-tabs');
-  if (tabsStrip){
-    const rect = tabsStrip.getBoundingClientRect();
-    const topbarH = 108; // fixed topbar height
-    // If tabs are above viewport (negative top) or below the fold, bring them just under the topbar
-    if (rect.top < topbarH + 8 || rect.top > window.innerHeight){
-      const offset = window.scrollY + rect.top - topbarH - 16;
-      window.scrollTo({ top: offset, behavior: 'smooth' });
-    }
-    // Otherwise: do nothing — user stays exactly where they were, content swaps in place
-  }
-}
-
-function updatePreNav(activeTabId){
-  const idx = PRE_TAB_ORDER.indexOf(activeTabId);
-  if (idx === -1) return;
-  const back = document.querySelector('.pre-nav-back');
-  const next = document.querySelector('.pre-nav-next');
-  const step = document.getElementById('pre-nav-step');
-  if (!back || !next) return;
-
-  // Step counter ("Step 2 of 4")
-  if (step) step.textContent = `Step ${idx + 1} of ${PRE_TAB_ORDER.length}`;
-
-  // Back button
-  if (idx > 0){
-    const prevId = PRE_TAB_ORDER[idx - 1];
-    back.style.visibility = 'visible';
-    back.dataset.goTab = prevId;
-    const lbl = back.querySelector('.pre-nav-back-label');
-    if (lbl) lbl.textContent = 'Back: ' + PRE_TAB_LABELS[prevId];
-  } else {
-    back.style.visibility = 'hidden';
-  }
-
-  // Next button
-  if (idx < PRE_TAB_ORDER.length - 1){
-    const nextId = PRE_TAB_ORDER[idx + 1];
-    next.style.visibility = 'visible';
-    next.dataset.goTab = nextId;
-    const lbl = next.querySelector('.pre-nav-next-label');
-    if (lbl) lbl.textContent = 'Next: ' + PRE_TAB_LABELS[nextId];
-  } else {
-    next.style.visibility = 'hidden';
-  }
-}
-
 function setupPreTabs(){
   document.querySelectorAll('[data-pre-tab]').forEach(tab => {
-    tab.addEventListener('click', () => switchPreTab(tab.dataset.preTab));
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('[data-pre-tab]').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.pre-tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      preGet('pre-' + tab.dataset.preTab).classList.add('active');
+    });
   });
-  const back = document.querySelector('.pre-nav-back');
-  const next = document.querySelector('.pre-nav-next');
-  if (back) back.addEventListener('click', () => { if (back.dataset.goTab) switchPreTab(back.dataset.goTab); });
-  if (next) next.addEventListener('click', () => { if (next.dataset.goTab) switchPreTab(next.dataset.goTab); });
-  // Initialise nav state for the default-active tab
-  updatePreNav('inputs');
 }
 
 // Build the achieved-input table for ToPF Predicted vs Actual
@@ -3021,98 +2953,6 @@ function applyRciGroupedHeaders(){
     row.innerHTML = groups.map(g => `<th colspan="${g.c}">${g.t}</th>`).join('');
     table.tHead.insertBefore(row, table.tHead.firstChild);
   });
-  // After group rows exist, set up the visual lock toggle for each table
-  Object.keys(specs).forEach(id => setupNormsLockToggle(id));
-}
-
-/* ---- Norms visual-lock toggle ----
-   Aesthetic only: when "locked", norm columns visually fade and their
-   inputs are disabled. Layout is untouched — no display:none, no width
-   changes. The user can toggle via a small pill button next to the
-   "Test data & patient scores" heading. */
-function setupNormsLockToggle(tableId){
-  const table = document.getElementById(tableId);
-  if (!table || !table.tHead) return;
-  const groupRow = table.tHead.querySelector('.table-group-row');
-  if (!groupRow) return;
-  // Compute the column range covered by the "Norms" group cell
-  let startCol = 0, endCol = 0, normsCell = null;
-  for (const c of groupRow.children){
-    const span = parseInt(c.colSpan || 1, 10);
-    if ((c.textContent || '').trim() === 'Norms'){
-      normsCell = c;
-      endCol = startCol + span;
-      break;
-    }
-    startCol += span;
-  }
-  if (!normsCell) return;
-  // Tag norm cells (header + body) so CSS can target them
-  function tagAll(){
-    Array.from(table.querySelectorAll('thead tr:not(.table-group-row), tbody tr')).forEach(row => {
-      Array.from(row.children).forEach((cell, i) => {
-        if (i >= startCol && i < endCol) cell.dataset.normCell = 'true';
-        else delete cell.dataset.normCell;
-      });
-    });
-    normsCell.dataset.normCell = 'true';
-    // If currently locked, ensure newly-added inputs are also disabled
-    if (table.classList.contains('norms-locked')){
-      table.querySelectorAll('[data-norm-cell="true"] input').forEach(inp => { inp.disabled = true; });
-    }
-  }
-  tagAll();
-  // Re-tag when tbody is re-rendered (add row, autofill, etc.)
-  if (!table.dataset.normsLockObserver){
-    new MutationObserver(() => tagAll()).observe(table.tBodies[0] || table, { childList: true, subtree: true });
-    table.dataset.normsLockObserver = '1';
-  }
-  // Inject the toggle button INSIDE the "Norms" group cell itself
-  if (!normsCell.querySelector('.norms-lock-btn')){
-    const labelText = (normsCell.textContent || 'Norms').trim();
-    normsCell.innerHTML = `
-      <span class="norms-group-label">${labelText}</span>
-      <button type="button" class="norms-lock-btn" aria-pressed="true" data-table-id="${tableId}">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="norms-lock-icon">
-          <rect x="3" y="7.5" width="10" height="6.5" rx="1"/>
-          <path d="M5 7.5V5.5a3 3 0 0 1 6 0v2"/>
-        </svg>
-        <span class="norms-lock-label">Unlock</span>
-      </button>
-    `;
-    normsCell.querySelector('.norms-lock-btn').addEventListener('click', e => {
-      e.stopPropagation();
-      toggleNormsLock(tableId);
-    });
-  }
-  // Default state: locked (norms faded, inputs disabled)
-  if (!table.dataset.normsLockInitialized){
-    toggleNormsLock(tableId, true);
-    table.dataset.normsLockInitialized = '1';
-  }
-}
-
-function toggleNormsLock(tableId, force){
-  const table = document.getElementById(tableId);
-  if (!table) return;
-  const willLock = (typeof force === 'boolean') ? force : !table.classList.contains('norms-locked');
-  table.classList.toggle('norms-locked', willLock);
-  // Disable/enable inputs in norm columns
-  table.querySelectorAll('[data-norm-cell="true"] input').forEach(inp => { inp.disabled = willLock; });
-  // Sync button label + state
-  const btn = table.querySelector('.norms-lock-btn[data-table-id="' + tableId + '"]');
-  if (btn){
-    btn.setAttribute('aria-pressed', String(willLock));
-    const label = btn.querySelector('.norms-lock-label');
-    if (label) label.textContent = willLock ? 'Unlock' : 'Lock';
-    // Swap the lock icon between closed (locked) and open (unlocked) shackle
-    const icon = btn.querySelector('.norms-lock-icon');
-    if (icon){
-      icon.innerHTML = willLock
-        ? '<rect x="3" y="7.5" width="10" height="6.5" rx="1"/><path d="M5 7.5V5.5a3 3 0 0 1 6 0v2"/>'
-        : '<rect x="3" y="7.5" width="10" height="6.5" rx="1"/><path d="M5 7.5V5.5a3 3 0 0 1 6 0"/>';
-    }
-  }
 }
 
 
@@ -4723,19 +4563,6 @@ function reportWalkPrev(){
   const current = reportCurrentStepIdx();
   if (current > 0) reportApplyStepIdx(current - 1);
 }
-// Friendly label for any step idx ("Setup", "Build: X", "Scores: X")
-function reportStepLabel(idx){
-  const N = reportState.sections.length;
-  if (idx <= 0) return 'Setup';
-  if (idx <= N){
-    const section = reportState.sections[idx - 1];
-    return section ? `Build: ${reportSectionHeading(section)}` : 'Build';
-  }
-  const sIdx = idx - N - 1;
-  const section = reportState.sections[sIdx];
-  return section ? `Scores: ${reportSectionHeading(section)}` : 'Scores';
-}
-
 function reportUpdateWizardNav(){
   const nav = document.getElementById('rw-wizard-nav');
   if (!nav) return;
@@ -4747,28 +4574,18 @@ function reportUpdateWizardNav(){
   const progress = nav.querySelector('#rw-wizard-progress');
   if (prevBtn) prevBtn.disabled = current === 0;
   if (nextBtn) nextBtn.disabled = (current === total - 1) || (current === 0 && N === 0);
-
-  // Update Back/Next button destination labels
-  if (prevBtn){
-    const lbl = prevBtn.querySelector('.rw-wizard-prev-label');
-    if (lbl){
-      lbl.textContent = current > 0 ? 'Back: ' + reportStepLabel(current - 1) : 'Back';
-    }
-  }
-  if (nextBtn){
-    const lbl = nextBtn.querySelector('.rw-wizard-next-label');
-    if (lbl){
-      lbl.textContent = (current < total - 1) ? 'Next: ' + reportStepLabel(current + 1) : 'Next';
-    }
-  }
-
-  // Progress label — concise step-of-total summary
   if (progress){
     let label;
     if (current === 0){
-      label = N ? `Step 1 of ${total} · Setup (${N} section${N === 1 ? '' : 's'} ready)` : `Step 1 of ${total} · Setup (add a section to continue)`;
+      label = N ? `Setup · ${N} section${N === 1 ? '' : 's'} ready` : 'Setup · add a section to continue';
+    } else if (current >= 1 && current <= N){
+      const idx = current - 1;
+      const section = reportState.sections[idx];
+      label = section ? `Build · ${reportSectionHeading(section)}  (${idx + 1} of ${N})` : 'Build';
     } else {
-      label = `Step ${current + 1} of ${total} · ${reportStepLabel(current)}`;
+      const idx = current - N - 1;
+      const section = reportState.sections[idx];
+      label = section ? `Scores · ${reportSectionHeading(section)}  (${idx + 1} of ${N})` : 'Scores';
     }
     progress.textContent = label;
   }

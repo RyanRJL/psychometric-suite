@@ -1068,15 +1068,9 @@
       <!-- Persistent wizard nav (shared across tabs, sticky to viewport bottom) -->
       <div class="rw-wizard-nav rw-wizard-nav-sticky" id="rw-wizard-nav">
         <button class="btn rw-clear-btn" id="rw-reset" type="button" title="Clear all sections, measures, and saved state">↺ Clear all</button>
-        <button class="btn btn-secondary" type="button" data-rw-wizard="prev">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px;margin-right:6px;vertical-align:-2px"><polyline points="10,3 5,8 10,13"/></svg>
-          <span class="rw-wizard-prev-label">Back</span>
-        </button>
+        <button class="btn" type="button" data-rw-wizard="prev">← Previous</button>
         <span class="rw-wizard-progress" id="rw-wizard-progress"></span>
-        <button class="btn btn-primary" type="button" data-rw-wizard="next">
-          <span class="rw-wizard-next-label">Next</span>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px;margin-left:6px;vertical-align:-2px"><polyline points="6,3 11,8 6,13"/></svg>
-        </button>
+        <button class="btn btn-primary" type="button" data-rw-wizard="next">Next →</button>
       </div>
 
       <div class="panel report-panel report-output-panel">
@@ -1731,15 +1725,6 @@
     <p class="section-desc">Estimate premorbid cognitive ability using the Test of Premorbid Functioning (ToPF), demographic regression equations, and the Oklahoma Premorbid Intelligence Estimate (OPIE-4). The second tab compares ToPF-predicted scores against actual WAIS-IV / WMS-IV index scores with base-rate look-ups. The third tab compares OPIE-4-predicted prorated FSIQ / GAI against the patient's achieved WAIS-IV indices.</p>
 
 
-    <div class="tabs pre-tabs" aria-label="Premorbid analysis views">
-      <div class="tab active" data-pre-tab="inputs"><span class="pre-tab-num">1</span><span>Inputs</span></div>
-      <div class="tab" data-pre-tab="estimates"><span class="pre-tab-num">2</span><span>Premorbid Estimates</span></div>
-      <div class="tab" data-pre-tab="predict"><span class="pre-tab-num">3</span><span>ToPF Predicted vs Actual</span></div>
-      <div class="tab" data-pre-tab="opiepredict"><span class="pre-tab-num">4</span><span>OPIE-4 Predicted vs Actual</span></div>
-    </div>
-
-    <!-- Tab 1: Inputs -->
-    <div class="pre-tab-content active" id="pre-inputs">
     <div class="panel panel-emphasis premorbid-input-panel">
       <h3 class="sub-title" style="margin-top:0">Inputs</h3>
       <p class="pre-input-intro">Enter whichever predictors are available. Leave unavailable fields blank; the estimate table will update only for models with enough information.</p>
@@ -1821,10 +1806,14 @@
       </div>
     </div>
 
-    </div><!-- /pre-inputs tab content -->
+    <div class="tabs pre-tabs" aria-label="Premorbid analysis views">
+      <div class="tab active" data-pre-tab="estimates"><span class="pre-tab-num">1</span><span>Premorbid Estimates</span></div>
+      <div class="tab" data-pre-tab="predict"><span class="pre-tab-num">2</span><span>ToPF Predicted vs Actual</span></div>
+      <div class="tab" data-pre-tab="opiepredict"><span class="pre-tab-num">3</span><span>OPIE-4 Predicted vs Actual</span></div>
+    </div>
 
-    <!-- Tab 2: Premorbid Estimates -->
-    <div class="pre-tab-content" id="pre-estimates">
+    <!-- Tab A: Premorbid Estimates -->
+    <div class="pre-tab-content active" id="pre-estimates">
       <table class="pre-results-table" id="pre-results-table">
         <thead>
           <tr>
@@ -2020,19 +2009,6 @@
         </div>
         <div class="apa-table-container" id="pre-opiepredict-apa"><div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter age plus a subtest to generate predictions, then add an Achieved score.</div></div>
       </div>
-    </div>
-
-    <!-- Tab navigation footer (Back / Next) -->
-    <div class="pre-tab-nav" id="pre-tab-nav">
-      <button type="button" class="btn btn-secondary pre-nav-back" style="visibility:hidden">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px;margin-right:6px;vertical-align:-2px"><polyline points="10,3 5,8 10,13"/></svg>
-        <span class="pre-nav-back-label">Back</span>
-      </button>
-      <div class="pre-nav-step" id="pre-nav-step"></div>
-      <button type="button" class="btn btn-primary pre-nav-next">
-        <span class="pre-nav-next-label">Next</span>
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px;margin-left:6px;vertical-align:-2px"><polyline points="6,3 11,8 6,13"/></svg>
-      </button>
     </div>
   </section>
 
@@ -6070,95 +6046,10 @@
   }
   wireConsolidatedThresholds();
 
-  // ---- Inject Overview tab + panel (smaller, leftmost; clinical descriptions of each method) ----
-  const overviewTab = document.createElement('button');
-  overviewTab.type = 'button';
-  overviewTab.className = 'change-method-tab change-method-tab-overview active';
-  overviewTab.dataset.changeMethod = 'overview';
-  overviewTab.setAttribute('role', 'tab');
-  overviewTab.setAttribute('aria-selected', 'true');
-  overviewTab.innerHTML = `
-    <span class="change-overview-bubble" aria-hidden="true">?</span>
-    <span class="change-method-overview-label">About</span>
-  `;
-  tabs.insertBefore(overviewTab, tabs.firstChild);
-
-  const overviewPanel = document.createElement('div');
-  overviewPanel.className = 'change-method-panel change-method-panel-overview active';
-  overviewPanel.id = 'overview';
-  overviewPanel.innerHTML = `
-    <p class="change-overview-intro">Five methods for evaluating test–retest change, ranging from descriptive to fully model-based. Pick the model that best matches the data you have available and the inferential rigour required. The Crawford regression-based method is generally preferred when suitable normative test–retest data are available.</p>
-    <div class="change-overview-cards">
-      <article class="change-overview-card">
-        <div class="change-overview-meta"><span class="change-overview-num">01</span><span class="change-overview-level">Level 1 · Descriptive</span></div>
-        <h3>Standard Deviation Index</h3>
-        <p>Quantifies the difference between two scores in standard-deviation units (SDΔ). Useful as a transparent, distribution-free index of magnitude when test–retest reliability data are unavailable, or when a quick descriptive summary is sufficient. <strong>Caveat:</strong> does not control for measurement error, practice effects, or regression to the mean — should not be used alone to claim "reliable change".</p>
-        <div class="change-overview-features">
-          <span class="change-overview-features-label">Adjusts for</span>
-          <span class="change-overview-feature is-none">Descriptive only — no statistical adjustments</span>
-        </div>
-      </article>
-      <article class="change-overview-card">
-        <div class="change-overview-meta"><span class="change-overview-num">02</span><span class="change-overview-level">Level 2 · Measurement error</span></div>
-        <h3>Simple Reliable Change</h3>
-        <p class="change-overview-cite">Jacobson &amp; Truax (1991)</p>
-        <p>The classic RCI. Tests whether observed change exceeds what would be expected from measurement error alone, using the test's reliability coefficient and standard deviation. <strong>Use when:</strong> a published reliability coefficient is available and practice effects in the normative sample are negligible. Assumes equal variance and reliability at both occasions.</p>
-        <div class="change-overview-features">
-          <span class="change-overview-features-label">Adjusts for</span>
-          <span class="change-overview-feature is-on" title="Tests whether change exceeds the standard error of measurement, derived from the test's reliability coefficient.">Measurement error</span>
-        </div>
-      </article>
-      <article class="change-overview-card">
-        <div class="change-overview-meta"><span class="change-overview-num">03</span><span class="change-overview-level">Level 3 · Practice-adjusted</span></div>
-        <h3>Practice Effect-Adjusted</h3>
-        <p class="change-overview-cite">Iverson (2001)</p>
-        <p>Extends Jacobson &amp; Truax by subtracting the average normative practice gain (M₂ − M₁) from the observed change before testing reliability. <strong>Use when:</strong> normative test–retest data show a non-trivial practice effect, and you want to evaluate change above and beyond the typical retest improvement.</p>
-        <div class="change-overview-features">
-          <span class="change-overview-features-label">Adjusts for</span>
-          <span class="change-overview-feature is-on" title="Tests whether change exceeds the standard error of measurement.">Measurement error</span>
-          <span class="change-overview-feature is-on" title="Subtracts the average retest improvement seen in the normative sample.">Practice effect</span>
-        </div>
-      </article>
-      <article class="change-overview-card">
-        <div class="change-overview-meta"><span class="change-overview-num">04</span><span class="change-overview-level">Level 4 · Regression-based</span></div>
-        <h3>Standardised Regression-Based</h3>
-        <p class="change-overview-cite">McSweeney et al. (1993)</p>
-        <p>Predicts the patient's expected retest score from baseline using a normative regression equation, then standardises the residual against the standard error of estimate (SEE). <strong>Use when:</strong> regression to the mean is a concern — particularly relevant for patients with extreme baseline scores. Controls for practice effects and baseline-dependent regression simultaneously.</p>
-        <div class="change-overview-features">
-          <span class="change-overview-features-label">Adjusts for</span>
-          <span class="change-overview-feature is-on" title="Standardises change against the standard error of estimate (SEE), incorporating measurement error.">Measurement error</span>
-          <span class="change-overview-feature is-on" title="Captured by the regression intercept — accounts for typical retest improvement.">Practice effect</span>
-          <span class="change-overview-feature is-on" title="Predicts retest from baseline, automatically correcting for regression to the mean at extreme baseline scores.">Regression to the mean</span>
-        </div>
-      </article>
-      <article class="change-overview-card change-overview-card-recommended">
-        <div class="change-overview-meta"><span class="change-overview-num">05</span><span class="change-overview-level">Level 5 · Sample-size adjusted</span></div>
-        <h3>Crawford Regression-Based <span class="change-overview-badge">Recommended</span></h3>
-        <p class="change-overview-cite">Crawford &amp; Garthwaite (2007)</p>
-        <p>The most rigorous option. Refines the regression-based approach with a t-distributed test statistic that accounts for normative sample size (N) and the patient's distance from the baseline mean. Properly handles uncertainty in the regression parameters when normative N is modest. <strong>Recommended</strong> when suitable test–retest norms are available — especially with smaller normative samples (e.g. clinical or rare-condition norms).</p>
-        <div class="change-overview-features">
-          <span class="change-overview-features-label">Adjusts for</span>
-          <span class="change-overview-feature is-on" title="Standardises change against the standard error of prediction (SEpred), incorporating measurement error.">Measurement error</span>
-          <span class="change-overview-feature is-on" title="Captured by the regression intercept — accounts for typical retest improvement.">Practice effect</span>
-          <span class="change-overview-feature is-on" title="Predicts retest from baseline, correcting for regression to the mean at extreme baseline scores.">Regression to the mean</span>
-          <span class="change-overview-feature is-on change-overview-feature-strong" title="Uses a t-distributed statistic that incorporates the normative sample size N — properly handles uncertainty in the regression parameters when N is modest.">Sample size</span>
-        </div>
-      </article>
-    </div>
-  `;
-  body.insertBefore(overviewPanel, body.firstChild);
-
-  // De-activate the originally-default first method
-  const firstTab = tabs.querySelector('[data-change-method="' + methods[0].id + '"]');
-  if (firstTab) { firstTab.classList.remove('active'); firstTab.setAttribute('aria-selected', 'false'); }
-  const firstPanel = body.querySelector('#' + methods[0].id);
-  if (firstPanel) firstPanel.classList.remove('active');
-
-  let activeMethod = 'overview';
+  let activeMethod = methods[0].id;
 
   function activateMethod(id, options){
-    // Allow 'overview' as a valid id; otherwise fall back to first method
-    if (id !== 'overview' && !methods.some(method => method.id === id)) id = methods[0].id;
+    if (!methods.some(method => method.id === id)) id = methods[0].id;
     const opts = options || {};
     activeMethod = id;
     tabs.querySelectorAll('.change-method-tab').forEach(tab => {
@@ -6169,23 +6060,18 @@
     body.querySelectorAll('.change-method-panel').forEach(panel => {
       panel.classList.toggle('active', panel.id === id);
     });
-    if (id === 'overview'){
-      if (mainTitle) mainTitle.innerHTML = 'Change <em>Analysis</em>';
-      if (mainEyebrow) mainEyebrow.textContent = 'About';
-      if (mainDesc) mainDesc.innerHTML = 'Choose the method below that best fits your data and rigour requirements.';
-    } else {
-      const method = methods.find(item => item.id === id);
-      if (mainTitle && method) mainTitle.textContent = method.title;
-      if (mainEyebrow && method) mainEyebrow.textContent = method.title;
-      if (mainDesc && method) mainDesc.innerHTML = method.source;
+    const method = methods.find(item => item.id === id);
+    if (mainTitle && method){
+      mainTitle.innerHTML = `Change <em>Analysis</em><span class="change-title-model">${method.title}</span>`;
     }
+    if (mainEyebrow && method){
+      mainEyebrow.textContent = method.title;
+    }
+    if (mainDesc && method) mainDesc.innerHTML = method.source;
     if (opts.updateHash !== false && window.location.hash !== `#${id}`){
       history.replaceState(null, '', `#${id}`);
     }
   }
-
-  // Set initial state to overview
-  activateMethod('overview', { updateHash: false });
 
   function showChangeSection(navItem){
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
