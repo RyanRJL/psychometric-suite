@@ -799,6 +799,53 @@ document.getElementById('conv-slider').addEventListener('input', function(){
 // Initialise slider ticks for default score type
 updateSliderTicks(document.getElementById('conv-type').value);
 
+// Click-and-drag on the bell curve to set z-score directly
+(function setupCurveDrag(){
+  const svg = document.getElementById('conv-curve');
+  if (!svg) return;
+  const W = 640, padL = 94, padR = 48;
+  const xMin = -3.5, xMax = 3.5;
+  let dragging = false;
+
+  function clientToZ(clientX){
+    const rect = svg.getBoundingClientRect();
+    const localX = (clientX - rect.left) * (W / rect.width);
+    const z = xMin + (localX - padL) / (W - padL - padR) * (xMax - xMin);
+    return Math.max(-3, Math.min(3, z));
+  }
+  function applyZ(z){
+    const type = document.getElementById('conv-type').value;
+    const scaleParams = {standard:{mean:100,sd:15},t:{mean:50,sd:10},scaled:{mean:10,sd:3},z:{mean:0,sd:1}};
+    let displayVal;
+    if (type === 'percentile'){
+      displayVal = (normCDF(z) * 100).toFixed(1);
+    } else {
+      const s = scaleParams[type] || scaleParams.standard;
+      const raw = s.mean + z * s.sd;
+      displayVal = (type === 'z') ? raw.toFixed(2) : Math.round(raw * 10) / 10;
+    }
+    document.getElementById('conv-value').value = displayVal;
+    renderConverter();
+  }
+
+  svg.addEventListener('pointerdown', e => {
+    dragging = true;
+    try { svg.setPointerCapture(e.pointerId); } catch(_) {}
+    applyZ(clientToZ(e.clientX));
+    e.preventDefault();
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    applyZ(clientToZ(e.clientX));
+  });
+  ['pointerup','pointercancel'].forEach(ev =>
+    svg.addEventListener(ev, e => {
+      dragging = false;
+      try { svg.releasePointerCapture(e.pointerId); } catch(_) {}
+    })
+  );
+})();
+
 // Slider tick marks
 (function initSliderMarks(){
   const wrap = document.getElementById('conv-slider-marks');
@@ -3022,7 +3069,10 @@ function applyRciGroupedHeaders(){
     table.tHead.insertBefore(row, table.tHead.firstChild);
   });
   // After group rows exist, set up the visual lock toggle for each table
-  Object.keys(specs).forEach(id => setupNormsLockToggle(id));
+  // (skip rci-basic — only 2 norm cells, the toggle adds clutter without much benefit)
+  Object.keys(specs)
+    .filter(id => id !== 'rci-basic-table')
+    .forEach(id => setupNormsLockToggle(id));
 }
 
 /* ---- Norms visual-lock toggle ----
@@ -3067,22 +3117,33 @@ function setupNormsLockToggle(tableId){
     new MutationObserver(() => tagAll()).observe(table.tBodies[0] || table, { childList: true, subtree: true });
     table.dataset.normsLockObserver = '1';
   }
-  // Inject the toggle button INSIDE the "Norms" group cell itself
-  if (!normsCell.querySelector('.norms-lock-btn')){
+  // Inject a two-segment "Lock | Unlock" pill INSIDE the Norms group cell
+  if (!normsCell.querySelector('.norms-toggle-pill')){
     const labelText = (normsCell.textContent || 'Norms').trim();
     normsCell.innerHTML = `
       <span class="norms-group-label">${labelText}</span>
-      <button type="button" class="norms-lock-btn" aria-pressed="true" data-table-id="${tableId}">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="norms-lock-icon">
-          <rect x="3" y="7.5" width="10" height="6.5" rx="1"/>
-          <path d="M5 7.5V5.5a3 3 0 0 1 6 0v2"/>
-        </svg>
-        <span class="norms-lock-label">Unlock</span>
-      </button>
+      <div class="norms-toggle-pill" role="group" aria-label="Norm column lock state" data-table-id="${tableId}">
+        <button type="button" class="norms-pill-segment is-active" data-state="locked" aria-pressed="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="7.5" width="10" height="6.5" rx="1"/>
+            <path d="M5 7.5V5.5a3 3 0 0 1 6 0v2"/>
+          </svg>
+          <span>Lock</span>
+        </button>
+        <button type="button" class="norms-pill-segment" data-state="unlocked" aria-pressed="false">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="7.5" width="10" height="6.5" rx="1"/>
+            <path d="M5 7.5V5.5a3 3 0 0 1 6 0"/>
+          </svg>
+          <span>Unlock</span>
+        </button>
+      </div>
     `;
-    normsCell.querySelector('.norms-lock-btn').addEventListener('click', e => {
-      e.stopPropagation();
-      toggleNormsLock(tableId);
+    normsCell.querySelectorAll('.norms-pill-segment').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        toggleNormsLock(tableId, btn.dataset.state === 'locked');
+      });
     });
   }
   // Default state: locked (norms faded, inputs disabled)
@@ -3099,19 +3160,14 @@ function toggleNormsLock(tableId, force){
   table.classList.toggle('norms-locked', willLock);
   // Disable/enable inputs in norm columns
   table.querySelectorAll('[data-norm-cell="true"] input').forEach(inp => { inp.disabled = willLock; });
-  // Sync button label + state
-  const btn = table.querySelector('.norms-lock-btn[data-table-id="' + tableId + '"]');
-  if (btn){
-    btn.setAttribute('aria-pressed', String(willLock));
-    const label = btn.querySelector('.norms-lock-label');
-    if (label) label.textContent = willLock ? 'Unlock' : 'Lock';
-    // Swap the lock icon between closed (locked) and open (unlocked) shackle
-    const icon = btn.querySelector('.norms-lock-icon');
-    if (icon){
-      icon.innerHTML = willLock
-        ? '<rect x="3" y="7.5" width="10" height="6.5" rx="1"/><path d="M5 7.5V5.5a3 3 0 0 1 6 0v2"/>'
-        : '<rect x="3" y="7.5" width="10" height="6.5" rx="1"/><path d="M5 7.5V5.5a3 3 0 0 1 6 0"/>';
-    }
+  // Sync segmented pill state — highlight the segment matching current state
+  const pill = table.querySelector('.norms-toggle-pill[data-table-id="' + tableId + '"]');
+  if (pill){
+    pill.querySelectorAll('.norms-pill-segment').forEach(seg => {
+      const isActive = (seg.dataset.state === 'locked') === willLock;
+      seg.classList.toggle('is-active', isActive);
+      seg.setAttribute('aria-pressed', String(isActive));
+    });
   }
 }
 
@@ -5617,4 +5673,23 @@ refreshAll();
   // Initial sync, plus a small deferred re-sync to catch the JS-built change-analysis section
   syncTopnav();
   setTimeout(syncTopnav, 200);
+})();
+
+/* =====================================================================
+   Score Converter — view-mode tabs (Equivalents / Distribution)
+   ===================================================================== */
+(function(){
+  document.querySelectorAll('#converter .conv-view-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.convView;
+      document.querySelectorAll('#converter .conv-view-tab').forEach(t => {
+        const active = t.dataset.convView === view;
+        t.classList.toggle('is-active', active);
+        t.setAttribute('aria-selected', String(active));
+      });
+      document.querySelectorAll('#converter .conv-view-pane').forEach(p => {
+        p.classList.toggle('is-active', p.dataset.pane === view);
+      });
+    });
+  });
 })();

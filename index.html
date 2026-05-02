@@ -802,8 +802,19 @@
         </div>
       </div>
 
-      <div id="conv-output" style="display: block;">
-        <div class="conv-panel-divider"></div>
+      <!-- Tab strip: Equivalents (default) / Distribution -->
+      <div class="conv-view-tabs" role="tablist" aria-label="Score Converter views">
+        <button class="conv-view-tab is-active" type="button" data-conv-view="equivalents" role="tab" aria-selected="true">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="3.5" height="8"/><rect x="5.5" y="3" width="3.5" height="8"/><rect x="9" y="3" width="3.5" height="8"/></svg>
+          <span>Equivalents &amp; classification</span>
+        </button>
+        <button class="conv-view-tab" type="button" data-conv-view="distribution" role="tab" aria-selected="false">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12c1-0 2-2 3-3 1-2 2-5 3-5 1 0 2 3 3 5 1 1 2 3 3 3"/></svg>
+          <span>Distribution</span>
+        </button>
+      </div>
+
+      <div id="conv-output" class="conv-view-pane is-active" data-pane="equivalents" style="display: block;">
         <div class="conv-strip-header">Score equivalents</div>
         <div class="conv-scores-strip" id="conv-grid"></div>
 
@@ -822,7 +833,7 @@
         <p class="conv-desc-footnote">AACN = American Academy of Clinical Neuropsychology &middot; Ranges shown as Standard Score (SS)</p>
       </div>
 
-      <div class="curve-wrap">
+      <div class="curve-wrap conv-view-pane" data-pane="distribution">
         <svg class="curve-svg" id="conv-curve" viewBox="0 0 600 240">
     <defs>
       <lineargradient id="tail-grad" x1="0" y1="0" x2="0" y2="1">
@@ -5851,9 +5862,9 @@
     },
     {
       id:'rci-srb',
-      label:'Regression-Based',
+      label:'McSweeney Regression-Based',
       title:'Standardised Regression-Based Change',
-      homeLabel:'Standardised Regression-Based',
+      homeLabel:'McSweeneyStandardised Regression-Based',
       meta:'Level 4 · Baseline-predicted retest',
       stack:['REG','RTM','PE'],
       badge:'Model',
@@ -5863,7 +5874,7 @@
     {
       id:'rci-crawford',
       label:'Crawford Regression-Based',
-      title:'Crawford Regression-Based Change',
+      title:'Crawford & Garthwaite Standardised Regression-Based (SRB) Change',
       homeLabel:'Crawford Regression-Based',
       meta:'Level 5 · Sample-size adjusted',
       stack:['REG','RTM','PE','N'],

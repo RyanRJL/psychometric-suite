@@ -1732,7 +1732,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 }
 
 /* ===== Effect Size Tools page (es-*) ===== */
-#effectsize.section{max-width:1180px;padding-top:36px;padding-bottom:48px}
+#effectsize.section{max-width:1320px;padding-top:36px;padding-bottom:48px}
 #effectsize .section-title{margin-bottom:6px}
 #effectsize .panel{padding:14px 18px;margin-bottom:14px}
 #effectsize .field{margin-bottom:0}
@@ -3417,21 +3417,8 @@ input[type="range"]#conv-slider::-moz-range-thumb{
   background:linear-gradient(180deg, #2A2A2A 0%, #1A1A1A 100%)!important;
   color:#FFFFFF!important;
 }
-/* Wechsler / AACN classification chart at the bottom */
-.conv-desc-rows{
-  background:linear-gradient(180deg, #FAF7F0, #F4F1E9)!important;
-  border:1px solid rgba(20,15,5,0.06)!important;
-  border-radius:var(--r-md)!important;
-  padding:14px 16px!important;
-  margin-top:14px;
-}
-.conv-desc-row-line{padding:8px 0;border-bottom:1px solid rgba(20,15,5,0.05)}
-.conv-desc-row-line:last-child{border-bottom:none}
-.conv-desc-pills{display:flex;flex-wrap:wrap;gap:6px}
-.conv-desc-pills > *{
-  font-family:var(--sans);font-size:11.5px;color:#5A5A5A;
-  padding:3px 10px;border-radius:var(--r-pill);
-}
+/* Wechsler / AACN classification carousel — keep original styling (line ~566 onward).
+   No Phase 6 overrides here. */
 
 /* ---------- NEUROPSYCH TABLES ---------- */
 #battery .bat-premorbid-panel{
@@ -4562,9 +4549,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 #change-analysis .change-settings-list{
   display:grid!important;
-  grid-template-columns:1fr 1fr!important;
-  gap:12px!important;
-  align-items:end;
+  grid-template-columns:1fr!important;
+  gap:10px!important;
 }
 #change-analysis .change-settings-list > .field{margin-bottom:0!important}
 #change-analysis .change-settings-list label{
@@ -4963,6 +4949,391 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
+   NEUROPSYCH TABLES — same polish principles as other inner pages
+   - Hide redundant section header (page name in topbar)
+   - Wider section + magazine layout (narrow setup, wide table)
+   - Tighter panels, refined autofill, polished controls
+   ===================================================================== */
+
+/* Hide redundant title + eyebrow (page name in topbar). Keep the
+   description as a refined intro line for first-time users. */
+#battery > .eyebrow,
+#battery > .section-title{display:none!important}
+#battery > .section-desc{
+  display:block!important;
+  font-family:var(--sans)!important;
+  font-size:13px!important;
+  font-style:italic!important;
+  color:#6B6B6B!important;
+  line-height:1.55!important;
+  max-width:780px;
+  margin:0 0 18px!important;
+  padding:0!important;
+  background:transparent!important;
+  border:none!important;
+}
+
+/* Wider section, tighter top */
+#battery.section{
+  max-width:1320px!important;
+  margin-left:auto;
+  margin-right:auto;
+  padding:24px 40px 48px!important;
+}
+
+/* Setup panel + premorbid panel + autofill panel — narrow (magazine-body width).
+   The subtest table breaks out wider when needed (existing behaviour). */
+#battery > .panel:not(.input-table-wrap){
+  max-width:1180px;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+/* Setup panel — flatter, consistent with rest of site */
+#battery > .panel{
+  background:#FFFFFF!important;
+  border:1px solid rgba(20,15,5,0.06)!important;
+  border-radius:var(--r-lg)!important;
+  box-shadow:var(--shadow-1)!important;
+  padding:18px 22px!important;
+  margin-bottom:14px!important;
+}
+
+/* Premorbid comparison panel — cream gradient distinguishes it as optional */
+#battery .bat-premorbid-panel{
+  background:linear-gradient(180deg, #FAF7F0, #F4F1E9)!important;
+  border:1px solid rgba(20,15,5,0.06)!important;
+}
+#battery .bat-premorbid-help{
+  font-family:var(--sans)!important;
+  font-size:12px!important;
+  font-style:italic!important;
+  color:#6B6B6B!important;
+  line-height:1.55!important;
+  margin:10px 0 0!important;
+}
+
+/* Autofill panel — refined */
+#battery .autofill-panel{
+  background:#FFFFFF!important;
+}
+#battery .autofill-row .field label{
+  font-family:var(--sans)!important;
+  font-size:10.5px!important;
+  font-weight:600!important;
+  letter-spacing:0.10em!important;
+  text-transform:uppercase!important;
+  color:#5A5A5A!important;
+}
+#battery .autofill-row .hint{
+  font-family:var(--sans)!important;
+  font-size:11.5px!important;
+  font-weight:400!important;
+  font-style:italic!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+  color:#9A968D!important;
+  margin-left:6px;
+}
+
+/* Field labels in setup grid — consistent uppercase tracking */
+#battery .panel:not(.bat-premorbid-panel) .field label,
+#battery .bat-premorbid-panel .field > label:first-child{
+  font-family:var(--sans)!important;
+  font-size:10.5px!important;
+  font-weight:600!important;
+  letter-spacing:0.10em!important;
+  text-transform:uppercase!important;
+  color:#5A5A5A!important;
+  margin-bottom:6px!important;
+}
+#battery .field .hint{
+  font-family:var(--sans)!important;
+  font-size:11px!important;
+  font-weight:400!important;
+  font-style:italic!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+  color:#9A968D!important;
+  margin-left:4px;
+}
+
+/* The block-title heading above the table (if present) — match other pages */
+#battery .block-title,
+#battery h2.block-title{
+  font-family:var(--serif)!important;
+  font-size:18px!important;
+  font-weight:600!important;
+  letter-spacing:-0.005em!important;
+  color:#1A1A1A!important;
+  margin:8px 0 14px!important;
+  padding-bottom:0;
+  border:none;
+}
+
+/* Subtest input table breaks out wide — full width minus section padding */
+#battery > .input-table-wrap,
+#battery > #bat-table,
+#battery > table.input-table{
+  max-width:none;
+  width:100%;
+}
+
+/* Action buttons below the table — flat consistent with other pages */
+#battery .add-row-actions .btn,
+#battery .table-actions .btn{
+  padding:8px 14px!important;
+  font-size:12.5px!important;
+  border-radius:var(--r-md)!important;
+}
+
+/* =====================================================================
+   REPORT WRITER — fit Setup/Build/Scores into one viewport
+   - Hide redundant title (page name in topbar)
+   - Refined intro line for first-time users
+   - Wider section, tighter top padding
+   - Tighter panel padding so the two-column setup grid fits
+   ===================================================================== */
+
+#report-writer > .eyebrow,
+#report-writer > .section-title{display:none!important}
+#report-writer > .section-desc{
+  display:block!important;
+  font-family:var(--sans)!important;
+  font-size:13px!important;
+  font-style:italic!important;
+  color:#6B6B6B!important;
+  line-height:1.55!important;
+  max-width:780px;
+  margin:0 0 16px!important;
+  padding:0!important;
+  background:transparent!important;
+  border:none!important;
+}
+
+#report-writer.section{
+  max-width:1320px!important;
+  margin-left:auto;
+  margin-right:auto;
+  padding:24px 40px 60px!important;
+}
+
+/* 3-step tabs (Setup / Build / Scores) — slightly more compact */
+#report-writer .rw-tabs{
+  margin-bottom:16px!important;
+}
+
+/* Setup-grid panels — tighter padding to fit more content */
+#report-writer .rw-setup-grid{
+  margin-bottom:18px!important;
+}
+#report-writer .report-panel{
+  padding:18px 20px!important;
+}
+#report-writer .report-options-panel,
+#report-writer .report-section-list-panel,
+#report-writer .report-measure-panel,
+#report-writer .report-selected-panel,
+#report-writer .report-scores-panel{
+  background:#FFFFFF!important;
+  border:1px solid rgba(20,15,5,0.06)!important;
+  border-radius:var(--r-lg)!important;
+  box-shadow:var(--shadow-1)!important;
+}
+
+/* Panel kicker labels — consistent with other pages */
+#report-writer .panel-kicker{
+  font-family:var(--sans)!important;
+  font-size:10.5px!important;
+  font-weight:600!important;
+  letter-spacing:0.10em!important;
+  text-transform:uppercase!important;
+  color:#7A766E!important;
+  margin-bottom:10px!important;
+}
+
+/* Field labels inside the Options panel — tighter */
+#report-writer .field label{
+  font-family:var(--sans)!important;
+  font-size:10.5px!important;
+  font-weight:600!important;
+  letter-spacing:0.08em!important;
+  text-transform:uppercase!important;
+  color:#5A5A5A!important;
+  margin-bottom:5px!important;
+}
+
+/* Compact the Options stack so all 3 fields fit comfortably */
+#report-writer .report-options-stack{
+  gap:12px!important;
+}
+#report-writer .report-options-stack .field{
+  margin-bottom:0!important;
+}
+
+/* Domain checklist — tighter */
+#report-writer .rw-domain-checklist{
+  gap:6px!important;
+  padding-top:4px!important;
+}
+
+/* Report-structure list rows — slightly tighter */
+#report-writer .report-section-list > *{
+  padding:10px 12px!important;
+}
+
+/* Generated Draft (the APA-style output below) keeps its width but
+   we don't constrain the section here — user said it's OK to scroll for it */
+#report-writer .report-output-panel{
+  margin-top:18px;
+}
+
+/* Build/Scores grid — compact */
+#report-writer .rw-build-grid{
+  margin-bottom:18px!important;
+}
+
+/* Hide the redundant "Options" kicker on the Setup tab — the field labels
+   inside (Reference / Descriptor system / Add domains) are self-explanatory */
+#report-writer .report-options-panel > .panel-kicker{
+  display:none!important;
+}
+
+/* =====================================================================
+   SCORE CONVERTER — same polish as other inner pages + view tabs
+   - Hide redundant title (page name in topbar), refined intro line
+   - Wider section, tighter padding
+   - Modern segmented control to switch between Equivalents and Distribution
+   - Tab content panes (only active one visible)
+   ===================================================================== */
+
+/* Hide redundant title + eyebrow + decorative rule */
+#converter > .eyebrow,
+#converter > .section-title,
+#converter > .section-rule{display:none!important}
+
+/* Section width + padding */
+#converter.section{
+  max-width:1320px!important;
+  margin-left:auto;
+  margin-right:auto;
+  padding:24px 40px 60px!important;
+}
+
+/* The unified panel — keep flat, less heavy */
+#converter .conv-unified-panel{
+  background:#FFFFFF!important;
+  border:1px solid rgba(20,15,5,0.06)!important;
+  border-radius:var(--r-lg)!important;
+  box-shadow:var(--shadow-1)!important;
+  padding:22px 26px!important;
+}
+
+/* Drop the visible divider that used to sit between the slider and output */
+#converter .conv-panel-divider{display:none!important}
+
+/* "Score equivalents" inline header — quieter */
+#converter .conv-strip-header{
+  font-family:var(--sans)!important;
+  font-size:9.5px!important;
+  font-weight:600!important;
+  letter-spacing:0.14em!important;
+  text-transform:uppercase!important;
+  color:#9A968D!important;
+  margin:14px 0 10px!important;
+}
+
+/* ---- View tabs: Equivalents / Distribution segmented control ---- */
+#converter .conv-view-tabs{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:0!important;
+  background:rgba(20,15,5,0.07)!important;
+  border:1px solid rgba(20,15,5,0.10)!important;
+  border-radius:var(--r-pill)!important;
+  padding:4px!important;
+  margin:18px 0 16px!important;
+  box-shadow:inset 0 1px 2px rgba(20,15,5,0.06)!important;
+}
+#converter .conv-view-tab{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  background:transparent!important;
+  border:none!important;
+  border-radius:14px!important;
+  padding:9px 18px!important;
+  font-family:var(--sans)!important;
+  font-size:12.5px!important;
+  font-weight:500!important;
+  color:#7A766E!important;
+  letter-spacing:0!important;
+  cursor:pointer;
+  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease)!important;
+  white-space:nowrap;
+  text-align:center!important;
+}
+#converter .conv-view-tab svg{
+  width:14px;height:14px;
+  flex-shrink:0;
+  opacity:0.7;
+  transition:opacity 240ms var(--ease);
+}
+#converter .conv-view-tab:hover:not(.is-active){color:#1A1A1A!important}
+#converter .conv-view-tab:hover:not(.is-active) svg{opacity:0.95}
+#converter .conv-view-tab.is-active{
+  background:#FFFFFF!important;
+  color:#1A1A1A!important;
+  font-weight:600!important;
+  box-shadow:0 1px 2px rgba(20,15,5,0.08), 0 0 0 1px rgba(20,15,5,0.04)!important;
+}
+#converter .conv-view-tab.is-active svg{opacity:1}
+
+/* Pane visibility — only the active pane is shown */
+#converter .conv-view-pane{display:none!important}
+#converter .conv-view-pane.is-active{display:block!important}
+/* Override the inline style="display:block" on conv-output */
+#converter #conv-output[style]{display:none!important}
+#converter #conv-output.is-active[style]{display:block!important}
+
+/* Distribution pane: bell curve as the hero — let it breathe */
+#converter .curve-wrap.conv-view-pane{
+  margin-top:0!important;
+  background:linear-gradient(180deg, #FAF7F0 0%, #FFFFFF 100%);
+  border:1px solid rgba(20,15,5,0.06);
+  border-radius:var(--r-md);
+  padding:28px 36px;
+}
+#converter .curve-svg{
+  display:block;
+  width:100%;
+  max-width:1200px;
+  margin:0 auto;
+  height:auto;
+  cursor:ew-resize;            /* indicate drag-to-adjust */
+  touch-action:none;            /* prevent page scroll while dragging */
+  user-select:none;
+  -webkit-user-select:none;
+}
+#converter .curve-svg:active{cursor:grabbing}
+
+/* Wechsler / AACN carousel: reverted to original styling (line ~566). */
+
+/* Fix descender clipping in dropdowns/inputs (e.g. "Mrs Doe (she/her)") —
+   override the legacy height:32px / padding:0 rule on report-options-stack */
+#report-writer .report-options-stack .field select,
+#report-writer .report-options-stack .field input,
+#report-writer select,
+#report-writer input[type="text"],
+#report-writer input[type="number"]{
+  height:auto!important;
+  min-height:38px!important;
+  line-height:1.4!important;
+  padding:9px 12px!important;
+}
+
+/* =====================================================================
    Norms visual-lock toggle — aesthetic fade + input lock, no layout shift
    Button sits INSIDE the Norms group header cell, on the right.
    ===================================================================== */
@@ -4977,49 +5348,64 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   display:inline-block;
 }
 
-/* Toggle button — visible pill anchored to the right of the Norms cell */
-.norms-lock-btn{
+/* Two-segment pill toggle — Lock | Unlock — anchored to right of Norms cell */
+.norms-toggle-pill{
   position:absolute;
   right:10px;
   top:50%;
   transform:translateY(-50%);
   display:inline-flex;
   align-items:center;
-  gap:6px;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.20);
+  background:rgba(20,15,5,0.06);
+  border:1px solid rgba(20,15,5,0.10);
   border-radius:var(--r-pill);
-  padding:5px 14px;
+  padding:3px;
+  gap:0;
+  box-shadow:inset 0 1px 2px rgba(20,15,5,0.04);
+}
+.norms-pill-segment{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  background:transparent;
+  border:none;
+  border-radius:calc(var(--r-pill) - 3px);
+  padding:5px 12px;
   font-family:var(--sans);
-  font-size:11.5px;
-  font-weight:600;
-  color:#1A1A1A;
+  font-size:11px;
+  font-weight:500;
+  color:#7A766E;
   cursor:pointer;
-  letter-spacing:0.02em;
+  letter-spacing:0;
   white-space:nowrap;
   text-transform:none;
-  box-shadow:0 1px 2px rgba(20,15,5,0.06), 0 0 0 1px rgba(20,15,5,0.02);
-  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease);
 }
-.norms-lock-btn:hover{
-  background:#FAF7F0;
-  border-color:rgba(20,15,5,0.32);
-  box-shadow:0 2px 4px rgba(20,15,5,0.10), 0 0 0 1px rgba(20,15,5,0.04);
-  transform:translateY(calc(-50% - 1px));
+.norms-pill-segment svg{
+  width:11px;
+  height:11px;
+  flex-shrink:0;
+  opacity:0.65;
+  transition:opacity 240ms var(--ease);
 }
-.norms-lock-btn:active{
-  transform:translateY(-50%);
+.norms-pill-segment:hover:not(.is-active){
+  color:#1A1A1A;
 }
-/* When norms ARE locked (default) — terracotta tint draws the eye */
-.norms-lock-btn[aria-pressed="true"]{
-  background:linear-gradient(180deg, rgba(168,85,68,0.12), rgba(168,85,68,0.06));
-  border-color:rgba(168,85,68,0.36);
+.norms-pill-segment:hover:not(.is-active) svg{
+  opacity:0.95;
+}
+.norms-pill-segment.is-active{
+  background:#FFFFFF;
+  color:#1A1A1A;
+  font-weight:600;
+  box-shadow:0 1px 2px rgba(20,15,5,0.08), 0 0 0 1px rgba(20,15,5,0.04);
+}
+.norms-pill-segment.is-active svg{opacity:1}
+/* Locked-active uses terracotta tint to read as "currently protected" */
+.norms-pill-segment.is-active[data-state="locked"]{
+  background:linear-gradient(180deg, rgba(168,85,68,0.16), rgba(168,85,68,0.08));
   color:#7A2E1F;
-}
-.norms-lock-btn[aria-pressed="true"]:hover{
-  background:linear-gradient(180deg, rgba(168,85,68,0.18), rgba(168,85,68,0.10));
-  border-color:rgba(168,85,68,0.50);
-  box-shadow:0 2px 6px rgba(168,85,68,0.16), 0 0 0 1px rgba(168,85,68,0.10);
+  box-shadow:0 1px 2px rgba(168,85,68,0.12), 0 0 0 1px rgba(168,85,68,0.10);
 }
 .norms-lock-btn:hover{
   background:#F4F1E9;
@@ -5067,6 +5453,347 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .input-table.norms-locked [data-norm-cell="true"] input{
   background:rgba(20,15,5,0.025)!important;
   cursor:default;
+}
+
+/* =====================================================================
+   Change Analysis — magazine layout: narrow content, wide table breakout
+   The page section stays full-width so the table has room. Everything
+   else is centered at 1180px so the eye has a focused reading zone.
+   ===================================================================== */
+
+/* Header text — eyebrow, title, formula description */
+#change-analysis > #change-main-eyebrow,
+#change-analysis > #change-main-title,
+#change-analysis > #change-main-desc{
+  max-width:1320px;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+/* Method tab strip + adjustment key */
+#change-analysis .change-flow-side{
+  max-width:1320px;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+/* Inside each method panel — settings, autofill, "Test data" heading
+   stay narrow. The input table and APA output break out to full width. */
+#change-analysis .change-method-panel > .change-active-head,
+#change-analysis .change-method-panel > .change-setup-grid,
+#change-analysis .change-method-panel > .block-title,
+#change-analysis .change-method-panel > .change-flow-side,
+#change-analysis .change-method-panel > .change-context-panel,
+#change-analysis .change-method-panel > .autofill-panel{
+  max-width:1320px;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+/* The Overview panel content (About) also constrained */
+#change-analysis .change-method-panel-overview{
+  max-width:1320px;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+/* Tables and APA output stay full-width — they're the data heroes */
+#change-analysis .change-method-panel > .input-table,
+#change-analysis .change-method-panel > .apa-wrap{
+  max-width:none;
+  width:100%;
+}
+
+/* Empty action column header (the × delete column) — make it blend in
+   so it doesn't appear as a weird detached strip on the right edge */
+#change-analysis .input-table thead th.row-actions,
+#change-analysis .input-table thead th:last-child:empty{
+  background:transparent!important;
+  border-bottom-color:transparent!important;
+}
+
+/* Hide the "Test data & patient scores" heading in each Change Analysis
+   method panel — the table itself is self-explanatory */
+#change-analysis .change-method-panel > .block-title{
+  display:none!important;
+}
+
+/* =====================================================================
+   EFFECT SIZE TOOLS — page polish (P0 + P1 pass)
+   - Smaller section title, tighter intro
+   - Modernize the 4 result-view sub-tabs (segmented control)
+   - Refine A/B mode tabs, drop the heavy "OR" pill
+   - Inline the preloaded-example notice as subtle helper text
+   ===================================================================== */
+
+/* Section header — hidden (page name shown in topbar already) */
+#effectsize > .eyebrow,
+#effectsize > .section-title,
+#effectsize > .section-desc{
+  display:none!important;
+}
+#effectsize.section{padding-top:24px!important}
+
+/* ---- A/B mode tabs — unified segmented control ---- */
+#effectsize .es-tabs-wrap{margin-bottom:14px!important}
+#effectsize .es-tabs{
+  display:grid!important;
+  grid-template-columns:1fr auto 1fr!important;
+  gap:0!important;
+  background:#FFFFFF!important;
+  border:1px solid rgba(20,15,5,0.10)!important;
+  border-radius:var(--r-lg)!important;
+  padding:5px!important;
+  box-shadow:0 1px 2px rgba(20,15,5,0.04), 0 4px 14px rgba(20,15,5,0.05)!important;
+  position:relative!important;
+  top:0!important;
+  overflow:hidden;
+}
+#effectsize .es-tab{
+  flex:none!important;
+  background:transparent!important;
+  border:none!important;
+  border-radius:calc(var(--r-lg) - 5px)!important;
+  padding:14px 18px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  color:#5A5A5A!important;
+  cursor:pointer;
+  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease)!important;
+  text-align:left!important;
+  position:relative!important;
+  top:0!important;
+}
+#effectsize .es-tab:hover:not(.is-active){
+  background:rgba(20,15,5,0.03)!important;
+  color:#1A1A1A!important;
+}
+/* Active state — cream gradient fill, no ring (the container border holds the strip together) */
+#effectsize .es-tab.is-active{
+  background:linear-gradient(180deg, #FAF7F0 0%, #F4F1E9 100%)!important;
+  color:#1A1A1A!important;
+  box-shadow:0 1px 2px rgba(20,15,5,0.05)!important;
+}
+
+/* Number badges A / B — circular, soft */
+#effectsize .es-tab-num{
+  width:28px!important;height:28px!important;
+  border-radius:50%!important;
+  background:rgba(20,15,5,0.08)!important;
+  color:#7A766E!important;
+  font-family:var(--sans)!important;
+  font-size:12px!important;
+  font-weight:600!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-shrink:0!important;
+  transition:background 240ms var(--ease), color 240ms var(--ease)!important;
+}
+#effectsize .es-tab.is-active .es-tab-num{
+  background:#1A1A1A!important;
+  color:#FFFFFF!important;
+}
+
+#effectsize .es-tab-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+#effectsize .es-tab-title{
+  font-family:var(--sans)!important;
+  font-size:13.5px!important;
+  font-weight:500!important;
+  color:#3F3F3F!important;
+  letter-spacing:-0.005em!important;
+  line-height:1.25!important;
+}
+#effectsize .es-tab.is-active .es-tab-title{color:#1A1A1A!important;font-weight:600!important}
+#effectsize .es-tab-sub{
+  font-family:var(--sans)!important;
+  font-size:11.5px!important;
+  font-weight:400!important;
+  color:#8A867E!important;
+  letter-spacing:0!important;
+  font-style:normal!important;
+  line-height:1.4!important;
+}
+#effectsize .es-tab.is-active .es-tab-sub{color:#5A5A5A!important}
+
+/* "OR" separator — quiet, just a thin character — no green pill */
+#effectsize .es-tabs-or{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0 4px!important;
+  background:transparent!important;
+}
+#effectsize .es-tabs-or span{
+  font-family:var(--sans)!important;
+  font-size:10px!important;
+  font-weight:600!important;
+  letter-spacing:0.16em!important;
+  color:#9E9A93!important;
+  background:transparent!important;
+  border:none!important;
+  padding:0!important;
+  border-radius:0!important;
+  text-transform:uppercase!important;
+}
+
+/* ---- Preloaded example notice — subtle inline helper ---- */
+#effectsize .es-preloaded-note{
+  display:flex!important;
+  align-items:flex-start!important;
+  gap:8px!important;
+  background:transparent!important;
+  border:none!important;
+  border-left:none!important;
+  border-radius:0!important;
+  padding:0 0 12px!important;
+  margin:0 0 4px!important;
+  font-family:var(--sans)!important;
+  font-size:12px!important;
+  font-style:italic!important;
+  color:#7A766E!important;
+  line-height:1.5!important;
+}
+#effectsize .es-preloaded-pill{
+  display:inline-block!important;
+  background:rgba(168,85,68,0.10)!important;
+  color:#7A2E1F!important;
+  font-family:var(--sans)!important;
+  font-size:9.5px!important;
+  font-weight:600!important;
+  font-style:normal!important;
+  letter-spacing:0.10em!important;
+  text-transform:uppercase!important;
+  padding:3px 9px!important;
+  border-radius:var(--r-pill)!important;
+  border:1px solid rgba(168,85,68,0.18)!important;
+  flex-shrink:0!important;
+  white-space:nowrap;
+  line-height:1.3;
+}
+
+/* ---- The 4 result-view sub-tabs — modern segmented control ----
+   Proportional columns: the longer "Common language description" gets
+   more room than the others to avoid wrapping when active. */
+#effectsize .es-view-tabs{
+  display:grid!important;
+  grid-template-columns:1fr 1fr 1fr 1.7fr!important;
+  gap:0!important;
+  background:rgba(20,15,5,0.07)!important;
+  border:1px solid rgba(20,15,5,0.10)!important;
+  border-radius:var(--r-pill)!important;
+  padding:4px!important;
+  margin-bottom:18px!important;
+  box-shadow:inset 0 1px 2px rgba(20,15,5,0.06)!important;
+}
+#effectsize .es-view-tab{
+  background:transparent!important;
+  border:none!important;
+  border-radius:14px!important;
+  padding:7px 10px!important;
+  font-family:var(--sans)!important;
+  font-size:11px!important;
+  font-weight:500!important;
+  color:#7A766E!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+  cursor:pointer;
+  margin:0!important;
+  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease)!important;
+  text-align:center!important;
+  line-height:1.25!important;
+  min-width:0;
+  white-space:nowrap;
+}
+#effectsize .es-view-tab + .es-view-tab{margin-left:0!important}
+#effectsize .es-view-tab:hover:not(.is-active){
+  color:#1A1A1A!important;
+}
+#effectsize .es-view-tab.is-active{
+  background:#FFFFFF!important;
+  color:#1A1A1A!important;
+  font-weight:600!important;
+  box-shadow:0 1px 2px rgba(20,15,5,0.08), 0 0 0 1px rgba(20,15,5,0.04)!important;
+}
+
+/* Effect-size results panel + Visual panel — equal height row, bottoms aligned */
+#effectsize .es-output-row{
+  align-items:stretch!important;
+}
+#effectsize .es-left-panel,
+#effectsize .es-curve-panel{
+  display:flex!important;
+  flex-direction:column!important;
+  height:100%!important;
+}
+
+/* Group-comparison target grid — align inputs to bottom of cells so they
+   stay on a row even if one label wraps to two lines */
+#effectsize .es-target-grid{
+  display:grid!important;
+  grid-template-columns:repeat(3,1fr)!important;
+  gap:14px 20px!important;
+  align-items:stretch!important;
+}
+#effectsize .es-target-grid > .field{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:flex-end!important;
+  gap:5px!important;
+  margin-bottom:0!important;
+}
+#effectsize .es-target-grid > .field > label{
+  margin-bottom:0!important;
+  line-height:1.35;
+}
+
+/* "Clear all inputs" — make it look like a clear button, not a form field */
+#effectsize .es-reset-btn,
+#effectsize #es-reset-all,
+#effectsize #es-clear{
+  background:transparent!important;
+  border:1px solid rgba(20,15,5,0.18)!important;
+  border-radius:var(--r-md)!important;
+  padding:8px 14px!important;
+  font-family:var(--sans)!important;
+  font-size:12.5px!important;
+  font-weight:500!important;
+  color:#5A5A5A!important;
+  letter-spacing:0!important;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease)!important;
+  height:auto!important;
+}
+#effectsize .es-reset-btn:hover,
+#effectsize #es-reset-all:hover,
+#effectsize #es-clear:hover{
+  background:rgba(168,85,68,0.06)!important;
+  border-color:rgba(168,85,68,0.36)!important;
+  color:#9C3D2A!important;
+}
+
+/* Quick effect size slider — refine the value readout */
+#effectsize #es-d-slider-val{
+  font-family:var(--mono)!important;
+  font-size:12.5px!important;
+  font-weight:500!important;
+  color:#5A5A5A!important;
+  background:rgba(20,15,5,0.04);
+  padding:3px 8px;
+  border-radius:var(--r-sm);
+  min-width:42px;
+  text-align:center;
+  display:inline-block;
+}
+#effectsize .es-d-slider-row label{
+  font-family:var(--sans)!important;
+  font-size:10.5px!important;
+  font-weight:600!important;
+  letter-spacing:0.12em!important;
+  text-transform:uppercase!important;
+  color:#7A766E!important;
 }
 
 
