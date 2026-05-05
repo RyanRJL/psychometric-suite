@@ -1,4 +1,4 @@
-:root{
+﻿:root{
   --paper:#FAF7F1;
   --paper-2:#F4F0E8;
   --paper-3:#EDE7DA;
@@ -27,8 +27,8 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-/* Global 10% downscale — compensates for 100% browser zoom and tightens the
-   layout for minimal scrolling. Uses `zoom` (better than transform: scale —
+/* Global 10% downscale â€” compensates for 100% browser zoom and tightens the
+   layout for minimal scrolling. Uses `zoom` (better than transform: scale â€”
    it preserves layout flow, scrollbars, and click targets). */
 body{display:flex;min-height:100vh;overflow:hidden;zoom:0.9}
 
@@ -443,14 +443,32 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 .input-table .computed.sig-no{color:var(--good)}
 .input-table .computed.sig-improve{color:var(--good);font-weight:500}
 .input-table .computed.sig-decline{color:var(--warn);font-weight:500}
+/* "+ Add row / Add subtest" buttons — green, matching the forward-progress
+   colour language used for wizard Next buttons. Outlined by default so they
+   stay visually lighter than the primary green CTAs. */
 .add-row-btn{
   margin-top:10px;display:inline-flex;align-items:center;gap:6px;
-  background:none;border:1px dashed var(--border);
+  background:rgba(46,133,82,0.06);
+  border:1px dashed #2E8552;
   padding:7px 12px;border-radius:3px;
-  font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;
-  transition:all 120ms ease;
+  font-family:var(--sans);font-size:12px;font-weight:600;color:#246B43;cursor:pointer;
+  transition:background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
-.add-row-btn:hover{border-color:var(--accent);color:var(--accent);border-style:solid}
+.add-row-btn:hover{
+  background:#2E8552;
+  border-color:#246B43;
+  border-style:solid;
+  color:#FFFFFF;
+  box-shadow:0 2px 6px rgba(46,133,82,0.30);
+}
+.add-row-btn:active{
+  background:#246B43;
+  border-color:#1F5D3A;
+}
+.add-row-btn:focus-visible{
+  outline:2px solid rgba(46,133,82,0.45);
+  outline-offset:2px;
+}
 
 /* APA OUTPUT TABLE */
 .apa-wrap{margin-top:32px;background:#fff;border:1px solid var(--border-soft);border-radius:4px;padding:24px 36px 32px;position:relative}
@@ -477,15 +495,15 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 @media (max-width:900px){.apa-toolbar{align-items:flex-start;flex-wrap:wrap}.apa-toolbar-left{width:100%}.apa-toolbar > div:nth-child(2){display:none}.apa-column-controls{left:0;right:auto;width:min(440px,calc(100vw - 48px))}}
 .apa-toolbar-label{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--faint);font-weight:500}
 .apa-table-container{font-family:var(--serif);color:#000}
-/* APA 7 §7.10–7.12: table number bold (not italic); title italic; column heads centred; Note. bold italic */
+/* APA 7 Â§7.10â€“7.12: table number bold (not italic); title italic; column heads centred; Note. bold italic */
 .apa-table-num{font-family:var(--serif);font-size:14px;font-style:normal;font-weight:700;color:#000;margin-bottom:2px}
 .apa-table-title{font-family:var(--serif);font-size:14px;font-weight:400;font-style:italic;color:#000;margin-bottom:14px;line-height:1.4}
 .apa-table{width:100%;border-collapse:collapse;font-family:var(--serif);font-size:13.5px;color:#000}
 .apa-table thead tr:first-child th{border-top:1.5px solid #000;padding-top:10px}
 .apa-table thead tr:last-child th{border-bottom:0.75px solid #000}
-/* rowspan="2" column headers straddle both header rows — bottom border at base */
+/* rowspan="2" column headers straddle both header rows â€” bottom border at base */
 .apa-table thead th[rowspan]{border-bottom:0.75px solid #000;vertical-align:bottom}
-/* Column spanners — italic, centred, partial rule below per APA 7 §7.12 */
+/* Column spanners â€” italic, centred, partial rule below per APA 7 Â§7.12 */
 .apa-table thead th.apa-spanner{
   font-size:12px;
   font-style:italic;
@@ -495,7 +513,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
   padding-bottom:3px;
   border-bottom:0.75px solid #000;
 }
-/* Column heads: stub (first col) left; all others centred per APA 7 §7.12 */
+/* Column heads: stub (first col) left; all others centred per APA 7 Â§7.12 */
 .apa-table th{
   font-family:var(--serif);font-weight:500;font-size:13px;color:#000;
   text-align:left;padding:6px 12px;
@@ -512,7 +530,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 .apa-note{font-family:var(--serif);font-size:12.5px;font-style:italic;color:#000;margin-top:10px;line-height:1.45}
 .apa-table tr.apa-group td{padding:10px 12px 4px;border:none;font-style:italic;font-weight:600;font-family:var(--serif);color:#000}
 .apa-table tr.apa-grouped-row td:first-child{padding-left:24px}
-/* Note. label: bold italic per APA 7 §7.14 */
+/* Note. label: bold italic per APA 7 Â§7.14 */
 .apa-note strong{font-weight:700;font-style:italic}
 
 /* SCORE CONVERTER RESULTS */
@@ -530,7 +548,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .conv-slider-ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:6px;letter-spacing:0.02em}
 .conv-slider-center{color:var(--accent);font-weight:500}
 
-/* CONVERTER READOUT — compact inline strip */
+/* CONVERTER READOUT â€” compact inline strip */
 .conv-readout{display:flex;gap:0;margin-top:12px;padding:8px 12px;background:var(--paper-2);border:1px solid var(--border-soft);border-radius:4px;align-items:center}
 .conv-readout-item{display:flex;align-items:baseline;gap:6px;padding-right:16px;margin-right:16px;border-right:1px solid var(--border-soft)}
 .conv-readout-item:last-child{border-right:none;padding-right:0;margin-right:0}
@@ -538,7 +556,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .conv-readout-value{font-family:var(--mono);font-size:15px;font-weight:500;color:var(--ink);letter-spacing:-0.01em}
 .conv-readout-accent{color:var(--accent)}
 
-/* CONVERTER UNIFIED PANEL — internal divider */
+/* CONVERTER UNIFIED PANEL â€” internal divider */
 .conv-panel-divider{border:none;border-top:1px solid var(--border-soft);margin:18px -24px 0}
 
 /* CONVERTER SCORES STRIP */
@@ -547,7 +565,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .conv-score-item{flex:1;padding:14px 16px;border-right:1px solid var(--border-soft);transition:background 150ms;position:relative}
 .conv-score-item:last-child{border-right:none}
 .conv-score-item.conv-score-active{background:var(--accent)}
-.conv-score-item.conv-score-active .conv-score-label::after{content:" · you entered";font-size:8px;letter-spacing:0.05em;color:rgba(255,220,200,0.6);text-transform:none}
+.conv-score-item.conv-score-active .conv-score-label::after{content:" Â· you entered";font-size:8px;letter-spacing:0.05em;color:rgba(255,220,200,0.6);text-transform:none}
 .conv-score-label{display:block;font-family:var(--mono);font-size:9px;letter-spacing:0.13em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 .conv-score-item.conv-score-active .conv-score-label{color:rgba(255,220,200,0.75)}
 .conv-score-value{font-family:var(--mono);font-size:20px;font-weight:500;color:var(--ink);letter-spacing:-0.01em;line-height:1}
@@ -750,8 +768,32 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 /* AUTOFILL PANEL */
 .autofill-panel{background:var(--note-bg);border-color:var(--border-soft)}
 .autofill-row{display:flex;gap:14px;align-items:flex-end}
-.btn-clear{flex-shrink:0;color:var(--muted)}
-.btn-clear:hover{color:var(--warn);border-color:var(--warn)}
+/* Destructive "Clear / Reset" buttons — solid red across the suite */
+.btn-clear{
+  flex-shrink:0;
+  background:#D63A2F;
+  border:1px solid #B22A20;
+  color:#FFFFFF;
+  font-weight:600;
+  box-shadow:0 1px 2px rgba(178,42,32,0.30), 0 2px 6px rgba(214,58,47,0.22);
+  transition:background 160ms ease, border-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+}
+.btn-clear:hover{
+  background:#E84A3D;
+  border-color:#C2342A;
+  color:#FFFFFF;
+  box-shadow:0 2px 4px rgba(178,42,32,0.35), 0 4px 12px rgba(214,58,47,0.40);
+  transform:translateY(-1px);
+}
+.btn-clear:active{
+  background:#B22A20;
+  border-color:#8E2118;
+  transform:translateY(0);
+}
+.btn-clear:focus-visible{
+  outline:3px solid rgba(214,58,47,0.45);
+  outline-offset:2px;
+}
 
 /* PREMORBID PAGE */
 .pre-tab-content{display:none}
@@ -1050,7 +1092,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   #report-writer .rw-tabs{grid-template-columns:1fr}
 }
 
-/* Sub-tab strip — domain tabs (numbered, prominent) */
+/* Sub-tab strip â€” domain tabs (numbered, prominent) */
 .rw-subtabs{
   display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;padding:8px;
   border:1px solid var(--border);border-radius:8px;background:var(--paper-2);
@@ -1093,7 +1135,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .report-section-item.active .report-section-num{color:var(--accent)}
 
-/* Wizard nav — shared across tabs, sticky to viewport bottom so Next is always visible */
+/* Wizard nav â€” shared across tabs, sticky to viewport bottom so Next is always visible */
 .rw-wizard-nav{
   display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:14px;
   margin:14px 0;padding:10px 16px;border:1px solid var(--border);border-radius:8px;
@@ -1121,12 +1163,90 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .report-picker-bar{
   display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:10px;align-items:center;margin-bottom:10px;
 }
-.report-test-search-inline{
-  width:100%;border:1px solid var(--border);border-radius:6px;background:#fff;
-  padding:8px 12px;font-family:var(--sans);font-size:13px;color:var(--ink);outline:none;
-  transition:border-color 120ms ease,box-shadow 120ms ease;
+/* Modern search shell — icon on the left, optional clear button on the right.
+   The shell is the visible "input"; the actual <input> is borderless inside. */
+.report-search-shell{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.12);
+  border-radius:10px;
+  padding:0 14px;
+  height:40px;
+  box-shadow:0 1px 2px rgba(60,40,20,0.04);
+  transition:border-color 200ms cubic-bezier(0.2,0.8,0.2,1),
+             box-shadow 200ms cubic-bezier(0.2,0.8,0.2,1),
+             background 200ms ease;
 }
-.report-test-search-inline:focus{border-color:rgba(156,61,42,.42);box-shadow:0 0 0 3px var(--accent-tint-strong)}
+.report-search-shell:hover{
+  border-color:rgba(20,15,5,0.22);
+}
+.report-search-shell:focus-within{
+  border-color:var(--accent);
+  box-shadow:
+    0 0 0 4px rgba(156,61,42,0.14),
+    0 1px 2px rgba(60,40,20,0.06),
+    0 4px 12px rgba(60,40,20,0.06);
+}
+.report-search-icon{
+  width:15px;height:15px;
+  color:#9A968D;
+  flex-shrink:0;
+  transition:color 200ms ease;
+}
+.report-search-shell:focus-within .report-search-icon{color:var(--accent)}
+
+/* Inner input is fully transparent — the shell IS the visible field. !important
+   defeats the legacy global input[type="text"] rules that would otherwise add
+   their own border/padding/min-height. */
+.report-search-shell .report-test-search-inline,
+#report-writer .report-search-shell input.report-test-search-inline{
+  flex:1!important;
+  min-width:0!important;
+  width:100%!important;
+  border:0!important;
+  background:transparent!important;
+  outline:none!important;
+  padding:0!important;
+  margin:0!important;
+  height:auto!important;
+  min-height:0!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  font-family:var(--sans);
+  font-size:13.5px;
+  color:#1A1A1A;
+  line-height:1.4;
+  letter-spacing:-0.005em;
+}
+.report-test-search-inline::placeholder{
+  color:#9A968D;
+  font-weight:400;
+}
+
+/* Clear button — only shows when the input has content (toggled by JS) */
+.report-search-clear{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;justify-content:center;
+  width:22px;height:22px;
+  border-radius:50%;
+  border:0;
+  background:rgba(20,15,5,0.06);
+  color:#5A5A5A;
+  cursor:pointer;
+  transition:background 160ms ease, color 160ms ease, transform 160ms ease;
+  padding:0;
+}
+.report-search-clear svg{width:10px;height:10px}
+.report-search-clear:hover{
+  background:rgba(20,15,5,0.14);
+  color:#1A1A1A;
+  transform:scale(1.08);
+}
+.report-search-clear[hidden]{display:none}
 .report-picker-bar .report-filter-chips{justify-content:flex-end}
 @media (max-width:1100px){
   .report-picker-bar{grid-template-columns:1fr}
@@ -1145,19 +1265,67 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .report-picker-floating-add .btn{height:30px;padding:0 14px;font-size:12px;box-sizing:border-box;display:inline-flex;align-items:center;line-height:1}
 
-/* Manual entry — collapsed by default */
-.report-manual-entry-details{margin-top:10px}
+/* Manual entry â€” collapsed by default */
+/* "Add custom test / trial" disclosure — styled as a clear secondary CTA */
+.report-manual-entry-details{margin-top:12px}
 .report-manual-entry-details > summary{
-  list-style:none;cursor:pointer;font-size:12px;color:var(--muted);padding:6px 2px;
-  font-family:var(--sans);user-select:none;
+  list-style:none;cursor:pointer;user-select:none;
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:600;
+  letter-spacing:0.02em;
+  color:#1A1A1A;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.18);
+  border-radius:999px;
+  padding:8px 16px 8px 12px;
+  box-shadow:0 1px 2px rgba(60,40,20,0.04);
+  transition:background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
 }
 .report-manual-entry-details > summary::-webkit-details-marker{display:none}
-.report-manual-entry-details > summary:hover{color:var(--accent)}
-.report-manual-entry-details[open] > summary{color:var(--accent);margin-bottom:6px}
-.report-manual-entry-details > summary::before{content:'＋  ';font-family:var(--mono);color:var(--faint)}
-.report-manual-entry-details[open] > summary::before{content:'－  ';color:var(--accent)}
+.report-manual-entry-details > summary:hover{
+  color:var(--accent);
+  border-color:rgba(156,61,42,0.45);
+  background:rgba(156,61,42,0.05);
+  box-shadow:0 2px 6px rgba(156,61,42,0.12);
+  transform:translateY(-1px);
+}
+.report-manual-entry-details > summary:focus-visible{
+  outline:2px solid rgba(156,61,42,0.45);
+  outline-offset:2px;
+}
+.report-manual-entry-details[open] > summary{
+  color:var(--accent);
+  border-color:rgba(156,61,42,0.45);
+  background:rgba(156,61,42,0.06);
+  margin-bottom:8px;
+  transform:translateY(0);
+}
+.report-manual-entry-details > summary::before{
+  content:'+';
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;
+  border-radius:50%;
+  background:rgba(20,15,5,0.06);
+  color:#5A5A5A;
+  font-family:var(--mono);
+  font-size:13px;
+  font-weight:700;
+  line-height:1;
+  transition:background 160ms ease, color 160ms ease, transform 200ms ease;
+}
+.report-manual-entry-details > summary:hover::before,
+.report-manual-entry-details[open] > summary::before{
+  background:var(--accent);
+  color:#FFFFFF;
+}
+.report-manual-entry-details[open] > summary::before{
+  content:'\2212'; /* − minus sign */
+  transform:rotate(180deg);
+}
 
-/* Options panel — head row with Reset button */
+/* Options panel â€” head row with Reset button */
 .report-panel-head-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
 .report-panel-head-row .panel-kicker{margin-bottom:0}
 .rw-reset-btn,.rw-sort-btn,.rw-autofill-btn{
@@ -1172,33 +1340,78 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .rw-autofill-btn:hover{color:var(--accent);border-color:var(--accent);border-style:solid}
 
-/* Selected-measures compact list (Build tab — replaces full table) */
+/* Selected-measures compact list (Build tab â€” replaces full table) */
 .report-selected-list{
   margin-top:14px;border:1px solid var(--border-soft);border-radius:7px;background:var(--paper);overflow:hidden;
 }
 .report-selected-empty{padding:14px 16px;font-size:12px;color:var(--faint);font-style:italic;text-align:center}
 .report-selected-row{
-  display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;
-  padding:5px 10px;border-bottom:1px solid rgba(216,210,199,.5);font-size:12.5px;line-height:1.2;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:7px 10px;
+  border-bottom:1px solid rgba(216,210,199,.5);
+  font-size:12.5px;line-height:1.2;
   cursor:grab;
 }
 .report-selected-row:last-child{border-bottom:0}
 .report-selected-row:hover{background:rgba(156,61,42,.035)}
 .report-selected-row.is-dragging,.report-selected-row:active{cursor:grabbing}
-.report-selected-row .report-selected-grip{color:var(--faint);font-size:12px;user-select:none}
-.report-selected-row .report-selected-name{font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.report-selected-row .report-selected-tools{display:inline-flex;gap:4px;align-items:center;opacity:.35;transition:opacity 120ms ease}
-.report-selected-row:hover .report-selected-tools,
-.report-selected-row .report-selected-tools:focus-within{opacity:1}
+.report-selected-row .report-selected-grip{color:var(--faint);font-size:12px;user-select:none;flex:0 0 auto}
+.report-selected-row .report-selected-name{
+  flex:1 1 auto;
+  font-weight:500;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+/* Push the remove/tools cluster to the far right of the row */
+.report-selected-row .report-selected-tools{
+  display:inline-flex;gap:4px;align-items:center;
+  margin-left:auto;
+  flex:0 0 auto;
+  opacity:1;
+}
+/* Generic tool buttons (S etc.) — quiet by default */
 .report-selected-row .report-selected-tools button{
   border:1px solid var(--border-soft);background:var(--paper);color:var(--faint);border-radius:3px;
   font-size:10.5px;line-height:1;padding:2px 6px;cursor:pointer;font-family:var(--mono);letter-spacing:.05em;
 }
 .report-selected-row .report-selected-tools button:hover{color:var(--ink);border-color:var(--border)}
 .report-selected-row .report-selected-tools button.is-on{background:var(--accent-tint);border-color:rgba(156,61,42,.34);color:var(--accent);opacity:1}
-.report-selected-row .report-selected-tools button.report-selected-remove:hover{color:var(--warn);border-color:rgba(156,61,42,.34)}
-/* Show the S button at full opacity even when hover isn't active, if it's flagged on */
-.report-selected-row .report-selected-tools:has(button.is-on){opacity:1}
+
+/* Remove (×) button — always visible, clearly destructive */
+.report-selected-row .report-selected-tools .report-selected-remove{
+  width:24px;
+  height:24px;
+  padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  border:1px solid rgba(214,58,47,0.35);
+  background:rgba(214,58,47,0.08);
+  color:#B22A20;
+  font-family:var(--sans);
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:0;
+  line-height:1;
+  cursor:pointer;
+  transition:background 140ms ease, color 140ms ease, border-color 140ms ease, transform 120ms ease, box-shadow 140ms ease;
+}
+.report-selected-row .report-selected-tools .report-selected-remove:hover{
+  background:#D63A2F;
+  border-color:#B22A20;
+  color:#FFFFFF;
+  box-shadow:0 2px 6px rgba(214,58,47,0.30);
+  transform:scale(1.06);
+}
+.report-selected-row .report-selected-tools .report-selected-remove:active{
+  background:#B22A20;
+  border-color:#8E2118;
+  transform:scale(1);
+}
+.report-selected-row .report-selected-tools .report-selected-remove:focus-visible{
+  outline:2px solid rgba(214,58,47,0.55);
+  outline-offset:2px;
+}
 
 /* Drag handle on section cards (Tab 1) */
 .report-section-grip{
@@ -1214,7 +1427,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   padding:0 2px;border:1px solid var(--border-soft);border-radius:3px;background:var(--paper);
 }
 
-/* Tab 3 — compact score entry table */
+/* Tab 3 â€” compact score entry table */
 .report-scores-table{font-size:12.5px}
 .report-scores-table tr[draggable="true"]{cursor:grab}
 .report-scores-table tr[draggable="true"]:active{cursor:grabbing}
@@ -1235,7 +1448,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .report-scores-table .row-actions button:hover{color:var(--warn);border-color:rgba(156,61,42,.34)}
 
-/* Output panel — keep visible without monopolising the page */
+/* Output panel â€” keep visible without monopolising the page */
 .report-output{max-height:min(48vh,440px);overflow-y:auto}
 .report-panel{box-shadow:none;border-color:var(--border-soft);padding:14px 16px;margin-bottom:0}
 .report-panel .panel-kicker{margin-bottom:8px}
@@ -1364,7 +1577,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .report-toggle:has(input:checked),.report-strength-toggle:has(input:checked){border-color:rgba(156,61,42,.34);color:var(--accent);background:var(--accent-tint)}
 .report-output.is-locked{background:#fafaf7;border-style:dashed}
 .report-output.is-stale::before{
-  content:'Inputs changed — click Regenerate to refresh';
+  content:'Inputs changed â€” click Regenerate to refresh';
   display:block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--accent);background:var(--accent-tint);border:1px solid rgba(156,61,42,.24);
   border-radius:4px;padding:5px 9px;margin:-6px -8px 12px;text-align:center
@@ -1508,8 +1721,8 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 .input-table td.computed.sig-no{color:var(--muted)}
 .input-table td.computed.sig-yes,.input-table td.computed.sig-decline{color:var(--warn)}
 .input-table td.computed.sig-improve{color:var(--good)}
-.add-row-btn{border-radius:999px;padding:8px 14px;background:rgba(255,255,255,0.22)}
-.add-row-btn:hover{background:var(--accent-tint)}
+/* Pill shape for in-table "+ Add row" — colour comes from the global green rule above */
+.add-row-btn{border-radius:999px;padding:8px 14px}
 .apa-toolbar-label{display:flex;align-items:center}
 #rci-basic h2.block-title,#rci-practice h2.block-title,#rci-srb h2.block-title,#rci-crawford h2.block-title,#sdi h2.block-title{
   margin-top:16px;margin-bottom:10px;padding-bottom:6px;
@@ -1742,7 +1955,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 #effectsize .field label{font-size:10.5px;letter-spacing:0.06em;margin-bottom:3px}
 #effectsize .field input,#effectsize .field select{padding:7px 10px;font-size:13px}
 
-/* Mode tabs (clear OR — looks like proper tabs sitting on top of the panel) */
+/* Mode tabs (clear OR â€” looks like proper tabs sitting on top of the panel) */
 #effectsize .es-tabs-wrap{margin-bottom:0}
 #effectsize .es-tabs{display:flex;align-items:stretch;gap:0;position:relative;z-index:2}
 #effectsize .es-tab{flex:1;display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--paper-2);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;font-family:var(--sans);text-align:left;cursor:pointer;transition:background 160ms,color 160ms,border-color 160ms;color:var(--ink-2);position:relative;top:1px}
@@ -1788,71 +2001,190 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
   letter-spacing:0.08em;
   text-transform:uppercase;
 }
+/* =====================================================================
+   Effect-size quick slider — minimalist single-row layout
+   [TRACK + ticks] [value]
+   ===================================================================== */
 #effectsize .es-d-slider-row{
-  display:flex;
+  --es-d-pct:50%;
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto;
   align-items:center;
-  gap:7px;
-  margin:0 0 6px;
-  padding:0 0 4px;
-  border-bottom:1px solid rgba(188,176,158,0.5);
+  gap:14px;
+  margin:0 0 12px;
+  padding:6px 14px 4px;
   background:transparent;
+  border:none;
+  border-radius:0;
+  box-shadow:none;
 }
-#effectsize .es-d-slider-row label{
-  margin:0;
-  font-family:var(--sans);
-  font-size:9px;
-  letter-spacing:0.07em;
-  text-transform:uppercase;
-  color:var(--muted);
-  font-weight:500;
-  white-space:nowrap;
-  opacity:0.9;
+
+/* CONTROL — slider + ticks together */
+#effectsize .es-d-slider-control{
+  position:relative;
+  height:30px;
+  padding-top:0;
 }
+/* Static track background underneath the native input — subtle inset shadow for depth */
+#effectsize .es-d-slider-track-bg{
+  position:absolute;
+  left:0;right:0;top:7px;
+  height:6px;
+  border-radius:999px;
+  background:linear-gradient(180deg, rgba(20,15,5,0.10) 0%, rgba(20,15,5,0.07) 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(20,15,5,0.10),
+    inset 0 -1px 0 rgba(255,255,255,0.55);
+  pointer-events:none;
+}
+/* Filled portion (between centre and thumb) — accent gradient */
+#effectsize .es-d-slider-track-bg::before{
+  content:"";
+  position:absolute;
+  top:0;bottom:0;
+  /* Fill from centre (0) outward toward thumb position. We handle both directions. */
+  left:min(50%, var(--es-d-pct, 50%));
+  right:max(50%, var(--es-d-pct, 50%));
+  background:linear-gradient(180deg, rgba(156,61,42,0.92) 0%, rgba(132,48,32,0.95) 100%);
+  border-radius:999px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.18);
+}
+
+/* Native range input — invisible track, styled thumb */
 #effectsize #es-d-slider{
-  flex:1;
-  height:16px;
+  position:relative;
+  z-index:2;
+  display:block;
+  width:100%;
+  height:20px;
+  margin:0;
+  background:transparent;
   -webkit-appearance:none;
   appearance:none;
-  background:transparent;
+  cursor:pointer;
+  touch-action:none;
 }
 #effectsize #es-d-slider::-webkit-slider-runnable-track{
-  height:2px;
-  background:rgba(107,107,107,0.35);
+  height:6px;
+  background:transparent;
   border-radius:999px;
 }
+#effectsize #es-d-slider::-moz-range-track{
+  height:6px;
+  background:transparent;
+  border-radius:999px;
+}
+/* Thumb: 18 px, dark with crisp white ring + soft drop shadow.
+   Easing curve is the same one Apple/Linear use for control affordances. */
 #effectsize #es-d-slider::-webkit-slider-thumb{
   -webkit-appearance:none;
   appearance:none;
-  width:11px;
-  height:11px;
-  margin-top:-4.5px;
+  width:18px;
+  height:18px;
+  margin-top:-6px;
   border-radius:50%;
-  background:var(--accent);
-  border:2px solid var(--paper);
-  box-shadow:0 0 0 1px rgba(156,61,42,0.35);
-}
-#effectsize #es-d-slider::-moz-range-track{
-  height:2px;
-  background:rgba(107,107,107,0.35);
-  border-radius:999px;
+  background:radial-gradient(circle at 30% 28%, #2A2A2A 0%, #0E0E0E 75%);
+  border:2px solid #FFFFFF;
+  box-shadow:
+    0 0 0 1px rgba(20,15,5,0.16),
+    0 1px 2px rgba(20,15,5,0.18),
+    0 4px 10px rgba(20,15,5,0.20);
+  cursor:grab;
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 #effectsize #es-d-slider::-moz-range-thumb{
-  width:11px;
-  height:11px;
+  width:14px;
+  height:14px;
   border-radius:50%;
-  background:var(--accent);
-  border:2px solid var(--paper);
-  box-shadow:0 0 0 1px rgba(156,61,42,0.35);
+  background:radial-gradient(circle at 30% 28%, #2A2A2A 0%, #0E0E0E 75%);
+  border:2px solid #FFFFFF;
+  box-shadow:
+    0 0 0 1px rgba(20,15,5,0.16),
+    0 1px 2px rgba(20,15,5,0.18),
+    0 4px 10px rgba(20,15,5,0.20);
+  cursor:grab;
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-#effectsize #es-d-slider-val{
-  min-width:24px;
-  text-align:right;
+#effectsize #es-d-slider:hover::-webkit-slider-thumb{
+  transform:scale(1.12);
+  box-shadow:
+    0 0 0 1px rgba(20,15,5,0.26),
+    0 2px 4px rgba(20,15,5,0.22),
+    0 8px 18px rgba(20,15,5,0.22);
+}
+#effectsize #es-d-slider:hover::-moz-range-thumb{
+  transform:scale(1.12);
+}
+#effectsize #es-d-slider:active::-webkit-slider-thumb,
+#effectsize #es-d-slider:focus-visible::-webkit-slider-thumb{
+  transform:scale(1.18);
+  box-shadow:
+    0 0 0 1px rgba(156,61,42,0.45),
+    0 0 0 6px rgba(156,61,42,0.16),
+    0 2px 4px rgba(20,15,5,0.22),
+    0 10px 22px rgba(20,15,5,0.22);
+  cursor:grabbing;
+}
+#effectsize #es-d-slider:active::-moz-range-thumb,
+#effectsize #es-d-slider:focus-visible::-moz-range-thumb{
+  transform:scale(1.18);
+  cursor:grabbing;
+}
+#effectsize #es-d-slider:focus{outline:none}
+
+/* TICK MARKS below the track — lighter, just whiskers, no labels by default */
+#effectsize .es-d-slider-ticks{
+  position:absolute;
+  left:0;right:0;
+  top:14px;
+  height:6px;
+  pointer-events:none;
+}
+#effectsize .es-d-tick{
+  position:absolute;
+  top:0;
+  width:1px;height:4px;
+  background:rgba(20,15,5,0.18);
+  transform:translateX(-50%);
+}
+#effectsize .es-d-tick::after{
+  /* Tiny labels under just the major + zero ticks */
+  content:"";
+}
+#effectsize .es-d-tick-major,
+#effectsize .es-d-tick-zero{height:5px;background:rgba(20,15,5,0.40)}
+#effectsize .es-d-tick-major::after,
+#effectsize .es-d-tick-zero::after{
+  content:attr(data-label);
+  position:absolute;
+  top:6px;left:50%;
+  transform:translateX(-50%);
   font-family:var(--mono);
-  font-size:10.5px;
-  color:var(--muted);
-  padding:0;
-  background:transparent;
+  font-size:8.5px;
+  color:#9A968D;
+  white-space:nowrap;
+  letter-spacing:0.02em;
 }
+#effectsize .es-d-tick-zero::after{color:#5A5A5A;font-weight:600}
+
+/* READOUT — value (inline, single row) */
+#effectsize .es-d-slider-val-num{
+  font-family:var(--mono);
+  font-size:14px;
+  font-weight:600;
+  color:#1A1A1A;
+  letter-spacing:-0.01em;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  min-width:44px;
+  text-align:right;
+}
+/* (Magnitude pill styling removed — pill itself was removed from the slider row to
+   keep the track at a fixed width. The JS still has guarded lookups that are no-ops.) */
 #effectsize .es-method-warning{
   display:none;
   margin:-4px 0 14px;
@@ -1988,7 +2320,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 #effectsize .es-view-pane[data-view-pane="comparison"] .panel-kicker,
 #effectsize .es-view-pane[data-view-pane="reference"] .panel-kicker{margin-bottom:8px}
 
-/* Results grid — denser */
+/* Results grid â€” denser */
 #effectsize .es-results-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:0;border:1px solid var(--border);background:var(--border)}
 @media (max-width:1100px){#effectsize .es-results-grid{grid-template-columns:repeat(4,1fr)}}
 @media (max-width:780px){#effectsize .es-results-grid{grid-template-columns:repeat(2,1fr)}}
@@ -2078,7 +2410,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 #effectsize .es-target-panel,#effectsize .es-examples{margin:0}
 #effectsize .es-target-panel summary,#effectsize .es-examples summary{cursor:pointer;list-style:none;outline:none;display:flex;align-items:center;gap:8px}
 #effectsize .es-target-panel summary::-webkit-details-marker,#effectsize .es-examples summary::-webkit-details-marker{display:none}
-#effectsize .es-target-panel summary::before,#effectsize .es-examples summary::before{content:"▸";color:var(--muted);font-size:10px;transition:transform 180ms}
+#effectsize .es-target-panel summary::before,#effectsize .es-examples summary::before{content:"â–¸";color:var(--muted);font-size:10px;transition:transform 180ms}
 #effectsize .es-target-panel[open] summary::before,#effectsize .es-examples[open] summary::before{transform:rotate(90deg)}
 #effectsize .es-target-body{margin-top:10px}
 #effectsize .es-target-intro{
@@ -2181,12 +2513,12 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 #effectsize .es-examples-refs{margin-top:8px;font-family:var(--sans);font-size:10.5px;color:var(--muted);font-style:italic;line-height:1.45}
 
 /* =====================================================================
-   REDESIGN OVERRIDES — Fisherman palette + restrained typography
+   REDESIGN OVERRIDES â€” Fisherman palette + restrained typography
    ===================================================================== */
 
 :root{
   /* Cool warm-grey palette, dark neutral accent (terracotta only in wordmark) */
-  --paper:#EBE8E1;            /* page background — Fisherman warm-grey */
+  --paper:#EBE8E1;            /* page background â€” Fisherman warm-grey */
   --paper-2:#E3DFD6;
   --paper-3:#D9D4C8;
   --paper-card:#FFFFFF;       /* card surfaces are pure white */
@@ -2216,7 +2548,7 @@ body{display:block;overflow:auto;background:var(--paper);font-size:13.5px}
   min-height:calc(100vh - var(--topbar-h));
 }
 
-/* ---- TOP BAR — two-tier (brand row + tabs row), Fisherman-style ---- */
+/* ---- TOP BAR â€” two-tier (brand row + tabs row), Fisherman-style ---- */
 .topbar{
   position:fixed;top:0;left:0;right:0;z-index:60;
   background:#FFFFFF;
@@ -2240,7 +2572,7 @@ body{display:block;overflow:auto;background:var(--paper);font-size:13.5px}
 
 .topbar-brand{display:flex;align-items:center;flex-shrink:0;line-height:1}
 .topbar-brand-mark{display:none}
-/* Wordmark — bigger, top-left, the ONLY place serif + terracotta appear */
+/* Wordmark â€” bigger, top-left, the ONLY place serif + terracotta appear */
 .topbar-brand-title{
   font-family:var(--serif);font-size:20px;font-weight:600;
   letter-spacing:-0.015em;color:var(--ink);line-height:1.1;
@@ -2254,7 +2586,7 @@ body{display:block;overflow:auto;background:var(--paper);font-size:13.5px}
   flex-shrink:0;
 }
 
-/* Current page title — updates via JS as user navigates */
+/* Current page title â€” updates via JS as user navigates */
 .topbar-page-title{
   font-family:var(--sans);font-size:14px;font-weight:500;
   color:var(--ink);letter-spacing:-0.005em;
@@ -2267,7 +2599,7 @@ body{display:block;overflow:auto;background:var(--paper);font-size:13.5px}
   color:#3F3F3F;
 }
 
-/* Nav tabs row — icons + label, Fisherman-style */
+/* Nav tabs row â€” icons + label, Fisherman-style */
 .topnav{display:flex;align-items:stretch;gap:0;height:100%;flex-wrap:nowrap}
 .topnav-item{
   position:relative;
@@ -2372,7 +2704,7 @@ body{display:block;overflow:auto;background:var(--paper);font-size:13.5px}
 /* ---- SECTION SHELL ---- */
 .section{max-width:1100px;padding:32px 40px 80px;font-size:13.5px}
 
-/* ---- TYPOGRAPHY — restrained, Fisherman-aligned ---- */
+/* ---- TYPOGRAPHY â€” restrained, Fisherman-aligned ---- */
 /* Eyebrow: tiny uppercase label, no decorations */
 .eyebrow{
   font-family:var(--sans);font-size:10px;font-weight:500;
@@ -2383,7 +2715,7 @@ body{display:block;overflow:auto;background:var(--paper);font-size:13.5px}
 }
 .eyebrow::before,.eyebrow::after,.eyebrow .ed-mark{display:none!important}
 
-/* Section titles — serif kept but MUCH smaller and tighter */
+/* Section titles â€” serif kept but MUCH smaller and tighter */
 .section-title{
   font-family:var(--serif);font-size:24px;font-weight:600;
   letter-spacing:-0.01em;color:var(--ink);line-height:1.2;
@@ -2408,7 +2740,7 @@ body{display:block;overflow:auto;background:var(--paper);font-size:13.5px}
 /* Section rule */
 .section-rule{background:#DCD8CD;height:1px;margin:0 0 24px;border:none}
 
-/* ---- PATHWAY CARDS — pure white, very flat, restrained ---- */
+/* ---- PATHWAY CARDS â€” pure white, very flat, restrained ---- */
 .home-pathways{
   display:grid;grid-template-columns:repeat(3,1fr);
   gap:14px;margin-top:0;
@@ -2468,7 +2800,7 @@ body{display:block;overflow:auto;background:var(--paper);font-size:13.5px}
 .home-pathway-tool-name{cursor:pointer;color:#3F3F3F}
 .home-pathway-tool-name:hover{color:#1A1A1A;text-decoration:underline;text-decoration-color:#9A968D;text-underline-offset:3px}
 
-/* "Recommended" badge — neutralise to grey from terracotta */
+/* "Recommended" badge â€” neutralise to grey from terracotta */
 .home-pathway-tool-badge{
   background:rgba(26,26,26,0.05);
   border-color:rgba(26,26,26,0.18)!important;
@@ -2482,7 +2814,7 @@ body{display:block;overflow:auto;background:var(--paper);font-size:13.5px}
 .home-actions .btn-primary{box-shadow:none}
 
 /* =====================================================================
-   REDESIGN PHASE 2 — propagate to inner pages
+   REDESIGN PHASE 2 â€” propagate to inner pages
    Flatten panels, neutralise terracotta accents on inputs/buttons/info,
    tighten section-level styling site-wide.
    ===================================================================== */
@@ -2566,8 +2898,30 @@ input[type="number"]{font-family:var(--mono)!important}
 .btn-secondary:hover{background:#F4F1E9!important;border-color:#9A968D!important;color:var(--ink)!important}
 .btn-ghost{background:transparent!important;border-color:transparent!important;color:#6B6B6B!important}
 .btn-ghost:hover{background:rgba(26,26,26,0.05)!important;color:var(--ink)!important}
-.btn-clear{color:#6B6B6B!important}
-.btn-clear:hover{color:#9C3D2A!important;border-color:#9C3D2A!important}  /* keep red for destructive */
+/* Destructive Clear / Reset — fully red, overrides the generic .btn:hover paper-fill */
+.btn.btn-clear{
+  background:#D63A2F!important;
+  border-color:#B22A20!important;
+  color:#FFFFFF!important;
+  font-weight:600!important;
+  box-shadow:0 1px 2px rgba(178,42,32,0.30), 0 2px 6px rgba(214,58,47,0.22)!important;
+}
+.btn.btn-clear:hover{
+  background:#E84A3D!important;
+  border-color:#C2342A!important;
+  color:#FFFFFF!important;
+  box-shadow:0 2px 4px rgba(178,42,32,0.35), 0 4px 12px rgba(214,58,47,0.40)!important;
+  transform:translateY(-1px);
+}
+.btn.btn-clear:active{
+  background:#B22A20!important;
+  border-color:#8E2118!important;
+  transform:translateY(0);
+}
+.btn.btn-clear:focus-visible{
+  outline:3px solid rgba(214,58,47,0.45);
+  outline-offset:2px;
+}
 
 /* ---- INFO BOX: neutral grey (was terracotta-tinted) ---- */
 .info-box{
@@ -2592,7 +2946,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{
   box-shadow:0 0 0 1px #1A1A1A!important;
 }
 
-/* ---- TABLE INPUT (input-table) — flatter, neutral header ---- */
+/* ---- TABLE INPUT (input-table) â€” flatter, neutral header ---- */
 .input-table{background:#FFFFFF;border:1px solid #E0DCD2}
 .input-table thead th{background:#F4F1E9;color:#3F3F3F}
 .input-table tbody tr:hover{background:#FAF7F0}
@@ -2617,7 +2971,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 a{color:#1A1A1A;text-decoration:underline;text-decoration-color:#9A968D;text-underline-offset:3px}
 a:hover{text-decoration-color:#1A1A1A}
 
-/* ---- SECTION HEADERS in inner pages — stay tight & restrained ---- */
+/* ---- SECTION HEADERS in inner pages â€” stay tight & restrained ---- */
 .section-title{font-size:24px}
 #change-analysis .section-title,
 #converter .section-title,
@@ -2658,7 +3012,7 @@ details summary:hover{color:var(--ink)}
 .conv-slider-wrap, .conv-slider-track-fill{}
 
 /* =====================================================================
-   REDESIGN PHASE 3 — clean inner-page aesthetic
+   REDESIGN PHASE 3 â€” clean inner-page aesthetic
    Method tabs, section-header cleanup, table polish, button refinement
    ===================================================================== */
 
@@ -2699,7 +3053,7 @@ details summary:hover{color:var(--ink)}
 #change-analysis .change-method-tab.active{
   background:linear-gradient(180deg, #FAF7F0 0%, #F4F1E9 100%)!important;
 }
-/* Soft bottom accent line on active tab — feathered edges */
+/* Soft bottom accent line on active tab â€” feathered edges */
 #change-analysis .change-method-tab.active::after{
   content:"";
   position:absolute;left:0;right:0;bottom:0;
@@ -2709,7 +3063,7 @@ details summary:hover{color:var(--ink)}
 /* Disable the old top accent so we don't double-accent */
 #change-analysis .change-method-tab.active::before{display:none!important}
 
-/* Number prefix — circular step badge (modern wizard-stepper feel) */
+/* Number prefix â€” circular step badge (modern wizard-stepper feel) */
 #change-analysis .change-method-num{
   width:26px!important;
   height:26px!important;
@@ -2781,7 +3135,7 @@ details summary:hover{color:var(--ink)}
 #change-analysis .change-adjustment-key{display:none!important}
 
 /* ---- CHANGE ANALYSIS: drop duplicated method name from section title ---- */
-/* (was: hide duplicate model name; no longer needed — main title now IS the method name) */
+/* (was: hide duplicate model name; no longer needed â€” main title now IS the method name) */
 
 /* ---- Hide redundant eyebrows on inner pages (page name already in topbar) ---- */
 #converter > .eyebrow,
@@ -2911,7 +3265,7 @@ details summary:hover{color:var(--ink)}
 }
 
 /* =====================================================================
-   REDESIGN PHASE 4 — Change Analysis page rebuild
+   REDESIGN PHASE 4 â€” Change Analysis page rebuild
    The method-tab strip is the most visible issue. Make it look like
    a proper segmented control: equal-width, clear active state,
    trimmed of decorative noise (descriptor pills, features key).
@@ -2935,7 +3289,7 @@ details summary:hover{color:var(--ink)}
   margin-bottom:20px!important;
 }
 
-/* Method tabs strip — proper segmented control */
+/* Method tabs strip â€” proper segmented control */
 #change-analysis .change-method-tabs{
   display:grid!important;
   grid-template-columns:repeat(5,1fr)!important;
@@ -2965,7 +3319,7 @@ details summary:hover{color:var(--ink)}
   min-height:auto!important;
 }
 
-/* Hide the numbered badges — labels alone are cleaner */
+/* Hide the numbered badges â€” labels alone are cleaner */
 #change-analysis .change-method-num{display:none!important}
 #change-analysis .change-method-tab:last-child{border-right:none!important}
 #change-analysis .change-method-tab:hover{background:#F8F5ED!important}
@@ -2980,7 +3334,7 @@ details summary:hover{color:var(--ink)}
   height:2px;
   background:#1A1A1A;
 }
-/* Number prefix (01, 02…) — tiny mono caption above the label */
+/* Number prefix (01, 02â€¦) â€” tiny mono caption above the label */
 #change-analysis .change-method-num{
   font-family:var(--mono)!important;
   font-size:10px!important;
@@ -3050,7 +3404,7 @@ details summary:hover{color:var(--ink)}
   color:#1A1A1A;
 }
 
-/* Compute button area / row actions below table — flatter */
+/* Compute button area / row actions below table â€” flatter */
 #change-analysis .input-table-controls,
 #change-analysis .change-actions{
   display:flex;gap:8px;align-items:center;
@@ -3058,7 +3412,7 @@ details summary:hover{color:var(--ink)}
 }
 
 /* =====================================================================
-   REDESIGN PHASE 5 — MODERNIZATION PASS
+   REDESIGN PHASE 5 â€” MODERNIZATION PASS
    Elevation, motion, radius, refined typography, hover states,
    and the micro-details that separate "clean" from "modern".
    ===================================================================== */
@@ -3096,7 +3450,7 @@ body{
 }
 .topbar-row-brand{border-bottom:1px solid rgba(20,15,5,0.06)!important}
 
-/* Smoother topnav underline — animated width */
+/* Smoother topnav underline â€” animated width */
 .topnav-item::after{
   transition:transform 220ms var(--ease)!important;
 }
@@ -3262,7 +3616,7 @@ input:focus, select:focus, textarea:focus{
   letter-spacing:-0.015em!important;
 }
 
-/* ---- NUMBERS — tabular alignment everywhere they matter ---- */
+/* ---- NUMBERS â€” tabular alignment everywhere they matter ---- */
 .input-table .num,
 .input-table input[type="number"],
 .es-result-value,
@@ -3272,7 +3626,7 @@ input:focus, select:focus, textarea:focus{
   font-feature-settings:"tnum" 1, "lnum" 1;
 }
 
-/* ---- FOCUS RINGS — modern offset style ---- */
+/* ---- FOCUS RINGS â€” modern offset style ---- */
 button:focus-visible,
 a:focus-visible{
   outline:2px solid rgba(26,26,26,0.4);
@@ -3361,7 +3715,7 @@ a:focus-visible{
 .topnav-item.active .topnav-icon{opacity:1!important}
 
 /* =====================================================================
-   REDESIGN PHASE 6 — page-by-page modernization
+   REDESIGN PHASE 6 â€” page-by-page modernization
    Apply elevation, refined typography, and modern micro-details to
    every page's bespoke UI components.
    ===================================================================== */
@@ -3374,7 +3728,7 @@ a:focus-visible{
   box-shadow:var(--shadow-1)!important;
   padding:24px 28px!important;
 }
-/* Slider thumb — modern dark with subtle ring */
+/* Slider thumb â€” modern dark with subtle ring */
 input[type="range"]#conv-slider::-webkit-slider-thumb{
   width:20px!important;height:20px!important;
   background:#1A1A1A!important;
@@ -3398,7 +3752,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{
   letter-spacing:0.14em;text-transform:uppercase;color:#8A867E!important;
   font-weight:600;margin-bottom:10px;
 }
-/* Score equivalents row — modernized cards */
+/* Score equivalents row â€” modernized cards */
 .conv-scores-strip{
   display:grid;grid-template-columns:repeat(5,1fr);gap:1px;
   background:rgba(20,15,5,0.06);
@@ -3413,14 +3767,14 @@ input[type="range"]#conv-slider::-moz-range-thumb{
   display:flex;flex-direction:column;gap:4px;
   transition:background var(--t-fast) var(--ease);
 }
-/* Active "you entered" pill — strong dark fill */
+/* Active "you entered" pill â€” strong dark fill */
 .conv-scores-strip > [data-active="true"],
 .conv-scores-strip .is-active,
 .conv-scores-strip .conv-strip-active{
   background:linear-gradient(180deg, #2A2A2A 0%, #1A1A1A 100%)!important;
   color:#FFFFFF!important;
 }
-/* Wechsler / AACN classification carousel — keep original styling (line ~566 onward).
+/* Wechsler / AACN classification carousel â€” keep original styling (line ~566 onward).
    No Phase 6 overrides here. */
 
 /* ---------- NEUROPSYCH TABLES ---------- */
@@ -3572,7 +3926,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{
   display:inline-flex;align-items:center;justify-content:center;
 }
 #premorbid .pre-tabs > .active .pre-tab-num{background:#1A1A1A;color:#FFFFFF}
-/* Result tables — overflow:visible so help-tooltips can escape the table */
+/* Result tables â€” overflow:visible so help-tooltips can escape the table */
 #premorbid .pre-results-table,
 #premorbid .pre-predict-table{
   background:#FFFFFF;
@@ -3730,7 +4084,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{
   padding:22px 24px!important;
 }
 
-/* ---------- HOME — push hero card hierarchy ---------- */
+/* ---------- HOME â€” push hero card hierarchy ---------- */
 .home-pathway-card .home-pathway-tools{
   border-top:1px solid rgba(20,15,5,0.06)!important;
   padding-top:14px!important;
@@ -3740,7 +4094,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{
   transition:color var(--t-fast) var(--ease);
 }
 .home-pathway-tool-name:hover{color:#1A1A1A!important}
-/* Recommended badge — modernize */
+/* Recommended badge â€” modernize */
 .home-pathway-tool-badge{
   background:linear-gradient(180deg, #2A2A2A, #1A1A1A)!important;
   color:#FFFFFF!important;
@@ -3769,9 +4123,9 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
-   REDESIGN PHASE 7 — Home page vertical compression
+   REDESIGN PHASE 7 â€” Home page vertical compression
    Claw back ~110px without making the layout feel cramped.
-   Targets only #home — other pages untouched.
+   Targets only #home â€” other pages untouched.
    ===================================================================== */
 
 /* Section container: tighter padding for Home only */
@@ -3836,7 +4190,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
-   REDESIGN PHASE 8 — Premorbid page vertical compression
+   REDESIGN PHASE 8 â€” Premorbid page vertical compression
    Flatten the Inputs sub-panel hierarchy, drop redundant title/desc,
    make Demographics 4-col instead of 2x2.
    Estimated savings: ~500px above-the-fold.
@@ -3865,7 +4219,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   display:none!important;
 }
 
-/* Compact the intro notice — small italic, no boxed treatment */
+/* Compact the intro notice â€” small italic, no boxed treatment */
 #premorbid .pre-input-intro{
   font-family:var(--sans)!important;
   font-size:12px!important;
@@ -3878,7 +4232,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   line-height:1.45!important;
 }
 
-/* Flatten the three pre-form-section sub-panels — no borders, no nested padding */
+/* Flatten the three pre-form-section sub-panels â€” no borders, no nested padding */
 #premorbid .pre-form-section{
   background:transparent!important;
   border:none!important;
@@ -3982,7 +4336,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
-   PHASE 9 — Premorbid Inputs tab polish
+   PHASE 9 â€” Premorbid Inputs tab polish
    Make the Inputs tab feel structured and modern: each sub-group
    (Predictors / Demographics / Output Settings) becomes its own white
    card on the cream backdrop, with proper spacing and clearer hierarchy.
@@ -3999,7 +4353,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   gap:16px;
 }
 
-/* Hide the leftover italic intro inside the panel — the tab label "Inputs"
+/* Hide the leftover italic intro inside the panel â€” the tab label "Inputs"
    already says what this is. */
 #premorbid #pre-inputs .pre-input-intro{
   display:none!important;
@@ -4019,7 +4373,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   box-shadow:var(--shadow-2)!important;
 }
 
-/* Sub-section header: better hierarchy — bigger, clearer label + note */
+/* Sub-section header: better hierarchy â€” bigger, clearer label + note */
 #premorbid #pre-inputs .pre-form-heading{
   display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
   padding-bottom:10px;
@@ -4044,7 +4398,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   font-weight:400;
 }
 
-/* Field labels — slightly more refined inside cards */
+/* Field labels â€” slightly more refined inside cards */
 #premorbid #pre-inputs .field label{
   font-family:var(--sans)!important;
   font-size:10.5px!important;
@@ -4064,7 +4418,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   text-transform:none!important;
 }
 
-/* Inputs inside cards — slightly larger for tactile feel */
+/* Inputs inside cards â€” slightly larger for tactile feel */
 #premorbid #pre-inputs input[type="text"],
 #premorbid #pre-inputs input[type="number"],
 #premorbid #pre-inputs select{
@@ -4076,7 +4430,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 #premorbid #pre-inputs .pre-form-section + .pre-form-section{margin-top:0!important}
 
 /* =====================================================================
-   PHASE 10 — Premorbid tabs 3 & 4 (ToPF Predicted vs Actual + OPIE)
+   PHASE 10 â€” Premorbid tabs 3 & 4 (ToPF Predicted vs Actual + OPIE)
    Polish the predicted-vs-actual tables: refined chrome, clearer
    group dividers, distinguished input cells, semantic colour on
    difference column, modern info notes and APA toolbar.
@@ -4156,7 +4510,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 #premorbid .pre-predict-table tbody tr:last-child td{border-bottom:none!important}
 
-/* Index name column (left) — slight indent under group headers */
+/* Index name column (left) â€” slight indent under group headers */
 #premorbid .pre-predict-table tbody td.model{
   font-family:var(--sans)!important;
   font-weight:500!important;
@@ -4172,12 +4526,12 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#3F3F3F!important;
 }
 
-/* Empty placeholder dashes — softer */
+/* Empty placeholder dashes â€” softer */
 #premorbid .pre-predict-table tbody td.num:not(:has(input)):not(:has(strong)){
   color:#9E9A93!important;
 }
 
-/* Achieved input cell — emphasise it as an input zone */
+/* Achieved input cell â€” emphasise it as an input zone */
 #premorbid .pre-predict-table tbody td.achieved-cell{
   padding:6px 10px!important;
   background:rgba(20,15,5,0.015);
@@ -4203,7 +4557,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   outline:none!important;
 }
 
-/* Difference column — semantic colour */
+/* Difference column â€” semantic colour */
 #premorbid .pre-predict-table tbody td.diff{
   font-family:var(--mono)!important;
   font-variant-numeric:tabular-nums;
@@ -4230,7 +4584,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#1A1A1A!important;
 }
 
-/* "Note." panel below table — already styled by .info-box but tighten margin */
+/* "Note." panel below table â€” already styled by .info-box but tighten margin */
 #premorbid #pre-predict .info-box,
 #premorbid #pre-opiepredict .info-box{
   margin:18px 0!important;
@@ -4275,7 +4629,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 /* OPIE table tab also gets the same treatment via shared classes */
 #premorbid #pre-opiepredict .pre-predict-table{}
 
-/* Modernize the help-tooltip on Premorbid model rows — match new design system */
+/* Modernize the help-tooltip on Premorbid model rows â€” match new design system */
 #premorbid .model-info-dot{
   background:rgba(20,15,5,0.06)!important;
   border:none!important;
@@ -4303,7 +4657,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   z-index:201!important;
 }
 
-/* ---- Tab navigation footer (Back / Step / Next) — sticky to viewport bottom ---- */
+/* ---- Tab navigation footer (Back / Step / Next) â€” sticky to viewport bottom ---- */
 #premorbid .pre-tab-nav{
   display:grid;
   grid-template-columns:1fr auto 1fr;
@@ -4333,7 +4687,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   pointer-events:none;
 }
 
-/* Step counter — bigger, clearer, more presence */
+/* Step counter â€” bigger, clearer, more presence */
 #premorbid .pre-nav-step{
   font-family:var(--sans);
   font-size:12.5px;
@@ -4346,7 +4700,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   padding:0 14px;
 }
 
-/* Buttons inside nav — larger and more prominent */
+/* Buttons inside nav â€” larger and more prominent */
 #premorbid .pre-tab-nav .btn{
   padding:11px 20px!important;
   font-size:13.5px!important;
@@ -4370,17 +4724,34 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* Next button: bigger, more confident */
 #premorbid .pre-nav-next{
-  background:linear-gradient(180deg, #2A2A2A 0%, #0F0F0F 100%)!important;
-  border:1px solid #0F0F0F!important;
+  background:linear-gradient(180deg, #3DA56B 0%, #2E8552 100%)!important;
+  border:1px solid #246B43!important;
   color:#FFFFFF!important;
-  box-shadow:0 1px 2px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.08)!important;
+  font-weight:600!important;
+  box-shadow:0 1px 2px rgba(36,107,67,0.30), 0 4px 12px rgba(46,133,82,0.28), inset 0 1px 0 rgba(255,255,255,0.18)!important;
+  transition:background 160ms ease, transform 120ms ease, box-shadow 160ms ease!important;
 }
 #premorbid .pre-nav-next:hover{
-  background:linear-gradient(180deg, #1F1F1F 0%, #000000 100%)!important;
-  box-shadow:0 2px 4px rgba(0,0,0,0.24), 0 8px 18px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.08)!important;
+  background:linear-gradient(180deg, #45B375 0%, #34935C 100%)!important;
+  border-color:#1F5D3A!important;
+  box-shadow:0 2px 4px rgba(36,107,67,0.35), 0 8px 18px rgba(46,133,82,0.40), inset 0 1px 0 rgba(255,255,255,0.20)!important;
   transform:translateY(-1px);
 }
-#premorbid .pre-nav-next:active{transform:translateY(0)}
+#premorbid .pre-nav-next:active{
+  background:linear-gradient(180deg, #2E8552 0%, #246B43 100%)!important;
+  transform:translateY(0);
+  box-shadow:0 1px 2px rgba(36,107,67,0.30) inset!important;
+}
+#premorbid .pre-nav-next:focus-visible{
+  outline:3px solid rgba(46,133,82,0.45);
+  outline-offset:2px;
+}
+#premorbid .pre-nav-next[disabled]{
+  background:linear-gradient(180deg, #BFD8C9 0%, #A6C4B3 100%)!important;
+  border-color:#9DBDAA!important;
+  box-shadow:none!important;
+  cursor:not-allowed;
+}
 
 /* Add bottom padding to the last tab content so the sticky bar doesn't cover it */
 #premorbid .pre-tab-content{padding-bottom:16px}
@@ -4407,7 +4778,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
-   PHASE 11 — Report Writer wizard nav (match Premorbid sticky style)
+   PHASE 11 â€” Report Writer wizard nav (match Premorbid sticky style)
    ===================================================================== */
 
 #report-writer .rw-wizard-nav{
@@ -4438,19 +4809,33 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* Clear-all stays subtle, semantic-warn on hover */
 #report-writer .rw-wizard-nav .rw-clear-btn{
-  background:transparent!important;
-  border:1px solid rgba(20,15,5,0.12)!important;
-  color:#7A766E!important;
-  font-size:11.5px!important;
-  font-weight:500!important;
-  letter-spacing:0!important;
-  padding:7px 12px!important;
+  background:#D63A2F!important;
+  border:1px solid #B22A20!important;
+  color:#FFFFFF!important;
+  font-size:12px!important;
+  font-weight:600!important;
+  letter-spacing:0.01em!important;
+  padding:8px 16px!important;
   height:auto!important;
+  box-shadow:0 1px 2px rgba(178,42,32,0.30), 0 2px 6px rgba(214,58,47,0.25)!important;
+  transition:background 160ms ease, border-color 160ms ease, transform 120ms ease, box-shadow 160ms ease!important;
 }
 #report-writer .rw-wizard-nav .rw-clear-btn:hover{
-  color:#9C3D2A!important;
-  border-color:rgba(156,61,42,0.35)!important;
-  background:rgba(156,61,42,0.04)!important;
+  background:#E84A3D!important;
+  border-color:#C2342A!important;
+  color:#FFFFFF!important;
+  box-shadow:0 2px 4px rgba(178,42,32,0.35), 0 4px 12px rgba(214,58,47,0.40)!important;
+  transform:translateY(-1px);
+}
+#report-writer .rw-wizard-nav .rw-clear-btn:active{
+  background:#B22A20!important;
+  border-color:#8E2118!important;
+  transform:translateY(0);
+  box-shadow:0 1px 2px rgba(178,42,32,0.30) inset!important;
+}
+#report-writer .rw-wizard-nav .rw-clear-btn:focus-visible{
+  outline:3px solid rgba(214,58,47,0.45);
+  outline-offset:2px;
 }
 
 /* Prev/Next buttons match Premorbid nav */
@@ -4476,19 +4861,36 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   box-shadow:var(--shadow-2)!important;
 }
 #report-writer .rw-wizard-nav [data-rw-wizard="next"]{
-  background:linear-gradient(180deg, #2A2A2A 0%, #0F0F0F 100%)!important;
-  border:1px solid #0F0F0F!important;
+  background:linear-gradient(180deg, #3DA56B 0%, #2E8552 100%)!important;
+  border:1px solid #246B43!important;
   color:#FFFFFF!important;
-  box-shadow:0 1px 2px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.08)!important;
+  font-weight:600!important;
+  box-shadow:0 1px 2px rgba(36,107,67,0.30), 0 4px 12px rgba(46,133,82,0.28), inset 0 1px 0 rgba(255,255,255,0.18)!important;
+  transition:background 160ms ease, transform 120ms ease, box-shadow 160ms ease!important;
 }
 #report-writer .rw-wizard-nav [data-rw-wizard="next"]:hover:not([disabled]){
-  background:linear-gradient(180deg, #1F1F1F 0%, #000000 100%)!important;
-  box-shadow:0 2px 4px rgba(0,0,0,0.24), 0 8px 18px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.08)!important;
+  background:linear-gradient(180deg, #45B375 0%, #34935C 100%)!important;
+  border-color:#1F5D3A!important;
+  box-shadow:0 2px 4px rgba(36,107,67,0.35), 0 8px 18px rgba(46,133,82,0.40), inset 0 1px 0 rgba(255,255,255,0.20)!important;
   transform:translateY(-1px);
 }
-#report-writer .rw-wizard-nav [data-rw-wizard="next"]:active{transform:translateY(0)}
+#report-writer .rw-wizard-nav [data-rw-wizard="next"]:active{
+  background:linear-gradient(180deg, #2E8552 0%, #246B43 100%)!important;
+  transform:translateY(0);
+  box-shadow:0 1px 2px rgba(36,107,67,0.30) inset!important;
+}
+#report-writer .rw-wizard-nav [data-rw-wizard="next"]:focus-visible{
+  outline:3px solid rgba(46,133,82,0.45);
+  outline-offset:2px;
+}
+#report-writer .rw-wizard-nav [data-rw-wizard="next"][disabled]{
+  background:linear-gradient(180deg, #BFD8C9 0%, #A6C4B3 100%)!important;
+  border-color:#9DBDAA!important;
+  box-shadow:none!important;
+  cursor:not-allowed;
+}
 
-/* Progress label — bigger, clearer, more presence */
+/* Progress label â€” bigger, clearer, more presence */
 #report-writer .rw-wizard-nav .rw-wizard-progress{
   text-align:center!important;
   font-family:var(--sans)!important;
@@ -4507,12 +4909,12 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
-   PHASE 12 — Change Analysis page polish
+   PHASE 12 â€” Change Analysis page polish
    Drop redundant title, format formula card, combine settings toolbar,
    promote section headers, polish action buttons, lift APA output.
    ===================================================================== */
 
-/* Method tabs — refine active accent line so it doesn't bleed beyond the tab box */
+/* Method tabs â€” refine active accent line so it doesn't bleed beyond the tab box */
 #change-analysis .change-method-tabs{overflow:hidden!important}
 #change-analysis .change-method-tab.active::before{
   left:0!important;right:0!important;
@@ -4566,7 +4968,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-bottom:5px!important;
 }
 
-/* Test data section heading — stronger presence */
+/* Test data section heading â€” stronger presence */
 #change-analysis h2,
 #change-analysis .change-section-heading,
 #change-analysis [class*="test-data-title"]{
@@ -4581,7 +4983,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   border-bottom:1px solid rgba(20,15,5,0.06);
 }
 
-/* Action buttons row below the table — flat, consistent, refined */
+/* Action buttons row below the table â€” flat, consistent, refined */
 #change-analysis .input-table-controls,
 #change-analysis .change-actions,
 #change-analysis [class*="row-actions"]{
@@ -4598,7 +5000,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   border-radius:var(--r-md)!important;
 }
 
-/* APA output panel — give it presence */
+/* APA output panel â€” give it presence */
 #change-analysis .apa-wrap{
   background:#FFFFFF!important;
   border:1px solid rgba(20,15,5,0.06)!important;
@@ -4630,7 +5032,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 /* Section bottom padding tighter */
 #change-analysis.section{padding:24px 40px 80px!important}
 
-/* Auto-fill empty state — subtle hint instead of huge empty space */
+/* Auto-fill empty state â€” subtle hint instead of huge empty space */
 #change-analysis .autofill-panel{
   display:flex;
   flex-direction:column;
@@ -4645,7 +5047,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 #change-analysis .autofill-panel .combo-input{margin-top:4px!important}
 
 /* =====================================================================
-   PHASE 13 — Change Analysis Overview tab
+   PHASE 13 â€” Change Analysis Overview tab
    Smaller "Overview" tab on the left + panel containing brief
    clinical descriptions of each of the 5 methods.
    ===================================================================== */
@@ -4655,7 +5057,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   grid-template-columns:auto repeat(5, 1fr)!important;
 }
 
-/* About tab — more prominent so clinicians spot it for guidance */
+/* About tab â€” more prominent so clinicians spot it for guidance */
 #change-analysis .change-method-tab-overview{
   padding:14px 20px!important;
   display:flex!important;
@@ -4680,7 +5082,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   position:absolute;top:0;left:0;right:0;height:2px;
   background:#A85544;
 }
-/* "?" bubble icon — terracotta-accented circular badge */
+/* "?" bubble icon â€” terracotta-accented circular badge */
 .change-overview-bubble{
   width:20px;height:20px;
   border-radius:50%;
@@ -4706,7 +5108,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   box-shadow:0 2px 6px rgba(122,46,31,0.45), 0 0 0 3px rgba(168,85,68,0.20);
 }
 
-/* Subtle pulse animation when the section is freshly loaded — draws the eye once */
+/* Subtle pulse animation when the section is freshly loaded â€” draws the eye once */
 @keyframes about-bubble-pulse{
   0%, 100%{box-shadow:0 1px 2px rgba(168,85,68,0.25), 0 0 0 2px rgba(168,85,68,0.15)}
   50%{box-shadow:0 2px 6px rgba(168,85,68,0.45), 0 0 0 6px rgba(168,85,68,0.0)}
@@ -4747,7 +5149,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   gap:12px;
 }
 
-/* Individual method-description card — tighter spacing */
+/* Individual method-description card â€” tighter spacing */
 #change-analysis .change-overview-card{
   background:#FFFFFF;
   border:1px solid rgba(20,15,5,0.06);
@@ -4839,7 +5241,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
-   PHASE 14 — Editable date column headers blend with table header
+   PHASE 14 â€” Editable date column headers blend with table header
    The DATE 1 / DATE 2 inputs were rendering as bordered white boxes
    that looked like buttons. Make them invisible-by-default; only show
    edit chrome on hover/focus (classic in-place edit pattern).
@@ -4881,7 +5283,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
-   PHASE 15 — Feature pills on About cards (statistical robustness labels)
+   PHASE 15 â€” Feature pills on About cards (statistical robustness labels)
    ===================================================================== */
 
 #change-analysis .change-overview-features{
@@ -4914,7 +5316,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   cursor:help;
   transition:background var(--t-fast) var(--ease);
   white-space:nowrap;
-  /* Default = is-on (active feature) — soft cream tint, dark text */
+  /* Default = is-on (active feature) â€” soft cream tint, dark text */
   background:rgba(20,15,5,0.05);
   color:#3F3F3F;
   border:1px solid transparent;
@@ -4925,7 +5327,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#1A1A1A;
 }
 
-/* "None" variant — for Level 1 (descriptive only) */
+/* "None" variant â€” for Level 1 (descriptive only) */
 #change-analysis .change-overview-feature.is-none{
   background:transparent;
   border:1px dashed rgba(20,15,5,0.18);
@@ -4938,7 +5340,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#9A968D;
 }
 
-/* "Strong" variant — softened terracotta tint for Sample size on Crawford */
+/* "Strong" variant â€” softened terracotta tint for Sample size on Crawford */
 #change-analysis .change-overview-feature-strong{
   background:rgba(168,85,68,0.10)!important;
   color:#7A2E1F!important;
@@ -4949,7 +5351,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#5A1F12!important;
 }
 
-/* Compare-with-premorbid toggle — keep label on a single line */
+/* Compare-with-premorbid toggle â€” keep label on a single line */
 #battery .bat-premorbid-toggle{
   white-space:nowrap!important;
   font-size:12px!important;
@@ -4959,7 +5361,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
-   NEUROPSYCH TABLES — same polish principles as other inner pages
+   NEUROPSYCH TABLES â€” same polish principles as other inner pages
    - Hide redundant section header (page name in topbar)
    - Wider section + magazine layout (narrow setup, wide table)
    - Tighter panels, refined autofill, polished controls
@@ -4991,7 +5393,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   padding:24px 40px 48px!important;
 }
 
-/* Setup panel + premorbid panel + autofill panel — narrow (magazine-body width).
+/* Setup panel + premorbid panel + autofill panel â€” narrow (magazine-body width).
    The subtest table breaks out wider when needed (existing behaviour). */
 #battery > .panel:not(.input-table-wrap){
   max-width:1180px;
@@ -4999,7 +5401,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-right:auto!important;
 }
 
-/* Setup panel — flatter, consistent with rest of site */
+/* Setup panel â€” flatter, consistent with rest of site */
 #battery > .panel{
   background:#FFFFFF!important;
   border:1px solid rgba(20,15,5,0.06)!important;
@@ -5009,7 +5411,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-bottom:14px!important;
 }
 
-/* Premorbid comparison panel — cream gradient distinguishes it as optional */
+/* Premorbid comparison panel â€” cream gradient distinguishes it as optional */
 #battery .bat-premorbid-panel{
   background:linear-gradient(180deg, #FAF7F0, #F4F1E9)!important;
   border:1px solid rgba(20,15,5,0.06)!important;
@@ -5023,7 +5425,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin:10px 0 0!important;
 }
 
-/* Autofill panel — refined */
+/* Autofill panel â€” refined */
 #battery .autofill-panel{
   background:#FFFFFF!important;
 }
@@ -5046,7 +5448,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-left:6px;
 }
 
-/* Field labels in setup grid — consistent uppercase tracking */
+/* Field labels in setup grid â€” consistent uppercase tracking */
 #battery .panel:not(.bat-premorbid-panel) .field label,
 #battery .bat-premorbid-panel .field > label:first-child{
   font-family:var(--sans)!important;
@@ -5068,7 +5470,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-left:4px;
 }
 
-/* The block-title heading above the table (if present) — match other pages */
+/* The block-title heading above the table (if present) â€” match other pages */
 #battery .block-title,
 #battery h2.block-title{
   font-family:var(--serif)!important;
@@ -5081,7 +5483,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   border:none;
 }
 
-/* Subtest input table breaks out wide — full width minus section padding */
+/* Subtest input table breaks out wide â€” full width minus section padding */
 #battery > .input-table-wrap,
 #battery > #bat-table,
 #battery > table.input-table{
@@ -5089,7 +5491,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   width:100%;
 }
 
-/* Action buttons below the table — flat consistent with other pages */
+/* Action buttons below the table â€” flat consistent with other pages */
 #battery .add-row-actions .btn,
 #battery .table-actions .btn{
   padding:8px 14px!important;
@@ -5098,7 +5500,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
-   REPORT WRITER — fit Setup/Build/Scores into one viewport
+   REPORT WRITER â€” fit Setup/Build/Scores into one viewport
    - Hide redundant title (page name in topbar)
    - Refined intro line for first-time users
    - Wider section, tighter top padding
@@ -5128,12 +5530,12 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   padding:24px 40px 60px!important;
 }
 
-/* 3-step tabs (Setup / Build / Scores) — slightly more compact */
+/* 3-step tabs (Setup / Build / Scores) â€” slightly more compact */
 #report-writer .rw-tabs{
   margin-bottom:16px!important;
 }
 
-/* Setup-grid panels — tighter padding to fit more content */
+/* Setup-grid panels â€” tighter padding to fit more content */
 #report-writer .rw-setup-grid{
   margin-bottom:18px!important;
 }
@@ -5151,7 +5553,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   box-shadow:var(--shadow-1)!important;
 }
 
-/* Panel kicker labels — consistent with other pages */
+/* Panel kicker labels â€” consistent with other pages */
 #report-writer .panel-kicker{
   font-family:var(--sans)!important;
   font-size:10.5px!important;
@@ -5162,7 +5564,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-bottom:10px!important;
 }
 
-/* Field labels inside the Options panel — tighter */
+/* Field labels inside the Options panel â€” tighter */
 #report-writer .field label{
   font-family:var(--sans)!important;
   font-size:10.5px!important;
@@ -5181,42 +5583,42 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-bottom:0!important;
 }
 
-/* Domain checklist — tighter */
+/* Domain checklist â€” tighter */
 #report-writer .rw-domain-checklist{
   gap:6px!important;
   padding-top:4px!important;
 }
 
-/* Report-structure list rows — slightly tighter */
+/* Report-structure list rows â€” slightly tighter */
 #report-writer .report-section-list > *{
   padding:10px 12px!important;
 }
 
 /* Generated Draft (the APA-style output below) keeps its width but
-   we don't constrain the section here — user said it's OK to scroll for it */
+   we don't constrain the section here â€” user said it's OK to scroll for it */
 #report-writer .report-output-panel{
   margin-top:18px;
 }
 
-/* Build/Scores grid — compact */
+/* Build/Scores grid â€” compact */
 #report-writer .rw-build-grid{
   margin-bottom:18px!important;
 }
 
 /* Shrink the test-picker browser so the whole Build tab fits without
-   page-scrolling — internal scroll handles overflow within the box. */
+   page-scrolling â€” internal scroll handles overflow within the box. */
 #report-writer .report-test-browser{
-  max-height:300px!important;
+  max-height:200px!important;
 }
 
-/* Hide the redundant "Options" kicker on the Setup tab — the field labels
+/* Hide the redundant "Options" kicker on the Setup tab â€” the field labels
    inside (Reference / Descriptor system / Add domains) are self-explanatory */
 #report-writer .report-options-panel > .panel-kicker{
   display:none!important;
 }
 
 /* =====================================================================
-   SCORE CONVERTER — same polish as other inner pages + view tabs
+   SCORE CONVERTER â€” same polish as other inner pages + view tabs
    - Hide redundant title (page name in topbar), refined intro line
    - Wider section, tighter padding
    - Modern segmented control to switch between Equivalents and Distribution
@@ -5236,7 +5638,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   padding:24px 40px 60px!important;
 }
 
-/* The unified panel — keep flat, less heavy */
+/* The unified panel â€” keep flat, less heavy */
 #converter .conv-unified-panel{
   background:#FFFFFF!important;
   border:1px solid rgba(20,15,5,0.06)!important;
@@ -5248,7 +5650,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 /* Drop the visible divider that used to sit between the slider and output */
 #converter .conv-panel-divider{display:none!important}
 
-/* "Score equivalents" inline header — quieter */
+/* "Score equivalents" inline header â€” quieter */
 #converter .conv-strip-header{
   font-family:var(--sans)!important;
   font-size:9.5px!important;
@@ -5306,14 +5708,14 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 #converter .conv-view-tab.is-active svg{opacity:1}
 
-/* Pane visibility — only the active pane is shown */
+/* Pane visibility â€” only the active pane is shown */
 #converter .conv-view-pane{display:none!important}
 #converter .conv-view-pane.is-active{display:block!important}
 /* Override the inline style="display:block" on conv-output */
 #converter #conv-output[style]{display:none!important}
 #converter #conv-output.is-active[style]{display:block!important}
 
-/* Distribution pane: bell curve as the hero — let it breathe */
+/* Distribution pane: bell curve as the hero â€” let it breathe */
 #converter .curve-wrap.conv-view-pane{
   margin-top:0!important;
   background:linear-gradient(180deg, #FAF7F0 0%, #FFFFFF 100%);
@@ -5336,7 +5738,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* Wechsler / AACN carousel: reverted to original styling (line ~566). */
 
-/* Fix descender clipping in dropdowns/inputs (e.g. "Mrs Doe (she/her)") —
+/* Fix descender clipping in dropdowns/inputs (e.g. "Mrs Doe (she/her)") â€”
    override the legacy height:32px / padding:0 rule on report-options-stack */
 #report-writer .report-options-stack .field select,
 #report-writer .report-options-stack .field input,
@@ -5350,11 +5752,11 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* =====================================================================
-   Norms visual-lock toggle — aesthetic fade + input lock, no layout shift
+   Norms visual-lock toggle â€” aesthetic fade + input lock, no layout shift
    Button sits INSIDE the Norms group header cell, on the right.
    ===================================================================== */
 
-/* Norms group cell layout — title centred, button on the right */
+/* Norms group cell layout â€” title centred, button on the right */
 #change-analysis .input-table .table-group-row th[data-norm-cell="true"]{
   position:relative;
   /* Keep the cell's natural alignment for the label, but allow the button
@@ -5364,7 +5766,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   display:inline-block;
 }
 
-/* Two-segment pill toggle — Lock | Unlock — anchored to right of Norms cell */
+/* Two-segment pill toggle â€” Lock | Unlock â€” anchored to right of Norms cell */
 .norms-toggle-pill{
   position:absolute;
   right:10px;
@@ -5436,7 +5838,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   transition:opacity var(--t-fast) var(--ease);
 }
 .norms-lock-btn:hover .norms-lock-icon{opacity:1}
-/* Pressed state — subtle terracotta tint to signal "norms are hidden" */
+/* Pressed state â€” subtle terracotta tint to signal "norms are hidden" */
 .norms-lock-btn[aria-pressed="true"]{
   background:rgba(168,85,68,0.08);
   border-color:rgba(168,85,68,0.24);
@@ -5449,7 +5851,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* When the table is locked, fade norm cells and desaturate them so they
-   visually recede. NO layout change — cells keep their position and width.
+   visually recede. NO layout change â€” cells keep their position and width.
    The toggle button itself is exempted so it stays clickable and crisp. */
 .input-table [data-norm-cell="true"]{
   transition:opacity 280ms ease, filter 280ms ease, background-color 280ms ease;
@@ -5465,19 +5867,19 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   opacity:0.5;
   transition:opacity 280ms ease;
 }
-/* Disabled inputs in locked state — flat, no caret, clearly uneditable */
+/* Disabled inputs in locked state â€” flat, no caret, clearly uneditable */
 .input-table.norms-locked [data-norm-cell="true"] input{
   background:rgba(20,15,5,0.025)!important;
   cursor:default;
 }
 
 /* =====================================================================
-   Change Analysis — magazine layout: narrow content, wide table breakout
+   Change Analysis â€” magazine layout: narrow content, wide table breakout
    The page section stays full-width so the table has room. Everything
    else is centered at 1180px so the eye has a focused reading zone.
    ===================================================================== */
 
-/* Header text — eyebrow, title, formula description */
+/* Header text â€” eyebrow, title, formula description */
 #change-analysis > #change-main-eyebrow,
 #change-analysis > #change-main-title,
 #change-analysis > #change-main-desc{
@@ -5493,7 +5895,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-right:auto!important;
 }
 
-/* Inside each method panel — settings, autofill, "Test data" heading
+/* Inside each method panel â€” settings, autofill, "Test data" heading
    stay narrow. The input table and APA output break out to full width. */
 #change-analysis .change-method-panel > .change-active-head,
 #change-analysis .change-method-panel > .change-setup-grid,
@@ -5513,14 +5915,14 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-right:auto!important;
 }
 
-/* Tables and APA output stay full-width — they're the data heroes */
+/* Tables and APA output stay full-width â€” they're the data heroes */
 #change-analysis .change-method-panel > .input-table,
 #change-analysis .change-method-panel > .apa-wrap{
   max-width:none;
   width:100%;
 }
 
-/* Empty action column header (the × delete column) — make it blend in
+/* Empty action column header (the Ã— delete column) â€” make it blend in
    so it doesn't appear as a weird detached strip on the right edge */
 #change-analysis .input-table thead th.row-actions,
 #change-analysis .input-table thead th:last-child:empty{
@@ -5529,20 +5931,20 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 
 /* Hide the "Test data & patient scores" heading in each Change Analysis
-   method panel — the table itself is self-explanatory */
+   method panel â€” the table itself is self-explanatory */
 #change-analysis .change-method-panel > .block-title{
   display:none!important;
 }
 
 /* =====================================================================
-   EFFECT SIZE TOOLS — page polish (P0 + P1 pass)
+   EFFECT SIZE TOOLS â€” page polish (P0 + P1 pass)
    - Smaller section title, tighter intro
    - Modernize the 4 result-view sub-tabs (segmented control)
    - Refine A/B mode tabs, drop the heavy "OR" pill
    - Inline the preloaded-example notice as subtle helper text
    ===================================================================== */
 
-/* Section header — hidden (page name shown in topbar already) */
+/* Section header â€” hidden (page name shown in topbar already) */
 #effectsize > .eyebrow,
 #effectsize > .section-title,
 #effectsize > .section-desc{
@@ -5550,7 +5952,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 #effectsize.section{padding-top:24px!important}
 
-/* ---- A/B mode tabs — unified segmented control ---- */
+/* ---- A/B mode tabs â€” unified segmented control ---- */
 #effectsize .es-tabs-wrap{margin-bottom:14px!important}
 #effectsize .es-tabs{
   display:grid!important;
@@ -5585,14 +5987,14 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   background:rgba(20,15,5,0.03)!important;
   color:#1A1A1A!important;
 }
-/* Active state — cream gradient fill, no ring (the container border holds the strip together) */
+/* Active state â€” cream gradient fill, no ring (the container border holds the strip together) */
 #effectsize .es-tab.is-active{
   background:linear-gradient(180deg, #FAF7F0 0%, #F4F1E9 100%)!important;
   color:#1A1A1A!important;
   box-shadow:0 1px 2px rgba(20,15,5,0.05)!important;
 }
 
-/* Number badges A / B — circular, soft */
+/* Number badges A / B â€” circular, soft */
 #effectsize .es-tab-num{
   width:28px!important;height:28px!important;
   border-radius:50%!important;
@@ -5633,7 +6035,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 #effectsize .es-tab.is-active .es-tab-sub{color:#5A5A5A!important}
 
-/* "OR" separator — quiet, just a thin character — no green pill */
+/* "OR" separator â€” quiet, just a thin character â€” no green pill */
 #effectsize .es-tabs-or{
   display:flex!important;
   align-items:center!important;
@@ -5654,7 +6056,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   text-transform:uppercase!important;
 }
 
-/* ---- Preloaded example notice — subtle inline helper ---- */
+/* ---- Preloaded example notice â€” subtle inline helper ---- */
 #effectsize .es-preloaded-note{
   display:flex!important;
   align-items:flex-start!important;
@@ -5689,7 +6091,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   line-height:1.3;
 }
 
-/* ---- The 4 result-view sub-tabs — modern segmented control ----
+/* ---- The 4 result-view sub-tabs â€” modern segmented control ----
    Proportional columns: the longer "Common language description" gets
    more room than the others to avoid wrapping when active. */
 #effectsize .es-view-tabs{
@@ -5733,7 +6135,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   box-shadow:0 1px 2px rgba(20,15,5,0.08), 0 0 0 1px rgba(20,15,5,0.04)!important;
 }
 
-/* Effect-size results panel + Visual panel — equal height row, bottoms aligned */
+/* Effect-size results panel + Visual panel â€” equal height row, bottoms aligned */
 #effectsize .es-output-row{
   align-items:stretch!important;
 }
@@ -5744,7 +6146,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   height:100%!important;
 }
 
-/* Group-comparison target grid — align inputs to bottom of cells so they
+/* Group-comparison target grid â€” align inputs to bottom of cells so they
    stay on a row even if one label wraps to two lines */
 #effectsize .es-target-grid{
   display:grid!important;
@@ -5764,7 +6166,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   line-height:1.35;
 }
 
-/* "Clear all inputs" — make it look like a clear button, not a form field */
+/* "Clear all inputs" â€” make it look like a clear button, not a form field */
 #effectsize .es-reset-btn,
 #effectsize #es-reset-all,
 #effectsize #es-clear{
@@ -5790,26 +6192,1269 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#9C3D2A!important;
 }
 
-/* Quick effect size slider — refine the value readout */
-#effectsize #es-d-slider-val{
-  font-family:var(--mono)!important;
-  font-size:12.5px!important;
-  font-weight:500!important;
-  color:#5A5A5A!important;
-  background:rgba(20,15,5,0.04);
-  padding:3px 8px;
-  border-radius:var(--r-sm);
-  min-width:42px;
-  text-align:center;
-  display:inline-block;
+/* (Effect-size slider styling lives in the consolidated block above —
+   the older overrides that used to live here have been removed.) */
+
+/* =====================================================================
+   NEUROPSYCH TABLES — side-by-side configuration + premorbid panels
+   - Two equal-width panels at the top, both always visible
+   - Auto-fill becomes the table header
+   - Rebalanced column widths so 'Scaled Score' doesn't wrap
+   ===================================================================== */
+
+#battery.section{padding-top:18px}
+
+/* Two-panel grid */
+#battery .bat-panels-grid{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);
+  gap:14px;
+  margin-bottom:14px;
 }
-#effectsize .es-d-slider-row label{
-  font-family:var(--sans)!important;
-  font-size:10.5px!important;
-  font-weight:600!important;
-  letter-spacing:0.12em!important;
-  text-transform:uppercase!important;
-  color:#7A766E!important;
+@media (max-width:900px){
+  #battery .bat-panels-grid{grid-template-columns:1fr}
 }
 
+/* Panel chrome */
+#battery .bat-side-panel{
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:10px;
+  box-shadow:0 1px 2px rgba(60,40,20,0.03);
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+#battery .bat-side-panel-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 16px;
+  border-bottom:1px solid rgba(20,15,5,0.06);
+  background:linear-gradient(180deg, #FAF7F0 0%, #FFFFFF 100%);
+  border-top-left-radius:10px;
+  border-top-right-radius:10px;
+}
+#battery .bat-side-panel-eyebrow{
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:#7A766E;
+}
+#battery .bat-side-panel-body{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px 14px;
+  padding:14px 16px 16px;
+  align-items:start;        /* align labels at the top so columns sit straight */
+}
+/* Title field and caption both span the full body width */
+#battery .bat-side-panel-body .bat-field-title,
+#battery .bat-side-panel-body .bat-side-panel-caption{grid-column:1 / -1}
+
+/* Premorbid SS is the only input in its panel — span the row but cap width
+   so the input doesn't stretch awkwardly across the whole panel */
+#battery .bat-side-panel-body .bat-field-prem-score{
+  grid-column:1 / -1;
+  max-width:240px;
+}
+
+/* Field styling shared by both panels */
+#battery .bat-field-compact{margin-bottom:0!important}
+#battery .bat-field-compact label{
+  font-family:var(--sans);
+  font-size:9.5px;
+  font-weight:600;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:#7A766E;
+  margin-bottom:5px;
+  display:block;
+}
+#battery .bat-field-compact .hint{
+  font-size:9px;
+  font-weight:400;
+  letter-spacing:0.04em;
+  text-transform:none;
+  color:#9A968D;
+  margin-left:6px;
+}
+#battery .bat-field-compact select,
+#battery .bat-field-compact input{
+  width:100%;
+  padding:8px 10px;
+  font-family:var(--sans);
+  font-size:13px;
+  border:1px solid rgba(20,15,5,0.14);
+  border-radius:6px;
+  background:#FFFFFF;
+}
+#battery .bat-field-compact select:focus,
+#battery .bat-field-compact input:focus{
+  outline:none;
+  border-color:rgba(156,61,42,0.45);
+  box-shadow:0 0 0 3px rgba(156,61,42,0.12);
+}
+
+/* Premorbid header has the enable toggle inline with the eyebrow */
+#battery .bat-premorbid-checkbox{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-family:var(--sans);
+  font-size:12px;
+  font-weight:500;
+  color:#1A1A1A;
+  cursor:pointer;
+  user-select:none;
+}
+#battery .bat-premorbid-checkbox input[type="checkbox"]{
+  margin:0;
+  width:14px;height:14px;
+  accent-color:var(--accent);
+  cursor:pointer;
+}
+
+/* When comparison is on, accent the panel border and header */
+#battery .bat-premorbid-block[data-enabled="true"]{
+  border-color:rgba(156,61,42,0.22);
+}
+#battery .bat-premorbid-block[data-enabled="true"] .bat-side-panel-head{
+  background:linear-gradient(180deg, rgba(156,61,42,0.05) 0%, #FFFFFF 100%);
+  border-bottom-color:rgba(156,61,42,0.18);
+}
+
+/* When comparison is OFF, grey out the blurb and body (head stays clear
+   so the checkbox is always interactive). */
+#battery .bat-premorbid-block .bat-side-panel-blurb,
+#battery .bat-premorbid-block .bat-side-panel-body{
+  opacity:0.45;
+  pointer-events:none;
+  transition:opacity 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+#battery .bat-premorbid-block[data-enabled="true"] .bat-side-panel-blurb,
+#battery .bat-premorbid-block[data-enabled="true"] .bat-side-panel-body{
+  opacity:1;
+  pointer-events:auto;
+}
+
+/* Hide the legacy long help paragraph if it survives anywhere */
+#battery .bat-premorbid-help{display:none!important}
+
+/* Plain-language blurb under a panel head */
+#battery .bat-side-panel-blurb{
+  font-family:var(--sans);
+  font-size:11.5px;
+  line-height:1.55;
+  color:#7A766E;
+  padding:8px 16px 0;
+  margin:0;
+}
+#battery .bat-side-panel-blurb abbr{
+  text-decoration:none;
+  border-bottom:1px dotted rgba(20,15,5,0.28);
+  cursor:help;
+}
+#battery .bat-side-panel-blurb strong{
+  font-family:var(--mono);
+  font-weight:700;
+  color:#5A5A5A;
+  letter-spacing:0;
+}
+
+/* Caption that spans the full panel body, sits under the field grid */
+#battery .bat-side-panel-caption{
+  margin:0;
+  padding-top:4px;
+  border-top:1px solid rgba(20,15,5,0.04);
+  font-family:var(--sans);
+  font-size:10.5px;
+  line-height:1.5;
+  color:#8A867E;
+}
+#battery .bat-side-panel-caption strong{
+  font-family:var(--mono);
+  font-weight:700;
+  color:#5A5A5A;
+}
+
+/* ---- TABLE BLOCK with auto-fill in header ---- */
+#battery .bat-table-block{
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:10px;
+  box-shadow:0 1px 2px rgba(60,40,20,0.03);
+  /* No overflow:hidden — would clip the auto-fill dropdown.
+     Inner sections explicitly round their own corners instead. */
+}
+#battery .bat-table-head{
+  padding:10px 14px;
+  border-bottom:1px solid rgba(20,15,5,0.06);
+  background:linear-gradient(180deg, #FAF7F0 0%, #FFFFFF 100%);
+  border-top-left-radius:10px;
+  border-top-right-radius:10px;
+  /* Sit above the table so any dropdown layered from here stacks on top */
+  position:relative;
+  z-index:5;
+}
+/* Auto-fill dropdown lifts above the table rows */
+#battery .bat-autofill-combo .combo-list{
+  z-index:60;
+  box-shadow:0 12px 28px rgba(60,40,20,0.14), 0 2px 6px rgba(60,40,20,0.08);
+}
+#battery .bat-autofill-inline{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  position:relative;
+}
+#battery .bat-autofill-icon{
+  width:16px;height:16px;
+  color:#9A968D;
+  flex-shrink:0;
+}
+#battery .bat-autofill-combo{
+  flex:1;
+  position:relative;
+  width:auto!important;
+}
+#battery .bat-autofill-input{
+  width:100%;
+  padding:9px 12px;
+  font-family:var(--sans);
+  font-size:13.5px;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.14);
+  border-radius:7px;
+  color:#1A1A1A;
+}
+#battery .bat-autofill-input::placeholder{color:#9A968D;font-style:italic}
+#battery .bat-autofill-input:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(156,61,42,0.12);
+}
+
+/* Table inside the block has no top margin */
+#battery .bat-table-block > .input-table{
+  margin-top:0!important;
+  border-radius:0;
+}
+
+/* Tighter rows so 8-subtest batteries fit without scrolling */
+#battery .bat-table-block .input-table tbody td{
+  padding-top:6px!important;
+  padding-bottom:6px!important;
+}
+
+/* Rebalance column widths — Subtest narrower, Classification roomier */
+#battery .bat-table-block .input-table th[style*="min-width:200px"]{
+  min-width:180px!important;
+  width:32%!important;
+}
+#battery .bat-table-block .input-table .bat-score-head{width:108px!important}
+#battery .bat-table-block .input-table th:nth-child(3){width:80px!important}    /* Raw */
+#battery .bat-table-block .input-table th:nth-child(5){width:84px!important}    /* Percentile */
+#battery .bat-table-block .input-table th:nth-child(6){width:170px!important}   /* Classification */
+
+/* Action row sits inside the table block, flush-left */
+#battery .bat-table-block .add-row-actions{
+  margin:10px 14px 12px;
+  gap:10px;
+}
+
+/* =====================================================================
+   WORKING REPORT BUNDLE v2
+   - Hide the per-page rendered APA tables (drawer is now source of truth).
+     Toolbar buttons remain so users can Copy / CSV / Add-to-report.
+   - Drawer renders FULL APA tables, drag-to-reorder, floating ↔ docked.
+   ===================================================================== */
+
+/* ---- Hide every page's inline APA panel entirely ----
+   The Working Report popup is now the canonical place where rendered APA
+   tables live. The per-page Copy table / Download CSV buttons are duplicated
+   by the popup's Copy / Export Word actions, so the whole panel goes. */
+.apa-wrap{display:none!important}
+
+/* ---- Floating root container ---- */
+.rb-root{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  z-index:9000;
+  font-family:var(--sans);
+}
+
+/* CRITICAL: the HTML [hidden] attribute must always win over any display rule
+   on .rb-chip / .rb-drawer below — otherwise minimise/expand never actually
+   show or hide anything. */
+.rb-root [hidden]{display:none!important}
+
+/* ---- CHIP ---- */
+.rb-chip{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  z-index:9001;
+  pointer-events:auto;       /* always clickable, even when parent has pointer-events:none */
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px 10px 12px;
+  background:linear-gradient(180deg, #2A2A2A 0%, #0F0F0F 100%);
+  color:#FFFFFF;
+  border:1px solid #0F0F0F;
+  border-radius:999px;
+  cursor:pointer;
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:600;
+  letter-spacing:0.01em;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.18),
+    0 6px 18px rgba(0,0,0,0.16),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+  transition:right 240ms cubic-bezier(0.2,0.8,0.2,1),
+             transform 220ms cubic-bezier(0.2,0.8,0.2,1),
+             box-shadow 220ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.rb-chip:hover{
+  transform:translateY(-2px);
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.22),
+    0 10px 26px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+}
+.rb-chip:active{transform:translateY(0)}
+.rb-chip svg{width:15px;height:15px;color:rgba(255,255,255,0.85)}
+.rb-chip-label{white-space:nowrap}
+.rb-chip-count{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:22px;
+  height:22px;
+  padding:0 7px;
+  border-radius:999px;
+  background:#9C3D2A;
+  color:#FFFFFF;
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:700;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.10), 0 1px 2px rgba(0,0,0,0.30);
+  margin-left:2px;
+}
+.rb-root.rb-flash .rb-chip{animation:rb-pulse 600ms cubic-bezier(0.2,0.8,0.2,1)}
+@keyframes rb-pulse{
+  0%   { transform:scale(1); box-shadow:0 0 0 0 rgba(156,61,42,0.55), 0 6px 18px rgba(0,0,0,0.16); }
+  70%  { transform:scale(1.04); box-shadow:0 0 0 14px rgba(156,61,42,0); }
+  100% { transform:scale(1); }
+}
+
+/* Chip stays anchored to the bottom-right corner of the viewport in BOTH states.
+   The drawer "pops up" out of and back into the chip's corner. */
+
+/* ---- DRAWER: always docked when shown (floating removed) ---- */
+/* ---- DRAWER: floating popover above the chip (fixed size, no resize) ---- */
+.rb-root.is-open .rb-drawer{
+  position:fixed;
+  right:20px;
+  bottom:74px;          /* sits just above the chip */
+  width:760px !important;          /* fixed width — overrides any persisted inline width */
+  max-width:calc(100vw - 40px);
+  height:auto;
+  max-height:min(80vh, 820px);
+  border:1px solid rgba(20,15,5,0.12);
+  border-radius:14px;
+  background:#FFFFFF;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  box-shadow:
+    0 1px 2px rgba(60,40,20,0.06),
+    0 18px 48px rgba(60,40,20,0.22);
+  /* Bubble out of the chip — origin shifted ~95px LEFT and ~34px BELOW the
+     drawer's bottom-right corner, so the scale-from-zero point lands on the
+     chip's centre rather than just near it. */
+  transform-origin:calc(100% - 95px) calc(100% + 34px);
+  animation:rb-drawer-bubble-in 360ms cubic-bezier(0.2, 0.9, 0.4, 1.06);
+  pointer-events:auto;
+}
+@keyframes rb-drawer-bubble-in{
+  0%   { transform:scale(0);    opacity:0; }
+  35%  { opacity:1; }
+  100% { transform:scale(1);    opacity:1; }
+}
+.rb-root.is-closing .rb-drawer{
+  transform-origin:calc(100% - 95px) calc(100% + 34px);
+  animation:rb-drawer-bubble-out 240ms cubic-bezier(0.55, 0, 0.78, 0.4) forwards;
+  pointer-events:none;
+}
+@keyframes rb-drawer-bubble-out{
+  0%   { transform:scale(1); opacity:1; }
+  100% { transform:scale(0); opacity:0; }
+}
+/* Drawer floats now — no need to displace body content */
+body.rb-docked-active{padding-right:0}
+@media (max-width:520px){
+  .rb-root.is-open .rb-drawer{width:calc(100vw - 40px); right:20px}
+  .rb-root.is-open .rb-chip{right:20px}
+}
+/* Drawer head action buttons (minimise / maximise) */
+.rb-drawer-head-actions{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  flex-shrink:0;
+}
+.rb-head-btn{
+  width:28px;
+  height:28px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:transparent;
+  border:1px solid transparent;
+  border-radius:6px;
+  color:#5A5A5A;
+  cursor:pointer;
+  padding:0;
+  transition:background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+.rb-head-btn svg{width:14px;height:14px;pointer-events:none}
+.rb-head-btn:hover{
+  background:rgba(20,15,5,0.06);
+  color:#1A1A1A;
+  border-color:rgba(20,15,5,0.10);
+}
+
+/* Maximise/restore icon swap */
+.rb-head-btn .rb-icon-restore{display:none}
+.rb-root.is-maximised .rb-head-btn .rb-icon-maximise{display:none}
+.rb-root.is-maximised .rb-head-btn .rb-icon-restore{display:block}
+
+/* Maximised state — drawer fills nearly the whole viewport, leaving small margins
+   so the chip stays visible at the bottom-right corner */
+.rb-root.is-maximised.is-open .rb-drawer{
+  /* "A bit bigger" — not full-screen, just enough extra room for wider tables */
+  width:1000px !important;
+  max-width:calc(100vw - 40px);
+  max-height:min(88vh, 920px) !important;
+}
+/* Smooth resize between maximised and restored states */
+.rb-root.is-open .rb-drawer{
+  transition:width 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+             max-height 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ---- TRANSIENT "View live report" PROMPT ----
+   Appears next to the chip whenever a new tool's table lands in the bundle
+   while the drawer is minimised. Gentle vertical bob to draw attention,
+   opacity-only fade in/out so the bounce animation doesn't snap. */
+.rb-add-prompt{
+  position:fixed;
+  right:20px;   /* aligned to the chip's right edge */
+  bottom:74px;  /* sits ABOVE the chip (chip is ~40px tall at bottom:20px + gap) */
+  z-index:9002; /* above the chip */
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:9px 14px 9px 12px;
+  /* Green gradient — same family as the wizard Next / Export Word buttons */
+  background:linear-gradient(180deg, #3DA56B 0%, #2E8552 100%);
+  color:#FFFFFF;
+  border:1px solid #246B43;
+  border-radius:999px;
+  font-family:var(--sans);
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:0.01em;
+  cursor:pointer;
+  box-shadow:
+    0 1px 2px rgba(36,107,67,0.30),
+    0 6px 18px rgba(46,133,82,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+  opacity:0;
+  pointer-events:auto;
+  /* Fade for entry/exit; bottom-transition smooths stack reflow when other pills
+     fly away. The bob animation uses transform separately so the two don't fight. */
+  transition:opacity 280ms cubic-bezier(0.2,0.8,0.2,1),
+             bottom  240ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.rb-add-prompt svg{width:13px;height:13px;color:#FFFFFF;pointer-events:none;flex-shrink:0}
+.rb-add-prompt span{
+  max-width:340px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  display:inline-block;
+}
+.rb-add-prompt:hover{
+  background:linear-gradient(180deg, #45B375 0%, #34935C 100%);
+}
+.rb-add-prompt.is-visible{
+  opacity:1;
+  animation:rb-add-prompt-bob 1100ms ease-in-out infinite;
+}
+/* Gentle vertical bob during the hold phase — the "look here" nudge */
+@keyframes rb-add-prompt-bob{
+  0%, 100% { transform:translateY(0); }
+  50%      { transform:translateY(-5px); }
+}
+
+/* Phase 3: fly DOWN into the chip. Anticipation pull-up at 18%, then accelerates
+   downward while shrinking + fading. The fly distance is per-pill (set via
+   --rb-fly-distance), so pills stacked higher fly further to reach the chip. */
+.rb-add-prompt.is-flying{
+  opacity:1;
+  animation:rb-add-prompt-fly 540ms cubic-bezier(0.55, 0, 0.78, 0.4) forwards;
+  pointer-events:none;
+  /* Don't transition bottom while flying — the transform handles motion */
+  transition:none;
+}
+@keyframes rb-add-prompt-fly{
+  0%   { opacity:1; transform:translate(0, 0)    scale(1);    }
+  18%  { opacity:1; transform:translate(0, -8px) scale(1.05); } /* anticipation pull-up */
+  100% { opacity:0; transform:translate(0, var(--rb-fly-distance, 50px)) scale(0.22); }
+}
+/* Tail points DOWN at the chip (pill sits above the chip in both desktop & mobile) */
+.rb-add-prompt::after{
+  content:"";
+  position:absolute;
+  right:30px;       /* roughly aligned with the chip's icon when right-edges match */
+  bottom:-5px;
+  transform:rotate(45deg);
+  width:9px; height:9px;
+  background:#2E8552;
+  border-right:1px solid #246B43;
+  border-bottom:1px solid #246B43;
+}
+
+/* ---- ONBOARDING HINT ---- */
+.rb-onboarding{
+  position:fixed;
+  right:20px;
+  bottom:78px;
+  z-index:8999;
+  pointer-events:none;
+  animation:rb-hint-bob 2400ms ease-in-out infinite;
+}
+@keyframes rb-hint-bob{
+  0%,100% { transform:translateY(0); }
+  50%     { transform:translateY(-4px); }
+}
+.rb-onboarding-bubble{
+  position:relative;
+  background:#1A1A1A;
+  color:#FFFFFF;
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:500;
+  padding:10px 32px 10px 14px;
+  border-radius:10px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.18);
+  letter-spacing:0.005em;
+  pointer-events:auto;
+  white-space:nowrap;
+}
+.rb-onboarding-bubble strong{color:#FFFFFF;font-weight:700}
+.rb-onboarding-bubble::after{
+  content:"";
+  position:absolute;
+  right:24px;
+  bottom:-6px;
+  width:12px;height:12px;
+  background:#1A1A1A;
+  transform:rotate(45deg);
+}
+.rb-onboarding-dismiss{
+  position:absolute;
+  top:6px; right:6px;
+  width:20px; height:20px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;
+  border:none;
+  border-radius:50%;
+  color:rgba(255,255,255,0.5);
+  cursor:pointer;
+  padding:0;
+  transition:color 160ms ease, background 160ms ease;
+}
+.rb-onboarding-dismiss:hover{color:#FFFFFF;background:rgba(255,255,255,0.10)}
+.rb-onboarding-dismiss svg{width:9px;height:9px;pointer-events:none}
+.rb-onboarding-arrow{
+  position:absolute;
+  right:36px;
+  bottom:-32px;
+  width:32px;height:28px;
+  color:#1A1A1A;
+  pointer-events:none;
+}
+.rb-onboarding-arrow svg{width:32px;height:28px}
+.rb-drawer-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:14px 16px;
+  background:linear-gradient(180deg, #FAF7F0 0%, #FFFFFF 100%);
+  border-bottom:1px solid rgba(20,15,5,0.07);
+}
+.rb-drawer-title{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-family:var(--serif);
+  font-size:16px;
+  font-weight:600;
+  color:#1A1A1A;
+  letter-spacing:-0.005em;
+}
+.rb-drawer-title svg{width:15px;height:15px;color:#5A5A5A}
+.rb-drawer-count{
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:500;
+  color:#9A968D;
+  margin-left:6px;
+  font-style:normal;
+}
+/* (icon-btn / head-actions / layout-toggle styles removed — drawer head no longer
+   has any action buttons; the always-visible chip is the single toggle.) */
+
+/* Make sure clicks on icons inside any drawer button land on the button itself,
+   not on internal <path>/<circle> elements (which would defeat event delegation). */
+.rb-root [data-rb-action] svg,
+.rb-root [data-rb-remove] svg,
+.rb-root .rb-item-grip svg,
+.rb-root .rb-chip svg{
+  pointer-events:none;
+}
+
+/* ---- Drawer body ---- */
+.rb-drawer-body{
+  flex:1;
+  overflow-y:auto;
+  padding:14px 16px;
+  background:#FAF7F0;
+}
+.rb-drawer-body::-webkit-scrollbar{width:8px}
+.rb-drawer-body::-webkit-scrollbar-thumb{background:rgba(20,15,5,0.16);border-radius:4px}
+
+/* ---- Empty state ---- */
+.rb-empty{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:48px 28px;
+  color:#9A968D;
+  gap:8px;
+}
+.rb-empty svg{width:38px;height:38px;color:#C7C2B6;margin-bottom:6px}
+.rb-empty-title{font-family:var(--serif);font-size:16px;color:#5A5A5A;font-weight:500}
+.rb-empty-sub{font-size:12.5px;line-height:1.55;color:#9A968D;max-width:340px}
+.rb-empty-sub strong{color:#5A5A5A;font-weight:600}
+
+/* ---- ITEM (renders the full APA table inside) ---- */
+.rb-item{
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:10px;
+  margin:10px 0;
+  /* overflow:visible so the per-item Options menu can extend below the item.
+     Header and rendered child elements round their own outer corners so the
+     loss of clipping isn't visible. */
+  overflow:visible;
+  box-shadow:0 1px 2px rgba(60,40,20,0.04);
+  transition:border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  animation:rb-item-in 240ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.rb-item-header{border-top-left-radius:10px;border-top-right-radius:10px}
+.rb-item-rendered{border-bottom-left-radius:10px;border-bottom-right-radius:10px}
+@keyframes rb-item-in{
+  from { transform:translateY(-4px); opacity:0; }
+  to   { transform:translateY(0);    opacity:1; }
+}
+.rb-item:hover{border-color:rgba(20,15,5,0.16);box-shadow:0 4px 14px rgba(60,40,20,0.06)}
+.rb-item.is-dragging{opacity:0.4}
+.rb-item.is-drop-before{border-top:2px solid var(--accent)}
+.rb-item.is-drop-after{border-bottom:2px solid var(--accent)}
+
+.rb-item-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 12px;
+  background:linear-gradient(180deg, #FAF7F0 0%, #FFFFFF 100%);
+  border-bottom:1px solid rgba(20,15,5,0.05);
+}
+.rb-item-grip{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:28px;
+  cursor:grab;
+  color:#9A968D;
+  flex-shrink:0;
+  border-radius:5px;
+  transition:color 160ms ease, background 160ms ease;
+}
+.rb-item-grip:hover{
+  color:#1A1A1A;
+  background:rgba(20,15,5,0.06);
+}
+.rb-item-grip:active{cursor:grabbing}
+.rb-item-grip svg{width:14px;height:18px}
+.rb-item-num{
+  flex:0 0 auto;
+  width:22px;height:22px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  background:rgba(20,15,5,0.06);
+  color:#5A5A5A;
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:700;
+}
+.rb-item-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.rb-item-source{
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.10em;
+  text-transform:uppercase;
+  color:#7A766E;
+}
+.rb-item-time{
+  font-family:var(--sans);
+  font-size:10.5px;
+  color:#9A968D;
+}
+.rb-item-remove{
+  flex:0 0 auto;
+  width:24px;height:24px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  border:1px solid rgba(214,58,47,0.30);
+  background:rgba(214,58,47,0.06);
+  color:#B22A20;
+  cursor:pointer;
+  padding:0;
+  transition:background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.rb-item-remove svg{width:10px;height:10px}
+.rb-item-remove:hover{
+  background:#D63A2F;
+  color:#FFFFFF;
+  border-color:#B22A20;
+  transform:scale(1.06);
+}
+
+/* Per-item action cluster (Copy + Options ⋯) */
+.rb-item-actions{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  flex-shrink:0;
+}
+/* Per-item Copy / Options buttons — bigger, with text labels */
+.rb-item-actionbtn{
+  height:30px;
+  padding:0 12px;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.16);
+  border-radius:6px;
+  color:#3F3F3F;
+  font-family:var(--sans);
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:0.01em;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+.rb-item-actionbtn svg{width:13px;height:13px;color:#7A766E;flex-shrink:0;transition:color 160ms ease}
+.rb-item-actionbtn:hover{
+  background:rgba(20,15,5,0.04);
+  color:#1A1A1A;
+  border-color:rgba(20,15,5,0.30);
+}
+.rb-item-actionbtn:hover svg{color:#1A1A1A}
+.rb-item-options-wrap{position:relative}
+.rb-item-options.is-open,
+.rb-item-options-wrap:has(.rb-item-menu.is-open) .rb-item-options{
+  background:rgba(20,15,5,0.08);
+  color:#1A1A1A;
+  border-color:rgba(20,15,5,0.36);
+}
+
+.rb-item-menu{
+  position:absolute;
+  right:0;
+  top:calc(100% + 6px);
+  min-width:184px;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.12);
+  border-radius:8px;
+  box-shadow:0 8px 24px rgba(60,40,20,0.14), 0 1px 2px rgba(60,40,20,0.06);
+  padding:4px;
+  z-index:30;
+  display:none;
+  animation:rb-menu-in 160ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.rb-item-menu.is-open{display:block}
+@keyframes rb-menu-in{
+  from { opacity:0; transform:translateY(-4px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.rb-item-menu-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  padding:8px 10px;
+  background:transparent;
+  border:none;
+  border-radius:5px;
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:500;
+  color:#1A1A1A;
+  text-align:left;
+  cursor:pointer;
+  transition:background 120ms ease, color 120ms ease;
+}
+.rb-item-menu-item svg{width:13px;height:13px;color:#7A766E;flex-shrink:0;transition:color 120ms ease}
+.rb-item-menu-item:hover:not(:disabled){background:rgba(20,15,5,0.05)}
+.rb-item-menu-item:hover:not(:disabled) svg{color:#1A1A1A}
+.rb-item-menu-item:disabled{
+  opacity:0.32;
+  cursor:not-allowed;
+}
+.rb-item-menu-sep{
+  height:1px;
+  background:rgba(20,15,5,0.07);
+  margin:4px 6px;
+}
+/* Section heading inside the options menu (e.g. "Columns") */
+.rb-item-menu-section{
+  font-family:var(--sans);
+  font-size:9.5px;
+  font-weight:600;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:#9A968D;
+  padding:6px 10px 4px;
+  user-select:none;
+}
+/* Column-toggle row: checkbox-style on the left, label on the right */
+.rb-col-toggle{
+  font-weight:500;
+}
+.rb-col-check{
+  width:14px;height:14px;
+  border:1px solid rgba(20,15,5,0.30);
+  border-radius:3px;
+  background:#FFFFFF;
+  display:inline-flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  transition:background 140ms ease, border-color 140ms ease;
+}
+.rb-col-check svg{
+  width:9px;height:9px;
+  color:#FFFFFF;
+  opacity:0;
+  transition:opacity 120ms ease;
+}
+.rb-col-check.is-checked{
+  background:var(--accent);
+  border-color:var(--accent);
+}
+.rb-col-check.is-checked svg{opacity:1}
+.rb-col-label{flex:1;text-align:left}
+.rb-item-menu-danger{color:#B22A20}
+.rb-item-menu-danger svg{color:#B22A20}
+.rb-item-menu-danger:hover{background:rgba(214,58,47,0.08); color:#B22A20}
+.rb-item-menu-danger:hover svg{color:#B22A20}
+
+/* The actual rendered APA table inside the item — inline-styled HTML
+   from buildStandaloneHtml renders with its own typography. */
+.rb-item-rendered{
+  padding:14px 18px 16px;
+  overflow:hidden;
+  background:#FFFFFF;
+  max-height:1500px;
+  opacity:1;
+  transition:max-height 260ms cubic-bezier(0.2,0.8,0.2,1),
+             opacity 200ms ease-out,
+             padding 260ms cubic-bezier(0.2,0.8,0.2,1);
+}
+/* Reorder mode: items collapse to header strips so the user can see the
+   full structure of the report at once while dragging. */
+.rb-drawer-body.is-reorder-mode .rb-item-rendered{
+  max-height:0;
+  opacity:0;
+  padding-top:0;
+  padding-bottom:0;
+  transition:max-height 220ms cubic-bezier(0.4,0,0.6,1),
+             opacity 160ms ease-out,
+             padding 220ms cubic-bezier(0.4,0,0.6,1);
+}
+.rb-drawer-body.is-reorder-mode .rb-item{margin:6px 0}
+
+/* Editable column headers: subtle hover affordance, accent dashed outline on focus */
+.rb-editable-header{
+  cursor:text;
+  outline:none;
+  border-radius:2px;
+  transition:background 120ms ease, box-shadow 120ms ease;
+  position:relative;
+}
+.rb-editable-header:hover{
+  background:rgba(156,61,42,0.06);
+  box-shadow:inset 0 -1px 0 rgba(156,61,42,0.30);
+}
+.rb-editable-header:focus{
+  background:rgba(156,61,42,0.10);
+  box-shadow:inset 0 0 0 1px rgba(156,61,42,0.50);
+}
+/* Stretch the table to use the full width of the drawer so it adjusts
+   when the user resizes. Inline width:auto from buildStandaloneHtml is
+   intentional for Word export — !important ensures we only override in
+   the browser; clipboard/Word output keeps the original inline styles. */
+.rb-item-rendered .apa-table,
+.rb-item-rendered table.apa-table{
+  width:100%!important;
+  max-width:100%;
+}
+.rb-item-rendered table{max-width:100%}
+
+/* ---- Drawer footer actions ---- */
+.rb-drawer-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:12px 14px;
+  background:#FFFFFF;
+  border-top:1px solid rgba(20,15,5,0.07);
+}
+.rb-actions-right{display:flex;gap:8px}
+.rb-drawer-actions .btn{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-family:var(--sans);
+  font-size:12px;
+  font-weight:600;
+  padding:8px 14px;
+  border-radius:7px;
+  cursor:pointer;
+  transition:background 160ms ease, color 160ms ease, border-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+}
+.rb-drawer-actions .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none!important}
+.rb-drawer-actions .btn svg{width:13px;height:13px}
+
+/* "New report" inherits the global red .btn-clear treatment */
+
+.rb-action-copy{
+  background:#FFFFFF;
+  color:#1A1A1A;
+  border:1px solid rgba(20,15,5,0.16);
+}
+.rb-action-copy:hover:not(:disabled){
+  background:#F4F1E9;
+  border-color:rgba(20,15,5,0.36);
+}
+.rb-action-export,
+.rb-action-export-excel{
+  background:linear-gradient(180deg, #3DA56B 0%, #2E8552 100%);
+  color:#FFFFFF;
+  border:1px solid #246B43;
+  box-shadow:0 1px 2px rgba(36,107,67,0.30), 0 4px 12px rgba(46,133,82,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.rb-action-export:hover:not(:disabled),
+.rb-action-export-excel:hover:not(:disabled){
+  background:linear-gradient(180deg, #45B375 0%, #34935C 100%);
+  transform:translateY(-1px);
+  box-shadow:0 2px 4px rgba(36,107,67,0.35), 0 8px 18px rgba(46,133,82,0.40), inset 0 1px 0 rgba(255,255,255,0.20);
+}
+.rb-action-export:active:not(:disabled),
+.rb-action-export-excel:active:not(:disabled){transform:translateY(0)}
+
+/* ---- "+ Add to report" button on each APA toolbar (green outline) ---- */
+.apa-toolbar .rb-add-btn{
+  display:inline-flex!important;
+  align-items:center;
+  gap:6px;
+  background:rgba(46,133,82,0.06)!important;
+  border:1px solid rgba(46,133,82,0.40)!important;
+  color:#246B43!important;
+  font-weight:600!important;
+  transition:background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 120ms ease!important;
+}
+.apa-toolbar .rb-add-btn:hover{
+  background:#2E8552!important;
+  border-color:#1F5D3A!important;
+  color:#FFFFFF!important;
+  box-shadow:0 2px 6px rgba(46,133,82,0.30)!important;
+  transform:translateY(-1px);
+}
+.apa-toolbar .rb-add-btn:active{transform:translateY(0)}
+.apa-toolbar .rb-add-btn svg{width:12px;height:12px}
+
+@media print{.rb-root{display:none!important}}
+
+/* =====================================================================
+   KO-FI SUPPORT — footer link + post-export thank-you toast
+   ===================================================================== */
+
+/* Level 1: header button — prominent, top-right of the brand row */
+.topbar-kofi{
+  margin-left:auto;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  flex-shrink:0;
+  padding:7px 13px;
+  border-radius:999px;
+  background:linear-gradient(180deg, #B14A33 0%, #9C3D2A 100%);
+  color:#FFFFFF;
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:600;
+  letter-spacing:0.01em;
+  text-decoration:none;
+  border:1px solid rgba(80,30,15,0.25);
+  box-shadow:0 1px 0 rgba(255,255,255,0.18) inset, 0 1px 2px rgba(80,30,15,0.18);
+  transition:transform 140ms ease, box-shadow 160ms ease, filter 160ms ease;
+  white-space:nowrap;
+}
+.topbar-kofi svg{
+  width:14px;height:14px;
+  color:currentColor;
+  flex-shrink:0;
+}
+.topbar-kofi:hover{
+  filter:brightness(1.06);
+  box-shadow:0 1px 0 rgba(255,255,255,0.22) inset, 0 2px 6px rgba(80,30,15,0.28);
+  transform:translateY(-1px);
+}
+.topbar-kofi:active{
+  transform:translateY(0);
+  filter:brightness(0.96);
+}
+@media (max-width:640px){
+  .topbar-kofi span{display:none}
+  .topbar-kofi{padding:7px 9px}
+}
+
+/* Level 2: post-export thank-you — center-screen modal with backdrop */
+.rb-kofi-modal-backdrop{
+  position:fixed;inset:0;
+  z-index:9999;
+  background:rgba(20,15,5,0.42);
+  opacity:0;
+  pointer-events:auto;
+  transition:opacity 220ms cubic-bezier(0.2,0.8,0.2,1);
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+}
+.rb-kofi-modal-backdrop.is-visible{opacity:1}
+
+.rb-kofi-toast{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -46%) scale(0.96);
+  z-index:10000;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.10);
+  border-radius:16px;
+  box-shadow:0 12px 28px rgba(60,40,20,0.18), 0 32px 64px rgba(60,40,20,0.22);
+  font-family:var(--sans);
+  width:min(480px, calc(100vw - 32px));
+  overflow:hidden;
+  opacity:0;
+  pointer-events:auto;
+  transition:opacity 260ms cubic-bezier(0.2,0.8,0.2,1),
+             transform 260ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.rb-kofi-toast.is-visible{
+  opacity:1;
+  transform:translate(-50%, -50%) scale(1);
+}
+
+/* Embed variant — sized snugly around the Ko-fi widget */
+.rb-kofi-toast--embed{
+  width:min(400px, calc(100vw - 24px));
+  max-height:calc(100vh - 32px);
+}
+.rb-kofi-toast-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 48px 12px 18px; /* right padding leaves room for the X */
+  border-bottom:1px solid rgba(20,15,5,0.06);
+}
+.rb-kofi-toast-header .rb-kofi-toast-icon{
+  margin-top:0;
+  width:38px;height:38px;
+  flex-shrink:0;
+}
+.rb-kofi-toast-header .rb-kofi-toast-icon svg{width:19px;height:19px}
+.rb-kofi-toast-header .rb-kofi-toast-text{
+  align-items:flex-start;
+  text-align:left;
+  gap:2px;
+}
+.rb-kofi-toast-header .rb-kofi-toast-text strong{font-size:14.5px;line-height:1.25}
+.rb-kofi-toast-header .rb-kofi-toast-text span{font-size:12px;line-height:1.35;max-width:none}
+
+.rb-kofi-toast-embed-wrap{
+  position:relative;
+  width:100%;
+  height:620px;
+  max-height:calc(100vh - 150px);
+  background:#F7F5EF;
+  overflow:hidden;
+}
+.rb-kofi-toast-iframe{
+  width:100%;
+  height:100%;
+  border:0;
+  display:block;
+}
+.rb-kofi-toast-footer{
+  padding:7px 14px 8px;
+  border-top:1px solid rgba(20,15,5,0.06);
+  display:flex;
+  justify-content:flex-end;
+  background:#FFFFFF;
+}
+.rb-kofi-toast-fallback{
+  font-family:var(--sans);
+  font-size:12px;
+  color:#7A766E;
+  text-decoration:none;
+  padding:4px 8px;
+  border-radius:6px;
+  transition:color 160ms ease, background 160ms ease;
+}
+.rb-kofi-toast-fallback:hover{
+  color:var(--accent);
+  background:rgba(156,61,42,0.05);
+}
+
+/* Dismiss × — floats top-right inside the card */
+.rb-kofi-toast-close{
+  position:absolute;
+  top:10px;right:10px;
+  width:30px;height:30px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;
+  border:none;
+  border-radius:50%;
+  color:#9A968D;
+  cursor:pointer;
+  padding:0;
+  z-index:2;
+  transition:background 160ms ease, color 160ms ease;
+}
+.rb-kofi-toast-close svg{width:12px;height:12px}
+.rb-kofi-toast-close:hover{
+  background:rgba(20,15,5,0.06);
+  color:#1A1A1A;
+}
+
+/* CTA fills the card; the whole anchor is clickable */
+.rb-kofi-toast-cta{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  gap:14px;
+  padding:32px 32px 28px;
+  text-decoration:none;
+  color:#1A1A1A;
+  transition:background 160ms ease;
+}
+.rb-kofi-toast-cta:hover{
+  background:rgba(156,61,42,0.04);
+}
+.rb-kofi-toast-icon{
+  display:inline-flex;
+  align-items:center;justify-content:center;
+  width:60px;height:60px;
+  border-radius:50%;
+  background:linear-gradient(180deg, rgba(156,61,42,0.16) 0%, rgba(156,61,42,0.06) 100%);
+  color:var(--accent);
+  flex-shrink:0;
+  margin-top:4px;
+}
+.rb-kofi-toast-icon svg{width:30px;height:30px}
+.rb-kofi-toast-text{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+  align-items:center;
+}
+.rb-kofi-toast-text strong{
+  font-family:var(--serif);
+  font-size:19px;
+  font-weight:600;
+  letter-spacing:-0.012em;
+  color:#1A1A1A;
+  line-height:1.25;
+}
+.rb-kofi-toast-text span{
+  font-family:var(--sans);
+  font-size:13.5px;
+  color:#5A5A5A;
+  line-height:1.45;
+  max-width:360px;
+}
+
+/* Pill button at the bottom of the card */
+.rb-kofi-toast-button{
+  margin-top:6px;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:10px 20px;
+  border-radius:999px;
+  background:linear-gradient(180deg, #B14A33 0%, #9C3D2A 100%);
+  color:#FFFFFF;
+  font-family:var(--sans);
+  font-size:13.5px;
+  font-weight:600;
+  letter-spacing:0.01em;
+  border:1px solid rgba(80,30,15,0.25);
+  box-shadow:0 1px 0 rgba(255,255,255,0.18) inset, 0 2px 6px rgba(80,30,15,0.20);
+}
+
+@media (max-width:520px){
+  .rb-kofi-toast-cta{padding:26px 22px 22px}
+  .rb-kofi-toast-text strong{font-size:17px}
+  .rb-kofi-toast--embed{width:calc(100vw - 20px)}
+  .rb-kofi-toast-header{padding:12px 44px 10px 14px;gap:10px}
+  .rb-kofi-toast-header .rb-kofi-toast-icon{width:34px;height:34px}
+  .rb-kofi-toast-header .rb-kofi-toast-icon svg{width:17px;height:17px}
+  .rb-kofi-toast-header .rb-kofi-toast-text strong{font-size:13.5px}
+  .rb-kofi-toast-header .rb-kofi-toast-text span{font-size:11.5px}
+  .rb-kofi-toast-embed-wrap{height:560px;max-height:calc(100vh - 130px)}
+}
+
+/* Hide the kofi modal when printing — it's a website element, not part of the report */
+@media print{.rb-kofi-toast, .rb-kofi-modal-backdrop, .topbar-kofi{display:none!important}}
 

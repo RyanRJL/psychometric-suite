@@ -335,6 +335,7 @@ async function copyApaTable(containerId){
       await navigator.clipboard.writeText(plain);
     }
     showToast('✓ Table copied — ready to paste into your report');
+    if (typeof ReportBundle !== 'undefined' && ReportBundle.showKofiPrompt) ReportBundle.showKofiPrompt();
   } catch(e){
     console.error(e);
     showToast('Copy failed — try selecting and copying manually', true);
@@ -480,6 +481,7 @@ function downloadApaTableCsv(containerId){
   a.remove();
   URL.revokeObjectURL(url);
   showToast('✓ CSV downloaded — opens in Excel');
+  if (typeof ReportBundle !== 'undefined' && ReportBundle.showKofiPrompt) ReportBundle.showKofiPrompt();
 }
 function enhanceApaToolbars(){
   document.querySelectorAll('[data-copy]').forEach(btn => {
@@ -1153,7 +1155,8 @@ function loadFamilyIntoBattery(family){
     batteryRows.push({ name, raw:'', score:'', group:family, scoreType:inferredType });
   });
   renderBattery();
-  showToast(`✓ Added ${names.length} subtests from ${family}`);
+  // Toast suppressed — the working-report pill is the single feedback channel
+  // for "things added to the report". (Old toast was a duplicate.)
 }
 function clearBattery(){
   batteryRows.length = 0;
@@ -1529,7 +1532,7 @@ function loadFamilyIntoSdi(family){
     sdiRows.push({ name, t1:'', t2:'', sd: raw ? sdiNormSd(p) : '', group:family });
   });
   renderSdi();
-  showToast(`✓ Added ${subtests.length} subtests from ${family}${raw ? ' with SD₁ values' : ''}`);
+  // Toast suppressed — the working-report pill is the single feedback channel
 }
 function clearSdi(){
   sdiRows = [];
@@ -2083,7 +2086,7 @@ function loadFamilyIntoMethod(method, family){
   // Append new auto-filled tests rather than replacing any tests already entered.
   rciState[method].rows = rciState[method].rows.concat(newRows);
   renderRci(method);
-  showToast(`✓ Added ${subtests.length} subtests from ${family}`);
+  // Toast suppressed — the working-report pill is the single feedback channel
 }
 function clearMethodRows(method){
   rciState[method].rows = [];
@@ -5112,7 +5115,24 @@ function setupReportWriter(){
     reportSwitchTab(tab.dataset.rwTab);
   });
 
-  document.getElementById('rw-test-search')?.addEventListener('input', renderReportTestOptions);
+  // Search input + clear-button visibility
+  const searchInput = document.getElementById('rw-test-search');
+  const searchClear = document.getElementById('rw-test-search-clear');
+  function syncSearchClear(){
+    if (searchClear) searchClear.hidden = !(searchInput && searchInput.value.length);
+  }
+  searchInput?.addEventListener('input', () => {
+    syncSearchClear();
+    renderReportTestOptions();
+  });
+  searchClear?.addEventListener('click', () => {
+    if (!searchInput) return;
+    searchInput.value = '';
+    syncSearchClear();
+    renderReportTestOptions();
+    searchInput.focus();
+  });
+  syncSearchClear();
   document.getElementById('rw-filter-chips')?.addEventListener('click', e => {
     const chip = e.target.closest('[data-rw-filter]');
     if (!chip) return;
@@ -5448,6 +5468,16 @@ setupReportWriter();
 buildDescCarousels();
 renderConverter();
 
+/* Premorbid panel — fade fields when comparison is off (kept always visible) */
+(function setupBatteryPremorbidDisable(){
+  const block = document.getElementById('bat-premorbid-block');
+  const checkbox = document.getElementById('bat-prem-enable');
+  if (!block || !checkbox) return;
+  function sync(){ block.dataset.enabled = String(checkbox.checked); }
+  checkbox.addEventListener('change', sync);
+  sync();
+})();
+
 // Premorbid setup
 setupPreTabs();
 buildPredictTable();
@@ -5707,3 +5737,1482 @@ refreshAll();
     });
   });
 })();
+
+/* ================================================================
+   WORKING REPORT BUNDLE v2
+   - Renders full APA tables in a wide drawer (replaces inline panels)
+   - Auto-updates via MutationObserver on each tool's APA container
+   - Dedupes by sourceId — re-Add refreshes the existing entry
+   - Drag-to-reorder items
+   - Toggle layout: floating popover ↔ docked side panel
+   - Persists across reloads via localStorage
+   ================================================================ */
+const ReportBundle = (function(){
+  const STORAGE_KEY = 'workingReport_v1';
+  const SOURCE_LABELS = {
+    'bat-apa':           'Neuropsych Tables',
+    'sdi-apa':           'Standard Deviation Index',
+    'rci-basic-apa':     'Simple Reliable Change',
+    'rci-practice-apa':  'Practice-Adjusted RCI',
+    'rci-srb-apa':       'Standardised Regression-Based',
+    'rci-crawford-apa':  'Crawford Regression-Based',
+    'pre-estimates-apa':    'Premorbid · Estimates',
+    'pre-predict-apa':      'Premorbid · ToPF Predicted',
+    'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted'
+  };
+  /* Method / tool names — combined with the detected test family to produce
+     intelligent table titles like "Crawford Regression-Based Change: WAIS-IV". */
+  const SOURCE_METHOD_NAMES = {
+    'bat-apa':              'Cognitive Outcomes',
+    'sdi-apa':              'Standard-Deviation Discrepancy',
+    'rci-basic-apa':        'Reliable Change (Jacobson & Truax)',
+    'rci-practice-apa':     'Practice-Adjusted Reliable Change',
+    'rci-srb-apa':          'Standardised Regression-Based Change',
+    'rci-crawford-apa':     'Crawford Regression-Based Change',
+    'pre-estimates-apa':    'Premorbid Cognitive Estimate',
+    'pre-predict-apa':      'ToPF-Predicted vs Achieved',
+    'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved'
+  };
+  /* Backwards alias — SOURCE_TITLES still referenced in a couple of places */
+  const SOURCE_TITLES = SOURCE_METHOD_NAMES;
+  /* Build an intelligent title:  "Method: Family"  if family detected, else just method name.
+     For split items, pass the family name explicitly via the second arg. */
+  function buildIntelligentTitle(sourceId, html, explicitFamily){
+    // Strip the "::groupname" suffix to get the parent's method
+    const parentId = (sourceId || '').split('::')[0];
+    const method = SOURCE_METHOD_NAMES[parentId] || null;
+
+    // Premorbid sources: the table CONTENT mentions WAIS-IV / WMS-IV (those are
+    // the predicted indices), but those aren't the "test family" — the test is
+    // ToPF / OPIE, already named in the method. Skip family detection here so
+    // we don't end up with "ToPF-Predicted vs Achieved: WAIS-IV".
+    if (parentId && parentId.startsWith('pre-')){
+      return method || 'APA Table';
+    }
+
+    const family = explicitFamily || detectTestFamily(html);
+    if (method && family) return `${method}: ${family}`;
+    if (method) return method;
+    return family || 'APA Table';
+  }
+  const SOURCE_IDS = Object.keys(SOURCE_LABELS);
+
+  let state = { items: [], minimized: true, drawerWidth: null, onboardingSeen: false, maximised: false };
+  /* Last seen body-row count per source. Used to decide whether the pill
+     should fire — we only want it on actual row additions, not score edits. */
+  const lastRowCount = {};
+  function countTableRows(container){
+    return container ? container.querySelectorAll('table tbody tr:not(.apa-group)').length : 0;
+  }
+  let rootEl = null;
+  const observers = new Map(); // sourceId -> MutationObserver
+  let dragId = null;
+  let lastChangedItemId = null; // for auto-scroll on render
+  const KOFI_SEEN_KEY = 'kofiPromptSeen_v1'; // localStorage flag — persists across tabs/sessions
+  let kofiToastShown = false;   // in-memory guard for current page load
+  function hasSeenKofi(){
+    try { return !!localStorage.getItem(KOFI_SEEN_KEY); } catch(e){ return false; }
+  }
+  function markKofiSeen(){
+    try { localStorage.setItem(KOFI_SEEN_KEY, String(Date.now())); } catch(e){}
+  }
+
+  /* Post-export thank-you modal. Auto-fires the FIRST time EVER (across tabs
+     and sessions) that the user exports/copies a table or spends 5 minutes
+     on the site. Can also be opened manually (e.g. from the header "Buy me a
+     coffee" button) by passing { force: true }, which bypasses the seen flag.
+     Persisted via localStorage. Center-screen with a dimming backdrop.
+     Dismissable via backdrop click, the X, or Escape. */
+  function maybeShowKofiToast(opts){
+    const force = !!(opts && opts.force);
+    // Don't double-render while a modal is already on screen
+    if (kofiToastShown) return;
+    // Auto-triggers (export, copy, timer) respect the localStorage flag.
+    // Force-opens (header button) always proceed regardless.
+    if (!force && hasSeenKofi()) return;
+    kofiToastShown = true;
+    // Only mark the persistent "seen" flag for AUTO-triggers — that's what the
+    // flag is for (don't repeatedly nudge passive users). Manual header-button
+    // clicks are user-initiated and shouldn't burn the budget.
+    if (!force) markKofiSeen();
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'rb-kofi-modal-backdrop';
+
+    const card = document.createElement('div');
+    card.className = 'rb-kofi-toast rb-kofi-toast--embed';
+    card.setAttribute('role', 'dialog');
+    card.setAttribute('aria-modal', 'true');
+    card.setAttribute('aria-label', 'Support this tool');
+    card.innerHTML = `
+      <button class="rb-kofi-toast-close" type="button" aria-label="Dismiss">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>
+      </button>
+      <div class="rb-kofi-toast-header">
+        <span class="rb-kofi-toast-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2.5 5.5h9V11a2.5 2.5 0 0 1-2.5 2.5h-4A2.5 2.5 0 0 1 2.5 11V5.5z"/>
+            <path d="M11.5 7h1.25a1.75 1.75 0 0 1 0 3.5H11.5"/>
+            <path d="M5 3v1.2"/><path d="M7 3v1.2"/><path d="M9 3v1.2"/>
+          </svg>
+        </span>
+        <div class="rb-kofi-toast-text">
+          <strong>Hope that saved you some report time.</strong>
+          <span>This site is free and ad-free. If it's helpful, a small donation  it that way.</span>
+        </div>
+      </div>
+      <div class="rb-kofi-toast-embed-wrap">
+        <iframe
+          class="rb-kofi-toast-iframe"
+          src="https://ko-fi.com/clinpsyry/?hidefeed=true&widget=true&embed=true&preview=true"
+          title="Support clinpsyry on Ko-fi"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <div class="rb-kofi-toast-footer">
+        <a class="rb-kofi-toast-fallback" href="https://ko-fi.com/clinpsyry" target="_blank" rel="noopener noreferrer">
+          Open on ko-fi.com &rarr;
+        </a>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    document.body.appendChild(card);
+    requestAnimationFrame(() => {
+      backdrop.classList.add('is-visible');
+      card.classList.add('is-visible');
+    });
+
+    function dismiss(){
+      backdrop.classList.remove('is-visible');
+      card.classList.remove('is-visible');
+      document.removeEventListener('keydown', onKey);
+      setTimeout(() => {
+        backdrop.remove(); card.remove();
+        // Reset the in-memory guard so a manual click on the header
+        // "Buy me a coffee" button can re-open the modal later.
+        kofiToastShown = false;
+      }, 280);
+    }
+    function onKey(e){ if (e.key === 'Escape') dismiss(); }
+    document.addEventListener('keydown', onKey);
+
+    backdrop.addEventListener('click', dismiss);
+    card.querySelector('.rb-kofi-toast-close').addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation(); dismiss();
+    });
+  }
+
+  /* ---------- persistence ---------- */
+  function load(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw){
+        const parsed = JSON.parse(raw);
+        const w = Number(parsed.drawerWidth);
+        state = {
+          items: Array.isArray(parsed.items) ? parsed.items : [],
+          minimized: parsed.minimized !== false,
+          drawerWidth: (Number.isFinite(w) && w >= 320) ? w : null,
+          onboardingSeen: parsed.onboardingSeen === true,
+          maximised: parsed.maximised === true
+        };
+      }
+    } catch(e){ state = { items:[], minimized:true, drawerWidth:null, onboardingSeen:false, maximised:false }; }
+  }
+  function save(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+  }
+
+  /* ---------- helpers ---------- */
+  function newId(){ return 'rb-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
+  function escapeHtmlLocal(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function debounce(fn, wait){
+    let t = null;
+    return function(){
+      const args = arguments;
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(this, args), wait);
+    };
+  }
+  function formatRelative(iso){
+    if (!iso) return '';
+    const t = new Date(iso).getTime();
+    const now = Date.now();
+    const sec = Math.max(1, Math.round((now - t) / 1000));
+    if (sec < 60) return 'just now';
+    const min = Math.round(sec / 60);
+    if (min < 60) return `${min} min ago`;
+    const hr = Math.round(min / 60);
+    if (hr < 24) return `${hr} hr ago`;
+    return `${Math.round(hr / 24)}d ago`;
+  }
+  function getTitleFromContainer(container, fallback){
+    const titleEl = container.querySelector('.apa-table-title');
+    const numEl = container.querySelector('.apa-table-num');
+    return (titleEl?.textContent || numEl?.textContent || fallback || 'APA Table').trim();
+  }
+  /* Replace the captured table's title text with an intelligent one of the form
+     "Method: Test family" (e.g. "Crawford Regression-Based Change: WAIS-IV"). */
+  function applyMeaningfulTitle(html, sourceId){
+    const title = buildIntelligentTitle(sourceId, html);
+    if (!title) return html;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const titleEl = tmp.querySelector('.apa-table-title');
+    if (titleEl) titleEl.textContent = title;
+    return tmp.innerHTML;
+  }
+  /* Read the column labels from a captured APA table for the column-toggle UI.
+     Uses the LAST header row (skipping spanner rows above it). */
+  function getItemColumns(item){
+    const tmp = document.createElement('div');
+    tmp.innerHTML = item.html;
+    const headerRows = tmp.querySelectorAll('table thead tr');
+    if (!headerRows.length) return [];
+    const lastRow = headerRows[headerRows.length - 1];
+    return [...lastRow.children].map((cell, idx) => ({
+      idx,
+      label: cell.textContent.replace(/\s+/g, ' ').trim() || `Column ${idx + 1}`
+    }));
+  }
+  /* Apply the per-item hiddenColumns filter to a captured-HTML string by
+     setting display:none on cells at hidden indices. Inline style so this
+     also carries through to clipboard / Word export. Skips spanner rows
+     in <thead> (we only target the last header row, where actual column
+     labels live, plus all body rows). */
+  function applyHiddenColumns(html, hiddenColumns){
+    if (!hiddenColumns || !hiddenColumns.length) return html;
+    const hidden = new Set(hiddenColumns);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const hideCell = cell => {
+      const existing = cell.getAttribute('style') || '';
+      if (!/display\s*:\s*none/i.test(existing)){
+        cell.setAttribute('style', existing + ';display:none;');
+      }
+    };
+    tmp.querySelectorAll('table').forEach(table => {
+      const headRows = table.querySelectorAll('thead tr');
+      if (headRows.length){
+        const lastHead = headRows[headRows.length - 1];
+        [...lastHead.children].forEach((cell, idx) => {
+          if (hidden.has(idx)) hideCell(cell);
+        });
+      }
+      table.querySelectorAll('tbody tr').forEach(tr => {
+        [...tr.children].forEach((cell, idx) => {
+          if (hidden.has(idx)) hideCell(cell);
+        });
+      });
+    });
+    return tmp.innerHTML;
+  }
+  /* Apply per-item header label overrides to the LAST <thead> row of the
+     captured HTML. Skips entries that are null/empty so the original captured
+     text shows through. */
+  function applyHeaderOverrides(html, overrides){
+    if (!overrides || !overrides.length) return html;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const headerRows = tmp.querySelectorAll('table thead tr');
+    if (!headerRows.length) return html;
+    const lastRow = headerRows[headerRows.length - 1];
+    [...lastRow.children].forEach((cell, idx) => {
+      const v = overrides[idx];
+      if (v != null && String(v).trim() !== '') cell.textContent = v;
+    });
+    return tmp.innerHTML;
+  }
+
+  /* Replace the captured "Table 1" number text with the item's position in
+     the report (Table 1 / Table 2 / Table 3 …). */
+  function renumberTable(html, num){
+    if (!Number.isFinite(num)) return html;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const numEl = tmp.querySelector('.apa-table-num');
+    if (numEl) numEl.textContent = `Table ${num}`;
+    return tmp.innerHTML;
+  }
+  function effectiveItemHtml(item, indexInReport){
+    let html = applyHiddenColumns(item.html, item.hiddenColumns || []);
+    html = applyHeaderOverrides(html, item.headerOverrides || []);
+    if (typeof indexInReport === 'number'){
+      html = renumberTable(html, indexInReport + 1);
+    }
+    return html;
+  }
+
+  /* Detect the test family name (CVLT-3, WAIS-IV, etc.) from a captured APA
+     table's content. Used to label the "Added to report" pill with the
+     actual test rather than the analysis type. */
+  const TEST_FAMILY_PATTERNS = [
+    'CVLT-3', 'CVLT-II', 'CVLT',
+    'D-KEFS',
+    'RBANS',
+    'WAIS-IV', 'WAIS-V', 'WAIS-III', 'WAIS',
+    'WMS-IV', 'WMS-V', 'WMS-III', 'WMS',
+    'WISC-V', 'WISC-IV', 'WISC',
+    'TOMM',
+    'ToPF',
+    'OPIE-4', 'OPIE-3', 'OPIE'
+  ];
+  function detectTestFamily(html){
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    // 1. Use the LAST group separator row — that's the most recently added
+    //    family. (Iterating from the first would echo whichever family was
+    //    added earliest forever.)
+    const groupCells = tmp.querySelectorAll('table tbody tr.apa-group td');
+    if (groupCells.length){
+      for (let i = groupCells.length - 1; i >= 0; i--){
+        const text = (groupCells[i].textContent || '').trim();
+        if (!text) continue;
+        const cleaned = text
+          .replace(/\s*[·•]\s*Ages?\s+[\w\d-]+(\s+\w+)?\s*$/i, '')
+          .replace(/\s*[·•]\s*All\s+Ages\s*$/i, '')
+          .trim();
+        if (cleaned) return cleaned;
+      }
+    }
+    // 2. Scan the full text for any known abbreviation as a fallback
+    const allText = tmp.textContent || '';
+    for (const fam of TEST_FAMILY_PATTERNS){
+      if (allText.includes(fam)) return fam;
+    }
+    return null;
+  }
+  function pillLabelFor(html, sourceId){
+    const parentId = (sourceId || '').split('::')[0];
+    // Premorbid sources: don't pattern-match WAIS-IV/WMS-IV from the table —
+    // those are predicted outcomes, not the test family.
+    if (parentId && parentId.startsWith('pre-')){
+      return SOURCE_LABELS[parentId] || null;
+    }
+    const family = detectTestFamily(html);
+    if (family) return family;
+    return SOURCE_LABELS[parentId] || null;
+  }
+
+  /* Walk the captured table for group separators (apa-group rows). If 2+
+     groups are present, return a per-group array of { name, html } so each
+     test family becomes its own table in the report. Returns [] when 0 or 1
+     groups (in which case the caller treats it as a single merged table). */
+  function extractGroupsFromHtml(html, sourceId){
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const tbody = tmp.querySelector('table tbody');
+    if (!tbody) return [];
+
+    const sections = [];
+    let current = null;
+    [...tbody.children].forEach(row => {
+      if (row.classList.contains('apa-group')){
+        if (current) sections.push(current);
+        current = {
+          name: ((row.querySelector('td')?.textContent) || '').trim(),
+          rows: []
+        };
+      } else if (current){
+        current.rows.push(row);
+      }
+    });
+    if (current) sections.push(current);
+
+    if (sections.length < 2) return [];
+
+    return sections.map(section => {
+      const cloneTmp = document.createElement('div');
+      cloneTmp.innerHTML = html;
+      const cloneTbody = cloneTmp.querySelector('table tbody');
+      if (!cloneTbody) return null;
+      cloneTbody.innerHTML = '';
+      section.rows.forEach(r => cloneTbody.appendChild(r.cloneNode(true)));
+      // Build an intelligent title combining the parent method name with this
+      // group's family name — e.g. "Crawford Regression-Based Change: WAIS-IV".
+      const titleText = buildIntelligentTitle(sourceId, cloneTmp.innerHTML, section.name);
+      const titleEl = cloneTmp.querySelector('.apa-table-title');
+      if (titleEl) titleEl.textContent = titleText;
+      return { name: section.name, title: titleText, html: cloneTmp.innerHTML };
+    }).filter(Boolean);
+  }
+
+  /* When a parent source produces 2+ groups, replace any merged parent item
+     with per-group items. Match existing per-group items by sourceId so that
+     user customisations (column toggles, header overrides) survive.
+
+     Pill firing logic:
+     - Splits already present in state get silent updates.
+     - When transitioning merged→split, the group that the merged item
+       represented is treated as a continuation (no pill).
+     - Only TRULY new groups fire pills.
+  */
+  function splitAndUpsert(parentSourceId, splits){
+    // Identify the previously-merged item's group name (if any) so we can
+    // treat that group as a continuation rather than a fresh addition.
+    const merged = state.items.find(i => i.sourceId === parentSourceId);
+    let prevGroupName = null;
+    if (merged){
+      const tmp = document.createElement('div');
+      tmp.innerHTML = merged.html;
+      const firstGroup = tmp.querySelector('table tbody tr.apa-group td');
+      if (firstGroup) prevGroupName = (firstGroup.textContent || '').trim();
+    }
+
+    // Drop the merged parent item
+    state.items = state.items.filter(i => i.sourceId !== parentSourceId);
+
+    const validIds = new Set();
+    splits.forEach(split => {
+      const splitId = `${parentSourceId}::${split.name}`;
+      validIds.add(splitId);
+      const existing = state.items.find(i => i.sourceId === splitId);
+      if (existing){
+        if (existing.html !== split.html || existing.title !== split.title){
+          existing.html = split.html;
+          existing.title = split.title || split.name;
+          existing.sourceTool = split.name;
+          existing.updatedAt = new Date().toISOString();
+          lastChangedItemId = existing.id;
+        }
+      } else {
+        const newItem = {
+          id: newId(),
+          title: split.title || split.name,
+          sourceTool: split.name,
+          sourceId: splitId,
+          html: split.html,
+          addedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          hiddenColumns: [],
+          headerOverrides: []
+        };
+        state.items.push(newItem);
+        lastChangedItemId = newItem.id;
+        // Only pill for genuinely new content — not for the group that was
+        // already represented by the merged item.
+        const isContinuation = prevGroupName && split.name === prevGroupName;
+        if (!isContinuation){
+          showAddPrompt(split.name, splitId);
+        }
+      }
+    });
+
+    // Remove orphaned per-group items (groups no longer present)
+    state.items = state.items.filter(i =>
+      !i.sourceId.startsWith(`${parentSourceId}::`) || validIds.has(i.sourceId)
+    );
+
+    save();
+    render();
+  }
+
+  /* ---------- core API ---------- */
+  function addOrReplace({title, sourceTool, sourceId, html}){
+    const now = new Date().toISOString();
+    const existingIdx = state.items.findIndex(i => i.sourceId === sourceId);
+    if (existingIdx >= 0){
+      const existing = state.items[existingIdx];
+      state.items[existingIdx] = {
+        ...existing,
+        title: title || existing.title,
+        html,
+        updatedAt: now
+      };
+    } else {
+      state.items.push({
+        id: newId(),
+        title: (title || 'APA Table').trim().slice(0, 200),
+        sourceTool: sourceTool || 'Unknown',
+        sourceId,
+        html,
+        addedAt: now,
+        updatedAt: now
+      });
+      ensureObserver(sourceId);
+    }
+    save();
+    render();
+    flashChip();
+    if (typeof showToast === 'function'){
+      const verb = existingIdx >= 0 ? '↻ Updated' : '✓ Added';
+      showToast(`${verb} in working report`);
+    }
+  }
+  function remove(id){
+    state.items = state.items.filter(i => i.id !== id);
+    save();
+    render();
+  }
+  function clear(){
+    if (!state.items.length) return;
+    if (!window.confirm('Start a new report?\n\nThis clears all collected tables — the change cannot be undone.')) return;
+    state.items = [];
+    save();
+    render();
+    if (typeof showToast === 'function') showToast('New report started');
+  }
+  function moveItem(fromId, toId, dropAfter){
+    const fromIdx = state.items.findIndex(i => i.id === fromId);
+    let toIdx = state.items.findIndex(i => i.id === toId);
+    if (fromIdx < 0 || toIdx < 0 || fromId === toId) return;
+    const [moved] = state.items.splice(fromIdx, 1);
+    if (toIdx > fromIdx) toIdx--;
+    state.items.splice(toIdx + (dropAfter ? 1 : 0), 0, moved);
+    save();
+    render();
+  }
+
+  /* ---------- auto-add + auto-update via MutationObserver ----------
+     Tables now flow into the working report automatically as you enter data.
+     - First time a tool's APA container has a real table → auto-create item.
+     - Subsequent edits → silently update the existing item.
+     - No toast / chip-pulse on updates (would be spam during typing).
+     - Subtle chip pulse only on first auto-add for a source.
+     - When a container becomes empty, the bundle entry is PRESERVED — clearing
+       inputs by accident shouldn't wipe your collected report.
+  */
+  function ensureObserver(sourceId){
+    if (observers.has(sourceId)) return;
+    const container = document.getElementById(sourceId);
+    if (!container) return;
+    // Seed the row count from the current DOM state so existing example rows
+    // don't trigger a phantom "added" pill on first edit.
+    if (lastRowCount[sourceId] == null){
+      lastRowCount[sourceId] = countTableRows(container);
+    }
+    const handler = debounce(() => {
+      // Always update the row-count tracker first, even if we're about to
+      // early-return, so cleared tables don't leave stale counts behind.
+      const currentRowCount = countTableRows(container);
+      const rowsAdded = currentRowCount > (lastRowCount[sourceId] || 0);
+      lastRowCount[sourceId] = currentRowCount;
+
+      if (!container.querySelector('.apa-table')) return;
+      if (typeof buildStandaloneHtml !== 'function') return;
+      const rawHtml = buildStandaloneHtml(container);
+      const html = applyMeaningfulTitle(rawHtml, sourceId);
+
+      // AUTO-SPLIT: if the captured table has 2+ test families (group separators),
+      // each becomes its own item in the working report.
+      const splits = extractGroupsFromHtml(html, sourceId);
+      if (splits.length >= 2){
+        splitAndUpsert(sourceId, splits);
+        return;
+      }
+      // Source is back to a single (or no) group — drop any per-group items
+      // for this parent so the merged version takes over cleanly.
+      const orphans = state.items.filter(i => i.sourceId.startsWith(`${sourceId}::`));
+      if (orphans.length){
+        state.items = state.items.filter(i => !i.sourceId.startsWith(`${sourceId}::`));
+      }
+
+      const item = state.items.find(i => i.sourceId === sourceId);
+      const title = buildIntelligentTitle(sourceId, html);
+
+      if (item){
+        if (html === item.html && title === item.title) return;
+        item.html = html;
+        item.title = title;
+        item.updatedAt = new Date().toISOString();
+        lastChangedItemId = item.id;
+        save();
+        render();
+        if (rowsAdded){
+          showAddPrompt(pillLabelFor(html, sourceId), sourceId);
+        }
+      } else {
+        // Auto-add (first time this tool produces data)
+        const now = new Date().toISOString();
+        const newItem = {
+          id: newId(),
+          title: (title || 'APA Table').trim().slice(0, 200),
+          sourceTool: SOURCE_LABELS[sourceId] || sourceId,
+          sourceId,
+          html,
+          addedAt: now,
+          updatedAt: now,
+          hiddenColumns: []
+        };
+        state.items.push(newItem);
+        lastChangedItemId = newItem.id;
+        save();
+        render();
+        // Show the confirmation pill — it'll fly into the chip after a hold
+        // and pulse the chip on impact, so we don't need a separate flashChip().
+        showAddPrompt(pillLabelFor(html, sourceId), sourceId);
+      }
+    }, 350);
+    const obs = new MutationObserver(handler);
+    obs.observe(container, { childList: true, subtree: true, characterData: true });
+    observers.set(sourceId, obs);
+  }
+  function setupAllObservers(){
+    SOURCE_IDS.forEach(id => ensureObserver(id));
+  }
+
+  /* ---------- exports ---------- */
+  function buildReportHtmlBody(){
+    if (!state.items.length) return '<p style="color:#888;font-style:italic;">No items in the working report yet.</p>';
+    return state.items.map((it, i) => `<div style="page-break-inside:avoid;margin:0 0 28pt;">${effectiveItemHtml(it, i)}</div>`).join('');
+  }
+  async function copyAll(){
+    if (!state.items.length){
+      if (typeof showToast === 'function') showToast('Working report is empty', true);
+      return;
+    }
+    const html = `<div style="font-family:'Times New Roman',serif;font-size:11pt;color:#000;">${buildReportHtmlBody()}</div>`;
+    const plain = state.items.map((it, i) => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = effectiveItemHtml(it, i);
+      return tmp.textContent.replace(/\s+/g, ' ').trim();
+    }).join('\n\n---\n\n');
+    try {
+      if (navigator.clipboard && window.ClipboardItem){
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/html':  new Blob([html],  { type:'text/html' }),
+          'text/plain': new Blob([plain], { type:'text/plain' })
+        })]);
+      } else {
+        await navigator.clipboard.writeText(plain);
+      }
+      if (typeof showToast === 'function') showToast(`✓ ${state.items.length} table${state.items.length===1?'':'s'} copied`);
+      maybeShowKofiToast();
+    } catch(e){
+      console.error(e);
+      if (typeof showToast === 'function') showToast('Copy failed — try selecting manually', true);
+    }
+  }
+  function exportExcel(){
+    if (!state.items.length){
+      if (typeof showToast === 'function') showToast('Working report is empty', true);
+      return;
+    }
+    // Generate CSV — Excel opens it natively without any "format mismatch"
+    // warning, and the data round-trips cleanly. Multiple tables are stacked
+    // with blank lines between them.
+    const csvCell = s => {
+      const v = String(s == null ? '' : s);
+      return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+    };
+    const sections = state.items.map((it, i) => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = effectiveItemHtml(it, i);
+      const table = tmp.querySelector('table');
+      if (!table) return '';
+      const numText = (tmp.querySelector('.apa-table-num')?.textContent || `Table ${i + 1}`).trim();
+      const titleText = (tmp.querySelector('.apa-table-title')?.textContent || '').trim();
+      const heading = titleText ? `${numText}: ${titleText}` : numText;
+      const lines = [csvCell(heading), ''];
+      table.querySelectorAll('thead tr, tbody tr').forEach(tr => {
+        const cells = [...tr.children].map(td =>
+          csvCell((td.textContent || '').replace(/\s+/g, ' ').trim())
+        );
+        lines.push(cells.join(','));
+      });
+      const noteEl = tmp.querySelector('.apa-note, .apa-table-note, .apa-footer');
+      if (noteEl){
+        const note = (noteEl.textContent || '').replace(/\s+/g, ' ').trim();
+        if (note){ lines.push(''); lines.push(csvCell(note)); }
+      }
+      return lines.join('\n');
+    }).filter(Boolean).join('\n\n');
+
+    // BOM + CRLF so Excel recognises UTF-8 and respects line endings on Windows.
+    const csvBlob = new Blob(['﻿', sections.replace(/\n/g, '\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(csvBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `assessment-report-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+    if (typeof showToast === 'function') showToast('✓ CSV downloaded — opens in Excel');
+    maybeShowKofiToast();
+  }
+  function exportWord(){
+    if (!state.items.length){
+      if (typeof showToast === 'function') showToast('Working report is empty', true);
+      return;
+    }
+    const dateStr = new Date().toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+    const doc = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>Assessment Report</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->
+<style>
+  @page { margin: 1in; }
+  body { font-family:'Times New Roman',serif; font-size:11pt; color:#000; line-height:1.4; }
+  h1 { font-family:'Times New Roman',serif; font-size:14pt; font-weight:bold; margin:0 0 12pt; }
+  .rb-doc-meta { color:#666; font-size:10pt; font-style:italic; margin:0 0 24pt; }
+</style>
+</head>
+<body>
+<h1>Assessment Report</h1>
+<p class="rb-doc-meta">Compiled ${escapeHtmlLocal(dateStr)} · ${state.items.length} table${state.items.length===1?'':'s'}</p>
+${buildReportHtmlBody()}
+</body>
+</html>`;
+    const blob = new Blob(['﻿', doc], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `assessment-report-${new Date().toISOString().slice(0,10)}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+    if (typeof showToast === 'function') showToast('✓ Word document downloaded');
+    maybeShowKofiToast();
+  }
+
+  /* ---------- UI rendering ---------- */
+  function injectUI(){
+    if (document.getElementById('report-bundle-root')) return;
+    const root = document.createElement('div');
+    root.className = 'rb-root';
+    root.id = 'report-bundle-root';
+    root.innerHTML = `
+      <button class="rb-chip" data-rb-action="toggle" type="button" aria-label="Toggle working report">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3.5 1.5h7l3 3v10h-10z"/>
+          <path d="M10.5 1.5v3h3"/>
+          <line x1="5.5" y1="8" x2="11.5" y2="8"/>
+          <line x1="5.5" y1="11" x2="9.5" y2="11"/>
+        </svg>
+        <span class="rb-chip-label">Working Report (APA Tables)</span>
+        <span class="rb-chip-count" data-rb-count>0</span>
+      </button>
+      <div class="rb-onboarding" data-rb-onboarding hidden aria-hidden="true">
+        <div class="rb-onboarding-bubble">
+          <strong>Click here</strong> to preview your working report.
+          <button class="rb-onboarding-dismiss" data-rb-action="dismiss-onboarding" type="button" aria-label="Dismiss">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>
+          </button>
+        </div>
+        <div class="rb-onboarding-arrow" aria-hidden="true">
+          <svg viewBox="0 0 32 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6 C 8 16, 16 22, 26 24"/>
+            <path d="M22 22l4 2-1-4.4"/>
+          </svg>
+        </div>
+      </div>
+      <div class="rb-drawer" hidden>
+        <div class="rb-drawer-head">
+          <div class="rb-drawer-title">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3.5 1.5h7l3 3v10h-10z"/>
+              <path d="M10.5 1.5v3h3"/>
+              <line x1="5.5" y1="8" x2="11.5" y2="8"/>
+              <line x1="5.5" y1="11" x2="9.5" y2="11"/>
+            </svg>
+            <span>Working Report</span>
+            <span class="rb-drawer-count" data-rb-count-text>0 items</span>
+          </div>
+          <div class="rb-drawer-head-actions">
+            <button class="rb-head-btn" data-rb-action="maximise" type="button" aria-label="Maximise" title="Maximise">
+              <svg class="rb-icon-maximise" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="2" width="10" height="10" rx="1"/>
+              </svg>
+              <svg class="rb-icon-restore" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="4" y="4" width="8" height="8" rx="1"/>
+                <path d="M2 9V3a1 1 0 0 1 1-1h6"/>
+              </svg>
+            </button>
+            <button class="rb-head-btn" data-rb-action="minimise" type="button" aria-label="Minimise" title="Minimise">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                <path d="M3 11h8"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="rb-drawer-body" data-rb-body></div>
+        <div class="rb-drawer-actions">
+          <button class="btn btn-clear rb-action-clear" data-rb-action="clear" type="button">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h10"/><path d="M5.5 4V2.5h3V4"/><path d="M3 4l1 8h6l1-8"/></svg>
+            New report
+          </button>
+          <div class="rb-actions-right">
+            <button class="btn rb-action-copy" data-rb-action="copy" type="button">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M2 9V3a1 1 0 0 1 1-1h6"/></svg>
+              Copy all tables
+            </button>
+            <button class="btn rb-action-export-excel" data-rb-action="export-excel" type="button">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2.5" width="10" height="9" rx="1"/><path d="M2 6h10"/><path d="M5.5 2.5v9"/></svg>
+              Export to Excel
+            </button>
+            <button class="btn rb-action-export" data-rb-action="export-word" type="button">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v2.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9"/><path d="M4 6l3 3 3-3"/><path d="M7 9V1.5"/></svg>
+              Export to Word
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(root);
+    rootEl = root;
+  }
+
+  function bindEvents(){
+    if (!rootEl) return;
+    // Delegated click handler at the DOCUMENT level
+    document.addEventListener('click', e => {
+      // Per-item Options menu close-on-outside-click
+      const insideMenu = e.target.closest('.rb-item-menu');
+      const onMenuTrigger = e.target.closest('[data-rb-item-options]');
+      if (!insideMenu && !onMenuTrigger){
+        rootEl?.querySelectorAll('.rb-item-menu.is-open').forEach(m => m.classList.remove('is-open'));
+      }
+
+      if (!e.target.closest('#report-bundle-root')) return;
+      const actionBtn = e.target.closest('[data-rb-action]');
+      if (actionBtn){
+        e.preventDefault();
+        e.stopPropagation();
+        const action = actionBtn.dataset.rbAction;
+        if (action === 'toggle')        toggle();
+        else if (action === 'minimise') close();
+        else if (action === 'maximise') toggleMaximised();
+        else if (action === 'clear')    clear();
+        else if (action === 'copy')     copyAll();
+        else if (action === 'export-word') exportWord();
+        else if (action === 'export-excel') exportExcel();
+        else if (action === 'dismiss-onboarding') dismissOnboarding();
+        return;
+      }
+      // Per-item: Copy single table
+      const copyOne = e.target.closest('[data-rb-item-copy]');
+      if (copyOne){
+        e.preventDefault();
+        e.stopPropagation();
+        copyItem(copyOne.dataset.rbItemCopy);
+        return;
+      }
+      // Per-item: Options menu trigger
+      const optsTrigger = e.target.closest('[data-rb-item-options]');
+      if (optsTrigger){
+        e.preventDefault();
+        e.stopPropagation();
+        const id = optsTrigger.dataset.rbItemOptions;
+        const menu = rootEl.querySelector(`.rb-item-menu[data-rb-item-menu="${id}"]`);
+        rootEl.querySelectorAll('.rb-item-menu.is-open').forEach(m => {
+          if (m !== menu) m.classList.remove('is-open');
+        });
+        menu?.classList.toggle('is-open');
+        return;
+      }
+      // Per-item: column toggles inside the Options menu
+      const colToggle = e.target.closest('[data-rb-col-toggle]');
+      if (colToggle){
+        e.preventDefault();
+        e.stopPropagation();
+        const id = colToggle.dataset.rbItemId;
+        const colIdx = colToggle.dataset.rbColToggle;
+        toggleColumn(id, colIdx);
+        // Re-open the menu after render so the user can toggle multiple columns
+        requestAnimationFrame(() => {
+          const menu = rootEl?.querySelector(`.rb-item-menu[data-rb-item-menu="${id}"]`);
+          if (menu) menu.classList.add('is-open');
+        });
+        return;
+      }
+      // Per-item: Options menu items
+      const menuItem = e.target.closest('[data-rb-item-action]');
+      if (menuItem){
+        e.preventDefault();
+        e.stopPropagation();
+        const action = menuItem.dataset.rbItemAction;
+        const id = menuItem.dataset.rbItemId;
+        if (action === 'up')          moveUp(id);
+        else if (action === 'down')   moveDown(id);
+        else if (action === 'top')    moveToTop(id);
+        else if (action === 'bottom') moveToBottom(id);
+        else if (action === 'refresh') refreshItem(id);
+        else if (action === 'remove') remove(id);
+        rootEl.querySelectorAll('.rb-item-menu.is-open').forEach(m => m.classList.remove('is-open'));
+        return;
+      }
+      const removeBtn = e.target.closest('[data-rb-remove]');
+      if (removeBtn){
+        e.preventDefault();
+        e.stopPropagation();
+        remove(removeBtn.dataset.rbRemove);
+        return;
+      }
+    });
+    // Drag-and-drop reorder
+    const body = rootEl.querySelector('[data-rb-body]');
+    // Helper: lock the drawer's current height so it doesn't shrink as items
+    // collapse to header strips during reorder.
+    function lockDrawerHeight(){
+      const drawerEl = rootEl.querySelector('.rb-drawer');
+      if (!drawerEl) return;
+      drawerEl.style.height = drawerEl.offsetHeight + 'px';
+    }
+    function unlockDrawerHeight(){
+      const drawerEl = rootEl.querySelector('.rb-drawer');
+      if (!drawerEl) return;
+      drawerEl.style.height = '';
+    }
+
+    body.addEventListener('dragstart', e => {
+      const item = e.target.closest('.rb-item');
+      if (!item) return;
+      dragId = item.dataset.rbId;
+      item.classList.add('is-dragging');
+      // Lock drawer height BEFORE collapsing items, so the window doesn't shrink
+      lockDrawerHeight();
+      body.classList.add('is-reorder-mode');
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', dragId); } catch(_){}
+    });
+    body.addEventListener('dragend', e => {
+      const item = e.target.closest('.rb-item');
+      if (item) item.classList.remove('is-dragging');
+      body.classList.remove('is-reorder-mode');
+      unlockDrawerHeight();
+      body.querySelectorAll('.is-drop-before, .is-drop-after').forEach(el => el.classList.remove('is-drop-before','is-drop-after'));
+      dragId = null;
+    });
+    body.addEventListener('dragover', e => {
+      const target = e.target.closest('.rb-item');
+      if (!target || !dragId || target.dataset.rbId === dragId) return;
+      e.preventDefault();
+      const rect = target.getBoundingClientRect();
+      const after = (e.clientY - rect.top) > rect.height / 2;
+      body.querySelectorAll('.is-drop-before, .is-drop-after').forEach(el => el.classList.remove('is-drop-before','is-drop-after'));
+      target.classList.add(after ? 'is-drop-after' : 'is-drop-before');
+      e.dataTransfer.dropEffect = 'move';
+    });
+    body.addEventListener('drop', e => {
+      // ALWAYS exit reorder mode + unlock drawer height on drop. The render()
+      // that moveItem() triggers detaches the source element, so dragend won't
+      // bubble afterwards — items would stay collapsed forever without this.
+      body.classList.remove('is-reorder-mode');
+      unlockDrawerHeight();
+      body.querySelectorAll('.is-drop-before, .is-drop-after').forEach(el =>
+        el.classList.remove('is-drop-before', 'is-drop-after')
+      );
+      const target = e.target.closest('.rb-item');
+      if (!target || !dragId || target.dataset.rbId === dragId){ dragId = null; return; }
+      e.preventDefault();
+      const rect = target.getBoundingClientRect();
+      const after = (e.clientY - rect.top) > rect.height / 2;
+      const fromId = dragId;
+      dragId = null;
+      moveItem(fromId, target.dataset.rbId, after);
+    });
+    // ESC closes (and blurs any in-progress header edit first)
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !state.minimized){
+        // If editing a header, just blur — don't close the drawer
+        const editing = document.activeElement?.closest('.rb-editable-header');
+        if (editing){ editing.blur(); return; }
+        close();
+      }
+      // Enter on a header cell → commit (blur to save)
+      if (e.key === 'Enter'){
+        const cell = e.target.closest?.('.rb-editable-header');
+        if (cell){ e.preventDefault(); cell.blur(); }
+      }
+    });
+    // Save header override on blur (focusout bubbles, blur doesn't)
+    document.addEventListener('focusout', e => {
+      const cell = e.target.closest?.('.rb-editable-header');
+      if (!cell) return;
+      const itemId = cell.dataset.rbItemId;
+      const colIdx = parseInt(cell.dataset.rbColIdx, 10);
+      saveHeaderOverride(itemId, colIdx, cell.textContent);
+    });
+    // Click anywhere outside the bundle root → minimize. Uses composedPath()
+    // which is captured at dispatch time, so it sees the original ancestor
+    // chain even if the inner click handler removed the target from DOM
+    // (e.g. clicking ✕ to remove an item triggers a full re-render).
+    document.addEventListener('click', e => {
+      if (state.minimized) return;
+      const path = (typeof e.composedPath === 'function') ? e.composedPath() : [];
+      for (const el of path){
+        if (el && el.id === 'report-bundle-root') return;
+      }
+      // Fallback for browsers without composedPath, when target is still in DOM
+      if (e.target.closest && e.target.closest('#report-bundle-root')) return;
+      close();
+    });
+
+    // Resize handle removed — drawer is now fixed-size.
+  }
+
+  /* ---------- state transitions ---------- */
+  function open(){
+    state.minimized = false;
+    state.onboardingSeen = true; // first open dismisses the hint
+    hideAddPrompt();             // dismiss the transient "View live report" prompt
+    save();
+    render();
+  }
+  function close(){
+    // Play the bubble-out animation (drawer shrinks back into the chip), then
+    // commit the state change once the animation finishes.
+    if (rootEl && !state.minimized){
+      rootEl.classList.add('is-closing');
+      setTimeout(() => {
+        state.minimized = true;
+        save();
+        render(); // removes is-open + hides drawer
+        rootEl?.classList.remove('is-closing'); // cleanup last so the drawer never re-animates
+      }, 240); // matches rb-drawer-bubble-out duration
+    } else {
+      state.minimized = true;
+      save();
+      render();
+    }
+  }
+  function toggle(){ state.minimized ? open() : close(); }
+  function toggleMaximised(){
+    state.maximised = !state.maximised;
+    save();
+    render();
+  }
+  function flashChip(){
+    if (!rootEl) return;
+    rootEl.classList.add('rb-flash');
+    setTimeout(() => rootEl?.classList.remove('rb-flash'), 600);
+  }
+
+  /* "Added to report" pills — one per source, stackable. Each pill pops in,
+     bobs gently, then flies into the chip. Multiple sources => stacked above
+     each other with the newest closest to the chip. Same source updating
+     => existing pill stays and its hold timer resets (no duplicate pile-up
+     during continuous typing). */
+  const PILL_HEIGHT = 40;       // approx pill height
+  const PILL_GAP    = 8;        // gap between stacked pills
+  const PILL_BASE_BOTTOM = 74;  // distance from viewport bottom for pill #1
+  const CHIP_CENTER_BOTTOM = 24; // chip's vertical centre, target for fly animation
+
+  function buildPillNode(sourceLabel, sourceId){
+    const text = sourceLabel ? `${sourceLabel} added to report` : 'Added to report';
+    const pill = document.createElement('button');
+    pill.className = 'rb-add-prompt';
+    pill.type = 'button';
+    pill.setAttribute('data-rb-action', 'toggle');
+    pill.setAttribute('aria-label', text);
+    pill.setAttribute('title', text);
+    if (sourceId) pill.setAttribute('data-rb-source', sourceId);
+    pill.innerHTML = `
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 7.5l3 3 5-7"/>
+      </svg>
+      <span data-rb-add-prompt-label>${escapeHtmlLocal(text)}</span>
+    `;
+    return pill;
+  }
+
+  function startPillFly(pill){
+    if (!pill || !pill.parentNode) return;
+    clearTimeout(pill._holdTimer);
+    pill.classList.remove('is-visible');
+    // Compute fly distance from this pill's CURRENT bottom to the chip's centre
+    const bottomVal = parseInt(pill.style.bottom, 10) || PILL_BASE_BOTTOM;
+    const flyDistance = bottomVal - CHIP_CENTER_BOTTOM;
+    pill.style.setProperty('--rb-fly-distance', flyDistance + 'px');
+    pill.classList.add('is-flying');
+    // Chip "catches" the pill just before arrival
+    setTimeout(() => flashChip(), 380);
+    pill._doneTimer = setTimeout(() => {
+      pill.remove();
+      reflowPillStack();
+    }, 540);
+  }
+
+  /* Make column headers in the drawer click-to-edit. Called after each render
+     so newly-rendered <th> cells get the contenteditable affordance. */
+  function decorateEditableHeaders(){
+    if (!rootEl) return;
+    rootEl.querySelectorAll('.rb-item').forEach(article => {
+      const itemId = article.dataset.rbId;
+      if (!itemId) return;
+      const headerRows = article.querySelectorAll('.rb-item-rendered table thead tr');
+      if (!headerRows.length) return;
+      const lastRow = headerRows[headerRows.length - 1];
+      [...lastRow.children].forEach((cell, idx) => {
+        cell.setAttribute('contenteditable', 'plaintext-only');
+        cell.classList.add('rb-editable-header');
+        cell.dataset.rbItemId = itemId;
+        cell.dataset.rbColIdx = String(idx);
+        cell.title = 'Click to rename column';
+      });
+    });
+  }
+  function saveHeaderOverride(itemId, colIdx, newText){
+    const item = state.items.find(i => i.id === itemId);
+    if (!item) return;
+    if (!Array.isArray(item.headerOverrides)) item.headerOverrides = [];
+
+    // Compare against the original (pre-override) header text — if it matches,
+    // clear the override so the column reverts to whatever the source produces.
+    const tmp = document.createElement('div');
+    tmp.innerHTML = item.html;
+    const headerRows = tmp.querySelectorAll('table thead tr');
+    const lastRow = headerRows[headerRows.length - 1];
+    const originalText = ((lastRow?.children[colIdx]?.textContent) || '').trim();
+
+    const trimmed = String(newText || '').trim();
+    if (trimmed === '' || trimmed === originalText){
+      item.headerOverrides[colIdx] = null;
+    } else {
+      item.headerOverrides[colIdx] = trimmed;
+    }
+    item.updatedAt = new Date().toISOString();
+    save();
+    render(); // by the time blur fires, focus has already moved off the cell
+  }
+
+  function reflowPillStack(){
+    if (!rootEl) return;
+    const pills = rootEl.querySelectorAll('.rb-add-prompt:not(.is-flying)');
+    // Newest pill (last added to DOM) sits closest to the chip; stack upward
+    [...pills].reverse().forEach((pill, i) => {
+      pill.style.bottom = (PILL_BASE_BOTTOM + i * (PILL_HEIGHT + PILL_GAP)) + 'px';
+    });
+  }
+
+  function showAddPrompt(sourceLabel, sourceId){
+    if (!state.minimized) return;
+    if (!rootEl) return;
+
+    // Dedupe by sourceId — if a non-flying pill for this source already exists,
+    // refresh its label and reset its hold timer instead of stacking a new one.
+    if (sourceId){
+      const existing = rootEl.querySelector(
+        `.rb-add-prompt[data-rb-source="${CSS.escape(sourceId)}"]:not(.is-flying)`
+      );
+      if (existing){
+        const text = sourceLabel ? `${sourceLabel} added to report` : 'Added to report';
+        const labelEl = existing.querySelector('[data-rb-add-prompt-label]');
+        if (labelEl) labelEl.textContent = text;
+        existing.setAttribute('title', text);
+        existing.setAttribute('aria-label', text);
+        clearTimeout(existing._holdTimer);
+        existing._holdTimer = setTimeout(() => startPillFly(existing), 1500);
+        return;
+      }
+    }
+
+    // Fresh pill — append, position, animate
+    const pill = buildPillNode(sourceLabel, sourceId);
+    rootEl.appendChild(pill);
+    reflowPillStack(); // sets bottom for the new (newest) pill at the base position
+
+    void pill.offsetWidth;             // reflow so the entrance animation runs
+    pill.classList.add('is-visible');
+
+    pill._holdTimer = setTimeout(() => startPillFly(pill), 1500);
+  }
+
+  function hideAddPrompt(){
+    if (!rootEl) return;
+    rootEl.querySelectorAll('.rb-add-prompt').forEach(pill => {
+      clearTimeout(pill._holdTimer);
+      clearTimeout(pill._doneTimer);
+      pill.remove();
+    });
+  }
+  function dismissOnboarding(){
+    state.onboardingSeen = true;
+    save();
+    render();
+  }
+
+  /* ---------- per-item ops ---------- */
+  function moveToTop(id){
+    const idx = state.items.findIndex(i => i.id === id);
+    if (idx <= 0) return;
+    const [moved] = state.items.splice(idx, 1);
+    state.items.unshift(moved);
+    save();
+    render();
+  }
+  function moveToBottom(id){
+    const idx = state.items.findIndex(i => i.id === id);
+    if (idx < 0 || idx === state.items.length - 1) return;
+    const [moved] = state.items.splice(idx, 1);
+    state.items.push(moved);
+    save();
+    render();
+  }
+  function moveUp(id){
+    const idx = state.items.findIndex(i => i.id === id);
+    if (idx <= 0) return;
+    const tmp = state.items[idx];
+    state.items[idx] = state.items[idx - 1];
+    state.items[idx - 1] = tmp;
+    save();
+    render();
+  }
+  function moveDown(id){
+    const idx = state.items.findIndex(i => i.id === id);
+    if (idx < 0 || idx >= state.items.length - 1) return;
+    const tmp = state.items[idx];
+    state.items[idx] = state.items[idx + 1];
+    state.items[idx + 1] = tmp;
+    save();
+    render();
+  }
+  function refreshItem(id){
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+    // Split items have sourceId like "bat-apa::CVLT-3 Indices" — only the
+    // prefix is a real DOM id.
+    const parentId = item.sourceId.split('::')[0];
+    const container = document.getElementById(parentId);
+    if (!container || !container.querySelector('.apa-table')){
+      if (typeof showToast === 'function') showToast('Source table is empty — nothing to refresh', true);
+      return;
+    }
+    if (typeof buildStandaloneHtml !== 'function') return;
+    const fullHtml = applyMeaningfulTitle(buildStandaloneHtml(container), parentId);
+
+    if (item.sourceId.includes('::')){
+      // Re-extract just this group from the latest source HTML
+      const splits = extractGroupsFromHtml(fullHtml, parentId);
+      const groupName = item.sourceId.split('::')[1];
+      const split = splits.find(s => s.name === groupName);
+      if (!split){
+        if (typeof showToast === 'function') showToast(`"${groupName}" no longer in source`, true);
+        return;
+      }
+      item.html = split.html;
+      item.title = split.title || split.name;
+      item.sourceTool = split.name;
+    } else {
+      item.html = fullHtml;
+      item.title = buildIntelligentTitle(item.sourceId, fullHtml);
+    }
+    item.updatedAt = new Date().toISOString();
+    lastChangedItemId = id;
+    save();
+    render();
+    if (typeof showToast === 'function') showToast('↻ Refreshed from source');
+  }
+  function toggleColumn(itemId, colIdx){
+    const item = state.items.find(i => i.id === itemId);
+    if (!item) return;
+    const idx = Number(colIdx);
+    if (!Number.isFinite(idx)) return;
+    if (!Array.isArray(item.hiddenColumns)) item.hiddenColumns = [];
+    const i = item.hiddenColumns.indexOf(idx);
+    if (i >= 0) item.hiddenColumns.splice(i, 1);
+    else        item.hiddenColumns.push(idx);
+    save();
+    render();
+  }
+  async function copyItem(id){
+    const idx = state.items.findIndex(i => i.id === id);
+    if (idx < 0) return;
+    const item = state.items[idx];
+    const itemHtml = effectiveItemHtml(item, idx);
+    const html = `<div style="font-family:'Times New Roman',serif;font-size:11pt;color:#000;">${itemHtml}</div>`;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = itemHtml;
+    const plain = tmp.textContent.replace(/\s+/g, ' ').trim();
+    try {
+      if (navigator.clipboard && window.ClipboardItem){
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/html':  new Blob([html],  { type:'text/html' }),
+          'text/plain': new Blob([plain], { type:'text/plain' })
+        })]);
+      } else {
+        await navigator.clipboard.writeText(plain);
+      }
+      if (typeof showToast === 'function') showToast('✓ Table copied to clipboard');
+      maybeShowKofiToast();
+    } catch(e){
+      console.error(e);
+      if (typeof showToast === 'function') showToast('Copy failed — try selecting manually', true);
+    }
+  }
+
+  /* ---------- rendering ---------- */
+  function renderItems(){
+    const body = rootEl?.querySelector('[data-rb-body]');
+    if (!body) return;
+    if (!state.items.length){
+      body.innerHTML = `
+        <div class="rb-empty">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 4h12l4 4v20H8z"/>
+            <path d="M20 4v4h4"/>
+            <line x1="12" y1="14" x2="22" y2="14"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+            <line x1="12" y1="24" x2="18" y2="24"/>
+          </svg>
+          <div class="rb-empty-title">No tables yet</div>
+          <div class="rb-empty-sub">Tables appear here automatically as you enter scores in any tool. Drag to reorder, click <strong>↺ New report</strong> to start fresh.</div>
+        </div>`;
+      return;
+    }
+    body.innerHTML = state.items.map((it, i) => {
+      const cols = getItemColumns(it);
+      const hidden = new Set(it.hiddenColumns || []);
+      const colsHtml = cols.length ? `
+        <div class="rb-item-menu-section">Columns</div>
+        ${cols.map(c => `
+          <button class="rb-item-menu-item rb-col-toggle" type="button" role="menuitemcheckbox"
+            aria-checked="${!hidden.has(c.idx)}"
+            data-rb-col-toggle="${c.idx}"
+            data-rb-item-id="${escapeHtmlLocal(it.id)}">
+            <span class="rb-col-check ${hidden.has(c.idx) ? '' : 'is-checked'}" aria-hidden="true">
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5l2 2 4-5"/></svg>
+            </span>
+            <span class="rb-col-label">${escapeHtmlLocal(c.label)}</span>
+          </button>
+        `).join('')}
+        <div class="rb-item-menu-sep"></div>
+      ` : '';
+      return `
+      <article class="rb-item" data-rb-id="${escapeHtmlLocal(it.id)}" draggable="true">
+        <header class="rb-item-header">
+          <span class="rb-item-grip" title="Drag to reorder" aria-hidden="true">
+            <svg viewBox="0 0 14 18" fill="currentColor" aria-hidden="true"><circle cx="5" cy="4" r="1.4"/><circle cx="9" cy="4" r="1.4"/><circle cx="5" cy="9" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="5" cy="14" r="1.4"/><circle cx="9" cy="14" r="1.4"/></svg>
+          </span>
+          <span class="rb-item-num">${i + 1}</span>
+          <div class="rb-item-meta">
+            <span class="rb-item-source">${escapeHtmlLocal(it.sourceTool)}</span>
+            <span class="rb-item-time" data-rb-time="${escapeHtmlLocal(it.updatedAt || it.addedAt)}">${formatRelative(it.updatedAt || it.addedAt)}</span>
+          </div>
+          <div class="rb-item-actions">
+            <button class="rb-item-actionbtn rb-item-copy" type="button" data-rb-item-copy="${escapeHtmlLocal(it.id)}" aria-label="Copy this table" title="Copy this table to clipboard">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M2 9V3a1 1 0 0 1 1-1h6"/></svg>
+              <span>Copy</span>
+            </button>
+            <div class="rb-item-options-wrap">
+              <button class="rb-item-actionbtn rb-item-options" type="button" data-rb-item-options="${escapeHtmlLocal(it.id)}" aria-label="More options" title="More options">
+                <svg viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><circle cx="3" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="11" cy="7" r="1.3"/></svg>
+                <span>Options</span>
+              </button>
+              <div class="rb-item-menu" data-rb-item-menu="${escapeHtmlLocal(it.id)}" role="menu">
+                ${colsHtml}
+                <button class="rb-item-menu-item" data-rb-item-action="up" data-rb-item-id="${escapeHtmlLocal(it.id)}" type="button" role="menuitem"${i === 0 ? ' disabled' : ''}>
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l4-4 4 4"/><path d="M7 2v10"/></svg>
+                  Move up
+                </button>
+                <button class="rb-item-menu-item" data-rb-item-action="down" data-rb-item-id="${escapeHtmlLocal(it.id)}" type="button" role="menuitem"${i === state.items.length - 1 ? ' disabled' : ''}>
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2v10"/><path d="M3 8l4 4 4-4"/></svg>
+                  Move down
+                </button>
+                <button class="rb-item-menu-item" data-rb-item-action="refresh" data-rb-item-id="${escapeHtmlLocal(it.id)}" type="button" role="menuitem">
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7a5 5 0 0 1 9-3"/><path d="M11 1v3.5h-3"/><path d="M12 7a5 5 0 0 1-9 3"/><path d="M3 13V9.5h3"/></svg>
+                  Refresh from source
+                </button>
+                <div class="rb-item-menu-sep"></div>
+                <button class="rb-item-menu-item rb-item-menu-danger" data-rb-item-action="remove" data-rb-item-id="${escapeHtmlLocal(it.id)}" type="button" role="menuitem">
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h10"/><path d="M5.5 4V2.5h3V4"/><path d="M3 4l1 8h6l1-8"/></svg>
+                  Remove
+                </button>
+              </div>
+            </div>
+            <button class="rb-item-remove" type="button" data-rb-remove="${escapeHtmlLocal(it.id)}" aria-label="Remove this table from the report" title="Remove from report">
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>
+            </button>
+          </div>
+        </header>
+        <div class="rb-item-rendered">${effectiveItemHtml(it, i)}</div>
+      </article>
+    `;}).join('');
+  }
+
+  function render(){
+    if (!rootEl) return;
+    const drawer = rootEl.querySelector('.rb-drawer');
+    const onboarding = rootEl.querySelector('[data-rb-onboarding]');
+    rootEl.querySelectorAll('[data-rb-count]').forEach(el => el.textContent = String(state.items.length));
+    rootEl.querySelectorAll('[data-rb-count-text]').forEach(el => el.textContent = `${state.items.length} item${state.items.length === 1 ? '' : 's'}`);
+    rootEl.querySelectorAll('[data-rb-action="clear"], [data-rb-action="copy"], [data-rb-action="export-word"], [data-rb-action="export-excel"]').forEach(b => b.disabled = !state.items.length);
+    rootEl.dataset.state = state.minimized ? 'closed' : 'open';
+    rootEl.classList.toggle('is-open', !state.minimized);
+    rootEl.classList.toggle('is-maximised', state.maximised && !state.minimized);
+
+    // Chip is ALWAYS visible (only its position shifts via CSS based on data-state)
+    // Drawer is only shown when open
+    if (drawer) drawer.hidden = state.minimized;
+
+    // Drawer is now a fixed-size floating popover — no inline width override,
+    // no body padding push.
+    if (drawer) drawer.style.width = '';
+    document.body.style.paddingRight = '';
+    document.body.classList.remove('rb-docked-active');
+
+    // Onboarding hint: show only on first ever visit, when drawer is closed
+    if (onboarding){
+      const showHint = !state.onboardingSeen && state.minimized;
+      onboarding.hidden = !showHint;
+      onboarding.setAttribute('aria-hidden', String(!showHint));
+    }
+
+    renderItems();
+    decorateEditableHeaders();
+
+    // Auto-scroll to the most recently changed item — only if drawer is open
+    if (lastChangedItemId && !state.minimized){
+      const target = lastChangedItemId;
+      lastChangedItemId = null;
+      requestAnimationFrame(() => {
+        const el = rootEl?.querySelector(`.rb-item[data-rb-id="${target}"]`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
+  }
+
+  /* "+ Add to report" buttons removed — adds are automatic via MutationObserver.
+     If a saved bundle from before still references these IDs, they're harmless. */
+
+  /* ---------- init ---------- */
+  function init(){
+    load();
+    injectUI();
+    bindEvents();
+    setupAllObservers();
+    render();
+    setInterval(() => {
+      if (state.minimized) return;
+      rootEl?.querySelectorAll('[data-rb-time]').forEach(el => {
+        el.textContent = formatRelative(el.dataset.rbTime);
+      });
+    }, 30000);
+
+    // Time-based Ko-fi prompt — fires after 5 min on site IF the user has
+    // never seen the modal (across any tab/session) and no export has
+    // already triggered it this page load. Persistence is via localStorage
+    // inside maybeShowKofiToast itself.
+    if (!hasSeenKofi()){
+      setTimeout(() => {
+        if (!kofiToastShown && !hasSeenKofi()) maybeShowKofiToast();
+      }, 5 * 60 * 1000);
+    }
+
+    // Header "Buy me a coffee" button — opens the modal in-page rather than
+    // letting the anchor navigate to a new tab. Force-opens regardless of
+    // whether the modal has been shown before (the seen flag only suppresses
+    // automatic triggers, not deliberate user clicks).
+    document.querySelectorAll('.topbar-kofi').forEach(el => {
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        maybeShowKofiToast({ force: true });
+      });
+    });
+  }
+
+  return { init, addOrReplace, remove, clear, copyAll, exportWord, exportExcel, open, close, toggle, showKofiPrompt: maybeShowKofiToast };
+})();
+
+if (document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', () => ReportBundle.init());
+} else {
+  ReportBundle.init();
+}

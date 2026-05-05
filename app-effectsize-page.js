@@ -26,7 +26,7 @@
    'es-out-r-desc','es-out-r2-desc','es-out-f-desc','es-out-similar','es-method-warning',
    'es-curve','es-curve-caption',
    'es-target','es-tgt-g1-above','es-tgt-g2-above','es-tgt-share-g1','es-tgt-share-g2','es-tgt-ratio','es-target-explain-toggle','es-target-explain',
-   'es-cl-summary','es-cl-u3line','es-d-slider','es-d-slider-val'
+   'es-cl-summary','es-cl-u3line','es-d-slider','es-d-slider-val','es-d-slider-magnitude'
   ].forEach(id => els[id] = $(id));
 
   if (!els['es-stat-type']) return;
@@ -245,6 +245,10 @@
       computeTarget(grp, null);
       renderCommonLanguage(null);
       if (els['es-d-slider-val']) els['es-d-slider-val'].textContent = '—';
+      if (els['es-d-slider-magnitude']){
+        els['es-d-slider-magnitude'].textContent = '—';
+        els['es-d-slider-magnitude'].dataset.mag = 'empty';
+      }
       return;
     }
 
@@ -290,8 +294,26 @@
     drawCurve(d, false);
     computeTarget(grp, d);
     renderCommonLanguage({ d, cles, u3, ovl, r });
-    if (els['es-d-slider']) els['es-d-slider'].value = String(Math.max(-3, Math.min(3, d)));
-    if (els['es-d-slider-val']) els['es-d-slider-val'].textContent = d.toFixed(1);
+    if (els['es-d-slider']){
+      const dClamp = Math.max(-3, Math.min(3, d));
+      els['es-d-slider'].value = String(dClamp);
+      const pct = ((dClamp + 3) / 6) * 100;
+      els['es-d-slider'].style.setProperty('--es-d-pct', pct + '%');
+    }
+    if (els['es-d-slider-val']){
+      const sign = d > 0 ? '+' : (d < 0 ? '−' : '');
+      els['es-d-slider-val'].textContent = sign + Math.abs(d).toFixed(2);
+    }
+    if (els['es-d-slider-magnitude']){
+      const a = Math.abs(d);
+      let label = 'Negligible', mag = 'negligible';
+      if (a >= 1.2)      { label = 'Very large'; mag = 'verylarge'; }
+      else if (a >= 0.8) { label = 'Large';      mag = 'large';     }
+      else if (a >= 0.5) { label = 'Medium';     mag = 'medium';    }
+      else if (a >= 0.2) { label = 'Small';      mag = 'small';     }
+      els['es-d-slider-magnitude'].textContent = label;
+      els['es-d-slider-magnitude'].dataset.mag = mag;
+    }
   }
 
   function renderCommonLanguage(payload){
@@ -471,20 +493,45 @@
     });
   }
   if (els['es-d-slider']){
+    // Cohen's d magnitude classifier (uses absolute value; sign is shown separately)
+    function classifyD(d){
+      const a = Math.abs(d);
+      if (a < 0.2)  return { label:'Negligible', mag:'negligible' };
+      if (a < 0.5)  return { label:'Small',      mag:'small'      };
+      if (a < 0.8)  return { label:'Medium',     mag:'medium'     };
+      if (a < 1.2)  return { label:'Large',      mag:'large'      };
+      return         { label:'Very large', mag:'verylarge'  };
+    }
     const onSlide = () => {
       const d = Number(els['es-d-slider'].value);
       els['es-stat-type'].value = 'd';
-      els['es-stat-value'].value = d.toFixed(1);
+      // 2-decimal precision matches the slider's step="0.01" so the input
+      // field doesn't visibly snap in 0.1 increments while the user drags.
+      els['es-stat-value'].value = d.toFixed(2);
       els['es-stat-aux'].value = '';
       esState.statTouched = true;
       esState.statAutoFilled = false;
       esState.source = 'stat';
-      if (els['es-d-slider-val']) els['es-d-slider-val'].textContent = d.toFixed(1);
+      if (els['es-d-slider-val']){
+        // Show sign explicitly so the user can see direction at a glance
+        const sign = d > 0 ? '+' : (d < 0 ? '−' : '');
+        els['es-d-slider-val'].textContent = sign + Math.abs(d).toFixed(2);
+      }
+      if (els['es-d-slider-magnitude']){
+        const c = classifyD(d);
+        els['es-d-slider-magnitude'].textContent = c.label;
+        els['es-d-slider-magnitude'].dataset.mag = c.mag;
+      }
+      // Live progress fill on the track (CSS variable picked up by ::before)
+      const pct = ((d + 3) / 6) * 100;
+      els['es-d-slider'].style.setProperty('--es-d-pct', pct + '%');
       switchEffectMode('stat');
       compute();
     };
     els['es-d-slider'].addEventListener('input', onSlide);
     els['es-d-slider'].addEventListener('change', onSlide);
+    // Initialise readout + fill on load
+    onSlide();
   }
 
   // Tab wiring

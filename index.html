@@ -4,6 +4,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Psychometric Calculators · Clinical Suite</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%239C3D2A'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Georgia, serif' font-size='22' font-style='italic' fill='%23FAF7F1'%3EΨ%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="styles.css">
 
 <style>
@@ -555,6 +556,14 @@
       </div>
       <span class="topbar-divider" aria-hidden="true"></span>
       <div class="topbar-page-title" id="topbar-page-title">Home</div>
+      <a class="topbar-kofi" href="https://ko-fi.com/clinpsyry" target="_blank" rel="noopener noreferrer" title="Support free clinical tools">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2.5 5.5h9V11a2.5 2.5 0 0 1-2.5 2.5h-4A2.5 2.5 0 0 1 2.5 11V5.5z"/>
+          <path d="M11.5 7h1.25a1.75 1.75 0 0 1 0 3.5H11.5"/>
+          <path d="M5 3v1.2"/><path d="M7 3v1.2"/><path d="M9 3v1.2"/>
+        </svg>
+        <span>Support this website</span>
+      </a>
     </div>
   </div>
   <div class="topbar-row topbar-row-nav">
@@ -858,64 +867,73 @@
     <h1 class="section-title">Clinical Outcomes Table</h1>
     <p class="section-desc">Build a single results table from one or more test families. Auto-fill loads subtest names from the normative database — score type is inferred per family. Enter raw and standardised scores manually; percentiles and classifications populate per row.</p>
 
-    <div class="panel">
-      <div class="field-row-3">
-        <div class="field">
-          <label>Classification system</label>
-          <select id="bat-class">
-            <option value="wechsler">Wechsler</option>
-            <option value="aan">AACN</option>
-          </select>
+    <!-- SIDE-BY-SIDE PANELS: configuration | premorbid -->
+    <div class="bat-panels-grid">
+
+      <!-- Configuration panel -->
+      <div class="bat-side-panel bat-config-panel">
+        <div class="bat-side-panel-head">
+          <span class="bat-side-panel-eyebrow">Configuration</span>
         </div>
-        <div class="field">
-          <label>Default score type <span class="hint">(for ungrouped rows)</span></label>
-          <select id="bat-type">
-            <option value="scaled">Scaled Score</option>
-            <option value="standard">Standard Score</option>
-            <option value="t">T-Score</option>
-            <option value="z">Z-Score</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Table title <span class="hint">(for the report)</span></label>
-          <input type="text" id="bat-title" placeholder="Wechsler Memory Scale–IV scores" value="Test scores">
+        <div class="bat-side-panel-body">
+          <div class="field bat-field-compact">
+            <label>Classification</label>
+            <select id="bat-class">
+              <option value="wechsler">Wechsler</option>
+              <option value="aan">AACN</option>
+            </select>
+          </div>
+          <div class="field bat-field-compact">
+            <label>Score type <span class="hint">default for ungrouped rows</span></label>
+            <select id="bat-type">
+              <option value="scaled">Scaled Score</option>
+              <option value="standard">Standard Score</option>
+              <option value="t">T-Score</option>
+              <option value="z">Z-Score</option>
+            </select>
+          </div>
+          <!-- Table title kept as a hidden input so existing JS (which reads bat-title.value) still works -->
+          <input type="hidden" id="bat-title" value="Test scores">
         </div>
       </div>
-    </div>
 
-    <div class="panel panel-tight bat-premorbid-panel">
-      <div class="field-row-3">
-        <div class="field">
-          <label>Premorbid comparison</label>
-          <label class="bat-premorbid-toggle"><input type="checkbox" id="bat-prem-enable"> Compare with premorbid estimate</label>
+      <!-- Premorbid panel -->
+      <div class="bat-side-panel bat-premorbid-block" id="bat-premorbid-block" data-enabled="false">
+        <div class="bat-side-panel-head">
+          <span class="bat-side-panel-eyebrow">Premorbid Comparison</span>
+          <label class="bat-premorbid-checkbox" title="Compare scores against an estimated premorbid ability">
+            <input type="checkbox" id="bat-prem-enable">
+            <span class="bat-premorbid-checkbox-label">Compare against premorbid estimate</span>
+          </label>
         </div>
-        <div class="field">
-          <label>Patient premorbid estimate <span class="hint">Standard Score</span></label>
-          <input type="number" id="bat-prem-score" step="any" placeholder="e.g. 110" disabled>
-        </div>
-        <div class="field">
-          <label>Premorbid estimate markers</label>
-          <select id="bat-prem-threshold" disabled>
-            <option value="stars" selected>* ≥1 SD · ** ≥1.5 SD · *** ≥2 SD</option>
-          </select>
+        <p class="bat-side-panel-blurb">
+          Flag scores that fall meaningfully below the patient's estimated premorbid ability (e.g., from <abbr title="Test of Premorbid Functioning">ToPF</abbr> or <abbr title="Oklahoma Premorbid Intelligence Estimate">OPIE-4</abbr>). Descriptors are marked <strong>*</strong> when ≥1 SD below, <strong>**</strong> when ≥1.5 SD below, <strong>***</strong> when ≥2 SD below.
+        </p>
+        <div class="bat-side-panel-body">
+          <div class="field bat-field-compact bat-field-prem-score">
+            <label>Premorbid Standard Score <span class="hint">e.g. 110</span></label>
+            <input type="number" id="bat-prem-score" step="any" placeholder="110" disabled>
+          </div>
+          <!-- Markers preset is fixed; hidden input keeps existing JS happy -->
+          <input type="hidden" id="bat-prem-threshold" value="stars">
         </div>
       </div>
-      <p class="bat-premorbid-help">Optional: enter the patient’s estimated premorbid ability as a standard score. When comparison is enabled, descriptors are marked with * for scores at least 1 SD below the premorbid estimate, ** for at least 1.5 SD below, and *** for at least 2 SD below.</p>
+
     </div>
 
-    <div class="panel autofill-panel">
-      <div class="autofill-row">
-        <div class="field" style="flex:1;margin-bottom:0">
-          <label>Auto-fill from normative database <span class="hint">(populates subtest names and infers score type — select multiple families to bundle into one battery)</span></label>
-          <div class="combo">
-            <input type="text" class="combo-input" id="bat-family-input" placeholder="Search test family…" autocomplete="off">
+    <!-- TABLE WITH AUTO-FILL IN HEADER -->
+    <div class="bat-table-block">
+      <div class="bat-table-head">
+        <div class="bat-autofill-inline" id="bat-autofill-inline">
+          <svg class="bat-autofill-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M11 11l3 3"/></svg>
+          <div class="combo bat-autofill-combo">
+            <input type="text" class="combo-input bat-autofill-input" id="bat-family-input" placeholder="Auto-fill: search a test family (WAIS-IV, WMS-IV, RBANS…)" autocomplete="off">
             <div class="combo-list" id="bat-family-list"><div class="combo-item" data-family="CVLT-3 Indices · Ages 16-44">CVLT-3 Indices · Ages 16-44</div><div class="combo-item" data-family="CVLT-3 Indices · Ages 45-90">CVLT-3 Indices · Ages 45-90</div><div class="combo-item" data-family="CVLT-3 Trials · Ages 16-44">CVLT-3 Trials · Ages 16-44</div><div class="combo-item" data-family="CVLT-3 Trials · Ages 45-90">CVLT-3 Trials · Ages 45-90</div><div class="combo-item" data-family="D-KEFS Colour-Word Interference · Ages 20-49">D-KEFS Colour-Word Interference · Ages 20-49</div><div class="combo-item" data-family="D-KEFS Colour-Word Interference · Ages 50-89">D-KEFS Colour-Word Interference · Ages 50-89</div><div class="combo-item" data-family="D-KEFS Colour-Word Interference · Ages 8-19">D-KEFS Colour-Word Interference · Ages 8-19</div><div class="combo-item" data-family="D-KEFS Colour-Word Interference · All Ages">D-KEFS Colour-Word Interference · All Ages</div><div class="combo-item" data-family="D-KEFS Design Fluency · Ages 20-49">D-KEFS Design Fluency · Ages 20-49</div><div class="combo-item" data-family="D-KEFS Design Fluency · Ages 50-89">D-KEFS Design Fluency · Ages 50-89</div><div class="combo-item" data-family="D-KEFS Design Fluency · Ages 8-19">D-KEFS Design Fluency · Ages 8-19</div><div class="combo-item" data-family="D-KEFS Design Fluency · All Ages">D-KEFS Design Fluency · All Ages</div><div class="combo-item" data-family="D-KEFS Sorting Test · Ages 20-49">D-KEFS Sorting Test · Ages 20-49</div><div class="combo-item" data-family="D-KEFS Sorting Test · Ages 50-89">D-KEFS Sorting Test · Ages 50-89</div><div class="combo-item" data-family="D-KEFS Sorting Test · Ages 8-19">D-KEFS Sorting Test · Ages 8-19</div><div class="combo-item" data-family="D-KEFS Sorting Test · All Ages">D-KEFS Sorting Test · All Ages</div><div class="combo-item" data-family="D-KEFS Tower Test · Ages 20-49">D-KEFS Tower Test · Ages 20-49</div><div class="combo-item" data-family="D-KEFS Tower Test · Ages 50-89">D-KEFS Tower Test · Ages 50-89</div><div class="combo-item" data-family="D-KEFS Tower Test · Ages 8-19">D-KEFS Tower Test · Ages 8-19</div><div class="combo-item" data-family="D-KEFS Tower Test · All Ages">D-KEFS Tower Test · All Ages</div><div class="combo-item" data-family="D-KEFS Trail Making Test · Ages 20-49">D-KEFS Trail Making Test · Ages 20-49</div><div class="combo-item" data-family="D-KEFS Trail Making Test · Ages 50-89">D-KEFS Trail Making Test · Ages 50-89</div><div class="combo-item" data-family="D-KEFS Trail Making Test · Ages 8-19">D-KEFS Trail Making Test · Ages 8-19</div><div class="combo-item" data-family="D-KEFS Trail Making Test · All Ages">D-KEFS Trail Making Test · All Ages</div><div class="combo-item" data-family="D-KEFS Verbal Fluency · Ages 20-49">D-KEFS Verbal Fluency · Ages 20-49</div><div class="combo-item" data-family="D-KEFS Verbal Fluency · Ages 50-89">D-KEFS Verbal Fluency · Ages 50-89</div><div class="combo-item" data-family="D-KEFS Verbal Fluency · Ages 8-19">D-KEFS Verbal Fluency · Ages 8-19</div><div class="combo-item" data-family="D-KEFS Verbal Fluency · All Ages">D-KEFS Verbal Fluency · All Ages</div><div class="combo-item" data-family="D-KEFS Word Context Test · Ages 20-49">D-KEFS Word Context Test · Ages 20-49</div><div class="combo-item" data-family="D-KEFS Word Context Test · Ages 50-89">D-KEFS Word Context Test · Ages 50-89</div><div class="combo-item" data-family="D-KEFS Word Context Test · Ages 8-19">D-KEFS Word Context Test · Ages 8-19</div><div class="combo-item" data-family="D-KEFS Word Context Test · All Ages">D-KEFS Word Context Test · All Ages</div><div class="combo-item" data-family="D-KEFS Word Proverb Test · Ages 20-49">D-KEFS Word Proverb Test · Ages 20-49</div><div class="combo-item" data-family="D-KEFS Word Proverb Test · Ages 50-89">D-KEFS Word Proverb Test · Ages 50-89</div><div class="combo-item" data-family="D-KEFS Word Proverb Test · Ages 8-19">D-KEFS Word Proverb Test · Ages 8-19</div><div class="combo-item" data-family="D-KEFS Word Proverb Test · All Ages">D-KEFS Word Proverb Test · All Ages</div><div class="combo-item" data-family="RBANS Indices · Ages 12-19">RBANS Indices · Ages 12-19</div><div class="combo-item" data-family="RBANS Indices · Ages 20-89">RBANS Indices · Ages 20-89</div><div class="combo-item" data-family="RBANS Subtests · Ages 12-19">RBANS Subtests · Ages 12-19</div><div class="combo-item" data-family="RBANS Subtests · Ages 20-89">RBANS Subtests · Ages 20-89</div><div class="combo-item" data-family="WAIS-IV Core Subtests · Ages 16-29">WAIS-IV Core Subtests · Ages 16-29</div><div class="combo-item" data-family="WAIS-IV Core Subtests · Ages 30-54">WAIS-IV Core Subtests · Ages 30-54</div><div class="combo-item" data-family="WAIS-IV Core Subtests · Ages 55-69">WAIS-IV Core Subtests · Ages 55-69</div><div class="combo-item" data-family="WAIS-IV Core Subtests · Ages 70-90">WAIS-IV Core Subtests · Ages 70-90</div><div class="combo-item" data-family="WAIS-IV Core Subtests · All Ages">WAIS-IV Core Subtests · All Ages</div><div class="combo-item" data-family="WAIS-IV Indices · Ages 16-29">WAIS-IV Indices · Ages 16-29</div><div class="combo-item" data-family="WAIS-IV Indices · Ages 30-54">WAIS-IV Indices · Ages 30-54</div><div class="combo-item" data-family="WAIS-IV Indices · Ages 55-69">WAIS-IV Indices · Ages 55-69</div><div class="combo-item" data-family="WAIS-IV Indices · Ages 70-90">WAIS-IV Indices · Ages 70-90</div><div class="combo-item" data-family="WAIS-IV Indices · All Ages">WAIS-IV Indices · All Ages</div><div class="combo-item" data-family="WISC-V Indices · All Ages">WISC-V Indices · All Ages</div><div class="combo-item" data-family="WISC-V Subtests · All Ages">WISC-V Subtests · All Ages</div><div class="combo-item" data-family="WMS-IV Indices · Ages 16-69">WMS-IV Indices · Ages 16-69</div><div class="combo-item" data-family="WMS-IV Indices · Ages 65-90">WMS-IV Indices · Ages 65-90</div><div class="combo-item" data-family="WMS-IV Subtests · Ages 16-69">WMS-IV Subtests · Ages 16-69</div><div class="combo-item" data-family="WMS-IV Subtests · Ages 65-90">WMS-IV Subtests · Ages 65-90</div></div>
           </div>
         </div>
       </div>
-    </div>
 
-    <table class="input-table" id="bat-table">
+      <table class="input-table" id="bat-table">
       <thead>
         <tr>
           <th class="row-num">#</th>
@@ -929,10 +947,12 @@
       </thead>
       <tbody></tbody>
     </table>
-    <div class="add-row-actions">
-      <button class="add-row-btn" id="bat-add">+ Add another subtest</button>
-      <button class="btn btn-clear" id="bat-clear">Clear all rows</button>
+      <div class="add-row-actions">
+        <button class="add-row-btn" id="bat-add">+ Add another subtest</button>
+        <button class="btn btn-clear" id="bat-clear">Clear all rows</button>
+      </div>
     </div>
+    <!-- /bat-table-block -->
 
     <div class="apa-wrap">
       <div class="apa-toolbar">
@@ -1007,7 +1027,18 @@
           <div class="panel report-panel report-measure-panel">
             <div class="report-test-picker">
               <div class="report-picker-bar">
-                <input type="text" id="rw-test-search" class="report-test-search-inline" placeholder="🔍 Search tests, trials, aliases, or abilities…" aria-label="Search tests">
+                <div class="report-search-shell">
+                  <svg class="report-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="7" cy="7" r="4.5"/>
+                    <path d="M11 11l3 3"/>
+                  </svg>
+                  <input type="text" id="rw-test-search" class="report-test-search-inline" placeholder="Search tests, trials, aliases, or abilities" aria-label="Search tests">
+                  <button type="button" class="report-search-clear" id="rw-test-search-clear" aria-label="Clear search" tabindex="-1" hidden>
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                      <path d="M3 3l8 8M11 3l-8 8"/>
+                    </svg>
+                  </button>
+                </div>
                 <div class="report-filter-chips" id="rw-filter-chips" aria-label="Filter mapped tests"></div>
               </div>
               <div class="report-test-browser" id="rw-test-list"></div>
@@ -1053,7 +1084,6 @@
               <h2 class="report-active-title" id="rw-scores-title">Add measures first</h2>
               <p class="report-mini-copy">Tab moves down columns (Score → Percentile → CI). Shift+Tab reverses.</p>
             </div>
-            <button class="btn rw-autofill-btn" id="rw-autofill" type="button" title="DEV: fill every row in every section with a random plausible score">⚡ Autofill (dev)</button>
           </div>
           <div class="report-table-wrap">
             <table class="input-table report-scores-table" id="rw-scores-table">
@@ -1131,10 +1161,23 @@
         <span class="es-preloaded-pill">Preloaded example</span>
         <span>UK male vs female height is loaded in the group-data fields from Option B (above). Edit the values or use Clear all inputs to start fresh.</span>
       </div>
-      <div class="es-d-slider-row">
-        <label for="es-d-slider">Quick effect size slider</label>
-        <input type="range" id="es-d-slider" min="-3" max="3" step="0.1" value="0">
-        <span id="es-d-slider-val">0.0</span>
+      <div class="es-d-slider-row" title="Quick effect size — drag to set Cohen's d">
+        <div class="es-d-slider-control">
+          <div class="es-d-slider-track-bg" aria-hidden="true"></div>
+          <input type="range" id="es-d-slider" min="-3" max="3" step="0.01" value="0" aria-label="Quick effect size — Cohen's d">
+          <div class="es-d-slider-ticks" aria-hidden="true">
+            <span class="es-d-tick es-d-tick-major" style="left:0%"   data-label="−3"></span>
+            <span class="es-d-tick" style="left:36.67%" data-label="−.8"></span>
+            <span class="es-d-tick" style="left:41.67%" data-label="−.5"></span>
+            <span class="es-d-tick" style="left:46.67%" data-label="−.2"></span>
+            <span class="es-d-tick es-d-tick-zero" style="left:50%" data-label="0"></span>
+            <span class="es-d-tick" style="left:53.33%" data-label=".2"></span>
+            <span class="es-d-tick" style="left:58.33%" data-label=".5"></span>
+            <span class="es-d-tick" style="left:63.33%" data-label=".8"></span>
+            <span class="es-d-tick es-d-tick-major" style="left:100%" data-label="+3"></span>
+          </div>
+        </div>
+        <span class="es-d-slider-val-num" id="es-d-slider-val">0.00</span>
       </div>
 
       <!-- Mode A: from a statistic -->
