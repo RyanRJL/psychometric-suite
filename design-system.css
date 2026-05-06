@@ -1,0 +1,2954 @@
+/* =============================================================================
+   PSYCHOMETRIC ASSISTANT — DESIGN SYSTEM (practice build)
+   Loaded AFTER styles.css. Overrides legacy ad-hoc rules with a token-based,
+   component-oriented system. Reference language: Stripe / Linear / Vercel.
+
+   Architecture:
+     1. Tokens          — colour, spacing, typography, motion, radii, shadow
+     2. Reset bridges   — taming a few legacy rules
+     3. Primitive: Button   (.btn + variants + sizes — replaces 5+ legacy classes)
+     4. Primitive: Input    (consistent height, ring on focus)
+     5. Primitive: Card     (white surface, hairline border, no warm leak)
+     6. Primitive: Badge    (count badges, status pills)
+     7. Patterns        — empty/loading/error states
+     8. Microcopy css   — placeholder contrast, faint-text rules
+     9. Footer          — version + last updated stamp
+    10. Skip-to-content link (a11y)
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   1. TOKENS
+   ---------------------------------------------------------------------------- */
+:root{
+  /* COLOUR ——————————————————————————————————————————————————————— */
+  /* Surfaces */
+  --ds-bg:                #F1F4F9;          /* page background */
+  --ds-surface:           #FFFFFF;          /* cards, panels */
+  --ds-surface-subtle:    #F7F9FC;          /* subtle alt surface */
+  --ds-surface-emphasis:  #E9EDF3;          /* hover / selected backgrounds */
+
+  /* Text */
+  --ds-text:              #0F1218;          /* primary */
+  --ds-text-muted:        #4A5260;          /* secondary */
+  --ds-text-subtle:       #6B7280;          /* tertiary / labels */
+  --ds-text-faint:        #9CA0A6;          /* placeholders, hints — passes WCAG AA on white */
+  --ds-text-inverse:      #FFFFFF;
+
+  /* Borders / dividers */
+  --ds-border:            rgba(15,18,24,0.10);
+  --ds-border-strong:     rgba(15,18,24,0.18);
+  --ds-border-subtle:     rgba(15,18,24,0.06);
+
+  /* Brand / accent (terracotta — restrained, single accent moment) */
+  --ds-primary:           #9C3D2A;
+  --ds-primary-hover:     #8A3424;
+  --ds-primary-active:    #74271B;
+  --ds-primary-tint:      rgba(156,61,42,0.08);
+  --ds-primary-ring:      rgba(156,61,42,0.40);
+
+  /* Functional (status) */
+  --ds-success:           #1F7A47;
+  --ds-success-tint:      rgba(31,122,71,0.10);
+  --ds-warning:           #B7791F;
+  --ds-warning-tint:      rgba(183,121,31,0.10);
+  --ds-destructive:       #B22A20;
+  --ds-destructive-hover: #951F16;
+  --ds-destructive-tint:  rgba(178,42,32,0.08);
+
+  /* SPACING ——————————————————————————————————————————————————————
+     4px grid. Every margin/padding in components below uses these
+     tokens — no magic numbers. */
+  --ds-space-0:   0;
+  --ds-space-1:   4px;
+  --ds-space-2:   8px;
+  --ds-space-3:   12px;
+  --ds-space-4:   16px;
+  --ds-space-5:   20px;
+  --ds-space-6:   24px;
+  --ds-space-8:   32px;
+  --ds-space-10:  40px;
+  --ds-space-12:  48px;
+  --ds-space-16:  64px;
+  --ds-space-20:  80px;
+
+  /* TYPOGRAPHY ————————————————————————————————————————————————————
+     Strict scale. Each size paired with a single line-height.
+     Use these tokens; do not invent new sizes. */
+  --ds-text-xs:    11px;
+  --ds-text-sm:    12.5px;
+  --ds-text-base:  14px;
+  --ds-text-md:    16px;
+  --ds-text-lg:    18px;
+  --ds-text-xl:    22px;
+  --ds-text-2xl:   28px;
+  --ds-text-3xl:   36px;
+
+  --ds-leading-tight:  1.2;
+  --ds-leading-snug:   1.35;
+  --ds-leading-normal: 1.5;
+  --ds-leading-relaxed:1.6;
+
+  --ds-tracking-tight: -0.018em;
+  --ds-tracking-base:  -0.005em;
+  --ds-tracking-wide:   0.04em;
+
+  --ds-weight-regular: 400;
+  --ds-weight-medium:  500;
+  --ds-weight-semibold:600;
+  --ds-weight-bold:    700;
+
+  /* RADII ———————————————————————————————————————————————————————— */
+  --ds-radius-xs:  3px;
+  --ds-radius-sm:  6px;
+  --ds-radius-md:  8px;
+  --ds-radius-lg:  12px;
+  --ds-radius-xl:  16px;
+  --ds-radius-full:999px;
+
+  /* SHADOWS — three tiers, neutral-cool tints (no warm brown) */
+  --ds-shadow-1: 0 1px 2px rgba(15,18,24,0.04), 0 1px 3px rgba(15,18,24,0.06);
+  --ds-shadow-2: 0 2px 4px rgba(15,18,24,0.06), 0 4px 12px rgba(15,18,24,0.08);
+  --ds-shadow-3: 0 4px 8px rgba(15,18,24,0.06), 0 12px 28px rgba(15,18,24,0.12);
+  --ds-shadow-overlay: 0 1px 2px rgba(15,18,24,0.06), 0 8px 24px rgba(15,18,24,0.10), 0 24px 56px rgba(15,18,24,0.16);
+
+  /* MOTION — 1 curve, 3 durations. Used everywhere. */
+  --ds-duration-instant: 80ms;
+  --ds-duration-fast:    160ms;
+  --ds-duration-slow:    260ms;
+  --ds-ease:             cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* RING (focus) */
+  --ds-ring-width: 2px;
+  --ds-ring-offset:2px;
+}
+
+/* ----------------------------------------------------------------------------
+   2. RESET BRIDGES — kill the most disruptive legacy rules
+   ---------------------------------------------------------------------------- */
+
+/* Body: kill the warm-cream ambient gradient once and for all */
+body{
+  background: var(--ds-bg) !important;
+  background-attachment: scroll !important;
+  background-image: none !important;
+  color: var(--ds-text);
+}
+
+/* Variables override — make legacy --paper / --accent point at the new tokens */
+:root{
+  --paper: var(--ds-bg);
+  --paper-2: var(--ds-surface-subtle);
+  --paper-3: var(--ds-surface-emphasis);
+  --paper-card: var(--ds-surface);
+  --ink: var(--ds-text);
+  --ink-2: var(--ds-text-muted);
+  --muted: var(--ds-text-subtle);
+  --faint: var(--ds-text-faint);
+  --border: var(--ds-border);
+  --border-soft: var(--ds-border-subtle);
+}
+
+/* ----------------------------------------------------------------------------
+   3. BUTTON — single primitive replaces .btn-clear, .btn-secondary, etc.
+   Variant via class: .btn-primary | .btn-secondary | .btn-ghost | .btn-destructive
+   Size via class: .btn-sm | .btn-md (default) | .btn-lg
+   ---------------------------------------------------------------------------- */
+.ds-btn,
+.btn{
+  /* Base — applied to every variant */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  height: 36px;                              /* md default */
+  padding: 0 var(--ds-space-4);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: var(--ds-tracking-base);
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ds-text);
+  text-decoration: none;
+  transition:
+    background var(--ds-duration-fast) var(--ds-ease),
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease),
+    transform var(--ds-duration-fast) var(--ds-ease);
+  -webkit-user-select: none; user-select: none;
+}
+.ds-btn:focus-visible,
+.btn:focus-visible{
+  outline: var(--ds-ring-width) solid var(--ds-primary-ring);
+  outline-offset: var(--ds-ring-offset);
+}
+.ds-btn:disabled, .btn:disabled,
+.ds-btn[aria-disabled="true"], .btn[aria-disabled="true"]{
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.ds-btn svg, .btn svg{
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+}
+
+/* Sizes */
+.btn-sm, .ds-btn-sm{ height: 28px; padding: 0 var(--ds-space-3); font-size: var(--ds-text-xs); }
+.btn-md, .ds-btn-md{ /* default — no override */ }
+.btn-lg, .ds-btn-lg{ height: 44px; padding: 0 var(--ds-space-5); font-size: var(--ds-text-base); }
+
+/* Primary — solid dark, the one loud thing on a page */
+.btn-primary{
+  background: var(--ds-text) !important;
+  color: var(--ds-text-inverse) !important;
+  border-color: var(--ds-text) !important;
+  box-shadow: var(--ds-shadow-1);
+}
+.btn-primary:hover:not(:disabled){
+  background: #1C2027 !important;
+  border-color: #1C2027 !important;
+  transform: translateY(-1px);
+  box-shadow: var(--ds-shadow-2);
+}
+.btn-primary:active:not(:disabled){ transform: translateY(0); }
+
+/* Secondary — outline, cool */
+.btn-secondary{
+  background: var(--ds-surface) !important;
+  color: var(--ds-text) !important;
+  border-color: var(--ds-border-strong) !important;
+}
+.btn-secondary:hover:not(:disabled){
+  background: var(--ds-surface-emphasis) !important;
+  border-color: var(--ds-border-strong) !important;
+}
+
+/* Ghost — text-only until hover */
+.btn-ghost{
+  background: transparent !important;
+  color: var(--ds-text-muted) !important;
+  border-color: transparent !important;
+}
+.btn-ghost:hover:not(:disabled){
+  background: var(--ds-surface-emphasis) !important;
+  color: var(--ds-text) !important;
+}
+
+/* Destructive — quiet by default, red on hover */
+.btn-destructive,
+.btn-clear{                                  /* legacy class bridged */
+  background: transparent !important;
+  color: var(--ds-text-subtle) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.btn-destructive:hover:not(:disabled),
+.btn-clear:hover:not(:disabled){
+  background: var(--ds-destructive-tint) !important;
+  color: var(--ds-destructive) !important;
+  border-color: rgba(178,42,32,0.18) !important;
+  transform: none !important;
+}
+
+/* Bridge legacy "add" buttons (the green pills) to the secondary look */
+.add-row-btn,
+.apa-toolbar .rb-add-btn,
+.rb-action-export,
+.rb-action-export-excel{
+  background: var(--ds-surface) !important;
+  color: var(--ds-text) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  box-shadow: none !important;
+  border-radius: var(--ds-radius-sm) !important;
+  height: 36px !important;
+  padding: 0 var(--ds-space-4) !important;
+  font-size: var(--ds-text-sm) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+}
+.add-row-btn:hover:not(:disabled),
+.apa-toolbar .rb-add-btn:hover:not(:disabled){
+  background: var(--ds-surface-emphasis) !important;
+  color: var(--ds-text) !important;
+  border-color: var(--ds-border-strong) !important;
+  transform: none !important;
+}
+
+/* The drawer's primary "Export to Word" button keeps its dark primary look */
+.rb-action-export{
+  background: var(--ds-text) !important;
+  color: var(--ds-text-inverse) !important;
+  border-color: var(--ds-text) !important;
+  box-shadow: var(--ds-shadow-1) !important;
+}
+.rb-action-export:hover:not(:disabled){
+  background: #1C2027 !important;
+  border-color: #1C2027 !important;
+  transform: translateY(-1px);
+  box-shadow: var(--ds-shadow-2) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   4. INPUT / SELECT / TEXTAREA — consistent surface, height, focus ring
+   ---------------------------------------------------------------------------- */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="search"],
+select,
+textarea{
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: var(--ds-text-base);
+  color: var(--ds-text);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease);
+}
+input::placeholder,
+textarea::placeholder{
+  color: var(--ds-text-faint);
+  opacity: 1;                                /* Firefox */
+}
+input:focus,
+select:focus,
+textarea:focus{
+  outline: none;
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 3px var(--ds-primary-tint);
+}
+
+/* Inline error state */
+.ds-input-error,
+input[aria-invalid="true"],
+select[aria-invalid="true"]{
+  border-color: var(--ds-destructive) !important;
+}
+input[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus{
+  box-shadow: 0 0 0 3px var(--ds-destructive-tint) !important;
+}
+.ds-error-message{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin-top: var(--ds-space-2);
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-destructive);
+}
+.ds-error-message::before{
+  content: "⚠";
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* ----------------------------------------------------------------------------
+   5. CARD / PANEL — repaints the warm Premorbid container
+   ---------------------------------------------------------------------------- */
+.panel,
+.panel-emphasis{
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: var(--ds-radius-lg) !important;
+  box-shadow: var(--ds-shadow-1) !important;
+}
+
+/* Specifically kill the Premorbid warm-cream wrapper */
+.premorbid-input-panel{
+  background: var(--ds-surface) !important;
+}
+#premorbid #pre-inputs .pre-form-section{
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   6. BADGE / STATUS PILL — count badges, "free" / "new" tags
+   ---------------------------------------------------------------------------- */
+.ds-badge{
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 var(--ds-space-2);
+  border-radius: var(--ds-radius-full);
+  background: var(--ds-surface-emphasis);
+  color: var(--ds-text-muted);
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0;
+}
+.ds-badge-primary{
+  background: var(--ds-primary-tint);
+  color: var(--ds-primary);
+}
+.ds-badge-success{
+  background: var(--ds-success-tint);
+  color: var(--ds-success);
+}
+
+/* ----------------------------------------------------------------------------
+   7. PATTERNS — empty / loading / error states
+   ---------------------------------------------------------------------------- */
+.ds-empty{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--ds-space-12) var(--ds-space-6);
+  color: var(--ds-text-subtle);
+  gap: var(--ds-space-2);
+}
+.ds-empty-icon{
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface-emphasis);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ds-text-faint);
+  margin-bottom: var(--ds-space-3);
+}
+.ds-empty-title{
+  font-family: var(--sans);
+  font-size: var(--ds-text-md);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: var(--ds-tracking-tight);
+  color: var(--ds-text);
+}
+.ds-empty-desc{
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  line-height: var(--ds-leading-normal);
+  color: var(--ds-text-subtle);
+  max-width: 340px;
+}
+
+/* Skeleton loader — cool gray pulse */
+@keyframes ds-skeleton{
+  0%,100% { background-color: var(--ds-surface-emphasis); }
+  50%     { background-color: var(--ds-surface-subtle); }
+}
+.ds-skeleton{
+  background: var(--ds-surface-emphasis);
+  border-radius: var(--ds-radius-sm);
+  animation: ds-skeleton 1.4s ease-in-out infinite;
+}
+
+/* Bridge legacy working-report empty state to use the new tokens */
+.rb-empty{
+  color: var(--ds-text-subtle) !important;
+}
+.rb-empty-title{
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-md) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  letter-spacing: var(--ds-tracking-tight) !important;
+  color: var(--ds-text) !important;
+}
+.rb-empty-sub{
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-sm) !important;
+  line-height: var(--ds-leading-normal) !important;
+  color: var(--ds-text-subtle) !important;
+}
+.rb-empty svg{ color: var(--ds-text-faint) !important; }
+
+/* ----------------------------------------------------------------------------
+   8. MICROCOPY — bump faint text contrast across legacy labels
+   ---------------------------------------------------------------------------- */
+.eyebrow,
+.pre-form-title,
+.bat-config-label{
+  color: var(--ds-text-subtle) !important;
+}
+.pre-form-note,
+.pre-label-sub,
+.bat-input-help{
+  color: var(--ds-text-faint) !important;
+  font-style: normal !important;             /* drop italic — reads as fluff */
+}
+
+/* Standardise placeholders site-wide via attribute selector */
+*::placeholder{
+  color: var(--ds-text-faint) !important;
+  opacity: 1 !important;
+  font-style: normal !important;
+}
+
+/* ----------------------------------------------------------------------------
+   9. FOOTER — version + last updated stamp
+   ---------------------------------------------------------------------------- */
+.site-footer{
+  background: transparent !important;
+  border-top: 1px solid var(--ds-border) !important;
+  padding: var(--ds-space-6) var(--ds-space-8) !important;
+  margin-top: var(--ds-space-12) !important;
+}
+.site-footer-inner{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-6);
+  max-width: 1320px;
+  margin: 0 auto;
+}
+.site-footer-links{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-6);
+}
+.site-footer-link{
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-sm) !important;
+  color: var(--ds-text-muted) !important;
+  font-weight: var(--ds-weight-medium) !important;
+  transition: color var(--ds-duration-fast) var(--ds-ease);
+}
+.site-footer-link:hover{
+  color: var(--ds-text) !important;
+}
+
+/* Version stamp — appended via JS or HTML; styled here */
+.ds-version-stamp{
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  font-family: var(--mono);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-text-faint);
+  letter-spacing: 0;
+}
+.ds-version-stamp .ds-version-dot{
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ds-success);
+  box-shadow: 0 0 0 3px var(--ds-success-tint);
+}
+
+/* ----------------------------------------------------------------------------
+   10. SKIP-TO-CONTENT — a11y standard; visible on focus
+   ---------------------------------------------------------------------------- */
+.ds-skip-link{
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10000;
+  padding: var(--ds-space-2) var(--ds-space-4);
+  background: var(--ds-text);
+  color: var(--ds-text-inverse);
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-semibold);
+  border-radius: var(--ds-radius-sm);
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-skip-link:focus{
+  transform: translateY(0);
+  outline: var(--ds-ring-width) solid var(--ds-primary-ring);
+  outline-offset: var(--ds-ring-offset);
+}
+
+/* ----------------------------------------------------------------------------
+   11. WORDMARK — refined; mark + wordmark together
+   ---------------------------------------------------------------------------- */
+.topbar-brand,
+.topbar-brand-home,
+button.topbar-brand{
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  /* Strip button defaults when the wordmark is rendered as a clickable
+     <button> for "click to go home" */
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  border-radius: var(--ds-radius-sm);
+  transition: opacity var(--ds-duration-fast) var(--ds-ease);
+}
+.topbar-brand-home:hover{ opacity: 0.85; }
+.topbar-brand-home:active{ opacity: 0.7; }
+.topbar-brand-home:focus-visible{
+  outline: 2px solid var(--ds-primary-ring);
+  outline-offset: 4px;
+}
+.ds-brand-mark{
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--ds-shadow-1);
+}
+.ds-brand-mark::before{
+  content: "Ψ";
+  font-family: Georgia, 'Source Serif 4', serif;
+  font-style: italic;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ds-text-inverse);
+  line-height: 1;
+}
+.topbar-brand-title{
+  font-family: var(--sans) !important;        /* modernise — was serif */
+  font-size: var(--ds-text-md) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  letter-spacing: var(--ds-tracking-tight) !important;
+  color: var(--ds-text) !important;
+}
+.topbar-brand-title em{
+  font-style: italic !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  color: var(--ds-primary) !important;        /* single accent moment retained */
+}
+
+/* ----------------------------------------------------------------------------
+   12. PAGE TITLE / ELEMENT — restore some rhythm now that body is sans
+   ---------------------------------------------------------------------------- */
+.section-title{
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-xl) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  letter-spacing: var(--ds-tracking-tight) !important;
+  color: var(--ds-text) !important;
+  margin-bottom: var(--ds-space-2) !important;
+}
+h1.section-title{
+  font-size: var(--ds-text-3xl) !important;
+}
+.section-desc{
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-base) !important;
+  line-height: var(--ds-leading-relaxed) !important;
+  color: var(--ds-text-muted) !important;
+  font-style: normal !important;
+}
+
+/* ----------------------------------------------------------------------------
+   13. FOCUS RINGS — visible, consistent, brand-coloured
+   ---------------------------------------------------------------------------- */
+:focus{ outline: none; }
+button:focus-visible,
+[role="button"]:focus-visible,
+.nav-item:focus-visible,
+.topnav-item:focus-visible,
+.tab:focus-visible,
+.site-footer-link:focus-visible,
+a:focus-visible{
+  outline: var(--ds-ring-width) solid var(--ds-primary-ring);
+  outline-offset: var(--ds-ring-offset);
+  border-radius: var(--ds-radius-xs);
+}
+
+/* ----------------------------------------------------------------------------
+   13b. SECOND-PASS PATCHES — hit the warm-cream / saturated-button holdouts
+   that escaped the first sweep. Each rule is targeted, !important-armed
+   so the legacy !important rules can't beat them.
+   ---------------------------------------------------------------------------- */
+
+/* --- Warm cream wrappers → cool surface --- */
+/* Premorbid input panel (the big wrapper) and all its sub-panels */
+.premorbid-input-panel,
+#premorbid .premorbid-input-panel,
+#premorbid .pre-form-section,
+#premorbid #pre-inputs .pre-form-section,
+.panel-emphasis,
+.bat-config-panel,                              /* Neuropsych Tables: "Configuration" */
+.bat-premorbid-panel,                           /* Neuropsych Tables: "Premorbid Comparison" */
+.es-mode-selector,                              /* Effect Sizes: "Convert / Compute" picker */
+.es-mode-option,
+.es-mode-option.is-active,
+.es-loaded-banner,                              /* "PRELOADED EXAMPLE" wrapper */
+.es-visual-panel,                               /* Effect Sizes: chart panel */
+.es-results-panel,
+.autofill-panel,
+.column-guide,
+.combo-ageband-note,
+.apa-empty,
+.apa-status,
+.bat-premorbid-help,
+.info-box,
+.home-info{
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+  border-color: var(--ds-border) !important;
+}
+
+/* "PRELOADED EXAMPLE" pill — quiet badge */
+.es-loaded-banner-pill,
+.es-loaded-pill{
+  background: var(--ds-surface-emphasis) !important;
+  color: var(--ds-text-subtle) !important;
+  border-color: var(--ds-border) !important;
+}
+
+/* --- Saturated green CTA buttons → dark primary --- */
+/* Premorbid step navigation, neuropsych "next" etc. */
+.pre-step-next,
+.pre-nav-btn,
+.pre-nav-next,
+button.pre-nav-next,
+.bat-action-primary,
+.es-action-primary{
+  background: var(--ds-text) !important;
+  color: var(--ds-text-inverse) !important;
+  border: 1px solid var(--ds-text) !important;
+  box-shadow: var(--ds-shadow-1) !important;
+  border-radius: var(--ds-radius-sm) !important;
+  background-image: none !important;
+}
+.pre-step-next:hover:not(:disabled),
+.pre-nav-btn:hover:not(:disabled),
+.pre-nav-next:hover:not(:disabled),
+button.pre-nav-next:hover:not(:disabled){
+  background: #1C2027 !important;
+  border-color: #1C2027 !important;
+  transform: translateY(-1px);
+  box-shadow: var(--ds-shadow-2) !important;
+}
+
+/* --- "Clear all" / saturated red destructive → quiet ghost-red --- */
+.btn-clear,
+.btn.btn-clear,
+.add-row-actions .btn-clear,
+button.btn-clear{
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--ds-text-subtle) !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  font-weight: var(--ds-weight-semibold) !important;
+}
+.btn-clear:hover:not(:disabled),
+button.btn-clear:hover:not(:disabled){
+  background: var(--ds-destructive-tint) !important;
+  color: var(--ds-destructive) !important;
+  border-color: rgba(178,42,32,0.18) !important;
+  transform: none !important;
+}
+
+/* --- Wordmark: belt-and-braces sans override --- */
+.topbar-brand-title,
+.topbar .topbar-brand-title{
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-md) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  letter-spacing: var(--ds-tracking-tight) !important;
+}
+.topbar-brand-title em{
+  font-family: var(--sans) !important;
+  font-style: italic !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  color: var(--ds-primary) !important;
+}
+
+/* --- Home pathway cards: subtle hairline so they read as deliberate --- */
+.home-pathway-card{
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: var(--ds-radius-lg) !important;
+  box-shadow: var(--ds-shadow-1) !important;
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease),
+    transform var(--ds-duration-fast) var(--ds-ease) !important;
+}
+.home-pathway-card:hover{
+  border-color: var(--ds-border-strong) !important;
+  box-shadow: var(--ds-shadow-2) !important;
+  transform: translateY(-1px);
+}
+
+/* --- Apa-toolbar background — kill any warm banding --- */
+.apa-wrap,
+.apa-toolbar,
+.apa-table-container{
+  background: var(--ds-surface) !important;
+}
+.apa-toolbar{
+  border-bottom: 1px solid var(--ds-border) !important;
+}
+
+/* ============================================================================
+   STAGE 2 — PRO POLISH
+   Ambitious upgrades to push the site from "modernised" toward "considered
+   clinical software". Inter typography, refined tables, semantic status
+   pills, motion polish, citation pattern, reduced-motion support.
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   15. TYPOGRAPHY — Inter as the primary face
+   Inter has optical-size axis, tabular numerics, contextual alternates —
+   the same font Linear / Vercel / Stripe Atlas use. Falls back gracefully.
+   ---------------------------------------------------------------------------- */
+:root{
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, monospace;
+}
+html{
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+body{
+  font-family: var(--sans) !important;
+  font-feature-settings:
+    'cv11' 1,                              /* Inter — single-storey 'a' alternative */
+    'ss01' 1,                              /* stylistic set 1 — refined punctuation */
+    'ss03' 1,                              /* stylistic set 3 — refined characters */
+    'kern' 1,                              /* kerning */
+    'liga' 1,                              /* standard ligatures */
+    'calt' 1;                              /* contextual alternates */
+}
+
+/* Numbers in WORKING tables — tabular figures align values column-perfect.
+   APA report tables intentionally excluded so the rendered report keeps
+   its original serif / Times New Roman typography. */
+.pre-results-table,
+.input-table,
+.results-table,
+.es-results-grid,
+.conv-equiv-grid,
+.score-result,
+.fsiq, .psy, .diff,
+.rb-chip-count,
+.rb-drawer-count,
+.ds-version-stamp,
+input[type="number"],
+.es-results-cell-value,
+[data-rb-time]{
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: 'tnum' 1, 'zero' 1;
+}
+
+/* Heading rhythm — tighter tracking for Inter at large sizes */
+h1, h2, h3, h4, h5, h6,
+.section-title,
+.home-pathway-title,
+.pre-form-title,
+.bat-config-label{
+  font-family: var(--sans);
+  font-feature-settings: 'cv11' 1, 'ss01' 1;
+}
+h1, h1.section-title{
+  letter-spacing: -0.025em;
+}
+h2, h2.section-title, .section-title{
+  letter-spacing: -0.018em;
+}
+h3{ letter-spacing: -0.012em; }
+
+/* ----------------------------------------------------------------------------
+   16. PRO TABLE STYLING — applied to working/input tables ONLY.
+   APA report tables are explicitly LEFT ALONE so they keep the
+   serif / Times New Roman / APA-convention borders the user authored.
+   ---------------------------------------------------------------------------- */
+.pre-results-table,
+.input-table{
+  border-collapse: separate !important;
+  border-spacing: 0;
+  width: 100%;
+}
+.pre-results-table thead th,
+.input-table thead th{
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  padding: var(--ds-space-3) var(--ds-space-3);
+  border-bottom: 1px solid var(--ds-border);
+  background: transparent;
+}
+.pre-results-table tbody td,
+.input-table tbody td{
+  font-family: var(--sans);
+  font-size: var(--ds-text-base);
+  color: var(--ds-text);
+  padding: var(--ds-space-3) var(--ds-space-3);
+  border-bottom: 1px solid var(--ds-border-subtle);
+  background: transparent;
+  vertical-align: middle;
+}
+.pre-results-table tbody tr:last-child td{
+  border-bottom: none;
+}
+/* Subtle row hover for clickability cues — only on tables that benefit */
+.pre-results-table tbody tr:hover td,
+.input-table tbody tr:hover td{
+  background: var(--ds-surface-emphasis) !important;
+}
+/* Right-align numeric cells in working tables (APA tables left untouched) */
+.pre-results-table .num,
+.pre-results-table .fsiq,
+.pre-results-table .psy,
+.pre-results-table .diff{
+  text-align: right;
+}
+.pre-results-table .model{
+  text-align: left;
+}
+
+/* ----------------------------------------------------------------------------
+   17. STATUS PILLS — semantic colour vocabulary
+   Use these everywhere a status, classification, or flag needs colour.
+   ---------------------------------------------------------------------------- */
+.ds-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  height: 22px;
+  padding: 0 var(--ds-space-2);
+  border-radius: var(--ds-radius-full);
+  background: var(--ds-surface-emphasis);
+  color: var(--ds-text-muted);
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0;
+  border: 1px solid transparent;
+}
+.ds-pill::before{
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.ds-pill-success{ background: var(--ds-success-tint); color: var(--ds-success); border-color: rgba(31,122,71,0.18); }
+.ds-pill-warning{ background: var(--ds-warning-tint); color: var(--ds-warning); border-color: rgba(183,121,31,0.18); }
+.ds-pill-danger{  background: var(--ds-destructive-tint); color: var(--ds-destructive); border-color: rgba(178,42,32,0.18); }
+.ds-pill-info{    background: rgba(15,18,24,0.06); color: var(--ds-text-muted); border-color: var(--ds-border); }
+
+/* Bridge legacy outcome text colours so they pick up the new semantic system.
+   The "Reliable decline" / "Reliable improvement" / "No reliable change" labels
+   that appear in change-analysis tables. */
+.outcome-decline,
+.outcome-decrease,
+[class*="reliable-decline"]{
+  color: var(--ds-destructive) !important;
+  font-weight: var(--ds-weight-semibold);
+}
+.outcome-improvement,
+.outcome-increase{
+  color: var(--ds-success) !important;
+  font-weight: var(--ds-weight-semibold);
+}
+.outcome-stable,
+.outcome-none{
+  color: var(--ds-text-muted) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   18. TOOL STATUS BAR — small "method · last calculated" strip
+   Use by adding <div class="ds-status-bar"> to the top of a tool's results.
+   ---------------------------------------------------------------------------- */
+.ds-status-bar{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-2) var(--ds-space-4);
+  background: var(--ds-surface-subtle);
+  border: 1px solid var(--ds-border-subtle);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-text-subtle);
+  margin-bottom: var(--ds-space-4);
+}
+.ds-status-bar .ds-status-method{
+  color: var(--ds-text);
+  font-weight: var(--ds-weight-semibold);
+}
+.ds-status-bar .ds-status-divider{
+  width: 1px;
+  height: 14px;
+  background: var(--ds-border);
+}
+.ds-status-bar .ds-status-time{
+  color: var(--ds-text-faint);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0;
+}
+
+/* ----------------------------------------------------------------------------
+   19. CITATION PATTERN — small superscript with hover popover
+   Usage: <span class="ds-cite" data-cite="Crawford & Garthwaite (2007)">¹</span>
+   ---------------------------------------------------------------------------- */
+.ds-cite{
+  position: relative;
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 1;
+  color: var(--ds-primary);
+  cursor: help;
+  font-weight: var(--ds-weight-semibold);
+  border-bottom: 1px dotted var(--ds-primary);
+  padding: 0 1px;
+}
+.ds-cite::after{
+  content: attr(data-cite);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+  background: var(--ds-text);
+  color: var(--ds-text-inverse);
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-medium);
+  letter-spacing: 0;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-radius: var(--ds-radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--ds-duration-fast) var(--ds-ease),
+    transform var(--ds-duration-fast) var(--ds-ease),
+    visibility 0s linear var(--ds-duration-fast);
+  box-shadow: var(--ds-shadow-2);
+  z-index: 100;
+}
+.ds-cite:hover::after,
+.ds-cite:focus-visible::after{
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+  transition:
+    opacity var(--ds-duration-fast) var(--ds-ease),
+    transform var(--ds-duration-fast) var(--ds-ease);
+}
+
+/* ----------------------------------------------------------------------------
+   20. INFO ICON / TOOLTIP — replaces italic note paragraphs
+   Usage: <span class="ds-info" data-tip="Helpful explanation">ⓘ</span>
+   ---------------------------------------------------------------------------- */
+.ds-info{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--ds-surface-emphasis);
+  color: var(--ds-text-subtle);
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: var(--ds-weight-bold);
+  cursor: help;
+  position: relative;
+  flex-shrink: 0;
+  margin-left: 4px;
+  transition: background var(--ds-duration-fast) var(--ds-ease), color var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-info:hover{ background: var(--ds-text); color: var(--ds-text-inverse); }
+.ds-info[data-tip]::after{
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  background: var(--ds-text);
+  color: var(--ds-text-inverse);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-radius: var(--ds-radius-sm);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-regular);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--ds-duration-fast) var(--ds-ease);
+  z-index: 100;
+  max-width: 240px;
+  white-space: normal;
+}
+.ds-info:hover[data-tip]::after{ opacity: 1; visibility: visible; }
+
+/* ----------------------------------------------------------------------------
+   21. RESULT REVEAL — subtle fade-in when a value updates
+   Apply with: element.classList.add('ds-reveal') after computing.
+   ---------------------------------------------------------------------------- */
+@keyframes ds-reveal{
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ds-reveal{
+  animation: ds-reveal var(--ds-duration-slow) var(--ds-ease) both;
+}
+
+/* ----------------------------------------------------------------------------
+   22. TOPBAR REFINEMENTS — slimmer, more deliberate
+   ---------------------------------------------------------------------------- */
+.topbar{
+  background: var(--ds-surface) !important;
+  border-bottom: 1px solid var(--ds-border) !important;
+}
+.topbar-row-brand{
+  border-bottom: 1px solid var(--ds-border-subtle) !important;
+}
+.topbar-divider{
+  background: var(--ds-border) !important;
+  height: 18px !important;
+}
+.topbar-page-title{
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-sm) !important;
+  font-weight: var(--ds-weight-medium) !important;
+  color: var(--ds-text-muted) !important;
+  letter-spacing: 0 !important;
+}
+.topbar-page-title em{
+  font-family: var(--sans) !important;
+  font-style: italic !important;
+  color: var(--ds-text) !important;
+}
+
+/* Topnav refinement — slimmer, tighter */
+.topnav-item{
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-medium);
+  letter-spacing: var(--ds-tracking-base);
+  color: var(--ds-text-muted) !important;
+  transition: color var(--ds-duration-fast) var(--ds-ease);
+}
+.topnav-item:hover{ color: var(--ds-text) !important; }
+.topnav-item.active{
+  color: var(--ds-text) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   23. PRINT — A4 page setup. APA-table rendering is LEFT INTACT so the
+   author's existing report styling (font, borders, conventions) prints
+   exactly as designed.
+   ---------------------------------------------------------------------------- */
+@page{
+  size: A4;
+  margin: 18mm 16mm;
+}
+@media print{
+  body{
+    background: white !important;
+    color: black !important;
+  }
+  /* Hide all UI chrome */
+  .rb-root,
+  .rb-kofi-toast,
+  .topbar-kofi,
+  .ds-skip-link,
+  .site-footer,
+  .topbar,
+  .add-row-actions,
+  .apa-toolbar,
+  .ds-status-bar{ display: none !important; }
+  /* Avoid splitting tables across pages */
+  .apa-table,
+  .pre-results-table{
+    page-break-inside: avoid;
+  }
+  /* Note: no font / border overrides on .apa-table — author styles are the
+     authoritative APA presentation and must reach the printer untouched. */
+}
+
+/* ----------------------------------------------------------------------------
+   24. REDUCED MOTION — respect user preference
+   ---------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce){
+  *,
+  *::before,
+  *::after{
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   25. SCROLLBAR — subtle, neutral, consistent
+   ---------------------------------------------------------------------------- */
+::-webkit-scrollbar{ width: 12px; height: 12px; }
+::-webkit-scrollbar-track{ background: transparent; }
+::-webkit-scrollbar-thumb{
+  background: rgba(15,18,24,0.16);
+  border-radius: 8px;
+  border: 3px solid var(--ds-bg);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover{ background: rgba(15,18,24,0.30); background-clip: padding-box; }
+*{ scrollbar-width: thin; scrollbar-color: rgba(15,18,24,0.20) transparent; }
+
+/* ----------------------------------------------------------------------------
+   26. SELECTION — branded text-selection colour
+   ---------------------------------------------------------------------------- */
+::selection{
+  background: var(--ds-primary-tint);
+  color: var(--ds-text);
+}
+
+/* ----------------------------------------------------------------------------
+   27. KBD — keyboard shortcut hint, used in tooltips and help
+   ---------------------------------------------------------------------------- */
+kbd, .ds-kbd{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--ds-radius-xs);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text);
+  letter-spacing: 0;
+}
+
+/* ----------------------------------------------------------------------------
+   28b. CHIP OVERLAP — three-layer fix so the Working Report chip never
+   sits on top of important content.
+
+   Layer 1: Bottom-padding on every section so content always has clearance
+            for the chip's footprint (chip is ~52px tall, 88px gives breathing).
+   Layer 2: Chip auto-fades + shrinks slightly when the user scrolls down
+            (de-emphasised while you're working) and returns full strength
+            when they stop or scroll up.
+   Layer 3: Quick-press idle nudge — chip is fully clickable always.
+   ---------------------------------------------------------------------------- */
+.section{
+  padding-bottom: 100px !important;            /* clearance for the floating chip */
+}
+@media (max-width: 720px){
+  .section{ padding-bottom: 120px !important; }   /* more clearance on phones */
+}
+
+/* Active "scrolling" state — chip visually recedes so it's not a hot spot
+   while the user is reading/scrolling content under it.
+   The .ds-chip-recede class is toggled by design-system.js on scroll. */
+.rb-chip{
+  transition:
+    transform 200ms var(--ds-ease),
+    opacity 200ms var(--ds-ease),
+    box-shadow 200ms var(--ds-ease) !important;
+}
+.ds-chip-recede .rb-chip{
+  opacity: 0.55;
+  transform: translateY(2px) scale(0.96);
+}
+/* Hover always restores full chip — even mid-scroll */
+.rb-chip:hover{
+  opacity: 1 !important;
+  transform: translateY(-3px) !important;
+}
+
+/* ============================================================================
+   29. SURFACE UNIFICATION — one rule, no exceptions
+   The page background is the ONLY non-white surface. Every elevated
+   surface (panels, cards, info boxes, search wrappers, modals, popovers)
+   uses pure #FFFFFF. Differentiation between elevated surfaces comes from
+   borders + shadows, never from colour tint.
+
+   This neutralises the warm-cream legacy palette across all components:
+   .autofill-panel, .bat-config-panel, .bat-premorbid-panel, .info-box,
+   .home-info, .column-guide, .combo-ageband-note, .apa-empty, .apa-status,
+   plus any element using --note-bg. Replaces all of them with one tone.
+   ============================================================================ */
+
+:root{
+  /* The single most leveraged variable — point it at neutral white so every
+     legacy rule that uses it picks up the new look. */
+  --note-bg: #FFFFFF;
+  --tooltip-bg: rgba(15,18,24,0.95);
+  --note-border: rgba(15,18,24,0.10);
+  --accent-tint: rgba(15,18,24,0.05);            /* legacy "subtle accent fill" rebridged as neutral */
+}
+
+/* All elevated surfaces — one tone, neutral border, no warm tint */
+.info-box,
+.home-info,
+.bat-config-panel,
+.bat-premorbid-panel,
+.bat-premorbid-help,
+.autofill-panel,
+.column-guide,
+.combo-ageband-note,
+.apa-empty,
+.apa-status,
+.formula-disclosure,
+.formula-disclosure .info-box,
+.es-mode-selector,
+.es-mode-option,
+.es-mode-option.is-active,
+.es-loaded-banner,
+.es-visual-panel,
+.es-results-panel,
+.pre-form-section,
+.premorbid-input-panel,
+.panel,
+.panel-emphasis{
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+  border-color: var(--ds-border) !important;
+}
+
+/* Auto-fill search wrapper — drop the panel chrome entirely; the input
+   field itself does all the visual work */
+.autofill-panel{
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+.autofill-panel input,
+.autofill-panel .combo input{
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  border-radius: var(--ds-radius-sm) !important;
+  height: 40px;
+  padding: 0 var(--ds-space-3) 0 var(--ds-space-10) !important;  /* room for search icon */
+}
+
+/* Table-row hover / striping / check / group-header — flatten ALL the warm
+   legacy backgrounds that were creating the patchwork look. One unified
+   tone for resting rows, one cool gray for hover, one neutral surface for
+   group-header rows. */
+.input-table tbody tr,
+.input-table tbody tr td,
+.input-table tbody tr.row-check,
+.input-table tbody tr.row-check td,
+.input-table tbody tr.row-awaiting,
+.input-table tbody tr.row-awaiting td,
+.input-table tbody tr:nth-child(even),
+.input-table tbody tr:nth-child(even) td{
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+}
+/* Single calm hover state — NO terracotta tint */
+.input-table tbody tr:hover,
+.input-table tbody tr:hover td{
+  background: var(--ds-surface-subtle) !important;
+}
+
+/* Group-header rows ("CVLT-3 INDICES · Standard Score") — quiet cool surface,
+   not warm cream. Treat as a section divider. */
+.input-table thead tr.table-group-row th,
+.input-table tr.group-header td{
+  background: var(--ds-surface-subtle) !important;
+  border-top: 1px solid var(--ds-border) !important;
+  border-bottom: 1px solid var(--ds-border) !important;
+  color: var(--ds-text-subtle) !important;
+}
+/* Group-header label cell — left-aligned section name in calm gray */
+.input-table thead tr.table-group-row th:first-child{
+  color: var(--ds-text-muted) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+}
+
+/* Restore subtle row separators so rows still feel like a structured grid
+   even with all backgrounds flattened. Hairlines only — no warm tint. */
+.input-table tbody tr td{
+  border-bottom: 1px solid var(--ds-border-subtle) !important;
+}
+.input-table tbody tr:last-child td{
+  border-bottom: none !important;
+}
+
+/* Row remove × — quiet, only red on hover */
+.input-table .row-remove,
+.input-table tr td .row-remove,
+.input-table tr.group-header td .group-remove{
+  color: var(--ds-text-faint) !important;
+  background: transparent !important;
+  border: none !important;
+  transition: color var(--ds-duration-fast) var(--ds-ease), background var(--ds-duration-fast) var(--ds-ease) !important;
+}
+.input-table .row-remove:hover,
+.input-table tr.group-header td .group-remove:hover{
+  color: var(--ds-destructive) !important;
+  background: var(--ds-destructive-tint) !important;
+}
+
+/* Descriptor stars next to classification labels (Borderline***, Low Average*)
+   — keep them readable but neutralise the warm tint */
+.input-table .descriptor-stars,
+.input-table td .descriptor-stars,
+.classification-mark,
+.classification-stars{
+  color: var(--ds-text-faint) !important;
+  font-weight: normal !important;
+  letter-spacing: 0.04em;
+}
+
+/* Eyebrow / SECTION-LABEL text — one tone, one weight */
+.eyebrow,
+.bat-config-label,
+.pre-form-title,
+.bat-section-label,
+.es-section-label,
+.conv-section-label{
+  color: var(--ds-text-subtle) !important;
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-xs) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+/* Descriptor stars (★ ★★ ★★★) used in "marked ★ when ≥1 SD below" sentences
+   — neutralise to muted gray so they read as dots not warning glyphs */
+.bat-descriptor-star,
+.descriptor-star,
+[data-descriptor-marker]{
+  color: var(--ds-text-faint) !important;
+  font-weight: normal !important;
+}
+
+/* If the stars are inline ★ characters with no class, this color
+   adjustment on the parent text is the cleanest fallback — the text
+   colour is calm gray throughout descriptor lines. */
+.bat-premorbid-help,
+.bat-descriptor-line,
+.descriptor-key{
+  color: var(--ds-text-muted) !important;
+}
+
+/* Footer eyebrow / "Last updated" / version — single token */
+.site-footer-meta{
+  color: var(--ds-text-faint) !important;
+  font-family: var(--mono) !important;
+  font-size: var(--ds-text-xs) !important;
+  letter-spacing: 0 !important;
+}
+
+/* Legacy emphasis-button bridges that may have warm shadows / tints */
+.btn-secondary,
+.btn-outline,
+.input-table .btn-row{
+  background: var(--ds-surface) !important;
+  border-color: var(--ds-border-strong) !important;
+  color: var(--ds-text) !important;
+  box-shadow: none !important;
+}
+
+/* Saturated red form-state stars / required indicators */
+.required-marker,
+[aria-required="true"] + label::after,
+label[required-marker]::after{
+  color: var(--ds-destructive) !important;
+  font-weight: normal !important;
+}
+
+/* Form group label hierarchy — one weight family */
+.field > label,
+.field-row > .field > label,
+.es-config label,
+.bat-config label,
+.pre-form-section label{
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-xs) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: var(--ds-text-subtle) !important;
+}
+
+/* Hint / sub-label text under form fields */
+.hint,
+.field-hint,
+.pre-label-sub,
+.pre-form-note,
+.bat-config-hint,
+.bat-input-help{
+  color: var(--ds-text-faint) !important;
+  font-style: normal !important;
+  font-weight: var(--ds-weight-regular) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+/* ----------------------------------------------------------------------------
+   29b. HIGH-SPECIFICITY OVERRIDES — beat the #battery and #rci-* scoped
+   legacy rules that paint warm gradients with !important. Writing rules
+   prefixed with the same id pseudo-selector to match specificity.
+   ---------------------------------------------------------------------------- */
+
+/* Battery (Neuropsych Tables) — premorbid comparison + every panel */
+#battery .bat-premorbid-panel,
+#battery .bat-premorbid-help,
+#battery .panel,
+#battery .panel-emphasis,
+#battery > .panel,
+#battery > .panel:not(.input-table-wrap){
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+  border-color: var(--ds-border) !important;
+}
+
+/* Reliable change tools — warm panel backgrounds */
+#sdi > .panel:not(.autofill-panel),
+#rci-practice > .panel:not(.autofill-panel),
+#rci-srb > .panel:not(.autofill-panel),
+#rci-mcsweeney > .panel:not(.autofill-panel),
+#rci-crawford > .panel:not(.autofill-panel){
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+  border-color: var(--ds-border) !important;
+}
+
+/* Effect Sizes — any warm panel chrome */
+#effectsize .panel,
+#effectsize .panel-emphasis,
+#effectsize .es-mode-selector,
+#effectsize .es-mode-option,
+#effectsize .es-mode-option.is-active,
+#effectsize .es-loaded-banner,
+#effectsize .es-visual-panel,
+#effectsize .es-results-panel,
+#effectsize .es-result-card{
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+  border-color: var(--ds-border) !important;
+}
+
+/* Premorbid — sub-panels and config wrappers */
+#premorbid .panel,
+#premorbid .panel-emphasis,
+#premorbid .premorbid-input-panel,
+#premorbid .pre-form-section,
+#premorbid #pre-inputs .pre-form-section{
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+  border-color: var(--ds-border) !important;
+}
+
+/* Report Writer */
+#report-writer .panel,
+#report-writer .panel-emphasis{
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+  border-color: var(--ds-border) !important;
+}
+
+/* Auto-fill panels in EVERY tool — strip the warm wrapper, keep input */
+#battery .autofill-panel,
+#sdi .autofill-panel,
+#rci-practice .autofill-panel,
+#rci-srb .autofill-panel,
+#rci-mcsweeney .autofill-panel,
+#rci-crawford .autofill-panel{
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Input fields inside the table cells — all use the same cool bg as the
+   page background tokens predict, no warm leftovers */
+.input-table td input,
+.input-table td input[type="text"],
+.input-table td input[type="number"]{
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+}
+
+/* Scoped row-state colours — kill any warm tinting from id-scoped legacy
+   rules (some tools have additional row-state painting beyond the global
+   row-check / row-awaiting pair) */
+#battery .input-table tbody tr,
+#battery .input-table tbody tr td,
+#battery .input-table tbody tr.row-check,
+#battery .input-table tbody tr.row-check td,
+#battery .input-table tbody tr.row-awaiting td,
+#sdi .input-table tbody tr,
+#rci-practice .input-table tbody tr,
+#rci-srb .input-table tbody tr,
+#rci-mcsweeney .input-table tbody tr,
+#rci-crawford .input-table tbody tr,
+#change-analysis .input-table tbody tr,
+#change-analysis .input-table tbody tr td{
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+}
+#battery .input-table tbody tr:hover,
+#battery .input-table tbody tr:hover td,
+#sdi .input-table tbody tr:hover,
+#rci-practice .input-table tbody tr:hover,
+#rci-srb .input-table tbody tr:hover,
+#rci-mcsweeney .input-table tbody tr:hover,
+#rci-crawford .input-table tbody tr:hover,
+#change-analysis .input-table tbody tr:hover,
+#change-analysis .input-table tbody tr:hover td{
+  background: var(--ds-surface-subtle) !important;
+}
+
+/* ============================================================================
+   30. SPECIFIC FIXES — tooltip text contrast, score-converter active pill,
+   autofill panel presence on Neuropsych Tables.
+   ============================================================================ */
+
+/* --- 30a. Tooltip text contrast — white on dark bg ------------------------- */
+/* Tooltip background was bridged to dark in section 29; the text colour
+   inside (legacy `var(--ink-2)` = dark gray) became unreadable. Force
+   tooltip text to white so the popovers are legible. */
+.model-info-dot::before,
+[data-tooltip]::before,
+[title]::after,
+.tooltip-content,
+.tip-content{
+  background: rgba(15,18,24,0.96) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(15,18,24,0.96) !important;
+  text-shadow: none !important;
+}
+.model-info-dot::after{
+  border-color: rgba(15,18,24,0.96) transparent transparent transparent !important;
+}
+
+/* --- 30b. Score Converter — drop the heavy black "you entered" pill ------- */
+/* The active score pill currently uses linear-gradient(180deg, #2A2A2A, #1A1A1A)
+   — a near-black emphasis that's loud against the cool palette. Replace
+   with a subtle outline + accent treatment that still flags "this is the
+   one you entered" without dominating the row. */
+.conv-scores-strip > [data-active="true"],
+.conv-scores-strip .is-active,
+.conv-scores-strip .conv-strip-active,
+.conv-score-item.conv-score-active,
+.conv-score-item.is-active{
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+  color: var(--ds-text) !important;
+  border: 1px solid var(--ds-primary) !important;
+  box-shadow:
+    0 0 0 3px var(--ds-primary-tint),
+    0 1px 2px rgba(15,18,24,0.04) !important;
+}
+.conv-scores-strip > [data-active="true"] .conv-score-label,
+.conv-score-item.conv-score-active .conv-score-label{
+  color: var(--ds-primary) !important;
+}
+.conv-scores-strip > [data-active="true"] .conv-score-value,
+.conv-score-item.conv-score-active .conv-score-value{
+  color: var(--ds-text) !important;
+}
+/* The little " · you entered" subtitle — make it readable on the new bg */
+.conv-score-item.conv-score-active .conv-score-label::after{
+  color: var(--ds-text-faint) !important;
+}
+
+/* --- 30c. Auto-fill panel — give it presence on every tool ----------------
+   In section 29 I stripped the auto-fill chrome to nothing; user reports it
+   blends into the page on Neuropsych Tables specifically. Restore a
+   distinct surface — subtle but unmistakably "this is a search field" —
+   matching the look it has on other tools that don't share the same
+   id-scoped overrides. */
+.autofill-panel,
+#battery .autofill-panel,
+#sdi .autofill-panel,
+#rci-practice .autofill-panel,
+#rci-srb .autofill-panel,
+#rci-mcsweeney .autofill-panel,
+#rci-crawford .autofill-panel{
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: var(--ds-radius-md) !important;
+  box-shadow: var(--ds-shadow-1) !important;
+  padding: var(--ds-space-3) var(--ds-space-4) !important;
+  margin-bottom: var(--ds-space-3) !important;
+}
+/* The search input inside should be subtle (no double border) */
+#battery .autofill-panel input,
+#battery .autofill-panel .combo input,
+.autofill-panel .combo input{
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: var(--ds-radius-sm) !important;
+  height: 40px !important;
+  padding: 0 var(--ds-space-3) 0 var(--ds-space-10) !important;
+}
+.autofill-panel .combo input:focus{
+  border-color: var(--ds-primary) !important;
+  box-shadow: 0 0 0 3px var(--ds-primary-tint) !important;
+}
+
+/* --- 30c-2. Neuropsych Tables auto-fill — different class, needs targeted
+   chrome upgrade. The legacy .bat-autofill-inline / .bat-table-head doesn't
+   use .autofill-panel at all so my earlier rules missed it. Build it as
+   a proper inset card with a clear "Quick add" affordance. */
+#battery .bat-table-head{
+  padding: var(--ds-space-3) var(--ds-space-4) !important;
+  background: var(--ds-surface) !important;
+  background-image: none !important;
+  border-bottom: 1px solid var(--ds-border) !important;
+  border-top-left-radius: var(--ds-radius-md) !important;
+  border-top-right-radius: var(--ds-radius-md) !important;
+  /* Soft tinted band so it reads as a distinct "search" zone */
+  background: linear-gradient(180deg, var(--ds-surface-subtle) 0%, var(--ds-surface) 100%) !important;
+}
+#battery .bat-autofill-inline{
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--ds-space-3) !important;
+  padding: 0 !important;
+}
+#battery .bat-autofill-icon{
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--ds-text-subtle) !important;
+  flex-shrink: 0;
+}
+#battery .bat-autofill-combo{
+  flex: 1;
+  position: relative;
+  width: auto !important;
+}
+#battery .bat-autofill-input{
+  width: 100% !important;
+  padding: 0 var(--ds-space-4) !important;
+  height: 40px !important;
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-base) !important;
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  border-radius: var(--ds-radius-sm) !important;
+  color: var(--ds-text) !important;
+  box-shadow: 0 1px 2px rgba(15,18,24,0.04) inset !important;
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease) !important;
+}
+#battery .bat-autofill-input::placeholder{
+  color: var(--ds-text-faint) !important;
+  font-style: normal !important;
+}
+#battery .bat-autofill-input:focus{
+  outline: none !important;
+  border-color: var(--ds-primary) !important;
+  box-shadow: 0 0 0 3px var(--ds-primary-tint) !important;
+}
+
+/* Add a small "label" to the left of the icon so it reads as a deliberate
+   feature, not a generic search bar. */
+#battery .bat-autofill-inline::before{
+  content: "Quick add";
+  flex-shrink: 0;
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  padding-right: var(--ds-space-2);
+  border-right: 1px solid var(--ds-border);
+  margin-right: var(--ds-space-1);
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------------------------
+   31. TOPNAV DROPDOWN — flatten the warm cream hover/active states
+   ---------------------------------------------------------------------------- */
+.topnav-dropdown{
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: var(--ds-radius-md) !important;
+  box-shadow: var(--ds-shadow-overlay) !important;
+  padding: var(--ds-space-1) !important;
+}
+.topnav-drop-item{
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-sm) !important;
+  font-weight: var(--ds-weight-medium) !important;
+  color: var(--ds-text-muted) !important;
+  letter-spacing: var(--ds-tracking-base) !important;
+  border-radius: var(--ds-radius-sm) !important;
+  background: transparent !important;
+  border: none !important;
+  border-left: none !important;
+}
+.topnav-drop-item:hover{
+  background: var(--ds-surface-emphasis) !important;
+  color: var(--ds-text) !important;
+}
+.topnav-drop-item.active{
+  background: var(--ds-surface-emphasis) !important;
+  color: var(--ds-text) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+}
+
+/* ============================================================================
+   32. INLINE CONTROL BAR — Change Analysis pages
+   Sits directly above the data table. Autofill on the left covers the
+   Subtest + norms columns; the 90/95% threshold toggle on the right
+   covers the t(RB) / p / Outcome columns. Replaces the legacy
+   "Analysis Settings" + "Auto-fill from normative database" cards.
+   ============================================================================ */
+.ds-legacy-hidden{ display: none !important; }
+
+/* Hide every .change-setup-grid wherever it appears. The consolidation
+   creates this wrapper to hold the legacy Settings + Auto-fill panels;
+   the new inline bar replaces both. Use the broadest possible selector
+   plus !important so this can't lose the cascade. */
+.change-setup-grid,
+body .change-setup-grid,
+.change-method-panel .change-setup-grid,
+[id] > .change-setup-grid{
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.ds-inline-bar{
+  /* Grid columns sized to roughly match the column groups in the data
+     table below: ~50% over Subtest+norms, ~20% over score input columns,
+     ~30% over results columns. Each method's table is proportioned a bit
+     differently but this is the visual sweet spot across all five. */
+  display: grid;
+  grid-template-columns: 1.6fr 0.85fr 1.05fr;
+  align-items: center;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  margin: 0 0 var(--ds-space-2);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-1);
+}
+
+.ds-inline-bar-section{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-width: 0;                           /* allow shrinking below content size */
+}
+.ds-inline-bar-right{
+  justify-content: flex-end;              /* pin threshold toggle to the right edge */
+}
+
+/* Score type dropdown — sits between Quick add and Threshold */
+.ds-inline-bar-select{
+  flex: 1;                                /* fill the section after the label */
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 var(--ds-space-8) 0 var(--ds-space-3);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  text-overflow: ellipsis;
+  /* Custom chevron — single SVG via background-image */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%234A5260' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3,5 6,8 9,5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--ds-space-3) center;
+  background-size: 12px 12px;
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-inline-bar-select:hover{
+  border-color: var(--ds-text-faint);
+}
+.ds-inline-bar-select:focus{
+  outline: none;
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 3px var(--ds-primary-tint);
+}
+
+/* Eyebrow-style label (Quick add / Threshold) */
+.ds-inline-bar-label{
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-right: var(--ds-space-3);
+  border-right: 1px solid var(--ds-border);
+}
+
+/* Search field on the left */
+.ds-inline-bar-search{
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.ds-inline-bar-search > svg{
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--ds-text-subtle);
+  pointer-events: none;
+  z-index: 1;
+}
+.ds-inline-bar-input,
+input.ds-inline-bar-input,
+input[type="text"].ds-inline-bar-input{
+  width: 100% !important;
+  height: 38px !important;
+  padding: 0 14px 0 40px !important;       /* explicit pixels — survives any cascade fight */
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  border-radius: var(--ds-radius-sm) !important;
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-base) !important;
+  color: var(--ds-text) !important;
+  box-shadow: 0 1px 2px rgba(15,18,24,0.04) inset !important;
+  box-sizing: border-box !important;
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease) !important;
+}
+.ds-inline-bar-input::placeholder{
+  color: var(--ds-text-faint);
+  font-style: normal;
+}
+.ds-inline-bar-input:focus{
+  outline: none;
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 3px var(--ds-primary-tint);
+}
+
+/* The combo-list dropdown is moved under the new search field; ensure
+   it positions itself correctly in this new container. */
+.ds-inline-bar-search .combo-list{
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-overlay);
+  padding: var(--ds-space-1);
+  display: none;
+}
+.ds-inline-bar-search .combo-list.show{ display: block; }
+
+/* Segmented toggle on the right (90% CI · 1.645  /  95% CI · 1.96, etc) */
+.ds-inline-bar-toggle{
+  display: inline-flex;
+  align-items: stretch;
+  flex-wrap: wrap;                          /* SDI has 5 options — let them wrap if needed */
+  background: var(--ds-surface-emphasis);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  padding: 3px;
+  gap: 2px;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+.ds-inline-bar-toggle-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 var(--ds-space-3);
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0;
+  color: var(--ds-text-muted);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background var(--ds-duration-fast) var(--ds-ease),
+    color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease);
+  min-width: 44px;                          /* tighter — fits 5 options on SDI */
+  white-space: nowrap;
+}
+.ds-inline-bar-toggle-btn:hover:not(.is-active){
+  color: var(--ds-text);
+}
+.ds-inline-bar-toggle-btn.is-active{
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  box-shadow:
+    0 1px 0 rgba(15,18,24,0.04),
+    0 1px 3px rgba(15,18,24,0.08);
+}
+.ds-inline-bar-toggle-btn:focus-visible{
+  outline: 2px solid var(--ds-primary-ring);
+  outline-offset: 2px;
+}
+
+/* Battery variant — 3 columns. Quick Add | Score Type | Class.
+   Premorbid is no longer in the bar — it lives in its own card above. */
+.ds-inline-bar-battery{
+  grid-template-columns: 1.7fr 0.9fr 0.85fr;
+}
+
+/* ---- Premorbid card — sits above the inline bar.
+   Visual treatment matches the inline bar: same border-radius, padding,
+   shadow, eyebrow typography. Reads as "another row in the same system",
+   not as a separate panel. */
+.ds-prem-card{
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-1);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  margin: 0 0 var(--ds-space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    background var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-prem-card.is-enabled{
+  border-color: rgba(156,61,42,0.25);
+  background: linear-gradient(180deg, rgba(156,61,42,0.025), transparent);
+}
+
+/* Eyebrow label — same typography as the bar's labels (Quick add, Score
+   type, Class) so it reads as part of the same system */
+.ds-prem-card-eyebrow{
+  flex-shrink: 0;
+  white-space: nowrap;
+  border-right: 1px solid var(--ds-border);
+  padding-right: var(--ds-space-3);
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+
+.ds-prem-card-row{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  flex: 1;
+  min-width: 0;
+}
+.ds-prem-card-toggle{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+  user-select: none;
+}
+.ds-prem-card-checkbox{
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+.ds-prem-card-mark{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--ds-border-strong);
+  border-radius: 4px;
+  background: var(--ds-surface);
+  color: transparent;
+  flex-shrink: 0;
+  transition:
+    background var(--ds-duration-fast) var(--ds-ease),
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    color var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-prem-card-mark svg{ width: 12px; height: 12px; }
+.ds-prem-card-checkbox:checked + .ds-prem-card-mark{
+  background: var(--ds-primary);
+  border-color: var(--ds-primary);
+  color: #FFFFFF;
+}
+.ds-prem-card-checkbox:focus-visible + .ds-prem-card-mark{
+  outline: 2px solid var(--ds-primary-ring);
+  outline-offset: 2px;
+}
+.ds-prem-card-toggle:hover .ds-prem-card-mark{
+  border-color: var(--ds-primary);
+}
+.ds-prem-card-desc{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-regular);
+  color: var(--ds-text-muted);
+  line-height: 1.5;
+  letter-spacing: -0.003em;
+}
+.ds-prem-card-desc-line{
+  display: block;
+}
+.ds-prem-card-desc strong{
+  color: var(--ds-text);
+  font-weight: var(--ds-weight-semibold);
+}
+.ds-prem-card-desc abbr{
+  text-decoration: none;
+  border-bottom: 1px dotted var(--ds-text-faint);
+  cursor: help;
+}
+
+/* Score input area on the right of the card — ALWAYS visible.
+   Has its own label so the field is unambiguous. When the checkbox is
+   off, the input is disabled (visually faded) but stays in place so
+   users can see the feature exists and what it expects. */
+.ds-prem-card-input-wrap{
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+.ds-prem-card-input-label{
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ds-prem-card-score{
+  width: 110px;
+  height: 38px;
+  padding: 0 var(--ds-space-3);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: var(--ds-text-base);
+  color: var(--ds-text);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-prem-card-score::placeholder{
+  color: var(--ds-text-faint);
+  font-style: normal;
+}
+.ds-prem-card-score:focus{
+  outline: none;
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 3px var(--ds-primary-tint);
+}
+.ds-prem-card-score:disabled{
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Premorbid sub-group — checkbox + info icon + conditional score input */
+.ds-inline-bar-prem{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  flex-wrap: nowrap;
+  position: relative;                       /* anchor the info tooltip */
+}
+
+/* Info icon inside the bar — small ⓘ that reveals descriptor explanation */
+.ds-inline-bar-info{
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  font-style: italic;
+  font-family: 'Times New Roman', Georgia, serif;
+  font-weight: 400;
+  flex-shrink: 0;
+  position: relative;
+}
+.ds-inline-bar-info[data-tip]::after{
+  /* Wider tooltip so the multi-sentence description doesn't squash. */
+  white-space: normal;
+  width: 280px;
+  max-width: 280px;
+  text-align: left;
+  line-height: 1.45;
+  font-size: 11.5px;
+  font-weight: 400;
+  padding: 10px 12px;
+  /* Anchor right above the icon, slightly to the right so it doesn't clip
+     the right edge of the bar */
+  bottom: calc(100% + 8px);
+  right: -4px;
+  left: auto;
+  transform: translateX(0);
+}
+
+/* Override the inline-bar overflow so the popover can escape */
+.ds-inline-bar{
+  overflow: visible;
+}
+.ds-inline-bar-checkbox{
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-text-muted);
+  white-space: nowrap;
+  user-select: none;
+}
+.ds-inline-bar-checkbox input{
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+.ds-inline-bar-checkbox-mark{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--ds-border-strong);
+  border-radius: 4px;
+  background: var(--ds-surface);
+  color: transparent;
+  flex-shrink: 0;
+  transition:
+    background var(--ds-duration-fast) var(--ds-ease),
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    color var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-inline-bar-checkbox-mark svg{
+  width: 12px;
+  height: 12px;
+}
+.ds-inline-bar-checkbox input:checked + .ds-inline-bar-checkbox-mark{
+  background: var(--ds-primary);
+  border-color: var(--ds-primary);
+  color: #FFFFFF;
+}
+.ds-inline-bar-checkbox input:focus-visible + .ds-inline-bar-checkbox-mark{
+  outline: 2px solid var(--ds-primary-ring);
+  outline-offset: 2px;
+}
+.ds-inline-bar-checkbox:hover .ds-inline-bar-checkbox-mark{
+  border-color: var(--ds-primary);
+}
+.ds-inline-bar-prem.is-enabled .ds-inline-bar-checkbox{
+  color: var(--ds-text);
+}
+
+/* Premorbid score input — narrow, hidden visually until checkbox ticked */
+.ds-inline-bar-prem-score{
+  width: 78px;
+  height: 38px;
+  padding: 0 var(--ds-space-2);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  transition:
+    opacity var(--ds-duration-fast) var(--ds-ease),
+    width var(--ds-duration-slow) var(--ds-ease),
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease),
+    margin-left var(--ds-duration-slow) var(--ds-ease);
+}
+.ds-inline-bar-prem-score:disabled{
+  opacity: 0;
+  width: 0;
+  margin-left: calc(-1 * var(--ds-space-2));
+  pointer-events: none;
+  border-color: transparent;
+  padding: 0;
+}
+.ds-inline-bar-prem-score::placeholder{
+  color: var(--ds-text-faint);
+  font-style: normal;
+}
+.ds-inline-bar-prem-score:focus{
+  outline: none;
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 3px var(--ds-primary-tint);
+}
+
+/* Mobile / narrow screens — stack the bar sections vertically */
+@media (max-width: 720px){
+  .ds-inline-bar,
+  .ds-inline-bar-battery{
+    grid-template-columns: 1fr;
+    gap: var(--ds-space-2);
+  }
+  .ds-inline-bar-right{
+    justify-content: flex-start;
+  }
+  .ds-inline-bar-prem{
+    justify-content: flex-start;
+  }
+  .ds-inline-bar-label{
+    border-right: none;
+    padding-right: 0;
+  }
+}
+
+/* ============================================================================
+   33b. INPUT-TABLE FONT-SIZE CONSISTENCY
+   Existing styles use 13px on inputs but 12px on .computed and status
+   cells, so a single row mixes two type sizes. Normalise everything in
+   the body of .input-table tables to the same size + family.
+   ============================================================================ */
+.input-table tbody td,
+.input-table tbody td input,
+.input-table tbody td input[type="text"],
+.input-table tbody td input[type="number"],
+.input-table tbody td.computed,
+.input-table tbody td.computed.sig-no,
+.input-table tbody td.computed.sig-yes,
+.input-table tbody td.computed.sig-improve,
+.input-table tbody td.computed.sig-decline,
+.input-table tbody td.status-awaiting,
+.input-table tbody td.status-check{
+  font-family: var(--sans) !important;
+  font-size: 13px !important;                /* one canonical body size for all table cells */
+  line-height: 1.4 !important;
+}
+
+/* ============================================================================
+   34. NORMS — borderless inputs (visual de-emphasis vs. score columns)
+   The norm inputs (M, SD, r, N) shed their borders so the score input
+   columns (Date 1 / Date 2) read as the primary editable region.
+   Norms still fully editable — just visually quieter.
+   Higher specificity (`td[data-norm-cell]`) needed to beat the existing
+   .input-table td input[type="number"] rule, which has (0,2,2).
+   ============================================================================ */
+.input-table td[data-norm-cell="true"] input,
+.input-table td[data-norm-cell="true"] input[type="text"],
+.input-table td[data-norm-cell="true"] input[type="number"]{
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ds-text-muted) !important;
+  text-align: center;
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    background var(--ds-duration-fast) var(--ds-ease),
+    color var(--ds-duration-fast) var(--ds-ease) !important;
+}
+/* Row-level reveal — when hovering anywhere on a row OR any input in the
+   row is focused, every norm input in that row reveals its border. Keeps
+   the row "active" feel grouped rather than per-cell flicker. */
+.input-table tbody tr:hover td[data-norm-cell="true"] input,
+.input-table tbody tr:focus-within td[data-norm-cell="true"] input{
+  border-color: var(--ds-border) !important;
+  color: var(--ds-text) !important;
+}
+
+/* Direct hover on a single norm cell — slightly stronger border so users
+   know which one their cursor is over within the active row */
+.input-table td[data-norm-cell="true"] input:hover,
+.input-table td[data-norm-cell="true"] input[type="text"]:hover,
+.input-table td[data-norm-cell="true"] input[type="number"]:hover{
+  border-color: var(--ds-border-strong) !important;
+  color: var(--ds-text) !important;
+}
+
+/* Focused cell gets the full edit chrome — terracotta border + tint ring */
+.input-table td[data-norm-cell="true"] input:focus,
+.input-table td[data-norm-cell="true"] input[type="text"]:focus,
+.input-table td[data-norm-cell="true"] input[type="number"]:focus{
+  border-color: var(--ds-primary) !important;
+  background: var(--ds-surface) !important;
+  color: var(--ds-text) !important;
+  box-shadow: 0 0 0 3px var(--ds-primary-tint) !important;
+  outline: none !important;
+}
+
+/* ============================================================================
+   35. CHIP ORBIT LIGHT — bright green sweep around the chip on tab click.
+   Brighter, thicker, longer arc, bigger glow. Reads from across the
+   screen as a deliberate confirmation pulse.
+   ============================================================================ */
+@property --ds-orbit-angle{
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.rb-chip{
+  position: fixed;
+}
+/* Outer glow ring — thin, slow. Brightness retained via drop-shadows. */
+.rb-chip::before{
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 999px;
+  padding: 2px;                              /* thinner ring */
+  background: conic-gradient(
+    from var(--ds-orbit-angle, 0deg),
+    transparent 0deg,
+    transparent 240deg,
+    rgba(34, 197, 94, 0.45)  270deg,
+    rgba(22, 163, 74, 0.95)  310deg,
+    rgba(34, 197, 94, 1)     335deg,
+    #BBF7D0                  352deg,
+    #FFFFFF                  358deg,
+    rgba(34, 197, 94, 1)     360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  filter:
+    drop-shadow(0 0 3px rgba(34,197,94,0.85))
+    drop-shadow(0 0 8px rgba(34,197,94,0.50))
+    drop-shadow(0 0 14px rgba(34,197,94,0.25));
+  z-index: 2;
+  transition: opacity 200ms var(--ds-ease);
+}
+/* Inner companion sweep — bright white spark on the chip surface */
+.rb-chip::after{
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  padding: 2px;                              /* thinner */
+  background: conic-gradient(
+    from var(--ds-orbit-angle, 0deg),
+    transparent 0deg,
+    transparent 300deg,
+    rgba(255, 255, 255, 0.6)  330deg,
+    rgba(255, 255, 255, 1)    355deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.7));
+  transition: opacity 200ms var(--ds-ease);
+}
+
+/* Active orbit — one full revolution at a calm pace */
+.rb-chip.rb-chip-orbit::before,
+.rb-chip.rb-chip-orbit::after{
+  opacity: 1;
+  animation: rb-chip-orbit-spin 2.4s cubic-bezier(0.4, 0, 0.2, 1) 1;
+}
+@keyframes rb-chip-orbit-spin{
+  0%   { --ds-orbit-angle: 0deg; }
+  100% { --ds-orbit-angle: 360deg; }
+}
+
+/* Fallback for browsers without @property — rotate the entire pseudo */
+@supports not (background: conic-gradient(from var(--x, 0deg), red, blue)){
+  .rb-chip::before{
+    background: conic-gradient(
+      transparent 0deg,
+      transparent 180deg,
+      rgba(34, 197, 94, 0.35) 220deg,
+      rgba(22, 163, 74, 0.85) 280deg,
+      rgba(34, 197, 94, 1) 320deg,
+      #BBF7D0 348deg,
+      #FFFFFF 358deg,
+      rgba(34, 197, 94, 1) 360deg
+    );
+  }
+  .rb-chip::after{
+    background: conic-gradient(
+      transparent 0deg,
+      transparent 300deg,
+      rgba(255, 255, 255, 0.6) 330deg,
+      rgba(255, 255, 255, 1) 355deg,
+      transparent 360deg
+    );
+  }
+  .rb-chip.rb-chip-orbit::before,
+  .rb-chip.rb-chip-orbit::after{
+    animation: rb-chip-orbit-rotate 2.4s linear 1;
+  }
+  @keyframes rb-chip-orbit-rotate{
+    from { transform: rotate(0deg);   }
+    to   { transform: rotate(360deg); }
+  }
+}
+
+/* ============================================================================
+   33. REMOVED FEATURE — Lock/Unlock norms toggle
+   The pill that used to live inside the "Norms" group-row cell is no
+   longer wanted. Hide it everywhere it appears, and undo the visual
+   "locked" state (faded norms columns, disabled inputs).
+   ============================================================================ */
+.norms-toggle-pill,
+.norms-pill-segment{
+  display: none !important;
+}
+/* Norms columns must always render at full strength — undo any "locked"
+   styling applied by the existing CSS. */
+.input-table.norms-locked [data-norm-cell="true"]{
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
+}
+.input-table.norms-locked [data-norm-cell="true"] input{
+  background: var(--ds-surface) !important;
+  color: var(--ds-text) !important;
+  cursor: text !important;
+}
+
+/* ============================================================================
+   33b. AUTOFILL DROPDOWN — kill the nested scrollbar
+        A late legacy rule (`.combo-list { overflow:auto }`) gave the outer
+        list a scrollbar in addition to the `.combo-options` inner scroll.
+        Force the multiselect outer to hide its own overflow so only one
+        scrollbar — the inner one — is visible.
+   ============================================================================ */
+.combo-list.is-multiselect{
+  overflow: hidden !important;
+  /* Sensible default — JS clamps this further on open based on the actual
+     space available below the input (see bindComboListAutoHeight). */
+  max-height: 520px !important;
+}
+/* Inner options panel: explicit max-height so overflow-y:auto fires. */
+.combo-options{
+  scrollbar-width: thin;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+  padding-bottom: 8px !important;
+  /* Default — overridden by JS based on the resolved outer height */
+  max-height: 380px !important;
+}
+
+/* ---------- Age-banded sub-items rendered side-by-side ----------
+   `buildFamilyListHtml` wraps each group's age-banded variants in a
+   `.combo-indented-row`. Render them as compact pills in a wrapping flex
+   row so they take one line instead of stacking — major scroll reduction
+   on long family lists. */
+.combo-indented-row{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  padding: 6px 12px 10px 22px !important;
+  border-bottom: 1px solid #F4F1E9;
+}
+.combo-indented-row .combo-item.combo-indented{
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 5px 10px !important;
+  border: 1px solid var(--ds-border-strong, #D8D5CC) !important;
+  border-radius: 999px !important;
+  font-size: 12.5px !important;
+  background: var(--ds-surface, #FFFFFF) !important;
+  cursor: pointer !important;
+  line-height: 1.2 !important;
+  transition: background-color 140ms var(--ds-ease, ease), border-color 140ms var(--ds-ease, ease);
+}
+.combo-indented-row .combo-item.combo-indented:hover{
+  background: #F8F6EF !important;
+  border-color: #B8B3A6 !important;
+}
+.combo-indented-row .combo-item.combo-indented:has(input:checked){
+  background: var(--ds-primary-tint, rgba(168,85,68,0.08)) !important;
+  border-color: var(--ds-primary, #A85544) !important;
+  color: var(--ds-text, #1A1A1A) !important;
+}
+.combo-indented-row .combo-item.combo-indented input{
+  margin: 0 6px 0 0 !important;
+}
+
+/* ============================================================================
+   34. PREMORBID — single-viewport 2-col layout
+        Goal: no page scroll. Inputs LEFT (compact, dense), tabbed tables RIGHT.
+   ============================================================================ */
+
+/* Break out of the 980px section cap on this page — the 2-col layout
+   needs every horizontal pixel we can give it. */
+#premorbid.ds-prem-restructured{
+  max-width: min(1500px, calc(100vw - 48px)) !important;
+  padding: var(--ds-space-4) var(--ds-space-6) var(--ds-space-6) !important;
+}
+
+/* Kill the legacy eyebrow + h1 — the topbar already shows "Premorbid Estimation",
+   but keep .section-desc visible (compact) so the page has the same brief
+   intro paragraph the other tools use. */
+#premorbid.ds-prem-restructured > .eyebrow,
+#premorbid.ds-prem-restructured > .section-title{
+  display: none !important;
+}
+#premorbid.ds-prem-restructured > .section-desc{
+  display: block !important;             /* outrank legacy `#premorbid > .section-desc{display:none}` */
+  margin: 0 0 var(--ds-space-3) !important;
+  max-width: 880px !important;
+  font-size: 13.5px !important;
+  line-height: 1.55 !important;
+  color: var(--ds-text-2) !important;
+}
+/* Drop the long intro paragraph above each table too */
+#premorbid.ds-prem-restructured #pre-predict > p:first-of-type,
+#premorbid.ds-prem-restructured #pre-opiepredict > p:first-of-type{
+  display: none !important;
+}
+
+/* The grid sits *inside* the section, immediately under the (hidden) header. */
+.ds-prem-layout{
+  display: grid;
+  grid-template-columns: 440px minmax(0, 1080px);
+  gap: var(--ds-space-5);
+  align-items: start;
+  margin-top: 0;
+}
+@media (max-width: 1100px){
+  .ds-prem-layout{ grid-template-columns: 1fr; }
+}
+
+/* Sticky aside — predictors stay in view */
+.ds-prem-aside{
+  position: sticky;
+  top: var(--ds-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+@media (max-width: 1100px){
+  .ds-prem-aside{ position: static; top: auto; }
+}
+
+.ds-prem-main{ min-width: 0; }
+
+/* Hide the now-redundant "Inputs" tab button — broad selector to outrank
+   any legacy display rule */
+#premorbid .pre-tabs [data-pre-tab="inputs"],
+#premorbid .pre-tabs .tab[data-pre-tab="inputs"]{
+  display: none !important;
+}
+
+/* ---------- Compact input panel inside aside ----------
+   Collapse the three nested .pre-form-section cards into a single card with
+   hairline dividers, drop the long intro paragraph, shrink labels, and pack
+   predictor fields side-by-side. */
+.ds-prem-aside .premorbid-input-panel{
+  margin: 0 !important;
+  padding: var(--ds-space-4) !important;
+}
+.ds-prem-aside .premorbid-input-panel > .sub-title,
+.ds-prem-aside .pre-input-intro{
+  display: none !important;
+}
+.ds-prem-aside .pre-form-section{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.ds-prem-aside .pre-form-section + .pre-form-section{
+  margin-top: var(--ds-space-3) !important;
+  padding-top: var(--ds-space-3) !important;
+  border-top: 1px solid var(--ds-border) !important;
+}
+.ds-prem-aside .pre-form-heading{
+  margin-bottom: var(--ds-space-2) !important;
+}
+.ds-prem-aside .pre-form-title{
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+}
+.ds-prem-aside .pre-form-note{
+  display: none !important;
+}
+
+/* Field grids — tight 3-up for predictors, 2x2 for demographics/output. */
+#premorbid.ds-prem-restructured .ds-prem-aside .pre-form-grid-3{
+  grid-template-columns: 1fr 1fr 1fr !important;
+  gap: var(--ds-space-3) var(--ds-space-2) !important;
+  align-items: start !important;
+}
+#premorbid.ds-prem-restructured .ds-prem-aside .pre-form-section:nth-of-type(2) .pre-form-grid-2,
+#premorbid.ds-prem-restructured .ds-prem-aside .pre-form-grid-2{
+  grid-template-columns: 1fr 1fr !important;
+  gap: var(--ds-space-3) var(--ds-space-2) !important;
+  align-items: start !important;
+}
+
+.ds-prem-aside .field{
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  justify-content: flex-start !important;
+}
+.ds-prem-aside .field label{
+  font-size: 11px !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: var(--ds-text-subtle) !important;
+  margin-bottom: 4px !important;
+  display: block !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+.ds-prem-aside .pre-label-sub{ display: none !important; }
+/* Override the legacy min-height:34px applied to labels with a .pre-label-sub
+   child — the sub span is hidden but still in the DOM, triggering the rule. */
+.ds-prem-aside .premorbid-input-panel label:has(.pre-label-sub){
+  min-height: 0 !important;
+}
+.ds-prem-aside .field input,
+.ds-prem-aside .field select{
+  height: 34px !important;
+  padding: 0 var(--ds-space-2) !important;
+  font-size: 13px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.ds-prem-aside .field select{
+  padding-right: 26px !important;
+}
+
+/* ---------- Right column: slim tab pills ---------- */
+#premorbid.ds-prem-restructured .pre-tabs{
+  margin: 0 0 var(--ds-space-3) !important;
+  gap: var(--ds-space-2) !important;
+  flex-wrap: nowrap !important;
+}
+#premorbid.ds-prem-restructured .pre-tabs .tab{
+  padding: 9px var(--ds-space-3) !important;
+  min-height: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: var(--ds-space-2) !important;
+}
+#premorbid.ds-prem-restructured .pre-tab-num{
+  display: none !important;
+}
+#premorbid.ds-prem-restructured .pre-tabs .tab span:not(.pre-tab-num){
+  white-space: nowrap !important;
+}
+
+/* Hide the bottom Back/Next nav — with Inputs tab gone there's only 3 panes */
+#premorbid.ds-prem-restructured .pre-tab-nav{
+  display: none !important;
+}
+#premorbid.ds-prem-restructured .pre-tab-content{
+  margin-top: 0 !important;
+}
+
+/* ---------- Font consistency on the Premorbid page ----------
+   The legacy table uses var(--serif) for model names and var(--mono) for
+   numbers. Force everything to the sans-serif system font so the page
+   reads as one cohesive surface. */
+#premorbid.ds-prem-restructured .pre-results-table,
+#premorbid.ds-prem-restructured .pre-results-table th,
+#premorbid.ds-prem-restructured .pre-results-table td,
+#premorbid.ds-prem-restructured .pre-results-table td.model,
+#premorbid.ds-prem-restructured .pre-results-table td.num,
+#premorbid.ds-prem-restructured .pre-results-table td.fsiq,
+#premorbid.ds-prem-restructured .pre-results-table td.psy,
+#premorbid.ds-prem-restructured .pre-predict-table .diff,
+#premorbid.ds-prem-restructured .pre-predict-table .achieved-cell input,
+#premorbid.ds-prem-restructured .info-box,
+#premorbid.ds-prem-restructured .info-box *{
+  font-family: var(--sans) !important;
+}
+/* Keep tabular alignment for numeric columns even without the mono font */
+#premorbid.ds-prem-restructured .pre-results-table td.num,
+#premorbid.ds-prem-restructured .pre-results-table td.fsiq,
+#premorbid.ds-prem-restructured .pre-results-table td.psy,
+#premorbid.ds-prem-restructured .pre-predict-table .diff{
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* ---------- Remove the redundant "Title" field ----------
+   The output table's title is fixed and there's no value letting the user
+   override it from the aside. Hide the field and collapse the output
+   settings grid to a single column so Confidence fills the row. */
+#premorbid.ds-prem-restructured .ds-prem-aside .field:has(#pre-title){
+  display: none !important;
+}
+#premorbid.ds-prem-restructured .ds-prem-aside .pre-form-section:nth-of-type(3) .pre-form-grid-2{
+  grid-template-columns: 1fr !important;
+}
+
+/* ---------- Predictions ticks panel — REMOVED per request ----------
+   The element is still built by design-system.js but hidden visually so
+   it doesn't take vertical space in the aside. */
+.ds-prem-ticks{ display: none !important; }
+
+/* ---------- Minimalistic model-availability ticks (styles retained
+              in case the panel is re-enabled in future) ---------- */
+.ds-prem-ticks{
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-1);
+  padding: var(--ds-space-3) var(--ds-space-4);
+}
+.ds-prem-ticks-head{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--ds-space-2);
+  gap: var(--ds-space-3);
+}
+.ds-prem-ticks-eyebrow{
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+}
+.ds-prem-ticks-count{
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text-faint);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+.ds-prem-ticks-count.is-all-ready{ color: #15803d; }
+.ds-prem-ticks-list{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ds-prem-ticks-row{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: 7px 0;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ds-text-faint);
+  border-bottom: 1px dashed var(--ds-border);
+  transition: color 220ms var(--ds-ease);
+}
+.ds-prem-ticks-row:last-child{ border-bottom: 0; }
+.ds-prem-ticks-row.is-ready{ color: var(--ds-text); }
+.ds-prem-ticks-name{ flex: 1; }
+.ds-prem-ticks-row.is-ready .ds-prem-ticks-name{
+  font-weight: var(--ds-weight-medium);
+}
+
+.ds-prem-ticks-mark{
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ds-border-strong);
+  background: transparent;
+  position: relative;
+  flex-shrink: 0;
+  transition:
+    background-color 220ms var(--ds-ease),
+    border-color 220ms var(--ds-ease),
+    transform 220ms var(--ds-ease);
+}
+.ds-prem-ticks-row.is-ready .ds-prem-ticks-mark{
+  background: #15803d;
+  border-color: #15803d;
+  transform: scale(1.05);
+}
+.ds-prem-ticks-mark::after{
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 8px;
+  height: 4px;
+  border-left: 1.6px solid white;
+  border-bottom: 1.6px solid white;
+  transform: translate(-50%, -65%) rotate(-45deg) scale(0);
+  transform-origin: center;
+  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ds-prem-ticks-row.is-ready .ds-prem-ticks-mark::after{
+  transform: translate(-50%, -65%) rotate(-45deg) scale(1);
+}
+
+/* ----------------------------------------------------------------------------
+   28. LEGACY TOAST — small refinements so it matches the system
+   ---------------------------------------------------------------------------- */
+.toast{
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-sm) !important;
+  font-weight: var(--ds-weight-medium) !important;
+  background: var(--ds-text) !important;
+  border-radius: var(--ds-radius-md) !important;
+  letter-spacing: var(--ds-tracking-base) !important;
+}

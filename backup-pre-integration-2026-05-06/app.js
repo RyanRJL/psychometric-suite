@@ -1192,11 +1192,9 @@ function comboFooterHtml(){
 function comboAgeBandNoteHtml(){
   return '<div class="combo-ageband-note"><span class="combo-ageband-note-icon">ℹ</span><span><strong>Specific age bands</strong> offer greater normative precision but rest on smaller samples, which reduces the stability of <em>r</em>. <strong>All Ages</strong> norms draw on larger <em>N</em>, yielding a more robust <em>r</em>, at the cost of age specificity.</span></div>';
 }
-function comboCheckboxItemHtml(f, isCustom, indented, groupKey, displayLabel){
+function comboCheckboxItemHtml(f, isCustom, indented, groupKey){
   const cls = 'combo-item combo-check' + (indented ? ' combo-indented' : '');
-  const label = displayLabel
-    ? escapeHtml(displayLabel)
-    : (indented ? ageBandLabel(f) : escapeHtml(f));
+  const label = indented ? ageBandLabel(f) : escapeHtml(f);
   const groupAttr = groupKey ? ` data-group="${escapeAttr(groupKey)}"` : '';
   return `<label class="${cls}" data-family="${escapeAttr(f)}"${groupAttr}><input type="checkbox" value="${escapeAttr(f)}"><span class="combo-check-text">${label}${comboCustomTag(isCustom)}</span></label>`;
 }
@@ -1256,11 +1254,7 @@ function wireMultiSelectFamilyList(list, onAdd){
       if (!families.length) return;
       if (typeof list._comboOnAdd === 'function') list._comboOnAdd(families);
       clearComboSelections(list);
-      // Keep the dropdown open so the user can keep adding tests without
-      // re-clicking the input. They can dismiss with Esc, blur, or by
-      // clicking outside (the existing global outside-click handler at
-      // line ~2132 still closes it when appropriate).
-      list.classList.add('show');
+      list.classList.remove('show');
       return;
     }
   });
@@ -1272,9 +1266,7 @@ function rebuildBatteryFamilyList(){
   if (!list) return;
   const db = getMergedDB();
   const families = Object.keys(db).sort();
-  // Battery page: collapse age bands to a single entry per family, no
-  // age-band note — norms don't affect the resulting table here.
-  list.innerHTML = comboFooterHtml() + buildFamilyListHtml(families, { flat: true });
+  list.innerHTML = comboFooterHtml() + comboAgeBandNoteHtml() + buildFamilyListHtml(families);
   wireMultiSelectFamilyList(list, families => {
     families.forEach(loadFamilyIntoBattery);
     const inp = document.getElementById('bat-family-input');
@@ -2007,15 +1999,10 @@ function ageBandLabel(f){
   return m ? escapeHtml(m[1]) : escapeHtml(f);
 }
 // Build grouped HTML: group header + indented items for age-banded families,
-// plain items for everything else.
-//
-// `opts.flat = true` collapses age-banded families into a single plain entry
-// labelled by the base name. The chosen value is the "All Ages" variant when
-// available, otherwise the first member. Used on the Neuropsych Tables page
-// where age bands don't change the resulting table and just clutter the UI.
-function buildFamilyListHtml(families, opts){
-  const flat = !!(opts && opts.flat);
+// plain items for everything else
+function buildFamilyListHtml(families){
   const isCustom = f => !normDB[f];
+  // Group families by base name, preserving sorted order of first appearance
   const order = [];
   const groups = {};
   families.forEach(f => {
@@ -2029,21 +2016,14 @@ function buildFamilyListHtml(families, opts){
     const members = groups[base];
     const groupKey = `grp:${base}`;
     if (members.length === 1 && !hasAgeBandSuffix(members[0])){
+      // Single entry with no age band — plain item
       html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false, groupKey);
-    } else if (flat){
-      // Pick the "All Ages" canonical entry if present, else the first.
-      const canon = members.find(m => /·\s*All\s+Ages\s*$/i.test(m)) || members[0];
-      html += comboCheckboxItemHtml(canon, isCustom(canon), false, groupKey, base);
     } else {
+      // Multiple entries or explicitly age-banded — render group heading + indented items
       html += `<div class="combo-group-heading" data-group="${escapeAttr(groupKey)}">${escapeHtml(base)}</div>`;
-      // Wrap age-banded variants in a flex row so they render side-by-side
-      // as compact pills instead of stacking — cuts vertical scroll roughly
-      // in half on long family lists (e.g. CVLT-3 INDICES + TRIALS, etc.).
-      html += `<div class="combo-indented-row" data-group="${escapeAttr(groupKey)}">`;
       members.forEach(f => {
         html += comboCheckboxItemHtml(f, isCustom(f), true, groupKey);
       });
-      html += `</div>`;
     }
   });
   return comboOptionsHtml(html);

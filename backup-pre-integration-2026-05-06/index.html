@@ -3,30 +3,9 @@
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Psychometric Assistant — clinical psychometric tools for neuropsychology</title>
-<meta name="description" content="Free clinical psychometric calculators: score conversion, neuropsych report tables, reliable change analysis, premorbid estimation, and effect size tools. APA-formatted output, session-only privacy, no tracking.">
-<meta name="theme-color" content="#0F1218">
-<meta name="color-scheme" content="light">
-<meta name="author" content="Psychometric Assistant">
-
-<!-- Open Graph / link previews -->
-<meta property="og:type" content="website">
-<meta property="og:title" content="Psychometric Assistant — clinical tools for neuropsychology">
-<meta property="og:description" content="Score conversion, reliable change analysis, premorbid estimation, neuropsych report tables. APA-formatted output, session-only privacy.">
-<meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect width='1200' height='630' fill='%23F1F4F9'/%3E%3Ctext x='600' y='320' text-anchor='middle' font-family='Georgia, serif' font-size='72' fill='%230F1218'%3EPsychometric%3C/text%3E%3Ctext x='600' y='400' text-anchor='middle' font-family='Georgia, serif' font-size='72' font-style='italic' fill='%239C3D2A'%3EAssistant%3C/text%3E%3C/svg%3E">
-<meta name="twitter:card" content="summary_large_image">
-
-<!-- Favicons (square + apple-touch + maskable) -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F1218'/%3E%3Ctext x='16' y='23.5' text-anchor='middle' font-family='Georgia, serif' font-size='22' font-style='italic' fill='%23F1F4F9'%3EΨ%3C/text%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230F1218'/%3E%3Ctext x='90' y='130' text-anchor='middle' font-family='Georgia, serif' font-size='124' font-style='italic' fill='%23F1F4F9'%3EΨ%3C/text%3E%3C/svg%3E">
-
-<!-- Inter — pro typography baseline; preconnect for fast font load -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-
-<link rel="stylesheet" href="styles.css?v=20260506b">
-<link rel="stylesheet" href="design-system.css?v=20260506m">
+<title>Psychometric Calculators · Clinical Suite</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%239C3D2A'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Georgia, serif' font-size='22' font-style='italic' fill='%23FAF7F1'%3EΨ%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css?v=20260506c">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -567,16 +546,14 @@
 
 </head>
 <body>
-<a class="ds-skip-link" href="#home">Skip to main content</a>
 
 <!-- ========== TOP NAVIGATION (redesign) ========== -->
 <header class="topbar" role="banner">
   <div class="topbar-row topbar-row-brand">
     <div class="topbar-inner">
-      <button type="button" class="topbar-brand topbar-brand-home nav-item" data-target="home" aria-label="Go to home page">
-        <span class="ds-brand-mark" aria-hidden="true"></span>
+      <div class="topbar-brand">
         <span class="topbar-brand-title">Psychometric <em>Assistant</em></span>
-      </button>
+      </div>
       <span class="topbar-divider" aria-hidden="true"></span>
       <div class="topbar-page-title" id="topbar-page-title">Home</div>
       <a class="topbar-kofi" href="https://ko-fi.com/clinpsyry" target="_blank" rel="noopener noreferrer" title="Support free clinical tools">
@@ -613,6 +590,25 @@
           </svg>
           <span>Neuropsych Tables</span>
         </button>
+        <button type="button" class="topnav-item nav-item" data-target="report-writer" data-bucket="report">
+          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 2.5h7l3 3v12a1 1 0 01-1 1H5a1 1 0 01-1-1V3.5a1 1 0 011-1z"/>
+            <polyline points="12,2.5 12,5.5 15,5.5"/>
+            <line x1="6.5" y1="10" x2="13" y2="10"/>
+            <line x1="6.5" y1="13" x2="13" y2="13"/>
+          </svg>
+          <span>Report Writer</span>
+        </button>
+        <button type="button" class="topnav-item nav-item" data-target="effectsize" data-bucket="effectsize">
+          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="14" x2="17" y2="6"/>
+            <line x1="4" y1="13" x2="6" y2="15"/>
+            <line x1="7.5" y1="10.5" x2="9.5" y2="12.5"/>
+            <line x1="11" y1="8" x2="13" y2="10"/>
+            <line x1="14.5" y1="5.5" x2="16.5" y2="7.5"/>
+          </svg>
+          <span>Effect Sizes</span>
+        </button>
         <div class="topnav-group" data-bucket="change">
           <button type="button" class="topnav-item nav-item" data-target="rci-crawford" data-bucket="change">
             <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -632,41 +628,12 @@
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
-        <div class="topnav-group" data-bucket="premorbid">
-          <button type="button" class="topnav-item nav-item" data-target="premorbid" data-bucket="premorbid">
-            <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="10" cy="10" r="6.5"/>
-              <circle cx="10" cy="10" r="2.5"/>
-            </svg>
-            <span>Premorbid</span>
-            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="4,6.5 8,10.5 12,6.5"/>
-            </svg>
-          </button>
-          <div class="topnav-dropdown" role="menu">
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="estimates" role="menuitem">Premorbid Estimates</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="predict" role="menuitem">ToPF Predicted vs Actual</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="opiepredict" role="menuitem">OPIE-4 Predicted vs Actual</button>
-          </div>
-        </div>
-        <button type="button" class="topnav-item nav-item" data-target="report-writer" data-bucket="report">
+        <button type="button" class="topnav-item nav-item" data-target="premorbid" data-bucket="premorbid">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 2.5h7l3 3v12a1 1 0 01-1 1H5a1 1 0 01-1-1V3.5a1 1 0 011-1z"/>
-            <polyline points="12,2.5 12,5.5 15,5.5"/>
-            <line x1="6.5" y1="10" x2="13" y2="10"/>
-            <line x1="6.5" y1="13" x2="13" y2="13"/>
+            <circle cx="10" cy="10" r="6.5"/>
+            <circle cx="10" cy="10" r="2.5"/>
           </svg>
-          <span>Report Writer</span>
-        </button>
-        <button type="button" class="topnav-item nav-item" data-target="effectsize" data-bucket="effectsize">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="14" x2="17" y2="6"/>
-            <line x1="4" y1="13" x2="6" y2="15"/>
-            <line x1="7.5" y1="10.5" x2="9.5" y2="12.5"/>
-            <line x1="11" y1="8" x2="13" y2="10"/>
-            <line x1="14.5" y1="5.5" x2="16.5" y2="7.5"/>
-          </svg>
-          <span>Effect Sizes</span>
+          <span>Premorbid</span>
         </button>
       </nav>
     </div>
@@ -687,10 +654,10 @@
     <div class="nav-item active" data-target="home"><span class="nav-item-num">00</span>Home</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">01</span>Score Converter</div>
     <div class="nav-item" data-target="battery"><span class="nav-item-num">02</span>Neuropsych Report Tables</div>
-    <div class="nav-item" data-target="premorbid"><span class="nav-item-num">03</span>Premorbid Estimate</div>
-    <div class="nav-item" data-target="report-writer"><span class="nav-item-num">04</span>Report Writer</div>
-    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">05</span>Effect Size Tools</div>
-    <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">06</span>Change Analysis</div>
+    <div class="nav-item" data-target="report-writer"><span class="nav-item-num">03</span>Report Writer</div>
+    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">04</span>Effect Size Tools</div>
+    <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">05</span>Change Analysis</div>
+    <div class="nav-item" data-target="premorbid"><span class="nav-item-num">06</span>Premorbid Estimate</div>
     <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Norms Database</div>
     <div class="nav-item" data-target="about"><span class="nav-item-num">08</span>Methods &amp; References</div>
   </nav>
@@ -940,7 +907,7 @@
           </label>
         </div>
         <p class="bat-side-panel-blurb">
-          Descriptors are marked <strong>*</strong> when ≥1 SD below, <strong>**</strong> when ≥1.5 SD below, <strong>***</strong> when ≥2 SD below.
+          Flag scores that fall meaningfully below the patient's estimated premorbid ability (e.g., from <abbr title="Test of Premorbid Functioning">ToPF</abbr> or <abbr title="Oklahoma Premorbid Intelligence Estimate">OPIE-4</abbr>). Descriptors are marked <strong>*</strong> when ≥1 SD below, <strong>**</strong> when ≥1.5 SD below, <strong>***</strong> when ≥2 SD below.
         </p>
         <div class="bat-side-panel-body">
           <div class="field bat-field-compact bat-field-prem-score">
@@ -5889,17 +5856,12 @@
       <button type="button" class="site-footer-link nav-item" data-target="custom-tests">Norms Database</button>
       <button type="button" class="site-footer-link nav-item" data-target="about">Methods &amp; References</button>
     </div>
-    <div class="ds-version-stamp" title="Build version and last update">
-      <span class="ds-version-dot" aria-hidden="true"></span>
-      <span>v1.0 &middot; updated May 2026</span>
-    </div>
   </div>
 </footer>
 
 <div class="toast" id="toast">✓ Table copied — ready to paste into your report</div>
 <script src="data.js"></script>
-<script src="app.js?v=20260506j"></script>
-<script src="design-system.js?v=20260506n" defer></script>
+<script src="app.js?v=20260505w"></script>
 <script src="app-effectsize-page.js"></script>
 <script>
 (function(){
