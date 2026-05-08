@@ -3,7 +3,7 @@
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Psychometric Assistant — clinical psychometric tools for neuropsychology</title>
+<title>Psychometric Assistant - clinical psychometric tools for neuropsychology</title>
 <meta name="description" content="Free clinical psychometric calculators: score conversion, neuropsych report tables, reliable change analysis, premorbid estimation, and effect size tools. APA-formatted output, session-only privacy, no tracking.">
 <meta name="theme-color" content="#0F1218">
 <meta name="color-scheme" content="light">
@@ -11,7 +11,7 @@
 
 <!-- Open Graph / link previews -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Psychometric Assistant — clinical tools for neuropsychology">
+<meta property="og:title" content="Psychometric Assistant - clinical tools for neuropsychology">
 <meta property="og:description" content="Score conversion, reliable change analysis, premorbid estimation, neuropsych report tables. APA-formatted output, session-only privacy.">
 <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect width='1200' height='630' fill='%23F1F4F9'/%3E%3Ctext x='600' y='320' text-anchor='middle' font-family='Georgia, serif' font-size='72' fill='%230F1218'%3EPsychometric%3C/text%3E%3Ctext x='600' y='400' text-anchor='middle' font-family='Georgia, serif' font-size='72' font-style='italic' fill='%239C3D2A'%3EAssistant%3C/text%3E%3C/svg%3E">
 <meta name="twitter:card" content="summary_large_image">
@@ -20,13 +20,13 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F1218'/%3E%3Ctext x='16' y='23.5' text-anchor='middle' font-family='Georgia, serif' font-size='22' font-style='italic' fill='%23F1F4F9'%3EΨ%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230F1218'/%3E%3Ctext x='90' y='130' text-anchor='middle' font-family='Georgia, serif' font-size='124' font-style='italic' fill='%23F1F4F9'%3EΨ%3C/text%3E%3C/svg%3E">
 
-<!-- Inter — pro typography baseline; preconnect for fast font load -->
+<!-- Inter - pro typography baseline; preconnect for fast font load -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=practice40">
-<link rel="stylesheet" href="design-system.css?v=practice53">
+<link rel="stylesheet" href="styles.css?v=20260507ac">
+<link rel="stylesheet" href="design-system.css?v=20260507ad">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -579,6 +579,14 @@
       </button>
       <span class="topbar-divider" aria-hidden="true"></span>
       <div class="topbar-page-title" id="topbar-page-title">Home</div>
+      <button type="button" class="topbar-clear" id="topbar-clear-all" title="Clear every table you've been working on this session" aria-label="Clear all tables">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 4h10"/>
+          <path d="M5.5 4V2.5h5V4"/>
+          <path d="M4 4l1 9h6l1-9"/>
+        </svg>
+        <span>Clear all tables</span>
+      </button>
       <a class="topbar-kofi" href="https://ko-fi.com/clinpsyry" target="_blank" rel="noopener noreferrer" title="Support free clinical tools">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M2.5 5.5h9V11a2.5 2.5 0 0 1-2.5 2.5h-4A2.5 2.5 0 0 1 2.5 11V5.5z"/>
@@ -632,6 +640,23 @@
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
+        <div class="topnav-group" data-bucket="premorbid">
+          <button type="button" class="topnav-item nav-item" data-target="premorbid" data-bucket="premorbid">
+            <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="10" cy="10" r="6.5"/>
+              <circle cx="10" cy="10" r="2.5"/>
+            </svg>
+            <span>Premorbid</span>
+            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="4,6.5 8,10.5 12,6.5"/>
+            </svg>
+          </button>
+          <div class="topnav-dropdown" role="menu">
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="estimates" role="menuitem">Premorbid Estimates</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="predict" role="menuitem">ToPF Predicted vs Actual</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="opiepredict" role="menuitem">OPIE-4 Predicted vs Actual</button>
+          </div>
+        </div>
         <button type="button" class="topnav-item nav-item" data-target="report-writer" data-bucket="report">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M5 2.5h7l3 3v12a1 1 0 01-1 1H5a1 1 0 01-1-1V3.5a1 1 0 011-1z"/>
@@ -640,13 +665,6 @@
             <line x1="6.5" y1="13" x2="13" y2="13"/>
           </svg>
           <span>Report Writer</span>
-        </button>
-        <button type="button" class="topnav-item nav-item" data-target="premorbid" data-bucket="premorbid">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="10" cy="10" r="6.5"/>
-            <circle cx="10" cy="10" r="2.5"/>
-          </svg>
-          <span>Premorbid</span>
         </button>
         <button type="button" class="topnav-item nav-item" data-target="effectsize" data-bucket="effectsize">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -677,10 +695,10 @@
     <div class="nav-item active" data-target="home"><span class="nav-item-num">00</span>Home</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">01</span>Score Converter</div>
     <div class="nav-item" data-target="battery"><span class="nav-item-num">02</span>Neuropsych Report Tables</div>
-    <div class="nav-item" data-target="report-writer"><span class="nav-item-num">03</span>Report Writer</div>
-    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">04</span>Effect Size Tools</div>
-    <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">05</span>Change Analysis</div>
-    <div class="nav-item" data-target="premorbid"><span class="nav-item-num">06</span>Premorbid Estimate</div>
+    <div class="nav-item" data-target="premorbid"><span class="nav-item-num">03</span>Premorbid Estimate</div>
+    <div class="nav-item" data-target="report-writer"><span class="nav-item-num">04</span>Report Writer</div>
+    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">05</span>Effect Size Tools</div>
+    <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">06</span>Change Analysis</div>
     <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Norms Database</div>
     <div class="nav-item" data-target="about"><span class="nav-item-num">08</span>Methods &amp; References</div>
   </nav>
@@ -823,13 +841,13 @@
           <input type="range" id="conv-slider" min="-3" max="3" step="0.01" value="0">
         </div>
         <div class="conv-slider-ticks">
-          <span id="conv-tick-0">−3σ</span>
-          <span id="conv-tick-1">−2σ</span>
-          <span id="conv-tick-2">−1σ</span>
-          <span id="conv-tick-3" class="conv-slider-center">μ</span>
-          <span id="conv-tick-4">+1σ</span>
-          <span id="conv-tick-5">+2σ</span>
-          <span id="conv-tick-6">+3σ</span>
+          <span id="conv-tick-0">−3 SD</span>
+          <span id="conv-tick-1">−2 SD</span>
+          <span id="conv-tick-2">−1 SD</span>
+          <span id="conv-tick-3" class="conv-slider-center">M</span>
+          <span id="conv-tick-4">+1 SD</span>
+          <span id="conv-tick-5">+2 SD</span>
+          <span id="conv-tick-6">+3 SD</span>
         </div>
       </div>
 
@@ -888,7 +906,7 @@
   <section class="section" id="battery">
     <div class="eyebrow">Conversion · Clinical Outcomes Table</div>
     <h1 class="section-title">Clinical Outcomes Table</h1>
-    <p class="section-desc">Build a single results table from one or more test families. Auto-fill loads subtest names from the normative database — score type is inferred per family. Enter raw and standardised scores manually; percentiles and classifications populate per row.</p>
+    <p class="section-desc">Build a single results table from one or more test families. Auto-fill loads subtest names from the normative database - score type is inferred per family. Enter raw and standardised scores manually; percentiles and classifications populate per row.</p>
 
     <!-- SIDE-BY-SIDE PANELS: configuration | premorbid -->
     <div class="bat-panels-grid">
@@ -996,9 +1014,42 @@
   <section class="section" id="report-writer">
     <div class="eyebrow">Narrative drafting · Descriptive report text</div>
     <h1 class="section-title">Report <em>Writer</em></h1>
-    <p class="section-desc">Build descriptive, editable report wording from selected headings, tests, trials, and scores. The generated text is deliberately descriptive: it reports what was administered and where scores fell, without drawing diagnostic conclusions.</p>
+    <p class="section-desc">A descriptive narrative is generated automatically from the scores you enter elsewhere on the site. Adjust the reference and descriptor system below; everything else updates live.</p>
 
-    <div class="report-writer-shell">
+    <!-- ===== AUTO-GENERATED REPORT (TRIAL) ===== -->
+    <div class="rwauto-shell" id="rwauto-shell">
+      <div class="rwauto-toolbar">
+        <div class="rwauto-toolbar-group">
+          <label class="rwauto-toolbar-label">Reference</label>
+          <select class="rwauto-toolbar-select" id="rwauto-reference"></select>
+        </div>
+        <div class="rwauto-toolbar-group">
+          <label class="rwauto-toolbar-label">Descriptor system</label>
+          <select class="rwauto-toolbar-select" id="rwauto-descriptor"></select>
+        </div>
+        <div class="rwauto-toolbar-group rwauto-toolbar-toggles">
+          <span class="rwauto-toolbar-label">Brackets</span>
+          <label class="rwauto-pill-toggle">
+            <input type="checkbox" id="rwauto-show-std" checked>
+            <span>Standard score</span>
+          </label>
+          <label class="rwauto-pill-toggle">
+            <input type="checkbox" id="rwauto-show-pct">
+            <span>Percentile</span>
+          </label>
+        </div>
+        <div class="rwauto-toolbar-spacer"></div>
+        <button type="button" class="rwauto-btn rwauto-btn-primary" id="rwauto-copy">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M2 9V3a1 1 0 0 1 1-1h6"/></svg>
+          <span>Copy report</span>
+        </button>
+      </div>
+      <article class="rwauto-paper" id="rwauto-paper">
+        <!-- generated text renders here -->
+      </article>
+    </div>
+
+    <div class="report-writer-shell rw-legacy-shell">
       <div class="tabs rw-tabs" role="tablist" aria-label="Report Writer views">
         <div class="tab active" data-rw-tab="setup" role="tab" tabindex="0"><span class="rw-tab-num">1</span><span>Setup</span></div>
         <div class="tab" data-rw-tab="build" role="tab" tabindex="0"><span class="rw-tab-num">2</span><span>Build</span></div>
@@ -1184,10 +1235,10 @@
         <span class="es-preloaded-pill">Preloaded example</span>
         <span>UK male vs female height is loaded in the group-data fields from Option B (above). Edit the values or use Clear all inputs to start fresh.</span>
       </div>
-      <div class="es-d-slider-row" title="Quick effect size — drag to set Cohen's d">
+      <div class="es-d-slider-row" title="Quick effect size - drag to set Cohen's d">
         <div class="es-d-slider-control">
           <div class="es-d-slider-track-bg" aria-hidden="true"></div>
-          <input type="range" id="es-d-slider" min="-3" max="3" step="0.01" value="0" aria-label="Quick effect size — Cohen's d">
+          <input type="range" id="es-d-slider" min="-3" max="3" step="0.01" value="0" aria-label="Quick effect size - Cohen's d">
           <div class="es-d-slider-ticks" aria-hidden="true">
             <span class="es-d-tick es-d-tick-major" style="left:0%"   data-label="−3"></span>
             <span class="es-d-tick" style="left:36.67%" data-label="−.8"></span>
@@ -1249,7 +1300,7 @@
               </div>
               <div class="field"><label id="es-g1-disp-label">SE</label><input type="number" id="es-g1-disp-val" step="any" placeholder="value" value="0.22"></div>
             </div>
-            <div class="es-grp-ci"><span class="es-grp-ci-label">95% CI:</span> <span id="es-g1-ci">—</span></div>
+            <div class="es-grp-ci"><span class="es-grp-ci-label">95% CI:</span> <span id="es-g1-ci">-</span></div>
           </div>
           <div class="es-group">
             <div class="es-group-title">Control (Group 2)</div>
@@ -1265,15 +1316,15 @@
               </div>
               <div class="field"><label id="es-g2-disp-label">SE</label><input type="number" id="es-g2-disp-val" step="any" placeholder="value" value="0.14"></div>
             </div>
-            <div class="es-grp-ci"><span class="es-grp-ci-label">95% CI:</span> <span id="es-g2-ci">—</span></div>
+            <div class="es-grp-ci"><span class="es-grp-ci-label">95% CI:</span> <span id="es-g2-ci">-</span></div>
           </div>
         </div>
         <div class="es-pooled">
-          <div class="es-pooled-item"><span class="es-pooled-label">Pooled N</span><span class="es-pooled-val" id="es-pooled-n">—</span></div>
-          <div class="es-pooled-item"><span class="es-pooled-label">Pooled Mean</span><span class="es-pooled-val" id="es-pooled-mean">—</span></div>
-          <div class="es-pooled-item"><span class="es-pooled-label">Pooled SD</span><span class="es-pooled-val" id="es-pooled-sd">—</span></div>
-          <div class="es-pooled-item"><span class="es-pooled-label">Pooled SE</span><span class="es-pooled-val" id="es-pooled-se">—</span></div>
-          <div class="es-pooled-item"><span class="es-pooled-label">Mean Diff</span><span class="es-pooled-val" id="es-pooled-md">—</span></div>
+          <div class="es-pooled-item"><span class="es-pooled-label">Pooled N</span><span class="es-pooled-val" id="es-pooled-n">-</span></div>
+          <div class="es-pooled-item"><span class="es-pooled-label">Pooled Mean</span><span class="es-pooled-val" id="es-pooled-mean">-</span></div>
+          <div class="es-pooled-item"><span class="es-pooled-label">Pooled SD</span><span class="es-pooled-val" id="es-pooled-sd">-</span></div>
+          <div class="es-pooled-item"><span class="es-pooled-label">Pooled SE</span><span class="es-pooled-val" id="es-pooled-se">-</span></div>
+          <div class="es-pooled-item"><span class="es-pooled-label">Mean Diff</span><span class="es-pooled-val" id="es-pooled-md">-</span></div>
           <button class="btn btn-secondary" id="es-apply-groups" type="button">Apply group data</button>
           <button class="btn btn-clear es-clear-btn es-reset-btn" id="es-clear" type="button">Clear all inputs</button>
         </div>
@@ -1296,24 +1347,24 @@
           <div class="es-results-grid">
           <div class="es-result-card es-result-primary" data-tooltip="Standardized mean difference in SD units. Rough convention: 0.2 small, 0.5 medium, 0.8 large.">
             <div class="es-result-label">Cohen's d</div>
-            <div class="es-result-value" id="es-out-d">—</div>
-            <div class="es-result-desc" id="es-out-d-desc">—</div>
+            <div class="es-result-value" id="es-out-d">-</div>
+            <div class="es-result-desc" id="es-out-d-desc">-</div>
           </div>
           <div class="es-result-card es-result-primary" data-tooltip="Bias-corrected version of d, preferred when sample sizes are small.">
             <div class="es-result-label">Hedges' g</div>
-            <div class="es-result-value" id="es-out-g">—</div>
-            <div class="es-result-desc" id="es-out-g-desc">—</div>
+            <div class="es-result-value" id="es-out-g">-</div>
+            <div class="es-result-desc" id="es-out-g-desc">-</div>
           </div>
-          <div class="es-result-card" data-tooltip="Correlation-style effect size (range −1 to +1), showing direction and strength of association."><div class="es-result-label">Pearson's r</div><div class="es-result-value" id="es-out-r">—</div><div class="es-result-desc" id="es-out-r-desc">—</div></div>
-          <div class="es-result-card" data-tooltip="Variance explained by group difference (r squared), shown as a percentage."><div class="es-result-label">R²</div><div class="es-result-value" id="es-out-r2">—</div><div class="es-result-desc" id="es-out-r2-desc">—</div></div>
-          <div class="es-result-card" data-tooltip="ANOVA-style effect size. For two-group contrasts, f corresponds directly to d/2."><div class="es-result-label">Cohen's f</div><div class="es-result-value" id="es-out-f">—</div><div class="es-result-desc" id="es-out-f-desc">—</div></div>
-          <div class="es-result-card" data-tooltip="Fisher z-transform of r (atanh[r]); useful for meta-analysis and interval calculations."><div class="es-result-label">Fisher's z</div><div class="es-result-value" id="es-out-z">—</div></div>
-          <div class="es-result-card" data-tooltip="Odds in Group 1 divided by odds in Group 2 (OR > 1 favors Group 1)."><div class="es-result-label">Odds Ratio</div><div class="es-result-value" id="es-out-or">—</div></div>
-          <div class="es-result-card" data-tooltip="Estimated proportion of overlap between the two normal distributions."><div class="es-result-label">Overlap</div><div class="es-result-value" id="es-out-ovl">—</div></div>
-          <div class="es-result-card" data-tooltip="Percent of Group 1 expected to score above the Group 2 mean."><div class="es-result-label">Cohen's U₃</div><div class="es-result-value" id="es-out-u3">—</div></div>
-          <div class="es-result-card" data-tooltip="Common Language Effect Size: probability a random Group 1 score exceeds a random Group 2 score."><div class="es-result-label">CLES</div><div class="es-result-value" id="es-out-cles">—</div></div>
-          <div class="es-result-card" data-tooltip="Approximate Number Needed to Treat derived from CLES under normality assumptions."><div class="es-result-label">Kraemer's NNT</div><div class="es-result-value" id="es-out-nnt">—</div></div>
-          <div class="es-result-card es-result-similar" data-tooltip="Closest reference benchmark by absolute Cohen's d. Use as a rough anchor, not as a clinical equivalence statement."><div class="es-result-label">Similar to</div><div class="es-result-value es-result-similar-value" id="es-out-similar">—</div></div>
+          <div class="es-result-card" data-tooltip="Correlation-style effect size (range −1 to +1), showing direction and strength of association."><div class="es-result-label">Pearson's r</div><div class="es-result-value" id="es-out-r">-</div><div class="es-result-desc" id="es-out-r-desc">-</div></div>
+          <div class="es-result-card" data-tooltip="Variance explained by group difference (r squared), shown as a percentage."><div class="es-result-label">R²</div><div class="es-result-value" id="es-out-r2">-</div><div class="es-result-desc" id="es-out-r2-desc">-</div></div>
+          <div class="es-result-card" data-tooltip="ANOVA-style effect size. For two-group contrasts, f corresponds directly to d/2."><div class="es-result-label">Cohen's f</div><div class="es-result-value" id="es-out-f">-</div><div class="es-result-desc" id="es-out-f-desc">-</div></div>
+          <div class="es-result-card" data-tooltip="Fisher z-transform of r (atanh[r]); useful for meta-analysis and interval calculations."><div class="es-result-label">Fisher's z</div><div class="es-result-value" id="es-out-z">-</div></div>
+          <div class="es-result-card" data-tooltip="Odds in Group 1 divided by odds in Group 2 (OR > 1 favors Group 1)."><div class="es-result-label">Odds Ratio</div><div class="es-result-value" id="es-out-or">-</div></div>
+          <div class="es-result-card" data-tooltip="Estimated proportion of overlap between the two normal distributions."><div class="es-result-label">Overlap</div><div class="es-result-value" id="es-out-ovl">-</div></div>
+          <div class="es-result-card" data-tooltip="Percent of Group 1 expected to score above the Group 2 mean."><div class="es-result-label">Cohen's U₃</div><div class="es-result-value" id="es-out-u3">-</div></div>
+          <div class="es-result-card" data-tooltip="Common Language Effect Size: probability a random Group 1 score exceeds a random Group 2 score."><div class="es-result-label">CLES</div><div class="es-result-value" id="es-out-cles">-</div></div>
+          <div class="es-result-card" data-tooltip="Approximate Number Needed to Treat derived from CLES under normality assumptions."><div class="es-result-label">Kraemer's NNT</div><div class="es-result-value" id="es-out-nnt">-</div></div>
+          <div class="es-result-card es-result-similar" data-tooltip="Closest reference benchmark by absolute Cohen's d. Use as a rough anchor, not as a clinical equivalence statement."><div class="es-result-label">Similar to</div><div class="es-result-value es-result-similar-value" id="es-out-similar">-</div></div>
         </div>
         </div>
 
@@ -1331,11 +1382,11 @@
             </div>
             <div class="es-target-grid">
               <div class="field"><label>Target value</label><input type="number" id="es-target" step="any" placeholder="e.g. 175.9" value="175.9"></div>
-              <div class="field"><label>Group 1 at or above target</label><div class="es-ci-readout" id="es-tgt-g1-above">—</div></div>
-              <div class="field"><label>Group 2 at or above target</label><div class="es-ci-readout" id="es-tgt-g2-above">—</div></div>
-              <div class="field"><label>Of people at this value: Group 1</label><div class="es-ci-readout" id="es-tgt-share-g1">—</div></div>
-              <div class="field"><label>Of people at this value: Group 2</label><div class="es-ci-readout" id="es-tgt-share-g2">—</div></div>
-              <div class="field"><label>Smaller-to-larger likelihood ratio</label><div class="es-ci-readout" id="es-tgt-ratio">—</div></div>
+              <div class="field"><label>Group 1 at or above target</label><div class="es-ci-readout" id="es-tgt-g1-above">-</div></div>
+              <div class="field"><label>Group 2 at or above target</label><div class="es-ci-readout" id="es-tgt-g2-above">-</div></div>
+              <div class="field"><label>Of people at this value: Group 1</label><div class="es-ci-readout" id="es-tgt-share-g1">-</div></div>
+              <div class="field"><label>Of people at this value: Group 2</label><div class="es-ci-readout" id="es-tgt-share-g2">-</div></div>
+              <div class="field"><label>Smaller-to-larger likelihood ratio</label><div class="es-ci-readout" id="es-tgt-ratio">-</div></div>
             </div>
             <div class="es-target-help">Requires means and standard deviations. If standard errors are entered above, the app converts them to SDs using each group's sample size.</div>
           </div>
@@ -1363,7 +1414,7 @@
           <div class="info-box" style="margin-top:8px">
             <strong>Interpretation summary.</strong>
             <div id="es-cl-summary" style="margin-top:6px">Enter a valid effect size to generate a plain-English interpretation.</div>
-            <div id="es-cl-u3line" style="margin-top:8px">The average person in Group 1 is above about — of Group 2 (Cohen's U₃).</div>
+            <div id="es-cl-u3line" style="margin-top:8px">The average person in Group 1 is above about - of Group 2 (Cohen's U₃).</div>
           </div>
         </div>
       </div>
@@ -1386,7 +1437,7 @@
   <section class="section" id="sdi">
     <div class="eyebrow">Discrepancy · Standard Deviation Index</div>
     <h1 class="section-title">Standard Deviation Index</h1>
-    <p class="section-desc">Quantify abnormality of test—retest discrepancy in standard-deviation units. Useful when reliability data are unavailable or for descriptive comparison.</p>
+    <p class="section-desc">Quantify abnormality of test-retest discrepancy in standard-deviation units. Useful when reliability data are unavailable or for descriptive comparison.</p>
 
     <div class="panel">
       <div class="field-row-4">
@@ -1409,11 +1460,11 @@
         <div class="field">
           <label>Significance threshold</label>
           <select id="sdi-cv">
-            <option value="0.90">Critical Value (90%) · 1.645σ</option>
-            <option value="0.95">Critical Value (95%) · 1.96σ</option>
-            <option value="1">Threshold 1.0 SD</option>
-            <option value="1.5">Threshold 1.5 SD</option>
-            <option value="2">Threshold 2.0 SD</option>
+            <option value="0.90" title="Critical Value (90%) · 1.645 SD">90% CI</option>
+            <option value="0.95" title="Critical Value (95%) · 1.96 SD">95% CI</option>
+            <option value="1" title="Threshold 1.0 SD">1.0 SD</option>
+            <option value="1.5" title="Threshold 1.5 SD">1.5 SD</option>
+            <option value="2" title="Threshold 2.0 SD" selected>2.0 SD</option>
           </select>
         </div>
         <div class="field">
@@ -1492,6 +1543,10 @@
         <label>Table title</label>
         <input type="text" class="rci-title" data-target="rci-basic" placeholder="California Verbal Learning Test–III" value="Reliable change analysis">
       </div>
+      <label class="rci-corr-toggle" title="Use the corrected (attenuation-adjusted) test-retest correlation when available. Falls back to the raw r when corrected r is not provided for a given test.">
+        <input type="checkbox" class="rci-use-corrected-r" data-target="rci-basic" checked>
+        <span>Use corrected <em>r</em> (attenuation-adjusted) when available</span>
+      </label>
     </div>
 
     <div class="panel autofill-panel">
@@ -1557,8 +1612,8 @@
         <div class="field">
           <label>Significance threshold</label>
           <select class="rci-cv" data-target="rci-practice">
-            <option value="0.90">90% confidence · critical value 1.645</option>
             <option value="0.95">95% confidence · critical value 1.96</option>
+            <option value="0.90">90% confidence · critical value 1.645</option>
           </select>
         </div>
         <div class="field">
@@ -1574,6 +1629,10 @@
         <label>Table title</label>
         <input type="text" class="rci-title" data-target="rci-practice" value="Reliable change analysis">
       </div>
+      <label class="rci-corr-toggle" title="Use the corrected (attenuation-adjusted) test-retest correlation when available. Falls back to the raw r when corrected r is not provided for a given test.">
+        <input type="checkbox" class="rci-use-corrected-r" data-target="rci-practice" checked>
+        <span>Use corrected <em>r</em> (attenuation-adjusted) when available</span>
+      </label>
     </div>
 
     <div class="panel autofill-panel">
@@ -1659,6 +1718,10 @@
         <label>Table title</label>
         <input type="text" class="rci-title" data-target="rci-srb" value="Reliable change analysis">
       </div>
+      <label class="rci-corr-toggle" title="Use the corrected (attenuation-adjusted) test-retest correlation when available. Falls back to the raw r when corrected r is not provided for a given test.">
+        <input type="checkbox" class="rci-use-corrected-r" data-target="rci-srb">
+        <span>Use corrected <em>r</em> (attenuation-adjusted) when available</span>
+      </label>
     </div>
 
     <div class="panel autofill-panel">
@@ -1745,12 +1808,16 @@
         <label>Table title</label>
         <input type="text" class="rci-title" data-target="rci-crawford" value="Reliable change analysis">
       </div>
+      <label class="rci-corr-toggle" title="Use the corrected (attenuation-adjusted) test-retest correlation when available. Falls back to the raw r when corrected r is not provided for a given test.">
+        <input type="checkbox" class="rci-use-corrected-r" data-target="rci-crawford">
+        <span>Use corrected <em>r</em> (attenuation-adjusted) when available</span>
+      </label>
     </div>
 
     <div class="panel autofill-panel">
       <div class="autofill-row">
         <div class="field" style="flex:1;margin-bottom:0">
-          <label>Auto-fill from normative database <span class="hint">(populates subtest names and fills M, SD, r, and N — N is required for this method)</span></label>
+          <label>Auto-fill from normative database <span class="hint">(populates subtest names and fills M, SD, r, and N - N is required for this method)</span></label>
           <div class="combo">
             <input type="text" class="combo-input rci-family-input" data-method="rci-crawford" placeholder="Search test family…" autocomplete="off">
             <div class="combo-list rci-family-list" data-method="rci-crawford"><div class="combo-item" data-family="CVLT-3 Indices · Ages 16-44">CVLT-3 Indices · Ages 16-44</div><div class="combo-item" data-family="CVLT-3 Indices · Ages 45-90">CVLT-3 Indices · Ages 45-90</div><div class="combo-item" data-family="CVLT-3 Trials · Ages 16-44">CVLT-3 Trials · Ages 16-44</div><div class="combo-item" data-family="CVLT-3 Trials · Ages 45-90">CVLT-3 Trials · Ages 45-90</div><div class="combo-item" data-family="D-KEFS Colour-Word Interference · All Ages">D-KEFS Colour-Word Interference · All Ages</div><div class="combo-item" data-family="D-KEFS Design Fluency · All Ages">D-KEFS Design Fluency · All Ages</div><div class="combo-item" data-family="D-KEFS Sorting Test · All Ages">D-KEFS Sorting Test · All Ages</div><div class="combo-item" data-family="D-KEFS Tower Test · All Ages">D-KEFS Tower Test · All Ages</div><div class="combo-item" data-family="D-KEFS Trail Making Test · All Ages">D-KEFS Trail Making Test · All Ages</div><div class="combo-item" data-family="D-KEFS Verbal Fluency · All Ages">D-KEFS Verbal Fluency · All Ages</div><div class="combo-item" data-family="D-KEFS Word Context Test · All Ages">D-KEFS Word Context Test · All Ages</div><div class="combo-item" data-family="D-KEFS Word Proverb Test · All Ages">D-KEFS Word Proverb Test · All Ages</div><div class="combo-item" data-family="RBANS Indices · Ages 12-19">RBANS Indices · Ages 12-19</div><div class="combo-item" data-family="RBANS Indices · Ages 20-89">RBANS Indices · Ages 20-89</div><div class="combo-item" data-family="RBANS Subtests · Ages 12-19">RBANS Subtests · Ages 12-19</div><div class="combo-item" data-family="RBANS Subtests · Ages 20-89">RBANS Subtests · Ages 20-89</div><div class="combo-item" data-family="WAIS-IV Core Subtests · All Ages">WAIS-IV Core Subtests · All Ages</div><div class="combo-item" data-family="WAIS-IV Indices · All Ages">WAIS-IV Indices · All Ages</div><div class="combo-item" data-family="WISC-V Indices · All Ages">WISC-V Indices · All Ages</div><div class="combo-item" data-family="WISC-V Subtests · All Ages">WISC-V Subtests · All Ages</div><div class="combo-item" data-family="WMS-IV Indices · Ages 16-69">WMS-IV Indices · Ages 16-69</div><div class="combo-item" data-family="WMS-IV Indices · Ages 65-90">WMS-IV Indices · Ages 65-90</div><div class="combo-item" data-family="WMS-IV Subtests · Ages 16-69">WMS-IV Subtests · Ages 16-69</div><div class="combo-item" data-family="WMS-IV Subtests · Ages 65-90">WMS-IV Subtests · Ages 65-90</div></div>
@@ -1849,7 +1916,7 @@
           <div class="field">
             <label>Sex</label>
             <select id="pre-sex">
-              <option value="">—</option>
+              <option value="">-</option>
               <option value="Female">Female</option>
               <option value="Male">Male</option>
             </select>
@@ -1857,7 +1924,7 @@
           <div class="field">
             <label>Occupation class</label>
             <select id="pre-occ">
-              <option value="">—</option>
+              <option value="">-</option>
               <option value="Professional">Professional</option>
               <option value="Intermediate">Intermediate</option>
               <option value="Skilled">Skilled</option>
@@ -1914,32 +1981,32 @@
         </thead>
         <tbody><tr>
       <td class="model">ToPF Raw Score Only</td>
-      <td class="fsiq">—</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
+      <td class="fsiq">-</td>
+      <td class="num">-</td>
+      <td class="num">-</td>
       <td class="psy">0.72</td>
       <td class="psy">9.87</td>
     </tr><tr>
       <td class="model">ToPF with Demographic Adjustment</td>
-      <td class="fsiq">—</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
+      <td class="fsiq">-</td>
+      <td class="num">-</td>
+      <td class="num">-</td>
       <td class="psy">0.81</td>
       <td class="psy">8.44</td>
     </tr><tr>
       <td class="model">Crawford &amp; Allan (2001) Demographic</td>
-      <td class="fsiq">—</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
+      <td class="fsiq">-</td>
+      <td class="num">-</td>
+      <td class="num">-</td>
       <td class="psy">0.73</td>
       <td class="psy">9.11</td>
     </tr><tr>
       <td class="model">OPIE-4 (prorated FSIQ): Vocab and/or Matrix</td>
-      <td class="fsiq">—</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="psy">—</td>
-      <td class="psy">—</td>
+      <td class="fsiq">-</td>
+      <td class="num">-</td>
+      <td class="num">-</td>
+      <td class="psy">-</td>
+      <td class="psy">-</td>
     </tr></tbody>
       </table>
 
@@ -1978,68 +2045,68 @@
         </thead>
         <tbody><tr class="group-row"><td colspan="7">WAIS-IV</td></tr><tr>
       <td class="model">Full Scale IQ</td>
-      <td class="num" id="pred-FSIQ">—</td>
-      <td class="num" id="pred-FSIQ-lo">—</td>
-      <td class="num" id="pred-FSIQ-hi">—</td>
+      <td class="num" id="pred-FSIQ">-</td>
+      <td class="num" id="pred-FSIQ-lo">-</td>
+      <td class="num" id="pred-FSIQ-hi">-</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="FSIQ" value=""></td>
-      <td class="num diff" id="diff-FSIQ">—</td>
-      <td class="num" id="br-FSIQ">—</td>
+      <td class="num diff" id="diff-FSIQ">-</td>
+      <td class="num" id="br-FSIQ">-</td>
     </tr><tr>
       <td class="model">Verbal Comprehension Index</td>
-      <td class="num" id="pred-VCI">—</td>
-      <td class="num" id="pred-VCI-lo">—</td>
-      <td class="num" id="pred-VCI-hi">—</td>
+      <td class="num" id="pred-VCI">-</td>
+      <td class="num" id="pred-VCI-lo">-</td>
+      <td class="num" id="pred-VCI-hi">-</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="VCI" value=""></td>
-      <td class="num diff" id="diff-VCI">—</td>
-      <td class="num" id="br-VCI">—</td>
+      <td class="num diff" id="diff-VCI">-</td>
+      <td class="num" id="br-VCI">-</td>
     </tr><tr>
       <td class="model">Perceptual Reasoning Index</td>
-      <td class="num" id="pred-PRI">—</td>
-      <td class="num" id="pred-PRI-lo">—</td>
-      <td class="num" id="pred-PRI-hi">—</td>
+      <td class="num" id="pred-PRI">-</td>
+      <td class="num" id="pred-PRI-lo">-</td>
+      <td class="num" id="pred-PRI-hi">-</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="PRI" value=""></td>
-      <td class="num diff" id="diff-PRI">—</td>
-      <td class="num" id="br-PRI">—</td>
+      <td class="num diff" id="diff-PRI">-</td>
+      <td class="num" id="br-PRI">-</td>
     </tr><tr>
       <td class="model">Working Memory Index</td>
-      <td class="num" id="pred-WMI">—</td>
-      <td class="num" id="pred-WMI-lo">—</td>
-      <td class="num" id="pred-WMI-hi">—</td>
+      <td class="num" id="pred-WMI">-</td>
+      <td class="num" id="pred-WMI-lo">-</td>
+      <td class="num" id="pred-WMI-hi">-</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="WMI" value=""></td>
-      <td class="num diff" id="diff-WMI">—</td>
-      <td class="num" id="br-WMI">—</td>
+      <td class="num diff" id="diff-WMI">-</td>
+      <td class="num" id="br-WMI">-</td>
     </tr><tr>
       <td class="model">Processing Speed Index</td>
-      <td class="num" id="pred-PSI">—</td>
-      <td class="num" id="pred-PSI-lo">—</td>
-      <td class="num" id="pred-PSI-hi">—</td>
+      <td class="num" id="pred-PSI">-</td>
+      <td class="num" id="pred-PSI-lo">-</td>
+      <td class="num" id="pred-PSI-hi">-</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="PSI" value=""></td>
-      <td class="num diff" id="diff-PSI">—</td>
-      <td class="num" id="br-PSI">—</td>
+      <td class="num diff" id="diff-PSI">-</td>
+      <td class="num" id="br-PSI">-</td>
     </tr><tr class="group-row"><td colspan="7">WMS-IV</td></tr><tr>
       <td class="model">Immediate Memory Index</td>
-      <td class="num" id="pred-IMI">—</td>
-      <td class="num" id="pred-IMI-lo">—</td>
-      <td class="num" id="pred-IMI-hi">—</td>
+      <td class="num" id="pred-IMI">-</td>
+      <td class="num" id="pred-IMI-lo">-</td>
+      <td class="num" id="pred-IMI-hi">-</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="IMI" value=""></td>
-      <td class="num diff" id="diff-IMI">—</td>
-      <td class="num" id="br-IMI">—</td>
+      <td class="num diff" id="diff-IMI">-</td>
+      <td class="num" id="br-IMI">-</td>
     </tr><tr>
       <td class="model">Delayed Memory Index</td>
-      <td class="num" id="pred-DMI">—</td>
-      <td class="num" id="pred-DMI-lo">—</td>
-      <td class="num" id="pred-DMI-hi">—</td>
+      <td class="num" id="pred-DMI">-</td>
+      <td class="num" id="pred-DMI-lo">-</td>
+      <td class="num" id="pred-DMI-hi">-</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="DMI" value=""></td>
-      <td class="num diff" id="diff-DMI">—</td>
-      <td class="num" id="br-DMI">—</td>
+      <td class="num diff" id="diff-DMI">-</td>
+      <td class="num" id="br-DMI">-</td>
     </tr><tr>
       <td class="model">Visual Working Memory Index</td>
-      <td class="num" id="pred-VWMI">—</td>
-      <td class="num" id="pred-VWMI-lo">—</td>
-      <td class="num" id="pred-VWMI-hi">—</td>
+      <td class="num" id="pred-VWMI">-</td>
+      <td class="num" id="pred-VWMI-lo">-</td>
+      <td class="num" id="pred-VWMI-hi">-</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="VWMI" value=""></td>
-      <td class="num diff" id="diff-VWMI">—</td>
-      <td class="num" id="br-VWMI">—</td>
+      <td class="num diff" id="diff-VWMI">-</td>
+      <td class="num" id="br-VWMI">-</td>
     </tr></tbody>
       </table>
 
@@ -2062,7 +2129,7 @@
 
     <!-- Tab C: OPIE-4 Predicted vs Actual -->
     <div class="pre-tab-content" id="pre-opiepredict">
-      <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter age plus Vocabulary and/or Matrix Reasoning raw scores in the Inputs panel above. Rows appear automatically for each model whose required inputs are present. Enter the patient's actual FSIQ / GAI in the Achieved column — the prorated index is calculated ACS manual procedures, excluding the subtest(s) used as predictors.</p>
+      <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter age plus Vocabulary and/or Matrix Reasoning raw scores in the Inputs panel above. Rows appear automatically for each model whose required inputs are present. Enter the patient's actual FSIQ / GAI in the Achieved column - the prorated index is calculated ACS manual procedures, excluding the subtest(s) used as predictors.</p>
 
       <table class="pre-results-table pre-predict-table" id="pre-opiepredict-table">
         <thead>
@@ -2082,7 +2149,7 @@
       </table>
 
       <div class="info-box" style="margin-top:18px">
-        <strong>Note.</strong> OPIE-4 prorated FSIQ and GAI predictions (Holdnack et al., 2013). UK adaptation: US education, region and ethnicity terms omitted. Confidence intervals are based on the published model SEE. Difference = Achieved − Predicted (a negative value indicates the patient is performing below their OPIE-4-estimated premorbid level). Base rates use the WAIS-IV / WMS-IV / ACS prorated predicted-versus-actual table. Interpret within UK practice with caution because the regression equations are derived from US normative data and may differ slightly from UK population expectations.
+        <strong>Note.</strong> OPIE-4 prorated FSIQ and GAI predicted from age plus Vocabulary and/or Matrix Reasoning. Difference = Achieved − Predicted. Base rate = % of standardisation sample with discrepancy ≤ this value. Based on US norms.
       </div>
 
       <div class="apa-wrap">
@@ -5872,7 +5939,7 @@
 
 </main>
 
-<!-- ========== SITE FOOTER (redesign) — secondary navigation ========== -->
+<!-- ========== SITE FOOTER (redesign) - secondary navigation ========== -->
 <footer class="site-footer" role="contentinfo">
   <div class="site-footer-inner">
     <div class="site-footer-links">
@@ -5886,10 +5953,10 @@
   </div>
 </footer>
 
-<div class="toast" id="toast">✓ Table copied — ready to paste into your report</div>
-<script src="data.js"></script>
-<script src="app.js?v=practice40"></script>
-<script src="design-system.js?v=practice49" defer></script>
+<div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
+<script src="data.js?v=20260507ai"></script>
+<script src="app.js?v=20260507ai"></script>
+<script src="design-system.js?v=20260507ai" defer></script>
 <script src="app-effectsize-page.js"></script>
 <script>
 (function(){
@@ -6170,10 +6237,10 @@
       <article class="change-overview-card" data-target-method="sdi" tabindex="0" role="button" aria-label="Open Standard Deviation Index method">
         <div class="change-overview-meta"><span class="change-overview-num">01</span><span class="change-overview-level">Level 1 · Descriptive</span></div>
         <h3>Standard Deviation Index</h3>
-        <p>Quantifies the difference between two scores in standard-deviation units (SDΔ). Useful as a transparent, distribution-free index of magnitude when test–retest reliability data are unavailable, or when a quick descriptive summary is sufficient. <strong>Caveat:</strong> does not control for measurement error, practice effects, or regression to the mean — should not be used alone to claim "reliable change".</p>
+        <p>Quantifies the difference between two scores in standard-deviation units (SDΔ). Useful as a transparent, distribution-free index of magnitude when test–retest reliability data are unavailable, or when a quick descriptive summary is sufficient. <strong>Caveat:</strong> does not control for measurement error, practice effects, or regression to the mean - should not be used alone to claim "reliable change".</p>
         <div class="change-overview-features">
           <span class="change-overview-features-label">Adjusts for</span>
-          <span class="change-overview-feature is-none">Descriptive only — no statistical adjustments</span>
+          <span class="change-overview-feature is-none">Descriptive only - no statistical adjustments</span>
         </div>
       </article>
       <article class="change-overview-card" data-target-method="rci-basic" tabindex="0" role="button" aria-label="Open Simple Reliable Change method">
@@ -6201,11 +6268,11 @@
         <div class="change-overview-meta"><span class="change-overview-num">04</span><span class="change-overview-level">Level 4 · Regression-based</span></div>
         <h3>Standardised Regression-Based</h3>
         <p class="change-overview-cite">McSweeney et al. (1993)</p>
-        <p>Predicts the patient's expected retest score from baseline using a normative regression equation, then standardises the residual against the standard error of estimate (SEE). <strong>Use when:</strong> regression to the mean is a concern — particularly relevant for patients with extreme baseline scores. Controls for practice effects and baseline-dependent regression simultaneously.</p>
+        <p>Predicts the patient's expected retest score from baseline using a normative regression equation, then standardises the residual against the standard error of estimate (SEE). <strong>Use when:</strong> regression to the mean is a concern - particularly relevant for patients with extreme baseline scores. Controls for practice effects and baseline-dependent regression simultaneously.</p>
         <div class="change-overview-features">
           <span class="change-overview-features-label">Adjusts for</span>
           <span class="change-overview-feature is-on" title="Standardises change against the standard error of estimate (SEE), incorporating measurement error.">Measurement error</span>
-          <span class="change-overview-feature is-on" title="Captured by the regression intercept — accounts for typical retest improvement.">Practice effect</span>
+          <span class="change-overview-feature is-on" title="Captured by the regression intercept - accounts for typical retest improvement.">Practice effect</span>
           <span class="change-overview-feature is-on" title="Predicts retest from baseline, automatically correcting for regression to the mean at extreme baseline scores.">Regression to the mean</span>
         </div>
       </article>
@@ -6213,13 +6280,13 @@
         <div class="change-overview-meta"><span class="change-overview-num">05</span><span class="change-overview-level">Level 5 · Sample-size adjusted</span></div>
         <h3>Crawford Regression-Based <span class="change-overview-badge">Recommended</span></h3>
         <p class="change-overview-cite">Crawford &amp; Garthwaite (2007)</p>
-        <p>The most rigorous option. Refines the regression-based approach with a t-distributed test statistic that accounts for normative sample size (N) and the patient's distance from the baseline mean. Properly handles uncertainty in the regression parameters when normative N is modest. <strong>Recommended</strong> when suitable test–retest norms are available — especially with smaller normative samples (e.g. clinical or rare-condition norms).</p>
+        <p>The most rigorous option. Refines the regression-based approach with a t-distributed test statistic that accounts for normative sample size (N) and the patient's distance from the baseline mean. Properly handles uncertainty in the regression parameters when normative N is modest. <strong>Recommended</strong> when suitable test–retest norms are available - especially with smaller normative samples (e.g. clinical or rare-condition norms).</p>
         <div class="change-overview-features">
           <span class="change-overview-features-label">Adjusts for</span>
           <span class="change-overview-feature is-on" title="Standardises change against the standard error of prediction (SEpred), incorporating measurement error.">Measurement error</span>
-          <span class="change-overview-feature is-on" title="Captured by the regression intercept — accounts for typical retest improvement.">Practice effect</span>
+          <span class="change-overview-feature is-on" title="Captured by the regression intercept - accounts for typical retest improvement.">Practice effect</span>
           <span class="change-overview-feature is-on" title="Predicts retest from baseline, correcting for regression to the mean at extreme baseline scores.">Regression to the mean</span>
-          <span class="change-overview-feature is-on change-overview-feature-strong" title="Uses a t-distributed statistic that incorporates the normative sample size N — properly handles uncertainty in the regression parameters when N is modest.">Sample size</span>
+          <span class="change-overview-feature is-on change-overview-feature-strong" title="Uses a t-distributed statistic that incorporates the normative sample size N - properly handles uncertainty in the regression parameters when N is modest.">Sample size</span>
         </div>
       </article>
     </div>
@@ -6265,7 +6332,7 @@
   // Set initial state to overview
   activateMethod('overview', { updateHash: false });
 
-  // Make the overview description cards clickable — each opens its method tab
+  // Make the overview description cards clickable - each opens its method tab
   overviewPanel.querySelectorAll('.change-overview-card[data-target-method]').forEach(card => {
     const go = () => {
       const id = card.dataset.targetMethod;

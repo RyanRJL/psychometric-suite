@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Report Writer Phrasing Simulator</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, system-ui, sans-serif; background: #F5F2EC; color: #1A1A1A; margin: 0; padding: 24px; }
+  h1 { font-size: 18px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; max-width: 1400px; margin: 0 auto; }
+  .panel { background: #FFFFFF; border: 1px solid #E5E2D9; border-radius: 8px; padding: 16px; }
+  .panel h2 { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6B6B; margin: 0 0 12px; font-weight: 600; }
+  .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; padding: 12px 14px; background: #FFFFFF; border: 1px solid #E5E2D9; border-radius: 8px; }
+  .toolbar label { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #6B6B6B; font-weight: 600; }
+  .toolbar select, .toolbar button { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid #D8D5CC; border-radius: 4px; background: white; cursor: pointer; }
+  .toolbar .toggle { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid #D8D5CC; border-radius: 4px; cursor: pointer; user-select: none; font-size: 12px; }
+  .toolbar .toggle input { margin: 0; }
+  textarea.seed { width: 100%; height: 360px; font-family: ui-monospace, monospace; font-size: 12px; padding: 10px; border: 1px solid #D8D5CC; border-radius: 4px; resize: vertical; }
+  textarea.templates { width: 100%; height: 480px; font-family: ui-monospace, monospace; font-size: 12px; padding: 10px; border: 1px solid #D8D5CC; border-radius: 4px; resize: vertical; }
+  .paper { background: white; border: 1px solid #E5E2D9; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 22px rgba(0,0,0,0.06); padding: 48px 56px; min-height: 500px; line-height: 1.7; font-size: 14.5px; }
+  .paper h3 { font-family: 'Times New Roman', Georgia, serif; font-style: italic; font-size: 18px; font-weight: 600; margin: 28px 0 8px; padding-bottom: 8px; border-bottom: 0.75px solid #1A1A1A; }
+  .paper h3:first-child { margin-top: 0; }
+  .paper p { margin: 0 0 12px; }
+  .empty { text-align: center; color: #999; font-style: italic; padding: 80px 0; }
+  .label { font-size: 12px; color: #555; margin: 0 0 6px; }
+  .row { margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<h1>Report Writer · Phrasing Simulator</h1>
+
+<div class="toolbar">
+  <label>Reference</label>
+  <select id="ref">
+    <option value="mrs">Mrs Doe (she/her)</option>
+    <option value="mr">Mr Doe (he/him)</option>
+    <option value="you">You (first person)</option>
+  </select>
+  <label>Brackets</label>
+  <label class="toggle"><input type="checkbox" id="showStd" checked> Standard score</label>
+  <label class="toggle"><input type="checkbox" id="showPct"> Percentile</label>
+  <button id="re-render">Re-render</button>
+</div>
+
+<div class="layout">
+  <div>
+    <div class="panel">
+      <h2>Seed data (JSON)</h2>
+      <p class="label">Battery rows + premorbid estimates. Edit and click Re-render.</p>
+      <textarea id="seed" class="seed"></textarea>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <h2>Phrase templates</h2>
+      <p class="label">Edit any template. Use placeholders like {POSS}, {NAME}, {ABILITY}, {USING}, {BRAND}, {TEST}, {DESC}, {BRACKET}.</p>
+      <textarea id="templates" class="templates"></textarea>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>Generated report</h2>
+      <article id="paper" class="paper"><div class="empty">Edit seed data + templates, click Re-render.</div></article>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   Standalone phrasing engine — mirrors the production Report Writer engine.
+   Edit the templates string and re-render to iterate on wording.
+   Most templates use placeholder syntax: {POSS}, {NAME_POSS}, {SUBJ}, {SUBJ_LOWER},
+                                          {ABILITY}, {USING}, {BRAND}, {TEST},
+                                          {DESC}, {DESC_LOWER}, {BRACKET},
+                                          {FIRST_T}, {LAST_T}, {FIRST_DESC}, {LAST_DESC},
+                                          {FIRST_BRACKET}, {LAST_BRACKET},
+                                          {MODELS_LIST}, {CI_LABEL}
+   ============================================================================ */
+
+const REF_MAP = {
+  mrs: { name: 'Mrs Doe', subject: 'she',  possessive: 'her',  firstPerson: false },
+  mr:  { name: 'Mr Doe',  subject: 'he',   possessive: 'his',  firstPerson: false },
+  you: { name: 'You',     subject: 'you',  possessive: 'your', firstPerson: true  }
+};
+function ref(){ return REF_MAP[document.getElementById('ref').value] || REF_MAP.mrs; }
+function poss(cap){ const r = ref(); const p = r.firstPerson ? 'your' : r.possessive; return cap ? p[0].toUpperCase() + p.slice(1) : p; }
+function fullPoss(){ const r = ref(); return r.firstPerson ? 'Your' : (r.name.endsWith('s') ? r.name + "'" : r.name + "'s"); }
+function fullSubj(){ const r = ref(); return r.firstPerson ? 'You' : r.name; }
+function pronounSubj(cap){ const r = ref(); const s = r.firstPerson ? 'you' : r.subject; return cap ? s[0].toUpperCase() + s.slice(1) : s; }
+function subjFor(i){
+  if (ref().firstPerson) return { possCap: 'Your', possLow: 'your', name: 'You', namePoss: 'Your' };
+  return (i % 2 === 0)
+    ? { possCap: fullPoss(), possLow: fullPoss(), name: fullSubj(), namePoss: fullPoss() }
+    : { possCap: poss(true), possLow: poss(false), name: pronounSubj(true), namePoss: poss(true) };
+}
+
+/* ----- Templates (editable) ----- */
+const DEFAULT_TEMPLATES = {
+  // Domain openers
+  'opener.first':     '{POSS} {ABILITY} was assessed using {USING} from the {BRAND}.',
+  'opener.first.collapsed': '{POSS} {ABILITY} was assessed using tests from the {BRAND}.',
+  'opener.next':      '{NAME} also undertook {USING} from the {BRAND}.',
+  'opener.next.collapsed': '{NAME} also undertook tests from the {BRAND}.',
+
+  // Battery sentences
+  'battery.single':       '{POSS} performance on {TEST} was {DESC_LOWER}{BRACKET}.',
+  'battery.cluster':      '{POSS} performance on {TESTS} was {DESC_LOWER}{BRACKET}.',
+  'battery.collapse':     '{POSS} performance on {TESTS} was all in the {DESC_LOWER} range{BRACKET}.',
+
+  // CVLT structured narrative
+  'cvlt.learning':        '{POSS} performance ranged from {FIRST_DESC} on {FIRST_T}{FIRST_BRACKET} to {LAST_DESC} by {LAST_T}{LAST_BRACKET}.',
+  'cvlt.shortDelay':      'After a short delay, {POSS_LOWER} performance on {TEST} was {DESC_LOWER}{BRACKET}.',
+  'cvlt.longDelay':       'Finally, after a long delay, {POSS_LOWER} performance on {TEST} was {DESC_LOWER}{BRACKET}.',
+  'cvlt.recog.notable':   '{POSS} performance was notably assisted by the recognition trial{BRACKET}.',
+  'cvlt.recog.slight':    '{POSS} performance was slightly assisted by the recognition trial{BRACKET}.',
+  'cvlt.recog.plain':     '{POSS} recognition performance was {DESC_LOWER}{BRACKET}.',
+
+  // Premorbid
+  'premorbid.opener':     "{POSS} baseline cognitive ability was estimated using {MODELS_LIST}.",
+  'premorbid.converged.both':   'Both of these models converged on the prediction that {NAME_POSS} ability was likely to fall within the {DESC_LOWER} range.',
+  'premorbid.converged.all':    'All of these models converged on the prediction that {NAME_POSS} ability was likely to fall within the {DESC_LOWER} range.',
+
+  // Validity
+  'validity.passed':      '{POSS} performance on {USING} fell within the normal range, with no concerns regarding effort or symptom validity.',
+  'validity.failed':      '{POSS} performance on {USING} fell below the validity cutoff, suggesting suboptimal effort. Cognitive results below should be interpreted with caution.'
+};
+let templates = { ...DEFAULT_TEMPLATES };
+
+const DOMAIN_LABEL = {
+  validity: 'performance validity',
+  premorbid: 'premorbid intellectual functioning',
+  intellectual: 'general intellectual functioning',
+  attention_working_memory: 'attention and working memory',
+  processing_speed: 'processing speed',
+  verbal_learning_memory: 'verbal learning and memory',
+  visual_learning_memory: 'visual learning and memory',
+  language: 'language',
+  visuospatial: 'visuospatial and constructional ability',
+  executive: 'executive functioning',
+  mood: 'mood and symptom reporting'
+};
+const DOMAIN_HEADING = {
+  validity: 'Performance Validity',
+  premorbid: 'Premorbid Functioning',
+  intellectual: 'General Intellectual Functioning',
+  attention_working_memory: 'Attention and Working Memory',
+  processing_speed: 'Processing Speed',
+  verbal_learning_memory: 'Verbal Learning and Memory',
+  visual_learning_memory: 'Visual Learning and Memory',
+  language: 'Language',
+  visuospatial: 'Visuospatial and Constructional Ability',
+  executive: 'Executive Functioning',
+  mood: 'Mood and Symptom Reporting'
+};
+const DOMAIN_ORDER = ['validity','premorbid','intellectual','attention_working_memory','processing_speed','verbal_learning_memory','visual_learning_memory','language','visuospatial','executive','mood'];
+const DOMAIN_RULES = [
+  [/tomm|word memory|reliable digit|msvt/i, 'validity'],
+  [/topf|opie|wtar|crawford.*allan|nart/i, 'premorbid'],
+  [/(cvlt|verbal paired|word list|hopkins verbal|rey auditory|hvlt)/i, 'verbal_learning_memory'],
+  [/logical memory/i, 'verbal_learning_memory'],
+  [/(rey complex figure.*recall|visual reproduction|brief visuospatial|bvmt)/i, 'visual_learning_memory'],
+  [/designs|family pictures|spatial recall/i, 'visual_learning_memory'],
+  [/(immediate|delayed|auditory|visual).*memory.*index/i, 'verbal_learning_memory'],
+  [/digit span|letter[- ]number|spatial span|symbol span|arithmetic/i, 'attention_working_memory'],
+  [/\b(wmi|working memory index)\b/i, 'attention_working_memory'],
+  [/(coding|symbol search|cancellation)/i, 'processing_speed'],
+  [/trail making|trails|tmt/i, 'processing_speed'],
+  [/\b(psi|processing speed)\b/i, 'processing_speed'],
+  [/\b(word reading|colou?r naming)\b/i, 'processing_speed'],
+  [/(color[- ]word|stroop|inhibition|set[- ]shifting)/i, 'executive'],
+  [/(verbal fluency|category fluency|letter fluency|fas|cowat|naming|boston)/i, 'language'],
+  [/vocabulary|similarities|comprehension|information/i, 'language'],
+  [/(block design|matrix reasoning|visual puzzles|figure weights)/i, 'visuospatial'],
+  [/(rey complex figure copy|figure copy|object assembly)/i, 'visuospatial'],
+  [/(tower|sorting|design fluency|wcst)/i, 'executive'],
+  [/\b(hads|phq|gad|bdi|bai|dass|pcl)\b|mood|anxiety|depression/i, 'mood'],
+  [/(fsiq|gai|full[- ]?scale|wais|wisc|rbans.*total)/i, 'intellectual']
+];
+const BRAND_PATTERNS = [/\bCVLT-3\b/i,/\bCVLT\b/i,/\bD-KEFS\b/i,/\bRBANS\b/i,/\bWAIS-V\b/i,/\bWAIS-IV\b/i,/\bWAIS\b/i,/\bWMS-V\b/i,/\bWMS-IV\b/i,/\bWMS\b/i,/\bTOMM\b/i,/\bToPF\b/i,/\bOPIE-4\b/i,/\bOPIE\b/i];
+
+function detectDomain(text){ for (const [re, d] of DOMAIN_RULES) if (re.test(text||'')) return d; return null; }
+function extractBrand(group){ const g = String(group||''); for (const p of BRAND_PATTERNS){ const m = g.match(p); if (m) return m[0]; } return g.replace(/\s*·.*$/,'').replace(/\s+(Core )?Subtests?\b.*$/i,'').replace(/\s+Tests?\b.*$/i,'').trim(); }
+function ordinal(n){ const r = Math.round(n); const last = r % 100; if (last>=11&&last<=13) return r+'th'; return r + (['th','st','nd','rd'][r%10] || 'th'); }
+function listJoin(a){ const arr = a.filter(Boolean); if (!arr.length) return ''; if (arr.length===1) return arr[0]; if (arr.length===2) return arr[0]+' and '+arr[1]; return arr.slice(0,-1).join(', ')+', and '+arr[arr.length-1]; }
+function toSs(score, type){ const n = parseFloat(score); if (!Number.isFinite(n)) return null; switch ((type||'standard').toLowerCase()){ case 'standard': return n; case 'scaled': return 100+(n-10)*5; case 't': return 100+(n-50)*1.5; case 'z': return 100+n*15; default: return n; } }
+function ssToPct(ss){ if (!Number.isFinite(ss)) return null; const erf = x => { const t = 1/(1+0.3275911*Math.abs(x)); const y = 1 - (((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x); return x<0?-y:y; }; const cdf = z => 0.5*(1+erf(z/Math.SQRT2)); return Math.max(1, Math.min(99, Math.round(cdf((ss-100)/15)*100))); }
+function descriptorFor(ss){ if (!Number.isFinite(ss)) return ''; if (ss>=130) return 'Very Superior'; if (ss>=120) return 'Superior'; if (ss>=110) return 'High Average'; if (ss>=90) return 'Average'; if (ss>=80) return 'Low Average'; if (ss>=70) return 'Borderline'; return 'Extremely Low'; }
+function scoreLabelLower(t){ return ({standard:'standard score',scaled:'scaled score',t:'T-score',z:'z-score'}[t||'standard'])||'standard score'; }
+function scoreLabelCap(t){ return ({standard:'Standard Score',scaled:'Scaled Score',t:'T-Score',z:'Z-Score'}[t||'standard'])||'Standard Score'; }
+function bracket(row, mode){
+  const showStd = document.getElementById('showStd').checked;
+  const showPct = document.getElementById('showPct').checked;
+  const parts = [];
+  if (showStd){
+    if (mode === 'cap') parts.push(scoreLabelCap(row.scoreType) + ' ' + row.score);
+    else                parts.push(scoreLabelLower(row.scoreType) + ' of ' + row.score);
+  }
+  if (showPct){ const p = ssToPct(row.ss); if (p != null) parts.push(ordinal(p) + ' percentile'); }
+  return parts.length ? ' (' + parts.join(', ') + ')' : '';
+}
+function bracketList(items){
+  const showStd = document.getElementById('showStd').checked;
+  const showPct = document.getElementById('showPct').checked;
+  const parts = [];
+  if (showStd){ const lbl = scoreLabelLower(items[0].scoreType); parts.push(lbl + (items.length>1?'s of ':' of ') + listJoin(items.map(r=>r.score))); }
+  if (showPct){ const ps = items.map(r=>ssToPct(r.ss)).filter(p=>p!=null); if (ps.length) parts.push((ps.length>1?'percentiles ':'percentile ') + listJoin(ps.map(ordinal))); }
+  return parts.length ? ' (' + parts.join(', ') + ')' : '';
+}
+function fillTpl(tpl, vars){ return String(tpl||'').replace(/\{(\w+)\}/g, (_, k) => vars[k] != null ? vars[k] : ''); }
+
+function annotate(rows){
+  return rows.map(r => {
+    const ss = toSs(r.score, r.scoreType);
+    return {
+      ...r,
+      brand: extractBrand(r.group||''),
+      domain: detectDomain(r.subtest) || detectDomain(r.group) || 'intellectual',
+      ss,
+      descriptor: descriptorFor(ss)
+    };
+  });
+}
+
+function batterySentences(rows, startIdx){
+  const groups = {};
+  rows.forEach(r => { const k = (r.descriptor||'').toLowerCase()+'|'+(r.scoreType||'standard'); if (!groups[k]) groups[k] = { descriptor:r.descriptor, scoreType:r.scoreType, items:[] }; groups[k].items.push(r); });
+  let i = startIdx; const sentences = [];
+  Object.keys(groups).forEach(k => {
+    const g = groups[k]; const labels = g.items.map(r=>r.subtest); const labelList = listJoin(labels);
+    const subj = subjFor(i);
+    const descLower = g.descriptor.toLowerCase();
+    const scores = g.items.map(r=>r.score);
+    const allSame = scores.length > 1 && scores.every(s => String(s) === String(scores[0]));
+    if (allSame){
+      sentences.push(fillTpl(templates['battery.collapse'], {
+        POSS: subj.possCap, TESTS: labelList, DESC_LOWER: descLower, BRACKET: bracket(g.items[0], 'cap')
+      }));
+    } else if (g.items.length === 1){
+      sentences.push(fillTpl(templates['battery.single'], {
+        POSS: subj.possCap, TEST: labelList, DESC_LOWER: descLower, BRACKET: bracket(g.items[0], 'lower')
+      }));
+    } else {
+      sentences.push(fillTpl(templates['battery.cluster'], {
+        POSS: subj.possCap, TESTS: labelList, DESC_LOWER: descLower, BRACKET: bracketList(g.items)
+      }));
+    }
+    i++;
+  });
+  return { sentences, nextIdx: i };
+}
+
+function cvltNarrative(rows, startIdx){
+  const find = re => rows.find(r => re.test(r.subtest||''));
+  const trials = rows.filter(r => /^Trial\s*[1-5]\b/i.test(r.subtest||'')).sort((a,b)=>parseInt(a.subtest.match(/\d/)[0])-parseInt(b.subtest.match(/\d/)[0]));
+  const sdfr = find(/short delay free recall/i), sdcr = find(/short delay cued recall/i);
+  const ldfr = find(/long delay free recall/i),  ldcr = find(/long delay cued recall/i);
+  const recog = find(/^recognition$|^recognition hits?\b|^total recognition\b/i);
+  const main = new Set([sdfr,sdcr,ldfr,ldcr,recog,...trials].filter(Boolean));
+  const auxiliary = rows.filter(r => !main.has(r));
+  let i = startIdx; const sentences = [];
+  if (trials.length >= 2){
+    const f = trials[0], l = trials[trials.length-1];
+    const subj = subjFor(i);
+    sentences.push(fillTpl(templates['cvlt.learning'], { POSS: subj.possCap, FIRST_DESC: f.descriptor.toLowerCase(), FIRST_T: f.subtest, FIRST_BRACKET: bracket(f,'cap'), LAST_DESC: l.descriptor.toLowerCase(), LAST_T: l.subtest, LAST_BRACKET: bracket(l,'cap') }));
+    i++;
+  }
+  const sp = sdfr || sdcr;
+  if (sp){ const subj = subjFor(i); sentences.push(fillTpl(templates['cvlt.shortDelay'], { POSS_LOWER: subj.possLow, TEST: sp.subtest, DESC_LOWER: sp.descriptor.toLowerCase(), BRACKET: bracket(sp,'cap') })); i++; }
+  const lp = ldfr || ldcr;
+  if (lp){ const subj = subjFor(i); sentences.push(fillTpl(templates['cvlt.longDelay'], { POSS_LOWER: subj.possLow, TEST: lp.subtest, DESC_LOWER: lp.descriptor.toLowerCase(), BRACKET: bracket(lp,'cap') })); i++; }
+  if (recog){
+    const subj = subjFor(i);
+    let key = 'cvlt.recog.plain';
+    if (lp){ const diff = parseFloat(recog.score) - parseFloat(lp.score); if (diff>=6) key='cvlt.recog.notable'; else if (diff>=3) key='cvlt.recog.slight'; }
+    sentences.push(fillTpl(templates[key], { POSS: subj.possCap, DESC_LOWER: recog.descriptor.toLowerCase(), BRACKET: bracket(recog,'cap') }));
+    i++;
+  }
+  return { sentences, nextIdx: i, auxiliary };
+}
+
+function premorbidSection(prem){
+  if (!prem || !prem.length) return '';
+  const subj = subjFor(0);
+  const ciLabel = '90%';
+  const clauses = prem.map(e => `the ${e.label} (FSIQ ≈ ${e.fsiq}, ${ciLabel} CI ${e.lo}-${e.hi})`);
+  let modelsList;
+  if (clauses.length === 1) modelsList = clauses[0];
+  else if (clauses.length === 2) modelsList = clauses[0] + ', as well as ' + clauses[1];
+  else modelsList = clauses[0] + ', as well as ' + clauses.slice(1,-1).join(', ') + ', and ' + clauses[clauses.length-1];
+  const s1 = fillTpl(templates['premorbid.opener'], { POSS: subj.possCap, MODELS_LIST: modelsList });
+  const descs = prem.map(e => descriptorFor(e.fsiq).toLowerCase());
+  const allSame = descs.length === prem.length && descs.every(d => d === descs[0]);
+  let s2 = '';
+  if (allSame && descs[0] && prem.length >= 2){
+    const tplKey = prem.length === 2 ? 'premorbid.converged.both' : 'premorbid.converged.all';
+    s2 = ' ' + fillTpl(templates[tplKey], { NAME_POSS: fullPoss(), DESC_LOWER: descs[0] });
+  }
+  return '<h3>Premorbid Functioning</h3><p>' + s1 + s2 + '</p>';
+}
+
+function compose(seed){
+  const rows = annotate(seed.battery || []);
+  const byDomain = {};
+  rows.forEach(r => { (byDomain[r.domain] = byDomain[r.domain] || []).push(r); });
+  const blocks = [];
+  let any = false;
+  if (byDomain.validity && byDomain.validity.length){
+    const families = [...new Set(byDomain.validity.map(r=>r.brand))];
+    const using = listJoin(families.map(f=>'the '+f));
+    const failed = byDomain.validity.find(r => r.ss != null && r.ss < 45);
+    const subj = subjFor(0);
+    const tpl = failed ? templates['validity.failed'] : templates['validity.passed'];
+    blocks.push('<h3>Performance Validity</h3><p>' + fillTpl(tpl, { POSS: subj.possCap, USING: using }) + '</p>');
+    any = true;
+  }
+  if (seed.premorbid && seed.premorbid.length){ blocks.push(premorbidSection(seed.premorbid)); any = true; }
+
+  DOMAIN_ORDER.forEach(d => {
+    if (d === 'validity' || d === 'premorbid') return;
+    const dRows = byDomain[d] || [];
+    if (!dRows.length) return;
+    any = true;
+    const heading = '<h3>' + DOMAIN_HEADING[d] + '</h3>';
+    const ability = DOMAIN_LABEL[d] || 'this domain';
+    const brandOrder = []; const byBrand = {};
+    dRows.forEach(r => { const b = r.brand; if (!byBrand[b]){ byBrand[b]=[]; brandOrder.push(b);} byBrand[b].push(r); });
+    let idx = 0; const paragraphs = [];
+    brandOrder.forEach((brand, bi) => {
+      const brRows = byBrand[brand];
+      const subtests = [...new Set(brRows.map(r=>r.subtest))];
+      const using = listJoin(subtests);
+      const subj = subjFor(idx);
+      const collapse = subtests.length > 4;
+      const opener = (bi === 0)
+        ? fillTpl(templates[collapse ? 'opener.first.collapsed' : 'opener.first'], { POSS: subj.possCap, ABILITY: ability, USING: using, BRAND: brand })
+        : fillTpl(templates[collapse ? 'opener.next.collapsed'  : 'opener.next' ], { NAME: subj.name, USING: using, BRAND: brand });
+      idx++;
+      const useCvlt = d === 'verbal_learning_memory' && /CVLT/i.test(brand);
+      const body = useCvlt ? cvltNarrative(brRows, idx) : batterySentences(brRows, idx);
+      idx = body.nextIdx;
+      paragraphs.push('<p>' + [opener].concat(body.sentences).join(' ') + '</p>');
+      if (body.auxiliary && body.auxiliary.length){
+        const aux = batterySentences(body.auxiliary, idx);
+        idx = aux.nextIdx;
+        if (aux.sentences.length) paragraphs.push('<p>' + aux.sentences.join(' ') + '</p>');
+      }
+    });
+    blocks.push(heading + paragraphs.join(''));
+  });
+
+  return any ? blocks.join('') : '<div class="empty">No data — edit the seed JSON above.</div>';
+}
+
+const SAMPLE_SEED = {
+  battery: [
+    { subtest: 'Digit Span',     score: '10', scoreType: 'scaled', group: 'WAIS-IV Core Subtests · All Ages' },
+    { subtest: 'Symbol Search',  score: '12', scoreType: 'scaled', group: 'WAIS-IV Core Subtests · All Ages' },
+    { subtest: 'Coding',         score: '7',  scoreType: 'scaled', group: 'WAIS-IV Core Subtests · All Ages' },
+    { subtest: 'Vocabulary',     score: '13', scoreType: 'scaled', group: 'WAIS-IV Core Subtests · All Ages' },
+    { subtest: 'Logical Memory I', score: '10', scoreType: 'scaled', group: 'WMS-IV Subtests · Ages 16-69' },
+    { subtest: 'Visual Reproduction I', score: '11', scoreType: 'scaled', group: 'WMS-IV Subtests · Ages 16-69' },
+    { subtest: 'Trial 1', score: '15', scoreType: 'scaled', group: 'CVLT-3' },
+    { subtest: 'Trial 5', score: '10', scoreType: 'scaled', group: 'CVLT-3' },
+    { subtest: 'Short Delay Free Recall', score: '8',  scoreType: 'scaled', group: 'CVLT-3' },
+    { subtest: 'Long Delay Free Recall',  score: '6',  scoreType: 'scaled', group: 'CVLT-3' },
+    { subtest: 'Recognition',             score: '11', scoreType: 'scaled', group: 'CVLT-3' },
+    { subtest: 'Total Repetitions',       score: '8',  scoreType: 'scaled', group: 'CVLT-3' }
+  ],
+  premorbid: [
+    { id: 'topf-demo', label: 'Test of Premorbid Functioning (ToPF) with demographic adjustment', fsiq: 102, lo: 88, hi: 116 },
+    { id: 'topf-raw',  label: 'ToPF (raw score)',                                                  fsiq: 100, lo: 85, hi: 115 },
+    { id: 'crawford',  label: 'Crawford & Allan (2001) demographic predictor',                     fsiq: 99,  lo: 84, hi: 114 },
+    { id: 'opie4',     label: 'OPIE-4 (Vocabulary and Matrix Reasoning)',                          fsiq: 105, lo: 90, hi: 120 }
+  ]
+};
+
+document.getElementById('seed').value = JSON.stringify(SAMPLE_SEED, null, 2);
+document.getElementById('templates').value = JSON.stringify(templates, null, 2);
+
+function rerender(){
+  let seed; try { seed = JSON.parse(document.getElementById('seed').value); } catch(e){ document.getElementById('paper').innerHTML = '<div class="empty" style="color:#B91C1C;">Seed JSON parse error: ' + e.message + '</div>'; return; }
+  try { templates = JSON.parse(document.getElementById('templates').value); } catch(e){ document.getElementById('paper').innerHTML = '<div class="empty" style="color:#B91C1C;">Templates JSON parse error: ' + e.message + '</div>'; return; }
+  document.getElementById('paper').innerHTML = compose(seed);
+}
+['re-render','ref','showStd','showPct'].forEach(id => document.getElementById(id).addEventListener(id==='re-render'?'click':'change', rerender));
+document.getElementById('seed').addEventListener('input', rerender);
+document.getElementById('templates').addEventListener('input', rerender);
+rerender();
+</script>
+</body>
+</html>

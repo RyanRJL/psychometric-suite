@@ -1790,7 +1790,7 @@ label[required-marker]::after{
   font-family: var(--sans) !important;
   font-size: var(--ds-text-sm) !important;
   font-weight: var(--ds-weight-medium) !important;
-  color: var(--ds-text-muted) !important;
+  color: var(--ds-text) !important;
   letter-spacing: var(--ds-tracking-base) !important;
   border-radius: var(--ds-radius-sm) !important;
   background: transparent !important;
@@ -1798,13 +1798,13 @@ label[required-marker]::after{
   border-left: none !important;
 }
 .topnav-drop-item:hover{
-  background: var(--ds-surface-emphasis) !important;
+  background: rgba(20,15,5,0.04) !important;
   color: var(--ds-text) !important;
 }
 .topnav-drop-item.active{
-  background: var(--ds-surface-emphasis) !important;
+  background: transparent !important;
   color: var(--ds-text) !important;
-  font-weight: var(--ds-weight-semibold) !important;
+  font-weight: var(--ds-weight-medium) !important;
 }
 
 /* ============================================================================
@@ -1838,7 +1838,7 @@ body .change-setup-grid,
      ~30% over results columns. Each method's table is proportioned a bit
      differently but this is the visual sweet spot across all five. */
   display: grid;
-  grid-template-columns: 1.6fr 0.85fr 1.05fr;
+  grid-template-columns: 1.25fr 1fr 1.2fr;
   align-items: center;
   gap: var(--ds-space-4);
   padding: var(--ds-space-3) var(--ds-space-4);
@@ -2024,6 +2024,64 @@ input[type="text"].ds-inline-bar-input{
 .ds-inline-bar-toggle-btn:focus-visible{
   outline: 2px solid var(--ds-primary-ring);
   outline-offset: 2px;
+}
+
+/* Corrected-r checkbox toggle inside the inline bar (SRB + Crawford).
+   Sits to the right of the threshold pill group, with a gap so it doesn't
+   visually merge with the threshold buttons. */
+.ds-inline-bar-corr-toggle{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: var(--ds-space-3);
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--ds-border-strong, #D8D5CC);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text-2);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease),
+              color var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-inline-bar-corr-toggle:hover{
+  background: #F8F6EF;
+  border-color: var(--ds-text-faint);
+  color: var(--ds-text);
+}
+.ds-inline-bar-corr-toggle input[type="checkbox"]{
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  margin: 0;
+  border: 1.5px solid var(--ds-border-strong, #D8D5CC);
+  border-radius: 3px;
+  background: white;
+  position: relative;
+  cursor: pointer;
+}
+.ds-inline-bar-corr-toggle input[type="checkbox"]:checked{
+  background: var(--ds-text);
+  border-color: var(--ds-text);
+}
+.ds-inline-bar-corr-toggle input[type="checkbox"]:checked::after{
+  content: "";
+  position: absolute;
+  top: 1px; left: 4px;
+  width: 4px; height: 8px;
+  border-right: 1.5px solid white;
+  border-bottom: 1.5px solid white;
+  transform: rotate(45deg);
+}
+.ds-inline-bar-corr-toggle:has(input:checked){
+  background: var(--ds-primary-tint, rgba(168,85,68,0.08));
+  border-color: var(--ds-primary, #A85544);
+  color: var(--ds-text);
 }
 
 /* Battery variant — 3 columns. Quick Add | Score Type | Class.
@@ -2433,14 +2491,13 @@ input[type="text"].ds-inline-bar-input{
 .rb-chip{
   position: fixed;
 }
-/* Outer glow ring — sits BEHIND the chip; gives the light a halo.
-   Restrained size; brightness retained via the layered drop-shadows. */
+/* Outer glow ring — thin, slow. Brightness retained via drop-shadows. */
 .rb-chip::before{
   content: '';
   position: absolute;
-  inset: -4px;
+  inset: -2px;
   border-radius: 999px;
-  padding: 4px;
+  padding: 2px;                              /* thinner ring */
   background: conic-gradient(
     from var(--ds-orbit-angle, 0deg),
     transparent 0deg,
@@ -2460,9 +2517,9 @@ input[type="text"].ds-inline-bar-input{
   pointer-events: none;
   opacity: 0;
   filter:
-    drop-shadow(0 0 4px rgba(34,197,94,0.95))
-    drop-shadow(0 0 10px rgba(34,197,94,0.65))
-    drop-shadow(0 0 18px rgba(34,197,94,0.35));
+    drop-shadow(0 0 3px rgba(34,197,94,0.85))
+    drop-shadow(0 0 8px rgba(34,197,94,0.50))
+    drop-shadow(0 0 14px rgba(34,197,94,0.25));
   z-index: 2;
   transition: opacity 200ms var(--ds-ease);
 }
@@ -2472,7 +2529,7 @@ input[type="text"].ds-inline-bar-input{
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  padding: 3px;
+  padding: 2px;                              /* thinner */
   background: conic-gradient(
     from var(--ds-orbit-angle, 0deg),
     transparent 0deg,
@@ -2489,15 +2546,15 @@ input[type="text"].ds-inline-bar-input{
   pointer-events: none;
   opacity: 0;
   z-index: 3;
-  filter: drop-shadow(0 0 6px rgba(255,255,255,0.85));
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.7));
   transition: opacity 200ms var(--ds-ease);
 }
 
-/* Active orbit — one full revolution */
+/* Active orbit — one full revolution at a calm pace */
 .rb-chip.rb-chip-orbit::before,
 .rb-chip.rb-chip-orbit::after{
   opacity: 1;
-  animation: rb-chip-orbit-spin 1.4s cubic-bezier(0.4, 0, 0.2, 1) 1;
+  animation: rb-chip-orbit-spin 2.4s cubic-bezier(0.4, 0, 0.2, 1) 1;
 }
 @keyframes rb-chip-orbit-spin{
   0%   { --ds-orbit-angle: 0deg; }
@@ -2529,7 +2586,7 @@ input[type="text"].ds-inline-bar-input{
   }
   .rb-chip.rb-chip-orbit::before,
   .rb-chip.rb-chip-orbit::after{
-    animation: rb-chip-orbit-rotate 1.4s linear 1;
+    animation: rb-chip-orbit-rotate 2.4s linear 1;
   }
   @keyframes rb-chip-orbit-rotate{
     from { transform: rotate(0deg);   }
@@ -2561,6 +2618,215 @@ input[type="text"].ds-inline-bar-input{
 }
 
 /* ============================================================================
+   33d. APA TABLE — guarantee a bottom border on the last data row
+        Some grouped tables (e.g. Neuropsych Tables with a single group like
+        CVLT-3 Indices) end with an `.apa-grouped-row` whose bottom border
+        was dropping out in some render paths. Force it here with high
+        specificity + !important so it never disappears.
+   ============================================================================ */
+.apa-table tbody tr:last-child td,
+.apa-table tbody tr.apa-grouped-row:last-child td{
+  border-bottom: 1.5px solid #000 !important;
+  padding-bottom: 8px !important;
+}
+
+/* ============================================================================
+   33e. CORRECTED-r TOGGLE — for SRB + Crawford config panels
+   ============================================================================ */
+.rci-corr-toggle{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 7px 11px 7px 9px;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: var(--ds-text);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease);
+}
+.rci-corr-toggle:hover{
+  background: #F8F6EF;
+  border-color: var(--ds-text-faint);
+}
+.rci-corr-toggle input[type="checkbox"]{
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  margin: 0;
+  border: 1.5px solid var(--ds-border-strong);
+  border-radius: 3px;
+  background: white;
+  position: relative;
+  cursor: pointer;
+}
+.rci-corr-toggle input[type="checkbox"]:checked{
+  background: var(--ds-text);
+  border-color: var(--ds-text);
+}
+.rci-corr-toggle input[type="checkbox"]:checked::after{
+  content: "";
+  position: absolute;
+  top: 1px; left: 4px;
+  width: 4px; height: 8px;
+  border-right: 1.5px solid white;
+  border-bottom: 1.5px solid white;
+  transform: rotate(45deg);
+}
+.rci-corr-toggle:has(input:checked){
+  background: var(--ds-primary-tint);
+  border-color: var(--ds-primary);
+}
+
+/* ============================================================================
+   33b. AUTOFILL DROPDOWN — kill the nested scrollbar
+        A late legacy rule (`.combo-list { overflow:auto }`) gave the outer
+        list a scrollbar in addition to the `.combo-options` inner scroll.
+        Force the multiselect outer to hide its own overflow so only one
+        scrollbar — the inner one — is visible.
+   ============================================================================ */
+.combo-list.is-multiselect{
+  overflow: hidden !important;
+  /* Sensible default — JS clamps this further on open based on the actual
+     space available below the input (see bindComboListAutoHeight). */
+  max-height: 520px !important;
+}
+/* Inner options panel: explicit max-height so overflow-y:auto fires. */
+.combo-options{
+  scrollbar-width: thin;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+  padding-bottom: 8px !important;
+  /* Default — overridden by JS based on the resolved outer height */
+  max-height: 380px !important;
+}
+
+/* ---------- Age-banded sub-items rendered side-by-side ----------
+   `buildFamilyListHtml` wraps each group's age-banded variants in a
+   `.combo-indented-row`. Render them as compact pills in a wrapping flex
+   row so they take one line instead of stacking — major scroll reduction
+   on long family lists. */
+.combo-indented-row{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  padding: 6px 12px 10px 22px !important;
+  border-bottom: 1px solid #F4F1E9;
+}
+.combo-indented-row .combo-item.combo-indented{
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 5px 10px !important;
+  border: 1px solid var(--ds-border-strong, #D8D5CC) !important;
+  border-radius: 999px !important;
+  font-size: 12.5px !important;
+  background: var(--ds-surface, #FFFFFF) !important;
+  cursor: pointer !important;
+  line-height: 1.2 !important;
+  transition: background-color 140ms var(--ds-ease, ease), border-color 140ms var(--ds-ease, ease);
+}
+.combo-indented-row .combo-item.combo-indented:hover{
+  background: #F8F6EF !important;
+  border-color: #B8B3A6 !important;
+}
+.combo-indented-row .combo-item.combo-indented:has(input:checked){
+  background: var(--ds-primary-tint, rgba(168,85,68,0.08)) !important;
+  border-color: var(--ds-primary, #A85544) !important;
+  color: var(--ds-text, #1A1A1A) !important;
+}
+.combo-indented-row .combo-item.combo-indented input{
+  margin: 0 6px 0 0 !important;
+}
+
+/* ============================================================================
+   33c. CHANGE-ANALYSIS / SDI input rows — match compact Neuropsych Tables
+        Legacy CSS forced inputs to min-height:33px in these sections via
+        `#sdi > .panel:not(.autofill-panel) input`. Battery escapes that rule
+        because its table sits inside `.bat-table-block` (not a `.panel`), so
+        its inputs render at the smaller default. Drop the same override here
+        so all input-tables across the site sit at the compact height.
+   ============================================================================ */
+#sdi .input-table td input,
+#sdi .input-table td select,
+#rci-basic .input-table td input,
+#rci-basic .input-table td select,
+#rci-practice .input-table td input,
+#rci-practice .input-table td select,
+#rci-srb .input-table td input,
+#rci-srb .input-table td select,
+#rci-crawford .input-table td input,
+#rci-crawford .input-table td select{
+  min-height: 0 !important;
+  padding: 5px 6px !important;
+  font-size: 13px !important;
+}
+#sdi .input-table tbody td,
+#rci-basic .input-table tbody td,
+#rci-practice .input-table tbody td,
+#rci-srb .input-table tbody td,
+#rci-crawford .input-table tbody td{
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+/* Premorbid CI buttons — discrete, side-by-side, with a clear gap between them
+   so each reads as its own clickable button rather than one segmented pill. */
+.ds-prem-aside .ds-prem-ci-toggle{
+  display: flex !important;
+  width: 100% !important;
+  height: auto !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  gap: var(--ds-space-2) !important;
+}
+.ds-prem-aside .ds-prem-ci-toggle .ds-inline-bar-toggle-btn{
+  flex: 1 1 0 !important;
+  height: 34px !important;
+  min-width: 0 !important;
+  padding: 0 var(--ds-space-3) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  border-radius: var(--ds-radius-sm) !important;
+  background: var(--ds-surface) !important;
+  color: var(--ds-text) !important;
+  font-size: 13px !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: 0.01em !important;
+  box-shadow: 0 1px 0 rgba(15,18,24,0.02), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+  cursor: pointer !important;
+  transition:
+    background-color var(--ds-duration-fast) var(--ds-ease),
+    color var(--ds-duration-fast) var(--ds-ease),
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease) !important;
+}
+.ds-prem-aside .ds-prem-ci-toggle .ds-inline-bar-toggle-btn:hover:not(.is-active){
+  background: #F8F6EF !important;
+  border-color: var(--ds-text-faint) !important;
+}
+.ds-prem-aside .ds-prem-ci-toggle .ds-inline-bar-toggle-btn.is-active{
+  background: var(--ds-text) !important;
+  color: white !important;
+  border-color: var(--ds-text) !important;
+  box-shadow:
+    0 1px 0 rgba(15,18,24,0.06),
+    0 1px 3px rgba(15,18,24,0.18) !important;
+}
+.ds-prem-aside .ds-prem-ci-toggle .ds-inline-bar-toggle-btn:active{
+  transform: translateY(1px);
+}
+
+/* ============================================================================
    34. PREMORBID — single-viewport 2-col layout
         Goal: no page scroll. Inputs LEFT (compact, dense), tabbed tables RIGHT.
    ============================================================================ */
@@ -2572,11 +2838,20 @@ input[type="text"].ds-inline-bar-input{
   padding: var(--ds-space-4) var(--ds-space-6) var(--ds-space-6) !important;
 }
 
-/* Kill the legacy section header — topbar already shows "Premorbid Estimation". */
+/* Kill the legacy eyebrow + h1 — the topbar already shows "Premorbid Estimation",
+   but keep .section-desc visible (compact) so the page has the same brief
+   intro paragraph the other tools use. */
 #premorbid.ds-prem-restructured > .eyebrow,
-#premorbid.ds-prem-restructured > .section-title,
-#premorbid.ds-prem-restructured > .section-desc{
+#premorbid.ds-prem-restructured > .section-title{
   display: none !important;
+}
+#premorbid.ds-prem-restructured > .section-desc{
+  display: block !important;             /* outrank legacy `#premorbid > .section-desc{display:none}` */
+  margin: 0 0 var(--ds-space-3) !important;
+  max-width: 880px !important;
+  font-size: 13.5px !important;
+  line-height: 1.55 !important;
+  color: var(--ds-text-2) !important;
 }
 /* Drop the long intro paragraph above each table too */
 #premorbid.ds-prem-restructured #pre-predict > p:first-of-type,
@@ -2653,11 +2928,10 @@ input[type="text"].ds-inline-bar-input{
   color: var(--ds-text-subtle);
 }
 .ds-prem-aside .pre-form-note{
-  display: none !important;                /* drop the explanatory subtitles */
+  display: none !important;
 }
 
-/* Field grids — tight 3-up for predictors, 2x2 for demographics/output.
-   Selectors include #premorbid to outrank legacy `#premorbid .pre-form-section:nth-of-type(2) .pre-form-grid-2` (0,3,1). */
+/* Field grids — tight 3-up for predictors, 2x2 for demographics/output. */
 #premorbid.ds-prem-restructured .ds-prem-aside .pre-form-grid-3{
   grid-template-columns: 1fr 1fr 1fr !important;
   gap: var(--ds-space-3) var(--ds-space-2) !important;
@@ -2670,13 +2944,12 @@ input[type="text"].ds-inline-bar-input{
   align-items: start !important;
 }
 
-/* Compact field rendering — single-line labels with consistent height so
-   inputs always align to a shared baseline */
 .ds-prem-aside .field{
   margin: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   min-width: 0 !important;
+  justify-content: flex-start !important;
 }
 .ds-prem-aside .field label{
   font-size: 11px !important;
@@ -2687,15 +2960,9 @@ input[type="text"].ds-inline-bar-input{
   margin-bottom: 4px !important;
   display: block !important;
   line-height: 1.25 !important;
-  white-space: normal !important;          /* allow wrap when needed */
+  white-space: normal !important;
   overflow: visible !important;
   text-overflow: clip !important;
-  /* No min-height — let label hug its input. Row alignment is achieved by
-     `align-items: end` on the grid (label+input stick to bottom of row),
-     so single-line labels sit just above input and two-line labels do too. */
-}
-.ds-prem-aside .field{
-  justify-content: flex-start !important;
 }
 .ds-prem-aside .pre-label-sub{ display: none !important; }
 /* Override the legacy min-height:34px applied to labels with a .pre-label-sub
@@ -2712,7 +2979,7 @@ input[type="text"].ds-inline-bar-input{
   box-sizing: border-box !important;
 }
 .ds-prem-aside .field select{
-  padding-right: 26px !important;          /* room for chevron */
+  padding-right: 26px !important;
 }
 
 /* ---------- Right column: slim tab pills ---------- */
@@ -2732,24 +2999,63 @@ input[type="text"].ds-inline-bar-input{
   gap: var(--ds-space-2) !important;
 }
 #premorbid.ds-prem-restructured .pre-tab-num{
-  display: none !important;                /* drop the numbered circle badge */
+  display: none !important;
 }
 #premorbid.ds-prem-restructured .pre-tabs .tab span:not(.pre-tab-num){
   white-space: nowrap !important;
 }
 
-/* Hide the bottom Back/Next nav — with Inputs tab gone there's only 3 panes
-   and the user can just click the tabs. Saves ~60px. */
+/* Hide the bottom Back/Next nav — with Inputs tab gone there's only 3 panes */
 #premorbid.ds-prem-restructured .pre-tab-nav{
   display: none !important;
 }
-
-/* Ensure tab content has no extra top padding */
 #premorbid.ds-prem-restructured .pre-tab-content{
   margin-top: 0 !important;
 }
 
-/* ---------- Minimalistic model-availability ticks ---------- */
+/* ---------- Font consistency on the Premorbid page ----------
+   The legacy table uses var(--serif) for model names and var(--mono) for
+   numbers. Force everything to the sans-serif system font so the page
+   reads as one cohesive surface. */
+#premorbid.ds-prem-restructured .pre-results-table,
+#premorbid.ds-prem-restructured .pre-results-table th,
+#premorbid.ds-prem-restructured .pre-results-table td,
+#premorbid.ds-prem-restructured .pre-results-table td.model,
+#premorbid.ds-prem-restructured .pre-results-table td.num,
+#premorbid.ds-prem-restructured .pre-results-table td.fsiq,
+#premorbid.ds-prem-restructured .pre-results-table td.psy,
+#premorbid.ds-prem-restructured .pre-predict-table .diff,
+#premorbid.ds-prem-restructured .pre-predict-table .achieved-cell input,
+#premorbid.ds-prem-restructured .info-box,
+#premorbid.ds-prem-restructured .info-box *{
+  font-family: var(--sans) !important;
+}
+/* Keep tabular alignment for numeric columns even without the mono font */
+#premorbid.ds-prem-restructured .pre-results-table td.num,
+#premorbid.ds-prem-restructured .pre-results-table td.fsiq,
+#premorbid.ds-prem-restructured .pre-results-table td.psy,
+#premorbid.ds-prem-restructured .pre-predict-table .diff{
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* ---------- Remove the redundant "Title" field ----------
+   The output table's title is fixed and there's no value letting the user
+   override it from the aside. Hide the field and collapse the output
+   settings grid to a single column so Confidence fills the row. */
+#premorbid.ds-prem-restructured .ds-prem-aside .field:has(#pre-title){
+  display: none !important;
+}
+#premorbid.ds-prem-restructured .ds-prem-aside .pre-form-section:nth-of-type(3) .pre-form-grid-2{
+  grid-template-columns: 1fr !important;
+}
+
+/* ---------- Predictions ticks panel — REMOVED per request ----------
+   The element is still built by design-system.js but hidden visually so
+   it doesn't take vertical space in the aside. */
+.ds-prem-ticks{ display: none !important; }
+
+/* ---------- Minimalistic model-availability ticks (styles retained
+              in case the panel is re-enabled in future) ---------- */
 .ds-prem-ticks{
   background: var(--ds-surface);
   border: 1px solid var(--ds-border);
@@ -2780,9 +3086,7 @@ input[type="text"].ds-inline-bar-input{
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
-.ds-prem-ticks-count.is-all-ready{
-  color: #15803d;
-}
+.ds-prem-ticks-count.is-all-ready{ color: #15803d; }
 .ds-prem-ticks-list{
   list-style: none;
   margin: 0;
@@ -2802,16 +3106,12 @@ input[type="text"].ds-inline-bar-input{
   transition: color 220ms var(--ds-ease);
 }
 .ds-prem-ticks-row:last-child{ border-bottom: 0; }
-.ds-prem-ticks-row.is-ready{
-  color: var(--ds-text);
-}
+.ds-prem-ticks-row.is-ready{ color: var(--ds-text); }
 .ds-prem-ticks-name{ flex: 1; }
 .ds-prem-ticks-row.is-ready .ds-prem-ticks-name{
   font-weight: var(--ds-weight-medium);
 }
 
-/* The tick mark itself — minimal hairline circle that fills with green on ready.
-   Animation is a slim scale + colour swap, nothing flashy. */
 .ds-prem-ticks-mark{
   width: 16px;
   height: 16px;
@@ -2844,6 +3144,223 @@ input[type="text"].ds-inline-bar-input{
 }
 .ds-prem-ticks-row.is-ready .ds-prem-ticks-mark::after{
   transform: translate(-50%, -65%) rotate(-45deg) scale(1);
+}
+
+/* ============================================================================
+   36. REPORT WRITER · auto-generated narrative (TRIAL)
+        Replaces the legacy 3-tab Report Writer with a single page: a slim
+        toolbar (Reference, Descriptor) over a paper-style output card.
+        Legacy markup is hidden so its JS bindings don't error.
+   ============================================================================ */
+
+#report-writer .rw-legacy-shell{ display: none !important; }
+#report-writer{
+  max-width: min(880px, calc(100vw - 48px)) !important;
+}
+
+.rwauto-shell{
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+  margin-top: var(--ds-space-3);
+}
+
+.rwauto-toolbar{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-1);
+}
+.rwauto-toolbar-spacer{ flex: 1; }
+.rwauto-toolbar-group{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+}
+.rwauto-toolbar-toggles{
+  gap: var(--ds-space-2);
+}
+
+/* Pill-style checkbox toggles for the bracket controls */
+.rwauto-pill-toggle{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--ds-border-strong, #D8D5CC);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text-2);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease),
+              color var(--ds-duration-fast) var(--ds-ease);
+}
+.rwauto-pill-toggle:hover{
+  background: #F8F6EF;
+  border-color: var(--ds-text-faint);
+  color: var(--ds-text);
+}
+.rwauto-pill-toggle input[type="checkbox"]{
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  margin: 0;
+  border: 1.5px solid var(--ds-border-strong, #D8D5CC);
+  border-radius: 3px;
+  background: white;
+  position: relative;
+  cursor: pointer;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease);
+}
+.rwauto-pill-toggle input[type="checkbox"]:checked{
+  background: var(--ds-text);
+  border-color: var(--ds-text);
+}
+.rwauto-pill-toggle input[type="checkbox"]:checked::after{
+  content: "";
+  position: absolute;
+  top: 1px; left: 4px;
+  width: 4px; height: 8px;
+  border-right: 1.5px solid white;
+  border-bottom: 1.5px solid white;
+  transform: rotate(45deg);
+}
+.rwauto-pill-toggle:has(input:checked){
+  background: var(--ds-primary-tint, rgba(168,85,68,0.08));
+  border-color: var(--ds-primary, #A85544);
+  color: var(--ds-text);
+}
+.rwauto-toolbar-label{
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+}
+.rwauto-toolbar-select{
+  height: 34px;
+  padding: 0 28px 0 var(--ds-space-3);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%234A5260' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3,5 6,8 9,5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--ds-space-3) center;
+  background-size: 12px 12px;
+}
+.rwauto-toolbar-select:hover{ border-color: var(--ds-text-faint); }
+.rwauto-toolbar-select:focus{
+  outline: none;
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 3px var(--ds-primary-tint);
+}
+
+.rwauto-btn{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: var(--ds-text);
+  color: white;
+  border: 1px solid var(--ds-text);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: var(--ds-weight-semibold);
+  cursor: pointer;
+  transition: background var(--ds-duration-fast) var(--ds-ease);
+}
+.rwauto-btn:hover{ background: #000; }
+.rwauto-btn svg{ width: 13px; height: 13px; }
+
+/* The output paper — proportioned like a printed report page. Generous
+   internal margins, narrower readable column, refined typography. */
+.rwauto-paper{
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow:
+    0 1px 2px rgba(15,18,24,0.04),
+    0 8px 22px rgba(15,18,24,0.06);
+  padding: 64px 72px;                       /* Word-margin feel */
+  font-family: var(--sans);
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ds-text);
+  letter-spacing: -0.001em;
+  min-height: 600px;
+  max-width: 820px;
+  margin: 0 auto;
+}
+@media (max-width: 720px){
+  .rwauto-paper{ padding: 36px 28px; }
+}
+
+/* Section heading: subtle uppercase eyebrow + serif-italic title to feel
+   like a clinical report rather than a web heading. Hairline rule below
+   keeps the visual rhythm. */
+.rwauto-paper h3{
+  font-family: var(--serif, Georgia, "Times New Roman", serif);
+  font-size: 19px;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: -0.005em;
+  color: var(--ds-text);
+  margin: var(--ds-space-7) 0 var(--ds-space-3);
+  padding-bottom: 8px;
+  border-bottom: 0.75px solid var(--ds-text);
+  position: relative;
+}
+.rwauto-paper h3:first-child{ margin-top: 0; }
+
+/* Body paragraphs */
+.rwauto-paper p{
+  margin: 0 0 var(--ds-space-3);
+  text-align: left;
+}
+.rwauto-paper p:last-child{ margin-bottom: 0; }
+
+/* Empty state */
+.rwauto-empty{
+  text-align: center;
+  padding: var(--ds-space-8) var(--ds-space-5);
+  color: var(--ds-text-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.rwauto-empty-title{
+  font-family: var(--serif, Georgia, serif);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--ds-text);
+}
+.rwauto-empty-sub{
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ds-text-2);
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 /* ----------------------------------------------------------------------------

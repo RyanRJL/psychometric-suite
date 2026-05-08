@@ -34,7 +34,7 @@ const WMS_COEF = [
   {idx:'VWMI', label:'Visual Working Memory Index', intercept:87.994, b1:0.5265, age:-0.1783, see:12.165}
 ];
 
-// OPIE-4 R and SEE (prorated FSIQ — Schoenberg et al., 2011 Table 5.16, post-Age step)
+// OPIE-4 R and SEE (prorated FSIQ - Schoenberg et al., 2011 Table 5.16, post-Age step)
 // Sex term included in equations; full-sample SEE used as a conservative CI estimate.
 const OPIE_STATS = {
   noAge:   { MR:{r:0.57,see:11.98}, VC:{r:0.70,see:10.52}, MR_VC:{r:0.77,see:9.34} },
@@ -207,660 +207,769 @@ const OPIE_BASE_RATES = {
    Test–retest parameters from published manuals/literature
    m1/sd1 = Test, m2/sd2 = Retest, r = corrected reliability
    ============================================================ */
-normDB = {
-  "D-KEFS Trail Making Test · Ages 8-19": {
-    "Visual Scanning":                               { m1:9.29,  sd1:2.84, m2:11.29, sd2:1.65, r:0.50 },
-    "Number Sequencing":                             { m1:10.44,  sd1:2.85, m2:11.44, sd2:1.99, r:0.77 },
-    "Letter Sequencing":                             { m1:9.44,  sd1:3.19, m2:11.15, sd2:2.69, r:0.57 },
-    "Switching":                                     { m1:9.36,  sd1:2.93, m2:10.5, sd2:3.05, r:0.20 },
-    "Motor Speed":                                   { m1:10.32,  sd1:2.71, m2:10.68, sd2:2.55, r:0.82 },
-    "Combined Number + Letter":                      { m1:9.7,  sd1:3.54, m2:11.22, sd2:3.02, r:0.78 },
-  },
-  "D-KEFS Trail Making Test · Ages 20-49": {
-    "Visual Scanning":                               { m1:10.14,  sd1:2.87, m2:10.86, sd2:2.68, r:0.55 },
-    "Number Sequencing":                             { m1:9.57,  sd1:3.18, m2:10.91, sd2:2.22, r:0.54 },
-    "Letter Sequencing":                             { m1:9.69,  sd1:3.32, m2:10.63, sd2:2.29, r:0.48 },
-    "Switching":                                     { m1:9.63,  sd1:2.8, m2:10.97, sd2:1.87, r:0.36 },
-    "Motor Speed":                                   { m1:9.77,  sd1:3.61, m2:10.51, sd2:3.06, r:0.73 },
-    "Combined Number + Letter":                      { m1:9.54,  sd1:3.37, m2:10.83, sd2:2.26, r:0.64 },
-  },
-  "D-KEFS Trail Making Test · Ages 50-89": {
-    "Visual Scanning":                               { m1:10.53,  sd1:2.66, m2:10.9, sd2:2.7, r:0.63 },
-    "Number Sequencing":                             { m1:9.7,  sd1:2.92, m2:11.54, sd2:2.21, r:0.37 },
-    "Letter Sequencing":                             { m1:9.9,  sd1:3.25, m2:10.76, sd2:3.04, r:0.70 },
-    "Switching":                                     { m1:10.33,  sd1:2.99, m2:10.61, sd2:3.25, r:0.55 },
-    "Motor Speed":                                   { m1:10.42,  sd1:2.47, m2:10.45, sd2:3.17, r:0.74 },
-    "Combined Number + Letter":                      { m1:9.66,  sd1:2.23, m2:11.13, sd2:2.92, r:0.60 },
-  },
-  "D-KEFS Trail Making Test · All Ages": {
-    "Visual Scanning":                               { m1:10.05,  sd1:2.8, m2:10.99, sd2:2.43, r:0.56, n:101 },
-    "Number Sequencing":                             { m1:9.86,  sd1:2.99, m2:11.29, sd2:2.15, r:0.59, n:99 },
-    "Letter Sequencing":                             { m1:9.7,  sd1:3.23, m2:10.82, sd2:2.68, r:0.59, n:100 },
-    "Switching":                                     { m1:9.81,  sd1:2.91, m2:10.71, sd2:2.75, r:0.38, n:99 },
-    "Motor Speed":                                   { m1:10.17,  sd1:2.96, m2:10.54, sd2:2.95, r:0.77, n:101 },
-    "Combined Number + Letter":                      { m1:9.63,  sd1:3.33, m2:11.05, sd2:2.71, r:0.66, n:98 },
-  },
-  "D-KEFS Verbal Fluency · Ages 8-19": {
-    "Letter Fluency":                                { m1:9.75,  sd1:2.61, m2:10.5, sd2:2.86, r:0.67 },
-    "Category Fluency":                              { m1:9.18,  sd1:2.52, m2:10.14, sd2:3.0, r:0.70 },
-    "Category Switching":                            { m1:9.25,  sd1:2.86, m2:10.54, sd2:2.32, r:0.65 },
-    "Switching Accuracy":                            { m1:10.29,  sd1:2.77, m2:11.0, sd2:3.15, r:0.53 },
-  },
-  "D-KEFS Verbal Fluency · Ages 20-49": {
-    "Letter Fluency":                                { m1:9.39,  sd1:3.11, m2:9.91, sd2:3.64, r:0.76 },
-    "Category Fluency":                              { m1:10.06,  sd1:3.3, m2:10.52, sd2:3.42, r:0.81 },
-    "Category Switching":                            { m1:9.39,  sd1:3.63, m2:8.24, sd2:3.66, r:0.49 },
-    "Switching Accuracy":                            { m1:10.36,  sd1:3.0, m2:9.3, sd2:3.88, r:0.24 },
-  },
-  "D-KEFS Verbal Fluency · Ages 50-89": {
-    "Letter Fluency":                                { m1:9.71,  sd1:3.56, m2:9.97, sd2:3.88, r:0.88 },
-    "Category Fluency":                              { m1:10.11,  sd1:3.68, m2:10.24, sd2:3.66, r:0.82 },
-    "Category Switching":                            { m1:10.71,  sd1:3.44, m2:10.79, sd2:3.86, r:0.51 },
-    "Switching Accuracy":                            { m1:10.55,  sd1:3.13, m2:11.26, sd2:3.55, r:0.39 },
-  },
-  "D-KEFS Verbal Fluency · All Ages": {
-    "Letter Fluency":                                { m1:9.62,  sd1:3.14, m2:10.1, sd2:3.51, r:0.80, n:101 },
-    "Category Fluency":                              { m1:9.83,  sd1:3.25, m2:10.3, sd2:3.38, r:0.79, n:101 },
-    "Category Switching":                            { m1:9.86,  sd1:3.39, m2:9.87, sd2:3.58, r:0.52, n:101 },
-    "Switching Accuracy":                            { m1:10.41,  sd1:2.96, m2:10.54, sd2:3.63, r:0.36, n:101 },
-  },
-  "D-KEFS Colour-Word Interference · Ages 8-19": {
-    "Colour Naming":                                 { m1:9.96,  sd1:2.43, m2:11.04, sd2:2.76, r:0.79 },
-    "Word Reading":                                  { m1:10.04,  sd1:2.82, m2:10.04, sd2:3.6, r:0.77 },
-    "Inhibition":                                    { m1:10.07,  sd1:3.01, m2:11.54, sd2:2.78, r:0.90 },
-    "Inhibition/Switching":                          { m1:9.75,  sd1:2.94, m2:11.57, sd2:3.25, r:0.80 },
-  },
-  "D-KEFS Colour-Word Interference · Ages 20-49": {
-    "Colour Naming":                                 { m1:9.63,  sd1:3.15, m2:10.6, sd2:2.58, r:0.86 },
-    "Word Reading":                                  { m1:9.57,  sd1:2.93, m2:10.17, sd2:2.15, r:0.49 },
-    "Inhibition":                                    { m1:10.11,  sd1:2.63, m2:11.29, sd2:2.19, r:0.71 },
-    "Inhibition/Switching":                          { m1:10.0,  sd1:2.36, m2:11.09, sd2:2.15, r:0.52 },
-  },
-  "D-KEFS Colour-Word Interference · Ages 50-89": {
-    "Colour Naming":                                 { m1:9.63,  sd1:3.12, m2:10.16, sd2:3.37, r:0.56 },
-    "Word Reading":                                  { m1:9.95,  sd1:3.0, m2:10.4, sd2:2.67, r:0.56 },
-    "Inhibition":                                    { m1:10.43,  sd1:3.07, m2:10.97, sd2:3.48, r:0.50 },
-    "Inhibition/Switching":                          { m1:10.43,  sd1:2.68, m2:10.92, sd2:3.48, r:0.57 },
-  },
-  "D-KEFS Colour-Word Interference · All Ages": {
-    "Colour Naming":                                 { m1:9.72,  sd1:2.93, m2:10.55, sd2:2.94, r:0.76, n:101 },
-    "Word Reading":                                  { m1:9.84,  sd1:2.91, m2:10.22, sd2:2.78, r:0.62, n:101 },
-    "Inhibition":                                    { m1:10.22,  sd1:2.88, m2:11.24, sd2:2.87, r:0.75, n:100 },
-    "Inhibition/Switching":                          { m1:10.09,  sd1:2.64, m2:11.16, sd2:2.99, r:0.65, n:100 },
-  },
-  "D-KEFS Design Fluency · Ages 8-19": {
-    "Filled Dots":                                   { m1:10.21,  sd1:2.74, m2:11.75, sd2:3.19, r:0.66 },
-    "Empty Dots":                                    { m1:9.64,  sd1:3.38, m2:11.39, sd2:3.1, r:0.43 },
-    "Switching":                                     { m1:9.64,  sd1:2.56, m2:11.86, sd2:2.81, r:0.13 },
-  },
-  "D-KEFS Design Fluency · Ages 20-49": {
-    "Filled Dots":                                   { m1:9.37,  sd1:2.76, m2:11.89, sd2:3.39, r:0.62 },
-    "Empty Dots":                                    { m1:9.37,  sd1:2.68, m2:11.14, sd2:2.79, r:0.73 },
-    "Switching":                                     { m1:9.83,  sd1:3.44, m2:11.49, sd2:2.83, r:0.22 },
-  },
-  "D-KEFS Design Fluency · Ages 50-89": {
-    "Filled Dots":                                   { m1:10.24,  sd1:2.72, m2:11.84, sd2:3.06, r:0.43 },
-    "Empty Dots":                                    { m1:10.0,  sd1:2.97, m2:11.08, sd2:2.91, r:0.49 },
-    "Switching":                                     { m1:11.03,  sd1:2.59, m2:11.16, sd2:3.33, r:0.58 },
-  },
-  "D-KEFS Design Fluency · All Ages": {
-    "Filled Dots":                                   { m1:9.93,  sd1:2.74, m2:11.83, sd2:3.19, r:0.58, n:101 },
-    "Empty Dots":                                    { m1:9.68,  sd1:2.98, m2:11.19, sd2:2.89, r:0.57, n:101 },
-    "Switching":                                     { m1:10.23,  sd1:2.95, m2:11.47, sd2:3.01, r:0.32, n:101 },
-  },
-  "D-KEFS Sorting Test · Ages 8-19": {
-    "Free Sorting Confirmed Sorts":                  { m1:10.22,  sd1:1.63, m2:11.67, sd2:2.34, r:0.49 },
-    "Free Sorting Total Score":                      { m1:10.19,  sd1:1.57, m2:11.85, sd2:2.48, r:0.67 },
-    "Sort Recognition Score":                        { m1:10.22,  sd1:2.95, m2:11.81, sd2:2.77, r:0.56 },
-    "Total Weighted Achievement":                    { m1:9.36,  sd1:2.84, m2:10.16, sd2:2.87, r:0.06 },
-    "Initial Abstraction Score":                     { m1:9.64,  sd1:2.34, m2:9.61, sd2:2.63, r:0.62 },
-  },
-  "D-KEFS Sorting Test · Ages 20-49": {
-    "Free Sorting Confirmed Sorts":                  { m1:9.67,  sd1:3.24, m2:11.33, sd2:2.56, r:0.51 },
-    "Free Sorting Description Total Score":          { m1:9.45,  sd1:3.23, m2:11.3, sd2:2.57, r:0.46 },
-    "Sort Recognition Total Description Score":      { m1:9.91,  sd1:2.83, m2:10.91, sd2:3.48, r:0.55 },
-    "Total Weighted Achievement":                    { m1:10.61,  sd1:2.73, m2:10.33, sd2:2.91, r:0.19 },
-    "Initial Abstraction Score":                     { m1:10.21,  sd1:2.0, m2:9.74, sd2:2.25, r:0.24 },
-  },
-  "D-KEFS Sorting Test · Ages 50-89": {
-    "Free Sorting Confirmed Sorts":                  { m1:10.9,  sd1:2.98, m2:10.97, sd2:2.44, r:0.62 },
-    "Free Sorting Description Total Score":          { m1:10.77,  sd1:2.82, m2:10.7, sd2:2.44, r:0.63 },
-    "Sort Recognition Total Description Score":      { m1:10.67,  sd1:3.02, m2:10.83, sd2:3.03, r:0.73 },
-    "Total Weighted Achievement":                    { m1:9.68,  sd1:3.43, m2:10.18, sd2:3.05, r:0.39 },
-    "Initial Abstraction Score":                     { m1:9.36,  sd1:2.63, m2:9.62, sd2:2.37, r:0.42 },
-  },
-  "D-KEFS Sorting Test · All Ages": {
-    "Free Sorting Confirmed Sorts":                  { m1:10.24,  sd1:2.77, m2:11.31, sd2:2.44, r:0.51, n:101 },
-    "Free Sorting Total Score":                      { m1:10.11,  sd1:2.72, m2:11.27, sd2:2.51, r:0.50, n:101 },
-    "Sort Recognition Score":                        { m1:10.26,  sd1:2.92, m2:11.16, sd2:3.13, r:0.60, n:101 },
-    "Total Weighted Achievement":                    { m1:9.92,  sd1:3.05, m2:10.23, sd2:2.92, r:0.24, n:101 },
-    "Initial Abstraction Score":                     { m1:9.73,  sd1:2.35, m2:9.66, sd2:2.38, r:0.43, n:101 },
-  },
-  "D-KEFS Word Context Test · Ages 8-19": {
-    "Total First Trial Consistently Correct":        { m1:10.57,  sd1:2.74, m2:12.25, sd2:3.1, r:0.58 },
-  },
-  "D-KEFS Word Context Test · Ages 20-49": {
-    "Total First Trial Consistently Correct":        { m1:10.26,  sd1:3.08, m2:11.97, sd2:2.94, r:0.73 },
-  },
-  "D-KEFS Word Context Test · Ages 50-89": {
-    "Total First Trial Consistently Correct":        { m1:9.42,  sd1:2.66, m2:10.61, sd2:3.53, r:0.78 },
-  },
-  "D-KEFS Word Context Test · All Ages": {
-    "Total First Trial Consistently Correct":        { m1:10.03,  sd1:2.85, m2:11.54, sd2:3.27, r:0.70, n:101 },
-  },
-  "D-KEFS Tower Test · Ages 8-19": {
-    "Total Achievement Score":                       { m1:11.0,  sd1:3.14, m2:12.08, sd2:2.8, r:0.51 },
-  },
-  "D-KEFS Tower Test · Ages 20-49": {
-    "Total Achievement Score":                       { m1:10.33,  sd1:3.03, m2:11.1, sd2:3.04, r:0.14 },
-  },
-  "D-KEFS Tower Test · Ages 50-89": {
-    "Total Achievement Score":                       { m1:9.79,  sd1:3.45, m2:11.89, sd2:2.96, r:0.38 },
-  },
-  "D-KEFS Tower Test · All Ages": {
-    "Total Achievement Score":                       { m1:10.35,  sd1:3.21, m2:11.66, sd2:2.94, r:0.44, n:83 },
-  },
-  "D-KEFS Word Proverb Test · Ages 8-19": {
-    "Total Achievement Score: Free Inquiry":         { m1:9.8,  sd1:3.29, m2:11.3, sd2:2.5, r:0.90 },
-  },
-  "D-KEFS Word Proverb Test · Ages 20-49": {
-    "Total Achievement Score: Free Inquiry":         { m1:10.13,  sd1:2.62, m2:10.56, sd2:2.26, r:0.66 },
-  },
-  "D-KEFS Word Proverb Test · Ages 50-89": {
-    "Total Achievement Score: Free Inquiry":         { m1:9.46,  sd1:3.4, m2:10.38, sd2:3.73, r:0.81 },
-  },
-  "D-KEFS Word Proverb Test · All Ages": {
-    "Total Achievement Score":                       { m1:9.77,  sd1:3.07, m2:10.57, sd2:3.04, r:0.76, n:101 },
-  },
-  // ── D-KEFS Advanced ─────────────────────────────────────────────────────────
-  // Distinct from D-KEFS (standard). Source: D-KEFS Advanced Manual, Table 3.7
-  // (Pearson test–retest r). Age bands: 8–18 (n=91), 19–59 (n=67), 60–90 (n=66), All Ages (n=224).
-  // Only Table 3.7 data included; Table 3.8 decision-consistency values are not Pearson r.
-
-  "D-KEFS Advanced Trail Making · All Ages": {
-    "Number Sequencing Connection Time":              { m1:10.40, sd1:2.80, m2:10.40, sd2:2.80, r:0.53, n:224 },
-    "Letter Sequencing Connection Time":              { m1:10.40, sd1:2.90, m2:10.40, sd2:3.00, r:0.52, n:224 },
-    "Number-Letter Switching Connection Time":              { m1:10.00, sd1:3.10, m2:11.10, sd2:3.10, r:0.64, n:224 },
-    "Switching-Distraction Connection Time":             { m1:9.90,  sd1:3.10, m2:11.10, sd2:3.10, r:0.69, n:224 },
-    "Switching-Working Memory Connection Time":             { m1:10.10, sd1:2.90, m2:10.70, sd2:3.30, r:0.66, n:224 },
-    "Combined Switching Active Errors":             { m1:10.00, sd1:3.20, m2:10.70, sd2:2.80, r:0.48, n:224 },
-    "Number-Letter Switching Pure Speed":                  { m1:10.00, sd1:3.00, m2:11.10, sd2:3.00, r:0.66, n:224 },
-    "Switching-Distraction Pure Speed":                 { m1:9.90,  sd1:3.10, m2:11.00, sd2:3.20, r:0.70, n:224 },
-    "Switching-Working Memory Pure Speed":                 { m1:10.00, sd1:2.90, m2:10.60, sd2:3.30, r:0.70, n:224 },
-    "Combined Sequencing Connection Time Index":    { m1:102.30, sd1:14.30, m2:102.50, sd2:15.10, r:0.67, n:224 },
-    "Combined Switching Connection Time Index":     { m1:99.60, sd1:15.80, m2:105.20, sd2:16.40, r:0.79, n:224 },
-    "Combined Switching Pure Response Speed Index": { m1:99.80, sd1:15.40, m2:105.00, sd2:16.20, r:0.81, n:224 },
-    "Multitasking Index":                           { m1:99.70, sd1:16.40, m2:105.50, sd2:16.40, r:0.73, n:224 },
-  },
-  "D-KEFS Advanced Trail Making · Ages 8-18": {
-    "Number Sequencing Connection Time":              { m1:10.10, sd1:3.00, m2:10.60, sd2:2.90, r:0.47, n:91 },
-    "Letter Sequencing Connection Time":              { m1:10.20, sd1:2.80, m2:10.60, sd2:2.70, r:0.47, n:91 },
-    "Number-Letter Switching Connection Time":              { m1:9.80,  sd1:3.20, m2:11.50, sd2:3.30, r:0.62, n:91 },
-    "Switching-Distraction Connection Time":             { m1:9.80,  sd1:3.40, m2:11.50, sd2:3.30, r:0.77, n:91 },
-    "Switching-Working Memory Connection Time":             { m1:9.60,  sd1:3.10, m2:10.60, sd2:3.40, r:0.76, n:91 },
-    "Combined Switching Active Errors":             { m1:10.00, sd1:3.30, m2:10.80, sd2:2.90, r:0.40, n:91 },
-    "Number-Letter Switching Pure Speed":                  { m1:9.70,  sd1:3.10, m2:11.50, sd2:3.30, r:0.65, n:91 },
-    "Switching-Distraction Pure Speed":                 { m1:9.90,  sd1:3.20, m2:11.50, sd2:3.20, r:0.75, n:91 },
-    "Switching-Working Memory Pure Speed":                 { m1:9.50,  sd1:2.90, m2:10.60, sd2:3.30, r:0.74, n:91 },
-    "Combined Sequencing Connection Time Index":    { m1:100.50, sd1:14.10, m2:103.40, sd2:14.60, r:0.64, n:91 },
-    "Combined Switching Connection Time Index":     { m1:98.20, sd1:16.70, m2:106.70, sd2:17.50, r:0.83, n:91 },
-    "Combined Switching Pure Response Speed Index": { m1:98.30, sd1:15.70, m2:106.80, sd2:16.70, r:0.84, n:91 },
-    "Multitasking Index":                           { m1:98.40, sd1:16.90, m2:106.80, sd2:17.00, r:0.77, n:91 },
-  },
-  "D-KEFS Advanced Trail Making · Ages 19-59": {
-    "Number Sequencing Connection Time":              { m1:11.00, sd1:2.50, m2:10.80, sd2:2.60, r:0.39, n:67 },
-    "Letter Sequencing Connection Time":              { m1:11.00, sd1:3.00, m2:10.70, sd2:3.10, r:0.46, n:67 },
-    "Number-Letter Switching Connection Time":              { m1:10.30, sd1:2.90, m2:11.20, sd2:2.50, r:0.59, n:67 },
-    "Switching-Distraction Connection Time":             { m1:10.40, sd1:2.80, m2:11.30, sd2:2.80, r:0.48, n:67 },
-    "Switching-Working Memory Connection Time":             { m1:10.50, sd1:2.50, m2:10.70, sd2:2.90, r:0.44, n:67 },
-    "Combined Switching Active Errors":             { m1:10.10, sd1:2.80, m2:10.80, sd2:2.70, r:0.52, n:67 },
-    "Number-Letter Switching Pure Speed":                  { m1:10.40, sd1:2.90, m2:11.20, sd2:2.60, r:0.59, n:67 },
-    "Switching-Distraction Pure Speed":                 { m1:10.50, sd1:2.70, m2:11.20, sd2:2.80, r:0.55, n:67 },
-    "Switching-Working Memory Pure Speed":                 { m1:10.50, sd1:2.40, m2:10.70, sd2:2.90, r:0.54, n:67 },
-    "Combined Sequencing Connection Time Index":    { m1:105.40, sd1:12.90, m2:104.20, sd2:15.10, r:0.55, n:67 },
-    "Combined Switching Connection Time Index":     { m1:102.30, sd1:13.40, m2:106.00, sd2:14.00, r:0.67, n:67 },
-    "Combined Switching Pure Response Speed Index": { m1:102.90, sd1:13.10, m2:106.00, sd2:13.70, r:0.69, n:67 },
-    "Multitasking Index":                           { m1:101.90, sd1:14.10, m2:106.20, sd2:14.20, r:0.63, n:67 },
-  },
-  "D-KEFS Advanced Trail Making · Ages 60-90": {
-    "Number Sequencing Connection Time":              { m1:10.30, sd1:2.70, m2:9.80,  sd2:2.80, r:0.70, n:66 },
-    "Letter Sequencing Connection Time":              { m1:10.30, sd1:3.20, m2:10.00, sd2:3.30, r:0.62, n:66 },
-    "Number-Letter Switching Connection Time":              { m1:10.00, sd1:3.30, m2:10.40, sd2:3.50, r:0.70, n:66 },
-    "Switching-Distraction Connection Time":             { m1:9.50,  sd1:3.10, m2:10.40, sd2:2.90, r:0.76, n:66 },
-    "Switching-Working Memory Connection Time":             { m1:10.20, sd1:3.10, m2:10.70, sd2:3.50, r:0.73, n:66 },
-    "Combined Switching Active Errors":             { m1:10.00, sd1:3.40, m2:10.50, sd2:2.90, r:0.52, n:66 },
-    "Number-Letter Switching Pure Speed":                  { m1:10.00, sd1:3.00, m2:10.50, sd2:3.10, r:0.72, n:66 },
-    "Switching-Distraction Pure Speed":                 { m1:9.30,  sd1:3.20, m2:10.00, sd2:3.40, r:0.77, n:66 },
-    "Switching-Working Memory Pure Speed":                 { m1:10.10, sd1:3.40, m2:10.50, sd2:3.60, r:0.79, n:66 },
-    "Combined Sequencing Connection Time Index":    { m1:101.60, sd1:15.40, m2:99.50,  sd2:15.40, r:0.78, n:66 },
-    "Combined Switching Connection Time Index":     { m1:99.00, sd1:16.80, m2:102.40, sd2:17.10, r:0.83, n:66 },
-    "Combined Switching Pure Response Speed Index": { m1:98.70, sd1:16.80, m2:101.50, sd2:17.60, r:0.87, n:66 },
-    "Multitasking Index":                           { m1:99.10, sd1:17.90, m2:103.00, sd2:17.50, r:0.76, n:66 },
-  },
-  "D-KEFS Advanced Verbal Fluency · All Ages": {
-    "Letter Fluency Total Correct":                 { m1:10.10, sd1:3.30, m2:10.90, sd2:3.30, r:0.81, n:224 },
-    "Category Fluency Total Correct":               { m1:10.30, sd1:3.10, m2:10.30, sd2:3.10, r:0.79, n:224 },
-    "Switching Fluency Total Correct":              { m1:10.10, sd1:3.10, m2:10.60, sd2:3.20, r:0.79, n:224 },
-    "Switching Fluency Accurate Switches":          { m1:10.10, sd1:3.20, m2:10.60, sd2:3.10, r:0.78, n:224 },
-    "Total Set-Loss Errors":                        { m1:9.80,  sd1:3.00, m2:10.00, sd2:2.90, r:0.19, n:224 },
-    "Total Repetitions":                            { m1:9.80,  sd1:2.90, m2:9.90,  sd2:2.70, r:0.44, n:224 },
-    "Switching Fluency/Accuracy Index":             { m1:100.40, sd1:15.90, m2:102.90, sd2:16.20, r:0.80, n:224 },
-    "Combined Letter and Category Fluency Index":   { m1:100.80, sd1:16.40, m2:103.40, sd2:16.40, r:0.84, n:224 },
-    "Combined Letter, Category and Switching Index":{ m1:100.50, sd1:16.30, m2:103.20, sd2:16.20, r:0.87, n:224 },
-  },
-  "D-KEFS Advanced Verbal Fluency · Ages 8-18": {
-    "Letter Fluency Total Correct":                 { m1:9.60,  sd1:3.00, m2:10.70, sd2:3.20, r:0.76, n:91 },
-    "Category Fluency Total Correct":               { m1:9.90,  sd1:3.20, m2:9.90,  sd2:2.80, r:0.80, n:91 },
-    "Switching Fluency Total Correct":              { m1:9.60,  sd1:3.10, m2:10.30, sd2:3.10, r:0.66, n:91 },
-    "Switching Fluency Accurate Switches":          { m1:9.70,  sd1:3.20, m2:10.50, sd2:3.10, r:0.68, n:91 },
-    "Total Set-Loss Errors":                        { m1:9.90,  sd1:2.90, m2:10.10, sd2:3.00, r:0.33, n:91 },
-    "Total Repetitions":                            { m1:10.10, sd1:2.80, m2:10.00, sd2:2.60, r:0.41, n:91 },
-    "Switching Fluency/Accuracy Index":             { m1:98.20, sd1:15.80, m2:101.70, sd2:15.70, r:0.67, n:91 },
-    "Combined Letter and Category Fluency Index":   { m1:98.60, sd1:15.90, m2:101.50, sd2:15.10, r:0.81, n:91 },
-    "Combined Letter, Category and Switching Index":{ m1:97.40, sd1:15.10, m2:100.80, sd2:14.70, r:0.78, n:91 },
-  },
-  "D-KEFS Advanced Verbal Fluency · Ages 19-59": {
-    "Letter Fluency Total Correct":                 { m1:10.90, sd1:3.40, m2:11.70, sd2:3.30, r:0.78, n:67 },
-    "Category Fluency Total Correct":               { m1:10.90, sd1:2.90, m2:10.80, sd2:3.40, r:0.71, n:67 },
-    "Switching Fluency Total Correct":              { m1:11.00, sd1:3.10, m2:11.20, sd2:3.20, r:0.81, n:67 },
-    "Switching Fluency Accurate Switches":          { m1:10.90, sd1:2.90, m2:11.20, sd2:3.20, r:0.76, n:67 },
-    "Total Set-Loss Errors":                        { m1:10.00, sd1:2.80, m2:10.40, sd2:2.80, r:0.00, n:67 },
-    "Total Repetitions":                            { m1:9.50,  sd1:2.70, m2:9.80,  sd2:3.00, r:0.50, n:67 },
-    "Switching Fluency/Accuracy Index":             { m1:104.80, sd1:15.30, m2:106.10, sd2:16.50, r:0.81, n:67 },
-    "Combined Letter and Category Fluency Index":   { m1:104.80, sd1:16.10, m2:106.90, sd2:17.00, r:0.78, n:67 },
-    "Combined Letter, Category and Switching Index":{ m1:105.10, sd1:16.40, m2:106.90, sd2:16.40, r:0.85, n:67 },
-  },
-  "D-KEFS Advanced Verbal Fluency · Ages 60-90": {
-    "Letter Fluency Total Correct":                 { m1:10.00, sd1:3.50, m2:10.50, sd2:3.50, r:0.88, n:66 },
-    "Category Fluency Total Correct":               { m1:10.10, sd1:3.00, m2:10.50, sd2:3.10, r:0.85, n:66 },
-    "Switching Fluency Total Correct":              { m1:9.90,  sd1:3.10, m2:10.40, sd2:3.40, r:0.86, n:66 },
-    "Switching Fluency Accurate Switches":          { m1:9.80,  sd1:3.20, m2:10.20, sd2:3.10, r:0.87, n:66 },
-    "Total Set-Loss Errors":                        { m1:9.60,  sd1:3.40, m2:9.50,  sd2:3.00, r:0.23, n:66 },
-    "Total Repetitions":                            { m1:9.70,  sd1:3.30, m2:9.80,  sd2:2.60, r:0.41, n:66 },
-    "Switching Fluency/Accuracy Index":             { m1:99.00, sd1:16.00, m2:101.30, sd2:16.50, r:0.87, n:66 },
-    "Combined Letter and Category Fluency Index":   { m1:99.90, sd1:17.00, m2:102.60, sd2:17.10, r:0.91, n:66 },
-    "Combined Letter, Category and Switching Index":{ m1:100.00, sd1:16.90, m2:102.70, sd2:17.50, r:0.94, n:66 },
-  },
-  "D-KEFS Advanced Color-Word Interference · All Ages": {
-    "Color Identification Net Correct":             { m1:10.20, sd1:3.00, m2:10.50, sd2:3.20, r:0.75, n:224 },
-    "Word Identification Net Correct":              { m1:10.20, sd1:2.80, m2:10.40, sd2:3.00, r:0.78, n:224 },
-    "Inhibition Net Correct":                       { m1:10.00, sd1:3.20, m2:10.70, sd2:3.20, r:0.81, n:224 },
-    "Inhibition/Switching Net Correct":             { m1:9.80,  sd1:3.00, m2:11.00, sd2:3.00, r:0.72, n:224 },
-    "Combined Inhibition/Switching Total Errors":   { m1:9.70,  sd1:3.20, m2:10.40, sd2:3.00, r:0.60, n:224 },
-    "Combined Color and Word ID Index":             { m1:101.10, sd1:14.60, m2:102.40, sd2:15.70, r:0.81, n:224 },
-    "Multitasking Index":                           { m1:99.60, sd1:15.80, m2:105.00, sd2:16.20, r:0.82, n:224 },
-    "Combined Inhibition/Switching Response Time Index": { m1:100.90, sd1:14.10, m2:104.80, sd2:15.60, r:0.84, n:224 },
-  },
-  "D-KEFS Advanced Color-Word Interference · Ages 8-18": {
-    "Color Identification Net Correct":             { m1:10.30, sd1:3.00, m2:10.40, sd2:3.40, r:0.73, n:91 },
-    "Word Identification Net Correct":              { m1:10.30, sd1:2.80, m2:10.40, sd2:3.10, r:0.75, n:91 },
-    "Inhibition Net Correct":                       { m1:10.10, sd1:3.40, m2:11.00, sd2:3.40, r:0.80, n:91 },
-    "Inhibition/Switching Net Correct":             { m1:9.40,  sd1:3.40, m2:10.80, sd2:3.20, r:0.79, n:91 },
-    "Combined Inhibition/Switching Total Errors":   { m1:9.30,  sd1:3.40, m2:10.10, sd2:3.20, r:0.61, n:91 },
-    "Combined Color and Word ID Index":             { m1:101.60, sd1:14.40, m2:102.30, sd2:17.00, r:0.81, n:91 },
-    "Multitasking Index":                           { m1:98.40, sd1:17.30, m2:105.30, sd2:17.40, r:0.84, n:91 },
-    "Combined Inhibition/Switching Response Time Index": { m1:100.20, sd1:15.30, m2:105.50, sd2:16.70, r:0.80, n:91 },
-  },
-  "D-KEFS Advanced Color-Word Interference · Ages 19-59": {
-    "Color Identification Net Correct":             { m1:10.70, sd1:3.20, m2:11.00, sd2:3.30, r:0.80, n:67 },
-    "Word Identification Net Correct":              { m1:10.40, sd1:3.20, m2:10.30, sd2:3.30, r:0.82, n:67 },
-    "Inhibition Net Correct":                       { m1:10.20, sd1:2.70, m2:10.70, sd2:3.00, r:0.77, n:67 },
-    "Inhibition/Switching Net Correct":             { m1:10.50, sd1:2.70, m2:11.60, sd2:2.80, r:0.62, n:67 },
-    "Combined Inhibition/Switching Total Errors":   { m1:10.00, sd1:3.10, m2:10.30, sd2:3.00, r:0.70, n:67 },
-    "Combined Color and Word ID Index":             { m1:102.80, sd1:16.60, m2:103.30, sd2:17.00, r:0.84, n:67 },
-    "Multitasking Index":                           { m1:102.20, sd1:13.40, m2:106.80, sd2:15.10, r:0.74, n:67 },
-    "Combined Inhibition/Switching Response Time Index": { m1:102.90, sd1:12.90, m2:106.60, sd2:14.00, r:0.79, n:67 },
-  },
-  "D-KEFS Advanced Color-Word Interference · Ages 60-90": {
-    "Color Identification Net Correct":             { m1:9.70,  sd1:2.60, m2:10.20, sd2:2.60, r:0.72, n:66 },
-    "Word Identification Net Correct":              { m1:9.90,  sd1:2.30, m2:10.50, sd2:2.30, r:0.77, n:66 },
-    "Inhibition Net Correct":                       { m1:9.70,  sd1:3.20, m2:10.20, sd2:3.00, r:0.84, n:66 },
-    "Inhibition/Switching Net Correct":             { m1:9.80,  sd1:2.90, m2:10.70, sd2:3.00, r:0.72, n:66 },
-    "Combined Inhibition/Switching Total Errors":   { m1:10.00, sd1:3.00, m2:10.80, sd2:2.80, r:0.47, n:66 },
-    "Combined Color and Word ID Index":             { m1:98.60, sd1:12.40, m2:101.60, sd2:12.20, r:0.79, n:66 },
-    "Multitasking Index":                           { m1:98.60, sd1:15.80, m2:102.80, sd2:15.50, r:0.85, n:66 },
-    "Combined Inhibition/Switching Response Time Index": { m1:99.80, sd1:13.80, m2:101.70, sd2:15.50, r:0.90, n:66 },
-  },
-  "D-KEFS Advanced Tower · All Ages": {
-    "Global Performance Score":                     { m1:9.80,  sd1:3.20, m2:11.20, sd2:3.30, r:0.56, n:224 },
-    "Adjusted Mean Pure Response Time":             { m1:10.10, sd1:3.20, m2:11.80, sd2:3.20, r:0.75, n:224 },
-    "Adjusted Mean Unproductive Responses":         { m1:9.90,  sd1:3.00, m2:11.30, sd2:2.90, r:0.51, n:224 },
-  },
-  "D-KEFS Advanced Tower · Ages 8-18": {
-    "Global Performance Score":                     { m1:9.30,  sd1:3.10, m2:11.10, sd2:3.20, r:0.42, n:91 },
-    "Adjusted Mean Pure Response Time":             { m1:9.90,  sd1:3.50, m2:12.80, sd2:2.90, r:0.65, n:91 },
-    "Adjusted Mean Unproductive Responses":         { m1:9.50,  sd1:3.00, m2:11.20, sd2:2.90, r:0.39, n:91 },
-  },
-  "D-KEFS Advanced Tower · Ages 19-59": {
-    "Global Performance Score":                     { m1:10.70, sd1:2.90, m2:12.00, sd2:3.00, r:0.54, n:67 },
-    "Adjusted Mean Pure Response Time":             { m1:10.80, sd1:3.20, m2:11.90, sd2:3.20, r:0.72, n:67 },
-    "Adjusted Mean Unproductive Responses":         { m1:10.40, sd1:3.00, m2:11.90, sd2:2.60, r:0.50, n:67 },
-  },
-  "D-KEFS Advanced Tower · Ages 60-90": {
-    "Global Performance Score":                     { m1:9.60,  sd1:3.50, m2:10.30, sd2:3.50, r:0.70, n:66 },
-    "Adjusted Mean Pure Response Time":             { m1:9.60,  sd1:2.80, m2:10.40, sd2:3.00, r:0.84, n:66 },
-    "Adjusted Mean Unproductive Responses":         { m1:10.00, sd1:2.70, m2:10.80, sd2:3.20, r:0.61, n:66 },
-  },
-  "D-KEFS Advanced Social Sorting · All Ages": {
-    "Global Performance Index":                     { m1:98.20,  sd1:16.10, m2:105.80, sd2:19.50, r:0.59, n:224 },
-    "Total Perseverative Responses":                { m1:10.00,  sd1:3.20,  m2:12.10,  sd2:3.50,  r:0.53, n:224 },
-    "Percent Perseverative Responses":              { m1:9.90,   sd1:3.30,  m2:12.00,  sd2:3.50,  r:0.46, n:224 },
-    "Total Perseverative Errors":                   { m1:9.80,   sd1:3.20,  m2:12.10,  sd2:3.60,  r:0.52, n:224 },
-    "Percent Perseverative Errors":                 { m1:9.90,   sd1:3.30,  m2:12.20,  sd2:3.70,  r:0.47, n:224 },
-    "Total Errors":                                 { m1:9.70,   sd1:3.20,  m2:11.60,  sd2:3.80,  r:0.60, n:224 },
-    "Percent Correct Responses":                    { m1:9.80,   sd1:3.20,  m2:11.80,  sd2:3.70,  r:0.59, n:224 },
-    "Total Nonperseverative Errors":                { m1:9.70,   sd1:3.50,  m2:10.70,  sd2:3.60,  r:0.54, n:224 },
-    "Percent Nonperseverative Errors":              { m1:9.70,   sd1:3.40,  m2:10.60,  sd2:3.50,  r:0.52, n:224 },
-    "Total Conceptual Level Responses":             { m1:9.70,   sd1:3.10,  m2:10.40,  sd2:3.30,  r:0.34, n:224 },
-    "Percent Conceptual Level Responses":           { m1:9.70,   sd1:3.20,  m2:11.60,  sd2:3.80,  r:0.60, n:224 },
-  },
-  "D-KEFS Advanced Social Sorting · Ages 8-18": {
-    "Global Performance Index":                     { m1:96.50,  sd1:14.80, m2:106.10, sd2:19.10, r:0.56, n:91 },
-    "Total Perseverative Responses":                { m1:9.60,   sd1:3.10,  m2:12.20,  sd2:3.30,  r:0.52, n:91 },
-    "Percent Perseverative Responses":              { m1:9.80,   sd1:3.00,  m2:12.30,  sd2:3.10,  r:0.48, n:91 },
-    "Total Perseverative Errors":                   { m1:9.50,   sd1:3.10,  m2:12.20,  sd2:3.40,  r:0.54, n:91 },
-    "Percent Perseverative Errors":                 { m1:9.90,   sd1:3.00,  m2:12.50,  sd2:3.40,  r:0.48, n:91 },
-    "Total Errors":                                 { m1:9.90,   sd1:3.00,  m2:12.20,  sd2:3.70,  r:0.60, n:91 },
-    "Percent Correct Responses":                    { m1:9.50,   sd1:3.20,  m2:12.00,  sd2:3.80,  r:0.57, n:91 },
-    "Total Nonperseverative Errors":                { m1:9.70,   sd1:3.10,  m2:11.10,  sd2:3.50,  r:0.52, n:91 },
-    "Percent Nonperseverative Errors":              { m1:9.70,   sd1:3.20,  m2:10.90,  sd2:3.60,  r:0.51, n:91 },
-    "Total Conceptual Level Responses":             { m1:9.50,   sd1:3.50,  m2:10.30,  sd2:3.50,  r:0.23, n:91 },
-    "Percent Conceptual Level Responses":           { m1:9.30,   sd1:3.30,  m2:11.70,  sd2:3.70,  r:0.60, n:91 },
-  },
-  "D-KEFS Advanced Social Sorting · Ages 19-59": {
-    "Global Performance Index":                     { m1:100.20, sd1:16.70, m2:107.80, sd2:19.80, r:0.48, n:67 },
-    "Total Perseverative Responses":                { m1:10.00,  sd1:3.20,  m2:12.50,  sd2:3.40,  r:0.41, n:67 },
-    "Percent Perseverative Responses":              { m1:9.90,   sd1:3.10,  m2:12.30,  sd2:3.30,  r:0.29, n:67 },
-    "Total Perseverative Errors":                   { m1:9.90,   sd1:3.40,  m2:12.60,  sd2:3.60,  r:0.37, n:67 },
-    "Percent Perseverative Errors":                 { m1:9.90,   sd1:3.30,  m2:12.70,  sd2:3.70,  r:0.33, n:67 },
-    "Total Errors":                                 { m1:10.00,  sd1:3.60,  m2:12.10,  sd2:3.90,  r:0.44, n:67 },
-    "Percent Correct Responses":                    { m1:10.00,  sd1:3.30,  m2:12.20,  sd2:3.70,  r:0.41, n:67 },
-    "Total Nonperseverative Errors":                { m1:10.20,  sd1:3.60,  m2:11.20,  sd2:3.40,  r:0.46, n:67 },
-    "Percent Nonperseverative Errors":              { m1:10.10,  sd1:3.40,  m2:10.90,  sd2:3.10,  r:0.45, n:67 },
-    "Total Conceptual Level Responses":             { m1:9.70,   sd1:2.50,  m2:10.20,  sd2:2.90,  r:0.13, n:67 },
-    "Percent Conceptual Level Responses":           { m1:10.00,  sd1:3.20,  m2:11.90,  sd2:3.70,  r:0.43, n:67 },
-  },
-  "D-KEFS Advanced Social Sorting · Ages 60-90": {
-    "Global Performance Index":                     { m1:98.30,  sd1:17.10, m2:103.30, sd2:19.90, r:0.71, n:66 },
-    "Total Perseverative Responses":                { m1:10.50,  sd1:3.30,  m2:11.60,  sd2:3.60,  r:0.63, n:66 },
-    "Percent Perseverative Responses":              { m1:10.00,  sd1:3.80,  m2:11.30,  sd2:4.10,  r:0.58, n:66 },
-    "Total Perseverative Errors":                   { m1:10.10,  sd1:3.30,  m2:11.30,  sd2:3.80,  r:0.63, n:66 },
-    "Percent Perseverative Errors":                 { m1:10.00,  sd1:3.70,  m2:11.20,  sd2:4.10,  r:0.57, n:66 },
-    "Total Errors":                                 { m1:9.20,   sd1:2.90,  m2:10.30,  sd2:3.70,  r:0.72, n:66 },
-    "Percent Correct Responses":                    { m1:10.00,  sd1:3.10,  m2:11.00,  sd2:3.60,  r:0.74, n:66 },
-    "Total Nonperseverative Errors":                { m1:9.20,   sd1:3.80,  m2:9.60,   sd2:3.60,  r:0.64, n:66 },
-    "Percent Nonperseverative Errors":              { m1:9.40,   sd1:3.70,  m2:9.80,   sd2:3.50,  r:0.58, n:66 },
-    "Total Conceptual Level Responses":             { m1:9.80,   sd1:3.20,  m2:10.50,  sd2:3.50,  r:0.61, n:66 },
-    "Percent Conceptual Level Responses":           { m1:9.90,   sd1:3.30,  m2:10.90,  sd2:3.90,  r:0.73, n:66 },
-  },
-  "D-KEFS Advanced Risk-Reward Decision · All Ages": {
-    "Total Net Earnings":                           { m1:9.90,  sd1:3.30, m2:12.60, sd2:3.70, r:0.56, n:224 },
-    "Net Earnings Races 1–20":                 { m1:9.80,  sd1:3.30, m2:12.90, sd2:3.40, r:0.39, n:224 },
-    "Net Earnings Races 21–40":                { m1:9.90,  sd1:3.30, m2:10.80, sd2:2.40, r:0.55, n:224 },
-    "Net Earnings Races 41–60":                { m1:10.00, sd1:3.20, m2:11.20, sd2:2.90, r:0.53, n:224 },
-  },
-  "D-KEFS Advanced Risk-Reward Decision · Ages 19-59": {
-    "Total Net Earnings":                           { m1:9.80,  sd1:3.10, m2:13.30, sd2:3.40, r:0.49, n:67 },
-    "Net Earnings Races 1–20":                 { m1:9.40,  sd1:3.10, m2:13.50, sd2:2.90, r:0.33, n:67 },
-    "Net Earnings Races 21–40":                { m1:9.70,  sd1:3.40, m2:10.80, sd2:2.00, r:0.48, n:67 },
-    "Net Earnings Races 41–60":                { m1:10.10, sd1:2.80, m2:11.40, sd2:2.70, r:0.43, n:67 },
-  },
-  "D-KEFS Advanced Risk-Reward Decision · Ages 60-90": {
-    "Total Net Earnings":                           { m1:9.90,  sd1:3.50, m2:12.00, sd2:3.90, r:0.63, n:66 },
-    "Net Earnings Races 1–20":                 { m1:10.20, sd1:3.40, m2:12.40, sd2:3.80, r:0.45, n:66 },
-    "Net Earnings Races 21–40":                { m1:10.10, sd1:3.30, m2:10.90, sd2:2.80, r:0.61, n:66 },
-    "Net Earnings Races 41–60":                { m1:9.80,  sd1:3.50, m2:10.90, sd2:3.00, r:0.62, n:66 },
-  },
-  // ── End D-KEFS Advanced ─────────────────────────────────────────────────────
-
-  "WAIS-IV Core Subtests · Ages 16-29": {
-    "Block Design":                                  { m1:10.1,  sd1:3.0, m2:11.3, sd2:2.9, r:0.81 },
-    "Similarities":                                  { m1:10.5,  sd1:3.2, m2:10.9, sd2:3.0, r:0.82 },
-    "Digit Span":                                    { m1:10.1,  sd1:2.8, m2:10.7, sd2:2.9, r:0.71 },
-    "Matrix Reasoning":                              { m1:10.5,  sd1:3.2, m2:10.7, sd2:3.0, r:0.70 },
-    "Vocabulary":                                    { m1:10.3,  sd1:3.1, m2:10.5, sd2:3.2, r:0.91 },
-    "Arithmetic":                                    { m1:10.0,  sd1:2.9, m2:10.5, sd2:2.9, r:0.84 },
-    "Symbol Search":                                 { m1:10.4,  sd1:3.3, m2:11.6, sd2:3.4, r:0.84 },
-    "Visual Puzzles":                                { m1:9.9,  sd1:2.6, m2:11.0, sd2:3.0, r:0.74 },
-    "Information":                                   { m1:10.0,  sd1:2.9, m2:10.7, sd2:3.1, r:0.90 },
-    "Coding":                                        { m1:9.8,  sd1:2.8, m2:10.7, sd2:2.8, r:0.83 },
-  },
-  "WAIS-IV Indices · Ages 16-29": {
-    "Verbal Comprehension Index":                    { m1:101.4,  sd1:14.9, m2:103.6, sd2:15.4, r:0.95 },
-    "Perceptual Reasoning Index":                    { m1:100.8,  sd1:13.9, m2:105.4, sd2:14.4, r:0.84 },
-    "Working Memory Index":                          { m1:100.5,  sd1:14.7, m2:103.2, sd2:14.5, r:0.82 },
-    "Processing Speed Index":                        { m1:100.6,  sd1:15.1, m2:105.4, sd2:15.8, r:0.87 },
-    "Full Scale IQ":                                 { m1:101.0,  sd1:13.8, m2:105.4, sd2:14.9, r:0.94 },
-  },
-  "WAIS-IV Core Subtests · Ages 30-54": {
-    "Block Design":                                  { m1:10.4,  sd1:2.9, m2:11.4, sd2:3.1, r:0.80 },
-    "Similarities":                                  { m1:9.1,  sd1:2.5, m2:9.7, sd2:2.6, r:0.85 },
-    "Digit Span":                                    { m1:10.0,  sd1:3.5, m2:10.5, sd2:3.1, r:0.81 },
-    "Matrix Reasoning":                              { m1:10.2,  sd1:3.5, m2:10.3, sd2:3.4, r:0.85 },
-    "Vocabulary":                                    { m1:9.4,  sd1:3.1, m2:9.5, sd2:3.0, r:0.90 },
-    "Arithmetic":                                    { m1:9.8,  sd1:2.5, m2:10.1, sd2:3.1, r:0.76 },
-    "Symbol Search":                                 { m1:10.3,  sd1:3.1, m2:11.4, sd2:3.4, r:0.75 },
-    "Visual Puzzles":                                { m1:10.3,  sd1:3.1, m2:11.4, sd2:3.0, r:0.70 },
-    "Information":                                   { m1:9.6,  sd1:2.9, m2:10.4, sd2:2.8, r:0.86 },
-    "Coding":                                        { m1:10.3,  sd1:2.9, m2:11.2, sd2:2.7, r:0.83 },
-  },
-  "WAIS-IV Indices · Ages 30-54": {
-    "Verbal Comprehension Index":                    { m1:96.4,  sd1:13.9, m2:99.1, sd2:13.6, r:0.95 },
-    "Perceptual Reasoning Index":                    { m1:101.2,  sd1:15.4, m2:105.7, sd2:15.9, r:0.88 },
-    "Working Memory Index":                          { m1:99.5,  sd1:14.6, m2:101.4, sd2:15.7, r:0.84 },
-    "Processing Speed Index":                        { m1:102.0,  sd1:13.7, m2:107.3, sd2:14.7, r:0.76 },
-    "Full Scale IQ":                                 { m1:99.5,  sd1:14.5, m2:103.9, sd2:15.9, r:0.96 },
-  },
-  "WAIS-IV Core Subtests · Ages 55-69": {
-    "Block Design":                                  { m1:10.5,  sd1:3.1, m2:11.1, sd2:2.9, r:0.77 },
-    "Similarities":                                  { m1:10.2,  sd1:2.5, m2:10.9, sd2:2.5, r:0.81 },
-    "Digit Span":                                    { m1:10.0,  sd1:2.9, m2:10.8, sd2:3.1, r:0.89 },
-    "Matrix Reasoning":                              { m1:9.9,  sd1:3.0, m2:10.7, sd2:3.3, r:0.72 },
-    "Vocabulary":                                    { m1:10.3,  sd1:3.2, m2:10.5, sd2:3.0, r:0.88 },
-    "Arithmetic":                                    { m1:9.6,  sd1:2.9, m2:10.4, sd2:2.7, r:0.80 },
-    "Symbol Search":                                 { m1:10.0,  sd1:2.9, m2:11.1, sd2:3.2, r:0.80 },
-    "Visual Puzzles":                                { m1:10.4,  sd1:2.9, m2:10.8, sd2:3.0, r:0.73 },
-    "Information":                                   { m1:10.5,  sd1:3.1, m2:11.4, sd2:3.4, r:0.92 },
-    "Coding":                                        { m1:10.1,  sd1:2.7, m2:10.7, sd2:3.1, r:0.86 },
-  },
-  "WAIS-IV Indices · Ages 55-69": {
-    "Verbal Comprehension Index":                    { m1:101.5,  sd1:14.3, m2:104.8, sd2:14.9, r:0.94 },
-    "Perceptual Reasoning Index":                    { m1:101.1,  sd1:13.8, m2:104.7, sd2:14.4, r:0.87 },
-    "Working Memory Index":                          { m1:98.7,  sd1:13.7, m2:103.0, sd2:14.1, r:0.90 },
-    "Processing Speed Index":                        { m1:100.3,  sd1:13.2, m2:105.3, sd2:14.9, r:0.89 },
-    "Full Scale IQ":                                 { m1:100.6,  sd1:14.5, m2:105.5, sd2:15.4, r:0.96 },
-  },
-  "WAIS-IV Core Subtests · Ages 70-90": {
-    "Block Design":                                  { m1:10.0,  sd1:2.6, m2:10.4, sd2:2.5, r:0.79 },
-    "Similarities":                                  { m1:9.8,  sd1:2.6, m2:10.3, sd2:3.0, r:0.84 },
-    "Digit Span":                                    { m1:9.8,  sd1:2.9, m2:10.5, sd2:2.9, r:0.84 },
-    "Matrix Reasoning":                              { m1:10.0,  sd1:2.8, m2:10.3, sd2:2.8, r:0.73 },
-    "Vocabulary":                                    { m1:9.7,  sd1:2.8, m2:9.7, sd2:2.8, r:0.91 },
-    "Arithmetic":                                    { m1:10.1,  sd1:2.7, m2:10.5, sd2:2.9, r:0.80 },
-    "Symbol Search":                                 { m1:9.8,  sd1:2.5, m2:10.0, sd2:2.9, r:0.80 },
-    "Visual Puzzles":                                { m1:9.4,  sd1:2.5, m2:10.4, sd2:3.0, r:0.57 },
-    "Information":                                   { m1:9.3,  sd1:3.2, m2:9.9, sd2:3.2, r:0.93 },
-    "Coding":                                        { m1:9.7,  sd1:2.6, m2:10.3, sd2:2.6, r:0.81 },
-  },
-  "WAIS-IV Indices · Ages 70-90": {
-    "Verbal Comprehension Index":                    { m1:97.8,  sd1:14.0, m2:99.9, sd2:15.3, r:0.95 },
-    "Perceptual Reasoning Index":                    { m1:98.7,  sd1:12.4, m2:101.9, sd2:12.7, r:0.80 },
-    "Working Memory Index":                          { m1:99.4,  sd1:13.4, m2:102.6, sd2:14.8, r:0.89 },
-    "Processing Speed Index":                        { m1:98.5,  sd1:12.0, m2:101.2, sd2:13.8, r:0.82 },
-    "Full Scale IQ":                                 { m1:98.1,  sd1:12.7, m2:101.6, sd2:14.0, r:0.94 },
-  },
-  "WAIS-IV Core Subtests · All Ages": {
-    "Block Design":                                  { m1:10.2,  sd1:2.9, m2:11.0, sd2:2.8, r:0.79, n:298 },
-    "Similarities":                                  { m1:9.9,  sd1:2.8, m2:10.4, sd2:2.8, r:0.83, n:298 },
-    "Digit Span":                                    { m1:10.0,  sd1:2.9, m2:10.6, sd2:3.0, r:0.82, n:298 },
-    "Matrix Reasoning":                              { m1:10.1,  sd1:3.1, m2:10.5, sd2:3.1, r:0.76, n:298 },
-    "Vocabulary":                                    { m1:9.9,  sd1:3.0, m2:10.0, sd2:3.0, r:0.90, n:298 },
-    "Arithmetic":                                    { m1:9.9,  sd1:2.8, m2:10.4, sd2:2.9, r:0.80, n:298 },
-    "Symbol Search":                                 { m1:10.1,  sd1:2.9, m2:11.0, sd2:3.3, r:0.80, n:298 },
-    "Visual Puzzles":                                { m1:10.0,  sd1:2.8, m2:10.9, sd2:3.0, r:0.80, n:298 },
-    "Information":                                   { m1:9.8,  sd1:3.0, m2:10.5, sd2:3.2, r:0.69, n:298 },
-    "Coding":                                        { m1:10.0,  sd1:2.7, m2:10.6, sd2:2.8, r:0.91, n:298 },
-  },
-  "WAIS-IV Indices · All Ages": {
-    "Verbal Comprehension Index":                    { m1:99.3,  sd1:14.4, m2:101.8, sd2:15.0, r:0.95, n:298 },
-    "Perceptual Reasoning Index":                    { m1:100.4,  sd1:13.8, m2:104.3, sd2:14.3, r:0.85, n:298 },
-    "Working Memory Index":                          { m1:99.5,  sd1:14.0, m2:102.6, sd2:14.7, r:0.87, n:298 },
-    "Processing Speed Index":                        { m1:100.2,  sd1:13.5, m2:104.6, sd2:14.9, r:0.84, n:298 },
-    "Full Scale IQ":                                 { m1:99.7,  sd1:13.8, m2:104.0, sd2:15.0, r:0.95, n:298 },
-  },
-  "WMS-IV Subtests · Ages 16-69": {
-    "Logical Memory I":                              { m1:10.3,  sd1:2.9, m2:12.2, sd2:2.6, r:0.72, n:173 },
-    "Logical Memory II":                             { m1:10.3,  sd1:2.8, m2:12.6, sd2:2.9, r:0.67, n:173 },
-    "Verbal Paired Associates I":                    { m1:9.8,  sd1:3.1, m2:12.1, sd2:3.4, r:0.76, n:173 },
-    "Verbal Paired Associates II":                   { m1:9.8,  sd1:3.0, m2:10.8, sd2:2.7, r:0.76, n:173 },
-    "Verbal Paired Associates II - Word Recall":     { m1:10.0,  sd1:2.9, m2:10.9, sd2:3.2, r:0.74, n:173 },
-    "Designs I":                                     { m1:10.0,  sd1:2.9, m2:11.1, sd2:3.4, r:0.73, n:173 },
-    "Designs I - Content":                           { m1:10.1,  sd1:3.0, m2:11.2, sd2:3.3, r:0.64, n:173 },
-    "Designs I - Spatial":                           { m1:10.2,  sd1:2.9, m2:10.9, sd2:3.1, r:0.56, n:173 },
-    "Designs II":                                    { m1:10.2,  sd1:2.7, m2:11.9, sd2:3.2, r:0.72, n:173 },
-    "Designs II - Content":                          { m1:10.3,  sd1:3.0, m2:11.5, sd2:3.4, r:0.64, n:173 },
-    "Designs II - Spatial":                          { m1:10.3,  sd1:2.7, m2:11.6, sd2:2.6, r:0.50, n:173 },
-    "Visual Reproduction I":                         { m1:10.0,  sd1:2.8, m2:11.9, sd2:2.8, r:0.62, n:173 },
-    "Visual Reproduction II":                        { m1:10.1,  sd1:2.8, m2:12.9, sd2:3.0, r:0.59, n:173 },
-    "Symbol Span":                                   { m1:10.0,  sd1:3.0, m2:10.6, sd2:3.1, r:0.72, n:173 },
-  },
-  "WMS-IV Indices · Ages 16-69": {
-    "Auditory Memory Index":                         { m1:100.1,  sd1:14.1, m2:111.6, sd2:14.4, r:0.83, n:173 },
-    "Visual Memory Index":                           { m1:100.0,  sd1:14.8, m2:112.1, sd2:16.6, r:0.81, n:173 },
-    "Visual Working Memory Index":                   { m1:99.5,  sd1:14.4, m2:103.8, sd2:15.6, r:0.83, n:173 },
-    "Immediate Memory Index":                        { m1:99.9,  sd1:14.9, m2:112.3, sd2:15.6, r:0.81, n:173 },
-    "Delayed Memory Index":                          { m1:100.4,  sd1:13.9, m2:114.1, sd2:15.0, r:0.82, n:173 },
-  },
-  "WMS-IV Subtests · Ages 65-90": {
-    "Logical Memory I":                              { m1:10.0,  sd1:2.9, m2:12.0, sd2:3.3, r:0.77, n:71 },
-    "Logical Memory II":                             { m1:10.0,  sd1:2.7, m2:12.1, sd2:2.8, r:0.71, n:71 },
-    "Verbal Paired Associates I":                    { m1:10.4,  sd1:2.8, m2:12.1, sd2:2.9, r:0.76, n:71 },
-    "Verbal Paired Associates II":                   { m1:10.4,  sd1:2.7, m2:11.5, sd2:2.7, r:0.77, n:71 },
-    "Verbal Paired Associates II - Word Recall":     { m1:10.5,  sd1:2.8, m2:11.7, sd2:2.7, r:0.72, n:71 },
-    "Visual Reproduction I":                         { m1:10.2,  sd1:3.1, m2:12.0, sd2:3.1, r:0.79, n:71 },
-    "Visual Reproduction II":                        { m1:10.5,  sd1:2.8, m2:12.3, sd2:3.1, r:0.64, n:71 },
-    "Symbol Span":                                   { m1:10.1,  sd1:2.8, m2:10.7, sd2:3.0, r:0.69, n:71 },
-  },
-  "WMS-IV Indices · Ages 65-90": {
-    "Auditory Memory Index":                         { m1:101.5,  sd1:12.9, m2:112.1, sd2:14.5, r:0.82, n:71 },
-    "Visual Memory Index":                           { m1:101.6,  sd1:14.6, m2:112.6, sd2:17.0, r:0.79, n:71 },
-    "Visual Working Memory Index":                   { m1:101.5,  sd1:13.9, m2:113.9, sd2:14.2, r:0.84, n:71 },
-    "Immediate Memory Index":                        { m1:101.7,  sd1:13.1, m2:112.7, sd2:14.4, r:0.80, n:71 },
-  },
-  "CVLT-3 Trials · Ages 16-44": {
-    "Trial 1":                                       { m1:9.6,  sd1:3.0, m2:9.7, sd2:3.0, r:0.49, n:213 },
-    "Trial 2":                                       { m1:9.8,  sd1:3.1, m2:10.0, sd2:2.6, r:0.56, n:213 },
-    "Trial 3":                                       { m1:9.7,  sd1:3.0, m2:9.7, sd2:3.0, r:0.69, n:213 },
-    "Trial 4":                                       { m1:9.8,  sd1:3.0, m2:10.0, sd2:3.0, r:0.57, n:213 },
-    "Trial 5":                                       { m1:9.3,  sd1:3.1, m2:9.1, sd2:2.9, r:0.53, n:213 },
-    "List B Correct":                                { m1:9.5,  sd1:2.7, m2:9.8, sd2:2.8, r:0.45, n:213 },
-    "Short Delay Free Recall":                       { m1:9.8,  sd1:3.0, m2:9.6, sd2:2.9, r:0.70, n:213 },
-    "Short Delay Cued Recall":                       { m1:9.8,  sd1:3.2, m2:9.6, sd2:3.2, r:0.61, n:213 },
-    "Long Delay Free Recall":                        { m1:9.6,  sd1:3.2, m2:9.5, sd2:3.3, r:0.65, n:213 },
-    "Long Delay Cued Recall":                        { m1:9.6,  sd1:3.2, m2:9.6, sd2:2.8, r:0.65, n:213 },
-    "Recognition":                                   { m1:10.0,  sd1:3.1, m2:9.8, sd2:2.9, r:0.51, n:213 },
-    "Recognition False Positive":                    { m1:9.5,  sd1:2.8, m2:9.1, sd2:2.9, r:0.50, n:213 },
-    "Recognition Discrimination":                    { m1:9.6,  sd1:2.8, m2:9.3, sd2:2.7, r:0.61, n:213 },
-    "Discrimination Nonparametric":                  { m1:9.8,  sd1:2.7, m2:9.4, sd2:2.6, r:0.57, n:213 },
-    "Total Intrusions":                              { m1:9.8,  sd1:3.2, m2:9.7, sd2:2.7, r:0.33, n:213 },
-    "Total Repetitions":                             { m1:10.2,  sd1:3.3, m2:10.1, sd2:2.9, r:0.65, n:213 },
-  },
+﻿normDB = {
   "CVLT-3 Indices · Ages 16-44": {
-    "T1-5 Correct":                                  { m1:97.9,  sd1:15.8, m2:98.5, sd2:14.0, r:0.77, n:213 },
-    "Delayed Recall Correct":                        { m1:97.9,  sd1:15.3, m2:98.4, sd2:15.7, r:0.78, n:213 },
-    "Total Recall Correct":                          { m1:97.7,  sd1:16.0, m2:98.7, sd2:14.8, r:0.82, n:213 },
-  },
-  "CVLT-3 Trials · Ages 45-90": {
-    "Trial 1":                                       { m1:10.3,  sd1:2.6, m2:10.0, sd2:3.0, r:0.42, n:213 },
-    "Trial 2":                                       { m1:10.5,  sd1:2.9, m2:10.3, sd2:3.2, r:0.55, n:213 },
-    "Trial 3":                                       { m1:10.7,  sd1:3.0, m2:10.5, sd2:2.8, r:0.62, n:213 },
-    "Trial 4":                                       { m1:10.5,  sd1:3.0, m2:10.3, sd2:2.6, r:0.67, n:213 },
-    "Trial 5":                                       { m1:10.5,  sd1:2.8, m2:10.2, sd2:2.9, r:0.67, n:213 },
-    "List B Correct":                                { m1:10.1,  sd1:2.9, m2:10.1, sd2:3.0, r:0.48, n:213 },
-    "Short Delay Free Recall":                       { m1:10.3,  sd1:3.2, m2:10.5, sd2:3.2, r:0.74, n:213 },
-    "Short Delay Cued Recall":                       { m1:10.1,  sd1:3.1, m2:10.2, sd2:3.1, r:0.70, n:213 },
-    "Long Delay Free Recall":                        { m1:10.2,  sd1:3.1, m2:10.2, sd2:3.1, r:0.73, n:213 },
-    "Long Delay Cued Recall":                        { m1:10.1,  sd1:3.2, m2:9.9, sd2:3.0, r:0.69, n:213 },
-    "Recognition":                                   { m1:10.4,  sd1:3.0, m2:10.5, sd2:3.0, r:0.61, n:213 },
-    "Recognition False Positive":                    { m1:10.1,  sd1:3.2, m2:10.3, sd2:3.2, r:0.59, n:213 },
-    "Recognition Discrimination":                    { m1:10.2,  sd1:3.5, m2:10.3, sd2:3.2, r:0.65, n:213 },
-    "Discrimination Nonparametric":                  { m1:10.2,  sd1:3.4, m2:10.3, sd2:3.3, r:0.68, n:213 },
-    "Total Intrusions":                              { m1:9.4,  sd1:3.0, m2:9.7, sd2:3.3, r:0.56, n:213 },
-    "Total Repetitions":                             { m1:9.7,  sd1:3.1, m2:10.0, sd2:3.4, r:0.72, n:213 },
+    "T1-5 Correct": { m1:97.9, sd1:15.8, m2:98.5, sd2:14, r:0.77, rCorrected:0.75, n:100 },
+    "Delayed Recall Correct": { m1:97.9, sd1:15.3, m2:98.4, sd2:15.7, r:0.78, rCorrected:0.77, n:100 },
+    "Total Recall Correct": { m1:97.7, sd1:16, m2:98.7, sd2:14.8, r:0.82, rCorrected:0.79, n:100 }
   },
   "CVLT-3 Indices · Ages 45-90": {
-    "T1-5 Correct":                                  { m1:102.6,  sd1:14.3, m2:101.3, sd2:14.6, r:0.77, n:213 },
-    "Delayed Recall Correct":                        { m1:100.9,  sd1:15.4, m2:101.1, sd2:15.7, r:0.81, n:213 },
-    "Total Recall Correct":                          { m1:101.7,  sd1:15.1, m2:101.2, sd2:15.5, r:0.84, n:213 },
+    "T1-5 Correct": { m1:102.6, sd1:14.3, m2:101.3, sd2:14.6, r:0.77, rCorrected:0.8, n:100 },
+    "Delayed Recall Correct": { m1:100.9, sd1:15.4, m2:101.1, sd2:15.7, r:0.81, rCorrected:0.8, n:100 },
+    "Total Recall Correct": { m1:101.7, sd1:15.1, m2:101.2, sd2:15.5, r:0.84, rCorrected:0.83, n:100 }
   },
-  "RBANS Subtests · Ages 12-19": {
-    "List Learning":                                 { m1:10.2,  sd1:3.1, m2:13.4, sd2:3.2, r:0.68, n:55 },
-    "Story Memory":                                  { m1:9.8,  sd1:2.7, m2:13.0, sd2:2.6, r:0.65, n:55 },
-    "Figure Copy":                                   { m1:10.0,  sd1:2.7, m2:10.0, sd2:2.5, r:0.46, n:55 },
-    "Line Orientation":                              { m1:16.7,  sd1:3.0, m2:16.9, sd2:2.9, r:0.72, n:55 },
-    "Picture Naming":                                { m1:9.1,  sd1:1.0, m2:9.2, sd2:0.9, r:0.73, n:55 },
-    "Semantic Fluency":                              { m1:10.0,  sd1:3.1, m2:10.8, sd2:3.0, r:0.67, n:55 },
-    "Digit Span":                                    { m1:9.8,  sd1:2.7, m2:10.0, sd2:3.2, r:0.59, n:55 },
-    "Coding":                                        { m1:10.2,  sd1:2.7, m2:11.2, sd2:3.1, r:0.75, n:55 },
-    "List Recall":                                   { m1:6.8,  sd1:1.8, m2:8.2, sd2:1.8, r:0.66, n:55 },
-    "List Recognition":                              { m1:19.9,  sd1:0.5, m2:19.9, sd2:0.4, r:0.70, n:55 },
-    "Story Recall":                                  { m1:10.0,  sd1:3.0, m2:11.7, sd2:3.1, r:0.48, n:55 },
-    "Figure Recall":                                 { m1:10.2,  sd1:2.5, m2:11.2, sd2:3.1, r:0.58, n:55 },
+  "CVLT-3 Trials · Ages 16-44": {
+    "Trial 1": { m1:9.6, sd1:3, m2:9.7, sd2:3, r:0.49, rCorrected:0.51, n:100 },
+    "Trial 2": { m1:9.8, sd1:3.1, m2:10, sd2:2.6, r:0.56, rCorrected:0.53, n:100 },
+    "Trial 3": { m1:9.7, sd1:3, m2:9.7, sd2:3, r:0.69, rCorrected:0.7, n:100 },
+    "Trial 4": { m1:9.8, sd1:3, m2:10, sd2:3, r:0.57, rCorrected:0.58, n:100 },
+    "Trial 5": { m1:9.3, sd1:3.1, m2:9.1, sd2:2.9, r:0.53, rCorrected:0.5, n:100 },
+    "List B Correct": { m1:9.5, sd1:2.7, m2:9.8, sd2:2.8, r:0.45, rCorrected:0.57, n:100 },
+    "Short Delay Free Recall": { m1:9.8, sd1:3, m2:9.6, sd2:2.9, r:0.7, rCorrected:0.71, n:100 },
+    "Short Delay Cued Recall": { m1:9.8, sd1:3.2, m2:9.6, sd2:3.2, r:0.61, rCorrected:0.56, n:100 },
+    "Long Delay Free Recall": { m1:9.6, sd1:3.2, m2:9.5, sd2:3.3, r:0.65, rCorrected:0.61, n:100 },
+    "Long Delay Cued Recall": { m1:9.6, sd1:3.2, m2:9.6, sd2:2.8, r:0.65, rCorrected:0.6, n:100 },
+    "Recognition": { m1:10, sd1:3.1, m2:9.8, sd2:2.9, r:0.51, rCorrected:0.49, n:100 },
+    "Recognition False Positive": { m1:9.5, sd1:2.8, m2:9.1, sd2:2.9, r:0.5, rCorrected:0.57, n:100 },
+    "Recognition Discrimination": { m1:9.6, sd1:2.8, m2:9.3, sd2:2.7, r:0.61, rCorrected:0.67, n:100 },
+    "Discrimination Nonparametric": { m1:9.8, sd1:2.7, m2:9.4, sd2:2.6, r:0.57, rCorrected:0.65, n:100 },
+    "Total Intrusions": { m1:9.8, sd1:3.2, m2:9.7, sd2:2.7, r:0.33, rCorrected:0.25, n:100 },
+    "Total Repetitions": { m1:10.2, sd1:3.3, m2:10.1, sd2:2.9, r:0.65, rCorrected:0.59, n:100 }
+  },
+  "CVLT-3 Trials · Ages 45-90": {
+    "Trial 1": { m1:10.3, sd1:2.6, m2:10, sd2:3, r:0.42, rCorrected:0.56, n:100 },
+    "Trial 2": { m1:10.5, sd1:2.9, m2:10.3, sd2:3.2, r:0.55, rCorrected:0.59, n:100 },
+    "Trial 3": { m1:10.7, sd1:3, m2:10.5, sd2:2.8, r:0.62, rCorrected:0.63, n:100 },
+    "Trial 4": { m1:10.5, sd1:3, m2:10.3, sd2:2.6, r:0.67, rCorrected:0.67, n:100 },
+    "Trial 5": { m1:10.5, sd1:2.8, m2:10.2, sd2:2.9, r:0.67, rCorrected:0.71, n:100 },
+    "List B Correct": { m1:10.1, sd1:2.9, m2:10.1, sd2:3, r:0.48, rCorrected:0.53, n:100 },
+    "Short Delay Free Recall": { m1:10.3, sd1:3.2, m2:10.5, sd2:3.2, r:0.74, rCorrected:0.71, n:100 },
+    "Short Delay Cued Recall": { m1:10.1, sd1:3.1, m2:10.2, sd2:3.1, r:0.7, rCorrected:0.69, n:100 },
+    "Long Delay Free Recall": { m1:10.2, sd1:3.1, m2:10.2, sd2:3.1, r:0.73, rCorrected:0.71, n:100 },
+    "Long Delay Cued Recall": { m1:10.1, sd1:3.2, m2:9.9, sd2:3, r:0.69, rCorrected:0.65, n:100 },
+    "Recognition": { m1:10.4, sd1:3, m2:10.5, sd2:3, r:0.61, rCorrected:0.62, n:100 },
+    "Recognition False Positive": { m1:10.1, sd1:3.2, m2:10.3, sd2:3.2, r:0.59, rCorrected:0.55, n:100 },
+    "Recognition Discrimination": { m1:10.2, sd1:3.5, m2:10.3, sd2:3.2, r:0.65, rCorrected:0.54, n:100 },
+    "Discrimination Nonparametric": { m1:10.2, sd1:3.4, m2:10.3, sd2:3.3, r:0.68, rCorrected:0.58, n:100 },
+    "Total Intrusions": { m1:9.4, sd1:3, m2:9.7, sd2:3.3, r:0.56, rCorrected:0.57, n:100 },
+    "Total Repetitions": { m1:9.7, sd1:3.1, m2:10, sd2:3.4, r:0.72, rCorrected:0.7, n:100 }
+  },
+  "CVLT-C Subtests (Raw Scores) · Age 8": {
+    "List A Trials 1-5 Total": { m1:42.47, sd1:9.55, m2:48.32, sd2:9.09, r:0.73, n:35 },
+    "List B Free-Recall Trial": { m1:5.26, sd1:1.71, m2:5.39, sd2:2.16, r:0.59, n:35 },
+    "Short-Delay Free Recall": { m1:8.5, sd1:2.04, m2:9.91, sd2:2.37, r:0.4, n:35 },
+    "Short-Delay Cued Recall": { m1:8.35, sd1:2.07, m2:9.51, sd2:2.79, r:0.75, n:35 },
+    "Long-Delay Free Recall": { m1:8.94, sd1:2.3, m2:10.14, sd2:2.59, r:0.59, n:35 },
+    "Long-Delay Cued Recall": { m1:8.42, sd1:2.21, m2:10.15, sd2:3.09, r:0.69, n:35 },
+    "Semantic Cluster Ratio": { m1:1.44, sd1:0.44, m2:1.83, sd2:0.63, r:0.56, n:35 },
+    "Perseverations": { m1:7.35, sd1:6.94, m2:7.54, sd2:6.39, r:0.9, n:35 },
+    "Free-Recall Intrusions": { m1:5.11, sd1:5.55, m2:4.97, sd2:5.99, r:0.74, n:35 },
+    "Cued-Recall Intrusions": { m1:2.83, sd1:4.33, m2:2.31, sd2:3.31, r:0.59, n:35 },
+    "Recognition Hits": { m1:13.67, sd1:1.45, m2:13.84, sd2:1.33, r:0.38, n:35 },
+    "Discriminability": { m1:92.76, sd1:5.69, m2:94.52, sd2:5.9, r:0.55, n:35 },
+    "False Positives": { m1:1.82, sd1:2.38, m2:1.16, sd2:2, r:0.62, n:35 }
+  },
+  "CVLT-C Subtests (Raw Scores) · Age 12": {
+    "List A Trials 1-5 Total": { m1:50.64, sd1:7.19, m2:56.47, sd2:8.92, r:0.73, n:40 },
+    "List B Free-Recall Trial": { m1:6.24, sd1:1.58, m2:6.82, sd2:1.57, r:0.26, n:40 },
+    "Short-Delay Free Recall": { m1:9.89, sd1:2.44, m2:12.24, sd2:2.62, r:0.77, n:40 },
+    "Short-Delay Cued Recall": { m1:11.13, sd1:2.21, m2:12.15, sd2:3.14, r:0.49, n:40 },
+    "Long-Delay Free Recall": { m1:10.77, sd1:2.32, m2:12.3, sd2:2.54, r:0.62, n:40 },
+    "Long-Delay Cued Recall": { m1:11.26, sd1:2.18, m2:12.74, sd2:2.53, r:0.69, n:40 },
+    "Semantic Cluster Ratio": { m1:1.49, sd1:0.43, m2:1.83, sd2:0.6, r:0.58, n:40 },
+    "Perseverations": { m1:4.55, sd1:4.32, m2:5.6, sd2:5.7, r:0.32, n:40 },
+    "Free-Recall Intrusions": { m1:0.97, sd1:1.44, m2:1.64, sd2:2.67, r:0.56, n:40 },
+    "Cued-Recall Intrusions": { m1:0.69, sd1:1.14, m2:0.56, sd2:1.02, r:0.17, n:40 },
+    "Recognition Hits": { m1:14.21, sd1:1.02, m2:14.67, sd2:0.82, r:0.24, n:40 },
+    "Discriminability": { m1:96.71, sd1:3.53, m2:98.06, sd2:3.25, r:0.37, n:40 },
+    "False Positives": { m1:0.55, sd1:0.86, m2:0.55, sd2:1.03, r:0.35, n:40 }
+  },
+  "CVLT-C Subtests (Raw Scores) · Age 16": {
+    "List A Trials 1-5 Total": { m1:53.53, sd1:6.15, m2:62.94, sd2:10.94, r:0.61, n:31 },
+    "List B Free-Recall Trial": { m1:6.67, sd1:1.7, m2:7.6, sd2:2.19, r:0.66, n:31 },
+    "Short-Delay Free Recall": { m1:11.61, sd1:2.09, m2:13.52, sd2:1.91, r:0.48, n:31 },
+    "Short-Delay Cued Recall": { m1:12, sd1:1.52, m2:13.71, sd2:1.59, r:0.59, n:31 },
+    "Long-Delay Free Recall": { m1:11.9, sd1:1.9, m2:13.5, sd2:1.87, r:0.6, n:31 },
+    "Long-Delay Cued Recall": { m1:12.57, sd1:1.72, m2:14, sd2:1.58, r:0.59, n:31 },
+    "Semantic Cluster Ratio": { m1:1.55, sd1:0.53, m2:2.3, sd2:0.66, r:0.53, n:31 },
+    "Perseverations": { m1:3.84, sd1:3.03, m2:5.42, sd2:5.76, r:0.31, n:31 },
+    "Free-Recall Intrusions": { m1:2.28, sd1:4.22, m2:2.19, sd2:4.13, r:0.85, n:31 },
+    "Cued-Recall Intrusions": { m1:0.66, sd1:1.68, m2:0.84, sd2:1.59, r:0.74, n:31 },
+    "Recognition Hits": { m1:14.59, sd1:0.82, m2:14.79, sd2:0.62, r:0.8, n:31 },
+    "Discriminability": { m1:97.2, sd1:4.17, m2:98.9, sd2:2.23, r:0.78, n:31 },
+    "False Positives": { m1:0.68, sd1:1.51, m2:0.35, sd2:0.91, r:0.78, n:31 }
+  },
+  "D-KEFS Colour-Word Interference · Ages 20-49": {
+    "Colour Naming": { m1:9.63, sd1:3.15, m2:10.6, sd2:2.58, r:0.86, n:35 },
+    "Word Reading": { m1:9.57, sd1:2.93, m2:10.17, sd2:2.15, r:0.49, n:35 },
+    "Inhibition": { m1:10.11, sd1:2.63, m2:11.29, sd2:2.19, r:0.71, n:35 },
+    "Inhibition/Switching": { m1:10, sd1:2.36, m2:11.09, sd2:2.15, r:0.52, n:35 }
+  },
+  "D-KEFS Colour-Word Interference · Ages 50-89": {
+    "Colour Naming": { m1:9.63, sd1:3.12, m2:10.16, sd2:3.37, r:0.56, n:38 },
+    "Word Reading": { m1:9.95, sd1:3, m2:10.4, sd2:2.67, r:0.56, n:38 },
+    "Inhibition": { m1:10.43, sd1:3.07, m2:10.97, sd2:3.48, r:0.5, n:37 },
+    "Inhibition/Switching": { m1:10.43, sd1:2.68, m2:10.92, sd2:3.48, r:0.57, n:37 }
+  },
+  "D-KEFS Colour-Word Interference · Ages 8-19": {
+    "Colour Naming": { m1:9.96, sd1:2.43, m2:11.04, sd2:2.76, r:0.79, n:28 },
+    "Word Reading": { m1:10.04, sd1:2.82, m2:10.04, sd2:3.6, r:0.77, n:28 },
+    "Inhibition": { m1:10.07, sd1:3.01, m2:11.54, sd2:2.78, r:0.9, n:28 },
+    "Inhibition/Switching": { m1:9.75, sd1:2.94, m2:11.57, sd2:3.25, r:0.8, n:28 }
+  },
+  "D-KEFS Colour-Word Interference · All Ages": {
+    "Colour Naming": { m1:9.72, sd1:2.93, m2:10.55, sd2:2.94, r:0.76, n:101 },
+    "Word Reading": { m1:9.84, sd1:2.91, m2:10.22, sd2:2.78, r:0.62, n:101 },
+    "Inhibition": { m1:10.22, sd1:2.88, m2:11.24, sd2:2.87, r:0.75, n:100 },
+    "Inhibition/Switching": { m1:10.09, sd1:2.64, m2:11.16, sd2:2.99, r:0.65, n:100 }
+  },
+  "D-KEFS Design Fluency · Ages 20-49": {
+    "Filled Dots": { m1:9.37, sd1:2.76, m2:11.89, sd2:3.39, r:0.62, n:35 },
+    "Empty Dots": { m1:9.37, sd1:2.68, m2:11.14, sd2:2.79, r:0.73, n:35 },
+    "Switching": { m1:9.83, sd1:3.44, m2:11.49, sd2:2.83, r:0.22, n:35 }
+  },
+  "D-KEFS Design Fluency · Ages 50-89": {
+    "Filled Dots": { m1:10.24, sd1:2.72, m2:11.84, sd2:3.06, r:0.43, n:38 },
+    "Empty Dots": { m1:10, sd1:2.97, m2:11.08, sd2:2.91, r:0.49, n:38 },
+    "Switching": { m1:11.03, sd1:2.59, m2:11.16, sd2:3.33, r:0.58, n:38 }
+  },
+  "D-KEFS Design Fluency · Ages 8-19": {
+    "Filled Dots": { m1:10.21, sd1:2.74, m2:11.75, sd2:3.19, r:0.66, n:28 },
+    "Empty Dots": { m1:9.64, sd1:3.38, m2:11.39, sd2:3.1, r:0.43, n:28 },
+    "Switching": { m1:9.64, sd1:2.56, m2:11.86, sd2:2.81, r:0.13, n:28 }
+  },
+  "D-KEFS Design Fluency · All Ages": {
+    "Filled Dots": { m1:9.93, sd1:2.74, m2:11.83, sd2:3.19, r:0.58, n:101 },
+    "Empty Dots": { m1:9.68, sd1:2.98, m2:11.19, sd2:2.89, r:0.57, n:101 },
+    "Switching": { m1:10.23, sd1:2.95, m2:11.47, sd2:3.01, r:0.32, n:101 }
+  },
+  "D-KEFS Sorting Test · Ages 20-49": {
+    "Free Sorting Confirmed Sorts": { m1:9.67, sd1:3.24, m2:11.33, sd2:2.56, r:0.51, n:35 },
+    "Free Sorting Description Total Score": { m1:9.45, sd1:3.23, m2:11.3, sd2:2.57, r:0.46, n:35 },
+    "Sort Recognition Total Description Score": { m1:9.91, sd1:2.83, m2:10.91, sd2:3.48, r:0.55, n:35 }
+  },
+  "D-KEFS Sorting Test · Ages 50-89": {
+    "Free Sorting Confirmed Sorts": { m1:10.9, sd1:2.98, m2:10.97, sd2:2.44, r:0.62, n:38 },
+    "Free Sorting Description Total Score": { m1:10.77, sd1:2.82, m2:10.7, sd2:2.44, r:0.63, n:38 },
+    "Sort Recognition Total Description Score": { m1:10.67, sd1:3.02, m2:10.83, sd2:3.03, r:0.73, n:38 }
+  },
+  "D-KEFS Sorting Test · Ages 8-19": {
+    "Free Sorting Confirmed Sorts": { m1:10.22, sd1:1.63, m2:11.67, sd2:2.34, r:0.49, n:28 },
+    "Free Sorting Description Total Score": { m1:10.19, sd1:1.57, m2:11.85, sd2:2.48, r:0.67, n:28 },
+    "Sort Recognition Total Description Score": { m1:10.22, sd1:2.95, m2:11.81, sd2:2.77, r:0.56, n:28 }
+  },
+  "D-KEFS Sorting Test · All Ages": {
+    "Free Sorting Confirmed Sorts": { m1:10.24, sd1:2.77, m2:11.31, sd2:2.44, r:0.51, n:101 },
+    "Free Sorting Description Total Score": { m1:10.11, sd1:2.72, m2:11.27, sd2:2.51, r:0.5, n:101 },
+    "Sort Recognition Total Description Score": { m1:10.26, sd1:2.92, m2:11.16, sd2:3.13, r:0.6, n:101 }
+  },
+  "D-KEFS Tower Test · Ages 20-49": {
+    "Total Achievement Score": { m1:10.33, sd1:3.03, m2:11.1, sd2:3.04, r:0.41, n:30 }
+  },
+  "D-KEFS Tower Test · Ages 50-89": {
+    "Total Achievement Score": { m1:9.79, sd1:3.45, m2:11.89, sd2:2.96, r:0.38, n:28 }
+  },
+  "D-KEFS Tower Test · Ages 8-19": {
+    "Total Achievement Score": { m1:11, sd1:3.14, m2:12.08, sd2:2.8, r:0.51, n:25 }
+  },
+  "D-KEFS Tower Test · All Ages": {
+    "Total Achievement Score": { m1:10.35, sd1:3.21, m2:11.66, sd2:2.94, r:0.44, n:83 }
+  },
+  "D-KEFS Trail Making Test · Ages 20-49": {
+    "Visual Scanning": { m1:10.14, sd1:2.87, m2:10.86, sd2:2.68, r:0.55, n:35 },
+    "Number Sequencing": { m1:9.57, sd1:3.18, m2:10.91, sd2:2.22, r:0.54, n:35 },
+    "Letter Sequencing": { m1:9.69, sd1:3.32, m2:10.63, sd2:2.29, r:0.48, n:35 },
+    "Switching": { m1:9.63, sd1:2.8, m2:10.97, sd2:1.87, r:0.36, n:35 },
+    "Motor Speed": { m1:9.77, sd1:3.61, m2:10.51, sd2:3.06, r:0.73, n:35 },
+    "Combined Number + Letter": { m1:9.54, sd1:3.37, m2:10.83, sd2:2.26, r:0.64, n:35 }
+  },
+  "D-KEFS Trail Making Test · Ages 50-89": {
+    "Visual Scanning": { m1:10.53, sd1:2.66, m2:10.9, sd2:2.7, r:0.63, n:38 },
+    "Number Sequencing": { m1:9.7, sd1:2.92, m2:11.54, sd2:2.21, r:0.37, n:37 },
+    "Letter Sequencing": { m1:9.9, sd1:3.25, m2:10.76, sd2:3.04, r:0.7, n:38 },
+    "Switching": { m1:10.33, sd1:2.99, m2:10.61, sd2:3.25, r:0.55, n:36 },
+    "Motor Speed": { m1:10.42, sd1:2.47, m2:10.45, sd2:3.17, r:0.74, n:38 },
+    "Combined Number + Letter": { m1:9.66, sd1:3.23, m2:11.13, sd2:2.92, r:0.6, n:37 }
+  },
+  "D-KEFS Trail Making Test · Ages 8-19": {
+    "Visual Scanning": { m1:9.29, sd1:2.84, m2:11.29, sd2:1.65, r:0.5, n:28 },
+    "Number Sequencing": { m1:10.44, sd1:2.85, m2:11.44, sd2:1.99, r:0.77, n:27 },
+    "Letter Sequencing": { m1:9.44, sd1:3.19, m2:11.15, sd2:2.69, r:0.57, n:27 },
+    "Switching": { m1:9.36, sd1:2.93, m2:10.5, sd2:3.05, r:0.2, n:28 },
+    "Motor Speed": { m1:10.32, sd1:2.71, m2:10.68, sd2:2.55, r:0.82, n:28 },
+    "Combined Number + Letter": { m1:9.7, sd1:3.54, m2:11.22, sd2:3.02, r:0.78, n:26 }
+  },
+  "D-KEFS Trail Making Test · All Ages": {
+    "Visual Scanning": { m1:10.05, sd1:2.8, m2:10.99, sd2:2.43, r:0.56, n:101 },
+    "Number Sequencing": { m1:9.86, sd1:2.99, m2:11.29, sd2:2.15, r:0.59, n:99 },
+    "Letter Sequencing": { m1:9.7, sd1:3.23, m2:10.82, sd2:2.68, r:0.59, n:100 },
+    "Switching": { m1:9.81, sd1:2.91, m2:10.71, sd2:2.75, r:0.38, n:99 },
+    "Motor Speed": { m1:10.17, sd1:2.96, m2:10.54, sd2:2.95, r:0.77, n:101 },
+    "Combined Number + Letter": { m1:9.63, sd1:3.33, m2:11.05, sd2:2.71, r:0.66, n:98 }
+  },
+  "D-KEFS Twenty Questions Test · Ages 20-49": {
+    "Total Weighted Achievement": { m1:10.61, sd1:2.73, m2:10.33, sd2:2.91, r:0.19, n:35 },
+    "Initial Abstraction Score": { m1:10.21, sd1:2, m2:9.74, sd2:2.25, r:0.24, n:35 }
+  },
+  "D-KEFS Twenty Questions Test · Ages 50-89": {
+    "Total Weighted Achievement": { m1:9.68, sd1:3.43, m2:10.18, sd2:3.05, r:0.39, n:38 },
+    "Initial Abstraction Score": { m1:9.36, sd1:2.63, m2:9.62, sd2:2.37, r:0.42, n:38 }
+  },
+  "D-KEFS Twenty Questions Test · Ages 8-19": {
+    "Total Weighted Achievement": { m1:9.36, sd1:2.84, m2:10.16, sd2:2.87, r:0.06, n:28 },
+    "Initial Abstraction Score": { m1:9.64, sd1:2.34, m2:9.61, sd2:2.63, r:0.62, n:28 }
+  },
+  "D-KEFS Twenty Questions Test · All Ages": {
+    "Total Weighted Achievement": { m1:9.92, sd1:3.05, m2:10.23, sd2:2.92, r:0.24, n:101 },
+    "Initial Abstraction Score": { m1:9.73, sd1:2.35, m2:9.66, sd2:2.38, r:0.43, n:101 }
+  },
+  "D-KEFS Verbal Fluency · Ages 20-49": {
+    "Letter Fluency": { m1:9.39, sd1:3.11, m2:9.91, sd2:3.64, r:0.76, n:35 },
+    "Category Fluency": { m1:10.06, sd1:3.3, m2:10.52, sd2:3.42, r:0.81, n:35 },
+    "Category Switching": { m1:9.39, sd1:3.63, m2:8.24, sd2:3.66, r:0.49, n:35 },
+    "Switching Accuracy": { m1:10.36, sd1:3, m2:9.3, sd2:3.88, r:0.24, n:35 }
+  },
+  "D-KEFS Verbal Fluency · Ages 50-89": {
+    "Letter Fluency": { m1:9.71, sd1:3.56, m2:9.97, sd2:3.88, r:0.88, n:38 },
+    "Category Fluency": { m1:10.11, sd1:3.68, m2:10.24, sd2:3.66, r:0.82, n:38 },
+    "Category Switching": { m1:10.71, sd1:3.44, m2:10.79, sd2:3.86, r:0.51, n:38 },
+    "Switching Accuracy": { m1:10.55, sd1:3.13, m2:11.26, sd2:3.55, r:0.39, n:38 }
+  },
+  "D-KEFS Verbal Fluency · Ages 8-19": {
+    "Letter Fluency": { m1:9.75, sd1:2.61, m2:10.5, sd2:2.86, r:0.67, n:28 },
+    "Category Fluency": { m1:9.18, sd1:2.52, m2:10.14, sd2:3, r:0.7, n:28 },
+    "Category Switching": { m1:9.25, sd1:2.86, m2:10.54, sd2:2.32, r:0.65, n:28 },
+    "Switching Accuracy": { m1:10.29, sd1:2.77, m2:11, sd2:3.15, r:0.53, n:28 }
+  },
+  "D-KEFS Verbal Fluency · All Ages": {
+    "Letter Fluency": { m1:9.62, sd1:3.14, m2:10.1, sd2:3.51, r:0.8, n:101 },
+    "Category Fluency": { m1:9.83, sd1:3.25, m2:10.3, sd2:3.38, r:0.79, n:101 },
+    "Category Switching": { m1:9.86, sd1:3.39, m2:9.87, sd2:3.58, r:0.52, n:101 },
+    "Switching Accuracy": { m1:10.41, sd1:2.96, m2:10.54, sd2:3.63, r:0.36, n:101 }
+  },
+  "D-KEFS Word Context Test · Ages 20-49": {
+    "Total First Trial Consistently Correct": { m1:10.26, sd1:3.08, m2:11.97, sd2:2.94, r:0.73, n:35 }
+  },
+  "D-KEFS Word Context Test · Ages 50-89": {
+    "Total First Trial Consistently Correct": { m1:9.42, sd1:2.66, m2:10.61, sd2:3.53, r:0.78, n:38 }
+  },
+  "D-KEFS Word Context Test · Ages 8-19": {
+    "Total First Trial Consistently Correct": { m1:10.57, sd1:2.74, m2:12.25, sd2:3.1, r:0.58, n:28 }
+  },
+  "D-KEFS Word Context Test · All Ages": {
+    "Total First Trial Consistently Correct": { m1:10.03, sd1:2.85, m2:11.54, sd2:3.27, r:0.7, n:101 }
+  },
+  "D-KEFS Word Proverb Test · Ages 20-49": {
+    "Total Achievement Score: Free Inquiry": { m1:10.13, sd1:2.62, m2:10.56, sd2:2.26, r:0.66, n:35 }
+  },
+  "D-KEFS Word Proverb Test · Ages 50-89": {
+    "Total Achievement Score: Free Inquiry": { m1:9.46, sd1:3.4, m2:10.38, sd2:3.73, r:0.81, n:38 }
+  },
+  "D-KEFS Word Proverb Test · Ages 16-19": {
+    "Total Achievement Score: Free Inquiry": { m1:9.8, sd1:3.29, m2:11.3, sd2:2.5, r:0.9, n:28 }
+  },
+  "D-KEFS Word Proverb Test · All Ages": {
+    "Total Achievement Score": { m1:9.77, sd1:3.07, m2:10.57, sd2:3.04, r:0.76, n:101 }
+  },
+  "D-KEFS Advanced Trail Making · All Ages": {
+    "NS Mean Correct (With Errors) Connection Time": { m1:10.4, sd1:2.8, m2:10.4, sd2:2.8, r:0.53, n:224 },
+    "LS Mean Correct (With Errors) Connection Time": { m1:10.4, sd1:2.9, m2:10.4, sd2:3, r:0.52, n:224 },
+    "SW Mean Correct (With Errors) Connection Time": { m1:10, sd1:3.1, m2:11.1, sd2:3.1, r:0.64, n:224 },
+    "SWD Mean Correct (With Errors) Connection Time": { m1:9.9, sd1:3.1, m2:11.1, sd2:3.1, r:0.69, n:224 },
+    "SWM Mean Correct (With Errors) Connection Time": { m1:10.1, sd1:2.9, m2:10.7, sd2:3.3, r:0.66, n:224 },
+    "Combined Switching Total Active Errors (Set-Loss + Sequencing)": { m1:10, sd1:3.2, m2:10.7, sd2:2.8, r:0.48, n:224 },
+    "SW Mean Pure Response Speed (Correct or Error Connections)": { m1:10, sd1:3, m2:11.1, sd2:3, r:0.66, n:224 },
+    "SWD Mean Pure Response Speed (Correct or Error Connections)": { m1:9.9, sd1:3.1, m2:11, sd2:3.2, r:0.7, n:224 },
+    "SWM Mean Pure Response Speed (Correct or Error Connections)": { m1:10, sd1:2.9, m2:10.6, sd2:3.3, r:0.7, n:224 },
+    "Combined Sequencing Mean Correct (With Errors) Connection Time Index": { m1:102.3, sd1:14.3, m2:102.5, sd2:15.1, r:0.67, n:224 },
+    "Combined Switching Mean Correct (With Errors) Connection Time Index": { m1:99.6, sd1:15.8, m2:105.2, sd2:16.4, r:0.79, n:224 },
+    "Combined Switching Mean Pure Response Speed (Correct or Error Connections) Idx": { m1:99.8, sd1:15.4, m2:105, sd2:16.2, r:0.81, n:224 },
+    "Multitasking Index": { m1:99.7, sd1:16.4, m2:105.5, sd2:16.4, r:0.73, n:224 }
+  },
+  "D-KEFS Advanced Trail Making · Ages 8-18": {
+    "NS Mean Correct (With Errors) Connection Time": { m1:10.1, sd1:3, m2:10.6, sd2:2.9, r:0.47, n:91 },
+    "LS Mean Correct (With Errors) Connection Time": { m1:10.2, sd1:2.8, m2:10.6, sd2:2.7, r:0.47, n:91 },
+    "SW Mean Correct (With Errors) Connection Time": { m1:9.8, sd1:3.2, m2:11.5, sd2:3.3, r:0.62, n:91 },
+    "SWD Mean Correct (With Errors) Connection Time": { m1:9.8, sd1:3.4, m2:11.5, sd2:3.3, r:0.77, n:91 },
+    "SWM Mean Correct (With Errors) Connection Time": { m1:9.6, sd1:3.1, m2:10.6, sd2:3.4, r:0.76, n:91 },
+    "Combined Switching Total Active Errors (Set-Loss + Sequencing)": { m1:10, sd1:3.3, m2:10.8, sd2:2.9, r:0.4, n:91 },
+    "SW Mean Pure Response Speed (Correct or Error Connections)": { m1:9.7, sd1:3.1, m2:11.5, sd2:3.3, r:0.65, n:91 },
+    "SWD Mean Pure Response Speed (Correct or Error Connections)": { m1:9.9, sd1:3.2, m2:11.5, sd2:3.2, r:0.75, n:91 },
+    "SWM Mean Pure Response Speed (Correct or Error Connections)": { m1:9.5, sd1:2.9, m2:10.6, sd2:3.3, r:0.74, n:91 },
+    "Combined Sequencing Mean Correct (With Errors) Connection Time Index": { m1:100.5, sd1:14.1, m2:103.4, sd2:14.6, r:0.64, n:91 },
+    "Combined Switching Mean Correct (With Errors) Connection Time Index": { m1:98.2, sd1:16.7, m2:106.7, sd2:17.5, r:0.83, n:91 },
+    "Combined Switching Mean Pure Response Speed (Correct or Error Connections) Idx": { m1:98.3, sd1:15.7, m2:106.8, sd2:16.7, r:0.84, n:91 },
+    "Multitasking Index": { m1:98.4, sd1:16.9, m2:106.8, sd2:17, r:0.77, n:91 }
+  },
+  "D-KEFS Advanced Trail Making · Ages 19-59": {
+    "NS Mean Correct (With Errors) Connection Time": { m1:11, sd1:2.5, m2:10.8, sd2:2.6, r:0.39, n:67 },
+    "LS Mean Correct (With Errors) Connection Time": { m1:11, sd1:3, m2:10.7, sd2:3.1, r:0.46, n:67 },
+    "SW Mean Correct (With Errors) Connection Time": { m1:10.3, sd1:2.9, m2:11.2, sd2:2.5, r:0.59, n:67 },
+    "SWD Mean Correct (With Errors) Connection Time": { m1:10.4, sd1:2.8, m2:11.3, sd2:2.8, r:0.48, n:67 },
+    "SWM Mean Correct (With Errors) Connection Time": { m1:10.5, sd1:2.5, m2:10.7, sd2:2.9, r:0.44, n:67 },
+    "Combined Switching Total Active Errors (Set-Loss + Sequencing)": { m1:10.1, sd1:2.8, m2:10.8, sd2:2.7, r:0.52, n:67 },
+    "SW Mean Pure Response Speed (Correct or Error Connections)": { m1:10.4, sd1:2.9, m2:11.2, sd2:2.6, r:0.59, n:67 },
+    "SWD Mean Pure Response Speed (Correct or Error Connections)": { m1:10.5, sd1:2.7, m2:11.2, sd2:2.8, r:0.55, n:67 },
+    "SWM Mean Pure Response Speed (Correct or Error Connections)": { m1:10.5, sd1:2.4, m2:10.7, sd2:2.9, r:0.54, n:67 },
+    "Combined Sequencing Mean Correct (With Errors) Connection Time Index": { m1:105.4, sd1:12.9, m2:104.2, sd2:15.1, r:0.55, n:67 },
+    "Combined Switching Mean Correct (With Errors) Connection Time Index": { m1:102.3, sd1:13.4, m2:106, sd2:14, r:0.67, n:67 },
+    "Combined Switching Mean Pure Response Speed (Correct or Error Connections) Idx": { m1:102.9, sd1:13.1, m2:106, sd2:13.7, r:0.69, n:67 },
+    "Multitasking Index": { m1:101.9, sd1:14.1, m2:106.2, sd2:14.2, r:0.63, n:67 }
+  },
+  "D-KEFS Advanced Trail Making · Ages 60-90": {
+    "NS Mean Correct (With Errors) Connection Time": { m1:10.3, sd1:2.7, m2:9.8, sd2:2.8, r:0.7, n:66 },
+    "LS Mean Correct (With Errors) Connection Time": { m1:10.3, sd1:3.2, m2:10, sd2:3.3, r:0.62, n:66 },
+    "SW Mean Correct (With Errors) Connection Time": { m1:10, sd1:3.3, m2:10.4, sd2:3.5, r:0.7, n:66 },
+    "SWD Mean Correct (With Errors) Connection Time": { m1:9.5, sd1:3.1, m2:10.4, sd2:2.9, r:0.76, n:66 },
+    "SWM Mean Correct (With Errors) Connection Time": { m1:10.2, sd1:3.1, m2:10.7, sd2:3.5, r:0.73, n:66 },
+    "Combined Switching Total Active Errors (Set-Loss + Sequencing)": { m1:10, sd1:3.4, m2:10.5, sd2:2.9, r:0.52, n:66 },
+    "SW Mean Pure Response Speed (Correct or Error Connections)": { m1:10, sd1:3, m2:10.5, sd2:3.1, r:0.72, n:66 },
+    "SWD Mean Pure Response Speed (Correct or Error Connections)": { m1:9.3, sd1:3.2, m2:10, sd2:3.4, r:0.77, n:66 },
+    "SWM Mean Pure Response Speed (Correct or Error Connections)": { m1:10.1, sd1:3.4, m2:10.5, sd2:3.6, r:0.79, n:66 },
+    "Combined Sequencing Mean Correct (With Errors) Connection Time Index": { m1:101.6, sd1:15.4, m2:99.5, sd2:15.4, r:0.78, n:66 },
+    "Combined Switching Mean Correct (With Errors) Connection Time Index": { m1:99, sd1:16.8, m2:102.4, sd2:17.1, r:0.83, n:66 },
+    "Combined Switching Mean Pure Response Speed (Correct or Error Connections) Idx": { m1:98.7, sd1:16.8, m2:101.5, sd2:17.6, r:0.87, n:66 },
+    "Multitasking Index": { m1:99.1, sd1:17.9, m2:103, sd2:17.5, r:0.76, n:66 }
+  },
+  "D-KEFS Advanced Verbal Fluency · All Ages": {
+    "Letter Fluency Total Correct": { m1:10.1, sd1:3.3, m2:10.9, sd2:3.3, r:0.81, n:224 },
+    "Category Fluency Total Correct": { m1:10.3, sd1:3.1, m2:10.3, sd2:3.1, r:0.79, n:224 },
+    "Switching Fluency Total Correct": { m1:10.1, sd1:3.1, m2:10.6, sd2:3.2, r:0.79, n:224 },
+    "Switching Fluency Total Accurate Switches": { m1:10.1, sd1:3.2, m2:10.6, sd2:3.1, r:0.78, n:224 },
+    "Total Set-Loss Errors": { m1:9.8, sd1:3, m2:10, sd2:2.9, r:0.19, n:224 },
+    "Total Repetitions": { m1:9.8, sd1:2.9, m2:9.9, sd2:2.7, r:0.44, n:224 },
+    "Switching Fluency Total Correct/Switching Accuracy Index": { m1:100.4, sd1:15.9, m2:102.9, sd2:16.2, r:0.8, n:224 },
+    "Combined Letter and Category Fluency Total Correct Index": { m1:100.8, sd1:16.4, m2:103.4, sd2:16.4, r:0.84, n:224 },
+    "Combined Letter, Category, and Switching Fluency Total Correct Index": { m1:100.5, sd1:16.3, m2:103.2, sd2:16.2, r:0.87, n:224 }
+  },
+  "D-KEFS Advanced Verbal Fluency · Ages 8-18": {
+    "Letter Fluency Total Correct": { m1:9.6, sd1:3, m2:10.7, sd2:3.2, r:0.76, n:91 },
+    "Category Fluency Total Correct": { m1:9.9, sd1:3.2, m2:9.9, sd2:2.8, r:0.8, n:91 },
+    "Switching Fluency Total Correct": { m1:9.6, sd1:3.1, m2:10.3, sd2:3.1, r:0.66, n:91 },
+    "Switching Fluency Total Accurate Switches": { m1:9.7, sd1:3.2, m2:10.5, sd2:3.1, r:0.68, n:91 },
+    "Total Set-Loss Errors": { m1:9.9, sd1:2.9, m2:10.1, sd2:3, r:0.33, n:91 },
+    "Total Repetitions": { m1:10.1, sd1:2.8, m2:10, sd2:2.6, r:0.41, n:91 },
+    "Switching Fluency Total Correct/Switching Accuracy Index": { m1:98.2, sd1:15.8, m2:101.7, sd2:15.7, r:0.67, n:91 },
+    "Combined Letter and Category Fluency Total Correct Index": { m1:98.6, sd1:15.9, m2:101.5, sd2:15.1, r:0.81, n:91 },
+    "Combined Letter, Category, and Switching Fluency Total Correct Index": { m1:97.4, sd1:15.1, m2:100.8, sd2:14.7, r:0.78, n:91 }
+  },
+  "D-KEFS Advanced Verbal Fluency · Ages 19-59": {
+    "Letter Fluency Total Correct": { m1:10.9, sd1:3.4, m2:11.7, sd2:3.3, r:0.78, n:67 },
+    "Category Fluency Total Correct": { m1:10.9, sd1:2.9, m2:10.8, sd2:3.4, r:0.71, n:67 },
+    "Switching Fluency Total Correct": { m1:11, sd1:3.1, m2:11.2, sd2:3.2, r:0.81, n:67 },
+    "Switching Fluency Total Accurate Switches": { m1:10.9, sd1:2.9, m2:11.2, sd2:3.2, r:0.76, n:67 },
+    "Total Set-Loss Errors": { m1:10, sd1:2.8, m2:10.4, sd2:2.8, r:0, n:67 },
+    "Total Repetitions": { m1:9.5, sd1:2.7, m2:9.8, sd2:3, r:0.5, n:67 },
+    "Switching Fluency Total Correct/Switching Accuracy Index": { m1:104.8, sd1:15.3, m2:106.1, sd2:16.5, r:0.81, n:67 },
+    "Combined Letter and Category Fluency Total Correct Index": { m1:104.8, sd1:16.1, m2:106.9, sd2:17, r:0.78, n:67 },
+    "Combined Letter, Category, and Switching Fluency Total Correct Index": { m1:105.1, sd1:16.4, m2:106.9, sd2:16.4, r:0.85, n:67 }
+  },
+  "D-KEFS Advanced Verbal Fluency · Ages 60-90": {
+    "Letter Fluency Total Correct": { m1:10, sd1:3.5, m2:10.5, sd2:3.5, r:0.88, n:66 },
+    "Category Fluency Total Correct": { m1:10.1, sd1:3, m2:10.5, sd2:3.1, r:0.85, n:66 },
+    "Switching Fluency Total Correct": { m1:9.9, sd1:3.1, m2:10.4, sd2:3.4, r:0.86, n:66 },
+    "Switching Fluency Total Accurate Switches": { m1:9.8, sd1:3.2, m2:10.2, sd2:3.1, r:0.87, n:66 },
+    "Total Set-Loss Errors": { m1:9.6, sd1:3.4, m2:9.5, sd2:3, r:0.23, n:66 },
+    "Total Repetitions": { m1:9.7, sd1:3.3, m2:9.8, sd2:2.6, r:0.41, n:66 },
+    "Switching Fluency Total Correct/Switching Accuracy Index": { m1:99, sd1:16, m2:101.3, sd2:16.5, r:0.87, n:66 },
+    "Combined Letter and Category Fluency Total Correct Index": { m1:99.9, sd1:17, m2:102.6, sd2:17.1, r:0.91, n:66 },
+    "Combined Letter, Category, and Switching Fluency Total Correct Index": { m1:100, sd1:16.9, m2:102.7, sd2:17.5, r:0.94, n:66 }
+  },
+  "D-KEFS Advanced Color-Word Interference · All Ages": {
+    "Color Identification Net Correct Responses": { m1:10.2, sd1:3, m2:10.5, sd2:3.2, r:0.75, n:224 },
+    "Word Identification Net Correct Responses": { m1:10.2, sd1:2.8, m2:10.4, sd2:3, r:0.78, n:224 },
+    "Inhibition Net Correct Responses": { m1:10, sd1:3.2, m2:10.7, sd2:3.2, r:0.81, n:224 },
+    "Inhibition/Switching Net Correct Responses": { m1:9.8, sd1:3, m2:11, sd2:3, r:0.72, n:224 },
+    "Combined Inhibition and Inhibition/Switching Total Errors": { m1:9.7, sd1:3.2, m2:10.4, sd2:3, r:0.6, n:224 },
+    "Combined Color and Word Identification Net Correct Responses Index": { m1:101.1, sd1:14.6, m2:102.4, sd2:15.7, r:0.81, n:224 },
+    "Multitasking Index": { m1:99.6, sd1:15.8, m2:105, sd2:16.2, r:0.82, n:224 },
+    "Combined Inhib. and Inhib./Switching Mean Pure Response Time Index": { m1:100.9, sd1:14.1, m2:104.8, sd2:15.6, r:0.84, n:224 }
+  },
+  "D-KEFS Advanced Color-Word Interference · Ages 8-18": {
+    "Color Identification Net Correct Responses": { m1:10.3, sd1:3, m2:10.4, sd2:3.4, r:0.73, n:91 },
+    "Word Identification Net Correct Responses": { m1:10.3, sd1:2.8, m2:10.4, sd2:3.1, r:0.75, n:91 },
+    "Inhibition Net Correct Responses": { m1:10.1, sd1:3.4, m2:11, sd2:3.4, r:0.8, n:91 },
+    "Inhibition/Switching Net Correct Responses": { m1:9.4, sd1:3.4, m2:10.8, sd2:3.2, r:0.79, n:91 },
+    "Combined Inhibition and Inhibition/Switching Total Errors": { m1:9.3, sd1:3.4, m2:10.1, sd2:3.2, r:0.61, n:91 },
+    "Combined Color and Word Identification Net Correct Responses Index": { m1:101.6, sd1:14.4, m2:102.3, sd2:17, r:0.81, n:91 },
+    "Multitasking Index": { m1:98.4, sd1:17.3, m2:105.3, sd2:17.4, r:0.84, n:91 },
+    "Combined Inhib. and Inhib./Switching Mean Pure Response Time Index": { m1:100.2, sd1:15.3, m2:105.5, sd2:16.7, r:0.8, n:91 }
+  },
+  "D-KEFS Advanced Color-Word Interference · Ages 19-59": {
+    "Color Identification Net Correct Responses": { m1:10.7, sd1:3.2, m2:11, sd2:3.3, r:0.8, n:67 },
+    "Word Identification Net Correct Responses": { m1:10.4, sd1:3.2, m2:10.3, sd2:3.3, r:0.82, n:67 },
+    "Inhibition Net Correct Responses": { m1:10.2, sd1:2.7, m2:10.7, sd2:3, r:0.77, n:67 },
+    "Inhibition/Switching Net Correct Responses": { m1:10.5, sd1:2.7, m2:11.6, sd2:2.8, r:0.62, n:67 },
+    "Combined Inhibition and Inhibition/Switching Total Errors": { m1:10, sd1:3.1, m2:10.3, sd2:3, r:0.7, n:67 },
+    "Combined Color and Word Identification Net Correct Responses Index": { m1:102.8, sd1:16.6, m2:103.3, sd2:17, r:0.84, n:67 },
+    "Multitasking Index": { m1:102.2, sd1:13.4, m2:106.8, sd2:15.1, r:0.74, n:67 },
+    "Combined Inhib. and Inhib./Switching Mean Pure Response Time Index": { m1:102.9, sd1:12.9, m2:106.6, sd2:14, r:0.79, n:67 }
+  },
+  "D-KEFS Advanced Color-Word Interference · Ages 60-90": {
+    "Color Identification Net Correct Responses": { m1:9.7, sd1:2.6, m2:10.2, sd2:2.6, r:0.72, n:66 },
+    "Word Identification Net Correct Responses": { m1:9.9, sd1:2.3, m2:10.5, sd2:2.3, r:0.77, n:66 },
+    "Inhibition Net Correct Responses": { m1:9.7, sd1:3.2, m2:10.2, sd2:3, r:0.84, n:66 },
+    "Inhibition/Switching Net Correct Responses": { m1:9.8, sd1:2.9, m2:10.7, sd2:3, r:0.72, n:66 },
+    "Combined Inhibition and Inhibition/Switching Total Errors": { m1:10, sd1:3, m2:10.8, sd2:2.8, r:0.47, n:66 },
+    "Combined Color and Word Identification Net Correct Responses Index": { m1:98.6, sd1:12.4, m2:101.6, sd2:12.2, r:0.79, n:66 },
+    "Multitasking Index": { m1:98.6, sd1:15.8, m2:102.8, sd2:15.5, r:0.85, n:66 },
+    "Combined Inhib. and Inhib./Switching Mean Pure Response Time Index": { m1:99.8, sd1:13.8, m2:101.7, sd2:15.5, r:0.9, n:66 }
+  },
+  "D-KEFS Advanced Tower · All Ages": {
+    "Global Performance Score": { m1:9.8, sd1:3.2, m2:11.2, sd2:3.3, r:0.56, n:224 },
+    "Adjusted Mean Pure Response Time": { m1:10.1, sd1:3.2, m2:11.8, sd2:3.2, r:0.75, n:224 },
+    "Adjusted Mean Unproductive Responses": { m1:9.9, sd1:3, m2:11.3, sd2:2.9, r:0.51, n:224 }
+  },
+  "D-KEFS Advanced Tower · Ages 8-18": {
+    "Global Performance Score": { m1:9.3, sd1:3.1, m2:11.1, sd2:3.2, r:0.42, n:91 },
+    "Adjusted Mean Pure Response Time": { m1:9.9, sd1:3.5, m2:12.8, sd2:2.9, r:0.65, n:91 },
+    "Adjusted Mean Unproductive Responses": { m1:9.5, sd1:3, m2:11.2, sd2:2.9, r:0.39, n:91 }
+  },
+  "D-KEFS Advanced Tower · Ages 19-59": {
+    "Global Performance Score": { m1:10.7, sd1:2.9, m2:12, sd2:3, r:0.54, n:67 },
+    "Adjusted Mean Pure Response Time": { m1:10.8, sd1:3.2, m2:11.9, sd2:3.2, r:0.72, n:67 },
+    "Adjusted Mean Unproductive Responses": { m1:10.4, sd1:3, m2:11.9, sd2:2.6, r:0.5, n:67 }
+  },
+  "D-KEFS Advanced Tower · Ages 60-90": {
+    "Global Performance Score": { m1:9.6, sd1:3.5, m2:10.3, sd2:3.5, r:0.7, n:66 },
+    "Adjusted Mean Pure Response Time": { m1:9.6, sd1:2.8, m2:10.4, sd2:3, r:0.84, n:66 },
+    "Adjusted Mean Unproductive Responses": { m1:10, sd1:2.7, m2:10.8, sd2:3.2, r:0.61, n:66 }
+  },
+  "D-KEFS Advanced Social Sorting · All Ages": {
+    "Global Performance Index": { m1:98.2, sd1:16.1, m2:105.8, sd2:19.5, r:0.59, n:224 },
+    "Total Number of Perseverative Responses": { m1:10, sd1:3.2, m2:12.1, sd2:3.5, r:0.53, n:224 },
+    "Percent Perseverative Responses": { m1:9.9, sd1:3.3, m2:12, sd2:3.5, r:0.46, n:224 },
+    "Total Number of Perseverative Errors": { m1:9.8, sd1:3.2, m2:12.1, sd2:3.6, r:0.52, n:224 },
+    "Percent Perseverative Errors": { m1:9.9, sd1:3.3, m2:12.2, sd2:3.7, r:0.47, n:224 },
+    "Total Number of Errors": { m1:9.7, sd1:3.2, m2:11.6, sd2:3.8, r:0.6, n:224 },
+    "Percent Correct Responses": { m1:9.8, sd1:3.2, m2:11.8, sd2:3.7, r:0.59, n:224 },
+    "Total Number of Nonperseverative Errors": { m1:9.7, sd1:3.5, m2:10.7, sd2:3.6, r:0.54, n:224 },
+    "Percent Nonperseverative Errors": { m1:9.7, sd1:3.4, m2:10.6, sd2:3.5, r:0.52, n:224 },
+    "Total Number of Conceptual Level Responses": { m1:9.7, sd1:3.1, m2:10.4, sd2:3.3, r:0.34, n:224 },
+    "Percent Conceptual Level Responses": { m1:9.7, sd1:3.2, m2:11.6, sd2:3.8, r:0.6, n:224 }
+  },
+  "D-KEFS Advanced Social Sorting · Ages 8-18": {
+    "Global Performance Index": { m1:96.5, sd1:14.8, m2:106.1, sd2:19.1, r:0.56, n:91 },
+    "Total Number of Perseverative Responses": { m1:9.6, sd1:3.1, m2:12.2, sd2:3.3, r:0.52, n:91 },
+    "Percent Perseverative Responses": { m1:9.8, sd1:3, m2:12.3, sd2:3.1, r:0.48, n:91 },
+    "Total Number of Perseverative Errors": { m1:9.5, sd1:3.1, m2:12.2, sd2:3.4, r:0.54, n:91 },
+    "Percent Perseverative Errors": { m1:9.9, sd1:3, m2:12.5, sd2:3.4, r:0.48, n:91 },
+    "Total Number of Errors": { m1:9.9, sd1:3, m2:12.2, sd2:3.7, r:0.6, n:91 },
+    "Percent Correct Responses": { m1:9.5, sd1:3.2, m2:12, sd2:3.8, r:0.57, n:91 },
+    "Total Number of Nonperseverative Errors": { m1:9.7, sd1:3.1, m2:11.1, sd2:3.5, r:0.52, n:91 },
+    "Percent Nonperseverative Errors": { m1:9.7, sd1:3.2, m2:10.9, sd2:3.6, r:0.51, n:91 },
+    "Total Number of Conceptual Level Responses": { m1:9.5, sd1:3.5, m2:10.3, sd2:3.5, r:0.23, n:91 },
+    "Percent Conceptual Level Responses": { m1:9.3, sd1:3.3, m2:11.7, sd2:3.7, r:0.6, n:91 }
+  },
+  "D-KEFS Advanced Social Sorting · Ages 19-59": {
+    "Global Performance Index": { m1:100.2, sd1:16.7, m2:107.8, sd2:19.8, r:0.48, n:67 },
+    "Total Number of Perseverative Responses": { m1:10, sd1:3.2, m2:12.5, sd2:3.4, r:0.41, n:67 },
+    "Percent Perseverative Responses": { m1:9.9, sd1:3.1, m2:12.3, sd2:3.3, r:0.29, n:67 },
+    "Total Number of Perseverative Errors": { m1:9.9, sd1:3.4, m2:12.6, sd2:3.6, r:0.37, n:67 },
+    "Percent Perseverative Errors": { m1:9.9, sd1:3.3, m2:12.7, sd2:3.7, r:0.33, n:67 },
+    "Total Number of Errors": { m1:10, sd1:3.6, m2:12.1, sd2:3.9, r:0.44, n:67 },
+    "Percent Correct Responses": { m1:10, sd1:3.3, m2:12.2, sd2:3.7, r:0.41, n:67 },
+    "Total Number of Nonperseverative Errors": { m1:10.2, sd1:3.6, m2:11.2, sd2:3.4, r:0.46, n:67 },
+    "Percent Nonperseverative Errors": { m1:10.1, sd1:3.4, m2:10.9, sd2:3.1, r:0.45, n:67 },
+    "Total Number of Conceptual Level Responses": { m1:9.7, sd1:2.5, m2:10.2, sd2:2.9, r:0.13, n:67 },
+    "Percent Conceptual Level Responses": { m1:10, sd1:3.2, m2:11.9, sd2:3.7, r:0.43, n:67 }
+  },
+  "D-KEFS Advanced Social Sorting · Ages 60-90": {
+    "Global Performance Index": { m1:98.3, sd1:17.1, m2:103.3, sd2:19.9, r:0.71, n:66 },
+    "Total Number of Perseverative Responses": { m1:10.5, sd1:3.3, m2:11.6, sd2:3.6, r:0.63, n:66 },
+    "Percent Perseverative Responses": { m1:10, sd1:3.8, m2:11.3, sd2:4.1, r:0.58, n:66 },
+    "Total Number of Perseverative Errors": { m1:10.1, sd1:3.3, m2:11.3, sd2:3.8, r:0.63, n:66 },
+    "Percent Perseverative Errors": { m1:10, sd1:3.7, m2:11.2, sd2:4.1, r:0.57, n:66 },
+    "Total Number of Errors": { m1:9.2, sd1:2.9, m2:10.3, sd2:3.7, r:0.72, n:66 },
+    "Percent Correct Responses": { m1:10, sd1:3.1, m2:11, sd2:3.6, r:0.74, n:66 },
+    "Total Number of Nonperseverative Errors": { m1:9.2, sd1:3.8, m2:9.6, sd2:3.6, r:0.64, n:66 },
+    "Percent Nonperseverative Errors": { m1:9.4, sd1:3.7, m2:9.8, sd2:3.5, r:0.58, n:66 },
+    "Total Number of Conceptual Level Responses": { m1:9.8, sd1:3.2, m2:10.5, sd2:3.5, r:0.61, n:66 },
+    "Percent Conceptual Level Responses": { m1:9.9, sd1:3.3, m2:10.9, sd2:3.9, r:0.73, n:66 }
+  },
+  "D-KEFS Advanced Risk-Reward Decision · All Ages": {
+    "Total Net Earnings": { m1:9.9, sd1:3.3, m2:12.6, sd2:3.7, r:0.56, n:224 },
+    "Net Earnings Races 1-20": { m1:9.8, sd1:3.3, m2:12.9, sd2:3.4, r:0.39, n:224 },
+    "Net Earnings Races 21-40": { m1:9.9, sd1:3.3, m2:10.8, sd2:2.4, r:0.55, n:224 },
+    "Net Earnings Races 41-60": { m1:10, sd1:3.2, m2:11.2, sd2:2.9, r:0.53, n:224 }
+  },
+  "D-KEFS Advanced Risk-Reward Decision · Ages 19-59": {
+    "Total Net Earnings": { m1:9.8, sd1:3.1, m2:13.3, sd2:3.4, r:0.49, n:67 },
+    "Net Earnings Races 1-20": { m1:9.4, sd1:3.1, m2:13.5, sd2:2.9, r:0.33, n:67 },
+    "Net Earnings Races 21-40": { m1:9.7, sd1:3.4, m2:10.8, sd2:2, r:0.48, n:67 },
+    "Net Earnings Races 41-60": { m1:10.1, sd1:2.8, m2:11.4, sd2:2.7, r:0.43, n:67 }
+  },
+  "D-KEFS Advanced Risk-Reward Decision · Ages 60-90": {
+    "Total Net Earnings": { m1:9.9, sd1:3.5, m2:12, sd2:3.9, r:0.63, n:66 },
+    "Net Earnings Races 1-20": { m1:10.2, sd1:3.4, m2:12.4, sd2:3.8, r:0.45, n:66 },
+    "Net Earnings Races 21-40": { m1:10.1, sd1:3.3, m2:10.9, sd2:2.8, r:0.61, n:66 },
+    "Net Earnings Races 41-60": { m1:9.8, sd1:3.5, m2:10.9, sd2:3, r:0.62, n:66 }
   },
   "RBANS Indices · Ages 12-19": {
-    "Immediate Memory":                              { m1:99.5,  sd1:14.5, m2:119.8, sd2:16.5, r:0.73, n:55 },
-    "Visuospatial/Constructional":                   { m1:99.7,  sd1:13.4, m2:98.7, sd2:13.4, r:0.53, n:55 },
-    "Attention":                                     { m1:100.5,  sd1:14.6, m2:103.6, sd2:17.3, r:0.69, n:55 },
-    "Language":                                      { m1:100.1,  sd1:15.9, m2:104.0, sd2:15.1, r:0.79, n:55 },
-    "Delayed Memory":                                { m1:100.6,  sd1:12.2, m2:110.1, sd2:16.3, r:0.70, n:55 },
-    "Total Scale":                                   { m1:100.8,  sd1:13.3, m2:110.4, sd2:14.8, r:0.81, n:55 },
-  },
-  "RBANS Subtests · Ages 20-89": {
-    "List Learning":                                 { m1:11.5,  sd1:2.9, m2:11.2, sd2:3.3, r:0.49, n:40 },
-    "Story Memory":                                  { m1:11.6,  sd1:1.8, m2:12.5, sd2:2.4, r:0.45, n:40 },
-    "Figure Copy":                                   { m1:9.6,  sd1:2.8, m2:11.1, sd2:2.6, r:0.47, n:40 },
-    "Line Orientation":                              { m1:16.0,  sd1:3.4, m2:16.4, sd2:3.7, r:0.49, n:40 },
-    "Picture Naming":                                { m1:9.6,  sd1:0.4, m2:9.7, sd2:0.5, r:0.50, n:40 },
-    "Semantic Fluency":                              { m1:11.1,  sd1:2.9, m2:11.2, sd2:3.3, r:0.49, n:40 },
-    "Digit Span":                                    { m1:10.4,  sd1:3.5, m2:10.1, sd2:3.7, r:0.73, n:40 },
-    "Coding":                                        { m1:10.8,  sd1:2.5, m2:11.7, sd2:2.8, r:0.76, n:40 },
-    "List Recall":                                   { m1:6.2,  sd1:2.4, m2:5.8, sd2:2.7, r:0.60, n:40 },
-    "List Recognition":                              { m1:19.6,  sd1:0.8, m2:19.8, sd2:0.5, r:0.27, n:40 },
-    "Story Recall":                                  { m1:11.6,  sd1:2.3, m2:11.6, sd2:2.3, r:0.52, n:40 },
-    "Figure Recall":                                 { m1:10.4,  sd1:3.0, m2:11.5, sd2:3.0, r:0.55, n:40 },
+    "Immediate Memory": { m1:99.5, sd1:14.5, m2:119.8, sd2:16.5, r:0.73, rCorrected:0.75, n:55 },
+    "Visuospatial/Constructional": { m1:99.7, sd1:13.4, m2:98.7, sd2:13.4, r:0.53, rCorrected:0.63, n:55 },
+    "Attention": { m1:100.5, sd1:14.6, m2:103.6, sd2:17.3, r:0.69, rCorrected:0.71, n:55 },
+    "Language": { m1:100.1, sd1:15.9, m2:104, sd2:15.1, r:0.79, rCorrected:0.76, n:55 },
+    "Delayed Memory": { m1:100.6, sd1:12.2, m2:110.1, sd2:16.3, r:0.7, rCorrected:0.8, n:55 },
+    "Total Scale": { m1:100.8, sd1:13.3, m2:110.4, sd2:14.8, r:0.81, rCorrected:0.85, n:55 }
   },
   "RBANS Indices · Ages 20-89": {
-    "Immediate Memory":                              { m1:109.3,  sd1:12.3, m2:110.6, sd2:14.4, r:0.62, n:40 },
-    "Visuospatial/Constructional":                   { m1:97.8,  sd1:14.2, m2:109.3, sd2:14.5, r:0.65, n:40 },
-    "Attention":                                     { m1:103.8,  sd1:15.7, m2:105.7, sd2:16.6, r:0.77, n:40 },
-    "Language":                                      { m1:107.8,  sd1:13.4, m2:105.4, sd2:14.8, r:0.64, n:40 },
-    "Delayed Memory":                                { m1:108.0,  sd1:13.8, m2:110.1, sd2:12.2, r:0.77, n:40 },
-    "Total Scale":                                   { m1:106.7,  sd1:13.9, m2:110.6, sd2:13.2, r:0.81, n:40 },
+    "Immediate Memory": { m1:109.3, sd1:12.3, m2:110.6, sd2:14.4, r:0.62, rCorrected:0.75, n:40 },
+    "Visuospatial/Constructional": { m1:97.8, sd1:14.2, m2:109.3, sd2:14.5, r:0.65, rCorrected:0.68, n:40 },
+    "Attention": { m1:103.8, sd1:15.7, m2:105.7, sd2:16.6, r:0.77, rCorrected:0.75, n:40 },
+    "Language": { m1:107.8, sd1:13.4, m2:105.4, sd2:14.8, r:0.64, rCorrected:0.71, n:40 },
+    "Delayed Memory": { m1:108, sd1:13.8, m2:110.1, sd2:12.2, r:0.77, rCorrected:0.8, n:40 },
+    "Total Scale": { m1:106.7, sd1:13.9, m2:110.6, sd2:13.2, r:0.81, rCorrected:0.84, n:40 }
   },
-  "WISC-V Subtests · All Ages": {
-    "Similarities":                                  { m1:9.8,  sd1:2.5, m2:10.6, sd2:2.5, r:0.82, n:218 },
-    "Vocabulary":                                    { m1:9.6,  sd1:2.8, m2:10.0, sd2:2.8, r:0.89, n:218 },
-    "Information":                                   { m1:9.7,  sd1:2.7, m2:10.3, sd2:2.7, r:0.85, n:218 },
-    "Comprehension":                                 { m1:10.0,  sd1:2.9, m2:10.2, sd2:2.8, r:0.81, n:218 },
-    "Block Design":                                  { m1:9.6,  sd1:2.9, m2:10.8, sd2:3.1, r:0.79, n:218 },
-    "Visual Puzzles":                                { m1:9.9,  sd1:2.8, m2:11.0, sd2:2.9, r:0.78, n:218 },
-    "Matrix Reasoning":                              { m1:9.6,  sd1:2.4, m2:10.6, sd2:2.6, r:0.65, n:218 },
-    "Figure Weights":                                { m1:10.0,  sd1:2.6, m2:10.5, sd2:2.6, r:0.76, n:218 },
-    "Picture Completion":                            { m1:9.8,  sd1:2.7, m2:10.7, sd2:2.9, r:0.63, n:218 },
-    "Arithmetic":                                    { m1:9.8,  sd1:2.5, m2:10.2, sd2:2.6, r:0.75, n:218 },
-    "Digit Span":                                    { m1:9.8,  sd1:2.8, m2:10.1, sd2:3.0, r:0.79, n:218 },
-    "Picture Span":                                  { m1:9.7,  sd1:2.5, m2:10.1, sd2:2.6, r:0.72, n:218 },
-    "Letter-Number Sequencing":                      { m1:9.8,  sd1:2.7, m2:10.2, sd2:2.8, r:0.77, n:218 },
-    "Coding":                                        { m1:10.0,  sd1:2.9, m2:11.3, sd2:3.1, r:0.79, n:218 },
-    "Symbol Search":                                 { m1:10.0,  sd1:2.7, m2:11.5, sd2:3.2, r:0.76, n:218 },
-    "Cancellation":                                  { m1:9.8,  sd1:2.9, m2:11.1, sd2:3.2, r:0.79, n:218 },
+  "RBANS Subtests · Ages 12-19": {
+    "List Learning": { m1:10.2, sd1:3.1, m2:13.4, sd2:3.2, r:0.68, rCorrected:0.66, n:55 },
+    "Story Memory": { m1:9.8, sd1:2.7, m2:13, sd2:2.6, r:0.65, rCorrected:0.72, n:55 },
+    "Figure Copy": { m1:10, sd1:2.7, m2:10, sd2:2.5, r:0.46, rCorrected:0.57, n:55 },
+    "Line Orientation": { m1:16.7, sd1:3, m2:16.9, sd2:2.9, r:0.72, n:55 },
+    "Picture Naming": { m1:9.1, sd1:1, m2:9.2, sd2:0.9, r:0.73, n:55 },
+    "Semantic Fluency": { m1:10, sd1:3.1, m2:10.8, sd2:3, r:0.67, rCorrected:0.65, n:55 },
+    "Digit Span": { m1:9.8, sd1:2.7, m2:10, sd2:3.2, r:0.59, rCorrected:0.67, n:55 },
+    "Coding": { m1:10.2, sd1:2.7, m2:11.2, sd2:3.1, r:0.75, rCorrected:0.79, n:55 },
+    "List Recall": { m1:6.8, sd1:1.8, m2:8.2, sd2:1.8, r:0.66, n:55 },
+    "List Recognition": { m1:19.9, sd1:0.5, m2:19.9, sd2:0.4, r:0.7, n:55 },
+    "Story Recall": { m1:10, sd1:3, m2:11.7, sd2:3.1, r:0.48, rCorrected:0.49, n:55 },
+    "Figure Recall": { m1:10.2, sd1:2.5, m2:11.2, sd2:3.1, r:0.58, rCorrected:0.71, n:55 }
+  },
+  "RBANS Subtests · Ages 20-89": {
+    "List Learning": { m1:11.5, sd1:2.9, m2:11.2, sd2:3.3, r:0.49, rCorrected:0.52, n:40 },
+    "Story Memory": { m1:11.6, sd1:1.8, m2:12.5, sd2:2.4, r:0.45, rCorrected:0.8, n:40 },
+    "Figure Copy": { m1:9.6, sd1:2.8, m2:11.9, sd2:2.6, r:0.47, rCorrected:0.54, n:40 },
+    "Line Orientation": { m1:16, sd1:3.4, m2:16.4, sd2:3.7, r:0.49, n:40 },
+    "Picture Naming": { m1:9.8, sd1:0.4, m2:9.7, sd2:0.5, r:0.5, n:40 },
+    "Semantic Fluency": { m1:11.1, sd1:2.9, m2:11.2, sd2:3.3, r:0.49, rCorrected:0.52, n:40 },
+    "Digit Span": { m1:10.4, sd1:3.5, m2:10.1, sd2:3.7, r:0.73, rCorrected:0.63, n:40 },
+    "Coding": { m1:10.8, sd1:2.5, m2:11.7, sd2:2.8, r:0.76, rCorrected:0.83, n:40 },
+    "List Recall": { m1:6.2, sd1:2.4, m2:5.8, sd2:2.7, r:0.6, n:40 },
+    "List Recognition": { m1:19.6, sd1:0.8, m2:19.8, sd2:0.5, r:0.27, n:40 },
+    "Story Recall": { m1:11.6, sd1:2.3, m2:11.6, sd2:2.3, r:0.52, rCorrected:0.72, n:40 },
+    "Figure Recall": { m1:10.4, sd1:3, m2:11.5, sd2:3, r:0.55, rCorrected:0.55, n:40 }
+  },
+  "WAIS-IV Core Subtests · Ages 16-29": {
+    "Block Design": { m1:10.1, sd1:3, m2:11.3, sd2:2.9, r:0.81, rCorrected:0.81 },
+    "Similarities": { m1:10.5, sd1:3.2, m2:10.9, sd2:3, r:0.82, rCorrected:0.8 },
+    "Digit Span": { m1:10.1, sd1:2.8, m2:10.7, sd2:2.9, r:0.71, rCorrected:0.75 },
+    "Matrix Reasoning": { m1:10.5, sd1:3.2, m2:10.7, sd2:3, r:0.7, rCorrected:0.66 },
+    "Vocabulary": { m1:10.3, sd1:3.1, m2:10.5, sd2:3.2, r:0.91, rCorrected:0.9 },
+    "Arithmetic": { m1:10, sd1:2.9, m2:10.5, sd2:2.9, r:0.84, rCorrected:0.85 },
+    "Symbol Search": { m1:10.4, sd1:3.3, m2:11.6, sd2:3.4, r:0.84, rCorrected:0.81 },
+    "Visual Puzzles": { m1:9.9, sd1:2.6, m2:11, sd2:3, r:0.74, rCorrected:0.8 },
+    "Information": { m1:10, sd1:2.9, m2:10.7, sd2:3.1, r:0.9, rCorrected:0.91 },
+    "Coding": { m1:9.8, sd1:2.8, m2:10.3, sd2:2.8, r:0.83, rCorrected:0.85 }
+  },
+  "WAIS-IV Core Subtests · Ages 30-54": {
+    "Block Design": { m1:10.4, sd1:2.9, m2:11.4, sd2:3.1, r:0.8, rCorrected:0.81 },
+    "Similarities": { m1:9.1, sd1:2.5, m2:9.7, sd2:2.6, r:0.85, rCorrected:0.9 },
+    "Digit Span": { m1:10, sd1:3.2, m2:10.5, sd2:3.1, r:0.81, rCorrected:0.78 },
+    "Matrix Reasoning": { m1:10.2, sd1:3.5, m2:10.3, sd2:3.4, r:0.85, rCorrected:0.8 },
+    "Vocabulary": { m1:9.4, sd1:3.1, m2:9.5, sd2:3, r:0.9, rCorrected:0.89 },
+    "Arithmetic": { m1:9.8, sd1:2.5, m2:10.1, sd2:3.1, r:0.76, rCorrected:0.83 },
+    "Symbol Search": { m1:10.3, sd1:3.1, m2:11.4, sd2:3.4, r:0.75, rCorrected:0.73 },
+    "Visual Puzzles": { m1:10.3, sd1:3.1, m2:11.4, sd2:3, r:0.7, rCorrected:0.68 },
+    "Information": { m1:9.6, sd1:2.9, m2:10.4, sd2:2.8, r:0.86, rCorrected:0.87 },
+    "Coding": { m1:10.3, sd1:2.9, m2:11.2, sd2:2.7, r:0.83, rCorrected:0.84 }
+  },
+  "WAIS-IV Core Subtests · Ages 55-69": {
+    "Block Design": { m1:10.5, sd1:3.1, m2:11.1, sd2:2.9, r:0.77, rCorrected:0.75 },
+    "Similarities": { m1:10.2, sd1:2.5, m2:10.9, sd2:2.5, r:0.81, rCorrected:0.87 },
+    "Digit Span": { m1:10, sd1:2.9, m2:10.8, sd2:3.1, r:0.89, rCorrected:0.9 },
+    "Matrix Reasoning": { m1:9.9, sd1:3, m2:10.7, sd2:3.3, r:0.72, rCorrected:0.72 },
+    "Vocabulary": { m1:10.3, sd1:3.2, m2:10.5, sd2:3, r:0.88, rCorrected:0.86 },
+    "Arithmetic": { m1:9.6, sd1:2.9, m2:10.4, sd2:2.7, r:0.8, rCorrected:0.81 },
+    "Symbol Search": { m1:10, sd1:2.9, m2:11.1, sd2:3.2, r:0.8, rCorrected:0.81 },
+    "Visual Puzzles": { m1:10.4, sd1:2.9, m2:10.8, sd2:3, r:0.73, rCorrected:0.75 },
+    "Information": { m1:10.5, sd1:3.1, m2:11.4, sd2:3.4, r:0.92, rCorrected:0.91 },
+    "Coding": { m1:10.1, sd1:2.7, m2:10.7, sd2:3.1, r:0.86, rCorrected:0.89 }
+  },
+  "WAIS-IV Core Subtests · Ages 70-90": {
+    "Block Design": { m1:10, sd1:2.6, m2:10.4, sd2:2.5, r:0.79, rCorrected:0.84 },
+    "Similarities": { m1:9.8, sd1:2.6, m2:10.3, sd2:3, r:0.84, rCorrected:0.88 },
+    "Digit Span": { m1:9.8, sd1:2.9, m2:10.5, sd2:2.9, r:0.84, rCorrected:0.85 },
+    "Matrix Reasoning": { m1:10, sd1:2.8, m2:10.3, sd2:2.8, r:0.73, rCorrected:0.76 },
+    "Vocabulary": { m1:9.7, sd1:2.8, m2:9.7, sd2:2.8, r:0.91, rCorrected:0.92 },
+    "Arithmetic": { m1:10.1, sd1:2.7, m2:10.5, sd2:2.9, r:0.8, rCorrected:0.84 },
+    "Symbol Search": { m1:9.8, sd1:2.5, m2:10, sd2:2.9, r:0.8, rCorrected:0.86 },
+    "Visual Puzzles": { m1:9.4, sd1:2.5, m2:10.4, sd2:3, r:0.57, rCorrected:0.7 },
+    "Information": { m1:9.3, sd1:3.2, m2:9.9, sd2:3.2, r:0.93, rCorrected:0.92 },
+    "Coding": { m1:9.7, sd1:2.6, m2:10.3, sd2:2.6, r:0.81, rCorrected:0.86 }
+  },
+  "WAIS-IV Core Subtests · All Ages": {
+    "Block Design": { m1:10.2, sd1:2.9, m2:11, sd2:2.8, r:0.79, rCorrected:0.8, n:298 },
+    "Similarities": { m1:9.9, sd1:2.8, m2:10.4, sd2:2.8, r:0.83, rCorrected:0.87, n:298 },
+    "Digit Span": { m1:10, sd1:2.9, m2:10.6, sd2:3, r:0.82, rCorrected:0.83, n:298 },
+    "Matrix Reasoning": { m1:10.1, sd1:3.1, m2:10.5, sd2:3.1, r:0.76, rCorrected:0.74, n:298 },
+    "Vocabulary": { m1:9.9, sd1:3, m2:10, sd2:3, r:0.9, rCorrected:0.89, n:298 },
+    "Arithmetic": { m1:9.9, sd1:2.8, m2:10.4, sd2:2.9, r:0.8, rCorrected:0.83, n:298 },
+    "Symbol Search": { m1:10.1, sd1:2.9, m2:11, sd2:3.3, r:0.8, rCorrected:0.81, n:298 },
+    "Visual Puzzles": { m1:10, sd1:2.8, m2:10.9, sd2:3, r:0.69, rCorrected:0.74, n:298 },
+    "Information": { m1:9.8, sd1:3, m2:10.5, sd2:3.2, r:0.91, rCorrected:0.9, n:298 },
+    "Coding": { m1:10, sd1:2.7, m2:10.6, sd2:2.8, r:0.83, rCorrected:0.86, n:298 }
+  },
+  "WAIS-IV Indices · Ages 16-29": {
+    "Verbal Comprehension Index": { m1:101.4, sd1:14.9, m2:103.6, sd2:15.4, r:0.95, rCorrected:0.95 },
+    "Perceptual Reasoning Index": { m1:100.8, sd1:13.9, m2:105.4, sd2:14.4, r:0.84, rCorrected:0.86 },
+    "Working Memory Index": { m1:100.5, sd1:14.7, m2:103.2, sd2:14.5, r:0.82, rCorrected:0.83 },
+    "Processing Speed Index": { m1:100.6, sd1:15.1, m2:105.4, sd2:15.8, r:0.87, rCorrected:0.87 },
+    "Full Scale IQ": { m1:101, sd1:13.8, m2:105.4, sd2:14.9, r:0.94, rCorrected:0.95 }
+  },
+  "WAIS-IV Indices · Ages 30-54": {
+    "Verbal Comprehension Index": { m1:96.4, sd1:13.9, m2:99.1, sd2:13.6, r:0.95, rCorrected:0.96 },
+    "Perceptual Reasoning Index": { m1:101.2, sd1:15.4, m2:105.7, sd2:15.9, r:0.88, rCorrected:0.87 },
+    "Working Memory Index": { m1:99.5, sd1:14.6, m2:101.4, sd2:15.7, r:0.84, rCorrected:0.85 },
+    "Processing Speed Index": { m1:102, sd1:13.7, m2:107.3, sd2:14.7, r:0.76, rCorrected:0.8 },
+    "Full Scale IQ": { m1:99.5, sd1:14.5, m2:103.9, sd2:15.9, r:0.96, rCorrected:0.96 }
+  },
+  "WAIS-IV Indices · Ages 55-69": {
+    "Verbal Comprehension Index": { m1:101.5, sd1:14.3, m2:104.8, sd2:14.9, r:0.94, rCorrected:0.95 },
+    "Perceptual Reasoning Index": { m1:101.1, sd1:13.8, m2:104.7, sd2:14.4, r:0.87, rCorrected:0.89 },
+    "Working Memory Index": { m1:98.7, sd1:13.7, m2:103, sd2:14.1, r:0.9, rCorrected:0.92 },
+    "Processing Speed Index": { m1:100.3, sd1:13.2, m2:105.3, sd2:14.9, r:0.89, rCorrected:0.91 },
+    "Full Scale IQ": { m1:100.6, sd1:14.5, m2:105.5, sd2:15.4, r:0.96, rCorrected:0.96 }
+  },
+  "WAIS-IV Indices · Ages 70-90": {
+    "Verbal Comprehension Index": { m1:97.8, sd1:14, m2:99.9, sd2:15.3, r:0.95, rCorrected:0.96 },
+    "Perceptual Reasoning Index": { m1:98.7, sd1:12.4, m2:101.9, sd2:12.7, r:0.8, rCorrected:0.86 },
+    "Working Memory Index": { m1:99.4, sd1:13.4, m2:102.6, sd2:14.8, r:0.89, rCorrected:0.91 },
+    "Processing Speed Index": { m1:98.5, sd1:12, m2:101.2, sd2:13.8, r:0.82, rCorrected:0.88 },
+    "Full Scale IQ": { m1:98.1, sd1:12.7, m2:101.6, sd2:14, r:0.94, rCorrected:0.96 }
+  },
+  "WAIS-IV Indices · All Ages": {
+    "Verbal Comprehension Index": { m1:99.3, sd1:14.4, m2:101.8, sd2:15, r:0.95, rCorrected:0.96, n:298 },
+    "Perceptual Reasoning Index": { m1:100.4, sd1:13.8, m2:104.3, sd2:14.3, r:0.85, rCorrected:0.87, n:298 },
+    "Working Memory Index": { m1:99.5, sd1:14, m2:102.6, sd2:14.7, r:0.87, rCorrected:0.88, n:298 },
+    "Processing Speed Index": { m1:100.2, sd1:13.5, m2:104.6, sd2:14.9, r:0.84, rCorrected:0.87, n:298 },
+    "Full Scale IQ": { m1:99.7, sd1:13.8, m2:104, sd2:15, r:0.95, rCorrected:0.96, n:298 }
+  },
+  "WAIS-IV Process Scores · Ages 16-29": {
+    "Block Design No Time Bonus": { m1:10.3, sd1:2.7, m2:11.3, sd2:2.4, r:0.77, rCorrected:0.81 },
+    "Digit Span Forward": { m1:10, sd1:2.7, m2:10.4, sd2:3.3, r:0.67, rCorrected:0.73 },
+    "Digit Span Backward": { m1:10.4, sd1:2.5, m2:11.2, sd2:3, r:0.51, rCorrected:0.66 },
+    "Digit Span Sequencing": { m1:9.9, sd1:3.2, m2:10.5, sd2:3.2, r:0.65, rCorrected:0.6 }
+  },
+  "WAIS-IV Process Scores · Ages 30-54": {
+    "Block Design No Time Bonus": { m1:10.6, sd1:2.9, m2:11.4, sd2:2.9, r:0.7, rCorrected:0.72 },
+    "Digit Span Forward": { m1:10.1, sd1:3, m2:10.2, sd2:3, r:0.71, rCorrected:0.71 },
+    "Digit Span Backward": { m1:10, sd1:3.2, m2:10.4, sd2:3.3, r:0.73, rCorrected:0.69 },
+    "Digit Span Sequencing": { m1:10.2, sd1:3, m2:10.5, sd2:2.7, r:0.7, rCorrected:0.7 }
+  },
+  "WAIS-IV Process Scores · Ages 55-69": {
+    "Block Design No Time Bonus": { m1:10.3, sd1:3.3, m2:11.1, sd2:3.3, r:0.75, rCorrected:0.7 },
+    "Digit Span Forward": { m1:9.8, sd1:2.7, m2:10.2, sd2:2.9, r:0.76, rCorrected:0.81 },
+    "Digit Span Backward": { m1:10.3, sd1:3, m2:11.1, sd2:3.2, r:0.77, rCorrected:0.77 },
+    "Digit Span Sequencing": { m1:9.8, sd1:2.2, m2:10.6, sd2:2.5, r:0.71, rCorrected:0.84 }
+  },
+  "WAIS-IV Process Scores · Ages 70-90": {
+    "Block Design No Time Bonus": { m1:10, sd1:2.6, m2:10.4, sd2:2.5, r:0.8, rCorrected:0.85 },
+    "Digit Span Forward": { m1:9.9, sd1:2.9, m2:10, sd2:2.9, r:0.81, rCorrected:0.82 },
+    "Digit Span Backward": { m1:10, sd1:3, m2:10.3, sd2:3, r:0.71, rCorrected:0.71 },
+    "Digit Span Sequencing": { m1:9.6, sd1:3.1, m2:10.7, sd2:2.8, r:0.72, rCorrected:0.7 }
+  },
+  "WAIS-IV Process Scores · All Ages": {
+    "Block Design No Time Bonus": { m1:10.3, sd1:2.9, m2:11, sd2:2.8, r:0.76, rCorrected:0.78, n:298 },
+    "Digit Span Forward": { m1:9.9, sd1:2.8, m2:10.2, sd2:3, r:0.74, rCorrected:0.77, n:298 },
+    "Digit Span Backward": { m1:10.2, sd1:2.9, m2:10.7, sd2:3.1, r:0.69, rCorrected:0.71, n:298 },
+    "Digit Span Sequencing": { m1:9.9, sd1:2.9, m2:10.6, sd2:2.8, r:0.7, rCorrected:0.72, n:298 }
+  },
+  "WAIS-IV Supplementary Subtests · Ages 16-29": {
+    "Letter-Number Sequencing": { m1:10.1, sd1:2.5, m2:10.8, sd2:3.4, r:0.76, rCorrected:0.83 },
+    "Figure Weights": { m1:10.4, sd1:3, m2:11.4, sd2:3.4, r:0.76, rCorrected:0.76 },
+    "Comprehension": { m1:10.2, sd1:3.2, m2:10.2, sd2:2.9, r:0.86, rCorrected:0.84 },
+    "Cancellation": { m1:9.7, sd1:2.9, m2:10.8, sd2:3.3, r:0.8, rCorrected:0.81 },
+    "Picture Completion": { m1:10, sd1:2.7, m2:12.4, sd2:3.2, r:0.74, rCorrected:0.79 }
+  },
+  "WAIS-IV Supplementary Subtests · Ages 30-54": {
+    "Letter-Number Sequencing": { m1:10, sd1:2.8, m2:10.5, sd2:2.9, r:0.81, rCorrected:0.83 },
+    "Figure Weights": { m1:9.7, sd1:2.7, m2:10.7, sd2:3.2, r:0.77, rCorrected:0.81 },
+    "Comprehension": { m1:9.3, sd1:2.8, m2:9.5, sd2:2.8, r:0.89, rCorrected:0.9 },
+    "Cancellation": { m1:10.8, sd1:2.8, m2:11.3, sd2:2.8, r:0.67, rCorrected:0.71 },
+    "Picture Completion": { m1:10.1, sd1:3, m2:12.4, sd2:3.3, r:0.68, rCorrected:0.68 }
+  },
+  "WAIS-IV Supplementary Subtests · Ages 55-69": {
+    "Letter-Number Sequencing": { m1:10, sd1:2.8, m2:10.1, sd2:2.8, r:0.7, rCorrected:0.74 },
+    "Figure Weights": { m1:9.7, sd1:3.2, m2:10.3, sd2:2.9, r:0.76, rCorrected:0.73 },
+    "Comprehension": { m1:10.4, sd1:2.9, m2:10.4, sd2:2.9, r:0.84, rCorrected:0.85 },
+    "Cancellation": { m1:10.1, sd1:2.6, m2:10.3, sd2:2.7, r:0.74, rCorrected:0.8 },
+    "Picture Completion": { m1:10, sd1:2.8, m2:11.8, sd2:3.6, r:0.78, rCorrected:0.81 }
+  },
+  "WAIS-IV Supplementary Subtests · Ages 70-90": {
+    "Comprehension": { m1:10.2, sd1:2.9, m2:10.6, sd2:3.1, r:0.85, rCorrected:0.86 },
+    "Picture Completion": { m1:9.4, sd1:3, m2:10.6, sd2:2.9, r:0.77, rCorrected:0.77 }
+  },
+  "WAIS-IV Supplementary Subtests · All Ages": {
+    "Letter-Number Sequencing": { m1:10.1, sd1:2.7, m2:10.5, sd2:3.1, r:0.76, rCorrected:0.8, n:298 },
+    "Figure Weights": { m1:10, sd1:3, m2:10.8, sd2:3.2, r:0.76, rCorrected:0.77, n:298 },
+    "Comprehension": { m1:10, sd1:3, m2:10.2, sd2:2.9, r:0.86, rCorrected:0.86, n:298 },
+    "Cancellation": { m1:10.2, sd1:2.8, m2:10.8, sd2:3, r:0.74, rCorrected:0.78, n:298 },
+    "Picture Completion": { m1:9.9, sd1:2.9, m2:11.8, sd2:3.3, r:0.74, rCorrected:0.77, n:298 }
   },
   "WISC-V Indices · All Ages": {
-    "Verbal Comprehension Index":                    { m1:98.5,  sd1:12.8, m2:101.6, sd2:13.0, r:0.91, n:218 },
-    "Visuospatial Index":                            { m1:98.6,  sd1:14.7, m2:105.3, sd2:15.1, r:0.84, n:218 },
-    "Fluid Reasoning Index":                         { m1:98.7,  sd1:13.6, m2:103.6, sd2:12.9, r:0.68, n:218 },
-    "Working Memory Index":                          { m1:98.5,  sd1:13.8, m2:100.9, sd2:13.8, r:0.79, n:218 },
-    "Processing Speed Index":                        { m1:100.3,  sd1:14.3, m2:108.2, sd2:16.0, r:0.81, n:218 },
-    "Full Scale IQ":                                 { m1:98.3,  sd1:13.7, m2:104.3, sd2:13.8, r:0.91, n:218 },
+    "Verbal Comprehension Index": { m1:98.5, sd1:12.8, m2:101.6, sd2:13, r:0.91, n:215 },
+    "Visuospatial Index": { m1:98.6, sd1:14.7, m2:105.3, sd2:15.1, r:0.84, n:217 },
+    "Fluid Reasoning Index": { m1:98.7, sd1:13.6, m2:103.6, sd2:12.9, r:0.68, n:217 },
+    "Working Memory Index": { m1:98.5, sd1:13.8, m2:100.9, sd2:13.8, r:0.79, n:217 },
+    "Processing Speed Index": { m1:100.3, sd1:14.3, m2:108.2, sd2:16, r:0.81, n:213 },
+    "Full Scale IQ": { m1:98.3, sd1:13.7, m2:104.3, sd2:13.8, r:0.91, n:212 }
   },
+  "WISC-V Subtests · All Ages": {
+    "Similarities": { m1:9.8, sd1:2.5, m2:10.6, sd2:2.5, r:0.82, n:213 },
+    "Vocabulary": { m1:9.6, sd1:2.8, m2:10, sd2:2.8, r:0.89, n:217 },
+    "Information": { m1:9.7, sd1:2.7, m2:10.3, sd2:2.7, r:0.85, n:218 },
+    "Comprehension": { m1:10, sd1:2.9, m2:10.2, sd2:2.8, r:0.81, n:214 },
+    "Block Design": { m1:9.6, sd1:2.9, m2:10.8, sd2:3.1, r:0.79, n:208 },
+    "Visual Puzzles": { m1:9.9, sd1:2.8, m2:11, sd2:2.9, r:0.78, n:210 },
+    "Matrix Reasoning": { m1:9.6, sd1:2.4, m2:10.6, sd2:2.6, r:0.65, n:202 },
+    "Figure Weights": { m1:10, sd1:2.6, m2:10.5, sd2:2.6, r:0.76, n:204 },
+    "Picture Concepts": { m1:9.8, sd1:2.7, m2:10.7, sd2:2.9, r:0.63, n:203 },
+    "Arithmetic": { m1:9.8, sd1:2.5, m2:10.2, sd2:2.6, r:0.75, n:205 },
+    "Digit Span": { m1:9.8, sd1:2.8, m2:10.1, sd2:3, r:0.79, n:214 },
+    "Picture Span": { m1:9.7, sd1:2.5, m2:10.1, sd2:2.6, r:0.72, n:208 },
+    "Letter-Number Sequencing": { m1:9.8, sd1:2.7, m2:10.2, sd2:2.8, r:0.77, n:212 },
+    "Coding": { m1:10, sd1:2.9, m2:11.3, sd2:3.1, r:0.79, n:216 },
+    "Symbol Search": { m1:10, sd1:2.7, m2:11.5, sd2:3.2, r:0.76, n:209 },
+    "Cancellation": { m1:9.8, sd1:2.9, m2:11.1, sd2:3.2, r:0.79, n:209 }
+  },
+  "WMS-IV Indices · Ages 16-69": {
+    "Auditory Memory Index": { m1:100.1, sd1:14.1, m2:111.6, sd2:14.4, r:0.81, rCorrected:0.83, n:168 },
+    "Visual Memory Index": { m1:100, sd1:14.8, m2:112.1, sd2:16.6, r:0.8, rCorrected:0.81, n:144 },
+    "Visual Working Memory Index": { m1:99.5, sd1:14.4, m2:103.8, sd2:15.6, r:0.82, rCorrected:0.83, n:171 },
+    "Immediate Memory Index": { m1:99.9, sd1:14.9, m2:112.3, sd2:15.6, r:0.81, rCorrected:0.81, n:154 },
+    "Delayed Memory Index": { m1:100.4, sd1:13.9, m2:114.1, sd2:15, r:0.79, rCorrected:0.82, n:150 }
+  },
+  "WMS-IV Indices · Ages 65-90": {
+    "Auditory Memory Index": { m1:101.5, sd1:12.9, m2:112.1, sd2:14.5, r:0.82, rCorrected:0.87, n:69 },
+    "Visual Memory Index": { m1:101.6, sd1:14.6, m2:112.6, sd2:17, r:0.79, rCorrected:0.8, n:70 },
+    "Immediate Memory Index": { m1:101.5, sd1:13.9, m2:113.9, sd2:14.2, r:0.84, rCorrected:0.86, n:69 },
+    "Delayed Memory Index": { m1:101.7, sd1:13.1, m2:112.7, sd2:14.4, r:0.8, rCorrected:0.85, n:71 }
+  },
+  "WMS-IV Subtests · Ages 16-69": {
+    "Logical Memory I": { m1:10.3, sd1:2.9, m2:12.2, sd2:2.6, r:0.72, rCorrected:0.74, n:173 },
+    "Logical Memory II": { m1:10.3, sd1:2.8, m2:12.6, sd2:2.9, r:0.67, rCorrected:0.71, n:172 },
+    "Verbal Paired Associates I": { m1:9.8, sd1:3.1, m2:12.1, sd2:3.4, r:0.76, rCorrected:0.74, n:171 },
+    "Verbal Paired Associates II": { m1:9.8, sd1:3, m2:10.8, sd2:2.7, r:0.76, rCorrected:0.76, n:170 },
+    "Verbal Paired Associates II - Word Recall": { m1:10, sd1:2.9, m2:10.9, sd2:3.2, r:0.74, rCorrected:0.76, n:170 },
+    "Designs I": { m1:10, sd1:2.9, m2:11.1, sd2:3.4, r:0.73, rCorrected:0.75, n:157 },
+    "Designs I - Content": { m1:10.1, sd1:3, m2:11.2, sd2:3.3, r:0.64, rCorrected:0.64, n:157 },
+    "Designs I - Spatial": { m1:10.2, sd1:2.9, m2:10.9, sd2:3.1, r:0.56, rCorrected:0.59, n:157 },
+    "Designs II": { m1:10.2, sd1:2.7, m2:11.9, sd2:3.2, r:0.72, rCorrected:0.77, n:151 },
+    "Designs II - Content": { m1:10.3, sd1:3, m2:11.5, sd2:3.4, r:0.64, rCorrected:0.64, n:151 },
+    "Designs II - Spatial": { m1:10.3, sd1:2.7, m2:11.6, sd2:2.6, r:0.5, rCorrected:0.6, n:151 },
+    "Visual Reproduction I": { m1:10, sd1:2.8, m2:11.9, sd2:2.8, r:0.62, rCorrected:0.67, n:170 },
+    "Visual Reproduction II": { m1:10.1, sd1:2.8, m2:12.9, sd2:3, r:0.59, rCorrected:0.64, n:169 },
+    "Spatial Addition": { m1:9.9, sd1:2.8, m2:10.7, sd2:3, r:0.74, rCorrected:0.77, n:172 },
+    "Symbol Span": { m1:10, sd1:3, m2:10.6, sd2:3.1, r:0.72, rCorrected:0.72, n:172 }
+  },
+  "WMS-IV Subtests · Ages 65-90": {
+    "Logical Memory I": { m1:10, sd1:2.9, m2:12, sd2:3.3, r:0.77, rCorrected:0.79, n:69 },
+    "Logical Memory II": { m1:10, sd1:2.7, m2:12.1, sd2:2.8, r:0.71, rCorrected:0.77, n:71 },
+    "Verbal Paired Associates I": { m1:10.4, sd1:2.8, m2:12.1, sd2:2.9, r:0.76, rCorrected:0.79, n:71 },
+    "Verbal Paired Associates II": { m1:10.4, sd1:2.7, m2:11.5, sd2:2.7, r:0.77, rCorrected:0.81, n:71 },
+    "Verbal Paired Associates II - Word Recall": { m1:10.5, sd1:2.8, m2:11.7, sd2:2.7, r:0.72, rCorrected:0.76, n:71 },
+    "Visual Reproduction I": { m1:10.2, sd1:3.1, m2:12, sd2:3.1, r:0.79, rCorrected:0.78, n:71 },
+    "Visual Reproduction II": { m1:10.5, sd1:2.8, m2:12.3, sd2:3.1, r:0.64, rCorrected:0.69, n:71 },
+    "Symbol Span": { m1:10.1, sd1:2.8, m2:10.7, sd2:3, r:0.69, rCorrected:0.73, n:69 }
+  }
 };

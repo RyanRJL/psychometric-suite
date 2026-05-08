@@ -1,5 +1,5 @@
 /* =====================================================================
-   Effect Size Tools — page module (#effectsize)
+   Effect Size Tools - page module (#effectsize)
    ===================================================================== */
 (function(){
   'use strict';
@@ -128,11 +128,11 @@
   }
 
   function fmtPct(v, digits){
-    if (v == null || isNaN(v) || !isFinite(v)) return '—';
+    if (v == null || isNaN(v) || !isFinite(v)) return '-';
     return (v*100).toFixed(digits != null ? digits : 2) + '%';
   }
   function ciString(mean, sd, n){
-    if (mean == null || sd == null || n == null || n < 2) return '—';
+    if (mean == null || sd == null || n == null || n < 2) return '-';
     const se = sd / Math.sqrt(n);
     return (mean - 1.96*se).toFixed(2) + ', ' + (mean + 1.96*se).toFixed(2);
   }
@@ -168,7 +168,7 @@
     return               { label: 'Large',      mag: 3 };
   }
   function applyDesc(el, descObj){
-    if (!descObj){ el.textContent = '—'; el.removeAttribute('data-mag'); return; }
+    if (!descObj){ el.textContent = '-'; el.removeAttribute('data-mag'); return; }
     el.textContent = descObj.label;
     el.setAttribute('data-mag', String(descObj.mag));
   }
@@ -187,14 +187,14 @@
   }
 
   function similarEffect(d){
-    if (d == null || isNaN(d) || !isFinite(d)) return '—';
+    if (d == null || isNaN(d) || !isFinite(d)) return '-';
     const ad = Math.abs(d);
-    if (ad > 3) return '—';
+    if (ad > 3) return '-';
     const closest = SIMILAR_EFFECTS.reduce((best, item) => {
       const gap = Math.abs(item.d - ad);
       return !best || gap < best.gap ? { ...item, gap } : best;
     }, null);
-    return closest ? closest.label : '—';
+    return closest ? closest.label : '-';
   }
 
   function compute(){
@@ -203,11 +203,11 @@
 
     els['es-g1-ci'].textContent = ciString(grp.m1, grp.sd1, grp.n1);
     els['es-g2-ci'].textContent = ciString(grp.m2, grp.sd2, grp.n2);
-    els['es-pooled-n'].textContent  = grp.pooledN  != null ? grp.pooledN : '—';
-    els['es-pooled-mean'].textContent = grp.pooledMean != null ? grp.pooledMean.toFixed(3) : '—';
-    els['es-pooled-sd'].textContent = grp.pooledSD != null ? grp.pooledSD.toFixed(3) : '—';
-    els['es-pooled-se'].textContent = grp.pooledSE != null ? grp.pooledSE.toFixed(3) : '—';
-    els['es-pooled-md'].textContent = grp.md != null ? grp.md.toFixed(3) : '—';
+    els['es-pooled-n'].textContent  = grp.pooledN  != null ? grp.pooledN : '-';
+    els['es-pooled-mean'].textContent = grp.pooledMean != null ? grp.pooledMean.toFixed(3) : '-';
+    els['es-pooled-sd'].textContent = grp.pooledSD != null ? grp.pooledSD.toFixed(3) : '-';
+    els['es-pooled-se'].textContent = grp.pooledSE != null ? grp.pooledSE.toFixed(3) : '-';
+    els['es-pooled-md'].textContent = grp.md != null ? grp.md.toFixed(3) : '-';
 
     const dispLabel = v => v === 'sd' ? 'Standard Deviation' : v === 'se' ? 'Standard Error' : '95% CI (Upper)';
     els['es-g1-disp-label'].textContent = dispLabel(els['es-g1-disp'].value);
@@ -238,15 +238,15 @@
 
     if (d == null || isNaN(d) || !isFinite(d)){
       ['es-out-d','es-out-g','es-out-r','es-out-r2','es-out-f','es-out-z','es-out-or',
-       'es-out-ovl','es-out-u3','es-out-cles','es-out-nnt','es-out-similar'].forEach(k => els[k].textContent = '—');
+       'es-out-ovl','es-out-u3','es-out-cles','es-out-nnt','es-out-similar'].forEach(k => els[k].textContent = '-');
       ['es-out-d-desc','es-out-g-desc','es-out-r-desc','es-out-r2-desc','es-out-f-desc']
         .forEach(k => applyDesc(els[k], null));
       drawCurve(0, true);
       computeTarget(grp, null);
       renderCommonLanguage(null);
-      if (els['es-d-slider-val']) els['es-d-slider-val'].textContent = '—';
+      if (els['es-d-slider-val']) els['es-d-slider-val'].textContent = '-';
       if (els['es-d-slider-magnitude']){
-        els['es-d-slider-magnitude'].textContent = '—';
+        els['es-d-slider-magnitude'].textContent = '-';
         els['es-d-slider-magnitude'].dataset.mag = 'empty';
       }
       return;
@@ -275,7 +275,7 @@
 
     els['es-out-d'].textContent  = d.toFixed(3);
     applyDesc(els['es-out-d-desc'], descD(d));
-    els['es-out-g'].textContent  = isFinite(gVal) ? gVal.toFixed(3) : '—';
+    els['es-out-g'].textContent  = isFinite(gVal) ? gVal.toFixed(3) : '-';
     applyDesc(els['es-out-g-desc'], isFinite(gVal) ? descD(gVal) : null);
     els['es-out-r'].textContent  = r.toFixed(3);
     applyDesc(els['es-out-r-desc'], descR(r));
@@ -288,7 +288,7 @@
     els['es-out-ovl'].textContent = (ovl*100).toFixed(2) + '%';
     els['es-out-u3'].textContent  = (u3*100).toFixed(2) + '%';
     els['es-out-cles'].textContent = (cles*100).toFixed(2) + '%';
-    els['es-out-nnt'].textContent = isFinite(nnt) && Math.abs(nnt) < 1e4 ? Math.abs(nnt).toFixed(2) : '—';
+    els['es-out-nnt'].textContent = isFinite(nnt) && Math.abs(nnt) < 1e4 ? Math.abs(nnt).toFixed(2) : '-';
     els['es-out-similar'].textContent = similarEffect(d);
 
     drawCurve(d, false);
@@ -323,7 +323,7 @@
 
     if (!payload){
       summaryEl.textContent = 'Enter a valid effect size to generate a plain-English interpretation.';
-      u3LineEl.textContent = 'The average person in Group 1 is above about — of Group 2 (Cohen\'s U₃).';
+      u3LineEl.textContent = 'The average person in Group 1 is above about - of Group 2 (Cohen\'s U₃).';
       return;
     }
 
@@ -396,7 +396,7 @@
     const can = grp.m1 != null && grp.m2 != null && grp.sd1 != null && grp.sd2 != null && grp.sd1 > 0 && grp.sd2 > 0 && t != null;
     if (!can){
       ['es-tgt-g1-above','es-tgt-g2-above','es-tgt-share-g1','es-tgt-share-g2','es-tgt-ratio']
-        .forEach(k => els[k].textContent = '—');
+        .forEach(k => els[k].textContent = '-');
       return;
     }
     const z1 = (t - grp.m1)/grp.sd1, z2 = (t - grp.m2)/grp.sd2;
@@ -410,7 +410,7 @@
     els['es-tgt-g2-above'].textContent = fmtPct(above2);
     els['es-tgt-share-g1'].textContent = fmtPct(share1);
     els['es-tgt-share-g2'].textContent = fmtPct(share2);
-    els['es-tgt-ratio'].textContent = ratio != null ? ratio.toFixed(3) : '—';
+    els['es-tgt-ratio'].textContent = ratio != null ? ratio.toFixed(3) : '-';
   }
 
   const watched = ['es-stat-type','es-stat-value','es-stat-aux',

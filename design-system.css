@@ -1790,7 +1790,7 @@ label[required-marker]::after{
   font-family: var(--sans) !important;
   font-size: var(--ds-text-sm) !important;
   font-weight: var(--ds-weight-medium) !important;
-  color: var(--ds-text-muted) !important;
+  color: var(--ds-text) !important;
   letter-spacing: var(--ds-tracking-base) !important;
   border-radius: var(--ds-radius-sm) !important;
   background: transparent !important;
@@ -1798,13 +1798,13 @@ label[required-marker]::after{
   border-left: none !important;
 }
 .topnav-drop-item:hover{
-  background: var(--ds-surface-emphasis) !important;
+  background: rgba(20,15,5,0.04) !important;
   color: var(--ds-text) !important;
 }
 .topnav-drop-item.active{
-  background: var(--ds-surface-emphasis) !important;
+  background: transparent !important;
   color: var(--ds-text) !important;
-  font-weight: var(--ds-weight-semibold) !important;
+  font-weight: var(--ds-weight-medium) !important;
 }
 
 /* ============================================================================
@@ -1838,7 +1838,7 @@ body .change-setup-grid,
      ~30% over results columns. Each method's table is proportioned a bit
      differently but this is the visual sweet spot across all five. */
   display: grid;
-  grid-template-columns: 1.6fr 0.85fr 1.05fr;
+  grid-template-columns: 1.25fr 1fr 1.2fr;
   align-items: center;
   gap: var(--ds-space-4);
   padding: var(--ds-space-3) var(--ds-space-4);
@@ -2024,6 +2024,64 @@ input[type="text"].ds-inline-bar-input{
 .ds-inline-bar-toggle-btn:focus-visible{
   outline: 2px solid var(--ds-primary-ring);
   outline-offset: 2px;
+}
+
+/* Corrected-r checkbox toggle inside the inline bar (SRB + Crawford).
+   Sits to the right of the threshold pill group, with a gap so it doesn't
+   visually merge with the threshold buttons. */
+.ds-inline-bar-corr-toggle{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: var(--ds-space-3);
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--ds-border-strong, #D8D5CC);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text-2);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease),
+              color var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-inline-bar-corr-toggle:hover{
+  background: #F8F6EF;
+  border-color: var(--ds-text-faint);
+  color: var(--ds-text);
+}
+.ds-inline-bar-corr-toggle input[type="checkbox"]{
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  margin: 0;
+  border: 1.5px solid var(--ds-border-strong, #D8D5CC);
+  border-radius: 3px;
+  background: white;
+  position: relative;
+  cursor: pointer;
+}
+.ds-inline-bar-corr-toggle input[type="checkbox"]:checked{
+  background: var(--ds-text);
+  border-color: var(--ds-text);
+}
+.ds-inline-bar-corr-toggle input[type="checkbox"]:checked::after{
+  content: "";
+  position: absolute;
+  top: 1px; left: 4px;
+  width: 4px; height: 8px;
+  border-right: 1.5px solid white;
+  border-bottom: 1.5px solid white;
+  transform: rotate(45deg);
+}
+.ds-inline-bar-corr-toggle:has(input:checked){
+  background: var(--ds-primary-tint, rgba(168,85,68,0.08));
+  border-color: var(--ds-primary, #A85544);
+  color: var(--ds-text);
 }
 
 /* Battery variant — 3 columns. Quick Add | Score Type | Class.
@@ -2560,6 +2618,72 @@ input[type="text"].ds-inline-bar-input{
 }
 
 /* ============================================================================
+   33d. APA TABLE — guarantee a bottom border on the last data row
+        Some grouped tables (e.g. Neuropsych Tables with a single group like
+        CVLT-3 Indices) end with an `.apa-grouped-row` whose bottom border
+        was dropping out in some render paths. Force it here with high
+        specificity + !important so it never disappears.
+   ============================================================================ */
+.apa-table tbody tr:last-child td,
+.apa-table tbody tr.apa-grouped-row:last-child td{
+  border-bottom: 1.5px solid #000 !important;
+  padding-bottom: 8px !important;
+}
+
+/* ============================================================================
+   33e. CORRECTED-r TOGGLE — for SRB + Crawford config panels
+   ============================================================================ */
+.rci-corr-toggle{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 7px 11px 7px 9px;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: var(--ds-text);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease);
+}
+.rci-corr-toggle:hover{
+  background: #F8F6EF;
+  border-color: var(--ds-text-faint);
+}
+.rci-corr-toggle input[type="checkbox"]{
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  margin: 0;
+  border: 1.5px solid var(--ds-border-strong);
+  border-radius: 3px;
+  background: white;
+  position: relative;
+  cursor: pointer;
+}
+.rci-corr-toggle input[type="checkbox"]:checked{
+  background: var(--ds-text);
+  border-color: var(--ds-text);
+}
+.rci-corr-toggle input[type="checkbox"]:checked::after{
+  content: "";
+  position: absolute;
+  top: 1px; left: 4px;
+  width: 4px; height: 8px;
+  border-right: 1.5px solid white;
+  border-bottom: 1.5px solid white;
+  transform: rotate(45deg);
+}
+.rci-corr-toggle:has(input:checked){
+  background: var(--ds-primary-tint);
+  border-color: var(--ds-primary);
+}
+
+/* ============================================================================
    33b. AUTOFILL DROPDOWN — kill the nested scrollbar
         A late legacy rule (`.combo-list { overflow:auto }`) gave the outer
         list a scrollbar in addition to the `.combo-options` inner scroll.
@@ -2619,6 +2743,87 @@ input[type="text"].ds-inline-bar-input{
 }
 .combo-indented-row .combo-item.combo-indented input{
   margin: 0 6px 0 0 !important;
+}
+
+/* ============================================================================
+   33c. CHANGE-ANALYSIS / SDI input rows — match compact Neuropsych Tables
+        Legacy CSS forced inputs to min-height:33px in these sections via
+        `#sdi > .panel:not(.autofill-panel) input`. Battery escapes that rule
+        because its table sits inside `.bat-table-block` (not a `.panel`), so
+        its inputs render at the smaller default. Drop the same override here
+        so all input-tables across the site sit at the compact height.
+   ============================================================================ */
+#sdi .input-table td input,
+#sdi .input-table td select,
+#rci-basic .input-table td input,
+#rci-basic .input-table td select,
+#rci-practice .input-table td input,
+#rci-practice .input-table td select,
+#rci-srb .input-table td input,
+#rci-srb .input-table td select,
+#rci-crawford .input-table td input,
+#rci-crawford .input-table td select{
+  min-height: 0 !important;
+  padding: 5px 6px !important;
+  font-size: 13px !important;
+}
+#sdi .input-table tbody td,
+#rci-basic .input-table tbody td,
+#rci-practice .input-table tbody td,
+#rci-srb .input-table tbody td,
+#rci-crawford .input-table tbody td{
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+/* Premorbid CI buttons — discrete, side-by-side, with a clear gap between them
+   so each reads as its own clickable button rather than one segmented pill. */
+.ds-prem-aside .ds-prem-ci-toggle{
+  display: flex !important;
+  width: 100% !important;
+  height: auto !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  gap: var(--ds-space-2) !important;
+}
+.ds-prem-aside .ds-prem-ci-toggle .ds-inline-bar-toggle-btn{
+  flex: 1 1 0 !important;
+  height: 34px !important;
+  min-width: 0 !important;
+  padding: 0 var(--ds-space-3) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  border-radius: var(--ds-radius-sm) !important;
+  background: var(--ds-surface) !important;
+  color: var(--ds-text) !important;
+  font-size: 13px !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: 0.01em !important;
+  box-shadow: 0 1px 0 rgba(15,18,24,0.02), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+  cursor: pointer !important;
+  transition:
+    background-color var(--ds-duration-fast) var(--ds-ease),
+    color var(--ds-duration-fast) var(--ds-ease),
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    box-shadow var(--ds-duration-fast) var(--ds-ease) !important;
+}
+.ds-prem-aside .ds-prem-ci-toggle .ds-inline-bar-toggle-btn:hover:not(.is-active){
+  background: #F8F6EF !important;
+  border-color: var(--ds-text-faint) !important;
+}
+.ds-prem-aside .ds-prem-ci-toggle .ds-inline-bar-toggle-btn.is-active{
+  background: var(--ds-text) !important;
+  color: white !important;
+  border-color: var(--ds-text) !important;
+  box-shadow:
+    0 1px 0 rgba(15,18,24,0.06),
+    0 1px 3px rgba(15,18,24,0.18) !important;
+}
+.ds-prem-aside .ds-prem-ci-toggle .ds-inline-bar-toggle-btn:active{
+  transform: translateY(1px);
 }
 
 /* ============================================================================
@@ -2939,6 +3144,223 @@ input[type="text"].ds-inline-bar-input{
 }
 .ds-prem-ticks-row.is-ready .ds-prem-ticks-mark::after{
   transform: translate(-50%, -65%) rotate(-45deg) scale(1);
+}
+
+/* ============================================================================
+   36. REPORT WRITER · auto-generated narrative (TRIAL)
+        Replaces the legacy 3-tab Report Writer with a single page: a slim
+        toolbar (Reference, Descriptor) over a paper-style output card.
+        Legacy markup is hidden so its JS bindings don't error.
+   ============================================================================ */
+
+#report-writer .rw-legacy-shell{ display: none !important; }
+#report-writer{
+  max-width: min(880px, calc(100vw - 48px)) !important;
+}
+
+.rwauto-shell{
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+  margin-top: var(--ds-space-3);
+}
+
+.rwauto-toolbar{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-1);
+}
+.rwauto-toolbar-spacer{ flex: 1; }
+.rwauto-toolbar-group{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+}
+.rwauto-toolbar-toggles{
+  gap: var(--ds-space-2);
+}
+
+/* Pill-style checkbox toggles for the bracket controls */
+.rwauto-pill-toggle{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--ds-border-strong, #D8D5CC);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text-2);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease),
+              color var(--ds-duration-fast) var(--ds-ease);
+}
+.rwauto-pill-toggle:hover{
+  background: #F8F6EF;
+  border-color: var(--ds-text-faint);
+  color: var(--ds-text);
+}
+.rwauto-pill-toggle input[type="checkbox"]{
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  margin: 0;
+  border: 1.5px solid var(--ds-border-strong, #D8D5CC);
+  border-radius: 3px;
+  background: white;
+  position: relative;
+  cursor: pointer;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease);
+}
+.rwauto-pill-toggle input[type="checkbox"]:checked{
+  background: var(--ds-text);
+  border-color: var(--ds-text);
+}
+.rwauto-pill-toggle input[type="checkbox"]:checked::after{
+  content: "";
+  position: absolute;
+  top: 1px; left: 4px;
+  width: 4px; height: 8px;
+  border-right: 1.5px solid white;
+  border-bottom: 1.5px solid white;
+  transform: rotate(45deg);
+}
+.rwauto-pill-toggle:has(input:checked){
+  background: var(--ds-primary-tint, rgba(168,85,68,0.08));
+  border-color: var(--ds-primary, #A85544);
+  color: var(--ds-text);
+}
+.rwauto-toolbar-label{
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+}
+.rwauto-toolbar-select{
+  height: 34px;
+  padding: 0 28px 0 var(--ds-space-3);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%234A5260' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3,5 6,8 9,5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--ds-space-3) center;
+  background-size: 12px 12px;
+}
+.rwauto-toolbar-select:hover{ border-color: var(--ds-text-faint); }
+.rwauto-toolbar-select:focus{
+  outline: none;
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 3px var(--ds-primary-tint);
+}
+
+.rwauto-btn{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: var(--ds-text);
+  color: white;
+  border: 1px solid var(--ds-text);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: var(--ds-weight-semibold);
+  cursor: pointer;
+  transition: background var(--ds-duration-fast) var(--ds-ease);
+}
+.rwauto-btn:hover{ background: #000; }
+.rwauto-btn svg{ width: 13px; height: 13px; }
+
+/* The output paper — proportioned like a printed report page. Generous
+   internal margins, narrower readable column, refined typography. */
+.rwauto-paper{
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow:
+    0 1px 2px rgba(15,18,24,0.04),
+    0 8px 22px rgba(15,18,24,0.06);
+  padding: 64px 72px;                       /* Word-margin feel */
+  font-family: var(--sans);
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ds-text);
+  letter-spacing: -0.001em;
+  min-height: 600px;
+  max-width: 820px;
+  margin: 0 auto;
+}
+@media (max-width: 720px){
+  .rwauto-paper{ padding: 36px 28px; }
+}
+
+/* Section heading: subtle uppercase eyebrow + serif-italic title to feel
+   like a clinical report rather than a web heading. Hairline rule below
+   keeps the visual rhythm. */
+.rwauto-paper h3{
+  font-family: var(--serif, Georgia, "Times New Roman", serif);
+  font-size: 19px;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: -0.005em;
+  color: var(--ds-text);
+  margin: var(--ds-space-7) 0 var(--ds-space-3);
+  padding-bottom: 8px;
+  border-bottom: 0.75px solid var(--ds-text);
+  position: relative;
+}
+.rwauto-paper h3:first-child{ margin-top: 0; }
+
+/* Body paragraphs */
+.rwauto-paper p{
+  margin: 0 0 var(--ds-space-3);
+  text-align: left;
+}
+.rwauto-paper p:last-child{ margin-bottom: 0; }
+
+/* Empty state */
+.rwauto-empty{
+  text-align: center;
+  padding: var(--ds-space-8) var(--ds-space-5);
+  color: var(--ds-text-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.rwauto-empty-title{
+  font-family: var(--serif, Georgia, serif);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--ds-text);
+}
+.rwauto-empty-sub{
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ds-text-2);
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 /* ----------------------------------------------------------------------------

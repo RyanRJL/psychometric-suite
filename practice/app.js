@@ -32,7 +32,7 @@ function logGamma(z){
   const t = z + g + 0.5;
   return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
 }
-// regularised incomplete beta I_x(a,b) — continued-fraction form (Numerical Recipes-style)
+// regularised incomplete beta I_x(a,b) - continued-fraction form (Numerical Recipes-style)
 function _betacf(x, a, b){
   const MAXIT = 200, EPS = 3e-7, FPMIN = 1e-30;
   const qab = a + b, qap = a + 1, qam = a - 1;
@@ -69,7 +69,7 @@ function tCDF(t, df){
   const ib = ibeta(x, df/2, 0.5);
   return t >= 0 ? 1 - 0.5*ib : 0.5*ib;
 }
-// inverse CDF (quantile) of Student's t — bisection
+// inverse CDF (quantile) of Student's t - bisection
 function tInv(p, df){
   if (p <= 0 || p >= 1 || df <= 0) return NaN;
   if (p === 0.5) return 0;
@@ -130,19 +130,19 @@ function fromZ(z, type){
   }
 }
 function fmt(n, dp = 2){
-  if (n == null || isNaN(n)) return '—';
+  if (n == null || isNaN(n)) return '-';
   if (Math.abs(n) < 0.0001 && n !== 0) return n.toExponential(2);
   return n.toFixed(dp);
 }
 function fmtPct(p){
-  if (p == null || isNaN(p)) return '—';
+  if (p == null || isNaN(p)) return '-';
   if (p < 0.1) return p.toFixed(2);
   if (p > 99.9) return p.toFixed(2);
   if (p < 1 || p > 99) return p.toFixed(1);
   return Math.round(p).toString();
 }
 function fmtP(p){
-  if (p == null || isNaN(p)) return '—';
+  if (p == null || isNaN(p)) return '-';
   if (p < 0.001) return '< .001';
   return p.toFixed(3).replace(/^0\./, '.');
 }
@@ -150,7 +150,7 @@ function fmtP(p){
 /* ---------- DESCRIPTORS ---------- */
 // Wechsler classification (based on Standard Score)
 function wechslerDesc(ss){
-  if (ss == null) return '—';
+  if (ss == null) return '-';
   if (ss >= 130) return 'Very Superior';
   if (ss >= 120) return 'Superior';
   if (ss >= 110) return 'High Average';
@@ -161,7 +161,7 @@ function wechslerDesc(ss){
 }
 // AACN classification (Guilmette et al., 2020)
 function aanDesc(ss){
-  if (ss == null) return '—';
+  if (ss == null) return '-';
   if (ss >= 130) return 'Exceptionally High';
   if (ss >= 120) return 'Above Average';
   if (ss >= 110) return 'High Average';
@@ -194,13 +194,13 @@ const DESC_PILL_W = 116; // must match CSS flex-basis on .conv-desc-pill
 const DESC_MID    = 3;   // index of the middle pill (0-based, 7 items → index 3)
 // Red → neutral → green scale across the 7 descriptor bands
 const DESC_COLOURS = [
-  '#9C3D2A', // Extremely Low   — deep red
-  '#B5631C', // Borderline      — burnt orange
-  '#A88818', // Low Average     — amber
-  '#6B7A5C', // Average         — olive/neutral
-  '#3D7550', // High Average    — muted green
-  '#2A6640', // Superior        — medium green
-  '#1A5430', // Very Superior   — deep green
+  '#9C3D2A', // Extremely Low   - deep red
+  '#B5631C', // Borderline      - burnt orange
+  '#A88818', // Low Average     - amber
+  '#6B7A5C', // Average         - olive/neutral
+  '#3D7550', // High Average    - muted green
+  '#2A6640', // Superior        - medium green
+  '#1A5430', // Very Superior   - deep green
 ];
 function ssToDescIndex(ss){
   if (ss < 70)  return 0;
@@ -318,7 +318,7 @@ function showToast(msg, isError){
 async function copyApaTable(containerId){
   const container = document.getElementById(containerId);
   if (!container || !container.innerHTML.trim()){
-    showToast('No table to copy yet — fill in some data first', true);
+    showToast('No table to copy yet - fill in some data first', true);
     return;
   }
   // Build standalone HTML with inline styles for Word/Docs paste
@@ -334,11 +334,11 @@ async function copyApaTable(containerId){
     } else {
       await navigator.clipboard.writeText(plain);
     }
-    showToast('✓ Table copied — ready to paste into your report');
+    showToast('✓ Table copied - ready to paste into your report');
     if (typeof ReportBundle !== 'undefined' && ReportBundle.showKofiPrompt) ReportBundle.showKofiPrompt();
   } catch(e){
     console.error(e);
-    showToast('Copy failed — try selecting and copying manually', true);
+    showToast('Copy failed - try selecting and copying manually', true);
   }
 }
 function buildStandaloneHtml(container){
@@ -399,10 +399,16 @@ function buildStandaloneHtml(container){
     const existing = td.getAttribute('style') || '';
     td.setAttribute('style', existing + 'border-bottom:1.5pt solid #000;padding-bottom:3pt;');
   });
-  // Preserve emphasis for clinically flagged descriptors in copied APA table
-  clone.querySelectorAll('.bat-class-extreme, .bat-expected-stars').forEach(el => {
+  // Preserve emphasis on the expected-range star markers, but DO NOT bold
+  // .bat-class-extreme - extremely-low scores should render in normal weight
+  // alongside every other classification cell.
+  clone.querySelectorAll('.bat-expected-stars').forEach(el => {
     const existing = el.getAttribute('style') || '';
     el.setAttribute('style', existing + 'font-weight:bold;background:transparent;');
+  });
+  clone.querySelectorAll('.bat-class-extreme').forEach(el => {
+    const existing = el.getAttribute('style') || '';
+    el.setAttribute('style', existing + 'font-weight:normal;background:transparent;');
   });
   // Note
   clone.querySelectorAll('.apa-note').forEach(n => {
@@ -467,7 +473,7 @@ function buildApaCsv(container){
 function downloadApaTableCsv(containerId){
   const container = document.getElementById(containerId);
   if (!container || !container.querySelector('.apa-table')){
-    showToast('No table to download yet — fill in some data first', true);
+    showToast('No table to download yet - fill in some data first', true);
     return;
   }
   const title = container.querySelector('.apa-table-title')?.textContent || containerId;
@@ -480,7 +486,7 @@ function downloadApaTableCsv(containerId){
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  showToast('✓ CSV downloaded — opens in Excel');
+  showToast('✓ CSV downloaded - opens in Excel');
   if (typeof ReportBundle !== 'undefined' && ReportBundle.showKofiPrompt) ReportBundle.showKofiPrompt();
 }
 function enhanceApaToolbars(){
@@ -781,7 +787,7 @@ document.getElementById('conv-type').addEventListener('change', function() {
 });
 document.getElementById('conv-value').addEventListener('input', renderConverter);
 
-// Slider — syncs back to the value input and re-renders
+// Slider - syncs back to the value input and re-renders
 document.getElementById('conv-slider').addEventListener('input', function(){
   const z = parseFloat(this.value);
   const type = document.getElementById('conv-type').value;
@@ -1120,7 +1126,7 @@ function renderBatteryApa(){
   const headerLabel = types.size === 1 ? scoreTypeLabel([...types][0]) : 'Score';
   const columns = [
     { key:'subtest', label:'Subtest', num:false, render:r => escapeHtml(r.name) },
-    { key:'raw', label:'Raw Score', group:'Scores', num:true, render:r => escapeHtml(r.raw || '—') },
+    { key:'raw', label:'Raw Score', group:'Scores', num:true, render:r => escapeHtml(r.raw || '-') },
     { key:'score', label:headerLabel, group:'Scores', num:true, render:r => escapeHtml(r.score || '') },
     { key:'percentile', label:'Percentile', group:'Scores', num:true, render:r => { const z = toZ(r.score, rowScoreType(r)); return z == null ? '' : fmtPct(normCDF(z) * 100); }},
     { key:'classification', label:'Classification', group:'Interpretation', num:false, render:r => batteryClassificationDetails(r, cls).html }
@@ -1155,7 +1161,7 @@ function loadFamilyIntoBattery(family){
     batteryRows.push({ name, raw:'', score:'', group:family, scoreType:inferredType });
   });
   renderBattery();
-  // Toast suppressed — the working-report pill is the single feedback channel
+  // Toast suppressed - the working-report pill is the single feedback channel
   // for "things added to the report". (Old toast was a duplicate.)
 }
 function clearBattery(){
@@ -1192,9 +1198,11 @@ function comboFooterHtml(){
 function comboAgeBandNoteHtml(){
   return '<div class="combo-ageband-note"><span class="combo-ageband-note-icon">ℹ</span><span><strong>Specific age bands</strong> offer greater normative precision but rest on smaller samples, which reduces the stability of <em>r</em>. <strong>All Ages</strong> norms draw on larger <em>N</em>, yielding a more robust <em>r</em>, at the cost of age specificity.</span></div>';
 }
-function comboCheckboxItemHtml(f, isCustom, indented, groupKey){
+function comboCheckboxItemHtml(f, isCustom, indented, groupKey, displayLabel){
   const cls = 'combo-item combo-check' + (indented ? ' combo-indented' : '');
-  const label = indented ? ageBandLabel(f) : escapeHtml(f);
+  const label = displayLabel
+    ? escapeHtml(displayLabel)
+    : (indented ? ageBandLabel(f) : escapeHtml(f));
   const groupAttr = groupKey ? ` data-group="${escapeAttr(groupKey)}"` : '';
   return `<label class="${cls}" data-family="${escapeAttr(f)}"${groupAttr}><input type="checkbox" value="${escapeAttr(f)}"><span class="combo-check-text">${label}${comboCustomTag(isCustom)}</span></label>`;
 }
@@ -1270,7 +1278,9 @@ function rebuildBatteryFamilyList(){
   if (!list) return;
   const db = getMergedDB();
   const families = Object.keys(db).sort();
-  list.innerHTML = comboFooterHtml() + comboAgeBandNoteHtml() + buildFamilyListHtml(families);
+  // Battery page: collapse age bands to a single entry per family, no
+  // age-band note - norms don't affect the resulting table here.
+  list.innerHTML = comboFooterHtml() + buildFamilyListHtml(families, { flat: true });
   wireMultiSelectFamilyList(list, families => {
     families.forEach(loadFamilyIntoBattery);
     const inp = document.getElementById('bat-family-input');
@@ -1498,14 +1508,29 @@ function renderSdiApa(){
   const named = sdiRows.filter(r => r.name);
   if (named.length === 0){ out.innerHTML = '<div class="apa-empty"><strong>APA-formatted output</strong>Add or select at least one test to preview the report-ready table.</div>'; return; }
   const cvDesc = cv === 0.90 ? '90% critical value (1.645)' : cv === 0.95 ? '95% critical value (1.96)' : `${cv} SD threshold`;
+  const colCount = raw ? 7 : 6;
+  // Insert apa-group separator rows when the test family changes - gives the
+  // table visible grouping AND lets the working-report pill detect the most
+  // recently added family (it reads the last `tr.apa-group`).
+  let lastGroup = null;
   const rows = named.map(r => {
+    const group = r.group || null;
+    let prefix = '';
+    if (group && group !== lastGroup){
+      prefix = `<tr class="apa-group"><td colspan="${colCount}">${escapeHtml(stripAgeRange(group))}</td></tr>`;
+      lastGroup = group;
+    } else if (!group){
+      lastGroup = null;
+    }
+    const inGroup = !!group;
+    const trCls = inGroup ? ' class="apa-grouped-row"' : '';
     const change = sdiComputeChange(r);
     if (change === null){
-      return `<tr><td>${escapeHtml(r.name)}</td><td class="num">${escapeHtml(r.t1 || '')}</td><td class="num">${escapeHtml(r.t2 || '')}</td>${raw ? `<td class="num">${escapeHtml(r.sd || '')}</td>` : ''}<td class="num"></td><td class="num"></td><td></td></tr>`;
+      return prefix + `<tr${trCls}><td>${escapeHtml(r.name)}</td><td class="num">${escapeHtml(r.t1 || '')}</td><td class="num">${escapeHtml(r.t2 || '')}</td>${raw ? `<td class="num">${escapeHtml(r.sd || '')}</td>` : ''}<td class="num"></td><td class="num"></td><td></td></tr>`;
     }
     const p = 2 * (1 - normCDF(Math.abs(change)));
     const sig = sdiCvHit(change, cv);
-    return `<tr><td>${escapeHtml(r.name)}</td><td class="num">${escapeHtml(r.t1)}</td><td class="num">${escapeHtml(r.t2)}</td>${raw ? `<td class="num">${escapeHtml(r.sd)}</td>` : ''}<td class="num">${fmt(change, 2)}</td><td class="num">${fmtP(p)}</td><td>${sig ? 'Significant' : 'Not Significant'}</td></tr>`;
+    return prefix + `<tr${trCls}><td>${escapeHtml(r.name)}</td><td class="num">${escapeHtml(r.t1)}</td><td class="num">${escapeHtml(r.t2)}</td>${raw ? `<td class="num">${escapeHtml(r.sd)}</td>` : ''}<td class="num">${fmt(change, 2)}</td><td class="num">${fmtP(p)}</td><td>${sig ? 'Significant' : 'Not Significant'}</td></tr>`;
   }).join('');
   out.innerHTML = `
     <div class="apa-table-num">Table 1</div>
@@ -1536,7 +1561,7 @@ function loadFamilyIntoSdi(family){
     sdiRows.push({ name, t1:'', t2:'', sd: raw ? sdiNormSd(p) : '', group:family });
   });
   renderSdi();
-  // Toast suppressed — the working-report pill is the single feedback channel
+  // Toast suppressed - the working-report pill is the single feedback channel
 }
 function clearSdi(){
   sdiRows = [];
@@ -1584,11 +1609,14 @@ document.getElementById('sdi-clear').addEventListener('click', clearSdi);
 /* ============================================================
    04-07 · RCI CALCULATORS (Basic / Practice / SRB / Crawford)
    ============================================================ */
+// Defaults for the corrected-r toggle:
+//   - Simple RCI / Practice-Adjusted: ON  (corrected r is the better reliability estimate)
+//   - SRB / Crawford:                  OFF (raw r matches the regression equations as published)
 const rciState = {
-  'rci-basic':    { rows:[], cv:0.95, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
-  'rci-practice': { rows:[], cv:0.90, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
-  'rci-srb':      { rows:[], cv:0.95, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
-  'rci-crawford': { rows:[], cv:0.95, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' }
+  'rci-basic':    { rows:[], cv:0.95, useCorrectedR:true,  d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  'rci-practice': { rows:[], cv:0.95, useCorrectedR:true,  d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  'rci-srb':      { rows:[], cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  'rci-crawford': { rows:[], cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' }
 };
 function newRciRow(method){
   if (method === 'rci-basic') return { name:'', sd:'', r:'', t1:'', t2:'' };
@@ -1604,29 +1632,50 @@ function rciRemoveGroup(method, group){
 window.rciRemove = rciRemove;
 window.rciRemoveGroup = rciRemoveGroup;
 
-function calcBasicRow(r){
-  const sd = parseFloat(r.sd), rel = parseFloat(r.r), t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
+function calcBasicRow(r, method){
+  method = method || 'rci-basic';
+  const sd = parseFloat(r.sd);
+  const rEff = rciEffectiveR(method, r);
+  const rel = rEff.value;
+  const t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
   if (isNaN(sd) || isNaN(rel) || isNaN(t1) || isNaN(t2) || rel < 0 || rel >= 1 || sd <= 0) return null;
   const sem = sd * Math.sqrt(1 - rel);
   const sed = Math.sqrt(2 * sem * sem);
   const rci = (t2 - t1) / sed;
   const p = 2 * (1 - normCDF(Math.abs(rci)));
-  return { sem, sed, rci, p };
+  return { sem, sed, rci, p, usedR: rel, usedCorrected: rEff.fromCorrected, rFallback: !!rEff.fallbackBecauseMissing };
 }
-function calcPracticeRow(r){
+function calcPracticeRow(r, method){
+  method = method || 'rci-practice';
   const m1 = parseFloat(r.m1), sd1 = parseFloat(r.sd1), m2 = parseFloat(r.m2), sd2 = parseFloat(r.sd2);
-  const rel = parseFloat(r.r), t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
+  const rEff = rciEffectiveR(method, r);
+  const rel = rEff.value;
+  const t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
   if ([m1,sd1,m2,sd2,rel,t1,t2].some(isNaN) || rel < 0 || rel >= 1 || sd1 <= 0 || sd2 <= 0) return null;
   const sem1 = sd1 * Math.sqrt(1 - rel);
   const sem2 = sd2 * Math.sqrt(1 - rel);
   const sdiff = Math.sqrt(sem1*sem1 + sem2*sem2);
   const rci = ((t2 - t1) - (m2 - m1)) / sdiff;
   const p = 2 * (1 - normCDF(Math.abs(rci)));
-  return { sem1, sem2, sdiff, rci, p };
+  return { sem1, sem2, sdiff, rci, p, usedR: rel, usedCorrected: rEff.fromCorrected, rFallback: !!rEff.fallbackBecauseMissing };
 }
-function calcSrbRow(r){
+/* Session-level "use corrected r" toggle. Defaults differ by method:
+   ON for Simple RCI + Practice-Adjusted, OFF for SRB + Crawford. The toggle
+   is stored on rciState[method].useCorrectedR, falling back to true. */
+function rciEffectiveR(method, row){
+  const wantCorrected = !rciState[method] || rciState[method].useCorrectedR !== false;
+  const rCorr = parseFloat(row.rCorrected);
+  const r     = parseFloat(row.r);
+  if (wantCorrected && Number.isFinite(rCorr)) return { value: rCorr, fromCorrected: true };
+  // Fallback to plain r (covers: toggle off, OR row has no corrected r available)
+  return { value: r, fromCorrected: false, fallbackBecauseMissing: wantCorrected && !Number.isFinite(rCorr) };
+}
+function calcSrbRow(r, method){
+  method = method || 'rci-srb';
   const m1 = parseFloat(r.m1), sd1 = parseFloat(r.sd1), m2 = parseFloat(r.m2), sd2 = parseFloat(r.sd2);
-  const rel = parseFloat(r.r), t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
+  const rEff = rciEffectiveR(method, r);
+  const rel = rEff.value;
+  const t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
   if ([m1,sd1,m2,sd2,rel,t1,t2].some(isNaN) || rel < 0 || rel >= 1 || sd1 <= 0 || sd2 <= 0) return null;
   const slope = rel * (sd2 / sd1);
   const intercept = m2 - slope * m1;
@@ -1634,11 +1683,14 @@ function calcSrbRow(r){
   const see = sd2 * Math.sqrt(1 - rel*rel);
   const rci = (t2 - predicted) / see;
   const p = 2 * (1 - normCDF(Math.abs(rci)));
-  return { slope, intercept, predicted, see, rci, p };
+  return { slope, intercept, predicted, see, rci, p, usedR: rel, usedCorrected: rEff.fromCorrected, rFallback: !!rEff.fallbackBecauseMissing };
 }
-function calcCrawfordRow(r){
+function calcCrawfordRow(r, method){
+  method = method || 'rci-crawford';
   const m1 = parseFloat(r.m1), sd1 = parseFloat(r.sd1), m2 = parseFloat(r.m2), sd2 = parseFloat(r.sd2);
-  const rel = parseFloat(r.r), n = parseFloat(r.n), t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
+  const rEff = rciEffectiveR(method, r);
+  const rel = rEff.value;
+  const n = parseFloat(r.n), t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
   if ([m1,sd1,m2,sd2,rel,n,t1,t2].some(isNaN) || rel < 0 || rel >= 1 || sd1 <= 0 || sd2 <= 0 || n < 3) return null;
   const slope = rel * (sd2 / sd1);
   const intercept = m2 - slope * m1;
@@ -1649,7 +1701,7 @@ function calcCrawfordRow(r){
   const df = n - 2;
   const tStat = (t2 - predicted) / sePred;
   const p = 2 * (1 - tCDF(Math.abs(tStat), df));
-  return { slope, intercept, predicted, see, sePred, df, rci: tStat, p };
+  return { slope, intercept, predicted, see, sePred, df, rci: tStat, p, usedR: rel, usedCorrected: rEff.fromCorrected, rFallback: !!rEff.fallbackBecauseMissing };
 }
 function rciOutcome(rci, cv, df){
   // For t-distributed RCIs (Crawford method), use t-quantile with df; otherwise z
@@ -1754,10 +1806,10 @@ function renderRci(method){
       lastGroup = null;
     }
     let calc = null;
-    if (method === 'rci-basic') calc = calcBasicRow(r);
-    else if (method === 'rci-practice') calc = calcPracticeRow(r);
-    else if (method === 'rci-srb') calc = calcSrbRow(r);
-    else if (method === 'rci-crawford') calc = calcCrawfordRow(r);
+    if (method === 'rci-basic') calc = calcBasicRow(r, method);
+    else if (method === 'rci-practice') calc = calcPracticeRow(r, method);
+    else if (method === 'rci-srb') calc = calcSrbRow(r, method);
+    else if (method === 'rci-crawford') calc = calcCrawfordRow(r, method);
 
     const rciStr = calc ? fmt(calc.rci, 2) : '';
     const pStr = calc ? fmtP(calc.p) : '';
@@ -1858,10 +1910,10 @@ function updateRciRow(method, i, tr){
   const r = rciState[method].rows[i];
   const cv = rciState[method].cv;
   let calc = null;
-  if (method === 'rci-basic') calc = calcBasicRow(r);
-  else if (method === 'rci-practice') calc = calcPracticeRow(r);
-  else if (method === 'rci-srb') calc = calcSrbRow(r);
-  else if (method === 'rci-crawford') calc = calcCrawfordRow(r);
+  if (method === 'rci-basic') calc = calcBasicRow(r, method);
+  else if (method === 'rci-practice') calc = calcPracticeRow(r, method);
+  else if (method === 'rci-srb') calc = calcSrbRow(r, method);
+  else if (method === 'rci-crawford') calc = calcCrawfordRow(r, method);
   const cells = tr.querySelectorAll('.computed');
   cells.forEach(c => { c.className = 'computed'; });
   tr.classList.remove('row-awaiting','row-check');
@@ -1886,7 +1938,7 @@ function updateRciRow(method, i, tr){
       cells.forEach(c => c.textContent = '');
     }
   } else {
-    // basic / practice — cells: RCI, p, outcome
+    // basic / practice - cells: RCI, p, outcome
     if (calc){
       cells[0].textContent = fmt(calc.rci, 2);
       cells[1].textContent = fmtP(calc.p);
@@ -1910,7 +1962,7 @@ function renderRciApa(method){
     'rci-basic':    `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Jacobson and Truax (1991). Reliable change threshold = ${cvLabelZ}.`,
     'rci-practice': `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Iverson (2001) and adjusted for practice effects. Reliable change threshold = ${cvLabelZ}.`,
     'rci-srb':      `Standardised Regression-Based RCI (z) per McSweeney et al. (1993). Ŷ₂ = predicted retest score from the regression model; RCI (z) tests whether Date 2 differs reliably from Ŷ₂. Reliable change threshold = ${cvLabelZ}.`,
-    'rci-crawford': `<i>t</i>(RB) is the Crawford regression-based reliable-change statistic, which accounts for uncertainty around the predicted retest score due to normative sample size. Ŷ₂ = predicted retest score from the regression model. Reliable change threshold = ${cvLabel} CI.`
+    'rci-crawford': `<i>t</i>(RB) is the Crawford regression-based reliable-change statistic. Reliable change threshold = ${cvLabel} CI.`
   }[method];
   const safe = (calc, prop, digits=2) => calc ? fmt(calc[prop], digits) : '';
   const safeP = calc => calc ? fmtP(calc.p) : '';
@@ -1923,30 +1975,30 @@ function renderRciApa(method){
   let columns;
   if (method === 'rci-basic'){
     columns = baseColumns.concat([
-      { key:'rci', label:'RCI (z)', group:'Results', num:true, render:r => safe(calcBasicRow(r), 'rci') },
-      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcBasicRow(r)) },
-      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcBasicRow(r)) }
+      { key:'rci', label:'RCI (z)', group:'Results', num:true, render:r => safe(calcBasicRow(r, method), 'rci') },
+      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcBasicRow(r, method)) },
+      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcBasicRow(r, method)) }
     ]);
   } else if (method === 'rci-practice'){
     columns = baseColumns.concat([
       { key:'delta', label:'Δ', group:'Results', num:true, defaultVisible:false, render:r => (r.t1 !== '' && r.t2 !== '' && !isNaN(r.t1) && !isNaN(r.t2)) ? fmt(parseFloat(r.t2) - parseFloat(r.t1), 1) : '' },
-      { key:'rci', label:'RCI (z)', group:'Results', num:true, render:r => safe(calcPracticeRow(r), 'rci') },
-      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcPracticeRow(r)) },
-      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcPracticeRow(r)) }
+      { key:'rci', label:'RCI (z)', group:'Results', num:true, render:r => safe(calcPracticeRow(r, method), 'rci') },
+      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcPracticeRow(r, method)) },
+      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcPracticeRow(r, method)) }
     ]);
   } else if (method === 'rci-srb'){
     columns = baseColumns.concat([
-      { key:'predicted', label:'Ŷ₂', group:'Results', num:true, defaultVisible:false, render:r => safe(calcSrbRow(r), 'predicted') },
-      { key:'rci', label:'RCI (z)', group:'Results', num:true, render:r => safe(calcSrbRow(r), 'rci') },
-      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcSrbRow(r)) },
-      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcSrbRow(r)) }
+      { key:'predicted', label:'Ŷ₂', group:'Results', num:true, defaultVisible:false, render:r => safe(calcSrbRow(r, method), 'predicted') },
+      { key:'rci', label:'RCI (z)', group:'Results', num:true, render:r => safe(calcSrbRow(r, method), 'rci') },
+      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcSrbRow(r, method)) },
+      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcSrbRow(r, method)) }
     ]);
   } else {
     columns = baseColumns.concat([
-      { key:'predicted', label:'Ŷ₂', group:'Results', num:true, defaultVisible:false, render:r => safe(calcCrawfordRow(r), 'predicted') },
-      { key:'trb', label:'<i>t</i>(RB)', group:'Results', num:true, render:r => safe(calcCrawfordRow(r), 'rci') },
-      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcCrawfordRow(r)) },
-      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcCrawfordRow(r)) }
+      { key:'predicted', label:'Ŷ₂', group:'Results', num:true, defaultVisible:false, render:r => safe(calcCrawfordRow(r, method), 'predicted') },
+      { key:'trb', label:'<i>t</i>(RB)', group:'Results', num:true, render:r => safe(calcCrawfordRow(r, method), 'rci') },
+      { key:'p', label:'<i>p</i>', group:'Results', num:true, render:r => safeP(calcCrawfordRow(r, method)) },
+      { key:'outcome', label:'Outcome', group:'Outcome', num:false, render:r => safeOutcome(calcCrawfordRow(r, method)) }
     ]);
   }
   updateApaColumnControls(outId, columns, () => renderRciApa(method));
@@ -1954,11 +2006,32 @@ function renderRciApa(method){
     out.innerHTML = '<div class="apa-empty"><strong>APA-formatted output</strong>Add or select at least one test to preview the report-ready table.</div>';
     return;
   }
+  // Footnote on which r flavour was used (all 4 RCI methods). When the user
+  // has the toggle ON but the active rows include any without a corrected r
+  // value, append a "fell back to raw r" qualifier.
+  let rNote = '';
+  if (method === 'rci-basic' || method === 'rci-practice' || method === 'rci-srb' || method === 'rci-crawford'){
+    const defaultOn = method === 'rci-basic' || method === 'rci-practice';
+    const wantCorrected = st.useCorrectedR === undefined ? defaultOn : st.useCorrectedR !== false;
+    if (wantCorrected){
+      const fallbackTests = valid
+        .filter(r => !Number.isFinite(parseFloat(r.rCorrected)))
+        .map(r => r.name);
+      if (fallbackTests.length === 0){
+        rNote = ' Calculations used the corrected (attenuation-adjusted) test-retest correlation.';
+      } else {
+        const list = fallbackTests.join(', ');
+        rNote = ' Calculations used the corrected (attenuation-adjusted) test-retest correlation where available; raw <i>r</i> was used for the following tests because no corrected <i>r</i> is published: ' + escapeHtml(list) + '.';
+      }
+    } else {
+      rNote = ' Calculations used the raw test-retest correlation.';
+    }
+  }
   out.innerHTML = `
     <div class="apa-table-num">Table 1</div>
     <div class="apa-table-title">${escapeHtml(st.title)}</div>
     ${buildApaTableFromColumns(outId, columns, valid, r => r.group)}
-    <div class="apa-note"><strong>Note.</strong> ${methodNote} <i>p</i>-values are two-tailed.</div>
+    <div class="apa-note"><strong>Note.</strong> ${methodNote}${rNote} <i>p</i>-values are two-tailed.</div>
   `;
 }
 
@@ -1975,6 +2048,16 @@ document.querySelectorAll('.rci-d2').forEach(inp => {
 document.querySelectorAll('.rci-title').forEach(inp => {
   inp.addEventListener('input', e => { rciState[e.target.dataset.target].title = e.target.value; renderRciApa(e.target.dataset.target); });
 });
+// Use corrected r toggle (SRB + Crawford only)
+document.querySelectorAll('.rci-use-corrected-r').forEach(cb => {
+  cb.addEventListener('change', e => {
+    const m = e.target.dataset.target;
+    if (rciState[m]){
+      rciState[m].useCorrectedR = !!e.target.checked;
+      renderRci(m);
+    }
+  });
+});
 document.querySelectorAll('[data-add]').forEach(btn => {
   btn.addEventListener('click', () => rciAddRow(btn.dataset.add));
 });
@@ -1989,24 +2072,29 @@ function getMergedDB(){
   return { ...normDB, ...custom };
 }
 // Age-band helpers ─────────────────────────────────────────────────────────
-// Strip "· Ages X-Y" or "· All Ages" suffix to get the base test name
+// Strip "· Ages X-Y", "· Age N", or "· All Ages" suffix to get the base test name
 function familyBaseName(f){
-  return f.replace(/\s+·\s+(Ages\s+[\d–\-]+|All\s+Ages)\s*$/i, '').trim();
+  return f.replace(/\s+·\s+(Ages\s+[\d–\-]+|Age\s+\d+|All\s+Ages)\s*$/i, '').trim();
 }
-// True for entries that carry any age-band suffix (All Ages or Ages X-Y)
+// True for entries that carry any age-band suffix (All Ages, Ages X-Y, or Age N)
 function hasAgeBandSuffix(f){
-  return /·\s*(All\s+Ages|Ages\s+[\d–\-]+)\s*$/i.test(f);
+  return /·\s*(All\s+Ages|Ages\s+[\d–\-]+|Age\s+\d+)\s*$/i.test(f);
 }
 // Return just the age-band portion for display in indented items
 function ageBandLabel(f){
-  const m = f.match(/·\s*((?:All\s+Ages|Ages\s+[\d–\-]+))\s*$/i);
+  const m = f.match(/·\s*((?:All\s+Ages|Ages\s+[\d–\-]+|Age\s+\d+))\s*$/i);
   return m ? escapeHtml(m[1]) : escapeHtml(f);
 }
 // Build grouped HTML: group header + indented items for age-banded families,
-// plain items for everything else
-function buildFamilyListHtml(families){
+// plain items for everything else.
+//
+// `opts.flat = true` collapses age-banded families into a single plain entry
+// labelled by the base name. The chosen value is the "All Ages" variant when
+// available, otherwise the first member. Used on the Neuropsych Tables page
+// where age bands don't change the resulting table and just clutter the UI.
+function buildFamilyListHtml(families, opts){
+  const flat = !!(opts && opts.flat);
   const isCustom = f => !normDB[f];
-  // Group families by base name, preserving sorted order of first appearance
   const order = [];
   const groups = {};
   families.forEach(f => {
@@ -2020,14 +2108,21 @@ function buildFamilyListHtml(families){
     const members = groups[base];
     const groupKey = `grp:${base}`;
     if (members.length === 1 && !hasAgeBandSuffix(members[0])){
-      // Single entry with no age band — plain item
       html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false, groupKey);
+    } else if (flat){
+      // Pick the "All Ages" canonical entry if present, else the first.
+      const canon = members.find(m => /·\s*All\s+Ages\s*$/i.test(m)) || members[0];
+      html += comboCheckboxItemHtml(canon, isCustom(canon), false, groupKey, base);
     } else {
-      // Multiple entries or explicitly age-banded — render group heading + indented items
       html += `<div class="combo-group-heading" data-group="${escapeAttr(groupKey)}">${escapeHtml(base)}</div>`;
+      // Wrap age-banded variants in a flex row so they render side-by-side
+      // as compact pills instead of stacking - cuts vertical scroll roughly
+      // in half on long family lists (e.g. CVLT-3 INDICES + TRIALS, etc.).
+      html += `<div class="combo-indented-row" data-group="${escapeAttr(groupKey)}">`;
       members.forEach(f => {
         html += comboCheckboxItemHtml(f, isCustom(f), true, groupKey);
       });
+      html += `</div>`;
     }
   });
   return comboOptionsHtml(html);
@@ -2047,7 +2142,9 @@ function populateFamilyList(list){
   const db = getMergedDB();
   const method = list.dataset.method;
   let families = Object.keys(db).sort();
-  // Crawford method requires N for the t-distributed test statistic — hide families without it
+  // Crawford method requires N for the t-distributed test statistic - hide
+  // families where no subtest carries a usable N. CVLT-3 now ships an N=100
+  // holding value so it qualifies; WAIS-IV age-band data still doesn't.
   if (method === 'rci-crawford'){
     families = families.filter(f => familyHasN(db[f]));
   }
@@ -2065,7 +2162,12 @@ function loadFamilyIntoMethod(method, family){
   let newRows;
   if (method === 'rci-basic'){
     newRows = subtests.map(([name, p]) => ({
-      name, group:family, sd: String(p.sd1), r: String(p.r), t1:'', t2:''
+      name, group:family,
+      sd: String(p.sd1),
+      r: String(p.r),
+      // Carry corrected r when present so the user-level toggle can pick it
+      rCorrected: (p.rCorrected != null ? String(p.rCorrected) : ''),
+      t1:'', t2:''
     }));
   } else if (method === 'rci-crawford'){
     newRows = subtests.map(([name, p]) => ({
@@ -2074,6 +2176,8 @@ function loadFamilyIntoMethod(method, family){
       m1: String(p.m1), sd1: String(p.sd1),
       m2: String(p.m2), sd2: String(p.sd2),
       r: String(p.r),
+      // Carry corrected r when present so the user-level toggle can pick it
+      rCorrected: (p.rCorrected != null ? String(p.rCorrected) : ''),
       n: (p.n != null ? String(p.n) : ''),
       t1:'', t2:''
     }));
@@ -2084,13 +2188,14 @@ function loadFamilyIntoMethod(method, family){
       m1: String(p.m1), sd1: String(p.sd1),
       m2: String(p.m2), sd2: String(p.sd2),
       r: String(p.r),
+      rCorrected: (p.rCorrected != null ? String(p.rCorrected) : ''),
       t1:'', t2:''
     }));
   }
   // Append new auto-filled tests rather than replacing any tests already entered.
   rciState[method].rows = rciState[method].rows.concat(newRows);
   renderRci(method);
-  // Toast suppressed — the working-report pill is the single feedback channel
+  // Toast suppressed - the working-report pill is the single feedback channel
 }
 function clearMethodRows(method){
   rciState[method].rows = [];
@@ -2200,7 +2305,7 @@ function renderDbList(){
       </div>
       <div class="db-subtests">
         <div class="db-subtest-row" style="font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid var(--border-soft);padding-bottom:6px">
-          <span>Subtest</span><span class="num-label">M₁</span><span class="num-label">SD₁</span><span class="num-label">M₂</span><span class="num-label">SD₂</span><span class="num-label">r</span><span class="num-label">N</span><span></span>
+          <span>Subtest</span><span class="num-label">M₁</span><span class="num-label">SD₁</span><span class="num-label">M₂</span><span class="num-label">SD₂</span><span class="num-label">r</span><span class="num-label" title="Attenuation-corrected test–retest correlation">corr. r</span><span class="num-label">N</span><span></span>
         </div>
         ${subsToShow.map(([name, p]) => `
           <div class="db-subtest-row">
@@ -2210,7 +2315,8 @@ function renderDbList(){
             <span class="num">${fmt(p.m2, 2)}</span>
             <span class="num">${fmt(p.sd2, 2)}</span>
             <span class="num">${fmt(p.r, 2)}</span>
-            <span class="num">${p.n == null ? '—' : escapeHtml(String(p.n))}</span>
+            <span class="num">${p.rCorrected == null ? '-' : fmt(p.rCorrected, 2)}</span>
+            <span class="num">${p.n == null ? '-' : escapeHtml(String(p.n))}</span>
             ${isCustom ? `<button class="btn btn-ghost btn-icon" data-del-sub="${escapeAttr(family)}::${escapeAttr(name)}" title="Remove subtest">×</button>` : '<span></span>'}
           </div>
         `).join('')}
@@ -2426,7 +2532,7 @@ function preModelCell(label, tipKey){
   return `<td class="model model-has-tip">${escapeHtml(label)}<span class="model-info-dot" data-tooltip="${escapeAttr(tip)}" aria-label="${escapeAttr(label + '. ' + tip)}">?</span></td>`;
 }
 
-// Premorbid state — separate from the input fields so we can re-render APA reliably
+// Premorbid state - separate from the input fields so we can re-render APA reliably
 const preState = { achieved: {}, opieAchieved: {} }; // achieved[idx] = string; opieAchieved[modelKey] = string
 
 function preGet(id){ return document.getElementById(id); }
@@ -2445,11 +2551,11 @@ function preCiMult(){
   return ci === '0.95' ? 1.96 : 1.645;
 }
 function fmtIntOrDash(v){
-  if (v == null || isNaN(v)) return '—';
+  if (v == null || isNaN(v)) return '-';
   return Math.round(v).toString();
 }
 function fmtPctBr(v){
-  if (v == null || isNaN(v)) return '—';
+  if (v == null || isNaN(v)) return '-';
   return (v*100).toFixed(2) + '%';
 }
 
@@ -2483,7 +2589,7 @@ function switchPreTab(tabId){
       const offset = window.scrollY + rect.top - topbarH - 16;
       window.scrollTo({ top: offset, behavior: 'smooth' });
     }
-    // Otherwise: do nothing — user stays exactly where they were, content swaps in place
+    // Otherwise: do nothing - user stays exactly where they were, content swaps in place
   }
 }
 
@@ -2547,12 +2653,12 @@ function buildPredictTable(){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       ${preModelCell(c.label, 'predictWais')}
-      <td class="num" id="pred-${c.idx}">—</td>
-      <td class="num" id="pred-${c.idx}-lo">—</td>
-      <td class="num" id="pred-${c.idx}-hi">—</td>
+      <td class="num" id="pred-${c.idx}">-</td>
+      <td class="num" id="pred-${c.idx}-lo">-</td>
+      <td class="num" id="pred-${c.idx}-hi">-</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="${c.idx}" value="${escapeAttr(preState.achieved[c.idx] || '')}"></td>
-      <td class="num diff" id="diff-${c.idx}">—</td>
-      <td class="num" id="br-${c.idx}">—</td>
+      <td class="num diff" id="diff-${c.idx}">-</td>
+      <td class="num" id="br-${c.idx}">-</td>
     `;
     tbody.appendChild(tr);
   });
@@ -2566,12 +2672,12 @@ function buildPredictTable(){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       ${preModelCell(c.label, 'predictWms')}
-      <td class="num" id="pred-${c.idx}">—</td>
-      <td class="num" id="pred-${c.idx}-lo">—</td>
-      <td class="num" id="pred-${c.idx}-hi">—</td>
+      <td class="num" id="pred-${c.idx}">-</td>
+      <td class="num" id="pred-${c.idx}-lo">-</td>
+      <td class="num" id="pred-${c.idx}-hi">-</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-ach="${c.idx}" value="${escapeAttr(preState.achieved[c.idx] || '')}"></td>
-      <td class="num diff" id="diff-${c.idx}">—</td>
-      <td class="num" id="br-${c.idx}">—</td>
+      <td class="num diff" id="diff-${c.idx}">-</td>
+      <td class="num" id="br-${c.idx}">-</td>
     `;
     tbody.appendChild(tr);
   });
@@ -2632,7 +2738,7 @@ function calcPremorbid(){
   }
   rows.push({ name:'Crawford & Allan (2001) Demographic', val:v3, see:9.11, r:0.73, tipKey:'crawfordAllan' });
 
-  // 4. OPIE-4 — prorated FSIQ, uses OPIE sex coding F=0, M=1
+  // 4. OPIE-4 - prorated FSIQ, uses OPIE sex coding F=0, M=1
   // Label, R and SEE update as soon as subtest inputs are present (branch alone).
   // FSIQ computation also requires age; sex term contributes 0 if not entered.
   const sexEffect = sexC_opie != null ? sexC_opie : 0;
@@ -2664,10 +2770,10 @@ function calcPremorbid(){
   const tbody = document.querySelector('#pre-results-table tbody');
   tbody.innerHTML = rows.map(row => {
     const fsiq = fmtIntOrDash(row.val);
-    const lo   = (row.val == null || row.see == null) ? '—' : fmtIntOrDash(row.val - mult*row.see);
-    const hi   = (row.val == null || row.see == null) ? '—' : fmtIntOrDash(row.val + mult*row.see);
-    const rStr = row.r != null ? row.r.toFixed(2) : '—';
-    const seeStr = row.see != null ? row.see.toFixed(2) : '—';
+    const lo   = (row.val == null || row.see == null) ? '-' : fmtIntOrDash(row.val - mult*row.see);
+    const hi   = (row.val == null || row.see == null) ? '-' : fmtIntOrDash(row.val + mult*row.see);
+    const rStr = row.r != null ? row.r.toFixed(2) : '-';
+    const seeStr = row.see != null ? row.see.toFixed(2) : '-';
     return `<tr>
       ${preModelCell(row.name, row.tipKey)}
       <td class="fsiq">${fsiq}</td>
@@ -2725,9 +2831,9 @@ function updatePredictRow(idx, pred, mult, see){
   const loEl = preGet('pred-'+idx+'-lo');
   const hiEl = preGet('pred-'+idx+'-hi');
   if (!predEl) return;
-  predEl.textContent = pred == null ? '—' : fmtIntOrDash(pred);
-  loEl.textContent = pred == null ? '—' : fmtIntOrDash(pred - mult*see);
-  hiEl.textContent = pred == null ? '—' : fmtIntOrDash(pred + mult*see);
+  predEl.textContent = pred == null ? '-' : fmtIntOrDash(pred);
+  loEl.textContent = pred == null ? '-' : fmtIntOrDash(pred - mult*see);
+  hiEl.textContent = pred == null ? '-' : fmtIntOrDash(pred + mult*see);
 
   const ach = preState.achieved[idx];
   const achNum = (ach != null && ach !== '') ? parseFloat(ach) : null;
@@ -2735,8 +2841,8 @@ function updatePredictRow(idx, pred, mult, see){
   const brEl = preGet('br-'+idx);
   diffEl.className = 'num diff';
   if (pred == null || achNum == null || isNaN(achNum)){
-    diffEl.textContent = '—';
-    brEl.textContent = '—';
+    diffEl.textContent = '-';
+    brEl.textContent = '-';
     return;
   }
   const diff = Math.round(achNum - pred);
@@ -2746,7 +2852,7 @@ function updatePredictRow(idx, pred, mult, see){
   // Base rate only meaningful for negative discrepancies
   const row = BASE_RATES[String(diff)];
   if (row && row[idx] != null) brEl.textContent = fmtPctBr(row[idx]);
-  else brEl.textContent = diff < 0 ? '< 0.01%' : '—';
+  else brEl.textContent = diff < 0 ? '< 0.01%' : '-';
 }
 
 // === APA Output: Premorbid Estimates ===
@@ -2762,10 +2868,10 @@ function renderPreEstimatesApa(){
   const ciPct = preState.ciPct || '90%';
   const mult = preState.ciMult || 1.645;
   const rows = valid.map(r => {
-    const lo = (r.see != null) ? Math.round(r.val - mult*r.see) : '—';
-    const hi = (r.see != null) ? Math.round(r.val + mult*r.see) : '—';
-    const rStr = r.r != null ? r.r.toFixed(2) : '—';
-    const seeStr = r.see != null ? r.see.toFixed(2) : '—';
+    const lo = (r.see != null) ? Math.round(r.val - mult*r.see) : '-';
+    const hi = (r.see != null) ? Math.round(r.val + mult*r.see) : '-';
+    const rStr = r.r != null ? r.r.toFixed(2) : '-';
+    const seeStr = r.see != null ? r.see.toFixed(2) : '-';
     return `<tr><td>${escapeHtml(r.name)}</td><td class="num">${Math.round(r.val)}</td><td class="num">${lo}</td><td class="num">${hi}</td><td class="num">${rStr}</td><td class="num">${seeStr}</td></tr>`;
   }).join('');
   out.innerHTML = `
@@ -2859,26 +2965,26 @@ function getOpiePredictions(){
   }
 
   // FSIQ models
-  pushModel('FSIQ_VC_MR', 'Prorated FSIQ — Vocab + Matrix', OPIE_PRORATED_FSIQ.VC_MR, true, true, 'opiePredFSIQ_VCMR');
-  pushModel('FSIQ_VC', 'Prorated FSIQ — Vocab only', OPIE_PRORATED_FSIQ.VC, true, false, 'opiePredFSIQ_VC');
-  pushModel('FSIQ_MR', 'Prorated FSIQ — Matrix only', OPIE_PRORATED_FSIQ.MR, false, true, 'opiePredFSIQ_MR');
+  pushModel('FSIQ_VC_MR', 'Prorated FSIQ - Vocab + Matrix', OPIE_PRORATED_FSIQ.VC_MR, true, true, 'opiePredFSIQ_VCMR');
+  pushModel('FSIQ_VC', 'Prorated FSIQ - Vocab only', OPIE_PRORATED_FSIQ.VC, true, false, 'opiePredFSIQ_VC');
+  pushModel('FSIQ_MR', 'Prorated FSIQ - Matrix only', OPIE_PRORATED_FSIQ.MR, false, true, 'opiePredFSIQ_MR');
 
   // GAI models
-  pushModel('GAI_VC_MR', 'Prorated GAI — Vocab + Matrix', OPIE_PRORATED_GAI.VC_MR, true, true, 'opiePredGAI_VCMR');
-  pushModel('GAI_VC', 'Prorated GAI — Vocab only', OPIE_PRORATED_GAI.VC, true, false, 'opiePredGAI_VC');
+  pushModel('GAI_VC_MR', 'Prorated GAI - Vocab + Matrix', OPIE_PRORATED_GAI.VC_MR, true, true, 'opiePredGAI_VCMR');
+  pushModel('GAI_VC', 'Prorated GAI - Vocab only', OPIE_PRORATED_GAI.VC, true, false, 'opiePredGAI_VC');
 
   return list;
 }
 
 function opieBaseRateFor(rowKey, diff){
-  if (!diff) return '—';
+  if (!diff) return '-';
   const key = diff > 0 ? `+${diff}` : String(diff);
   const row = OPIE_BASE_RATES[key];
   if (row && row[rowKey] != null) return fmtPctBr(row[rowKey]);
-  // Beyond the range of the published table — for negative discrepancies this means
+  // Beyond the range of the published table - for negative discrepancies this means
   // the base rate is smaller than the minimum tabulated value (< 0.1%)
   if (diff < 0) return '< 0.1%';
-  return '—';
+  return '-';
 }
 
 function calcOpiePredict(){
@@ -2908,10 +3014,10 @@ function calcOpiePredict(){
     const ach = preState.opieAchieved[row.key];
     const achVal = (ach != null && ach !== '') ? parseFloat(ach) : null;
     const hasPred = row.val != null && Number.isFinite(row.val);
-    const lo = hasPred ? fmtIntOrDash(row.val - mult * row.see) : '—';
-    const hi = hasPred ? fmtIntOrDash(row.val + mult * row.see) : '—';
-    let diffHtml = '<td class="num diff">—</td>';
-    let brHtml = '<td class="num opie-base-rate">—</td>';
+    const lo = hasPred ? fmtIntOrDash(row.val - mult * row.see) : '-';
+    const hi = hasPred ? fmtIntOrDash(row.val + mult * row.see) : '-';
+    let diffHtml = '<td class="num diff">-</td>';
+    let brHtml = '<td class="num opie-base-rate">-</td>';
     if (hasPred && achVal != null && !isNaN(achVal)){
       const diff = Math.round(achVal - row.val);
       const sign = diff > 0 ? '+' : '';
@@ -2922,7 +3028,7 @@ function calcOpiePredict(){
     const achInputVal = ach != null ? escapeAttr(ach) : '';
     return `<tr>
       ${modelCell(row)}
-      <td class="num">${hasPred ? fmtIntOrDash(row.val) : '—'}</td>
+      <td class="num">${hasPred ? fmtIntOrDash(row.val) : '-'}</td>
       <td class="num">${lo}</td>
       <td class="num">${hi}</td>
       <td class="achieved-cell"><input type="number" min="40" max="160" step="1" data-pre-opie-ach="${row.key}" value="${achInputVal}"></td>
@@ -2955,12 +3061,12 @@ function calcOpiePredict(){
       const achVal = e.target.value !== '' ? parseFloat(e.target.value) : null;
       diffCell.className = 'num diff';
       if (achVal == null || isNaN(achVal)){
-        diffCell.textContent = '—';
-        if (brCell) brCell.textContent = '—';
+        diffCell.textContent = '-';
+        if (brCell) brCell.textContent = '-';
       } else {
         if (row.val == null || !Number.isFinite(row.val)){
-          diffCell.textContent = '—';
-          if (brCell) brCell.textContent = '—';
+          diffCell.textContent = '-';
+          if (brCell) brCell.textContent = '-';
         } else {
           const diff = Math.round(achVal - row.val);
           diffCell.textContent = (diff > 0 ? '+' : '') + diff;
@@ -2998,13 +3104,13 @@ function renderOpiePredictApa(){
       const achRaw = preState.opieAchieved[r.key];
       const ach = achRaw != null && achRaw !== '' && !isNaN(parseFloat(achRaw)) ? parseFloat(achRaw) : null;
       const hasPred = r.val != null && Number.isFinite(r.val);
-      const lo = hasPred ? Math.round(r.val - mult * r.see) : '—';
-      const hi = hasPred ? Math.round(r.val + mult * r.see) : '—';
+      const lo = hasPred ? Math.round(r.val - mult * r.see) : '-';
+      const hi = hasPred ? Math.round(r.val + mult * r.see) : '-';
       const diff = (!hasPred || ach == null) ? null : Math.round(ach - r.val);
-      const diffText = diff == null ? '—' : `${diff > 0 ? '+' : ''}${diff}`;
-      const br = diff == null ? '—' : opieBaseRateFor(r.key, diff);
-      const achText = ach == null ? '—' : String(ach);
-      const predText = hasPred ? String(Math.round(r.val)) : '—';
+      const diffText = diff == null ? '-' : `${diff > 0 ? '+' : ''}${diff}`;
+      const br = diff == null ? '-' : opieBaseRateFor(r.key, diff);
+      const achText = ach == null ? '-' : String(ach);
+      const predText = hasPred ? String(Math.round(r.val)) : '-';
       body += `<tr><td>&nbsp;&nbsp;${escapeHtml(r.label)}</td><td class="num">${predText}</td><td class="num">${lo}</td><td class="num">${hi}</td><td class="num">${achText}</td><td class="num">${diffText}</td><td class="num">${br}</td></tr>`;
     });
   });
@@ -3018,7 +3124,7 @@ function renderOpiePredictApa(){
       </thead>
       <tbody>${body}</tbody>
     </table>
-    <div class="apa-note"><strong>Note.</strong> OPIE-4 prorated FSIQ/GAI predictions are adapted for UK use by omitting US education, region, and ethnicity terms (sex retained). Interpret cautiously in UK settings because equations are based on US normative regression data. CI uses ${ciPct === '95%' ? '1.96' : '1.645'} × SEE; base rates use WAIS-IV/WMS-IV/ACS prorated tables.</div>
+    <div class="apa-note"><strong>Note.</strong> OPIE-4 prorated FSIQ and GAI predicted from age plus Vocabulary and/or Matrix Reasoning. Difference = Achieved − Predicted. Base rate = % of standardisation sample with discrepancy ≤ this value. Based on US norms.</div>
   `;
 }
 
@@ -3076,7 +3182,7 @@ function applyRciGroupedHeaders(){
     table.tHead.insertBefore(row, table.tHead.firstChild);
   });
   // After group rows exist, set up the visual lock toggle for each table
-  // (skip rci-basic — only 2 norm cells, the toggle adds clutter without much benefit)
+  // (skip rci-basic - only 2 norm cells, the toggle adds clutter without much benefit)
   Object.keys(specs)
     .filter(id => id !== 'rci-basic-table')
     .forEach(id => setupNormsLockToggle(id));
@@ -3084,7 +3190,7 @@ function applyRciGroupedHeaders(){
 
 /* ---- Norms visual-lock toggle ----
    Aesthetic only: when "locked", norm columns visually fade and their
-   inputs are disabled. Layout is untouched — no display:none, no width
+   inputs are disabled. Layout is untouched - no display:none, no width
    changes. The user can toggle via a small pill button next to the
    "Test data & patient scores" heading. */
 function setupNormsLockToggle(tableId){
@@ -3167,7 +3273,7 @@ function toggleNormsLock(tableId, force){
   table.classList.toggle('norms-locked', willLock);
   // Disable/enable inputs in norm columns
   table.querySelectorAll('[data-norm-cell="true"] input').forEach(inp => { inp.disabled = willLock; });
-  // Sync segmented pill state — highlight the segment matching current state
+  // Sync segmented pill state - highlight the segment matching current state
   const pill = table.querySelector('.norms-toggle-pill[data-table-id="' + tableId + '"]');
   if (pill){
     pill.querySelectorAll('.norms-pill-segment').forEach(seg => {
@@ -3366,7 +3472,7 @@ const REPORT_FAMILY_ORDER = [
 const REPORT_PICKER_LIMIT = 160;
 const REPORT_STORAGE_KEY = 'reportWriterState_v2';
 
-// Reporting-role bands shown within each test in the picker. Order matters — indices first.
+// Reporting-role bands shown within each test in the picker. Order matters - indices first.
 const REPORT_ROLE_ORDER = ['index','subtest','learning-trial','delayed-recall','recognition','intrusion','condition','measure'];
 const REPORT_ROLE_LABELS = {
   'index':'Indices',
@@ -3379,7 +3485,7 @@ const REPORT_ROLE_LABELS = {
   'measure':'Measures'
 };
 
-// Test catalog — clinical administration units. Each entry maps families → measures with
+// Test catalog - clinical administration units. Each entry maps families → measures with
 // reporting role + domain mapping + curated "core" measures per cognitive domain.
 // Measures not in the catalog fall back to construct-cluster inference (REPORT_CLUSTER_RULES).
 const REPORT_TEST_CATALOG = [
@@ -3675,7 +3781,7 @@ const REPORT_FAMILY_TO_TEST = (() => {
 function reportTestById(id){ return REPORT_TEST_CATALOG.find(t => t.id === id) || null; }
 function reportTestForFamily(family){ return REPORT_FAMILY_TO_TEST[family] || null; }
 function reportTestMeasureMeta(test, measureName){ return test?.measures?.[measureName] || null; }
-// Construct cluster lookup — first match wins. Replaces the previous regex chain.
+// Construct cluster lookup - first match wins. Replaces the previous regex chain.
 const REPORT_CLUSTER_RULES = [
   { m:/\b(hads|phq|gad|bdi|bai|dass|pcl|ies|stai|geriatric depression|brief symptom|insomnia)\b|mood|anxiety|depression/i,
     g:'mood_symptoms', c:'mood and symptom reporting', d:['mood'] },
@@ -3779,7 +3885,7 @@ function reportCleanText(value){
   return String(value || '')
     .replace(/Â·/g, '·')
     .replace(/â€“/g, '–')
-    .replace(/â€”/g, '—')
+    .replace(/â€”/g, '-')
     .replace(/â€™/g, "'")
     .replace(/\s+/g, ' ')
     .trim();
@@ -3928,7 +4034,7 @@ function reportRankToDescriptor(rank){
 
 /* ---------- Grouping ---------- */
 function reportRowGroupKey(row){
-  // Cluster by descriptor + score type only — measures with the same descriptor
+  // Cluster by descriptor + score type only - measures with the same descriptor
   // (e.g. four CVLT trials all in the Average range) cluster into one sentence,
   // even if their exact scores differ. The parenthetical shows a range when needed.
   return [
@@ -3991,9 +4097,9 @@ function reportFormatTestGroupedList(rows){
 }
 
 // Parenthetical for a measure-group cluster.
-// — 1 row: existing per-row parenthetical (with CI if present)
-// — 2+ rows, all scores identical: same as per-row (CI dropped — per-row only)
-// — 2+ rows, scores vary: range syntax, e.g. (scaled scores 9–11, 37th–63rd percentile)
+// - 1 row: existing per-row parenthetical (with CI if present)
+// - 2+ rows, all scores identical: same as per-row (CI dropped - per-row only)
+// - 2+ rows, scores vary: range syntax, e.g. (scaled scores 9–11, 37th–63rd percentile)
 function reportClusterParenthetical(rows){
   if (rows.length === 1) return reportScoreParenthetical(rows[0]);
   const type = reportScoreType(rows[0].scoreType);
@@ -4107,7 +4213,7 @@ function reportRenderMeasureGroupSentence(group, previous, counts, useName, isFi
     return `${prefix} performance on ${tests} fell within the <em>${desc}</em> range${paren}.`;
   }
 
-  // Multi-row, not compacted — inline parens per measure
+  // Multi-row, not compacted - inline parens per measure
   const inlineItems = group.rows.map(r =>
     `${escapeHtml(reportMeasureLabel(r))}${reportScoreParenthetical(r)}`
   );
@@ -4125,7 +4231,7 @@ function reportRenderMeasureGroupSentence(group, previous, counts, useName, isFi
 }
 /* ---------- Plan + render whole section paragraph ---------- */
 function reportRowGroupKey(row){
-  // Cluster by descriptor + score type only — measures with the same descriptor
+  // Cluster by descriptor + score type only - measures with the same descriptor
   // (e.g. four CVLT trials all in the Average range) cluster into one sentence,
   // even if their exact scores differ. The parenthetical shows a range when needed.
   return [
@@ -4194,24 +4300,36 @@ function reportBuildSummary(){
   const top = sortedDesc.slice(0, 3);
   const bottom = sortedDesc.slice(-3).reverse();
 
-  const subjectName = reportSubject('possessive', true); // first mention — full name
+  const subjectName = reportSubject('possessive', true); // first mention - full name
   const ref = reportReference();
 
   const renderItem = e => `${escapeHtml(reportMeasureLabel(e.row))}${reportScoreParenthetical(e.row)}`;
   const topList = reportFormatList(top.map(renderItem));
   const bottomList = reportFormatList(bottom.map(renderItem));
 
-  // Overall sentence — pick a phrasing based on overall central tendency (mean SS)
+  // Overall sentence - pick a phrasing based on overall central tendency (mean SS).
+  // reportSubject already returns the correctly-cased token: lowercase 'your' for
+  // first-person, proper-cased "Mrs Doe's" for named reports.
   const meanSs = enriched.reduce((a, e) => a + e.ss, 0) / enriched.length;
   const overallDescriptor = reportDescriptorFor(meanSs).toLowerCase();
-  const overallLine = `Overall, ${ref.firstPerson ? 'your' : reportLowerFirst(reportSubject('possessive', true))} performance across the assessed domains was broadly within the <em>${escapeHtml(overallDescriptor)}</em> range.`;
-  const topLine = `Highest performances were observed on ${topList}.`;
-  const bottomLine = `Lower scores were observed on ${bottomList}.`;
+  const overallLine = `Overall, ${reportSubject('possessive', true)} performance across the assessed domains was broadly within the <em>${escapeHtml(overallDescriptor)}</em> range.`;
+
+  // Top / bottom sentences use pronouns rather than restating the name:
+  //   "Her highest performance was observed on X."
+  //   "However, she performed poorest on Y."
+  // For first-person: "Your highest..." / "However, you performed poorest on Y."
+  const subjPronoun = reportSubject('subject', false);
+  const possPronoun = reportSubject('possessive', false);
+  const possCap = possPronoun.charAt(0).toUpperCase() + possPronoun.slice(1);
+  const topNoun = top.length === 1 ? 'highest performance' : 'highest performances';
+  const topVerb = top.length === 1 ? 'was' : 'were';
+  const topLine = `${possCap} ${topNoun} ${topVerb} observed on ${topList}.`;
+  const bottomLine = `However, ${subjPronoun} performed poorest on ${bottomList}.`;
 
   return `<h3>Summary</h3><p>${overallLine} ${topLine} ${bottomLine}</p>`;
 }
 
-/* ---------- Section rendering — single paragraph, indices first then subtests ---------- */
+/* ---------- Section rendering - single paragraph, indices first then subtests ---------- */
 function reportRenderSectionHtml(section, rows, scored){
   const out = [];
   out.push(`<h3>${escapeHtml(reportSectionHeading(section))}</h3>`);
@@ -4222,10 +4340,10 @@ function reportRenderSectionHtml(section, rows, scored){
   return out.join('');
 }
 
-/* ---------- Section opener — "[Subject's] [domain] was assessed using [list]." ---------- */
+/* ---------- Section opener - "[Subject's] [domain] was assessed using [list]." ---------- */
 function reportSectionOpener(section, rows){
   const ability = reportDomain(section.domain).ability;
-  const subj = reportSubject('possessive', true); // first mention — name
+  const subj = reportSubject('possessive', true); // first mention - name
   const valid = reportFilterScoredRows(rows);
   if (!valid.length) return '';
   const list = escapeHtml(reportFormatTestGroupedList(valid));
@@ -4491,7 +4609,7 @@ function renderReportTestOptions(){
     ? `<div class="report-picker-limit-note">Showing the first ${visible.length} of ${filtered.length} measures. Narrow with a test chip or search.</div>`
     : '';
 
-  // Render — one section per test, role bands inside
+  // Render - one section per test, role bands inside
   const sectionsHtml = orderedTestIds.map(testId => {
     const group = byTest.get(testId);
     const optionsInTest = group.options.filter(o => visibleSet.has(o.key));
@@ -4518,7 +4636,7 @@ function renderReportTestOptions(){
         <div class="report-role-band-head">${escapeHtml(REPORT_ROLE_LABELS[role] || 'Measures')}</div>
         ${opts.map(option => {
           const isAdded = reportOptionAlreadyAdded(section, option.key);
-          // Checkbox now reflects "in this section?" — tick to add, untick to remove
+          // Checkbox now reflects "in this section?" - tick to add, untick to remove
           const checked = isAdded || reportState.selectedOptionKeys.has(option.key);
           const badge = isAdded ? 'Added' : coreKeySet.has(option.key) ? 'Core' : '';
           return `
@@ -4575,7 +4693,7 @@ function renderReportSubtabs(){
   strips.forEach(({ id, prefix }) => {
     const el = document.getElementById(id); if (!el) return;
     if (!reportState.sections.length){
-      el.innerHTML = '<span class="rw-subtabs-empty">No sections yet — add one in Setup.</span>';
+      el.innerHTML = '<span class="rw-subtabs-empty">No sections yet - add one in Setup.</span>';
       return;
     }
     el.innerHTML = reportState.sections.map((section, i) => {
@@ -4612,7 +4730,7 @@ function renderReportSelectedList(){
   if (!list) return;
   const section = reportActiveSection();
   if (!section || section.rows.length === 0){
-    list.innerHTML = `<div class="report-selected-empty">${section ? 'No measures yet — pick from the list above, or add a custom row.' : 'Add a section first in Setup.'}</div>`;
+    list.innerHTML = `<div class="report-selected-empty">${section ? 'No measures yet - pick from the list above, or add a custom row.' : 'Add a section first in Setup.'}</div>`;
     return;
   }
   list.innerHTML = section.rows.map(row => {
@@ -4642,7 +4760,7 @@ function renderReportScoresTable(){
     return;
   }
   if (section.rows.length === 0){
-    tbody.innerHTML = '<tr><td colspan="8" class="computed muted">No measures in this section yet — add some in Build.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="computed muted">No measures in this section yet - add some in Build.</td></tr>';
     return;
   }
   tbody.innerHTML = section.rows.map(row => {
@@ -4703,7 +4821,7 @@ function renderReportWriter(){
   reportSaveState();
 }
 // Add one section for the given domain id and re-render. Triggered by ticking
-// a checkbox on the Setup tab — the just-added domain falls out of the
+// a checkbox on the Setup tab - the just-added domain falls out of the
 // checklist (renderReportDomainChecklist filters out already-used domains).
 function reportAddDomainSection(domain){
   if (!domain) return;
@@ -4826,7 +4944,7 @@ function reportUpdateWizardNav(){
     }
   }
 
-  // Progress label — concise step-of-total summary
+  // Progress label - concise step-of-total summary
   if (progress){
     let label;
     if (current === 0){
@@ -5029,7 +5147,7 @@ function setupReportWriter(){
   // Restore the active tab in the DOM (default is 'setup')
   reportSwitchTab(reportState.activeTab || 'setup');
 
-  // Domain checklist — tick to add a section instantly (no button)
+  // Domain checklist - tick to add a section instantly (no button)
   document.getElementById('rw-domain-checklist')?.addEventListener('change', e => {
     const cb = e.target.closest('input[type="checkbox"][data-rw-domain]');
     if (!cb || !cb.checked) return;
@@ -5204,7 +5322,7 @@ function setupReportWriter(){
   });
   document.getElementById('rw-add-manual')?.addEventListener('click', reportAddManual);
 
-  // Tab 2 (Build) — Selected measures list: remove
+  // Tab 2 (Build) - Selected measures list: remove
   const selectedList = document.getElementById('rw-selected-list');
   selectedList?.addEventListener('click', e => {
     const section = reportActiveSection();
@@ -5265,7 +5383,7 @@ function setupReportWriter(){
     selectedList.querySelectorAll('.is-dragging').forEach(el => el.classList.remove('is-dragging'));
   });
 
-  // Tab 3 (Scores) — score table inputs / select / remove + column-major Tab key
+  // Tab 3 (Scores) - score table inputs / select / remove + column-major Tab key
   const scoresTable = document.getElementById('rw-scores-table');
   scoresTable?.addEventListener('input', e => {
     const rowEl = e.target.closest('[data-rw-row]');
@@ -5299,7 +5417,7 @@ function setupReportWriter(){
   scoresTable?.addEventListener('dragstart', e => {
     const tr = e.target.closest('tr[data-rw-row]');
     if (!tr) return;
-    // Don't initiate drag from inputs/selects — only from the row itself or the grip cell
+    // Don't initiate drag from inputs/selects - only from the row itself or the grip cell
     if (e.target.matches('input,select,button')) { e.preventDefault(); return; }
     dragScoreRowId = tr.dataset.rwRow;
     tr.classList.add('is-dragging');
@@ -5369,7 +5487,7 @@ function setupReportWriter(){
     if (nextNode){ e.preventDefault(); nextNode.focus(); nextNode.select?.(); }
   });
 
-  // Subtabs (Build / Scores) — clicking switches active section, × deletes the domain
+  // Subtabs (Build / Scores) - clicking switches active section, × deletes the domain
   document.querySelectorAll('#rw-build-subtabs, #rw-scores-subtabs').forEach(strip => {
     strip.addEventListener('click', e => {
       const remove = e.target.closest('[data-rw-remove-subtab]');
@@ -5393,7 +5511,7 @@ function setupReportWriter(){
     });
   });
 
-  // Persistent wizard nav — strictly sequential prev/next
+  // Persistent wizard nav - strictly sequential prev/next
   document.getElementById('rw-wizard-nav')?.addEventListener('click', e => {
     const btn = e.target.closest('[data-rw-wizard]');
     if (!btn || btn.disabled) return;
@@ -5405,7 +5523,7 @@ function setupReportWriter(){
   document.getElementById('rw-reset')?.addEventListener('click', reportResetAll);
   // Sort sections by clinical convention
   document.getElementById('rw-sort-convention')?.addEventListener('click', reportSortByConvention);
-  // DEV — autofill scores
+  // DEV - autofill scores
   document.getElementById('rw-autofill')?.addEventListener('click', reportAutofillAllScores);
 
   // Reference (Mrs Doe / Mr Doe / You): regenerates output
@@ -5472,7 +5590,7 @@ setupReportWriter();
 buildDescCarousels();
 renderConverter();
 
-/* Premorbid panel — fade fields when comparison is off (kept always visible) */
+/* Premorbid panel - fade fields when comparison is off (kept always visible) */
 (function setupBatteryPremorbidDisable(){
   const block = document.getElementById('bat-premorbid-block');
   const checkbox = document.getElementById('bat-prem-enable');
@@ -5496,6 +5614,84 @@ wireSdiAutofill();
 
 // Final initialization
 refreshAll();
+
+/* ---------- GLOBAL CLEAR — Topbar "Clear all tables" button ----------
+   Wipes every tool's session data in one action: battery rows, SDI rows,
+   the four RCI methods, premorbid inputs, working report items.
+
+   The auto-add MutationObserver on each APA container is suppressed during
+   the clear cascade so the residual table HTML doesn't sneak items back
+   into the bundle after we wipe it. */
+(function wireGlobalClear(){
+  const btn = document.getElementById('topbar-clear-all');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const ok = confirm('Are you sure?\n\nThis clears every table you\'ve been working on across all tools, including the Working Report. It cannot be undone.');
+    if (!ok) return;
+
+    // Suppress the observers BEFORE any clearing happens. The 350ms debounce
+    // means handlers from changes triggered during the cascade can fire well
+    // after we've finished, so we keep suppression on for ~700ms to be safe.
+    if (typeof ReportBundle !== 'undefined' && ReportBundle.setSuppressed){
+      ReportBundle.setSuppressed(true);
+    }
+
+    // Battery / Neuropsych Tables
+    try { batteryRows.length = 0; renderBattery(); } catch(e){}
+    // SDI
+    try { if (typeof clearSdi === 'function') clearSdi(); } catch(e){}
+    // All four RCI methods
+    try {
+      ['rci-basic','rci-practice','rci-srb','rci-crawford'].forEach(m => {
+        if (typeof clearMethodRows === 'function') clearMethodRows(m);
+      });
+    } catch(e){}
+    // Premorbid inputs (predictors + demographics)
+    try {
+      ['pre-topf','pre-vc','pre-mr','pre-sex','pre-occ','pre-edu','pre-age'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = '';
+        el.dispatchEvent(new Event('input',  { bubbles:true }));
+        el.dispatchEvent(new Event('change', { bubbles:true }));
+      });
+      // Premorbid achieved-score cells (per-index)
+      document.querySelectorAll('[data-pre-ach]').forEach(inp => {
+        inp.value = '';
+        inp.dispatchEvent(new Event('input',  { bubbles:true }));
+        inp.dispatchEvent(new Event('change', { bubbles:true }));
+      });
+      document.querySelectorAll('[data-pre-opie-ach]').forEach(inp => {
+        inp.value = '';
+        inp.dispatchEvent(new Event('input',  { bubbles:true }));
+        inp.dispatchEvent(new Event('change', { bubbles:true }));
+      });
+    } catch(e){}
+
+    // Working Report bundle - clear after the tools so any pending observer
+    // tasks fire against an empty state.
+    try {
+      if (typeof ReportBundle !== 'undefined' && ReportBundle.clearSilent){
+        ReportBundle.clearSilent();
+      }
+    } catch(e){}
+
+    // Re-clear after the debounce window in case any observer queued an
+    // add during the cascade. Then turn observers back on.
+    setTimeout(() => {
+      try {
+        if (typeof ReportBundle !== 'undefined' && ReportBundle.clearSilent){
+          ReportBundle.clearSilent();
+        }
+        if (typeof ReportBundle !== 'undefined' && ReportBundle.setSuppressed){
+          ReportBundle.setSuppressed(false);
+        }
+      } catch(e){}
+    }, 700);
+
+    if (typeof showToast === 'function') showToast('All tables cleared');
+  });
+})();
 
 
 /* ============================================================
@@ -5652,7 +5848,7 @@ refreshAll();
 })();
 
 /* =====================================================================
-   REDESIGN — Top-bar navigation bucket sync
+   REDESIGN - Top-bar navigation bucket sync
    Each section ID maps to the topnav bucket (data-bucket) that should
    be highlighted when that section is active.
    ===================================================================== */
@@ -5724,7 +5920,7 @@ refreshAll();
 })();
 
 /* =====================================================================
-   Score Converter — view-mode tabs (Equivalents / Distribution)
+   Score Converter - view-mode tabs (Equivalents / Distribution)
    ===================================================================== */
 (function(){
   document.querySelectorAll('#converter .conv-view-tab').forEach(btn => {
@@ -5746,7 +5942,7 @@ refreshAll();
    WORKING REPORT BUNDLE v2
    - Renders full APA tables in a wide drawer (replaces inline panels)
    - Auto-updates via MutationObserver on each tool's APA container
-   - Dedupes by sourceId — re-Add refreshes the existing entry
+   - Dedupes by sourceId - re-Add refreshes the existing entry
    - Drag-to-reorder items
    - Toggle layout: floating popover ↔ docked side panel
    - Persists across reloads via localStorage
@@ -5764,7 +5960,7 @@ const ReportBundle = (function(){
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
     'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted'
   };
-  /* Method / tool names — combined with the detected test family to produce
+  /* Method / tool names - combined with the detected test family to produce
      intelligent table titles like "Crawford Regression-Based Change: WAIS-IV". */
   const SOURCE_METHOD_NAMES = {
     'bat-apa':              'Cognitive Outcomes',
@@ -5777,7 +5973,7 @@ const ReportBundle = (function(){
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',
     'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved'
   };
-  /* Backwards alias — SOURCE_TITLES still referenced in a couple of places */
+  /* Backwards alias - SOURCE_TITLES still referenced in a couple of places */
   const SOURCE_TITLES = SOURCE_METHOD_NAMES;
   /* Build an intelligent title:  "Method: Family"  if family detected, else just method name.
      For split items, pass the family name explicitly via the second arg. */
@@ -5787,7 +5983,7 @@ const ReportBundle = (function(){
     const method = SOURCE_METHOD_NAMES[parentId] || null;
 
     // Premorbid sources: the table CONTENT mentions WAIS-IV / WMS-IV (those are
-    // the predicted indices), but those aren't the "test family" — the test is
+    // the predicted indices), but those aren't the "test family" - the test is
     // ToPF / OPIE, already named in the method. Skip family detection here so
     // we don't end up with "ToPF-Predicted vs Achieved: WAIS-IV".
     if (parentId && parentId.startsWith('pre-')){
@@ -5803,7 +5999,7 @@ const ReportBundle = (function(){
 
   let state = { items: [], minimized: true, drawerWidth: null, onboardingSeen: false, maximised: false };
   /* Last seen body-row count per source. Used to decide whether the pill
-     should fire — we only want it on actual row additions, not score edits. */
+     should fire - we only want it on actual row additions, not score edits. */
   const lastRowCount = {};
   function countTableRows(container){
     return container ? container.querySelectorAll('table tbody tr:not(.apa-group)').length : 0;
@@ -5812,7 +6008,7 @@ const ReportBundle = (function(){
   const observers = new Map(); // sourceId -> MutationObserver
   let dragId = null;
   let lastChangedItemId = null; // for auto-scroll on render
-  const KOFI_SEEN_KEY = 'kofiPromptSeen_v1'; // localStorage flag — persists across tabs/sessions
+  const KOFI_SEEN_KEY = 'kofiPromptSeen_v1'; // localStorage flag - persists across tabs/sessions
   let kofiToastShown = false;   // in-memory guard for current page load
   function hasSeenKofi(){
     try { return !!localStorage.getItem(KOFI_SEEN_KEY); } catch(e){ return false; }
@@ -5835,7 +6031,7 @@ const ReportBundle = (function(){
     // Force-opens (header button) always proceed regardless.
     if (!force && hasSeenKofi()) return;
     kofiToastShown = true;
-    // Only mark the persistent "seen" flag for AUTO-triggers — that's what the
+    // Only mark the persistent "seen" flag for AUTO-triggers - that's what the
     // flag is for (don't repeatedly nudge passive users). Manual header-button
     // clicks are user-initiated and shouldn't burn the budget.
     if (!force) markKofiSeen();
@@ -6064,7 +6260,7 @@ const ReportBundle = (function(){
   function detectTestFamily(html){
     const tmp = document.createElement('div');
     tmp.innerHTML = html || '';
-    // 1. Use the LAST group separator row — that's the most recently added
+    // 1. Use the LAST group separator row - that's the most recently added
     //    family. (Iterating from the first would echo whichever family was
     //    added earliest forever.)
     const groupCells = tmp.querySelectorAll('table tbody tr.apa-group td');
@@ -6088,7 +6284,7 @@ const ReportBundle = (function(){
   }
   function pillLabelFor(html, sourceId){
     const parentId = (sourceId || '').split('::')[0];
-    // Premorbid sources: don't pattern-match WAIS-IV/WMS-IV from the table —
+    // Premorbid sources: don't pattern-match WAIS-IV/WMS-IV from the table -
     // those are predicted outcomes, not the test family.
     if (parentId && parentId.startsWith('pre-')){
       return SOURCE_LABELS[parentId] || null;
@@ -6133,7 +6329,7 @@ const ReportBundle = (function(){
       cloneTbody.innerHTML = '';
       section.rows.forEach(r => cloneTbody.appendChild(r.cloneNode(true)));
       // Build an intelligent title combining the parent method name with this
-      // group's family name — e.g. "Crawford Regression-Based Change: WAIS-IV".
+      // group's family name - e.g. "Crawford Regression-Based Change: WAIS-IV".
       const titleText = buildIntelligentTitle(sourceId, cloneTmp.innerHTML, section.name);
       const titleEl = cloneTmp.querySelector('.apa-table-title');
       if (titleEl) titleEl.textContent = titleText;
@@ -6193,7 +6389,7 @@ const ReportBundle = (function(){
         };
         state.items.push(newItem);
         lastChangedItemId = newItem.id;
-        // Only pill for genuinely new content — not for the group that was
+        // Only pill for genuinely new content - not for the group that was
         // already represented by the merged item.
         const isContinuation = prevGroupName && split.name === prevGroupName;
         if (!isContinuation){
@@ -6250,12 +6446,23 @@ const ReportBundle = (function(){
   }
   function clear(){
     if (!state.items.length) return;
-    if (!window.confirm('Start a new report?\n\nThis clears all collected tables — the change cannot be undone.')) return;
+    if (!window.confirm('Start a new report?\n\nThis clears all collected tables - the change cannot be undone.')) return;
     state.items = [];
     save();
     render();
     if (typeof showToast === 'function') showToast('New report started');
   }
+  function clearSilent(){
+    state.items = [];
+    save();
+    render();
+  }
+  /* Observer suppression - lets a global "clear all" wipe state without
+     the auto-add MutationObserver immediately re-populating from the
+     residual APA table HTML during the clear cascade. */
+  let _suppressed = false;
+  function setSuppressed(v){ _suppressed = !!v; }
+  function isSuppressed(){ return _suppressed; }
   function moveItem(fromId, toId, dropAfter){
     const fromIdx = state.items.findIndex(i => i.id === fromId);
     let toIdx = state.items.findIndex(i => i.id === toId);
@@ -6273,7 +6480,7 @@ const ReportBundle = (function(){
      - Subsequent edits → silently update the existing item.
      - No toast / chip-pulse on updates (would be spam during typing).
      - Subtle chip pulse only on first auto-add for a source.
-     - When a container becomes empty, the bundle entry is PRESERVED — clearing
+     - When a container becomes empty, the bundle entry is PRESERVED - clearing
        inputs by accident shouldn't wipe your collected report.
   */
   function ensureObserver(sourceId){
@@ -6286,6 +6493,9 @@ const ReportBundle = (function(){
       lastRowCount[sourceId] = countTableRows(container);
     }
     const handler = debounce(() => {
+      // Bail out during a global clear so we don't immediately re-populate
+      // the bundle from residual APA HTML during the clear cascade.
+      if (_suppressed) return;
       // Always update the row-count tracker first, even if we're about to
       // early-return, so cleared tables don't leave stale counts behind.
       const currentRowCount = countTableRows(container);
@@ -6304,7 +6514,7 @@ const ReportBundle = (function(){
         splitAndUpsert(sourceId, splits);
         return;
       }
-      // Source is back to a single (or no) group — drop any per-group items
+      // Source is back to a single (or no) group - drop any per-group items
       // for this parent so the merged version takes over cleanly.
       const orphans = state.items.filter(i => i.sourceId.startsWith(`${sourceId}::`));
       if (orphans.length){
@@ -6342,7 +6552,7 @@ const ReportBundle = (function(){
         lastChangedItemId = newItem.id;
         save();
         render();
-        // Show the confirmation pill — it'll fly into the chip after a hold
+        // Show the confirmation pill - it'll fly into the chip after a hold
         // and pulse the chip on impact, so we don't need a separate flashChip().
         showAddPrompt(pillLabelFor(html, sourceId), sourceId);
       }
@@ -6384,7 +6594,7 @@ const ReportBundle = (function(){
       maybeShowKofiToast();
     } catch(e){
       console.error(e);
-      if (typeof showToast === 'function') showToast('Copy failed — try selecting manually', true);
+      if (typeof showToast === 'function') showToast('Copy failed - try selecting manually', true);
     }
   }
   function exportExcel(){
@@ -6392,7 +6602,7 @@ const ReportBundle = (function(){
       if (typeof showToast === 'function') showToast('Working report is empty', true);
       return;
     }
-    // Generate CSV — Excel opens it natively without any "format mismatch"
+    // Generate CSV - Excel opens it natively without any "format mismatch"
     // warning, and the data round-trips cleanly. Multiple tables are stacked
     // with blank lines between them.
     const csvCell = s => {
@@ -6432,7 +6642,7 @@ const ReportBundle = (function(){
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 100);
-    if (typeof showToast === 'function') showToast('✓ CSV downloaded — opens in Excel');
+    if (typeof showToast === 'function') showToast('✓ CSV downloaded - opens in Excel');
     maybeShowKofiToast();
   }
   function exportWord(){
@@ -6496,7 +6706,7 @@ ${buildReportHtmlBody()}
           <div class="rb-onboarding-title">Your Working Report</div>
           <div class="rb-onboarding-body">
             <p>Every APA-formatted table you generate across the suite is <strong>auto-saved into one place</strong> as you work.</p>
-            <p>Open the panel to <strong>reorder, hide columns, edit titles, and export</strong> the whole bundle to Word, Excel, or your clipboard — paste straight into your report.</p>
+            <p>Open the panel to <strong>reorder, hide columns, edit titles, and export</strong> the whole bundle to Word, Excel, or your clipboard - paste straight into your report.</p>
             <p>Everything lives in your browser. <strong>Nothing is uploaded, nothing leaves your device.</strong></p>
           </div>
           <div class="rb-onboarding-cta">Click the button below to open it ↓</div>
@@ -6599,7 +6809,15 @@ ${buildReportHtmlBody()}
         if (action === 'toggle')        toggle();
         else if (action === 'minimise') close();
         else if (action === 'maximise') toggleMaximised();
-        else if (action === 'clear')    clear();
+        else if (action === 'clear')    {
+          // Forward to the topbar's "Clear all tables" button so it does
+          // the full session wipe (every tool + the bundle), with a single
+          // confirm. Falls back to local-only clear if the topbar button
+          // isn't available for any reason.
+          const topbarBtn = document.getElementById('topbar-clear-all');
+          if (topbarBtn) topbarBtn.click();
+          else clear();
+        }
         else if (action === 'copy')     copyAll();
         else if (action === 'export-word') exportWord();
         else if (action === 'export-excel') exportExcel();
@@ -6735,7 +6953,7 @@ ${buildReportHtmlBody()}
       moveItem(fromId, target.dataset.rbId, after);
     });
 
-    // Keyboard reorder — focus a grip handle, then Alt+ArrowUp/Down to
+    // Keyboard reorder - focus a grip handle, then Alt+ArrowUp/Down to
     // shift that item one position. Standard accessibility pattern.
     body.addEventListener('keydown', e => {
       if (!(e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown'))) return;
@@ -6764,7 +6982,7 @@ ${buildReportHtmlBody()}
     // ESC closes (and blurs any in-progress header edit first)
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && !state.minimized){
-        // If editing a header, just blur — don't close the drawer
+        // If editing a header, just blur - don't close the drawer
         const editing = document.activeElement?.closest('.rb-editable-header');
         if (editing){ editing.blur(); return; }
         close();
@@ -6798,7 +7016,7 @@ ${buildReportHtmlBody()}
       close();
     });
 
-    // Resize handle removed — drawer is now fixed-size.
+    // Resize handle removed - drawer is now fixed-size.
   }
 
   /* ---------- state transitions ---------- */
@@ -6832,7 +7050,7 @@ ${buildReportHtmlBody()}
     save();
     render();
   }
-  /* Preview mode — toggles the drawer body into a Word-style print
+  /* Preview mode - toggles the drawer body into a Word-style print
      preview where APA tables sit on a white "page" with proper margins,
      editing chrome (drag, remove, options) hidden. Session-only; not
      persisted, since it's a transient view, not a setting. */
@@ -6855,14 +7073,14 @@ ${buildReportHtmlBody()}
     setTimeout(() => rootEl?.classList.remove('rb-flash'), 600);
   }
 
-  /* "Added to report" pills — one per source, stackable. Each pill pops in,
+  /* "Added to report" pills - one per source, stackable. Each pill pops in,
      bobs gently, then flies into the chip. Multiple sources => stacked above
      each other with the newest closest to the chip. Same source updating
      => existing pill stays and its hold timer resets (no duplicate pile-up
      during continuous typing). */
   const PILL_HEIGHT = 40;       // approx pill height
   const PILL_GAP    = 8;        // gap between stacked pills
-  const PILL_BASE_BOTTOM = 74;  // distance from viewport bottom for pill #1
+  const PILL_BASE_BOTTOM = 82;  // distance from viewport bottom for pill #1
   const CHIP_CENTER_BOTTOM = 24; // chip's vertical centre, target for fly animation
 
   function buildPillNode(sourceLabel, sourceId){
@@ -6924,7 +7142,7 @@ ${buildReportHtmlBody()}
     if (!item) return;
     if (!Array.isArray(item.headerOverrides)) item.headerOverrides = [];
 
-    // Compare against the original (pre-override) header text — if it matches,
+    // Compare against the original (pre-override) header text - if it matches,
     // clear the override so the column reverts to whatever the source produces.
     const tmp = document.createElement('div');
     tmp.innerHTML = item.html;
@@ -6956,7 +7174,7 @@ ${buildReportHtmlBody()}
     if (!state.minimized) return;
     if (!rootEl) return;
 
-    // Dedupe by sourceId — if a non-flying pill for this source already exists,
+    // Dedupe by sourceId - if a non-flying pill for this source already exists,
     // refresh its label and reset its hold timer instead of stacking a new one.
     if (sourceId){
       const existing = rootEl.querySelector(
@@ -6974,7 +7192,7 @@ ${buildReportHtmlBody()}
       }
     }
 
-    // Fresh pill — append, position, animate
+    // Fresh pill - append, position, animate
     const pill = buildPillNode(sourceLabel, sourceId);
     rootEl.appendChild(pill);
     reflowPillStack(); // sets bottom for the new (newest) pill at the base position
@@ -7037,12 +7255,12 @@ ${buildReportHtmlBody()}
   function refreshItem(id){
     const item = state.items.find(i => i.id === id);
     if (!item) return;
-    // Split items have sourceId like "bat-apa::CVLT-3 Indices" — only the
+    // Split items have sourceId like "bat-apa::CVLT-3 Indices" - only the
     // prefix is a real DOM id.
     const parentId = item.sourceId.split('::')[0];
     const container = document.getElementById(parentId);
     if (!container || !container.querySelector('.apa-table')){
-      if (typeof showToast === 'function') showToast('Source table is empty — nothing to refresh', true);
+      if (typeof showToast === 'function') showToast('Source table is empty - nothing to refresh', true);
       return;
     }
     if (typeof buildStandaloneHtml !== 'function') return;
@@ -7104,7 +7322,7 @@ ${buildReportHtmlBody()}
       maybeShowKofiToast();
     } catch(e){
       console.error(e);
-      if (typeof showToast === 'function') showToast('Copy failed — try selecting manually', true);
+      if (typeof showToast === 'function') showToast('Copy failed - try selecting manually', true);
     }
   }
 
@@ -7212,7 +7430,7 @@ ${buildReportHtmlBody()}
     // Drawer is only shown when open
     if (drawer) drawer.hidden = state.minimized;
 
-    // Drawer is now a fixed-size floating popover — no inline width override,
+    // Drawer is now a fixed-size floating popover - no inline width override,
     // no body padding push.
     if (drawer) drawer.style.width = '';
     document.body.style.paddingRight = '';
@@ -7228,7 +7446,7 @@ ${buildReportHtmlBody()}
     renderItems();
     decorateEditableHeaders();
 
-    // Auto-scroll to the most recently changed item — only if drawer is open
+    // Auto-scroll to the most recently changed item - only if drawer is open
     if (lastChangedItemId && !state.minimized){
       const target = lastChangedItemId;
       lastChangedItemId = null;
@@ -7239,7 +7457,7 @@ ${buildReportHtmlBody()}
     }
   }
 
-  /* "+ Add to report" buttons removed — adds are automatic via MutationObserver.
+  /* "+ Add to report" buttons removed - adds are automatic via MutationObserver.
      If a saved bundle from before still references these IDs, they're harmless. */
 
   /* ---------- init ---------- */
@@ -7256,7 +7474,7 @@ ${buildReportHtmlBody()}
       });
     }, 30000);
 
-    // Time-based Ko-fi prompt — fires after 5 min on site IF the user has
+    // Time-based Ko-fi prompt - fires after 5 min on site IF the user has
     // never seen the modal (across any tab/session) and no export has
     // already triggered it this page load. Persistence is via localStorage
     // inside maybeShowKofiToast itself.
@@ -7266,7 +7484,7 @@ ${buildReportHtmlBody()}
       }, 5 * 60 * 1000);
     }
 
-    // Header "Buy me a coffee" button — opens the modal in-page rather than
+    // Header "Buy me a coffee" button - opens the modal in-page rather than
     // letting the anchor navigate to a new tab. Force-opens regardless of
     // whether the modal has been shown before (the seen flag only suppresses
     // automatic triggers, not deliberate user clicks).
@@ -7278,7 +7496,7 @@ ${buildReportHtmlBody()}
     });
   }
 
-  return { init, addOrReplace, remove, clear, copyAll, exportWord, exportExcel, open, close, toggle, showKofiPrompt: maybeShowKofiToast };
+  return { init, addOrReplace, remove, clear, clearSilent, setSuppressed, isSuppressed, copyAll, exportWord, exportExcel, open, close, toggle, showKofiPrompt: maybeShowKofiToast };
 })();
 
 if (document.readyState === 'loading'){
