@@ -1891,187 +1891,433 @@
     return Number.isFinite(v) ? ' (' + sl + ' = ' + v.toFixed(2) + ')' : '';
   }
 
-  /* CVLT-specific cluster-based change paragraph (Rule 19, amended).
-     Learning / Short Delay / Long Delay / Recognition / Auxiliary cluster logic.
-     Long Delay is always inline (never trailing). Null measures from single-
-     changed clusters are pushed to a trailing list rather than a However clause. */
+  /* CVLT cluster-based change paragraph (Rule 19, full rewrite).
+     Implements:
+       - p-values dropped (only t(RB) shown)
+       - 6-connector logic (Finally / Alternatively / However / Similarly / also / though)
+       - Learning Trials naming (2-3 → "Trials 2 and 5"; 4-5 → count)
+       - SD→LD bridge with 10 explicit cases
+       - Recognition connector matrix based on LD outcome
+       - Auxiliary "Finally," + "while X were preserved" handling
+       - Trailing sentence: 2 items no Oxford comma; 3+ items with Oxford comma */
   function rwAutoChangeParagraphCvlt(g){
     const kind  = g.kind;
     const brand = g.brand;
-    const dates = rwAutoMethodDates(kind);
     const sl    = RWAUTO_STAT_LABEL[kind] || 't(RB)';
-    const since = rwAutoSince(dates.d1);
 
     const byName = {};
     g.items.forEach(c => { byName[c.name] = c; });
 
     const NUM_WORDS = ['zero','one','two','three','four','five','six','seven','eight','nine'];
-    function numWord(n)   { return NUM_WORDS[n] || String(n); }
-    function numWordCap(n){ const w = numWord(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+    const numWord    = n => NUM_WORDS[n] || String(n);
+    const numWordCap = n => { const w = numWord(n); return w.charAt(0).toUpperCase() + w.slice(1); };
+
+    const sBkt  = c       => cvltSingleBracket(c, sl);
+    const pBkt  = (a,b)   => cvltPairedBracket(a, b, sl);
+    const rBkt  = items   => items.length ? ' (' + cvltStatRangeStr(items, sl) + ')' : '';
+
+    /* "Trials 2 and 5" / "Trials 2, 3, and 5" / "Trial 3" */
+    function trialsList(trials){
+      const nums = trials.map(t => parseInt(t.name.replace(/^Trial\s+/, ''), 10))
+                         .filter(Number.isFinite).sort((a,b)=>a-b);
+      if (nums.length === 1) return 'Trial ' + nums[0];
+      if (nums.length === 2) return 'Trials ' + nums[0] + ' and ' + nums[1];
+      return 'Trials ' + nums.slice(0,-1).join(', ') + ', and ' + nums[nums.length-1];
+    }
 
     const CLUSTERS = [
-      { id:'learning',    label:'Learning Trials',  noun:'learning trials',     size:'five',  tests:['Trial 1','Trial 2','Trial 3','Trial 4','Trial 5'] },
-      { id:'short_delay', label:'Short Delay',       noun:'Short Delay',          size:'two',   tests:['Short Delay Free Recall','Short Delay Cued Recall'] },
-      { id:'long_delay',  label:'Long Delay',        noun:'Long Delay',           size:'two',   tests:['Long Delay Free Recall','Long Delay Cued Recall'] },
-      { id:'recognition', label:'Recognition',       noun:'recognition measures', size:'four',  tests:['Recognition','Recognition False Positive','Recognition Discrimination','Discrimination Nonparametric'] },
-      { id:'auxiliary',   label:'Auxiliary',         noun:'auxiliary measures',   size:'three', tests:['List B Correct','Total Intrusions','Total Repetitions'] },
+      { id:'learning',    tests:['Trial 1','Trial 2','Trial 3','Trial 4','Trial 5'] },
+      { id:'short_delay', tests:['Short Delay Free Recall','Short Delay Cued Recall'] },
+      { id:'long_delay',  tests:['Long Delay Free Recall','Long Delay Cued Recall'] },
+      { id:'recognition', tests:['Recognition','Recognition False Positive','Recognition Discrimination','Discrimination Nonparametric'] },
+      { id:'auxiliary',   tests:['List B Correct','Total Intrusions','Total Repetitions'] },
     ];
 
+    /* Per-cluster analysis. Outcome:
+        'absent'      = no measures entered
+        'no_change'   = ≥1 measure entered, none reliable
+        'decline'     = all reliable changes are declines (no opposites)
+        'improvement' = all reliable changes are improvements
+        'mixed'       = both directions present (declines AND improvements) */
+    function analyze(cl){
+      const present  = cl.tests.map(t => byName[t]).filter(Boolean);
+      const changed  = present.filter(rwAutoIsReliable);
+      const declines = changed.filter(c => rwAutoChangeDir(c) === 'decline');
+      const improves = changed.filter(c => rwAutoChangeDir(c) === 'improvement');
+      const nullItems= present.filter(c => !rwAutoIsReliable(c));
+      let outcome, dom = null, majority = [], minority = [];
+      if (!present.length) outcome = 'absent';
+      else if (!changed.length) outcome = 'no_change';
+      else if (declines.length && improves.length){
+        outcome = 'mixed';
+        dom = declines.length >= improves.length ? 'decline' : 'improvement';
+        majority = dom === 'decline' ? declines : improves;
+        minority = dom === 'decline' ? improves : declines;
+      } else if (declines.length){
+        outcome = 'decline'; dom = 'decline'; majority = declines;
+      } else {
+        outcome = 'improvement'; dom = 'improvement'; majority = improves;
+      }
+      return { id:cl.id, present, changed, declines, improves, nullItems,
+               majority, minority, dom, outcome };
+    }
+
+    const data = {};
+    CLUSTERS.forEach(cl => { data[cl.id] = analyze(cl); });
+
+    /* Will the cluster emit inline content? */
+    function emits(d){
+      if (d.outcome === 'absent') return false;
+      if (d.id === 'short_delay' || d.id === 'long_delay') return true;
+      return d.outcome !== 'no_change';
+    }
+    const emitsRec = emits(data.recognition);
+    const emitsAux = emits(data.auxiliary);
+    /* "Finally," fires only when the cluster is the LAST emitting cluster
+       with a named finding. Aux is last; if Aux skips, no Finally. */
+    const finallyOn = emitsAux ? 'aux' : null;
+
     let idx = 0;
-    const sents   = [];
-    const trailing = []; // individual names or cluster labels for trailing sentence
+    const sents = [];
+    const trailing = [];
+    function nextSubj(){ const s = rwAutoSubjectFor(idx); idx++; return s; }
 
     sents.push(rwAutoChangeOpener(brand, kind, idx));
     idx++;
 
-    /* However-clause builder for learning / recognition / auxiliary.
-       "However" appears only on the first exception sentence. */
-    function buildHoweverClause(nullItems, minority, dom, noun){
-      let firstDone = false;
+    /* prev tracks the prior cluster's effective direction for connector
+       selection: 'decline' / 'improvement' / 'no_change' / 'mixed' / null. */
+    let prev = null;
 
-      if (nullItems.length >= 2){
-        /* Impersonal — does NOT advance idx. */
-        sents.push('However, the remaining ' + numWord(nullItems.length) +
-          ' ' + noun + ' did not reliably change.');
-        firstDone = true;
-      } else if (nullItems.length === 1){
-        const subj = rwAutoSubjectFor(idx); idx++;
-        sents.push('However, ' + subj.possLower + ' performance on ' +
-          nullItems[0].name + ' did not reliably change.');
-        firstDone = true;
-      }
+    /* ───────────── Learning Trials ───────────── */
+    (function processLearning(){
+      const d = data.learning;
+      if (d.outcome === 'absent') return;
+      if (d.outcome === 'no_change'){ trailing.push('Learning Trials'); prev = 'no_change'; return; }
 
-      if (minority.length){
-        const oppVerb = dom === 'decline' ? 'reliably improved' : 'reliably declined';
-        const bkt = minority.length === 1
-          ? rwAutoChangeBracket(minority[0])
-          : ' (' + cvltStatRangeStr(minority, sl) + ')';
-        const subj = rwAutoSubjectFor(idx); idx++;
-        if (!firstDone){
-          sents.push('However, ' + subj.possLower + ' performance on ' +
-            cvltNameList(minority) + ' ' + oppVerb + ' ' + since + bkt + '.');
-        } else {
-          sents.push(subj.possessive + ' performance on ' +
-            cvltNameList(minority) + ' ' + oppVerb + ' ' + since + bkt + '.');
-        }
-      }
-    }
-
-    /* Paired-sentence builder for Short Delay and Long Delay.
-       Always emits an inline sentence — never adds to trailing.
-       Templates: both-same / both-no-change / one-changed-one-not. */
-    function buildPairedCluster(cl){
-      const present = cl.tests.map(t => byName[t]).filter(Boolean);
-      if (!present.length) return; // cluster not entered at all — silently skip
-
-      const [m1, m2] = present;
-
-      if (!m2){
-        /* Only one measure entered — individual sentence. */
-        const subj = rwAutoSubjectFor(idx); idx++;
-        if (rwAutoIsReliable(m1)){
-          sents.push(subj.possessive + ' performance on ' + m1.name + ' reliably ' +
-            (rwAutoChangeDir(m1) === 'decline' ? 'declined' : 'improved') +
-            ' ' + since + rwAutoChangeBracket(m1) + '.');
-        } else {
-          sents.push(subj.possessive + ' performance on ' + m1.name +
-            ' did not reliably change.');
-        }
+      if (d.changed.length === 1){
+        const c = d.changed[0];
+        const subj = nextSubj();
+        const verb = rwAutoChangeDir(c) === 'decline' ? 'reliably declined' : 'reliably improved';
+        sents.push(subj.possessive + ' performance on ' + c.name + ' ' + verb + sBkt(c) + '.');
+        d.nullItems.forEach(it => trailing.push(it.name));
+        prev = rwAutoChangeDir(c);
         return;
       }
 
-      const dir1 = rwAutoChangeDir(m1);
-      const dir2 = rwAutoChangeDir(m2);
+      /* 2+ changed — naming or count format */
+      const top = [...d.majority].sort((a,b) =>
+        Math.abs(b.kind === 'sdi' ? b.delta : b.stat) -
+        Math.abs(a.kind === 'sdi' ? a.delta : a.stat))[0];
+      const subjPhrase = (d.majority.length <= 3)
+        ? trialsList(d.majority)
+        : numWordCap(d.majority.length) + ' of the five learning trials';
+      let main = subjPhrase + ' showed reliable ' + d.dom +
+                 ', most pronounced in ' + top.name + sBkt(top);
+      if (d.nullItems.length){
+        main += ', though the remaining ' + numWord(d.nullItems.length) +
+                ' learning trial' + (d.nullItems.length === 1 ? ' was' : 's were') + ' preserved';
+      }
+      sents.push(main + '.');
 
-      if (dir1 === null && dir2 === null){
-        /* Both no reliable change. */
-        const subj = rwAutoSubjectFor(idx); idx++;
-        sents.push(subj.possessive + ' performance on both ' + m1.name + ' and ' + m2.name +
-          ' did not reliably change.');
-      } else if (dir1 !== null && dir2 !== null && dir1 === dir2){
-        /* Both same direction. */
-        const verb = dir1 === 'decline' ? 'reliably declined' : 'reliably improved';
-        const subj = rwAutoSubjectFor(idx); idx++;
-        sents.push(subj.possessive + ' performance on both ' + m1.name + ' and ' + m2.name +
-          ' ' + verb + ' ' + since + cvltPairedBracket(m1, m2, sl) + '.');
+      /* Opposite-direction trials → separate "However," sentence */
+      if (d.minority.length){
+        const oppVerb = d.dom === 'decline' ? 'reliably improved' : 'reliably declined';
+        const subj = nextSubj();
+        const bkt = d.minority.length === 1 ? sBkt(d.minority[0]) : rBkt(d.minority);
+        sents.push('However, ' + subj.possLower + ' performance on ' +
+          cvltNameList(d.minority) + ' ' + oppVerb + bkt + '.');
+        prev = 'mixed';
       } else {
-        /* One changed, one did not.
-           Template: "[Subject] performance on [unchanged] did not reliably change,
-                      though [pron] performance on [changed] reliably [verb] (stat)." */
+        prev = d.dom;
+      }
+    })();
+
+    /* ───────────── Short Delay → Long Delay bridge ───────────── */
+    (function processDelays(){
+      const sd = data.short_delay;
+      const ld = data.long_delay;
+      if (sd.outcome === 'absent' && ld.outcome === 'absent') return;
+
+      /* Helper: clean outcome of a delay cluster (both measures present, no mix). */
+      function cleanOutcome(d){
+        if (d.outcome === 'absent') return 'absent';
+        if (d.outcome === 'no_change') return 'no_change';
+        if (d.outcome === 'mixed') return 'mixed';
+        if (d.nullItems.length > 0) return 'mixed'; // 1 changed + 1 null
+        return d.outcome;
+      }
+      const sdOut = cleanOutcome(sd);
+      const ldOut = cleanOutcome(ld);
+
+      /* Mixed within either cluster → individual-sentence handling. */
+      function emitMixedDelay(d){
+        if (d.present.length < 2){
+          /* Only one measure entered. */
+          const c = d.present[0];
+          const subj = nextSubj();
+          if (rwAutoIsReliable(c)){
+            const verb = rwAutoChangeDir(c) === 'decline' ? 'reliably declined' : 'reliably improved';
+            sents.push(subj.possessive + ' performance on ' + c.name + ' ' + verb + sBkt(c) + '.');
+          } else {
+            sents.push(subj.possessive + ' performance on ' + c.name + ' did not reliably change.');
+          }
+          return;
+        }
+        const [m1, m2] = d.present;
         const unchanged = rwAutoIsReliable(m1) ? m2 : m1;
         const changed   = rwAutoIsReliable(m1) ? m1 : m2;
+        if (rwAutoIsReliable(m1) && rwAutoIsReliable(m2)){
+          /* Both changed but in opposite directions (true mixed). */
+          const subj = nextSubj();
+          const verb1 = rwAutoChangeDir(m1) === 'decline' ? 'reliably declined' : 'reliably improved';
+          const verb2 = rwAutoChangeDir(m2) === 'decline' ? 'reliably declined' : 'reliably improved';
+          sents.push(subj.possessive + ' performance on ' + m1.name + ' ' + verb1 + sBkt(m1) +
+                     ', though ' + rwAutoPossessive(false) + ' performance on ' + m2.name + ' ' + verb2 + sBkt(m2) + '.');
+          return;
+        }
+        /* One changed, one didn't. */
         const verb = rwAutoChangeDir(changed) === 'decline' ? 'reliably declined' : 'reliably improved';
-        const subj = rwAutoSubjectFor(idx); idx++;
-        const pron = rwAutoPossessive(false); // "her" / "his" / "their"
+        const subj = nextSubj();
+        const pron = rwAutoPossessive(false);
         sents.push(subj.possessive + ' performance on ' + unchanged.name +
-          ' did not reliably change, though ' + pron + ' performance on ' + changed.name +
-          ' ' + verb + ' ' + since + rwAutoChangeBracket(changed) + '.');
+                   ' did not reliably change, though ' + pron + ' performance on ' + changed.name +
+                   ' ' + verb + sBkt(changed) + '.');
       }
-    }
 
-    CLUSTERS.forEach(cl => {
-      /* Short Delay and Long Delay always get an inline paired sentence. */
-      if (cl.id === 'short_delay' || cl.id === 'long_delay'){
-        buildPairedCluster(cl);
+      /* Case 10 fallback: any mixed → individual sentences each. */
+      if (sdOut === 'mixed' || ldOut === 'mixed'){
+        if (sd.outcome !== 'absent') emitMixedDelay(sd);
+        if (ld.outcome !== 'absent') emitMixedDelay(ld);
+        /* prev: take LD's dominant direction if any; otherwise SD's. */
+        const lastD = ld.outcome !== 'absent' ? ld : sd;
+        prev = lastD.dom || (lastD.outcome === 'no_change' ? 'no_change' : prev);
         return;
       }
 
-      const present = cl.tests.map(t => byName[t]).filter(Boolean);
-      if (!present.length) return;
-
-      const changed   = present.filter(c => rwAutoIsReliable(c));
-
-      if (!changed.length){
-        /* All present, none changed → cluster goes to trailing. */
-        trailing.push(cl.label);
+      /* SD only or LD only — clean outcome each. */
+      if (sd.outcome === 'absent' || ld.outcome === 'absent'){
+        const d = sd.outcome !== 'absent' ? sd : ld;
+        const which = d.id === 'short_delay' ? 'short delay' : 'long delay';
+        const subj = nextSubj();
+        if (d.outcome === 'no_change'){
+          sents.push(subj.possessive + ' ' + which + ' performance was intact.');
+          prev = 'no_change';
+        } else {
+          const [m1, m2] = d.present;
+          const verb = d.dom === 'decline' ? 'reliably declined' : 'reliably improved';
+          sents.push(subj.possessive + ' performance on both ' + m1.name + ' and ' + m2.name +
+                     ' ' + verb + pBkt(m1, m2) + '.');
+          prev = d.dom;
+        }
         return;
       }
 
-      const declines  = changed.filter(c => rwAutoChangeDir(c) === 'decline');
-      const improves  = changed.filter(c => rwAutoChangeDir(c) === 'improvement');
-      const dom       = declines.length >= improves.length ? 'decline' : 'improvement';
-      const majority  = dom === 'decline' ? declines : improves;
-      const minority  = dom === 'decline' ? improves : declines;
-      const nullItems = present.filter(c => !rwAutoIsReliable(c));
+      /* Both present and clean — Cases 1–9 from the spec. */
+      const sdSubj = () => nextSubj();
+      const sdM = sd.present;
+      const ldM = ld.present;
 
-      if (cl.id === 'learning'){
-        if (changed.length >= 2){
-          const top = [...majority].sort((a,b) =>
-            Math.abs(b.kind === 'sdi' ? b.delta : b.stat) -
-            Math.abs(a.kind === 'sdi' ? a.delta : a.stat))[0];
-          /* Count sentence — impersonal, does NOT advance idx. */
-          sents.push(numWordCap(majority.length) + ' of the ' + cl.size +
-            ' learning trials showed reliable ' + dom + ' ' + since +
-            ', most pronounced in ' + top.name + rwAutoChangeBracket(top) + '.');
-          buildHoweverClause(nullItems, minority, dom, cl.noun);
-        } else {
-          /* Exactly 1 changed — individual sentence; null trials → trailing. */
-          sents.push(rwAutoChangeSentence(changed[0], idx)); idx++;
-          nullItems.forEach(c => trailing.push(c.name));
-        }
-
-      } else {
-        /* Recognition or Auxiliary. */
-        const clLabel = cl.id === 'recognition' ? 'recognition' : 'auxiliary';
-        if (changed.length >= 2){
-          const rangeStr = cvltStatRangeStr(majority, sl);
-          /* Count sentence — impersonal, does NOT advance idx. */
-          sents.push(numWordCap(majority.length) + ' of the ' + cl.size +
-            ' ' + clLabel + ' measures showed reliable ' + dom + ' ' + since +
-            ' (' + rangeStr + ').');
-          buildHoweverClause(nullItems, minority, dom, cl.noun);
-        } else {
-          /* Exactly 1 changed — individual sentence; null measures → trailing. */
-          sents.push(rwAutoChangeSentence(changed[0], idx)); idx++;
-          nullItems.forEach(c => trailing.push(c.name));
-        }
+      if (sdOut === 'no_change' && ldOut === 'no_change'){
+        /* Case 1 */
+        const s1 = sdSubj();
+        sents.push(s1.possessive + ' short delay performance was intact.');
+        const s2 = sdSubj();
+        sents.push(s2.possessive + ' long delay performance was similarly preserved.');
+        prev = 'no_change';
+      } else if (sdOut === 'no_change' && ldOut === 'decline'){
+        /* Case 2 */
+        const s1 = sdSubj();
+        sents.push(s1.possessive + ' short delay performance was intact, though this did not extend to long delay measures, where both ' +
+                   ldM[0].name + ' and ' + ldM[1].name + ' reliably declined' + pBkt(ldM[0], ldM[1]) + '.');
+        prev = 'decline';
+      } else if (sdOut === 'no_change' && ldOut === 'improvement'){
+        /* Case 3 */
+        const s1 = sdSubj();
+        sents.push(s1.possessive + ' short delay performance was intact, though long delay measures showed reliable improvement' +
+                   pBkt(ldM[0], ldM[1]) + '.');
+        prev = 'improvement';
+      } else if (sdOut === 'decline' && ldOut === 'decline'){
+        /* Case 4 */
+        const s1 = sdSubj();
+        sents.push(s1.possessive + ' performance on both short delay measures reliably declined' + pBkt(sdM[0], sdM[1]) + '.');
+        sents.push('Both long delay measures also showed reliable decline' + pBkt(ldM[0], ldM[1]) + '.');
+        prev = 'decline';
+      } else if (sdOut === 'decline' && ldOut === 'no_change'){
+        /* Case 5 */
+        const s1 = sdSubj();
+        sents.push(s1.possessive + ' performance on both short delay measures reliably declined' + pBkt(sdM[0], sdM[1]) +
+                   ', though long delay performance was preserved.');
+        prev = 'no_change';
+      } else if (sdOut === 'decline' && ldOut === 'improvement'){
+        /* Case 6 */
+        const s1 = sdSubj();
+        sents.push(s1.possessive + ' performance on both short delay measures reliably declined' + pBkt(sdM[0], sdM[1]) +
+                   ', though long delay measures showed reliable improvement' + pBkt(ldM[0], ldM[1]) + '.');
+        prev = 'improvement';
+      } else if (sdOut === 'improvement' && ldOut === 'improvement'){
+        /* Case 7 */
+        const s1 = sdSubj();
+        sents.push(s1.possessive + ' performance on both short delay measures reliably improved' + pBkt(sdM[0], sdM[1]) + '.');
+        sents.push('Both long delay measures also showed reliable improvement' + pBkt(ldM[0], ldM[1]) + '.');
+        prev = 'improvement';
+      } else if (sdOut === 'improvement' && ldOut === 'decline'){
+        /* Case 8 */
+        const s1 = sdSubj();
+        sents.push(s1.possessive + ' performance on both short delay measures reliably improved' + pBkt(sdM[0], sdM[1]) +
+                   ', though long delay measures showed reliable decline' + pBkt(ldM[0], ldM[1]) + '.');
+        prev = 'decline';
+      } else if (sdOut === 'improvement' && ldOut === 'no_change'){
+        /* Case 9 */
+        const s1 = sdSubj();
+        sents.push(s1.possessive + ' performance on both short delay measures reliably improved' + pBkt(sdM[0], sdM[1]) +
+                   ', though long delay performance was preserved.');
+        prev = 'no_change';
       }
-    });
+    })();
 
-    /* Trailing sentence: individual measure names + fully-skipped cluster labels. */
+    /* ───────────── Recognition ───────────── */
+    (function processRecognition(){
+      const d = data.recognition;
+      if (d.outcome === 'absent') return;
+      if (d.outcome === 'no_change'){ trailing.push('Recognition'); return; }
+
+      /* Connector selection based on LD outcome → Rec direction.
+         If LD absent, fall back to SD outcome; if both absent, no connector. */
+      const ld = data.long_delay;
+      const sd = data.short_delay;
+      let baseOut;
+      if (ld.outcome !== 'absent') baseOut = (ld.outcome === 'mixed' || (ld.changed.length && ld.nullItems.length)) ? 'mixed' : ld.outcome;
+      else if (sd.outcome !== 'absent') baseOut = (sd.outcome === 'mixed' || (sd.changed.length && sd.nullItems.length)) ? 'mixed' : sd.outcome;
+      else baseOut = null;
+
+      let prefix = '';   // sentence-start connector ("However, " / "Alternatively, " / "Among the recognition measures, ")
+      let useAlso = false;
+      if (baseOut === 'mixed'){
+        prefix = 'Among the recognition measures, ';
+      } else if (baseOut === 'decline' && d.dom === 'decline'){
+        useAlso = true;
+      } else if (baseOut === 'decline' && d.dom === 'improvement'){
+        prefix = 'Alternatively, ';
+      } else if (baseOut === 'no_change' && d.dom === 'decline'){
+        prefix = 'However, ';
+      } else if (baseOut === 'no_change' && d.dom === 'improvement'){
+        prefix = 'Alternatively, ';
+      } else if (baseOut === 'improvement' && d.dom === 'improvement'){
+        useAlso = true;
+      } else if (baseOut === 'improvement' && d.dom === 'decline'){
+        prefix = 'However, ';
+      }
+
+      const alsoStr = useAlso ? ' also' : '';
+
+      if (d.changed.length === 1){
+        /* Single individual sentence with connector. */
+        const c = d.changed[0];
+        const verb = rwAutoChangeDir(c) === 'decline' ? 'reliably declined' : 'reliably improved';
+        const subj = nextSubj();
+        const subjStr = prefix ? subj.possLower : subj.possessive;
+        sents.push(prefix + subjStr + ' performance on ' + c.name + alsoStr + ' ' + verb + sBkt(c) + '.');
+        d.nullItems.forEach(it => trailing.push(it.name));
+        prev = rwAutoChangeDir(c);
+        return;
+      }
+
+      /* 2+ changed — count sentence with within-cluster though clause. */
+      const countStr = prefix
+        ? numWord(d.majority.length)
+        : numWordCap(d.majority.length);
+      let main = prefix + countStr + ' of the four recognition measures' + alsoStr +
+                 ' showed reliable ' + d.dom + rBkt(d.majority);
+
+      /* Within-cluster though: null first, else minority. */
+      let secondException = null;
+      if (d.nullItems.length){
+        const subj = nextSubj();
+        main += ', though ' + subj.possLower + ' performance on ' +
+                cvltNameList(d.nullItems) + ' did not reliably change';
+        if (d.minority.length){
+          const oppVerb = d.dom === 'decline' ? 'reliably improved' : 'reliably declined';
+          const bkt = d.minority.length === 1 ? sBkt(d.minority[0]) : rBkt(d.minority);
+          const s2 = nextSubj();
+          secondException = s2.possessive + ' performance on ' + cvltNameList(d.minority) +
+                            ' ' + oppVerb + bkt + '.';
+        }
+      } else if (d.minority.length){
+        const oppVerb = d.dom === 'decline' ? 'reliably improved' : 'reliably declined';
+        const bkt = d.minority.length === 1 ? sBkt(d.minority[0]) : rBkt(d.minority);
+        const subj = nextSubj();
+        main += ', though ' + subj.possLower + ' performance on ' +
+                cvltNameList(d.minority) + ' ' + oppVerb + bkt;
+      }
+      sents.push(main + '.');
+      if (secondException) sents.push(secondException);
+      prev = d.dom;
+    })();
+
+    /* ───────────── Auxiliary ───────────── */
+    (function processAuxiliary(){
+      const d = data.auxiliary;
+      if (d.outcome === 'absent') return;
+      if (d.outcome === 'no_change'){ trailing.push('Auxiliary'); return; }
+
+      const useFinally = (finallyOn === 'aux');
+      const useAlso = useFinally && (prev === d.dom);
+      const alsoStr = useAlso ? ' also' : '';
+      const prefix = useFinally ? 'Finally, ' : '';
+
+      if (d.changed.length === 1){
+        const c = d.changed[0];
+        const verb = rwAutoChangeDir(c) === 'decline' ? 'reliably declined' : 'reliably improved';
+        const subj = nextSubj();
+        const subjStr = prefix ? subj.possLower : subj.possessive;
+        let sent = prefix + subjStr + ' performance on ' + c.name + alsoStr + ' ' + verb + sBkt(c);
+        /* When Finally fires, fold null measures into "while … were preserved" instead of trailing. */
+        if (useFinally && d.nullItems.length){
+          sent += ', while ' + cvltNameList(d.nullItems) + ' ' +
+                  (d.nullItems.length === 1 ? 'was' : 'were') + ' preserved';
+        } else {
+          d.nullItems.forEach(it => trailing.push(it.name));
+        }
+        sents.push(sent + '.');
+        return;
+      }
+
+      /* 2+ changed */
+      const countStr = prefix ? numWord(d.majority.length) : numWordCap(d.majority.length);
+      let main = prefix + countStr + ' of the three auxiliary measures' + alsoStr +
+                 ' showed reliable ' + d.dom + rBkt(d.majority);
+      let secondException = null;
+      if (d.nullItems.length){
+        const subj = nextSubj();
+        main += ', though ' + subj.possLower + ' performance on ' +
+                cvltNameList(d.nullItems) + ' did not reliably change';
+        if (d.minority.length){
+          const oppVerb = d.dom === 'decline' ? 'reliably improved' : 'reliably declined';
+          const bkt = d.minority.length === 1 ? sBkt(d.minority[0]) : rBkt(d.minority);
+          const s2 = nextSubj();
+          secondException = s2.possessive + ' performance on ' + cvltNameList(d.minority) +
+                            ' ' + oppVerb + bkt + '.';
+        }
+      } else if (d.minority.length){
+        const oppVerb = d.dom === 'decline' ? 'reliably improved' : 'reliably declined';
+        const bkt = d.minority.length === 1 ? sBkt(d.minority[0]) : rBkt(d.minority);
+        const subj = nextSubj();
+        main += ', though ' + subj.possLower + ' performance on ' +
+                cvltNameList(d.minority) + ' ' + oppVerb + bkt;
+      }
+      sents.push(main + '.');
+      if (secondException) sents.push(secondException);
+    })();
+
+    /* ───────────── Trailing sentence ───────────── */
     if (trailing.length === 1){
       sents.push('No reliable change was observed in the ' + trailing[0] + ' measures.');
-    } else if (trailing.length >= 2){
+    } else if (trailing.length === 2){
+      /* No Oxford comma for exactly two items. */
+      sents.push('No reliable change was observed in the ' +
+        trailing[0] + ' and ' + trailing[1] + ' measures.');
+    } else if (trailing.length >= 3){
       const last = trailing[trailing.length-1];
       const rest = trailing.slice(0,-1);
       sents.push('No reliable change was observed in the ' +
