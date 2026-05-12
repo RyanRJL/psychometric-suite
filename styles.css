@@ -88,6 +88,15 @@ body{display:flex;min-height:100vh;overflow:hidden;zoom:0.9}
 .nav-item:hover{background:rgba(0,0,0,0.03);color:var(--ink)}
 .nav-item.active{background:var(--accent-tint);color:var(--accent);border-left-color:var(--accent);font-weight:500}
 .nav-item-label{flex:1;min-width:0;line-height:1.25}
+/* "In development" tag — used on Report Writer side-nav and topnav */
+.nav-dev-tag{
+  display:inline-flex;align-items:center;
+  margin-left:8px;padding:2px 7px;
+  font-size:10px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;
+  color:#92400e;background:#fef3c7;border:1px solid #fcd34d;border-radius:4px;
+  line-height:1;white-space:nowrap;
+}
+.topnav-item .nav-dev-tag{margin-left:6px;font-size:9px;padding:2px 6px}
 /* Compact recommendation box: neutral by default, terracotta only when active */
 .nav-item.nav-item-recommended{
   position:relative;
@@ -676,64 +685,8 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .tab:hover{color:var(--ink)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
-#premorbid .pre-tabs{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px;
-  margin:18px 0 24px;
-  padding:8px;
-  border:1px solid var(--border);
-  border-radius:8px;
-  background:var(--paper-2);
-  box-shadow:var(--shadow-soft);
-}
-#premorbid .pre-tabs .tab{
-  display:flex;
-  align-items:center;
-  gap:9px;
-  min-height:48px;
-  margin:0;
-  padding:10px 12px;
-  border:1px solid var(--border-soft);
-  border-radius:6px;
-  background:var(--paper);
-  color:var(--ink-2);
-  font-size:12.5px;
-  font-weight:500;
-  line-height:1.25;
-}
-#premorbid .pre-tabs .tab:hover{
-  transform:translateY(-1px);
-  border-color:rgba(156,61,42,0.28);
-  color:var(--accent);
-  box-shadow:0 6px 16px rgba(60,40,20,0.05);
-}
-#premorbid .pre-tabs .tab.active{
-  border-color:rgba(156,61,42,0.42);
-  background:var(--accent-tint);
-  color:var(--accent);
-  box-shadow:inset 0 0 0 1px rgba(156,61,42,0.08);
-}
-#premorbid .pre-tab-num{
-  flex:0 0 24px;
-  width:24px;
-  height:24px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  border:1px solid var(--border);
-  border-radius:999px;
-  background:var(--paper-2);
-  color:var(--muted);
-  font-family:var(--mono);
-  font-size:11px;
-  font-weight:700;
-}
-#premorbid .pre-tabs .tab.active .pre-tab-num{
-  border-color:var(--accent);
-  background:var(--accent);
-  color:var(--paper);
-}
+/* Legacy 3-up pre-tabs block removed — see design-system.css for the
+   canonical underline-tab treatment. */
 @media (max-width:900px){
   #premorbid .pre-tabs{grid-template-columns:1fr}
 }
@@ -3903,46 +3856,8 @@ input[type="range"]#conv-slider::-moz-range-thumb{
   font-family:var(--serif);font-size:15px!important;font-weight:600!important;
   color:#1A1A1A!important;letter-spacing:-0.005em;margin-bottom:10px;
 }
-#premorbid .pre-tabs{
-  display:flex!important;gap:0!important;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.06);
-  border-radius:var(--r-lg);
-  box-shadow:var(--shadow-1);
-  overflow:hidden;
-  margin-bottom:18px;
-}
-#premorbid .pre-tabs > *{
-  flex:1;
-  background:transparent;
-  border:none;
-  border-right:1px solid rgba(20,15,5,0.06);
-  padding:14px 16px;
-  display:flex;align-items:center;gap:10px;
-  cursor:pointer;
-  position:relative;
-  transition:background var(--t-fast) var(--ease);
-  font-family:var(--sans);font-size:13px;font-weight:500;color:#5A5A5A;
-}
-#premorbid .pre-tabs > *:last-child{border-right:none}
-#premorbid .pre-tabs > *:hover{background:rgba(20,15,5,0.025)}
-#premorbid .pre-tabs > .active,
-#premorbid .pre-tabs > [aria-selected="true"]{
-  background:linear-gradient(180deg, #FAF7F0 0%, #F4F1E9 100%);
-  color:#1A1A1A;
-}
-#premorbid .pre-tabs > .active::before,
-#premorbid .pre-tabs > [aria-selected="true"]::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg, transparent 0%, #1A1A1A 20%, #1A1A1A 80%, transparent 100%);
-}
-#premorbid .pre-tab-num{
-  width:22px;height:22px;border-radius:50%;
-  background:rgba(20,15,5,0.08);color:#737373;
-  font-family:var(--sans);font-size:11px;font-weight:600;
-  display:inline-flex;align-items:center;justify-content:center;
-}
-#premorbid .pre-tabs > .active .pre-tab-num{background:#1A1A1A;color:#FFFFFF}
+/* Legacy .pre-tabs block removed — see design-system.css for the canonical
+   underline-tab treatment in the restructured Premorbid layout. */
 /* Result tables â€” overflow:visible so help-tooltips can escape the table */
 #premorbid .pre-results-table,
 #premorbid .pre-predict-table{
@@ -4308,49 +4223,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-top:0!important;
 }
 
-/* Tabs strip: full-width, segmented control with a clear active state */
-#premorbid .pre-tabs{
-  display:grid!important;
-  grid-template-columns:repeat(4,1fr)!important;
-  gap:0!important;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.06);
-  border-radius:var(--r-lg);
-  box-shadow:var(--shadow-1);
-  overflow:hidden;
-  margin:0 0 18px!important;
-}
-#premorbid .pre-tabs > .tab{
-  flex:1;
-  background:transparent;
-  border:none;
-  border-right:1px solid rgba(20,15,5,0.06);
-  padding:14px 16px;
-  display:flex;align-items:center;gap:10px;
-  cursor:pointer;
-  position:relative;
-  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
-  font-family:var(--sans);font-size:13px;font-weight:500;color:#5A5A5A;
-}
-#premorbid .pre-tabs > .tab:last-child{border-right:none}
-#premorbid .pre-tabs > .tab:hover{background:rgba(20,15,5,0.025)}
-#premorbid .pre-tabs > .tab.active{
-  background:linear-gradient(180deg, #FAF7F0 0%, #F4F1E9 100%);
-  color:#1A1A1A;
-}
-#premorbid .pre-tabs > .tab.active::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg, transparent 0%, #1A1A1A 20%, #1A1A1A 80%, transparent 100%);
-}
-#premorbid .pre-tab-num{
-  width:22px;height:22px;border-radius:50%;
-  background:rgba(20,15,5,0.08);color:#737373;
-  font-family:var(--sans);font-size:11px;font-weight:600;
-  display:inline-flex;align-items:center;justify-content:center;
-}
-#premorbid .pre-tabs > .tab.active .pre-tab-num{
-  background:#1A1A1A;color:#FFFFFF;
-}
+/* Legacy segmented-control block removed — superseded by the underline-tab
+   treatment defined in design-system.css. */
 
 /* =====================================================================
    PHASE 9 â€” Premorbid Inputs tab polish
@@ -5163,6 +5037,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 #change-analysis .change-overview-cards{
   display:grid;
   grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  align-items:start;          /* each card sizes to its own content, no
+                                 row-height equalisation when one expands */
   gap:12px;
 }
 
@@ -5176,12 +5052,50 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   display:flex;
   flex-direction:column;
   cursor:pointer;
-  transition:box-shadow var(--t-base) var(--ease), transform var(--t-base) var(--ease), border-color var(--t-base) var(--ease);
+  transition:box-shadow var(--t-base) var(--ease), transform var(--t-base) var(--ease), border-color var(--t-base) var(--ease), background var(--t-base) var(--ease);
 }
 #change-analysis .change-overview-card:hover{
   box-shadow:var(--shadow-2);
   transform:translateY(-1px);
   border-color:rgba(20,15,5,0.14);
+}
+/* Minimalist by default — hide the citation + descriptive body. Hover
+   reveals them temporarily; clicking the card pins them open via the
+   .is-pinned class. The features row + title stay visible always. */
+#change-analysis .change-overview-card .change-overview-cite,
+#change-analysis .change-overview-card > p:not(.change-overview-cite){
+  max-height:0;
+  opacity:0;
+  margin-top:0!important;
+  margin-bottom:0!important;
+  overflow:hidden;
+  pointer-events:none;
+  transition:max-height 220ms var(--ease), opacity 160ms ease, margin 220ms var(--ease);
+}
+#change-analysis .change-overview-card:hover .change-overview-cite,
+#change-analysis .change-overview-card.is-pinned .change-overview-cite,
+#change-analysis .change-overview-card:focus-visible .change-overview-cite{
+  max-height:60px;
+  opacity:1;
+  margin:0 0 8px!important;
+  pointer-events:auto;
+}
+#change-analysis .change-overview-card:hover > p:not(.change-overview-cite),
+#change-analysis .change-overview-card.is-pinned > p:not(.change-overview-cite),
+#change-analysis .change-overview-card:focus-visible > p:not(.change-overview-cite){
+  max-height:340px;
+  opacity:1;
+  margin:0 0 6px!important;
+  pointer-events:auto;
+}
+/* Pinned state — clearer affordance that this card is "locked open" */
+#change-analysis .change-overview-card.is-pinned{
+  border-color:rgba(168,85,68,0.40);
+  background:#FBF8F2;
+  box-shadow:var(--shadow-2);
+}
+#change-analysis .change-overview-card.is-pinned:hover{
+  transform:none;
 }
 #change-analysis .change-overview-card:active{transform:translateY(0)}
 #change-analysis .change-overview-card:focus-visible{

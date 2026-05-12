@@ -25,8 +25,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260507ac">
-<link rel="stylesheet" href="design-system.css?v=20260507ad">
+<link rel="stylesheet" href="styles.css?v=20260512ag">
+<link rel="stylesheet" href="design-system.css?v=20260512ae">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -619,7 +619,7 @@
             <line x1="2.5" y1="8" x2="17.5" y2="8"/>
             <line x1="7.5" y1="8" x2="7.5" y2="16.5"/>
           </svg>
-          <span>Neuropsych Tables</span>
+          <span>Score Tables</span>
         </button>
         <div class="topnav-group" data-bucket="change">
           <button type="button" class="topnav-item nav-item" data-target="rci-crawford" data-bucket="change">
@@ -665,6 +665,7 @@
             <line x1="6.5" y1="13" x2="13" y2="13"/>
           </svg>
           <span>Report Writer</span>
+          <span class="nav-dev-tag" aria-label="In development">In dev</span>
         </button>
         <button type="button" class="topnav-item nav-item" data-target="effectsize" data-bucket="effectsize">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -694,9 +695,9 @@
   <nav class="nav-list" aria-label="Primary navigation">
     <div class="nav-item active" data-target="home"><span class="nav-item-num">00</span>Home</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">01</span>Score Converter</div>
-    <div class="nav-item" data-target="battery"><span class="nav-item-num">02</span>Neuropsych Report Tables</div>
+    <div class="nav-item" data-target="battery"><span class="nav-item-num">02</span>Score Tables</div>
     <div class="nav-item" data-target="premorbid"><span class="nav-item-num">03</span>Premorbid Estimate</div>
-    <div class="nav-item" data-target="report-writer"><span class="nav-item-num">04</span>Report Writer</div>
+    <div class="nav-item" data-target="report-writer"><span class="nav-item-num">04</span>Report Writer<span class="nav-dev-tag" aria-label="In development">In dev</span></div>
     <div class="nav-item" data-target="effectsize"><span class="nav-item-num">05</span>Effect Size Tools</div>
     <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">06</span>Change Analysis</div>
     <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Norms Database</div>
@@ -740,7 +741,7 @@
           </li>
           <li class="home-pathway-tool">
             <span class="home-pathway-tool-num">02</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;battery&quot;]').click()">Neuropsych Report Tables</span>
+            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;battery&quot;]').click()">Score Tables</span>
           </li>
           <li class="home-pathway-tool">
             <span class="home-pathway-tool-num">03</span>
@@ -1874,11 +1875,11 @@
     <p class="section-desc">Estimate premorbid cognitive ability using the Test of Premorbid Functioning (ToPF), demographic regression equations, and the Oklahoma Premorbid Intelligence Estimate (OPIE-4). The second tab compares ToPF-predicted scores against actual WAIS-IV / WMS-IV index scores with base-rate look-ups. The third tab compares OPIE-4-predicted prorated FSIQ / GAI against the patient's achieved WAIS-IV indices.</p>
 
 
-    <div class="tabs pre-tabs" aria-label="Premorbid analysis views">
-      <div class="tab active" data-pre-tab="inputs"><span class="pre-tab-num">1</span><span>Inputs</span></div>
-      <div class="tab" data-pre-tab="estimates"><span class="pre-tab-num">2</span><span>Premorbid Estimates</span></div>
-      <div class="tab" data-pre-tab="predict"><span class="pre-tab-num">3</span><span>ToPF Predicted vs Actual</span></div>
-      <div class="tab" data-pre-tab="opiepredict"><span class="pre-tab-num">4</span><span>OPIE-4 Predicted vs Actual</span></div>
+    <div class="tabs pre-tabs" role="tablist" aria-label="Premorbid analysis views">
+      <div class="tab" data-pre-tab="inputs" role="tab"><span>Inputs</span></div>
+      <div class="tab active" data-pre-tab="estimates" role="tab" aria-selected="true"><span>Premorbid Estimates</span></div>
+      <div class="tab" data-pre-tab="predict" role="tab"><span>ToPF vs Actual</span></div>
+      <div class="tab" data-pre-tab="opiepredict" role="tab"><span>OPIE-4 vs Actual</span></div>
     </div>
 
     <!-- Tab 1: Inputs -->
@@ -5956,7 +5957,7 @@
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260507ai"></script>
 <script src="app.js?v=20260507ai"></script>
-<script src="design-system.js?v=20260507ai" defer></script>
+<script src="design-system.js?v=20260512ad" defer></script>
 <script src="app-effectsize-page.js"></script>
 <script>
 (function(){
@@ -6234,7 +6235,7 @@
   overviewPanel.innerHTML = `
     <p class="change-overview-intro">Five methods for evaluating test–retest change, ranging from descriptive to fully model-based. Pick the model that best matches the data you have available and the inferential rigour required. The Crawford regression-based method is generally preferred when suitable normative test–retest data are available.</p>
     <div class="change-overview-cards">
-      <article class="change-overview-card" data-target-method="sdi" tabindex="0" role="button" aria-label="Open Standard Deviation Index method">
+      <article class="change-overview-card" data-target-method="sdi" tabindex="0" role="button" aria-label="Toggle Standard Deviation Index details">
         <div class="change-overview-meta"><span class="change-overview-num">01</span><span class="change-overview-level">Level 1 · Descriptive</span></div>
         <h3>Standard Deviation Index</h3>
         <p>Quantifies the difference between two scores in standard-deviation units (SDΔ). Useful as a transparent, distribution-free index of magnitude when test–retest reliability data are unavailable, or when a quick descriptive summary is sufficient. <strong>Caveat:</strong> does not control for measurement error, practice effects, or regression to the mean - should not be used alone to claim "reliable change".</p>
@@ -6243,7 +6244,7 @@
           <span class="change-overview-feature is-none">Descriptive only - no statistical adjustments</span>
         </div>
       </article>
-      <article class="change-overview-card" data-target-method="rci-basic" tabindex="0" role="button" aria-label="Open Simple Reliable Change method">
+      <article class="change-overview-card" data-target-method="rci-basic" tabindex="0" role="button" aria-label="Toggle Simple Reliable Change details">
         <div class="change-overview-meta"><span class="change-overview-num">02</span><span class="change-overview-level">Level 2 · Measurement error</span></div>
         <h3>Simple Reliable Change</h3>
         <p class="change-overview-cite">Jacobson &amp; Truax (1991)</p>
@@ -6253,7 +6254,7 @@
           <span class="change-overview-feature is-on" title="Tests whether change exceeds the standard error of measurement, derived from the test's reliability coefficient.">Measurement error</span>
         </div>
       </article>
-      <article class="change-overview-card" data-target-method="rci-practice" tabindex="0" role="button" aria-label="Open Practice Effect-Adjusted method">
+      <article class="change-overview-card" data-target-method="rci-practice" tabindex="0" role="button" aria-label="Toggle Practice Effect-Adjusted details">
         <div class="change-overview-meta"><span class="change-overview-num">03</span><span class="change-overview-level">Level 3 · Practice-adjusted</span></div>
         <h3>Practice Effect-Adjusted</h3>
         <p class="change-overview-cite">Iverson (2001)</p>
@@ -6264,7 +6265,7 @@
           <span class="change-overview-feature is-on" title="Subtracts the average retest improvement seen in the normative sample.">Practice effect</span>
         </div>
       </article>
-      <article class="change-overview-card" data-target-method="rci-srb" tabindex="0" role="button" aria-label="Open Standardised Regression-Based method">
+      <article class="change-overview-card" data-target-method="rci-srb" tabindex="0" role="button" aria-label="Toggle Standardised Regression-Based details">
         <div class="change-overview-meta"><span class="change-overview-num">04</span><span class="change-overview-level">Level 4 · Regression-based</span></div>
         <h3>Standardised Regression-Based</h3>
         <p class="change-overview-cite">McSweeney et al. (1993)</p>
@@ -6276,7 +6277,7 @@
           <span class="change-overview-feature is-on" title="Predicts retest from baseline, automatically correcting for regression to the mean at extreme baseline scores.">Regression to the mean</span>
         </div>
       </article>
-      <article class="change-overview-card change-overview-card-recommended" data-target-method="rci-crawford" tabindex="0" role="button" aria-label="Open Crawford Regression-Based method">
+      <article class="change-overview-card change-overview-card-recommended" data-target-method="rci-crawford" tabindex="0" role="button" aria-label="Toggle Crawford Regression-Based details">
         <div class="change-overview-meta"><span class="change-overview-num">05</span><span class="change-overview-level">Level 5 · Sample-size adjusted</span></div>
         <h3>Crawford Regression-Based <span class="change-overview-badge">Recommended</span></h3>
         <p class="change-overview-cite">Crawford &amp; Garthwaite (2007)</p>
@@ -6332,15 +6333,19 @@
   // Set initial state to overview
   activateMethod('overview', { updateHash: false });
 
-  // Make the overview description cards clickable - each opens its method tab
+  /* Overview cards are now informational toggles. By default they show
+     only the name + "Adjusts for" tags; hover reveals the body and
+     citation, click pins them open. Method navigation happens via the
+     tab strip at the top of the section. */
   overviewPanel.querySelectorAll('.change-overview-card[data-target-method]').forEach(card => {
-    const go = () => {
-      const id = card.dataset.targetMethod;
-      if (id) activateMethod(id);
+    const togglePin = () => {
+      const pinned = card.classList.toggle('is-pinned');
+      card.setAttribute('aria-pressed', pinned ? 'true' : 'false');
     };
-    card.addEventListener('click', go);
+    card.setAttribute('aria-pressed', 'false');
+    card.addEventListener('click', togglePin);
     card.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); }
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); togglePin(); }
     });
   });
 
@@ -6384,8 +6389,11 @@
   });
 
   const initialHash = window.location.hash.replace('#', '');
-  const initialMethod = methods.some(method => method.id === initialHash) ? initialHash : methods[0].id;
-  if (methods.some(method => method.id === initialHash)){
+  const isKnownMethod = methods.some(method => method.id === initialHash);
+  /* Default landing for Change Analysis is the About overview. Direct
+     hash links to a method still work. */
+  const initialMethod = (initialHash === 'overview' || isKnownMethod) ? initialHash : 'overview';
+  if (isKnownMethod){
     const nav = document.querySelector(`.nav-item[data-target="change-analysis"]`) || primaryNav;
     showChangeSection(nav);
   }

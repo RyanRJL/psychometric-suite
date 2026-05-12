@@ -520,11 +520,27 @@ document.addEventListener('click', e => {
 });
 
 const examples = {
-  'rci-basic': {name:'Example index score',sd:'15',r:'0.90',t1:'100',t2:'89'},
-  'rci-practice': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89'},
-  'rci-srb': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89'},
-  'rci-crawford': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',n:'100',t1:'100',t2:'89'}
+  'rci-basic': {name:'Example index score',sd:'15',r:'0.90',t1:'100',t2:'89',isExample:true},
+  'rci-practice': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89',isExample:true},
+  'rci-srb': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89',isExample:true},
+  'rci-crawford': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',n:'100',t1:'100',t2:'89',isExample:true}
 };
+
+/* A row is "blank" if the user has entered nothing in it — the seeded
+   placeholder rows that sit below an example fall into this category.
+   Returns false for example rows so they're never accidentally swept out.
+   Used by the autofill loaders to remove a stale placeholder when the
+   user picks a test from the family list. */
+const ROW_BLANK_KEYS = ['name','group','raw','score','t1','t2','sd','m1','sd1','m2','sd2','r','rCorrected','n'];
+function isRowBlank(r){
+  if (!r) return true;
+  if (r.isExample) return false;
+  return ROW_BLANK_KEYS.every(k => r[k] == null || r[k] === '');
+}
+function dropFirstBlankRow(rows){
+  const idx = rows.findIndex(isRowBlank);
+  if (idx >= 0) rows.splice(idx, 1);
+}
 function renderConverter(){
   const type = document.getElementById('conv-type').value;
   const val = document.getElementById('conv-value').value;
@@ -919,7 +935,7 @@ function batteryPremorbidThresholdLabel(v){
 }
 function syncBatteryPremorbidControls(){
   const enabled = document.getElementById('bat-prem-enable')?.checked;
-  ['bat-prem-score','bat-prem-threshold'].forEach(id => {
+  ['bat-prem-score','bat-prem-threshold','bat-prem-link-btn'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.disabled = !enabled;
   });
@@ -929,15 +945,216 @@ function getBatteryPremorbidComparison(){
   const scoreEl = document.getElementById('bat-prem-score');
   const estimate = parseFloat(scoreEl?.value);
   if (!enabled || isNaN(estimate)) return null;
-  return { estimate };
+  const lo  = parseFloat(scoreEl.dataset.lowerBound);
+  const hi  = parseFloat(scoreEl.dataset.upperBound);
+  const see = parseFloat(scoreEl.dataset.see);
+  return {
+    estimate,
+    lowerBound: Number.isFinite(lo)  ? lo  : null,
+    upperBound: Number.isFinite(hi)  ? hi  : null,
+    see:        Number.isFinite(see) ? see : null,
+    modelLabel: scoreEl.dataset.modelLabel || null,
+    ciLabel:    scoreEl.dataset.ciLabel || null
+  };
 }
+/* Asterisk logic.
+   AUTOFILL MODE (SEE available): asterisks map to one-tailed-equivalent
+   confidence that the observed score is below the premorbid estimate.
+   Thresholds use the two-tailed CI lower bounds at 90 / 95 / 99% — the
+   same convention clinicians read in the Premorbid Estimates table.
+       *   below estimate − 1.645·SEE   (90% CI lower bound)
+       **  below estimate − 1.960·SEE   (95% CI lower bound)
+       *** below estimate − 2.576·SEE   (99% CI lower bound)
+   MANUAL MODE (no SEE): falls back to the simple SD-below-entered logic,
+   since there's no CI information to derive multi-tier thresholds from.
+       *   ≥ 1   SD below entered
+       **  ≥ 1.5 SD below entered
+       *** ≥ 2   SD below entered                                       */
+const PREMORBID_CI_Z = { ninety: 1.645, ninetyFive: 1.960, ninetyNine: 2.576 };
 function batteryPremorbidStars(ss, prem){
-  if (!prem || !Number.isFinite(ss)) return '';
+  if (!prem || !Number.isFinite(ss) || !Number.isFinite(prem.estimate)) return '';
+  if (Number.isFinite(prem.see) && prem.see > 0){
+    const t90 = prem.estimate - PREMORBID_CI_Z.ninety      * prem.see;
+    const t95 = prem.estimate - PREMORBID_CI_Z.ninetyFive  * prem.see;
+    const t99 = prem.estimate - PREMORBID_CI_Z.ninetyNine  * prem.see;
+    if (ss <= t99) return '***';
+    if (ss <= t95) return '**';
+    if (ss <= t90) return '*';
+    return '';
+  }
   const diffSd = (prem.estimate - ss) / 15;
-  if (diffSd >= 2) return '***';
+  if (diffSd >= 2)   return '***';
   if (diffSd >= 1.5) return '**';
-  if (diffSd >= 1) return '*';
+  if (diffSd >= 1)   return '*';
   return '';
+}
+
+/* Read available premorbid model estimates from the Premorbid page's
+   results table. Returns an array of {label, fsiq, lo, hi, see}. Rows
+   that haven't been computed (showing "-") are skipped. SEE is needed
+   to derive multi-tier CI thresholds for the asterisk logic. */
+function getPremorbidEstimateOptions(){
+  const out = [];
+  const rows = document.querySelectorAll('#pre-results-table tbody tr');
+  rows.forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    if (tds.length < 4) return;
+    const rawLabel = (tds[0]?.textContent || '').replace(/\?\s*$/, '').trim();
+    const fsiq = parseFloat((tds[1]?.textContent || '').replace(/[^\d.\-]/g, ''));
+    const lo   = parseFloat((tds[2]?.textContent || '').replace(/[^\d.\-]/g, ''));
+    const hi   = parseFloat((tds[3]?.textContent || '').replace(/[^\d.\-]/g, ''));
+    const see  = parseFloat((tds[5]?.textContent || '').replace(/[^\d.\-]/g, ''));
+    if (rawLabel && Number.isFinite(fsiq)){
+      out.push({
+        label: rawLabel,
+        fsiq,
+        lo:  Number.isFinite(lo)  ? lo  : null,
+        hi:  Number.isFinite(hi)  ? hi  : null,
+        see: Number.isFinite(see) ? see : null
+      });
+    }
+  });
+  return out;
+}
+function getPremorbidCiLevel(){
+  const sel = document.getElementById('pre-ci');
+  const v = sel ? sel.value : '90';
+  return v === '95' ? '95% CI' : '90% CI';
+}
+/* Update the link-status block beside the autofill button. When a link
+   is active, the autofill button hides and the status block takes its
+   slot in the source row. The status shows all three asterisk-threshold
+   CIs (90/95/99%) so the clinician can see what each asterisk means.
+
+   Asterisks are rendered with spaces (* * *) instead of (***) — the
+   spaced form avoids the bold-rendering quirk where the middle glyph
+   appears misaligned against its neighbours. */
+function updatePremorbidLinkStatus(){
+  const scoreEl  = document.getElementById('bat-prem-score');
+  const statusEl = document.getElementById('bat-prem-link-status');
+  const linkWrap = document.getElementById('bat-prem-link-wrap');
+  if (!scoreEl || !statusEl){ return; }
+  const see   = parseFloat(scoreEl.dataset.see);
+  const est   = parseFloat(scoreEl.value);
+  const lo    = parseFloat(scoreEl.dataset.lowerBound);
+  const hi    = parseFloat(scoreEl.dataset.upperBound);
+  const label = scoreEl.dataset.modelLabel;
+  const ci    = scoreEl.dataset.ciLabel;
+  const clearBtn = '<button type="button" class="bat-prem-link-clear" id="bat-prem-link-clear" aria-label="Unlink premorbid estimate">×</button>';
+  const linkActive = (Number.isFinite(see) && see > 0 && Number.isFinite(est) && label) || (Number.isFinite(lo) && label);
+
+  /* When the link is active, hide the autofill button (mutually
+     exclusive with the status block in the source row). */
+  if (linkWrap) linkWrap.style.display = linkActive ? 'none' : '';
+
+  if (Number.isFinite(see) && see > 0 && Number.isFinite(est) && label){
+    const lcb90 = Math.round(est - 1.645 * see);
+    const lcb95 = Math.round(est - 1.960 * see);
+    const lcb99 = Math.round(est - 2.576 * see);
+    /* Single compact line so the source row stays tidy. Asterisks are
+       rendered with spaces (* * *) to avoid the bold-glyph collision. */
+    statusEl.innerHTML =
+      '<span class="bat-prem-link-status-body">' +
+        `<strong>${escapeHtml(label)}</strong> ${Math.round(est)}` +
+        ` · <span class="bat-prem-link-tier"><strong>*</strong> ≤${lcb90}</span>` +
+        ` · <span class="bat-prem-link-tier"><strong>* *</strong> ≤${lcb95}</span>` +
+        ` · <span class="bat-prem-link-tier"><strong>* * *</strong> ≤${lcb99}</span>` +
+      '</span>' + clearBtn;
+    statusEl.hidden = false;
+    document.getElementById('bat-prem-link-clear')?.addEventListener('click', clearPremorbidLink);
+    return;
+  }
+  if (Number.isFinite(lo) && label){
+    /* Fallback for models without SEE — show just the single chosen CI. */
+    const range = Number.isFinite(hi) ? `${lo}–${hi}` : `≥${lo}`;
+    statusEl.innerHTML =
+      `<span class="bat-prem-link-text">Using <strong>${escapeHtml(label)}</strong>` +
+      (ci ? ` · ${escapeHtml(ci)} ${range}` : ` · lower bound ${lo}`) + '</span>' + clearBtn;
+    statusEl.hidden = false;
+    document.getElementById('bat-prem-link-clear')?.addEventListener('click', clearPremorbidLink);
+    return;
+  }
+  statusEl.innerHTML = '';
+  statusEl.hidden = true;
+}
+function clearPremorbidLink(){
+  const scoreEl = document.getElementById('bat-prem-score');
+  if (!scoreEl) return;
+  delete scoreEl.dataset.lowerBound;
+  delete scoreEl.dataset.upperBound;
+  delete scoreEl.dataset.see;
+  delete scoreEl.dataset.modelLabel;
+  delete scoreEl.dataset.ciLabel;
+  updatePremorbidLinkStatus();
+  renderBattery();
+}
+function applyPremorbidLink(option){
+  const scoreEl = document.getElementById('bat-prem-score');
+  if (!scoreEl || !option) return;
+  /* Mark the next legacy-input event as programmatic so the manual-edit
+     clear-on-input handler doesn't wipe the data attributes we're about to
+     set. */
+  scoreEl.dataset.programmaticUpdate = '1';
+  scoreEl.value = String(option.fsiq);
+  if (option.lo != null) scoreEl.dataset.lowerBound = String(option.lo);
+  else delete scoreEl.dataset.lowerBound;
+  if (option.hi != null) scoreEl.dataset.upperBound = String(option.hi);
+  else delete scoreEl.dataset.upperBound;
+  if (option.see != null) scoreEl.dataset.see = String(option.see);
+  else delete scoreEl.dataset.see;
+  scoreEl.dataset.modelLabel = option.label;
+  scoreEl.dataset.ciLabel    = getPremorbidCiLevel();
+  /* Mirror to the visible card input so the user sees the value change. */
+  const cardScore = document.getElementById('ds-prem-card-score');
+  if (cardScore && cardScore.value !== scoreEl.value) cardScore.value = scoreEl.value;
+  /* Make sure the checkbox is on so the comparison actually fires. */
+  const enable = document.getElementById('bat-prem-enable');
+  if (enable && !enable.checked){
+    enable.checked = true;
+    enable.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  delete scoreEl.dataset.programmaticUpdate;
+  updatePremorbidLinkStatus();
+  renderBattery();
+}
+/* Build / open / close the popover that lists available premorbid models. */
+function openPremorbidLinkPopover(){
+  const popover = document.getElementById('bat-prem-link-popover');
+  if (!popover) return;
+  const options = getPremorbidEstimateOptions();
+  if (!options.length){
+    popover.innerHTML =
+      '<div class="bat-prem-link-empty">No estimates yet — open the <strong>Premorbid</strong> page and enter inputs to generate a model.</div>';
+  } else {
+    popover.innerHTML = options.map((o, i) => {
+      const range = (o.lo != null && o.hi != null) ? `${o.lo}–${o.hi}` : '—';
+      return `<button type="button" class="bat-prem-link-option" data-idx="${i}">` +
+        `<span class="bat-prem-link-option-name">${escapeHtml(o.label)}</span>` +
+        `<span class="bat-prem-link-option-stats">FSIQ ${o.fsiq} · ${getPremorbidCiLevel()} ${range}</span>` +
+      '</button>';
+    }).join('');
+    popover.querySelectorAll('.bat-prem-link-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.dataset.idx, 10);
+        applyPremorbidLink(options[i]);
+        closePremorbidLinkPopover();
+      });
+    });
+  }
+  popover.classList.add('show');
+  // dismiss on outside click
+  setTimeout(() => document.addEventListener('click', premorbidLinkOutsideClick), 0);
+}
+function closePremorbidLinkPopover(){
+  document.getElementById('bat-prem-link-popover')?.classList.remove('show');
+  document.removeEventListener('click', premorbidLinkOutsideClick);
+}
+function premorbidLinkOutsideClick(e){
+  const pop = document.getElementById('bat-prem-link-popover');
+  const btn = document.getElementById('bat-prem-link-btn');
+  if (!pop) return;
+  if (pop.contains(e.target) || (btn && btn.contains(e.target))) return;
+  closePremorbidLinkPopover();
 }
 function batteryClassificationDetails(r, cls){
   const z = toZ(r.score, rowScoreType(r));
@@ -1120,7 +1337,7 @@ function renderBatteryApa(){
   const cls = document.getElementById('bat-class').value;
   const title = document.getElementById('bat-title').value || 'Test scores';
   const out = document.getElementById('bat-apa');
-  const valid = batteryRows.filter(r => r.name);
+  const valid = batteryRows.filter(r => r.name && !r.isExample);
   const completed = valid.filter(r => r.score !== '' && !isNaN(r.score));
   const types = new Set((completed.length ? completed : valid).map(r => rowScoreType(r)));
   const headerLabel = types.size === 1 ? scoreTypeLabel([...types][0]) : 'Score';
@@ -1157,6 +1374,9 @@ function loadFamilyIntoBattery(family){
   }
   const inferredType = inferScoreType(family);
   const names = Object.keys(db[family]);
+  // Sweep out the stale placeholder row that sits below the example before
+  // appending the autofilled tests.
+  dropFirstBlankRow(batteryRows);
   names.forEach(name => {
     batteryRows.push({ name, raw:'', score:'', group:family, scoreType:inferredType });
   });
@@ -1293,7 +1513,21 @@ document.getElementById('bat-type').addEventListener('change', renderBattery);
 document.getElementById('bat-class').addEventListener('change', renderBattery);
 document.getElementById('bat-title').addEventListener('input', renderBatteryApa);
 document.getElementById('bat-prem-enable').addEventListener('change', renderBattery);
-document.getElementById('bat-prem-score').addEventListener('input', renderBattery);
+document.getElementById('bat-prem-score').addEventListener('input', e => {
+  /* Skip the clear when the value was set by applyPremorbidLink — that
+     update is programmatic and should preserve the data attributes. */
+  if (e.target.dataset.programmaticUpdate) return;
+  /* A manual edit means the user no longer wants the CI-linked anchor.
+     Clear the link metadata so the comparison falls back to the point
+     estimate they're typing. */
+  delete e.target.dataset.lowerBound;
+  delete e.target.dataset.upperBound;
+  delete e.target.dataset.see;
+  delete e.target.dataset.modelLabel;
+  delete e.target.dataset.ciLabel;
+  updatePremorbidLinkStatus();
+  renderBattery();
+});
 document.getElementById('bat-prem-threshold').addEventListener('change', renderBattery);
 document.getElementById('bat-clear').addEventListener('click', clearBattery);
 
@@ -1505,7 +1739,7 @@ function renderSdiApa(){
   const d1 = sdiDateLabel('d1');
   const d2 = sdiDateLabel('d2');
   const out = document.getElementById('sdi-apa');
-  const named = sdiRows.filter(r => r.name);
+  const named = sdiRows.filter(r => r.name && !r.isExample);
   if (named.length === 0){ out.innerHTML = '<div class="apa-empty"><strong>APA-formatted output</strong>Add or select at least one test to preview the report-ready table.</div>'; return; }
   const cvDesc = cv === 0.90 ? '90% critical value (1.645)' : cv === 0.95 ? '95% critical value (1.96)' : `${cv} SD threshold`;
   const colCount = raw ? 7 : 6;
@@ -1557,6 +1791,7 @@ function loadFamilyIntoSdi(family){
   }
   const raw = sdiMode() === 'raw';
   const subtests = Object.entries(db[family]);
+  dropFirstBlankRow(sdiRows);
   subtests.forEach(([name, p]) => {
     sdiRows.push({ name, t1:'', t2:'', sd: raw ? sdiNormSd(p) : '', group:family });
   });
@@ -1955,7 +2190,7 @@ function renderRciApa(method){
   const st = rciState[method];
   const outId = `${method}-apa`;
   const out = document.getElementById(outId);
-  const valid = st.rows.filter(r => r.name);
+  const valid = st.rows.filter(r => r.name && !r.isExample);
   const cvLabel = st.cv === 0.95 ? '95%' : '90%';
   const cvLabelZ = st.cv === 0.95 ? '95% (z = 1.96)' : '90% (z = 1.645)';
   const methodNote = {
@@ -2192,7 +2427,9 @@ function loadFamilyIntoMethod(method, family){
       t1:'', t2:''
     }));
   }
-  // Append new auto-filled tests rather than replacing any tests already entered.
+  // Sweep out the stale placeholder row below the example, then append the
+  // autofilled tests (keeping any tests the user has already entered).
+  dropFirstBlankRow(rciState[method].rows);
   rciState[method].rows = rciState[method].rows.concat(newRows);
   renderRci(method);
   // Toast suppressed - the working-report pill is the single feedback channel
@@ -2569,9 +2806,11 @@ const PRE_TAB_LABELS = {
 };
 
 function switchPreTab(tabId){
-  document.querySelectorAll('[data-pre-tab]').forEach(t => t.classList.remove('active'));
+  // Scope to the pre-tabs strip — the topnav dropdown shares data-pre-tab
+  // attribute names and would otherwise steal the .active class.
+  document.querySelectorAll('#premorbid .pre-tabs .tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.pre-tab-content').forEach(c => c.classList.remove('active'));
-  const tabBtn = document.querySelector(`[data-pre-tab="${tabId}"]`);
+  const tabBtn = document.querySelector(`#premorbid .pre-tabs .tab[data-pre-tab="${tabId}"]`);
   if (tabBtn) tabBtn.classList.add('active');
   const content = document.getElementById('pre-' + tabId);
   if (content) content.classList.add('active');
@@ -2635,8 +2874,18 @@ function setupPreTabs(){
   const next = document.querySelector('.pre-nav-next');
   if (back) back.addEventListener('click', () => { if (back.dataset.goTab) switchPreTab(back.dataset.goTab); });
   if (next) next.addEventListener('click', () => { if (next.dataset.goTab) switchPreTab(next.dataset.goTab); });
-  // Initialise nav state for the default-active tab
-  updatePreNav('inputs');
+  // Initialise on "estimates" — Inputs is now an always-visible aside in the
+  // restructured layout, so its tab is hidden and shouldn't be the default.
+  // Set active classes directly (avoiding switchPreTab's scroll behaviour
+  // which can fire before the section is visible). Scope to .pre-tabs because
+  // the topnav dropdown shares the data-pre-tab attribute.
+  document.querySelectorAll('#premorbid .pre-tabs .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.pre-tab-content').forEach(c => c.classList.remove('active'));
+  const initBtn = document.querySelector('#premorbid .pre-tabs .tab[data-pre-tab="estimates"]');
+  if (initBtn) initBtn.classList.add('active');
+  const initContent = document.getElementById('pre-estimates');
+  if (initContent) initContent.classList.add('active');
+  updatePreNav('estimates');
 }
 
 // Build the achieved-input table for ToPF Predicted vs Actual
@@ -3387,20 +3636,22 @@ function addColumnTitles(){
 }
 function loadExampleRow(method){
   if (method === 'sdi'){
-    const example = sdiMode() === 'raw' ? {name:'Example memory score',t1:'42',t2:'36',sd:'8'} : {name:'Example memory score',t1:'9',t2:'6'};
+    const example = sdiMode() === 'raw'
+      ? {name:'Example memory score',t1:'42',t2:'36',sd:'8',isExample:true}
+      : {name:'Example memory score',t1:'9',t2:'6',isExample:true};
     sdiRows.push(example); renderSdi(); showToast('Example row added'); return;
   }
   if (method === 'battery'){
-    const example = {name:'Example subtest', raw:'25', score:'10'};
+    const example = {name:'Example subtest', raw:'25', score:'10', isExample:true};
     batteryRows.push(example); renderBattery(); showToast('Example row added'); return;
   }
-  const examples = {
-    'rci-basic': {name:'Example index score',sd:'15',r:'0.90',t1:'100',t2:'89'},
-    'rci-practice': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89'},
-    'rci-srb': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89'},
-    'rci-crawford': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',n:'100',t1:'100',t2:'89'}
+  const localExamples = {
+    'rci-basic': {name:'Example index score',sd:'15',r:'0.90',t1:'100',t2:'89',isExample:true},
+    'rci-practice': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89',isExample:true},
+    'rci-srb': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89',isExample:true},
+    'rci-crawford': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',n:'100',t1:'100',t2:'89',isExample:true}
   };
-  if (rciState[method]){ rciState[method].rows.push(examples[method]); renderRci(method); showToast('Example row added'); }
+  if (rciState[method]){ rciState[method].rows.push({...localExamples[method]}); renderRci(method); showToast('Example row added'); }
 }
 
 /* ============================================================
@@ -5576,10 +5827,16 @@ function setupReportWriter(){
 }
 
 /* ---------- INITIAL POPULATION ---------- */
-// Add a starter example row and one blank row to each editable table
-batteryRows = [{name:'Example subtest', raw:'25', score:'10'}, {name:'', raw:'', score:''}];
-sdiRows = [sdiMode() === 'raw' ? {name:'Example memory score',t1:'42',t2:'36',sd:'8'} : {name:'Example memory score',t1:'9',t2:'6'}, {}];
-['rci-basic', 'rci-practice', 'rci-srb', 'rci-crawford'].forEach(m => { rciState[m].rows = [examples[m], {}]; renderRci(m); });
+// Add a starter example row (purely illustrative, excluded from analyses)
+// and one blank row to each editable table.
+batteryRows = [{name:'Example subtest', raw:'25', score:'10', isExample:true}, {name:'', raw:'', score:''}];
+sdiRows = [
+  sdiMode() === 'raw'
+    ? {name:'Example memory score',t1:'42',t2:'36',sd:'8',isExample:true}
+    : {name:'Example memory score',t1:'9',t2:'6',isExample:true},
+  {}
+];
+['rci-basic', 'rci-practice', 'rci-srb', 'rci-crawford'].forEach(m => { rciState[m].rows = [{...examples[m]}, {}]; renderRci(m); });
 renderBattery();
 renderSdi();
 applyCalculatorPolish();
@@ -5599,6 +5856,19 @@ renderConverter();
   checkbox.addEventListener('change', sync);
   sync();
 })();
+
+/* Premorbid → Score-Tables auto-link: picker button + popover wiring.
+   Uses document-level delegation because the design-system rebuilds the
+   ds-prem-card later, replacing the original button. Delegation keeps the
+   handler attached regardless of when the markup arrives. */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('#bat-prem-link-btn');
+  if (!btn || btn.disabled) return;
+  e.stopPropagation();
+  const popover = document.getElementById('bat-prem-link-popover');
+  if (popover && popover.classList.contains('show')) closePremorbidLinkPopover();
+  else openPremorbidLinkPopover();
+});
 
 // Premorbid setup
 setupPreTabs();
@@ -5874,7 +6144,7 @@ refreshAll();
   const PAGE_TITLES = {
     home: 'Home',
     converter: 'Score Converter',
-    battery: 'Neuropsych Report Tables',
+    battery: 'Score Tables',
     'report-writer': 'Report Writer',
     effectsize: 'Effect Size Tools',
     sdi: 'Standard Deviation Index',
@@ -5950,7 +6220,7 @@ refreshAll();
 const ReportBundle = (function(){
   const STORAGE_KEY = 'workingReport_v1';
   const SOURCE_LABELS = {
-    'bat-apa':           'Neuropsych Tables',
+    'bat-apa':           'Score Tables',
     'sdi-apa':           'Standard Deviation Index',
     'rci-basic-apa':     'Simple Reliable Change',
     'rci-practice-apa':  'Practice-Adjusted RCI',

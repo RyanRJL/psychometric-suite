@@ -18,7 +18,7 @@
   const TITLE_MAP = {
     'home':           'Home',
     'converter':      'Score Converter',
-    'battery':        'Neuropsych Report Tables',
+    'battery':        'Score Tables',
     'report-writer':  'Report Writer',
     'effectsize':     'Effect Sizes',
     'change-analysis':'Change Analysis',
@@ -398,22 +398,50 @@
     premCard.className = 'ds-prem-card' + (premCheckbox && premCheckbox.checked ? ' is-enabled' : '');
     if (premCheckbox && premScoreInput){
       premCard.innerHTML = `
-        <span class="ds-inline-bar-label ds-prem-card-eyebrow">Premorbid comparison</span>
-        <div class="ds-prem-card-row">
-          <label class="ds-prem-card-toggle">
-            <input type="checkbox" class="ds-prem-card-checkbox"${premCheckbox.checked ? ' checked' : ''}>
-            <span class="ds-prem-card-mark" aria-hidden="true">
-              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5,6.5 5,9 9.5,3.5"/></svg>
-            </span>
-            <span class="ds-prem-card-desc">
-              <span class="ds-prem-card-desc-line">Flag subtest scores meaningfully below an estimated premorbid ability.</span>
-              <span class="ds-prem-card-desc-line">Adds <strong>*</strong> when ≥1 SD below, <strong>**</strong> when ≥1.5 SD, <strong>***</strong> when ≥2 SD.</span>
-            </span>
-          </label>
-          <div class="ds-prem-card-input-wrap">
-            <label class="ds-prem-card-input-label" for="ds-prem-card-score">Premorbid score</label>
-            <input type="number" id="ds-prem-card-score" class="ds-prem-card-score" placeholder="e.g. 110" step="any"${premCheckbox.checked ? '' : ' disabled'} aria-label="Premorbid standard score">
-          </div>
+        <label class="ds-prem-card-header">
+          <span class="ds-inline-bar-label ds-prem-card-eyebrow">
+            Premorbid comparison
+            <span class="ds-prem-card-eyebrow-tag">(informal)</span>
+          </span>
+          <input type="checkbox" class="ds-prem-card-checkbox"${premCheckbox.checked ? ' checked' : ''}>
+          <span class="ds-prem-card-mark" aria-hidden="true">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5,6.5 5,9 9.5,3.5"/></svg>
+          </span>
+        </label>
+
+        <!-- Info icon — full description lives in the tooltip -->
+        <span class="ds-prem-card-info" tabindex="0" role="button" aria-label="How premorbid comparison works">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5"/>
+            <line x1="8" y1="7" x2="8" y2="11.5"/>
+            <circle cx="8" cy="4.8" r="0.6" fill="currentColor" stroke="none"/>
+          </svg>
+          <span class="ds-prem-card-info-tip" role="tooltip">
+            Asterisks flag subtests below the premorbid estimate. When autofilled from the Premorbid page, thresholds are derived from the model's standard error of estimate: <strong>*</strong> below the 90% CI lower bound, <strong>**</strong> below 95%, <strong>***</strong> below 99%. When entered manually, asterisks fire at 1, 1.5, and 2&nbsp;SD below the entered value.
+          </span>
+        </span>
+
+        <!-- Primary: autofill (replaced by status block when a link is active) -->
+        <div class="bat-prem-link-wrap" id="bat-prem-link-wrap">
+          <button type="button" class="bat-prem-link-btn" id="bat-prem-link-btn"${premCheckbox.checked ? '' : ' disabled'}
+                  aria-haspopup="true" aria-expanded="false"
+                  title="Pull an estimate from the Premorbid page (uses the lower CI bound as the comparison anchor)">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 7h10"/>
+              <polyline points="8,3 12,7 8,11"/>
+            </svg>
+            Autofill from Premorbid page
+          </button>
+          <div class="bat-prem-link-popover" id="bat-prem-link-popover" role="menu"></div>
+        </div>
+        <div class="bat-prem-link-status" id="bat-prem-link-status" hidden></div>
+
+        <span class="ds-prem-card-or" aria-hidden="true">or</span>
+
+        <!-- Secondary: manual entry -->
+        <div class="ds-prem-card-input-wrap">
+          <label class="ds-prem-card-input-label" for="ds-prem-card-score">Manual</label>
+          <input type="number" id="ds-prem-card-score" class="ds-prem-card-score" placeholder="e.g. 110" step="any"${premCheckbox.checked ? '' : ' disabled'} aria-label="Premorbid standard score">
         </div>
       `;
     }
@@ -499,6 +527,9 @@
             newScore.disabled = !premCheckbox.checked;
             if (newScore.value !== premScoreInput.value) newScore.value = premScoreInput.value;
           }
+          /* Keep the picker link button enable-state in sync with the checkbox */
+          const linkBtn = premCard.querySelector('#bat-prem-link-btn');
+          if (linkBtn) linkBtn.disabled = !premCheckbox.checked;
           premCard.classList.toggle('is-enabled', premCheckbox.checked);
         };
         newCheckbox.addEventListener('change', () => {
@@ -1353,7 +1384,7 @@
   function rwAutoCollectBattery(){
     let rows = [];
     try { rows = (typeof batteryRows !== 'undefined' && Array.isArray(batteryRows)) ? batteryRows : []; } catch(e){}
-    return rows.filter(r => r && r.name && r.score !== '' && r.score != null).map(r => {
+    return rows.filter(r => r && r.name && r.score !== '' && r.score != null && !r.isExample).map(r => {
       const ss = rwAutoToStandard(r.score, r.scoreType);
       const desc = ss != null ? rwAutoDescriptor(ss) : '';
       const familyText = r.group || '';
@@ -1382,7 +1413,7 @@
     try {
       if (typeof sdiRows !== 'undefined' && Array.isArray(sdiRows)){
         sdiRows.forEach(r => {
-          if (!r || !r.name) return;
+          if (!r || !r.name || r.isExample) return;
           const t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
           if (!Number.isFinite(t1) || !Number.isFinite(t2)) return;
           const sd = parseFloat(r.sd);
@@ -1399,7 +1430,7 @@
       if (typeof rciState !== 'undefined' && rciState){
         Object.entries(rciState).forEach(([method, state]) => {
           (state.rows || []).forEach(r => {
-            if (!r || !r.name) return;
+            if (!r || !r.name || r.isExample) return;
             const family = r.group || '';
             const domain = rwAutoDetectDomain(r.name) || rwAutoDetectDomain(family) || null;
             if (!domain) return;
@@ -1574,26 +1605,27 @@
 
     const sentences = [];
     let i = startIdx;
-    // CVLT narrative uses capitalised "Scaled Score" form for parens
-    const paren = (r) => rwAutoFmtBracket(r, 'cap');
+    // Rule 20 — single-row bracket "(SS = X)" honouring rule-12 toggles.
+    const bkt = (r) => rwAutoR20BracketSingle(r);
 
     // 1. Learning curve — Rule 10 (ranged) OR Rule 13 (stable when first/last
-    //    fall in the same descriptor band)
+    //    fall in the same descriptor band). Rule 20: Title-Case bands,
+    //    "within the [Band] range" wording.
     if (trials.length >= 2){
       const first = trials[0], last = trials[trials.length - 1];
       const subj = rwAutoSubjectFor(i);
       const stable = first.descriptor && last.descriptor && first.descriptor === last.descriptor;
       if (stable){
         sentences.push(
-          subj.possessive + ' performance was stable across the five learning trials, ' +
-          first.descriptor.toLowerCase() + ' on both ' + first.subtest + paren(first) +
-          ' and ' + last.subtest + paren(last) + '.'
+          subj.possessive + ' performance was stable across the five learning trials, within the ' +
+          first.descriptor + ' range on both ' + first.subtest + bkt(first) +
+          ' and ' + last.subtest + bkt(last) + '.'
         );
       } else {
         sentences.push(
-          subj.possessive + ' performance ranged from ' + first.descriptor.toLowerCase() +
-          ' on ' + first.subtest + paren(first) + ' to ' +
-          last.descriptor.toLowerCase() + ' by ' + last.subtest + paren(last) + '.'
+          subj.possessive + ' performance ranged from ' + first.descriptor +
+          ' on ' + first.subtest + bkt(first) + ' to ' +
+          last.descriptor + ' by ' + last.subtest + bkt(last) + '.'
         );
       }
       i++;
@@ -1607,15 +1639,15 @@
 
     if (stableDelays){
       const subj = rwAutoSubjectFor(i);
-      // Combined bracket: "Scaled Score X for SDFR, Scaled Score Y for LDFR"
-      const sdfrSum = rwAutoScoreSummary(sdfr);
-      const ldfrSum = rwAutoScoreSummary(ldfr);
+      // Combined bracket: "(SS = X for SDFR, SS = Y for LDFR)" — honours toggles.
+      const sdfrSum = rwAutoR20ScoreSummary(sdfr);
+      const ldfrSum = rwAutoR20ScoreSummary(ldfr);
       const combined = (sdfrSum && ldfrSum)
         ? ' (' + sdfrSum + ' for ' + sdfr.subtest + ', ' + ldfrSum + ' for ' + ldfr.subtest + ')'
         : '';
       sentences.push(
-        subj.possessive + ' performance after both short and long delays was ' +
-        sdfr.descriptor.toLowerCase() + combined + '.'
+        subj.possessive + ' performance after both short and long delays was within the ' +
+        sdfr.descriptor + ' range' + combined + '.'
       );
       i++;
     } else {
@@ -1624,8 +1656,8 @@
         const subj = rwAutoSubjectFor(i);
         sentences.push(
           'After a short delay, ' + subj.possLower + ' performance on ' +
-          shortPrimary.subtest + ' was ' + shortPrimary.descriptor.toLowerCase() +
-          paren(shortPrimary) + '.'
+          shortPrimary.subtest + ' was within the ' + shortPrimary.descriptor + ' range' +
+          bkt(shortPrimary) + '.'
         );
         i++;
       }
@@ -1633,8 +1665,8 @@
         const subj = rwAutoSubjectFor(i);
         sentences.push(
           'Finally, after a long delay, ' + subj.possLower + ' performance on ' +
-          longPrimary.subtest + ' was ' + longPrimary.descriptor.toLowerCase() +
-          paren(longPrimary) + '.'
+          longPrimary.subtest + ' was within the ' + longPrimary.descriptor + ' range' +
+          bkt(longPrimary) + '.'
         );
         i++;
       }
@@ -1656,7 +1688,8 @@
         else                 phrase = 'not significantly assisted by the recognition trial';
       } else {
         // No LDFR available — fall back to a plain recognition report
-        sentences.push(subj.possessive + ' recognition performance was ' + recog.descriptor.toLowerCase() + paren(recog) + '.');
+        sentences.push(subj.possessive + ' recognition performance was within the ' +
+                       recog.descriptor + ' range' + bkt(recog) + '.');
         i++;
       }
 
@@ -1664,8 +1697,8 @@
         // Rule 16: include "up from {LDFR summary}" when assistance fired AND
         // at least one bracket toggle is on. When both toggles are off, the
         // entire parenthetical (including up-from) is omitted.
-        const recogSum = rwAutoScoreSummary(recog);
-        const ldfrSum  = (includeUpFrom && longPrimary) ? rwAutoScoreSummary(longPrimary) : '';
+        const recogSum = rwAutoR20ScoreSummary(recog);
+        const ldfrSum  = (includeUpFrom && longPrimary) ? rwAutoR20ScoreSummary(longPrimary) : '';
         let bracket = '';
         if (recogSum){
           const tail = ldfrSum
@@ -1683,56 +1716,288 @@
     return { sentences, nextIdx: i, auxiliary, composites };
   }
 
-  /* Per-descriptor-group result sentences with subject cycle and identical-
-     score collapse. When all rows in a descriptor cluster share the SAME
-     score, prose collapses to:
-        "[Subject's] performance on X, Y and Z was all in the average range
-         (Scaled Score 10, 50th percentile)."
-     Otherwise the existing list form is used. */
-  function rwAutoBatterySentences(rows, startIdx){
-    if (!rows.length) return { sentences: [], nextIdx: startIdx };
-    const groups = {};
+  /* ── Rule 20 — band-step ladders (Wechsler + AACN) ───────────
+     Both systems are 7 steps; index = step number (0 = lowest).
+     "Adjacent" = 1 step; "outlier" = 2+ steps from majority. */
+  const RWAUTO_WECHSLER_BANDS = [
+    'Extremely Low', 'Borderline', 'Low Average', 'Average',
+    'High Average', 'Superior', 'Very Superior'
+  ];
+  const RWAUTO_AACN_BANDS = [
+    'Exceptionally Low', 'Below Average', 'Low Average', 'Average',
+    'High Average', 'Above Average', 'Exceptionally High'
+  ];
+  function rwAutoBandStep(label){
+    const w = RWAUTO_WECHSLER_BANDS.indexOf(label);
+    if (w >= 0) return w;
+    const a = RWAUTO_AACN_BANDS.indexOf(label);
+    if (a >= 0) return a;
+    return -1;
+  }
+
+  /* Composite / index score detection. Composites render in paragraph 1
+     (after the rule-8 opener) with their own per-row sentence and a label-
+     specific bracket like "(FSIQ = X)". */
+  const RWAUTO_COMPOSITE_LABELS = {
+    'Full Scale IQ':              'FSIQ',
+    'General Ability Index':      'GAI',
+    'Verbal Comprehension Index': 'VCI',
+    'Perceptual Reasoning Index': 'PRI',
+    'Working Memory Index':       'WMI',
+    'Processing Speed Index':     'PSI',
+    'Visual Spatial Index':       'VSI',
+    'Fluid Reasoning Index':      'FRI',
+    'Cognitive Proficiency Index':'CPI',
+    'Auditory Memory Index':      'AMI',
+    'Visual Memory Index':        'VMI',
+    'Visual Working Memory Index':'VWMI',
+    'Immediate Memory Index':     'IMI',
+    'Delayed Memory Index':       'DMI',
+    'General Memory Index':       'GMI'
+  };
+  const RWAUTO_COMPOSITE_RX = /\b(FSIQ|GAI|VCI|PRI|WMI|PSI|VSI|FRI|CPI|AMI|VMI|VWMI|IMI|DMI|GMI|Index|Quotient|Composite|Full Scale IQ)\b/i;
+  function rwAutoIsComposite(row){
+    return RWAUTO_COMPOSITE_RX.test(String(row.subtest || ''));
+  }
+  function rwAutoCompositeLabel(name){
+    if (RWAUTO_COMPOSITE_LABELS[name]) return RWAUTO_COMPOSITE_LABELS[name];
+    for (const full in RWAUTO_COMPOSITE_LABELS){
+      if (name.indexOf(full) >= 0) return RWAUTO_COMPOSITE_LABELS[full];
+    }
+    return name; // fallback to the raw name
+  }
+
+  /* Numbers as words — shared between Rule 19 (CVLT) and Rule 20. */
+  const RWAUTO_NUM_WORDS = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+  function rwAutoNumWord(n){ return RWAUTO_NUM_WORDS[n] || String(n); }
+  function rwAutoNumWordCap(n){ const w = rwAutoNumWord(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  /* Rule 20 SS bracket helpers — honour the rule-12 toggles
+     (rwAutoShowStd / rwAutoShowPct). With both off, no bracket at all. */
+  function rwAutoR20BracketSingle(row){
+    if (!rwAutoShowStd && !rwAutoShowPct) return '';
+    const parts = [];
+    if (rwAutoShowStd) parts.push('SS = ' + row.score);
+    if (rwAutoShowPct){
+      const p = rwAutoSsToPercentile(row.ss);
+      if (p != null) parts.push(rwAutoOrdinal(p) + ' percentile');
+    }
+    return parts.length ? ' (' + parts.join(', ') + ')' : '';
+  }
+  function rwAutoR20BracketList(items){
+    if (!rwAutoShowStd && !rwAutoShowPct) return '';
+    const parts = [];
+    if (rwAutoShowStd){
+      parts.push('SS = ' + rwAutoListJoin(items.map(r => String(r.score))));
+    }
+    if (rwAutoShowPct){
+      const pcts = items.map(r => rwAutoSsToPercentile(r.ss)).filter(p => p != null);
+      if (pcts.length === 1) parts.push(rwAutoOrdinal(pcts[0]) + ' percentile');
+      else if (pcts.length >= 2) parts.push('at the ' + rwAutoListJoin(pcts.map(rwAutoOrdinal)) + ' percentiles');
+    }
+    return parts.length ? ' (' + parts.join(', ') + ')' : '';
+  }
+  function rwAutoR20BracketRange(items){
+    if (!rwAutoShowStd) return '';
+    const ssVals = items.map(r => r.ss).filter(Number.isFinite);
+    if (!ssVals.length) return '';
+    const lo = Math.min.apply(null, ssVals);
+    const hi = Math.max.apply(null, ssVals);
+    return ' (SS range: ' + lo + '–' + hi + ')';
+  }
+  /* Compact "SS = X[, Yth percentile]" string — no surrounding parens.
+     Used inside multi-part brackets (combined delay bracket, recognition
+     "up from LDFR" bracket). Both toggles off → empty string. */
+  function rwAutoR20ScoreSummary(row){
+    if (!row) return '';
+    const parts = [];
+    if (rwAutoShowStd) parts.push('SS = ' + row.score);
+    if (rwAutoShowPct){
+      const p = rwAutoSsToPercentile(row.ss);
+      if (p != null) parts.push(rwAutoOrdinal(p) + ' percentile');
+    }
+    return parts.join(', ');
+  }
+
+  /* Composite bracket: "(FSIQ = X)" / "(WMI = X)" — uses the matched label. */
+  function rwAutoR20CompositeBracket(row){
+    if (!rwAutoShowStd && !rwAutoShowPct) return '';
+    const parts = [];
+    if (rwAutoShowStd) parts.push(rwAutoCompositeLabel(row.subtest) + ' = ' + row.score);
+    if (rwAutoShowPct){
+      const p = rwAutoSsToPercentile(row.ss);
+      if (p != null) parts.push(rwAutoOrdinal(p) + ' percentile');
+    }
+    return parts.length ? ' (' + parts.join(', ') + ')' : '';
+  }
+
+  /* Render a band group as one sentence.
+     - count form (4+ in band): "Three of the N WAIS-IV subtests performed within the X range (SS range: A–B)"
+     - named (2-3): "[possessive] performance on A and B was within the X range (SS = a and b)"
+     - single: "[possessive] performance on A was within the X range (SS = a)"
+
+     Connector handling (Rule 20):
+       'finally' → "Finally, …" — sentence opener, lowercase pronoun/numword after
+       'however' → "However, …" — sentence opener, lowercase pronoun/numword after
+       'also'    → embedded ("was also within" / "also performed within")
+       null      → no connector
+
+     Outliers (only on the majority sentence) fold into a "though" clause
+     attached to the end of the sentence regardless of connector.
+     The cycle index `idx` is consumed and returned advanced for person-subject
+     sentences; count sentences do not advance the cycle. */
+  function rwAutoR20RenderBandSentence(group, outliers, brandTotal, brandName, idx, connector){
+    const items = group.items;
+    const band  = group.band;
+    let sent;
+    let advanceCycle = false;
+    const isCount = items.length >= 4;
+
+    /* Sentence-opener prefixes (with trailing comma + space). */
+    let prefix = '';
+    if (connector === 'finally')      prefix = 'Finally, ';
+    else if (connector === 'however') prefix = 'However, ';
+
+    if (isCount){
+      /* Count form — measure-subject; does NOT advance cycle. */
+      const range = rwAutoR20BracketRange(items);
+      const brandPart = brandName ? brandName + ' ' : '';
+      const countWord = prefix
+        ? rwAutoNumWord(items.length)        // lowercase after a connector comma
+        : rwAutoNumWordCap(items.length);    // capitalised at sentence start
+      const verbPart = (connector === 'also')
+        ? ' also performed within the '
+        : ' performed within the ';
+      sent = prefix + countWord + ' of the ' + brandTotal + ' ' +
+             brandPart + 'subtests' + verbPart + band + ' range' + range;
+    } else {
+      const labels = rwAutoListJoin(items.map(r => r.subtest));
+      const subj = rwAutoSubjectFor(idx);
+      const bracket = items.length === 1
+        ? rwAutoR20BracketSingle(items[0])
+        : rwAutoR20BracketList(items);
+      const verbPart = (connector === 'also')
+        ? ' was also within the '
+        : ' was within the ';
+      const subjPart = prefix ? subj.possLower : subj.possessive;
+      sent = prefix + subjPart + ' performance on ' + labels + verbPart + band + ' range' + bracket;
+      advanceCycle = true;
+    }
+
+    /* "Though" clause for outliers — only fires on the majority sentence. */
+    if (outliers && outliers.length){
+      const ordered = [...outliers].sort((a,b) =>
+        Math.abs(a.step - group.step) - Math.abs(b.step - group.step) ||
+        b.step - a.step);
+      const phrases = ordered.map(o => {
+        const oLabels = rwAutoListJoin(o.items.map(r => r.subtest));
+        const oBracket = o.items.length === 1 ? rwAutoR20BracketSingle(o.items[0]) : rwAutoR20BracketList(o.items);
+        return oLabels + ' fell in the ' + o.band + ' range' + oBracket;
+      });
+      const possLow = rwAutoPossessive(false);
+      sent += ', though ' + possLow + ' performance on ' + phrases.join(', and on ');
+    }
+
+    return { text: sent + '.', nextIdx: advanceCycle ? idx + 1 : idx };
+  }
+
+  /* Per-brand sentence builder (Rule 20).
+     Returns three arrays + a nextIdx for the next brand's opener:
+       composites — sentences for paragraph 1 (after the rule-8 opener)
+       sentences  — band sentences for paragraph 2 (cycle resets at start)
+       trailing   — sentences for paragraph 3 (process scores / unclassifiable)
+       nextIdx    — domain-level cycle for the next brand's opener
+     `isLastBrand` toggles the "Finally," connector on the first band sentence. */
+  function rwAutoBatterySentences(rows, startIdx, isLastBrand){
+    if (!rows.length) return { composites: [], sentences: [], trailing: [], nextIdx: startIdx };
+
+    const compRows  = [];
+    const subRows   = [];
+    const trailRows = [];
     rows.forEach(r => {
-      if (!r.descriptor || r.ss == null) return;
-      const key = (r.descriptor || '').toLowerCase() + '|' + (r.scoreType || 'standard');
-      if (!groups[key]) groups[key] = { descriptor: r.descriptor, scoreType: r.scoreType, items: [] };
-      groups[key].items.push(r);
+      if (!r) return;
+      if (rwAutoIsComposite(r)){ compRows.push(r); return; }
+      if (r.descriptor && r.ss != null && rwAutoBandStep(r.descriptor) >= 0){ subRows.push(r); return; }
+      trailRows.push(r);
     });
-    const sentences = [];
+
+    const brandName = (rows[0] && rows[0].brand) || '';
+
+    /* Paragraph 1 — composites (after the opener), domain-level cycle. */
+    const composites = [];
     let i = startIdx;
-    Object.keys(groups).forEach(k => {
-      const g = groups[k];
-      const labels = g.items.map(r => r.subtest);
-      const scores = g.items.map(r => r.score);
-      const labelList = rwAutoListJoin(labels);
-      const subj = rwAutoSubjectFor(i);
-      const descLower = g.descriptor.toLowerCase();
-
-      const allSameScore = scores.length > 1 && scores.every(s => String(s) === String(scores[0]));
-
-      if (allSameScore){
-        // Collapse to singular: capitalised form, percentile in brackets per
-        // toggle. Rule 6 amend 1: two-item form uses "were both in the X range";
-        // three or more items keep the existing "was all in the X range" form.
-        const bracket = rwAutoFmtBracket(g.items[0], 'cap');
-        const verbPhrase = (g.items.length === 2)
-          ? ' were both in the '
-          : ' was all in the ';
-        sentences.push(subj.possessive + ' performance on ' + labelList +
-                       verbPhrase + descLower + ' range' + bracket + '.');
-      } else if (g.items.length === 1){
-        const bracket = rwAutoFmtBracket(g.items[0], 'lower');
-        sentences.push(subj.possessive + ' performance on ' + labelList +
-                       ' was ' + descLower + bracket + '.');
-      } else {
-        // Multiple different scores in same descriptor cluster
-        const bracket = rwAutoFmtBracketList(g.items);
-        sentences.push(subj.possessive + ' performance on ' + labelList +
-                       ' was ' + descLower + bracket + '.');
-      }
-      i++;
+    compRows.forEach(r => {
+      const subj = rwAutoSubjectFor(i); i++;
+      const verb = i % 2 === 0 ? ' was within ' : ' was within '; // same wording either way
+      const bracket = rwAutoR20CompositeBracket(r);
+      composites.push(subj.possessive + ' ' + r.subtest + verb + 'the ' + r.descriptor + ' range' + bracket + '.');
     });
-    return { sentences, nextIdx: i };
+
+    /* Paragraph 2 — band sentences. Cycle RESETS to 0 at start of paragraph. */
+    const sentences = [];
+    let p2Idx = 0;
+    if (subRows.length){
+      // Group by band
+      const byBand = new Map();
+      subRows.forEach(r => {
+        if (!byBand.has(r.descriptor)) byBand.set(r.descriptor, []);
+        byBand.get(r.descriptor).push(r);
+      });
+      const groups = [];
+      byBand.forEach((items, band) => {
+        groups.push({ band, items, step: rwAutoBandStep(band), count: items.length });
+      });
+      // Sort: count desc, then step desc (higher leads on tie)
+      const sorted = [...groups].sort((a,b) =>
+        (b.count - a.count) || (b.step - a.step));
+      const majority = sorted[0];
+      const others   = sorted.slice(1);
+
+      const adjUp    = [];
+      const adjDown  = [];
+      const outliers = [];
+      others.forEach(g => {
+        const d = g.step - majority.step;
+        if (d === 1) adjUp.push(g);
+        else if (d === -1) adjDown.push(g);
+        else if (Math.abs(d) >= 2) outliers.push(g);
+      });
+      adjUp.sort((a,b) => a.step - b.step);     // closest above first
+      adjDown.sort((a,b) => b.step - a.step);   // closest below first
+
+      // 1. Majority sentence — connector = "Finally," for last brand in domain
+      const majConn = isLastBrand ? 'finally' : null;
+      const mainOut = rwAutoR20RenderBandSentence(majority, outliers, subRows.length, brandName, p2Idx, majConn);
+      sentences.push(mainOut.text);
+      p2Idx = mainOut.nextIdx;
+      // 2. Adjacent-up — "also" embedded
+      adjUp.forEach(g => {
+        const r = rwAutoR20RenderBandSentence(g, [], subRows.length, brandName, p2Idx, 'also');
+        sentences.push(r.text); p2Idx = r.nextIdx;
+      });
+      // 3. Adjacent-down — "However," sentence opener
+      adjDown.forEach(g => {
+        const r = rwAutoR20RenderBandSentence(g, [], subRows.length, brandName, p2Idx, 'however');
+        sentences.push(r.text); p2Idx = r.nextIdx;
+      });
+    }
+
+    /* Paragraph 3 — trailing. Continues from para-2 cycle. */
+    const trailing = [];
+    trailRows.forEach(r => {
+      if (r.descriptor && r.ss != null && rwAutoBandStep(r.descriptor) >= 0){
+        // Process score with valid band — render as individual sentence
+        const subj = rwAutoSubjectFor(p2Idx); p2Idx++;
+        const bracket = rwAutoR20BracketSingle(r);
+        trailing.push(subj.possessive + ' performance on ' + r.subtest +
+                      ' was within the ' + r.descriptor + ' range' + bracket + '.');
+      } else {
+        // Unclassifiable
+        trailing.push(r.subtest + ' could not be compared against normative data and is not included in the summary above.');
+      }
+    });
+
+    return { composites, sentences, trailing, nextIdx: i };
   }
 
   /* Rule 19 — change-analysis paragraph(s) for one domain.
@@ -2506,33 +2771,44 @@
           ? rwAutoBrandOpenerFirst(d, brand, brandRows, idx)
           : rwAutoBrandOpenerNext(d, brand, brandRows, idx);
         idx++;
-        // CVLT verbal-learning gets its own structured narrative (learning
-        // curve → short delay → long delay → recognition). Other brands use
-        // the generic per-test sentence builder.
         const useCvlt = (d === 'verbal_learning_memory') && rwAutoIsCvltBrand(brand);
-        const body = useCvlt
-          ? rwAutoCvltNarrative(brandRows, idx)
-          : rwAutoBatterySentences(brandRows, idx);
-        idx = body.nextIdx;
-        paragraphs.push('<p>' + [opener].concat(body.sentences).join(' ') + '</p>');
 
-        // Auxiliary measures (CVLT only) — render in their own paragraph
-        // after the main narrative. Uses the standard per-test sentences.
-        if (body.auxiliary && body.auxiliary.length){
-          const aux = rwAutoBatterySentences(body.auxiliary, idx);
-          idx = aux.nextIdx;
-          if (aux.sentences.length){
-            paragraphs.push('<p>' + aux.sentences.join(' ') + '</p>');
+        if (useCvlt){
+          /* CVLT keeps its existing cluster narrative (learning curve →
+             short delay → long delay → recognition). Phase 5 will overhaul
+             this to use band labels per Rule 20; for now it ships unchanged. */
+          const body = rwAutoCvltNarrative(brandRows, idx);
+          idx = body.nextIdx;
+          paragraphs.push('<p>' + [opener].concat(body.sentences).join(' ') + '</p>');
+          if (body.auxiliary && body.auxiliary.length){
+            const aux = rwAutoBatterySentences(body.auxiliary, idx);
+            idx = aux.nextIdx;
+            if (aux.sentences.length){
+              paragraphs.push('<p>' + aux.sentences.join(' ') + '</p>');
+            }
           }
-        }
-        // Composite measures (CVLT only) — Standard Score scale (T1-5 Correct,
-        // Total Recall Correct, Delayed Recall Correct). Rule 18: rendered as
-        // a third paragraph after the auxiliary paragraph.
-        if (body.composites && body.composites.length){
-          const comp = rwAutoBatterySentences(body.composites, idx);
-          idx = comp.nextIdx;
-          if (comp.sentences.length){
-            paragraphs.push('<p>' + comp.sentences.join(' ') + '</p>');
+          if (body.composites && body.composites.length){
+            const comp = rwAutoBatterySentences(body.composites, idx);
+            idx = comp.nextIdx;
+            if (comp.sentences.length){
+              paragraphs.push('<p>' + comp.sentences.join(' ') + '</p>');
+            }
+          }
+        } else {
+          /* Rule 20 — three-paragraph structure per brand:
+             P1: opener + composites
+             P2: subtest band sentences (cycle resets); "Finally," fires on
+                 the first band sentence when this is the last brand in domain
+             P3: trailing (process scores / unclassifiable) */
+          const isLastBrand = (bi === brandOrder.length - 1);
+          const body = rwAutoBatterySentences(brandRows, idx, isLastBrand);
+          idx = body.nextIdx;
+          paragraphs.push('<p>' + [opener].concat(body.composites).join(' ') + '</p>');
+          if (body.sentences && body.sentences.length){
+            paragraphs.push('<p>' + body.sentences.join(' ') + '</p>');
+          }
+          if (body.trailing && body.trailing.length){
+            paragraphs.push('<p>' + body.trailing.join(' ') + '</p>');
           }
         }
       });
@@ -2549,7 +2825,7 @@
     if (!any){
       return '<div class="rwauto-empty">' +
         '<div class="rwauto-empty-title">No scores entered yet</div>' +
-        '<div class="rwauto-empty-sub">Enter scores in <strong>Neuropsych Tables</strong>, <strong>Premorbid Estimate</strong>, or <strong>Change Analysis</strong>. The descriptive narrative will build itself here.</div>' +
+        '<div class="rwauto-empty-sub">Enter scores in <strong>Score Tables</strong>, <strong>Premorbid Estimate</strong>, or <strong>Change Analysis</strong>. The descriptive narrative will build itself here.</div>' +
       '</div>';
     }
 

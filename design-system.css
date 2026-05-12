@@ -2099,14 +2099,92 @@ input[type="text"].ds-inline-bar-input{
   border: 1px solid var(--ds-border);
   border-radius: var(--ds-radius-md);
   box-shadow: var(--ds-shadow-1);
-  padding: var(--ds-space-3) var(--ds-space-4);
+  padding: var(--ds-space-3) var(--ds-space-5);
   margin: 0 0 var(--ds-space-2);
   display: flex;
-  align-items: center;
-  gap: var(--ds-space-4);
+  align-items: center;              /* single-row flat layout */
+  flex-wrap: wrap;                  /* let very narrow viewports wrap */
+  gap: var(--ds-space-3);
   transition:
     border-color var(--ds-duration-fast) var(--ds-ease),
     background var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-prem-card-or{
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle, #8B8B8B);
+  padding: 0 4px;
+  user-select: none;
+}
+
+/* ---------- Info icon + tooltip ---------- */
+.ds-prem-card-info{
+  flex-shrink: 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #9C3D2A;
+  background: #FAF1ED;
+  border: 1px solid rgba(156,61,42,0.45);
+  border-radius: 50%;
+  cursor: help;
+  outline: none;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 1px 2px rgba(156,61,42,0.10);
+}
+.ds-prem-card-info svg{
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.8;
+}
+.ds-prem-card-info:hover,
+.ds-prem-card-info:focus-visible{
+  color: #FFFFFF;
+  border-color: #9C3D2A;
+  background: #9C3D2A;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(156,61,42,0.25);
+}
+.ds-prem-card-info-tip{
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, -4px);
+  width: min(360px, 80vw);
+  padding: 10px 12px;
+  background: #FFFFFF;
+  border: 1px solid rgba(20,15,5,0.14);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(20,15,5,0.14);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: #5A5A5A;
+  line-height: 1.5;
+  letter-spacing: -0.003em;
+  text-align: left;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms;
+  z-index: 100;
+  white-space: normal;
+}
+.ds-prem-card-info-tip strong{
+  color: #1A1A1A;
+  font-weight: 600;
+}
+.ds-prem-card-info:hover .ds-prem-card-info-tip,
+.ds-prem-card-info:focus-visible .ds-prem-card-info-tip{
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
 }
 .ds-prem-card.is-enabled{
   border-color: rgba(156,61,42,0.25);
@@ -2114,15 +2192,39 @@ input[type="text"].ds-inline-bar-input{
 }
 
 /* Eyebrow label — same typography as the bar's labels (Quick add, Score
-   type, Class) so it reads as part of the same system */
+   type, Class) so it reads as part of the same system. Inside the new
+   header column it sits above the checkbox (vertical stack). Allowed to
+   wrap so the longer "Premorbid comparison" label can break naturally. */
 .ds-prem-card-eyebrow{
+  display: block;
+  margin-bottom: 8px;
+  text-align: center;
+  line-height: 1.25;
+}
+.ds-prem-card-eyebrow-tag{
+  display: block;
+  margin-top: 3px;
+  /* inherit font-size, weight, colour, text-transform from the eyebrow */
+}
+
+/* Header column on the LEFT of the card: eyebrow stacked above the
+   checkbox, both clickable as one label (toggles the comparison). */
+.ds-prem-card-header{
   flex-shrink: 0;
-  white-space: nowrap;
-  border-right: 1px solid var(--ds-border);
-  padding-right: var(--ds-space-3);
-  align-self: stretch;
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding-right: var(--ds-space-4);
+  border-right: 1px solid var(--ds-border);
+  align-self: stretch;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-prem-card-header:hover .ds-prem-card-mark{
+  border-color: var(--ds-primary);
 }
 
 .ds-prem-card-row{
@@ -2178,9 +2280,9 @@ input[type="text"].ds-inline-bar-input{
   border-color: var(--ds-primary);
 }
 .ds-prem-card-desc{
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   font-family: var(--sans);
   font-size: var(--ds-text-sm);
   font-weight: var(--ds-weight-regular);
@@ -2206,10 +2308,13 @@ input[type="text"].ds-inline-bar-input{
    off, the input is disabled (visually faded) but stays in place so
    users can see the feature exists and what it expects. */
 .ds-prem-card-input-wrap{
-  flex-shrink: 0;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: var(--ds-space-2);
+}
+.ds-prem-card-info + .bat-prem-link-wrap{
+  flex: 0 0 auto;
 }
 .ds-prem-card-input-label{
   font-family: var(--sans);
@@ -2982,27 +3087,77 @@ input[type="text"].ds-inline-bar-input{
   padding-right: 26px !important;
 }
 
-/* ---------- Right column: slim tab pills ---------- */
+/* ---------- Right column: underline tabs ----------
+   Conventional underline-tab pattern. The strip is a flat row of tab labels
+   with a hairline divider beneath. The active tab is anchored to the
+   content card below by a thick accent underline that visually replaces
+   the hairline at the active position. */
 #premorbid.ds-prem-restructured .pre-tabs{
-  margin: 0 0 var(--ds-space-3) !important;
-  gap: var(--ds-space-2) !important;
+  display: flex !important;
   flex-wrap: nowrap !important;
+  gap: 0 !important;
+  margin: 0 0 -1px !important;            /* overlap the content card's top border */
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(20,15,5,0.10) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
 }
-#premorbid.ds-prem-restructured .pre-tabs .tab{
-  padding: 9px var(--ds-space-3) !important;
+#premorbid.ds-prem-restructured .pre-tabs > .tab{
+  position: relative !important;
+  flex: 0 0 auto !important;
+  padding: 12px 18px !important;
+  margin: 0 !important;
+  margin-bottom: -1px !important;          /* sit on the strip's bottom border */
   min-height: 0 !important;
-  font-size: 13px !important;
+  font-family: var(--sans) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
   line-height: 1.2 !important;
+  color: #6B6B6B !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
   white-space: nowrap !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: var(--ds-space-2) !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  transition: color 120ms ease, border-color 120ms ease !important;
 }
+#premorbid.ds-prem-restructured .pre-tabs > .tab:hover{
+  color: #1A1A1A !important;
+  border-bottom-color: rgba(20,15,5,0.20) !important;
+  background: transparent !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+#premorbid.ds-prem-restructured .pre-tabs > .tab.active,
+#premorbid.ds-prem-restructured .pre-tabs > .tab.active:hover{
+  color: #1A1A1A !important;
+  font-weight: 600 !important;
+  border-bottom-color: #1A1A1A !important; /* the accent underline */
+  background: transparent !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+/* Numbered chips are dropped — keep the rule defensive in case markup includes them */
 #premorbid.ds-prem-restructured .pre-tab-num{
   display: none !important;
 }
-#premorbid.ds-prem-restructured .pre-tabs .tab span:not(.pre-tab-num){
+#premorbid.ds-prem-restructured .pre-tabs .tab span{
   white-space: nowrap !important;
+}
+/* The content panel below the tabs visually "owns" the tab strip:
+   share its top edge with the active tab's underline. */
+#premorbid.ds-prem-restructured .pre-tab-content{
+  border-top: none !important;
+  margin-top: 0 !important;
 }
 
 /* Hide the bottom Back/Next nav — with Inputs tab gone there's only 3 panes */
@@ -3374,3 +3529,179 @@ input[type="text"].ds-inline-bar-input{
   border-radius: var(--ds-radius-md) !important;
   letter-spacing: var(--ds-tracking-base) !important;
 }
+
+/* ============================================================================
+   PREMORBID COMPARISON — auto-link picker UI
+   A "tools row" sits below the main premorbid card row. Contains the
+   picker button, the popover (anchored under the button), the linked-CI
+   status chip, and the disabled Tier 2 SEM-adjustment toggle.
+   ============================================================================ */
+/* Legacy .ds-prem-card-tools — kept defensive in case any other markup
+   references it; the new layout uses .ds-prem-card-stack instead. */
+.ds-prem-card-tools{
+  flex-basis: 100%;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(20,15,5,0.08);
+}
+.bat-prem-link-wrap{
+  position: relative;
+  display: inline-flex;
+}
+.bat-prem-link-btn{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  height: 34px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #9C3D2A;
+  background: #FFFFFF;
+  border: 1px solid rgba(156,61,42,0.30);
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+.bat-prem-link-btn svg{ width: 13px; height: 13px; flex: 0 0 auto; }
+.bat-prem-link-btn:hover:not(:disabled){
+  background: #FAF1ED;
+  border-color: rgba(156,61,42,0.55);
+  color: #7E2F1F;
+  box-shadow: 0 2px 6px rgba(156,61,42,0.10);
+}
+.bat-prem-link-btn:disabled{
+  color: #B7B0A4;
+  background: #FFFFFF;
+  border-color: rgba(20,15,5,0.10);
+  cursor: not-allowed;
+}
+.bat-prem-link-popover{
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 280px;
+  max-width: 360px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: #FFFFFF;
+  border: 1px solid rgba(20,15,5,0.14);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(20,15,5,0.14);
+  /* Higher than the working-report onboarding bubble (z 8999) so the
+     popover is never blocked by it. */
+  z-index: 9100;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.bat-prem-link-popover.show{ display: flex; }
+.bat-prem-link-option{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: background 120ms ease;
+}
+.bat-prem-link-option:hover{ background: rgba(20,15,5,0.04); }
+.bat-prem-link-option-name{
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1A1A1A;
+  line-height: 1.2;
+}
+.bat-prem-link-option-stats{
+  font-size: 11px;
+  color: #6B6B6B;
+  font-variant-numeric: tabular-nums;
+}
+.bat-prem-link-empty{
+  padding: 10px 8px;
+  font-size: 11.5px;
+  color: #6B6B6B;
+  line-height: 1.4;
+}
+/* Status block — only shown when a link is active. Default hidden so
+   the empty container doesn't render as an orphan strip. Single-line
+   layout now (lives inline in the source row, no longer a multi-row
+   block). */
+.bat-prem-link-status[hidden]{ display: none !important; }
+.bat-prem-link-status{
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #FAF7F0;
+  border: 1px solid rgba(20,15,5,0.10);
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  color: #5A5A5A;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bat-prem-link-status-body{
+  display: inline;
+  font-variant-numeric: tabular-nums;
+}
+.bat-prem-link-status-body strong{ color: #1A1A1A; font-weight: 600; }
+.bat-prem-link-tier{
+  display: inline;
+  font-variant-numeric: tabular-nums;
+}
+.bat-prem-link-tier strong{
+  color: #1A1A1A;
+  font-weight: 600;
+  font-family: var(--mono, var(--sans));
+}
+/* Legacy single-line text path (fallback when SEE missing) */
+.bat-prem-link-text{
+  font-size: 11px;
+  color: #5A5A5A;
+  line-height: 1.2;
+}
+.bat-prem-link-text strong{ color: #1A1A1A; font-weight: 600; }
+.bat-prem-link-clear{
+  flex: 0 0 auto;
+  width: 16px; height: 16px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: #8B8B8B;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.bat-prem-link-clear:hover{ background: rgba(20,15,5,0.08); color: #1A1A1A; }
+
+/* Visually mute the source row when the comparison is off, but keep it
+   visible so the affordances stay discoverable. The disabled button
+   still communicates "enable comparison first". */
+.ds-prem-card:not(.is-enabled) .ds-prem-card-source,
+.ds-prem-card:not(.is-enabled) .ds-prem-card-tools{ opacity: 0.6; }
+
