@@ -906,7 +906,6 @@
   <section class="section" id="battery">
     <div class="eyebrow">Conversion · Clinical Outcomes Table</div>
     <h1 class="section-title">Clinical Outcomes Table</h1>
-    <p class="section-desc">Build a single results table from one or more test families. Auto-fill loads subtest names from the normative database - score type is inferred per family. Enter raw and standardised scores manually; percentiles and classifications populate per row.</p>
 
     <!-- SIDE-BY-SIDE PANELS: configuration | premorbid -->
     <div class="bat-panels-grid">
@@ -6121,26 +6120,9 @@
       if (scoreLabel) scoreLabel.textContent = 'Input score type';
       const autofillHint = autofill?.querySelector('.hint');
       if (autofillHint) autofillHint.textContent = '(populates subtest names from the normative database)';
-    } else if (!settings.querySelector('.rci-score-type')){
-      const scoreField = document.createElement('div');
-      scoreField.className = 'field';
-      scoreField.innerHTML = `
-        <label>Input score type</label>
-        <select class="rci-score-type" data-target="${method.id}">
-          <option value="standard" selected>Standard scores (M = 100, SD = 15)</option>
-          <option value="scaled">Scaled scores (M = 10, SD = 3)</option>
-          <option value="t">T-scores (M = 50, SD = 10)</option>
-          <option value="z">Z-scores (M = 0, SD = 1)</option>
-          <option value="raw">Raw / other metric</option>
-        </select>
-      `;
-      const firstRow = settings.querySelector('.field-row-3, .field-row-4') || settings;
-      firstRow.insertBefore(scoreField, firstRow.firstElementChild);
     }
 
-    const scoreField = method.id === 'sdi'
-      ? fieldFor(settings.querySelector('#sdi-type'))
-      : fieldFor(settings.querySelector('.rci-score-type'));
+    const scoreField = null;
     const thresholdField = fieldFor(settings.querySelector('#sdi-cv, .rci-cv'));
     let settingsList = settings.querySelector('.change-settings-list');
     if (!settingsList){

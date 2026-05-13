@@ -1833,12 +1833,7 @@ body .change-setup-grid,
 }
 
 .ds-inline-bar{
-  /* Grid columns sized to roughly match the column groups in the data
-     table below: ~50% over Subtest+norms, ~20% over score input columns,
-     ~30% over results columns. Each method's table is proportioned a bit
-     differently but this is the visual sweet spot across all five. */
-  display: grid;
-  grid-template-columns: 1.25fr 1fr 1.2fr;
+  display: flex;
   align-items: center;
   gap: var(--ds-space-4);
   padding: var(--ds-space-3) var(--ds-space-4);
@@ -1853,10 +1848,15 @@ body .change-setup-grid,
   display: flex;
   align-items: center;
   gap: var(--ds-space-3);
-  min-width: 0;                           /* allow shrinking below content size */
+  min-width: 0;
+}
+.ds-inline-bar-left{
+  flex: 1;
+  max-width: 680px;
 }
 .ds-inline-bar-right{
-  justify-content: flex-end;              /* pin threshold toggle to the right edge */
+  margin-left: auto;                      /* pin threshold to the right edge */
+  justify-content: flex-end;
 }
 
 /* Score type dropdown — sits between Quick add and Threshold */
@@ -2084,10 +2084,14 @@ input[type="text"].ds-inline-bar-input{
   color: var(--ds-text);
 }
 
-/* Battery variant — 3 columns. Quick Add | Score Type | Class.
-   Premorbid is no longer in the bar — it lives in its own card above. */
+/* Battery variant — 4 columns. Quick Add | Raw | Class | Score CI. */
 .ds-inline-bar-battery{
-  grid-template-columns: 1.7fr 0.9fr 0.85fr;
+  grid-template-columns: 1.6fr auto 0.85fr auto;
+}
+.ds-inline-bar-raw{
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ---- Premorbid card — sits above the inline bar.
@@ -2101,12 +2105,12 @@ input[type="text"].ds-inline-bar-input{
   border: 1px solid var(--ds-border);
   border-radius: var(--ds-radius-md);
   box-shadow: var(--ds-shadow-1);
-  padding: var(--ds-space-3) var(--ds-space-5);
+  padding: var(--ds-space-3) var(--ds-space-4);
   margin: 0 0 var(--ds-space-2);
   display: flex;
-  align-items: center;              /* single-row flat layout */
-  flex-wrap: wrap;                  /* let very narrow viewports wrap */
-  gap: var(--ds-space-3);
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--ds-space-2);
   transition:
     border-color var(--ds-duration-fast) var(--ds-ease),
     background var(--ds-duration-fast) var(--ds-ease);
@@ -2126,6 +2130,7 @@ input[type="text"].ds-inline-bar-input{
 .ds-prem-card-info{
   flex-shrink: 0;
   position: relative;
+  z-index: 200;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2198,27 +2203,31 @@ input[type="text"].ds-inline-bar-input{
    header column it sits above the checkbox (vertical stack). Allowed to
    wrap so the longer "Premorbid comparison" label can break naturally. */
 .ds-prem-card-eyebrow{
+  flex: 1;
+  min-width: 0;
   display: block;
-  margin-bottom: 8px;
-  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.25;
 }
 .ds-prem-card-eyebrow-tag{
-  display: block;
-  margin-top: 3px;
-  /* inherit font-size, weight, colour, text-transform from the eyebrow */
+  display: inline;
+  margin-left: 2px;
+  color: #9C3D2A;
 }
 
 /* Header column on the LEFT of the card: eyebrow stacked above the
    checkbox, both clickable as one label (toggles the comparison). */
 .ds-prem-card-header{
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 0;
-  padding-right: var(--ds-space-4);
+  gap: 6px;
+  padding-right: var(--ds-space-3);
   border-right: 1px solid var(--ds-border);
   align-self: stretch;
   cursor: pointer;
@@ -2241,7 +2250,7 @@ input[type="text"].ds-inline-bar-input{
   align-items: center;
   gap: var(--ds-space-3);
   cursor: pointer;
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
   user-select: none;
 }
@@ -2329,9 +2338,11 @@ input[type="text"].ds-inline-bar-input{
   cursor: pointer;
 }
 .ds-prem-card-score{
-  width: 110px;
+  width: 130px !important;
+  max-width: 130px !important;
+  min-width: 0 !important;
   height: 38px;
-  padding: 0 var(--ds-space-3);
+  padding: 0 6px !important;
   background: var(--ds-surface);
   border: 1px solid var(--ds-border-strong);
   border-radius: var(--ds-radius-sm);
@@ -2343,6 +2354,15 @@ input[type="text"].ds-inline-bar-input{
   transition:
     border-color var(--ds-duration-fast) var(--ds-ease),
     box-shadow var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-prem-card-score::-webkit-outer-spin-button,
+.ds-prem-card-score::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+.ds-prem-card-score{
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 .ds-prem-card-score::placeholder{
   color: var(--ds-text-faint);
@@ -2496,7 +2516,12 @@ input[type="text"].ds-inline-bar-input{
 
 /* Mobile / narrow screens — stack the bar sections vertically */
 @media (max-width: 720px){
-  .ds-inline-bar,
+  .ds-inline-bar{
+    flex-wrap: wrap;
+    gap: var(--ds-space-2);
+  }
+  .ds-inline-bar-left{ flex: 1 1 100%; }
+  .ds-inline-bar-right{ margin-left: 0; }
   .ds-inline-bar-battery{
     grid-template-columns: 1fr;
     gap: var(--ds-space-2);
@@ -3554,6 +3579,8 @@ input[type="text"].ds-inline-bar-input{
 .bat-prem-link-wrap{
   position: relative;
   display: inline-flex;
+  flex: 1;
+  min-width: 0;
 }
 .bat-prem-link-btn{
   display: inline-flex;
@@ -3658,12 +3685,15 @@ input[type="text"].ds-inline-bar-input{
   font-size: 11.5px;
   color: #5A5A5A;
   line-height: 1.25;
+  overflow: hidden;
+}
+.bat-prem-link-status-body{
+  flex: 1;
+  min-width: 0;
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.bat-prem-link-status-body{
-  display: inline;
   font-variant-numeric: tabular-nums;
 }
 .bat-prem-link-status-body strong{ color: #1A1A1A; font-weight: 600; }
@@ -3706,4 +3736,163 @@ input[type="text"].ds-inline-bar-input{
    still communicates "enable comparison first". */
 .ds-prem-card:not(.is-enabled) .ds-prem-card-source,
 .ds-prem-card:not(.is-enabled) .ds-prem-card-tools{ opacity: 0.6; }
+
+
+/* CI column — hidden when CI is off */
+#bat-table:not(.ci-enabled) .bat-ci-head,
+#bat-table:not(.ci-enabled) .bat-ci-cell{ display: none; }
+.bat-ci-head,
+.bat-ci-cell{
+  text-align: center !important;
+  vertical-align: middle;
+  line-height: 1;
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--ink-1, #1A1A1A);
+}
+/* Raw column show/hide */
+#bat-table.raw-hidden .bat-raw-head,
+#bat-table.raw-hidden .bat-raw-cell{ display: none; }
+
+
+/* Score type popover on the "+ Add another subtest" button */
+.bat-add-wrap{
+  position: relative;
+  display: inline-block;
+}
+.bat-type-popover{
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 300;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #E0E0E0);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  min-width: 200px;
+  padding: 4px;
+  flex-direction: column;
+  gap: 2px;
+}
+.bat-type-popover.is-open{
+  display: flex;
+}
+.bat-type-opt{
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-1, #1A1A1A);
+  text-align: left;
+  white-space: nowrap;
+}
+.bat-type-opt:hover{
+  background: var(--surface-2, #F5F5F5);
+}
+.bat-type-opt-sub{
+  font-size: 11px;
+  color: var(--ink-3, #9A9A9A);
+  font-weight: 400;
+}
+.bat-type-popover-heading{
+  margin: 4px 12px 6px;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3, #9A9A9A);
+}
+/* Per-row score type tag — inline after the row number */
+.bat-row-type-tag{
+  display: inline;
+  font-family: var(--sans);
+  font-size: 9px;
+  color: var(--ink-3, #9A9A9A);
+  letter-spacing: 0.02em;
+  margin-left: 2px;
+  white-space: nowrap;
+}
+
+/* Raw toggle lives in the actions <th> — small pill that lights up when raw is visible */
+.bat-raw-toggle{
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--border, #E0E0E0);
+  background: transparent;
+  color: var(--ink-3, #9A9A9A);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.bat-raw-toggle:hover,
+.bat-raw-toggle.is-active{
+  background: var(--surface-2, #F0F0F0);
+  color: var(--ink-1, #1A1A1A);
+  border-color: var(--ink-3, #9A9A9A);
+}
+
+/* Repeat-last-type button — secondary ghost style */
+.bat-add-repeat[hidden]{ display: none !important; }
+.bat-add-repeat{
+  color: var(--ink-2, #555);
+  background: transparent;
+  border: 1px solid var(--border, #E0E0E0);
+}
+.bat-add-repeat:hover{
+  background: var(--surface-2, #F5F5F5);
+}
+
+/* Note line between premorbid card and quick-add bar */
+.ds-prem-note{
+  display: none;
+  margin: -2px 0 16px;
+  padding: 0 2px;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  color: var(--ds-text-subtle, #8B8B8B);
+  white-space: nowrap;
+  line-height: 1;
+  text-align: right;
+}
+.ds-prem-card.is-enabled + .ds-prem-note{
+  display: block;
+}
+.ds-prem-note strong{
+  font-weight: 600;
+  color: #6A6A6A;
+}
+
+/* Flagging method toggle — inline with the other card controls */
+.ds-prem-mode-row{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.ds-prem-mode-desc{
+  font-family: var(--sans);
+  font-size: 11.5px;
+  color: var(--ds-text-subtle, #8B8B8B);
+  white-space: nowrap;
+}
+.ds-prem-mode-desc strong{
+  font-weight: 600;
+  color: #1A1A1A;
+}
+.ds-prem-card:not(.is-enabled) .ds-prem-mode-row{
+  opacity: 0.5;
+  pointer-events: none;
+}
 

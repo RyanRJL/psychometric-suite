@@ -917,6 +917,9 @@ function stripAgeRange(name){
 function scoreTypeLabel(type){
   return {scaled:'Scaled Score', standard:'Standard Score', t:'T-Score', z:'Z-Score'}[type] || 'Score';
 }
+function scoreTypeAbbr(type){
+  return {scaled:'Scaled', standard:'Standard', t:'T-Score', z:'Z-Score'}[type] || '';
+}
 function updateBatteryScoreHeader(){
   const type = document.getElementById('bat-type')?.value;
   const label = scoreTypeLabel(type);
@@ -957,23 +960,21 @@ function getBatteryPremorbidComparison(){
     ciLabel:    scoreEl.dataset.ciLabel || null
   };
 }
-/* Asterisk logic.
-   AUTOFILL MODE (SEE available): asterisks map to one-tailed-equivalent
-   confidence that the observed score is below the premorbid estimate.
-   Thresholds use the two-tailed CI lower bounds at 90 / 95 / 99% — the
-   same convention clinicians read in the Premorbid Estimates table.
+/* Asterisk logic — controlled by the "SD / SEE-based CI" toggle.
+   SD MODE (bat-prem-threshold = "sd", default):
+       *   ≥ 1   SD below premorbid point estimate
+       **  ≥ 1.5 SD below premorbid point estimate
+       *** ≥ 2   SD below premorbid point estimate
+   SEE MODE (bat-prem-threshold = "see", requires autofill SEE):
        *   below estimate − 1.645·SEE   (90% CI lower bound)
        **  below estimate − 1.960·SEE   (95% CI lower bound)
        *** below estimate − 2.576·SEE   (99% CI lower bound)
-   MANUAL MODE (no SEE): falls back to the simple SD-below-entered logic,
-   since there's no CI information to derive multi-tier thresholds from.
-       *   ≥ 1   SD below entered
-       **  ≥ 1.5 SD below entered
-       *** ≥ 2   SD below entered                                       */
+   SEE mode silently falls back to SD mode when SEE is not available.    */
 const PREMORBID_CI_Z = { ninety: 1.645, ninetyFive: 1.960, ninetyNine: 2.576 };
 function batteryPremorbidStars(ss, prem){
   if (!prem || !Number.isFinite(ss) || !Number.isFinite(prem.estimate)) return '';
-  if (Number.isFinite(prem.see) && prem.see > 0){
+  const mode = document.getElementById('bat-prem-threshold')?.value === 'see' ? 'see' : 'sd';
+  if (mode === 'see' && Number.isFinite(prem.see) && prem.see > 0){
     const t90 = prem.estimate - PREMORBID_CI_Z.ninety      * prem.see;
     const t95 = prem.estimate - PREMORBID_CI_Z.ninetyFive  * prem.see;
     const t99 = prem.estimate - PREMORBID_CI_Z.ninetyNine  * prem.see;
@@ -1048,17 +1049,23 @@ function updatePremorbidLinkStatus(){
   if (linkWrap) linkWrap.style.display = linkActive ? 'none' : '';
 
   if (Number.isFinite(see) && see > 0 && Number.isFinite(est) && label){
-    const lcb90 = Math.round(est - 1.645 * see);
-    const lcb95 = Math.round(est - 1.960 * see);
-    const lcb99 = Math.round(est - 2.576 * see);
-    /* Single compact line so the source row stays tidy. Asterisks are
-       rendered with spaces (* * *) to avoid the bold-glyph collision. */
+    const mode = document.getElementById('bat-prem-threshold')?.value === 'see' ? 'see' : 'sd';
+    let t1, t2, t3;
+    if (mode === 'see'){
+      t1 = Math.round(est - 1.645 * see);
+      t2 = Math.round(est - 1.960 * see);
+      t3 = Math.round(est - 2.576 * see);
+    } else {
+      t1 = Math.round(est - 1.0 * 15);
+      t2 = Math.round(est - 1.5 * 15);
+      t3 = Math.round(est - 2.0 * 15);
+    }
     statusEl.innerHTML =
       '<span class="bat-prem-link-status-body">' +
         `<strong>${escapeHtml(label)}</strong> ${Math.round(est)}` +
-        ` · <span class="bat-prem-link-tier"><strong>*</strong> ≤${lcb90}</span>` +
-        ` · <span class="bat-prem-link-tier"><strong>* *</strong> ≤${lcb95}</span>` +
-        ` · <span class="bat-prem-link-tier"><strong>* * *</strong> ≤${lcb99}</span>` +
+        ` · <span class="bat-prem-link-tier"><strong>*</strong> ≤${t1}</span>` +
+        ` · <span class="bat-prem-link-tier"><strong>* *</strong> ≤${t2}</span>` +
+        ` · <span class="bat-prem-link-tier"><strong>* * *</strong> ≤${t3}</span>` +
       '</span>' + clearBtn;
     statusEl.hidden = false;
     document.getElementById('bat-prem-link-clear')?.addEventListener('click', clearPremorbidLink);
@@ -1208,12 +1215,45 @@ function setupBatteryContextualTabbing(tbody){
     });
   });
 }
+function getBatteryRowReliability(row){
+  if (!row.group) return null;
+  const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
+  if (!db) return null;
+  const family = db[row.group];
+  if (!family) return null;
+  const entry = family[row.name];
+  if (!entry || typeof entry !== 'object') return null;
+  const r  = Number.isFinite(entry.rCorrected) ? entry.rCorrected :
+             Number.isFinite(entry.r)           ? entry.r           : null;
+  const sd = Number.isFinite(entry.sd1)         ? entry.sd1         : null;
+  return (r !== null && sd !== null) ? { r, sd } : null;
+}
+function getBatteryCiHtml(ss, row, level){
+  if (!Number.isFinite(ss)) return '';
+  const rel = getBatteryRowReliability(row);
+  if (!rel) return '';
+  const zMult  = level === '90' ? 1.645 : 1.960;
+  const sem    = rel.sd * Math.sqrt(1 - rel.r);
+  const loRaw  = ss - zMult * sem;
+  const hiRaw  = ss + zMult * sem;
+  const type   = rowScoreType(row);
+  const lo     = type === 'z' ? Math.round(loRaw * 10) / 10 : Math.max(1, Math.round(loRaw));
+  const hi     = type === 'z' ? Math.round(hiRaw * 10) / 10 : Math.round(hiRaw);
+  return `${lo}–${hi}`;
+}
+
 function renderBattery(){
   syncBatteryPremorbidControls();
   updateBatteryScoreHeader();
-  const cls = document.getElementById('bat-class').value;
+  const cls     = document.getElementById('bat-class').value;
+  const ciLevel = document.getElementById('bat-ci-level')?.value || 'off';
   const tbody = document.querySelector('#bat-table tbody');
   tbody.innerHTML = '';
+  document.getElementById('bat-table').classList.toggle('ci-enabled', ciLevel !== 'off');
+  const ciHead = document.querySelector('#bat-table .bat-ci-head');
+  if (ciHead) ciHead.textContent = ciLevel === 'off' ? 'CI' : `${ciLevel}% CI`;
+  const repeatBtn = document.getElementById('bat-add-repeat');
+  if (repeatBtn && batteryRows.length === 0) repeatBtn.hidden = true;
   let lastGroup = null;
   batteryRows.forEach((r, i) => {
     // Inject a group header when group changes
@@ -1221,7 +1261,7 @@ function renderBattery(){
       const ghr = document.createElement('tr');
       ghr.className = 'group-header';
       const stLabel = scoreTypeLabel(r.scoreType || inferScoreType(r.group));
-      ghr.innerHTML = `<td colspan="7">${escapeHtml(stripAgeRange(r.group))} <span class="type-badge">· ${stLabel}</span><button class="group-remove" data-rm-group="${escapeAttr(r.group)}" title="Remove group">×</button></td>`;
+      ghr.innerHTML = `<td colspan="8">${escapeHtml(stripAgeRange(r.group))} <span class="type-badge">· ${stLabel}</span><button class="group-remove" data-rm-group="${escapeAttr(r.group)}" title="Remove group">×</button></td>`;
       tbody.appendChild(ghr);
       lastGroup = r.group;
     } else if (!r.group){
@@ -1231,13 +1271,18 @@ function renderBattery(){
     const z = toZ(r.score, rowType);
     const pct = z == null ? '' : fmtPct(normCDF(z) * 100);
     const details = batteryClassificationDetails(r, cls);
+    const ss = parseFloat(r.score);
+    const ciHtml = ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : '';
     const tr = document.createElement('tr');
     if (r.group) tr.className = 'in-group';
+    const abbr = scoreTypeAbbr(rowType);
+    const typeTag = abbr ? `<span class="bat-row-type-tag">(${abbr})</span>` : '';
     tr.innerHTML = `
-      <td class="row-num">${i+1}</td>
+      <td class="row-num">${i+1}${typeTag}</td>
       <td><input type="text" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Subtest name"></td>
-      <td><input type="number" step="any" data-r="${i}" data-f="raw" value="${escapeAttr(r.raw)}"></td>
+      <td class="bat-raw-cell"><input type="number" step="any" data-r="${i}" data-f="raw" value="${escapeAttr(r.raw)}"></td>
       <td><input type="number" step="any" data-r="${i}" data-f="score" value="${escapeAttr(r.score)}"></td>
+      <td class="computed bat-ci-cell">${ciHtml}</td>
       <td class="computed">${pct}</td>
       <td class="computed ${details.className}">${details.html}</td>
       <td class="row-actions"><button onclick="batteryRemove(${i})" title="Remove">×</button></td>
@@ -1257,10 +1302,16 @@ function renderBattery(){
       const rowType = rowScoreType(batteryRows[i]);
       const z = toZ(batteryRows[i].score, rowType);
       const cells = tr.querySelectorAll('.computed');
-      cells[0].textContent = z == null ? '' : fmtPct(normCDF(z) * 100);
+      const ciCell = cells[0]; // bat-ci-cell
+      const pctCell = cells[1];
+      const clsCell = cells[2];
+      pctCell.textContent = z == null ? '' : fmtPct(normCDF(z) * 100);
       const details = batteryClassificationDetails(batteryRows[i], cls);
-      cells[1].className = `computed ${details.className}`.trim();
-      cells[1].innerHTML = details.html;
+      clsCell.className = `computed ${details.className}`.trim();
+      clsCell.innerHTML = details.html;
+      if (f === 'score' && ciCell){
+        ciCell.innerHTML = ciLevel !== 'off' ? getBatteryCiHtml(parseFloat(batteryRows[i].score), batteryRows[i], ciLevel) : '';
+      }
       renderBatteryApa();
     });
   });
@@ -1334,19 +1385,31 @@ function buildApaTableFromColumns(outId, columns, rows, groupLabelFn){
 }
 
 function renderBatteryApa(){
-  const cls = document.getElementById('bat-class').value;
-  const title = document.getElementById('bat-title').value || 'Test scores';
-  const out = document.getElementById('bat-apa');
-  const valid = batteryRows.filter(r => r.name && !r.isExample);
+  const cls      = document.getElementById('bat-class').value;
+  const title    = document.getElementById('bat-title').value || 'Test scores';
+  const out      = document.getElementById('bat-apa');
+  const ciLevel  = document.getElementById('bat-ci-level')?.value || 'off';
+  const rawHidden = document.getElementById('bat-table')?.classList.contains('raw-hidden') ?? true;
+  const valid    = batteryRows.filter(r => r.name && !r.isExample);
   const completed = valid.filter(r => r.score !== '' && !isNaN(r.score));
-  const types = new Set((completed.length ? completed : valid).map(r => rowScoreType(r)));
+  const types    = new Set((completed.length ? completed : valid).map(r => rowScoreType(r)));
   const headerLabel = types.size === 1 ? scoreTypeLabel([...types][0]) : 'Score';
+
+  /* Sync column visibility with the table's current settings before building */
+  if (!apaColumnState['bat-apa']) apaColumnState['bat-apa'] = new Set();
+  if (rawHidden) apaColumnState['bat-apa'].delete('raw');
+  else           apaColumnState['bat-apa'].add('raw');
+  if (ciLevel === 'off') apaColumnState['bat-apa'].delete('ci');
+  else                   apaColumnState['bat-apa'].add('ci');
+
+  const ciLabel = ciLevel !== 'off' ? `${ciLevel}% CI` : 'CI';
   const columns = [
-    { key:'subtest', label:'Subtest', num:false, render:r => escapeHtml(r.name) },
-    { key:'raw', label:'Raw Score', group:'Scores', num:true, render:r => escapeHtml(r.raw || '-') },
-    { key:'score', label:headerLabel, group:'Scores', num:true, render:r => escapeHtml(r.score || '') },
-    { key:'percentile', label:'Percentile', group:'Scores', num:true, render:r => { const z = toZ(r.score, rowScoreType(r)); return z == null ? '' : fmtPct(normCDF(z) * 100); }},
-    { key:'classification', label:'Classification', group:'Interpretation', num:false, render:r => batteryClassificationDetails(r, cls).html }
+    { key:'subtest',        label:'Subtest',        num:false, render:r => escapeHtml(r.name) },
+    { key:'raw',            label:'Raw Score',       group:'Scores', num:true,  defaultVisible:!rawHidden, render:r => escapeHtml(r.raw || '-') },
+    { key:'score',          label:headerLabel,       group:'Scores', num:true,  render:r => escapeHtml(r.score || '') },
+    { key:'ci',             label:ciLabel,           group:'Scores', num:true,  defaultVisible:ciLevel !== 'off', render:r => { const ss = parseFloat(r.score); return ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : ''; }},
+    { key:'percentile',     label:'Percentile',      group:'Scores', num:true,  render:r => { const z = toZ(r.score, rowScoreType(r)); return z == null ? '' : fmtPct(normCDF(z) * 100); }},
+    { key:'classification', label:'Classification',  group:'Interpretation', num:false, render:r => batteryClassificationDetails(r, cls).html }
   ];
   updateApaColumnControls('bat-apa', columns, renderBatteryApa);
   if (valid.length === 0){
@@ -1359,7 +1422,7 @@ function renderBatteryApa(){
     <div class="apa-table-num">Table 1</div>
     <div class="apa-table-title">${escapeHtml(title)}</div>
     ${buildApaTableFromColumns('bat-apa', columns, valid, r => r.group)}
-    <div class="apa-note"><strong>Note.</strong> Classification follows ${cls === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.${types.size > 1 ? ' Subtest scores are reported in their native standardised metric (scaled-score subtests vs. standard-score indices).' : ''}${premNote}</div>
+    <div class="apa-note"><strong>Note.</strong> Classification follows ${cls === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.${types.size > 1 ? ' Subtest scores are reported in their native standardised metric (scaled-score subtests vs. standard-score indices).' : ''}${ciLevel !== 'off' ? ` Confidence intervals are ${ciLevel}%.` : ''}${premNote}</div>
   `;
 }
 
@@ -1508,8 +1571,53 @@ function rebuildBatteryFamilyList(){
   });
 }
 
-document.getElementById('bat-add').addEventListener('click', () => batteryAddRow());
-document.getElementById('bat-type').addEventListener('change', renderBattery);
+/* Popover for score type when adding a manual row */
+(function(){
+  const addBtn    = document.getElementById('bat-add');
+  const repeatBtn = document.getElementById('bat-add-repeat');
+  const popover   = document.getElementById('bat-type-popover');
+  if (!addBtn || !popover) return;
+
+  const TYPE_LABELS = { scaled:'Scaled Score', standard:'Standard Score', t:'T-Score', z:'Z-Score' };
+  let lastType = null;
+
+  function setLastType(type){
+    lastType = type;
+    if (repeatBtn){
+      repeatBtn.textContent = `+ ${TYPE_LABELS[type] || type}`;
+      repeatBtn.hidden = false;
+    }
+  }
+
+  addBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = popover.classList.toggle('is-open');
+    addBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  popover.querySelectorAll('[data-add-type]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      popover.classList.remove('is-open');
+      addBtn.setAttribute('aria-expanded', 'false');
+      setLastType(btn.dataset.addType);
+      batteryAddRow({ name:'', raw:'', score:'', scoreType: btn.dataset.addType });
+    });
+  });
+
+  if (repeatBtn){
+    repeatBtn.addEventListener('click', () => {
+      if (lastType) batteryAddRow({ name:'', raw:'', score:'', scoreType: lastType });
+    });
+  }
+
+  document.addEventListener('click', e => {
+    if (!popover.contains(e.target) && e.target !== addBtn){
+      popover.classList.remove('is-open');
+      addBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+})();
 document.getElementById('bat-class').addEventListener('change', renderBattery);
 document.getElementById('bat-title').addEventListener('input', renderBatteryApa);
 document.getElementById('bat-prem-enable').addEventListener('change', renderBattery);
@@ -1528,7 +1636,8 @@ document.getElementById('bat-prem-score').addEventListener('input', e => {
   updatePremorbidLinkStatus();
   renderBattery();
 });
-document.getElementById('bat-prem-threshold').addEventListener('change', renderBattery);
+document.getElementById('bat-prem-threshold').addEventListener('change', () => { updatePremorbidLinkStatus(); renderBattery(); });
+document.getElementById('bat-ci-level').addEventListener('change', renderBattery);
 document.getElementById('bat-clear').addEventListener('click', clearBattery);
 
 /* ============================================================
@@ -1833,7 +1942,42 @@ function wireSdiAutofill(){
     if (!list.matches(':hover')) list.classList.remove('show');
   }, 180));
 }
-document.getElementById('sdi-add').addEventListener('click', () => sdiAddRow());
+(function(){
+  const addBtn    = document.getElementById('sdi-add');
+  const repeatBtn = document.getElementById('sdi-add-repeat');
+  const popover   = document.getElementById('sdi-type-popover');
+  const typeSelect = document.getElementById('sdi-type');
+  const TYPE_LABELS = { standard:'Standard Score', scaled:'Scaled Score', t:'T-Score', z:'Z-Score' };
+  let lastType = typeSelect?.value || 'standard';
+  function setLastType(type){
+    lastType = type;
+    if (repeatBtn){ repeatBtn.textContent = `+ ${TYPE_LABELS[type] || type}`; repeatBtn.hidden = false; }
+    if (typeSelect && typeSelect.value !== type){
+      typeSelect.value = type;
+      typeSelect.dispatchEvent(new Event('change'));
+    }
+  }
+  addBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = popover.classList.toggle('is-open');
+    addBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  popover.querySelectorAll('[data-sdi-type]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      popover.classList.remove('is-open');
+      addBtn.setAttribute('aria-expanded', 'false');
+      setLastType(btn.dataset.sdiType);
+      sdiAddRow();
+    });
+  });
+  if (repeatBtn) repeatBtn.addEventListener('click', () => sdiAddRow());
+  document.addEventListener('click', e => {
+    if (!popover.contains(e.target) && e.target !== addBtn){
+      popover.classList.remove('is-open');
+      addBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+})();
 document.getElementById('sdi-mode').addEventListener('change', renderSdi);
 document.getElementById('sdi-cv').addEventListener('change', renderSdi);
 document.getElementById('sdi-type').addEventListener('change', renderSdi);

@@ -587,6 +587,7 @@
         </svg>
         <span>Clear all tables</span>
       </button>
+      <!-- DONATION BUTTON — kept for easy re-activation, remove comment tags to restore
       <a class="topbar-kofi" href="https://ko-fi.com/clinpsyry" target="_blank" rel="noopener noreferrer" title="Support free clinical tools">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M2.5 5.5h9V11a2.5 2.5 0 0 1-2.5 2.5h-4A2.5 2.5 0 0 1 2.5 11V5.5z"/>
@@ -595,6 +596,7 @@
         </svg>
         <span>Support this website</span>
       </a>
+      -->
     </div>
   </div>
   <div class="topbar-row topbar-row-nav">
@@ -606,13 +608,23 @@
           </svg>
           <span>Home</span>
         </button>
-        <button type="button" class="topnav-item nav-item" data-target="converter" data-bucket="converter">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3,7 14,7 11.5,4.5"/>
-            <polyline points="17,13 6,13 8.5,15.5"/>
-          </svg>
-          <span>Score Converter</span>
-        </button>
+        <div class="topnav-group" data-bucket="premorbid">
+          <button type="button" class="topnav-item nav-item" data-target="premorbid" data-bucket="premorbid">
+            <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="10" cy="10" r="6.5"/>
+              <circle cx="10" cy="10" r="2.5"/>
+            </svg>
+            <span>Premorbid Estimate</span>
+            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="4,6.5 8,10.5 12,6.5"/>
+            </svg>
+          </button>
+          <div class="topnav-dropdown" role="menu">
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="estimates" role="menuitem">Premorbid Estimates</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="predict" role="menuitem">ToPF Predicted vs Actual</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="opiepredict" role="menuitem">OPIE-4 Predicted vs Actual</button>
+          </div>
+        </div>
         <button type="button" class="topnav-item nav-item" data-target="battery" data-bucket="battery">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2.5" y="3.5" width="15" height="13" rx="1"/>
@@ -622,7 +634,7 @@
           <span>Score Tables</span>
         </button>
         <div class="topnav-group" data-bucket="change">
-          <button type="button" class="topnav-item nav-item" data-target="rci-crawford" data-bucket="change">
+          <button type="button" class="topnav-item nav-item" data-target="change-analysis" data-bucket="change">
             <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="2.5,14 7,9.5 11,12.5 17.5,5"/>
               <polyline points="13.5,5 17.5,5 17.5,9"/>
@@ -640,23 +652,6 @@
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
-        <div class="topnav-group" data-bucket="premorbid">
-          <button type="button" class="topnav-item nav-item" data-target="premorbid" data-bucket="premorbid">
-            <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="10" cy="10" r="6.5"/>
-              <circle cx="10" cy="10" r="2.5"/>
-            </svg>
-            <span>Premorbid</span>
-            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="4,6.5 8,10.5 12,6.5"/>
-            </svg>
-          </button>
-          <div class="topnav-dropdown" role="menu">
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="estimates" role="menuitem">Premorbid Estimates</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="predict" role="menuitem">ToPF Predicted vs Actual</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="opiepredict" role="menuitem">OPIE-4 Predicted vs Actual</button>
-          </div>
-        </div>
         <button type="button" class="topnav-item nav-item" data-target="report-writer" data-bucket="report">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M5 2.5h7l3 3v12a1 1 0 01-1 1H5a1 1 0 01-1-1V3.5a1 1 0 011-1z"/>
@@ -666,6 +661,13 @@
           </svg>
           <span>Report Writer</span>
           <span class="nav-dev-tag" aria-label="In development">In dev</span>
+        </button>
+        <button type="button" class="topnav-item nav-item" data-target="converter" data-bucket="converter">
+          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3,7 14,7 11.5,4.5"/>
+            <polyline points="17,13 6,13 8.5,15.5"/>
+          </svg>
+          <span>Score Converter</span>
         </button>
         <button type="button" class="topnav-item nav-item" data-target="effectsize" data-bucket="effectsize">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -694,12 +696,12 @@
 
   <nav class="nav-list" aria-label="Primary navigation">
     <div class="nav-item active" data-target="home"><span class="nav-item-num">00</span>Home</div>
-    <div class="nav-item" data-target="converter"><span class="nav-item-num">01</span>Score Converter</div>
+    <div class="nav-item" data-target="premorbid"><span class="nav-item-num">01</span>Premorbid Estimate</div>
     <div class="nav-item" data-target="battery"><span class="nav-item-num">02</span>Score Tables</div>
-    <div class="nav-item" data-target="premorbid"><span class="nav-item-num">03</span>Premorbid Estimate</div>
+    <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">03</span>Change Analysis</div>
     <div class="nav-item" data-target="report-writer"><span class="nav-item-num">04</span>Report Writer<span class="nav-dev-tag" aria-label="In development">In dev</span></div>
-    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">05</span>Effect Size Tools</div>
-    <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">06</span>Change Analysis</div>
+    <div class="nav-item" data-target="converter"><span class="nav-item-num">05</span>Score Converter</div>
+    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">06</span>Effect Size Tools</div>
     <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Norms Database</div>
     <div class="nav-item" data-target="about"><span class="nav-item-num">08</span>Methods &amp; References</div>
   </nav>
@@ -907,7 +909,6 @@
   <section class="section" id="battery">
     <div class="eyebrow">Conversion · Clinical Outcomes Table</div>
     <h1 class="section-title">Clinical Outcomes Table</h1>
-    <p class="section-desc">Build a single results table from one or more test families. Auto-fill loads subtest names from the normative database - score type is inferred per family. Enter raw and standardised scores manually; percentiles and classifications populate per row.</p>
 
     <!-- SIDE-BY-SIDE PANELS: configuration | premorbid -->
     <div class="bat-panels-grid">
@@ -949,15 +950,17 @@
           </label>
         </div>
         <p class="bat-side-panel-blurb">
-          Descriptors are marked <strong>*</strong> when ≥1 SD below, <strong>**</strong> when ≥1.5 SD below, <strong>***</strong> when ≥2 SD below.
+          SD mode: <strong>*</strong> ≥1 SD below, <strong>**</strong> ≥1.5 SD, <strong>***</strong> ≥2 SD. SEE mode: <strong>*</strong> below 90% CI, <strong>**</strong> below 95% CI, <strong>***</strong> below 99% CI lower bound.
         </p>
         <div class="bat-side-panel-body">
           <div class="field bat-field-compact bat-field-prem-score">
             <label>Premorbid Standard Score <span class="hint">e.g. 110</span></label>
             <input type="number" id="bat-prem-score" step="any" placeholder="110" disabled>
           </div>
-          <!-- Markers preset is fixed; hidden input keeps existing JS happy -->
-          <input type="hidden" id="bat-prem-threshold" value="stars">
+          <!-- Flagging mode: "sd" = SD below estimate, "see" = SEE-based CI -->
+          <input type="hidden" id="bat-prem-threshold" value="sd">
+          <!-- Score CI: "off" | "90" | "95" -->
+          <input type="hidden" id="bat-ci-level" value="off">
         </div>
       </div>
 
@@ -975,22 +978,33 @@
         </div>
       </div>
 
-      <table class="input-table" id="bat-table">
+      <table class="input-table raw-hidden" id="bat-table">
       <thead>
         <tr>
           <th class="row-num">#</th>
           <th style="min-width:200px">Subtest</th>
-          <th style="width:90px">Raw</th>
-          <th style="width:120px" class="bat-score-head">Score</th>
-          <th style="width:90px">Percentile</th>
-          <th style="width:160px">Classification</th>
+          <th style="width:90px" class="bat-raw-head">Raw</th>
+          <th style="width:110px" class="bat-score-head">Score</th>
+          <th style="width:110px" class="bat-ci-head">CI</th>
+          <th style="width:110px">Percentile</th>
+          <th style="width:130px">Classification</th>
           <th class="row-actions"></th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
       <div class="add-row-actions">
-        <button class="add-row-btn" id="bat-add">+ Add another subtest</button>
+        <div class="bat-add-wrap">
+          <button class="add-row-btn" id="bat-add">+ Add row</button>
+          <div class="bat-type-popover" id="bat-type-popover" role="menu">
+            <p class="bat-type-popover-heading">Input Type</p>
+            <button type="button" class="bat-type-opt" data-add-type="scaled" role="menuitem">Scaled Score <span class="bat-type-opt-sub">M=10, SD=3</span></button>
+            <button type="button" class="bat-type-opt" data-add-type="standard" role="menuitem">Standard Score <span class="bat-type-opt-sub">M=100, SD=15</span></button>
+            <button type="button" class="bat-type-opt" data-add-type="t" role="menuitem">T-Score <span class="bat-type-opt-sub">M=50, SD=10</span></button>
+            <button type="button" class="bat-type-opt" data-add-type="z" role="menuitem">Z-Score <span class="bat-type-opt-sub">M=0, SD=1</span></button>
+          </div>
+        </div>
+        <button class="add-row-btn bat-add-repeat" id="bat-add-repeat" hidden></button>
         <button class="btn btn-clear" id="bat-clear">Clear all rows</button>
       </div>
     </div>
@@ -1495,7 +1509,17 @@
       <tbody></tbody>
     </table>
     <div class="add-row-actions">
-      <button class="add-row-btn" id="sdi-add">+ Add another subtest</button>
+      <div class="bat-add-wrap">
+        <button class="add-row-btn" id="sdi-add" aria-expanded="false">+ Add another subtest</button>
+        <div class="bat-type-popover" id="sdi-type-popover" role="menu">
+          <p class="bat-type-popover-heading">Score Type</p>
+          <button type="button" class="bat-type-opt" data-sdi-type="standard" role="menuitem">Standard Score <span class="bat-type-opt-sub">M=100, SD=15</span></button>
+          <button type="button" class="bat-type-opt" data-sdi-type="scaled" role="menuitem">Scaled Score <span class="bat-type-opt-sub">M=10, SD=3</span></button>
+          <button type="button" class="bat-type-opt" data-sdi-type="t" role="menuitem">T-Score <span class="bat-type-opt-sub">M=50, SD=10</span></button>
+          <button type="button" class="bat-type-opt" data-sdi-type="z" role="menuitem">Z-Score <span class="bat-type-opt-sub">M=0, SD=1</span></button>
+        </div>
+      </div>
+      <button class="add-row-btn bat-add-repeat" id="sdi-add-repeat" hidden></button>
       <button class="btn btn-clear" id="sdi-clear">Clear all rows</button>
     </div>
 
@@ -6122,26 +6146,9 @@
       if (scoreLabel) scoreLabel.textContent = 'Input score type';
       const autofillHint = autofill?.querySelector('.hint');
       if (autofillHint) autofillHint.textContent = '(populates subtest names from the normative database)';
-    } else if (!settings.querySelector('.rci-score-type')){
-      const scoreField = document.createElement('div');
-      scoreField.className = 'field';
-      scoreField.innerHTML = `
-        <label>Input score type</label>
-        <select class="rci-score-type" data-target="${method.id}">
-          <option value="standard" selected>Standard scores (M = 100, SD = 15)</option>
-          <option value="scaled">Scaled scores (M = 10, SD = 3)</option>
-          <option value="t">T-scores (M = 50, SD = 10)</option>
-          <option value="z">Z-scores (M = 0, SD = 1)</option>
-          <option value="raw">Raw / other metric</option>
-        </select>
-      `;
-      const firstRow = settings.querySelector('.field-row-3, .field-row-4') || settings;
-      firstRow.insertBefore(scoreField, firstRow.firstElementChild);
     }
 
-    const scoreField = method.id === 'sdi'
-      ? fieldFor(settings.querySelector('#sdi-type'))
-      : fieldFor(settings.querySelector('.rci-score-type'));
+    const scoreField = null;
     const thresholdField = fieldFor(settings.querySelector('#sdi-cv, .rci-cv'));
     let settingsList = settings.querySelector('.change-settings-list');
     if (!settingsList){
@@ -6325,9 +6332,6 @@
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
       if (mainDesc && method) mainDesc.innerHTML = method.source;
     }
-    if (opts.updateHash !== false && window.location.hash !== `#${id}`){
-      history.replaceState(null, '', `#${id}`);
-    }
   }
 
   // Set initial state to overview
@@ -6363,10 +6367,9 @@
     if (tab) activateMethod(tab.dataset.changeMethod);
   });
 
-  const primaryNav = document.querySelector('.nav-item[data-target="change-analysis"]');
-  if (primaryNav){
-    primaryNav.addEventListener('click', () => activateMethod(activeMethod || 'sdi', { updateHash:false }));
-  }
+  document.querySelectorAll('.nav-item[data-target="change-analysis"]').forEach(nav => {
+    nav.addEventListener('click', () => activateMethod(activeMethod, { updateHash:false }));
+  });
 
   methods.forEach(method => {
     const nav = document.querySelector(`.nav-item[data-target="${method.id}"]`);
@@ -6383,21 +6386,13 @@
     link.removeAttribute('onclick');
     link.addEventListener('click', event => {
       event.stopPropagation();
+      const primaryNav = document.querySelector('.nav-item[data-target="change-analysis"]');
       if (primaryNav) primaryNav.click();
       activateMethod(method.id);
     });
   });
 
-  const initialHash = window.location.hash.replace('#', '');
-  const isKnownMethod = methods.some(method => method.id === initialHash);
-  /* Default landing for Change Analysis is the About overview. Direct
-     hash links to a method still work. */
-  const initialMethod = (initialHash === 'overview' || isKnownMethod) ? initialHash : 'overview';
-  if (isKnownMethod){
-    const nav = document.querySelector(`.nav-item[data-target="change-analysis"]`) || primaryNav;
-    showChangeSection(nav);
-  }
-  activateMethod(initialMethod, { updateHash:false });
+  activateMethod('overview', { updateHash:false });
 })();
 </script>
 </body></html>

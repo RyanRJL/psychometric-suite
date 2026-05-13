@@ -177,7 +177,7 @@
     /* Locate the legacy controls we'll remote-control. Crawford & co use
        class-based selectors; SDI uses ID-based. Try both. */
     const sigSelect    = section.querySelector('.rci-cv, #sdi-cv');
-    const scoreSelect  = section.querySelector('.rci-score-type, #sdi-type');
+    const scoreSelect  = section.querySelector('.rci-score-type');
     const familyInput  = section.querySelector('.combo-input.rci-family-input, .combo-input');
     const familyList   = section.querySelector('.combo-list.rci-family-list, .combo-list');
     const corrCheckbox = section.querySelector('.rci-use-corrected-r');
@@ -371,17 +371,20 @@
           </div>
         ` : ''}
       </div>
-      ${typeSelect ? `
-        <div class="ds-inline-bar-section ds-inline-bar-middle">
-          <span class="ds-inline-bar-label">Score type</span>
-          <select class="ds-inline-bar-select" aria-label="Score type">
-            ${[...typeSelect.options].map(opt => `<option value="${opt.value}"${opt.value===typeSelect.value?' selected':''}>${opt.textContent}</option>`).join('')}
-          </select>
+      <div class="ds-inline-bar-section ds-inline-bar-raw">
+        <button type="button" class="ds-inline-bar-toggle-btn" id="ds-bat-raw-toggle" aria-pressed="false">Show Raw</button>
+      </div>
+      <div class="ds-inline-bar-section">
+        <span class="ds-inline-bar-label">Score CI</span>
+        <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Score confidence interval">
+          <button type="button" class="ds-inline-bar-toggle-btn is-active" data-bat-ci="off" role="radio" aria-checked="true">Off</button>
+          <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci="90" role="radio" aria-checked="false">90%</button>
+          <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci="95" role="radio" aria-checked="false">95%</button>
         </div>
-      ` : ''}
+      </div>
       ${classSelect ? `
         <div class="ds-inline-bar-section ds-inline-bar-right">
-          <span class="ds-inline-bar-label">Class</span>
+          <span class="ds-inline-bar-label">Classification</span>
           <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Classification system">
             ${[...classSelect.options].map(opt => `
               <button type="button" class="ds-inline-bar-toggle-btn" data-class="${opt.value}" role="radio">${opt.textContent.trim()}</button>
@@ -399,27 +402,15 @@
     if (premCheckbox && premScoreInput){
       premCard.innerHTML = `
         <label class="ds-prem-card-header">
-          <span class="ds-inline-bar-label ds-prem-card-eyebrow">
-            Premorbid comparison
-            <span class="ds-prem-card-eyebrow-tag">(informal)</span>
-          </span>
           <input type="checkbox" class="ds-prem-card-checkbox"${premCheckbox.checked ? ' checked' : ''}>
           <span class="ds-prem-card-mark" aria-hidden="true">
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5,6.5 5,9 9.5,3.5"/></svg>
           </span>
-        </label>
-
-        <!-- Info icon — full description lives in the tooltip -->
-        <span class="ds-prem-card-info" tabindex="0" role="button" aria-label="How premorbid comparison works">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="8" cy="8" r="6.5"/>
-            <line x1="8" y1="7" x2="8" y2="11.5"/>
-            <circle cx="8" cy="4.8" r="0.6" fill="currentColor" stroke="none"/>
-          </svg>
-          <span class="ds-prem-card-info-tip" role="tooltip">
-            Asterisks flag subtests below the premorbid estimate. When autofilled from the Premorbid page, thresholds are derived from the model's standard error of estimate: <strong>*</strong> below the 90% CI lower bound, <strong>**</strong> below 95%, <strong>***</strong> below 99%. When entered manually, asterisks fire at 1, 1.5, and 2&nbsp;SD below the entered value.
+          <span class="ds-inline-bar-label ds-prem-card-eyebrow">
+            Premorbid comparison
+            <span class="ds-prem-card-eyebrow-tag">(informal)</span>
           </span>
-        </span>
+        </label>
 
         <!-- Primary: autofill (replaced by status block when a link is active) -->
         <div class="bat-prem-link-wrap" id="bat-prem-link-wrap">
@@ -443,11 +434,25 @@
           <label class="ds-prem-card-input-label" for="ds-prem-card-score">Manual</label>
           <input type="number" id="ds-prem-card-score" class="ds-prem-card-score" placeholder="e.g. 110" step="any"${premCheckbox.checked ? '' : ' disabled'} aria-label="Premorbid standard score">
         </div>
+
+        <!-- Flagging method toggle -->
+        <div class="ds-prem-mode-row" id="ds-prem-mode-row">
+          <span class="ds-inline-bar-label">Flag if</span>
+          <div class="ds-inline-bar-toggle ds-prem-mode-toggle" role="radiogroup" aria-label="Flagging method">
+            <button type="button" class="ds-inline-bar-toggle-btn ds-prem-mode-btn is-active" data-prem-mode="sd" role="radio" aria-checked="true">SD Threshold</button>
+            <button type="button" class="ds-inline-bar-toggle-btn ds-prem-mode-btn" data-prem-mode="see" role="radio" aria-checked="false">CI Threshold</button>
+          </div>
+        </div>
       `;
     }
-    /* Insert: premorbid card first (above), then inline bar, then table */
+    /* Insert: premorbid card, then note, then inline bar, then table */
     const tableBlock = section.querySelector('.bat-table-block') || table;
     if (premCheckbox && premScoreInput) tableBlock.parentNode.insertBefore(premCard, tableBlock);
+    const premNote = document.createElement('p');
+    premNote.className = 'ds-prem-note';
+    premNote.id = 'ds-prem-note';
+    premNote.innerHTML = 'Flagging scores below premorbid estimate &ensp;·&ensp; <strong>*</strong> ≥1 SD below &ensp;·&ensp; <strong>**</strong> ≥1.5 SD below &ensp;·&ensp; <strong>***</strong> ≥2 SD below';
+    if (premCheckbox && premScoreInput) tableBlock.parentNode.insertBefore(premNote, tableBlock);
     tableBlock.parentNode.insertBefore(bar, tableBlock);
 
     /* Wire Quick add - same pattern as Change Analysis */
@@ -499,17 +504,44 @@
       refresh();
     }
 
-    /* Wire Score Type dropdown */
-    if (typeSelect){
-      const newSelect = bar.querySelector('.ds-inline-bar-middle .ds-inline-bar-select');
-      if (newSelect){
-        newSelect.addEventListener('change', () => {
-          typeSelect.value = newSelect.value;
-          typeSelect.dispatchEvent(new Event('change', { bubbles:true }));
+    /* Wire Score CI toggle */
+    const ciInput = document.getElementById('bat-ci-level');
+    if (ciInput){
+      const ciBtns = bar.querySelectorAll('[data-bat-ci]');
+      const syncCi = () => {
+        const v = ciInput.value || 'off';
+        ciBtns.forEach(b => {
+          const active = b.dataset.batCi === v;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-checked', active ? 'true' : 'false');
         });
-        typeSelect.addEventListener('change', () => {
-          if (newSelect.value !== typeSelect.value) newSelect.value = typeSelect.value;
+      };
+      ciBtns.forEach(b => {
+        b.addEventListener('click', () => {
+          ciInput.value = b.dataset.batCi;
+          ciInput.dispatchEvent(new Event('change', { bubbles: true }));
+          syncCi();
         });
+      });
+      ciInput.addEventListener('change', syncCi);
+      syncCi();
+    }
+
+    /* Wire Raw column toggle */
+    if (table){
+      const rawBtn = bar.querySelector('#ds-bat-raw-toggle');
+      if (rawBtn){
+        const syncRaw = () => {
+          const visible = !table.classList.contains('raw-hidden');
+          rawBtn.textContent = visible ? 'Hide Raw' : 'Show Raw';
+          rawBtn.classList.toggle('is-active', visible);
+          rawBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+        };
+        rawBtn.addEventListener('click', () => {
+          table.classList.toggle('raw-hidden');
+          syncRaw();
+        });
+        syncRaw();
       }
     }
 
@@ -550,6 +582,35 @@
         premScoreInput.addEventListener('input', () => {
           if (newScore.value !== premScoreInput.value) newScore.value = premScoreInput.value;
         });
+      }
+
+      /* Wire flagging-method toggle */
+      const modeThreshold = document.getElementById('bat-prem-threshold');
+      if (modeThreshold){
+        const modeBtns = premCard.querySelectorAll('[data-prem-mode]');
+        const SD_NOTE  = 'Flagging scores below premorbid estimate &ensp;·&ensp; <strong>*</strong> ≥1 SD below &ensp;·&ensp; <strong>**</strong> ≥1.5 SD below &ensp;·&ensp; <strong>***</strong> ≥2 SD below';
+        const SEE_NOTE = 'Flagging scores outside the SEE of the premorbid estimate &ensp;·&ensp; <strong>*</strong> below 90% CI lower bound &ensp;·&ensp; <strong>**</strong> below 95% CI lower bound &ensp;·&ensp; <strong>***</strong> below 99% CI lower bound';
+        function syncModeUI(){
+          const mode = modeThreshold.value === 'see' ? 'see' : 'sd';
+          modeBtns.forEach(b => {
+            const active = b.dataset.premMode === mode;
+            b.classList.toggle('is-active', active);
+            b.setAttribute('aria-checked', active ? 'true' : 'false');
+          });
+          const noteEl = document.getElementById('ds-prem-note');
+          if (noteEl) noteEl.innerHTML = mode === 'see' ? SEE_NOTE : SD_NOTE;
+        }
+        /* Normalize legacy "stars" value */
+        if (modeThreshold.value !== 'see') modeThreshold.value = 'sd';
+        syncModeUI();
+        modeBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            modeThreshold.value = btn.dataset.premMode;
+            modeThreshold.dispatchEvent(new Event('change', { bubbles: true }));
+            syncModeUI();
+          });
+        });
+        modeThreshold.addEventListener('change', syncModeUI);
       }
     }
   }
