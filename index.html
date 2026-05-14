@@ -652,6 +652,7 @@
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
+        <!-- REPORT WRITER topnav — hidden, remove comment tags to restore
         <button type="button" class="topnav-item nav-item" data-target="report-writer" data-bucket="report">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M5 2.5h7l3 3v12a1 1 0 01-1 1H5a1 1 0 01-1-1V3.5a1 1 0 011-1z"/>
@@ -662,6 +663,7 @@
           <span>Report Writer</span>
           <span class="nav-dev-tag" aria-label="In development">In dev</span>
         </button>
+        -->
         <button type="button" class="topnav-item nav-item" data-target="converter" data-bucket="converter">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3,7 14,7 11.5,4.5"/>
@@ -699,7 +701,9 @@
     <div class="nav-item" data-target="premorbid"><span class="nav-item-num">01</span>Premorbid Estimate</div>
     <div class="nav-item" data-target="battery"><span class="nav-item-num">02</span>Score Tables</div>
     <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">03</span>Change Analysis</div>
+    <!-- REPORT WRITER sidebar nav — hidden, remove comment tags to restore
     <div class="nav-item" data-target="report-writer"><span class="nav-item-num">04</span>Report Writer<span class="nav-dev-tag" aria-label="In development">In dev</span></div>
+    -->
     <div class="nav-item" data-target="converter"><span class="nav-item-num">05</span>Score Converter</div>
     <div class="nav-item" data-target="effectsize"><span class="nav-item-num">06</span>Effect Size Tools</div>
     <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Norms Database</div>
@@ -717,98 +721,97 @@
 
   <!-- ========== 00 HOME ========== -->
   <section class="section active" id="home">
-    <div class="home-hero">
-      <div class="eyebrow">Clinical Suite · Overview</div>
-      <h1 class="section-title">Psychometric <em>Assistant</em></h1>
-      <p class="section-desc">Convert scores, build report-ready tables, estimate premorbid ability, and evaluate reliable change across assessments in one easy-to-use, clinician-friendly programme. All analyses are customisable with report-ready APA-formatted tables.</p>
-    </div>
 
-    <div class="home-pathways">
+    <header class="home-db-header">
+      <div class="eyebrow">Clinical Suite</div>
+      <h1 class="home-db-title">Psychometric <em>Assistant</em></h1>
+      <p class="home-db-sub">Neuropsychological calculators for clinical practice — APA-formatted output</p>
+    </header>
 
-      <div class="home-pathway-card">
-        <div class="home-pathway-icon">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="3" width="16" height="14" rx="1.5"/>
-            <line x1="2" y1="8" x2="18" y2="8"/>
-            <line x1="7" y1="8" x2="7" y2="17"/>
+    <div class="home-db-grid">
+
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;converter&quot;]').click()">
+        <div class="home-db-card-icon">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/>
+            <line x1="2" y1="11" x2="20" y2="11"/>
+            <line x1="11" y1="2" x2="11" y2="6"/><line x1="11" y1="16" x2="11" y2="20"/>
           </svg>
         </div>
-        <div class="home-pathway-label">Basic Report Tools</div>
-        <div class="home-pathway-title">Scores &amp; Tables</div>
-        <p class="home-pathway-desc">Convert between standard scores, T-scores, scaled scores, z-scores, and percentiles. Build clean APA-formatted clinical outcome tables, and convert or derive common effect sizes for report-ready interpretation.</p>
-        <ul class="home-pathway-tools">
-          <li class="home-pathway-tool">
-            <span class="home-pathway-tool-num">01</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;converter&quot;]').click()">Score Converter</span>
-          </li>
-          <li class="home-pathway-tool">
-            <span class="home-pathway-tool-num">02</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;battery&quot;]').click()">Score Tables</span>
-          </li>
-          <li class="home-pathway-tool">
-            <span class="home-pathway-tool-num">03</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;report-writer&quot;]').click()">Report Writer</span>
-          </li>
-          <li class="home-pathway-tool">
-            <span class="home-pathway-tool-num">04</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">Effect Size Tools</span>
-          </li>
-        </ul>
-      </div>
+        <div class="home-db-card-name">Score Converter</div>
+        <div class="home-db-card-desc">Convert between standard, scaled, T, z-scores and percentiles with classification bands</div>
+        <div class="home-db-card-arrow">→</div>
+      </button>
 
-      <div class="home-pathway-card">
-        <div class="home-pathway-icon">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="2,14 7,9 11,12 18,5"/>
-            <polyline points="14,5 18,5 18,9"/>
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;battery&quot;]').click()">
+        <div class="home-db-card-icon">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="18" height="14" rx="2"/>
+            <line x1="2" y1="9" x2="20" y2="9"/>
+            <line x1="8" y1="9" x2="8" y2="18"/>
           </svg>
         </div>
-        <div class="home-pathway-label">Reliable Change</div>
-        <div class="home-pathway-title">Change Analysis</div>
-        <p class="home-pathway-desc">Evaluate whether observed test-retest differences are statistically meaningful, including practice-adjusted and regression-based methods.</p>
-        <ul class="home-pathway-tools">
-          <li class="home-pathway-tool">
-            <span class="home-pathway-tool-num">04</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;sdi&quot;]').click()">Standard Deviation Index</span>
-          </li>
-          <li class="home-pathway-tool">
-            <span class="home-pathway-tool-num">05</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;rci-basic&quot;]').click()">Simple Reliable Change</span>
-          </li>
-          <li class="home-pathway-tool">
-            <span class="home-pathway-tool-num">06</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;rci-practice&quot;]').click()">Practice Effect-Adjusted</span>
-          </li>
-          <li class="home-pathway-tool">
-            <span class="home-pathway-tool-num">07</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;rci-srb&quot;]').click()">Standardised Regression-Based</span>
-          </li>
-          <li class="home-pathway-tool">
-            <span class="home-pathway-tool-num">08</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;rci-crawford&quot;]').click()">Crawford Regression-Based</span>
-          </li>
-        </ul>
-      </div>
+        <div class="home-db-card-name">Score Tables</div>
+        <div class="home-db-card-desc">Build APA-formatted neuropsych report tables with CI columns and premorbid comparison</div>
+        <div class="home-db-card-arrow">→</div>
+      </button>
 
-      <div class="home-pathway-card">
-        <div class="home-pathway-icon">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="10" cy="10" r="7"/>
-            <circle cx="10" cy="10" r="2.5"/>
-            <line x1="10" y1="1" x2="10" y2="4.5"/>
-            <line x1="10" y1="15.5" x2="10" y2="19"/>
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;change-analysis&quot;]').click()">
+        <div class="home-db-card-icon">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="2,16 7,10 12,13 20,5"/>
+            <polyline points="15,5 20,5 20,10"/>
           </svg>
         </div>
-        <div class="home-pathway-label">Premorbid</div>
-        <div class="home-pathway-title">Premorbid Estimation</div>
-        <p class="home-pathway-desc">Estimate premorbid ability using ToPF- and OPIE-4-based models, then compare predicted versus achieved WAIS-IV/WMS-IV indices with confidence intervals, base rates, and report-ready APA output.</p>
-        <ul class="home-pathway-tools">
-          <li class="home-pathway-tool">
-            <span class="home-pathway-tool-num">09</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;premorbid&quot;]').click()">Premorbid Estimate</span>
-          </li>
-        </ul>
-      </div>
+        <div class="home-db-card-name">Change Analysis</div>
+        <div class="home-db-card-desc">Evaluate test-retest change with five methods from descriptive SDI to Crawford regression</div>
+        <div class="home-db-card-arrow">→</div>
+      </button>
+
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;premorbid&quot;]').click()">
+        <div class="home-db-card-icon">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <circle cx="11" cy="11" r="3"/>
+            <line x1="11" y1="1" x2="11" y2="5"/>
+            <line x1="11" y1="17" x2="11" y2="21"/>
+            <line x1="1" y1="11" x2="5" y2="11"/>
+            <line x1="17" y1="11" x2="21" y2="11"/>
+          </svg>
+        </div>
+        <div class="home-db-card-name">Premorbid Estimation</div>
+        <div class="home-db-card-desc">Estimate premorbid ability using ToPF and OPIE-4 models with WAIS-IV/WMS-IV comparison</div>
+        <div class="home-db-card-arrow">→</div>
+      </button>
+
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
+        <div class="home-db-card-icon">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="18" x2="18" y2="4"/>
+            <circle cx="6" cy="16" r="2.5"/>
+            <circle cx="16" cy="6" r="2.5"/>
+            <line x1="4" y1="11" x2="8" y2="11"/>
+            <line x1="6" y1="9" x2="6" y2="13"/>
+          </svg>
+        </div>
+        <div class="home-db-card-name">Effect Size Tools</div>
+        <div class="home-db-card-desc">Convert between and interpret effect sizes — Cohen's d, r, η², odds ratios and more</div>
+        <div class="home-db-card-arrow">→</div>
+      </button>
+
+      <button class="home-db-card home-db-card--muted" onclick="document.querySelector('.nav-item[data-target=&quot;about&quot;]').click()">
+        <div class="home-db-card-icon">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 2h10l4 4v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/>
+            <polyline points="14,2 14,6 18,6"/>
+            <line x1="7" y1="10" x2="15" y2="10"/>
+            <line x1="7" y1="14" x2="12" y2="14"/>
+          </svg>
+        </div>
+        <div class="home-db-card-name">Methods &amp; References</div>
+        <div class="home-db-card-desc">Formulas, citations and statistical conventions used throughout the suite</div>
+        <div class="home-db-card-arrow">→</div>
+      </button>
 
     </div>
   </section>

@@ -699,12 +699,7 @@
   document.addEventListener('click', e => {
     const navTab = e.target.closest('.topnav-item, .topnav-drop-item');
     if (!navTab) return;
-    const chip = document.querySelector('.rb-chip');
-    if (!chip) return;
-    chip.classList.remove('rb-chip-orbit');
-    void chip.offsetWidth;                         /* force reflow to restart animation */
-    chip.classList.add('rb-chip-orbit');
-    setTimeout(() => chip.classList.remove('rb-chip-orbit'), 2500);  /* matches CSS 2.4s + tiny buffer */
+    /* orbit trigger disabled — always-on rainbow ring replaces it */
   }, true);
 
   /* --- 4c. Remove the deprecated "Lock norms" feature ----------------------
