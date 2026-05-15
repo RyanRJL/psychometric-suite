@@ -1366,10 +1366,10 @@ kbd, .ds-kbd{
   opacity: 0.55;
   transform: translateY(2px) scale(0.96);
 }
-/* Hover always restores full chip — even mid-scroll */
+/* Hover snaps to lifted position */
 .rb-chip:hover{
   opacity: 1 !important;
-  transform: translateY(-3px) !important;
+  transform: translateY(-4px) scale(1.03) !important;
 }
 
 /* ============================================================================
@@ -2836,8 +2836,19 @@ input[type="text"].ds-inline-bar-input{
   75% { box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0  9px 2px rgba(236, 72,153,0.30), 0 0 20px 6px rgba(236, 72,153,0.10); }
   100%{ box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0  8px 2px rgba(99, 102,241,0.30), 0 0 20px 6px rgba(99, 102,241,0.10); }
 }
+@keyframes rb-chip-float{
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-7px); }
+}
 .rb-chip{
-  animation: rb-chip-ambient-glow 10s ease-in-out infinite;
+  animation: rb-chip-ambient-glow 10s ease-in-out infinite,
+             rb-chip-float 3.2s ease-in-out infinite;
+}
+.ds-chip-recede .rb-chip{
+  animation-play-state: paused;
+}
+.rb-chip:hover{
+  animation-play-state: paused;
 }
 
 /* ============================================================================

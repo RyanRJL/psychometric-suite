@@ -20,6 +20,10 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F1218'/%3E%3Ctext x='16' y='23.5' text-anchor='middle' font-family='Georgia, serif' font-size='22' font-style='italic' fill='%23F1F4F9'%3EΨ%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230F1218'/%3E%3Ctext x='90' y='130' text-anchor='middle' font-family='Georgia, serif' font-size='124' font-style='italic' fill='%23F1F4F9'%3EΨ%3C/text%3E%3C/svg%3E">
 
+<!-- PWA: makes the site installable as a chromeless desktop / mobile app -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F1218">
+
 <!-- Inter - pro typography baseline; preconnect for fast font load -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -723,7 +727,6 @@
   <section class="section active" id="home">
 
     <header class="home-db-header">
-      <div class="eyebrow">Clinical Suite</div>
       <h1 class="home-db-title">Psychometric <em>Assistant</em></h1>
       <p class="home-db-sub">Neuropsychological calculators for clinical practice — APA-formatted output</p>
     </header>
@@ -5986,6 +5989,19 @@
 <script src="app.js?v=20260507ai"></script>
 <script src="design-system.js?v=20260512ad" defer></script>
 <script src="app-effectsize-page.js"></script>
+
+<!-- PWA: register the service worker for offline support + installability.
+     Only runs when served over http(s)://; skipped silently for file://
+     so the bundled single-HTML version doesn't error in dev tools. -->
+<script>
+  if ('serviceWorker' in navigator && location.protocol !== 'file:'){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .catch(err => console.warn('[pwa] service worker registration failed:', err));
+    });
+  }
+</script>
+
 <script>
 (function(){
   const methods = [
