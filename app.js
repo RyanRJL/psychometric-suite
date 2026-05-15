@@ -581,9 +581,22 @@ function renderConverter(){
 }
 function drawCurve(z, scoreType){
   const svg = document.getElementById('conv-curve');
-  const W = 640, H = 408, padL = 94, padR = 48;
-  const bottomPad = 124;
-  const topPad = 76;
+  /* Cockpit layout: viewBox is ~2.6:1 so when the SVG fills the right column
+     (~830px wide) it renders ~320px tall — matching the equivalents column's
+     natural height for a balanced row with no dead vertical space. */
+  const W = 940, H = 360, padL = 70, padR = 36;
+  /* bottomPad was 124 to leave room for the per-row conversion table beneath
+     the baseline (Standard / Scaled / T / z / Percentile / Classification).
+     The cockpit layout shows that information in the side column instead,
+     so we crop the SVG to ~30px below the baseline. The table-generating
+     code (rowsSvg below) is kept but rendered into a hidden <g>. */
+  const bottomPad = 30;
+  /* topPad was 76 to leave room for the "Average · 50th percentile" callout
+     above the curve peak. The callout is dropped in the cockpit layout — the
+     side column already shows the percentile and the classification strip
+     below shows the band — so we shrink the top margin to just enough for
+     the −1 SD / +1 SD labels above the curve. */
+  const topPad = 16;
   const curveH = H - topPad - bottomPad;
   const xMin = -3.5, xMax = 3.5;
   const xScale = x => padL + (x - xMin) / (xMax - xMin) * (W - padL - padR);
@@ -637,9 +650,9 @@ function drawCurve(z, scoreType){
     const lx = xScale(zv);
     const curveY = yScale(normPDF(zv));
     sdLineSegs += `<line x1="${lx}" y1="${curveY.toFixed(1)}" x2="${lx}" y2="${base}"
-      stroke="${bold ? '#555' : '#999'}" stroke-width="${bold ? 1.2 : 0.8}" opacity="0.55"/>`;
-    sdLabelTexts += `<text x="${lx}" y="${(curveY - 9).toFixed(1)}"
-      font-family="IBM Plex Sans" font-size="${bold ? 10 : 9}" fill="${bold ? '#444' : '#777'}"
+      stroke="${bold ? '#555' : '#999'}" stroke-width="${bold ? 1.6 : 1.0}" opacity="0.55"/>`;
+    sdLabelTexts += `<text x="${lx}" y="${(curveY - 12).toFixed(1)}"
+      font-family="IBM Plex Sans" font-size="${bold ? 15 : 13}" fill="${bold ? '#444' : '#777'}"
       text-anchor="middle" font-weight="${bold ? '600' : '400'}">${label}</text>`;
   });
   // Short ticks at ±3
@@ -670,7 +683,7 @@ function drawCurve(z, scoreType){
     const curveY = yScale(normPDF(zMid));
     const labelY = curveY + (base - curveY) * 0.45;
     pctLabels += `<text x="${bx.toFixed(1)}" y="${labelY.toFixed(1)}"
-      font-family="IBM Plex Mono" font-size="8.5" fill="#888" text-anchor="middle" opacity="0.85">${p}</text>`;
+      font-family="IBM Plex Mono" font-size="12" fill="#888" text-anchor="middle" opacity="0.85">${p}</text>`;
   });
 
   // Score scale rows
@@ -744,9 +757,9 @@ function drawCurve(z, scoreType){
   const aboveN = (100-pct) < 1 ? '<1' : (100-pct) > 99 ? '>99' : String(100-pctRound);
   let twoTail = '';
   if (cx > padL + 70)
-    twoTail += `<text x="${cx-10}" y="${base-8}" font-family="IBM Plex Mono" font-size="8" fill="#BFB2A5" text-anchor="end">${belowN}% scored below ◂</text>`;
+    twoTail += `<text x="${cx-10}" y="${base-8}" font-family="IBM Plex Mono" font-size="11" fill="#9A9285" text-anchor="end">${belowN}% scored below ◂</text>`;
   if (cx < W - padR - 70)
-    twoTail += `<text x="${cx+10}" y="${base-8}" font-family="IBM Plex Mono" font-size="8" fill="#BFB2A5" text-anchor="start">▸ ${aboveN}% scored above</text>`;
+    twoTail += `<text x="${cx+10}" y="${base-8}" font-family="IBM Plex Mono" font-size="11" fill="#9A9285" text-anchor="start">▸ ${aboveN}% scored above</text>`;
 
   const baseLine = `<line x1="${padL}" y1="${base}" x2="${W-padR}" y2="${base}" stroke="#2A2A2A" stroke-width="0.8"/>`;
 
@@ -769,8 +782,8 @@ function drawCurve(z, scoreType){
     ${baseLine}
     ${pctLabels}
     ${twoTail}
-    ${rowsSvg}
-    ${zLine}${zDot}${zInner}${callout}
+    <g class="conv-curve-rows" aria-hidden="true">${rowsSvg}</g>
+    ${zLine}${zDot}${zInner}
   `;
 }
 function updateSliderTicks(type) {
@@ -2945,8 +2958,8 @@ const PRE_TAB_ORDER = ['inputs', 'estimates', 'predict', 'opiepredict'];
 const PRE_TAB_LABELS = {
   inputs: 'Inputs',
   estimates: 'Premorbid Estimates',
-  predict: 'ToPF Predicted vs Actual',
-  opiepredict: 'OPIE-4 Predicted vs Actual'
+  predict: 'ToPF vs WAIS-IV',
+  opiepredict: 'OPIE-4 vs WAIS-IV'
 };
 
 function switchPreTab(tabId){
@@ -3032,7 +3045,7 @@ function setupPreTabs(){
   updatePreNav('estimates');
 }
 
-// Build the achieved-input table for ToPF Predicted vs Actual
+// Build the achieved-input table for ToPF vs WAIS-IV
 function buildPredictTable(){
   const tbody = document.querySelector('#pre-predict-table tbody');
   tbody.innerHTML = '';
@@ -3114,7 +3127,7 @@ function calcPremorbid(){
   if (topf != null && topf >= 0 && topf <= 70 && Number.isFinite(topf)){
     v1 = TOPF_TO_FSIQ[Math.round(topf)];
   }
-  rows.push({ name:'ToPF Raw Score Only', val:v1, see:9.867, r:0.72, tipKey:'topfRaw' });
+  rows.push({ name:'ToPF Raw Score', val:v1, see:9.867, r:0.72, tipKey:'topfRaw' });
 
   // 2. ToPF + Demographics  (uses TOPF sex coding F=1, M=2)
   let v2 = null;
@@ -3122,7 +3135,7 @@ function calcPremorbid(){
     v2 = 29.991 + 2.09426*topf + (-0.0404559)*topf*topf
        + 0.000340705*Math.pow(topf,3) + 1.4617126*edu + 4.925*sexC_topf;
   }
-  rows.push({ name:'ToPF with Demographic Adjustment', val:v2, see:8.441, r:0.81, tipKey:'topfDemo' });
+  rows.push({ name:'Demographic Adjusted ToPF', val:v2, see:8.441, r:0.81, tipKey:'topfDemo' });
 
   // 3. Crawford & Allan (2001)
   let v3 = null;
@@ -3280,7 +3293,7 @@ function renderPreEstimatesApa(){
   `;
 }
 
-// === APA Output: ToPF Predicted vs Actual ===
+// === APA Output: ToPF vs WAIS-IV ===
 function renderPrePredictApa(){
   const out = preGet('pre-predict-apa');
   if (!out) return;
@@ -3329,7 +3342,7 @@ function renderPrePredictApa(){
   `;
 }
 
-// === OPIE-4 Predicted vs Actual calculation ===
+// === OPIE-4 vs WAIS-IV calculation ===
 // Builds a list of OPIE-4 prediction rows for whichever combinations of inputs are available,
 // then renders them into the third premorbid tab. Achieved values are kept in preState.opieAchieved
 // keyed by a stable model key (e.g. "FSIQ_VC_MR").
@@ -3475,7 +3488,7 @@ function calcOpiePredict(){
   renderOpiePredictApa();
 }
 
-// === APA Output: OPIE-4 Predicted vs Actual ===
+// === APA Output: OPIE-4 vs WAIS-IV ===
 function renderOpiePredictApa(){
   const out = preGet('pre-opiepredict-apa');
   if (!out) return;

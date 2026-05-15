@@ -2564,8 +2564,8 @@ const PRE_TAB_ORDER = ['inputs', 'estimates', 'predict', 'opiepredict'];
 const PRE_TAB_LABELS = {
   inputs: 'Inputs',
   estimates: 'Premorbid Estimates',
-  predict: 'ToPF Predicted vs Actual',
-  opiepredict: 'OPIE-4 Predicted vs Actual'
+  predict: 'ToPF vs WAIS-IV',
+  opiepredict: 'OPIE-4 vs WAIS-IV'
 };
 
 function switchPreTab(tabId){
@@ -2639,7 +2639,7 @@ function setupPreTabs(){
   updatePreNav('inputs');
 }
 
-// Build the achieved-input table for ToPF Predicted vs Actual
+// Build the achieved-input table for ToPF vs WAIS-IV
 function buildPredictTable(){
   const tbody = document.querySelector('#pre-predict-table tbody');
   tbody.innerHTML = '';
@@ -2721,7 +2721,7 @@ function calcPremorbid(){
   if (topf != null && topf >= 0 && topf <= 70 && Number.isFinite(topf)){
     v1 = TOPF_TO_FSIQ[Math.round(topf)];
   }
-  rows.push({ name:'ToPF Raw Score Only', val:v1, see:9.867, r:0.72, tipKey:'topfRaw' });
+  rows.push({ name:'ToPF Raw Score', val:v1, see:9.867, r:0.72, tipKey:'topfRaw' });
 
   // 2. ToPF + Demographics  (uses TOPF sex coding F=1, M=2)
   let v2 = null;
@@ -2729,7 +2729,7 @@ function calcPremorbid(){
     v2 = 29.991 + 2.09426*topf + (-0.0404559)*topf*topf
        + 0.000340705*Math.pow(topf,3) + 1.4617126*edu + 4.925*sexC_topf;
   }
-  rows.push({ name:'ToPF with Demographic Adjustment', val:v2, see:8.441, r:0.81, tipKey:'topfDemo' });
+  rows.push({ name:'Demographic Adjusted ToPF', val:v2, see:8.441, r:0.81, tipKey:'topfDemo' });
 
   // 3. Crawford & Allan (2001)
   let v3 = null;
@@ -2887,7 +2887,7 @@ function renderPreEstimatesApa(){
   `;
 }
 
-// === APA Output: ToPF Predicted vs Actual ===
+// === APA Output: ToPF vs WAIS-IV ===
 function renderPrePredictApa(){
   const out = preGet('pre-predict-apa');
   if (!out) return;
@@ -2936,7 +2936,7 @@ function renderPrePredictApa(){
   `;
 }
 
-// === OPIE-4 Predicted vs Actual calculation ===
+// === OPIE-4 vs WAIS-IV calculation ===
 // Builds a list of OPIE-4 prediction rows for whichever combinations of inputs are available,
 // then renders them into the third premorbid tab. Achieved values are kept in preState.opieAchieved
 // keyed by a stable model key (e.g. "FSIQ_VC_MR").
@@ -3082,7 +3082,7 @@ function calcOpiePredict(){
   renderOpiePredictApa();
 }
 
-// === APA Output: OPIE-4 Predicted vs Actual ===
+// === APA Output: OPIE-4 vs WAIS-IV ===
 function renderOpiePredictApa(){
   const out = preGet('pre-opiepredict-apa');
   if (!out) return;

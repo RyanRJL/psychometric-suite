@@ -653,8 +653,8 @@
           </button>
           <div class="topnav-dropdown" role="menu">
             <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="estimates" role="menuitem">Premorbid Estimates</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="predict" role="menuitem">ToPF Predicted vs Actual</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="opiepredict" role="menuitem">OPIE-4 Predicted vs Actual</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="predict" role="menuitem">ToPF vs WAIS-IV</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="opiepredict" role="menuitem">OPIE-4 vs WAIS-IV</button>
           </div>
         </div>
         <button type="button" class="topnav-item nav-item" data-target="report-writer" data-bucket="report">
@@ -1870,14 +1870,12 @@
   <section class="section" id="premorbid">
     <div class="eyebrow">Premorbid · Estimation</div>
     <h1 class="section-title">Premorbid Estimate</h1>
-    <p class="section-desc">Estimate premorbid cognitive ability using the Test of Premorbid Functioning (ToPF), demographic regression equations, and the Oklahoma Premorbid Intelligence Estimate (OPIE-4). The second tab compares ToPF-predicted scores against actual WAIS-IV / WMS-IV index scores with base-rate look-ups. The third tab compares OPIE-4-predicted prorated FSIQ / GAI against the patient's achieved WAIS-IV indices.</p>
-
 
     <div class="tabs pre-tabs" aria-label="Premorbid analysis views">
       <div class="tab active" data-pre-tab="inputs"><span class="pre-tab-num">1</span><span>Inputs</span></div>
       <div class="tab" data-pre-tab="estimates"><span class="pre-tab-num">2</span><span>Premorbid Estimates</span></div>
-      <div class="tab" data-pre-tab="predict"><span class="pre-tab-num">3</span><span>ToPF Predicted vs Actual</span></div>
-      <div class="tab" data-pre-tab="opiepredict"><span class="pre-tab-num">4</span><span>OPIE-4 Predicted vs Actual</span></div>
+      <div class="tab" data-pre-tab="predict"><span class="pre-tab-num">3</span><span>ToPF vs WAIS-IV</span></div>
+      <div class="tab" data-pre-tab="opiepredict"><span class="pre-tab-num">4</span><span>OPIE-4 vs WAIS-IV</span></div>
     </div>
 
     <!-- Tab 1: Inputs -->
@@ -1979,14 +1977,14 @@
           </tr>
         </thead>
         <tbody><tr>
-      <td class="model">ToPF Raw Score Only</td>
+      <td class="model">ToPF Raw Score</td>
       <td class="fsiq">-</td>
       <td class="num">-</td>
       <td class="num">-</td>
       <td class="psy">0.72</td>
       <td class="psy">9.87</td>
     </tr><tr>
-      <td class="model">ToPF with Demographic Adjustment</td>
+      <td class="model">Demographic Adjusted ToPF</td>
       <td class="fsiq">-</td>
       <td class="num">-</td>
       <td class="num">-</td>
@@ -2026,7 +2024,7 @@
       </div>
     </div>
 
-    <!-- Tab B: ToPF Predicted vs Actual -->
+    <!-- Tab B: ToPF vs WAIS-IV -->
     <div class="pre-tab-content" id="pre-predict">
       <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter the patient's actual WAIS-IV / WMS-IV index scores in the Achieved column to compute ToPF-predicted vs actual discrepancies. Base rates from the standardisation sample are shown only for negative discrepancies (achieved &lt; predicted).</p>
 
@@ -2126,7 +2124,7 @@
       </div>
     </div>
 
-    <!-- Tab C: OPIE-4 Predicted vs Actual -->
+    <!-- Tab C: OPIE-4 vs WAIS-IV -->
     <div class="pre-tab-content" id="pre-opiepredict">
       <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter age plus Vocabulary and/or Matrix Reasoning raw scores in the Inputs panel above. Rows appear automatically for each model whose required inputs are present. Enter the patient's actual FSIQ / GAI in the Achieved column - the prorated index is calculated ACS manual procedures, excluding the subtest(s) used as predictors.</p>
 

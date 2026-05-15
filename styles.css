@@ -594,8 +594,37 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .conv-flag.conv-flag-on .conv-meta-label{color:var(--accent)}
 
 /* DESCRIPTOR CAROUSEL ROWS */
-.conv-desc-rows{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.conv-desc-rows{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;position:relative}
 .conv-desc-row-line{position:relative;display:block;width:100%}
+
+/* Stationary viewfinder — a single overlay centred on .conv-desc-rows that
+   spans both classification rows. Only the four corner brackets are drawn
+   (no edges between), giving a minimalistic camera-viewfinder feel. The
+   carousels slide underneath; whichever classification ends up framed is
+   the active one. */
+.conv-desc-rows::after{
+  content:"";
+  position:absolute;
+  left:50%; top:50%;
+  transform:translate(-50%, -50%);
+  width:128px;
+  height:108px;
+  pointer-events:none;
+  z-index:3;
+  background:
+    /* top-left arms */
+    linear-gradient(#9C3D2A, #9C3D2A) top left / 12px 1.5px no-repeat,
+    linear-gradient(#9C3D2A, #9C3D2A) top left / 1.5px 12px no-repeat,
+    /* top-right arms */
+    linear-gradient(#9C3D2A, #9C3D2A) top right / 12px 1.5px no-repeat,
+    linear-gradient(#9C3D2A, #9C3D2A) top right / 1.5px 12px no-repeat,
+    /* bottom-left arms */
+    linear-gradient(#9C3D2A, #9C3D2A) bottom left / 12px 1.5px no-repeat,
+    linear-gradient(#9C3D2A, #9C3D2A) bottom left / 1.5px 12px no-repeat,
+    /* bottom-right arms */
+    linear-gradient(#9C3D2A, #9C3D2A) bottom right / 12px 1.5px no-repeat,
+    linear-gradient(#9C3D2A, #9C3D2A) bottom right / 1.5px 12px no-repeat;
+}
 .conv-desc-sys{position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:2;font-family:var(--mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);opacity:0.75;font-weight:700;pointer-events:none}
 .conv-desc-pills{
   position:relative;overflow:hidden;width:100%;height:52px;
@@ -633,6 +662,9 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .conv-desc-pill.active .pill-label{font-weight:700;font-size:13px}
 .pill-range{font-size:8.5px;letter-spacing:0.02em;line-height:1;white-space:nowrap;color:inherit;opacity:0.7}
 .conv-desc-pill.active .pill-range{opacity:0.85}
+
+/* (Per-row rectangle viewfinder removed — replaced by a single corner-
+   bracket overlay on .conv-desc-rows above, so both rows share one frame.) */
 
 /* DESCRIPTOR FOOTNOTE */
 .conv-desc-footnote{font-family:var(--mono);font-size:8.5px;color:var(--muted);opacity:0.5;margin:10px 0 0;letter-spacing:0.03em}
@@ -7782,4 +7814,802 @@ body.rb-docked-active{padding-right:0}
 
 /* Hide the kofi modal when printing — it's a website element, not part of the report */
 @media print{.rb-kofi-toast, .rb-kofi-modal-backdrop, .topbar-kofi{display:none!important}}
+
+/* ============================================================================
+   CHANGE ANALYSIS — DASHBOARD REVAMP (2026-05-15)
+   Info-dense cards with always-visible adjustment-indicator rows so the
+   five methods can be compared at a glance. The decision-aid guide list
+   has been removed — each card now carries that information internally
+   via filled/empty dots showing the level-up progression.
+   ============================================================================ */
+
+/* Hero block above the cards */
+#change-analysis .change-overview-hero{
+  margin-bottom:18px;
+  max-width:780px;
+}
+#change-analysis .change-overview-h{
+  font-family:var(--serif);
+  font-size:22px;
+  font-weight:600;
+  color:#1A1A1A;
+  letter-spacing:-0.01em;
+  line-height:1.2;
+  margin:0 0 6px;
+}
+#change-analysis .change-overview-sub{
+  font-family:var(--sans);
+  font-size:13.5px;
+  color:#3F3F3F;
+  line-height:1.55;
+  margin:0;
+}
+
+/* Grid + cards (override the older spec) */
+#change-analysis .change-overview-cards{
+  display:grid !important;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)) !important;
+  align-items:stretch !important;     /* equal-height tiles when content varies */
+  gap:14px !important;
+}
+
+/* Reset old hide-on-default styles so all content is visible by default. */
+#change-analysis .change-overview-card .change-overview-cite,
+#change-analysis .change-overview-card > p:not(.change-overview-cite),
+#change-analysis .change-overview-card .change-overview-tag,
+#change-analysis .change-overview-card .change-overview-title{
+  max-height:none !important;
+  opacity:1 !important;
+  overflow:visible !important;
+  pointer-events:auto !important;
+  margin:revert !important;
+}
+
+/* New card shell */
+#change-analysis .change-overview-card{
+  background:#FFFFFF !important;
+  border:1px solid rgba(20,15,5,0.08) !important;
+  border-radius:12px !important;
+  box-shadow:0 1px 2px rgba(20,15,5,0.04), 0 4px 16px rgba(20,15,5,0.04) !important;
+  padding:18px 18px 16px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:0 !important;
+  cursor:default !important;
+  position:relative;
+  transition:box-shadow var(--t-base) var(--ease), border-color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
+}
+#change-analysis .change-overview-card:hover{
+  border-color:rgba(20,15,5,0.16) !important;
+  box-shadow:0 2px 6px rgba(20,15,5,0.06), 0 12px 30px rgba(20,15,5,0.07) !important;
+  transform:translateY(-2px) !important;
+}
+
+/* Card head — level number + uppercase label */
+#change-analysis .change-overview-card-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:10px;
+}
+#change-analysis .change-overview-card-head .change-overview-num{
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:600;
+  color:#9C3D2A;
+  letter-spacing:0.06em;
+}
+#change-analysis .change-overview-card-head .change-overview-level{
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:#7A766E;
+}
+
+/* Title */
+#change-analysis .change-overview-card .change-overview-title{
+  font-family:var(--serif) !important;
+  font-size:16px !important;
+  font-weight:600 !important;
+  color:#1A1A1A !important;
+  letter-spacing:-0.005em !important;
+  line-height:1.2 !important;
+  margin:0 0 6px !important;
+}
+
+/* One-line tagline — always visible */
+#change-analysis .change-overview-card .change-overview-tag{
+  font-family:var(--sans);
+  font-size:12.5px;
+  line-height:1.45;
+  color:#3F3F3F;
+  margin:0 0 4px !important;
+}
+
+/* Citation, light grey, always visible */
+#change-analysis .change-overview-card .change-overview-cite{
+  font-family:var(--sans) !important;
+  font-size:10.5px !important;
+  font-style:italic !important;
+  color:#7A766E !important;
+  margin:0 0 12px !important;
+  line-height:1.35 !important;
+}
+
+/* Indicator list — 5 rows showing what each method adjusts for */
+#change-analysis .change-overview-indicators{
+  list-style:none;
+  padding:0;
+  margin:0 0 14px;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+#change-analysis .change-overview-indicator{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  font-family:var(--sans);
+  font-size:11.5px;
+  line-height:1.2;
+}
+#change-analysis .change-overview-indicator .change-overview-dot{
+  flex:0 0 8px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  display:inline-block;
+}
+#change-analysis .change-overview-indicator.is-on{
+  color:#1A1A1A;
+  font-weight:500;
+}
+#change-analysis .change-overview-indicator.is-on .change-overview-dot{
+  /* Sage green — reads as "on/yes/included" without screaming.
+     Subtle outer ring softens the dot against white card backgrounds. */
+  background:#4F8552;
+  box-shadow:0 0 0 2px rgba(79,133,82,0.16);
+}
+#change-analysis .change-overview-indicator.is-off{
+  color:#B7B0A4;
+}
+#change-analysis .change-overview-indicator.is-off .change-overview-dot{
+  background:transparent;
+  border:1px solid #D8D2C5;
+}
+
+/* Use-this-method CTA at the bottom of every card */
+#change-analysis .change-overview-cta{
+  margin-top:auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:10px 14px;
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:600;
+  color:#9C3D2A;
+  background:#FFFFFF;
+  border:1px solid rgba(156,61,42,0.30);
+  border-radius:8px;
+  cursor:pointer;
+  letter-spacing:0.01em;
+  transition:background 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+#change-analysis .change-overview-cta svg{
+  width:14px;
+  height:14px;
+  transition:transform 140ms ease;
+}
+#change-analysis .change-overview-cta:hover{
+  background:#9C3D2A;
+  color:#FFFFFF;
+  border-color:#9C3D2A;
+  transform:translateY(-1px);
+  box-shadow:0 4px 10px rgba(156,61,42,0.20);
+}
+#change-analysis .change-overview-cta:hover svg{ transform:translateX(2px); }
+
+/* Suppress legacy chrome that no longer belongs */
+#change-analysis .change-overview-features,
+#change-analysis .change-overview-meta,
+#change-analysis .change-overview-card-recommended,
+#change-analysis .change-overview-badge{ display:none !important; }
+#change-analysis .change-overview-card.is-pinned{
+  background:#FFFFFF !important;
+  border-color:rgba(20,15,5,0.08) !important;
+}
+
+/* ============================================================================
+   CHANGE ANALYSIS — BOLDER TAB-TO-PANEL CONNECTION
+   The active tab and the panel below it share a more saturated cream and
+   are visually joined by a 3px accent rail running along the active tab's
+   bottom edge and the panel's top edge. Active tab now reads as part of
+   the panel below, with non-active tabs sitting on a clear baseline.
+   ============================================================================ */
+
+#change-analysis .change-method-tabs{
+  border-radius:var(--r-lg) var(--r-lg) 0 0 !important;
+  border-bottom:none !important;
+  margin-bottom:0 !important;
+  overflow:visible !important;
+  box-shadow:0 1px 2px rgba(20,15,5,0.04) !important;
+  background:#FFFFFF !important;
+  border:1px solid rgba(20,15,5,0.08) !important;
+}
+
+/* Inactive tabs sit on a visible baseline. */
+#change-analysis .change-method-tab:not(.active)::before,
+#change-analysis .change-method-tab:not(.active)::after{ display:none !important; }
+#change-analysis .change-method-tab:not(.active){
+  background:#FFFFFF !important;
+  box-shadow:inset 0 -1px 0 rgba(20,15,5,0.08) !important;
+}
+
+/* Active tab — more saturated cream + visible accent rail underneath. */
+#change-analysis .change-method-tab.active{
+  background:#F0E8D6 !important;          /* notably warmer than the panel-strip cream */
+  position:relative !important;
+  z-index:2 !important;
+}
+#change-analysis .change-method-tab.active::after{
+  /* A 3px accent rail along the bottom edge of the active tab. It extends
+     1px below the tab strip's bottom so it overlaps the panel's top and
+     reads as one shared coloured edge. */
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important; right:0 !important;
+  bottom:-1px !important;
+  height:3px !important;
+  background:#9C3D2A !important;
+  z-index:3 !important;
+}
+
+/* Panel: same warm cream as the active tab, with a matching accent rail
+   at its TOP edge so the panel and tab visibly share a coloured seam. */
+#change-analysis .change-method-panel.active,
+#change-analysis .change-method-panel-overview.active{
+  background:linear-gradient(180deg, #F0E8D6 0%, #F7F2E6 80px, #FFFFFF 100%) !important;
+  border:1px solid rgba(20,15,5,0.08) !important;
+  border-top:none !important;
+  border-radius:0 0 var(--r-lg) var(--r-lg) !important;
+  box-shadow:0 6px 18px rgba(20,15,5,0.05) !important;
+  padding:24px !important;
+  margin:0 0 24px !important;
+  position:relative;
+  animation:change-panel-in 180ms var(--ease) both;
+}
+@keyframes change-panel-in{
+  from{ opacity:0; transform:translateY(-4px); }
+  to  { opacity:1; transform:translateY(0); }
+}
+
+/* =====================================================================
+   SCORE CONVERTER — Cockpit layout
+   Bell curve is the hero (right column). Equivalents stack as a slim
+   vertical readout (left column). Classification rows span full width
+   below. Tabs are dropped — both panes are always visible.
+   ===================================================================== */
+
+/* Drop the segmented Equivalents / Distribution control entirely */
+#converter .conv-view-tabs{ display:none !important; }
+
+/* Force both panes visible regardless of .is-active state */
+#converter .conv-view-pane,
+#converter #conv-output[style],
+#converter .curve-wrap.conv-view-pane{
+  display:block !important;
+}
+
+/* Turn the panel into a 2-col grid:
+     [ equivalents column ] [ bell curve column ]
+   with field-row, slider, classification, and footnote spanning both. */
+#converter .conv-unified-panel{
+  display:grid !important;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr) !important;
+  grid-template-areas:
+    "fields  fields"
+    "slider  slider"
+    "equiv   curve"
+    "class   class"
+    "foot    foot" !important;
+  column-gap:24px !important;
+  row-gap:18px !important;
+  align-items:start !important;  /* top-align so equivalents column doesn't stretch */
+}
+
+/* The conversion-table rows beneath the bell curve (Standard / Scaled / T /
+   z / Percentile / Classification) duplicate the side column in the cockpit
+   layout. Keep the JS that generates them but hide the group from view. */
+#converter .conv-curve-rows{ display:none !important; }
+#converter .conv-unified-panel > .field-row       { grid-area: fields; }
+#converter .conv-unified-panel > .conv-slider-wrap{ grid-area: slider; margin:0 !important; padding:0 !important; }
+#converter .conv-unified-panel > #conv-output     { grid-area: equiv; }
+#converter .conv-unified-panel > .curve-wrap      { grid-area: curve; }
+#converter .conv-unified-panel > .conv-meta-strip { grid-area: class; }
+#converter .conv-unified-panel > .conv-desc-footnote { grid-area: foot; }
+
+/* Equivalents column — vertical stack of 5 chips, one score per row.
+   Each row: label on the left, value on the right. */
+#converter #conv-output{
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.06);
+  border-radius:var(--r-md);
+  padding:14px 14px 16px !important;
+  margin:0 !important;
+  display:flex !important;
+  flex-direction:column;
+  /* No height:100% — top-align with natural content height */
+}
+#converter #conv-output .conv-strip-header{
+  margin:0 0 10px !important;
+}
+#converter .conv-scores-strip{
+  display:flex !important;
+  flex-direction:column !important;
+  grid-template-columns:none !important;
+  gap:0 !important;
+  background:transparent !important;
+  border:1px solid rgba(20,15,5,0.06) !important;
+  border-radius:var(--r-md) !important;
+  overflow:hidden;
+  margin:0 !important;
+  /* No flex:1 — rows take their natural height */
+}
+#converter .conv-scores-strip > *{
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:baseline !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  padding:16px 16px !important;
+  border:none !important;
+  border-bottom:1px solid rgba(20,15,5,0.06) !important;
+  background:#FFFFFF !important;
+  transition:background var(--t-fast) var(--ease) !important;
+}
+#converter .conv-scores-strip > *:last-child{ border-bottom:none !important; }
+
+/* Label on the left, value on the right */
+#converter .conv-scores-strip .conv-score-label{
+  margin:0 !important;
+  font-family:var(--sans) !important;
+  font-size:10px !important;
+  font-weight:600 !important;
+  letter-spacing:0.12em !important;
+  text-transform:uppercase !important;
+  color:#8A867E !important;
+  flex:0 0 auto;
+}
+#converter .conv-scores-strip .conv-score-value{
+  font-family:var(--mono) !important;
+  font-size:18px !important;
+  font-weight:500 !important;
+  color:#1A1A1A !important;
+  line-height:1 !important;
+  text-align:right;
+  flex:1 1 auto;
+}
+/* Active "you entered" row — cream highlight with terracotta accent rail */
+#converter .conv-scores-strip > .conv-score-active{
+  background:#F0E8D6 !important;
+  position:relative;
+}
+#converter .conv-scores-strip > .conv-score-active::before{
+  content:"" !important;
+  position:absolute !important;
+  left:0; top:0; bottom:0;
+  width:3px !important;
+  background:#9C3D2A !important;
+}
+#converter .conv-scores-strip > .conv-score-active .conv-score-label{
+  color:#9C3D2A !important;
+}
+#converter .conv-scores-strip > .conv-score-active .conv-score-value{
+  color:#1A1A1A !important;
+}
+/* Suppress the inline "· you entered" suffix on the label — the rail + cream
+   background already mark the active row, and the suffix wraps awkwardly
+   in the narrow column. */
+#converter .conv-scores-strip > .conv-score-active .conv-score-label::after{
+  content:"" !important;
+  display:none !important;
+}
+
+/* Curve column — keep the existing bell-curve container styling but slot it
+   into the right column. Stretch the SVG so it fills its share of the row. */
+/* Curve is unboxed in the cockpit layout — no background, no border, no
+   padding. It floats on the panel surface alongside the equivalents card. */
+#converter .conv-unified-panel > .curve-wrap{
+  margin:0 !important;
+  background:transparent !important;
+  border:none !important;
+  border-radius:0 !important;
+  padding:0 !important;
+  box-shadow:none !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+/* SVG viewBox is now 940×314 (~3:1) — let it fill the column width. At ~830px
+   wide, the SVG renders at ~277px tall, which balances neatly against the
+   equivalents column's natural height. */
+#converter .conv-unified-panel > .curve-wrap .curve-svg{
+  width:100% !important;
+  height:auto !important;
+  max-width:none !important;
+  display:block;
+  margin:0 auto;
+}
+
+/* Classification + footnote sit at the bottom, full width */
+#converter .conv-unified-panel > .conv-meta-strip{
+  margin:0 !important;
+}
+#converter .conv-unified-panel > .conv-desc-footnote{
+  margin:0 !important;
+}
+
+/* Compact the field-row and slider so they don't dominate */
+#converter .conv-unified-panel > .field-row{
+  margin:0 !important;
+}
+
+/* Narrow viewports — collapse to a single column. Curve drops below the
+   equivalents column, classification stays below both. */
+@media (max-width: 900px){
+  #converter .conv-unified-panel{
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "fields"
+      "slider"
+      "curve"
+      "equiv"
+      "class"
+      "foot" !important;
+  }
+  #converter .conv-unified-panel > .curve-wrap{
+    padding:14px 16px !important;
+  }
+}
+
+/* =====================================================================
+   EFFECT SIZES — Story-flow revamp
+   Drops the 4-tab strip and the chunky A/B card row. Lays the page out
+   as a single vertical story:
+     1. Inputs (with compact A/B segmented control + slider)
+     2. Visual (curve) — the hero
+     3. Plain-English interpretation — terracotta hero callout
+     4. Effect-size conversion grid
+     5. Group comparison
+   The Reference values pane is hidden; the per-cell magnitude labels in
+   the conversion grid already convey small/medium/large.
+   ===================================================================== */
+
+/* --- Compact A/B segmented control (replaces the chunky tab cards) --- */
+#effectsize .es-tabs-wrap{ margin-bottom:12px !important; }
+#effectsize .es-tabs{
+  display:inline-flex !important;
+  gap:0 !important;
+  background:rgba(20,15,5,0.05) !important;
+  border:1px solid rgba(20,15,5,0.08) !important;
+  border-radius:999px !important;
+  padding:3px !important;
+  box-shadow:inset 0 1px 2px rgba(20,15,5,0.04) !important;
+  position:static !important;
+}
+#effectsize .es-tab{
+  flex:0 0 auto !important;
+  padding:6px 14px !important;
+  background:transparent !important;
+  border:none !important;
+  border-radius:999px !important;
+  top:0 !important;
+  box-shadow:none !important;
+  font-size:12px !important;
+  font-weight:500 !important;
+  color:#6B6B6B !important;
+  display:inline-flex !important;
+  gap:6px !important;
+  align-items:center !important;
+}
+#effectsize .es-tab .es-tab-num{
+  width:18px !important;
+  height:18px !important;
+  font-size:10px !important;
+  background:rgba(20,15,5,0.08) !important;
+  color:#6B6B6B !important;
+  border:none !important;
+}
+#effectsize .es-tab .es-tab-sub{ display:none !important; }
+#effectsize .es-tab .es-tab-title{ font-size:12px !important; font-weight:500 !important; }
+#effectsize .es-tab.is-active{
+  background:#FFFFFF !important;
+  color:#1A1A1A !important;
+  box-shadow:0 1px 2px rgba(20,15,5,0.10) !important;
+  border:1px solid rgba(20,15,5,0.06) !important;
+}
+#effectsize .es-tab.is-active .es-tab-num{ background:#9C3D2A !important; color:#FFFFFF !important; }
+#effectsize .es-tab.is-active .es-tab-title{ font-weight:600 !important; color:#1A1A1A !important; }
+#effectsize .es-tabs-or{ display:none !important; }
+
+/* Input panel — no longer "attached" to the chunky tabs above it */
+#effectsize .es-input-panel{
+  border-radius:var(--r-lg) !important;
+  margin-top:0 !important;
+  border-top:1px solid rgba(20,15,5,0.06) !important;
+}
+
+/* Drop the preloaded-example banner */
+#effectsize .es-preloaded-note{ display:none !important; }
+
+/* --- Workspace: drop tabs, vertical story flow --- */
+#effectsize .es-view-tabs{ display:none !important; }
+#effectsize .es-view-pane{ display:block !important; animation:none !important; }
+/* Reference values pane — hidden entirely per design */
+#effectsize .es-view-pane[data-view-pane="reference"]{ display:none !important; }
+
+/* Two-column dashboard. Layout:
+     Row 1 left: Visual (spans 2 rows)   Row 1 right: Common Language
+     Row 2 left: ↑ Visual continues       Row 2 right: Effect-size grid
+     Row 3 full: Group comparison
+   The visual stretches down the left to balance against CL + grid stacked
+   on the right. align-items:start so cells don't stretch vertically. */
+#effectsize .es-output-row{
+  display:grid !important;
+  grid-template-columns:1.3fr 1fr !important;
+  grid-template-areas:
+    "curve  common"
+    "curve  grid"
+    "comp   comp" !important;
+  gap:12px !important;
+  margin-bottom:10px !important;
+  align-items:start !important;
+}
+#effectsize .es-left-panel{
+  display:contents !important;
+}
+#effectsize .es-curve-panel{ grid-area:curve; order:unset !important; }
+#effectsize .es-view-pane[data-view-pane="common-language"]{ grid-area:common; order:unset !important; }
+#effectsize .es-view-pane[data-view-pane="conversion"]{ grid-area:grid; order:unset !important; }
+#effectsize .es-view-pane[data-view-pane="comparison"]{ grid-area:comp; order:unset !important; }
+
+/* Conversion pane is unboxed — the grid cards form their own visual
+   structure, so the panel doesn't need its own card shell. Frees up
+   space for the grid to grow and fill the right column. */
+#effectsize .es-view-pane[data-view-pane="conversion"]{
+  background:transparent !important;
+  border:none !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  margin:0 !important;
+}
+/* Group comparison keeps its card shell — it has form inputs and intro
+   text that benefit from being visually contained. */
+#effectsize .es-view-pane[data-view-pane="comparison"]{
+  background:#FFFFFF !important;
+  border:1px solid rgba(20,15,5,0.06) !important;
+  border-radius:var(--r-lg) !important;
+  box-shadow:var(--shadow-1) !important;
+  padding:12px 16px !important;
+  margin:0 !important;
+}
+
+/* Curve panel — compact. The SVG is capped at 460px wide so it doesn't
+   blow up vertically on wide screens. Panel-kicker hidden because the
+   curve is self-evidently the "visual" (saves ~24px). */
+#effectsize .es-curve-panel{
+  background:#FFFFFF !important;
+  border:1px solid rgba(20,15,5,0.06) !important;
+  border-radius:var(--r-lg) !important;
+  box-shadow:var(--shadow-1) !important;
+  padding:10px 12px !important;
+  margin:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+#effectsize .es-curve-panel .panel-kicker{ display:none !important; }
+#effectsize .es-curve-wrap{
+  max-width:none !important;
+  margin:0 !important;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+#effectsize .es-curve{
+  width:100%;
+  max-width:none;
+  margin:0 auto;
+}
+#effectsize .es-curve-legend{
+  font-size:10.5px !important;
+  gap:14px !important;
+  margin-top:2px;
+}
+#effectsize .es-curve-caption{
+  font-size:10px !important;
+  margin:0 !important;
+  line-height:1.3;
+  color:var(--muted);
+}
+
+/* --- HERO CALLOUT: common-language pane ---
+       align-items:start on the grid makes this card size to content, so
+       padding alone determines its height. */
+#effectsize .es-view-pane[data-view-pane="common-language"]{
+  background:linear-gradient(180deg, #F0E8D6 0%, #F7F2E6 100%) !important;
+  border:1px solid rgba(156,61,42,0.18) !important;
+  border-left:4px solid #9C3D2A !important;
+  border-radius:var(--r-lg) !important;
+  box-shadow:var(--shadow-1) !important;
+  padding:12px 14px !important;
+  margin:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+/* Kicker hidden — the cream gradient + terracotta rail already signals
+   "this is the interpretation panel" */
+#effectsize .es-view-pane[data-view-pane="common-language"] .panel-kicker{
+  display:none !important;
+}
+#effectsize .es-view-pane[data-view-pane="common-language"] .info-box{
+  background:transparent !important;
+  border:none !important;
+  padding:0 !important;
+  margin:0 !important;
+  font-size:13px !important;
+  line-height:1.5 !important;
+  color:#1A1A1A !important;
+}
+#effectsize .es-view-pane[data-view-pane="common-language"] .info-box strong{
+  color:#1A1A1A !important;
+  font-weight:600 !important;
+}
+/* Render the two sentences as one continuous paragraph (instead of two
+   stacked blocks). The U₃ line continues on the same flow with a leading
+   space, so the whole interpretation reads as one body of text. */
+#effectsize .es-view-pane[data-view-pane="common-language"] #es-cl-summary,
+#effectsize .es-view-pane[data-view-pane="common-language"] #es-cl-u3line{
+  display:inline !important;
+  font-size:13.5px !important;
+  color:#1A1A1A !important;
+  line-height:1.5 !important;
+  margin:0 !important;
+}
+#effectsize .es-view-pane[data-view-pane="common-language"] #es-cl-summary{
+  font-weight:500 !important;
+}
+#effectsize .es-view-pane[data-view-pane="common-language"] #es-cl-u3line{
+  font-weight:400 !important;
+  color:#3A3A3A !important;
+}
+#effectsize .es-view-pane[data-view-pane="common-language"] #es-cl-summary::after{
+  content:" ";
+  white-space:normal;
+}
+/* The "Interpretation summary." inline label is redundant with the kicker */
+#effectsize .es-view-pane[data-view-pane="common-language"] .info-box > strong:first-child{
+  display:none !important;
+}
+
+/* --- Compress the input panel: slider + fields share ONE row in A mode.
+       (B mode is more complex, falls back to its native multi-row layout.) */
+#effectsize .es-input-panel{
+  padding:10px 14px !important;
+  margin-bottom:10px !important;
+}
+/* In statistic mode (A), make the panel a single flex row with the slider
+   on the left taking the leftover width, fields on the right. */
+#effectsize .es-input-panel:has(.es-mode-pane[data-pane="stat"].is-active){
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:end !important;
+  gap:16px !important;
+}
+#effectsize .es-input-panel:has(.es-mode-pane[data-pane="stat"].is-active) .es-d-slider-row{
+  flex:1 1 auto;
+  margin:0 !important;
+  min-width:280px;
+}
+#effectsize .es-input-panel:has(.es-mode-pane[data-pane="stat"].is-active) .es-mode-pane[data-pane="stat"]{
+  flex:0 0 auto;
+}
+/* Fallback (no :has support, or mode B active) — vertical stack but tight */
+#effectsize .es-d-slider-row{ margin:0 0 8px !important; }
+#effectsize .es-stat-row{ gap:10px !important; margin:0 !important; }
+#effectsize .es-stat-row .field{ margin:0 !important; }
+#effectsize .es-stat-row .field label{ font-size:9.5px !important; margin-bottom:2px !important; }
+#effectsize .es-stat-row .field input,
+#effectsize .es-stat-row .field select{
+  padding:6px 10px !important;
+  min-height:30px !important;
+  height:30px !important;
+  font-size:12.5px !important;
+}
+#effectsize .es-stat-row .field select{ min-width:140px; }
+#effectsize .es-reset-btn{ min-height:30px !important; height:30px !important; padding:0 12px !important; font-size:11.5px !important; }
+
+/* Demote the page header — the top-nav tab already labels this page, so
+   eyebrow + description add noise. Title stays small. */
+#effectsize .eyebrow{ display:none !important; }
+#effectsize .section-title{ font-size:18px !important; margin:0 0 8px !important; line-height:1.2 !important; }
+#effectsize .section-desc{ display:none !important; }
+
+/* --- Conversion grid (unboxed) ---
+       Sits in the narrow right column under Common Language. 4 cols × 3
+       rows = 12 cards. Cards are tall enough to fill the right column
+       and roomy enough to read at a glance. */
+#effectsize .es-view-pane[data-view-pane="conversion"] .panel-kicker{ display:none !important; }
+#effectsize .es-results-grid{
+  grid-template-columns:repeat(4, 1fr) !important;
+  border:1px solid rgba(20,15,5,0.08) !important;
+  border-radius:var(--r-md) !important;
+  overflow:hidden !important;
+  background:rgba(20,15,5,0.06) !important;
+}
+#effectsize .es-result-card{
+  min-height:78px !important;
+  padding:12px 14px !important;
+  grid-template-rows:auto auto auto !important;
+  gap:4px !important;
+  align-content:center !important;
+}
+#effectsize .es-result-label{ font-size:9.5px !important; letter-spacing:0.07em !important; }
+#effectsize .es-result-value{ font-size:17px !important; line-height:1.15 !important; }
+#effectsize .es-result-desc{ font-size:9.5px !important; }
+#effectsize .es-result-similar-value{ font-size:12px !important; line-height:1.25 !important; }
+
+/* --- Compress group comparison into a flat horizontal strip --- */
+#effectsize .es-view-pane[data-view-pane="comparison"] .panel-kicker{ margin-bottom:6px !important; }
+#effectsize .es-view-pane[data-view-pane="comparison"] .es-target-intro{
+  font-size:11.5px !important;
+  margin-bottom:8px !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+}
+#effectsize .es-view-pane[data-view-pane="comparison"] .es-target-intro strong{ font-size:11.5px !important; }
+#effectsize .es-view-pane[data-view-pane="comparison"] .es-target-explain-btn{
+  padding:3px 10px !important;
+  font-size:10.5px !important;
+  margin-left:auto;
+}
+#effectsize .es-view-pane[data-view-pane="comparison"] .es-target-grid{
+  display:grid !important;
+  grid-template-columns:repeat(6, 1fr) !important;
+  gap:8px 10px !important;
+}
+#effectsize .es-view-pane[data-view-pane="comparison"] .es-target-grid .field{ margin:0 !important; }
+#effectsize .es-view-pane[data-view-pane="comparison"] .es-target-grid .field label{ font-size:9px !important; margin-bottom:2px !important; }
+#effectsize .es-view-pane[data-view-pane="comparison"] .es-target-grid .field input,
+#effectsize .es-view-pane[data-view-pane="comparison"] .es-target-grid .es-ci-readout{
+  padding:5px 9px !important;
+  min-height:28px !important;
+  height:28px !important;
+  font-size:11.5px !important;
+  line-height:18px !important;
+}
+#effectsize .es-view-pane[data-view-pane="comparison"] .es-target-help{
+  font-size:10px !important;
+  margin-top:6px !important;
+  line-height:1.4 !important;
+}
+
+/* Narrow viewports — drop to a single column */
+@media (max-width: 1100px){
+  #effectsize .es-output-row{
+    grid-template-columns:1fr !important;
+    grid-template-areas:
+      "curve"
+      "common"
+      "grid"
+      "comp" !important;
+  }
+  #effectsize .es-results-grid{ grid-template-columns:repeat(3, 1fr) !important; }
+}
+
 

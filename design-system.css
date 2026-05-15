@@ -3089,10 +3089,12 @@ input[type="text"].ds-inline-bar-input{
    ============================================================================ */
 
 /* Break out of the 980px section cap on this page — the 2-col layout
-   needs every horizontal pixel we can give it. */
+   needs every horizontal pixel we can give it. Top padding is bumped
+   (was --ds-space-4) because the legacy eyebrow + .section-desc that
+   used to provide breathing room are now removed. */
 #premorbid.ds-prem-restructured{
   max-width: min(1500px, calc(100vw - 48px)) !important;
-  padding: var(--ds-space-4) var(--ds-space-6) var(--ds-space-6) !important;
+  padding: var(--ds-space-8) var(--ds-space-6) var(--ds-space-6) !important;
 }
 
 /* Kill the legacy eyebrow + h1 — the topbar already shows "Premorbid Estimation",
@@ -3244,59 +3246,67 @@ input[type="text"].ds-inline-bar-input{
    with a hairline divider beneath. The active tab is anchored to the
    content card below by a thick accent underline that visually replaces
    the hairline at the active position. */
+/* Tab strip — white card with rounded TOP corners only, sits above the
+   active panel so they read as one folder shape. Matches the Change
+   Analysis treatment. */
 #premorbid.ds-prem-restructured .pre-tabs{
   display: flex !important;
   flex-wrap: nowrap !important;
   gap: 0 !important;
-  margin: 0 0 -1px !important;            /* overlap the content card's top border */
+  margin: 0 !important;
   padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  border-bottom: 1px solid rgba(20,15,5,0.10) !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+  background: #FFFFFF !important;
+  border: 1px solid rgba(20,15,5,0.08) !important;
+  border-bottom: none !important;
+  border-radius: var(--r-lg) var(--r-lg) 0 0 !important;
+  box-shadow: 0 1px 2px rgba(20,15,5,0.04) !important;
   overflow: visible !important;
 }
 #premorbid.ds-prem-restructured .pre-tabs > .tab{
   position: relative !important;
   flex: 0 0 auto !important;
-  padding: 12px 18px !important;
+  padding: 14px 20px !important;
   margin: 0 !important;
-  margin-bottom: -1px !important;          /* sit on the strip's bottom border */
   min-height: 0 !important;
   font-family: var(--sans) !important;
-  font-size: 14px !important;
+  font-size: 13.5px !important;
   font-weight: 500 !important;
   line-height: 1.2 !important;
   color: #6B6B6B !important;
-  background: transparent !important;
+  background: #FFFFFF !important;
   border: none !important;
-  border-bottom: 2px solid transparent !important;
   border-radius: 0 !important;
-  box-shadow: none !important;
+  box-shadow: inset 0 -1px 0 rgba(20,15,5,0.08) !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 0 !important;
-  transition: color 120ms ease, border-color 120ms ease !important;
+  transition: background 120ms ease, color 120ms ease !important;
 }
-#premorbid.ds-prem-restructured .pre-tabs > .tab:hover{
+#premorbid.ds-prem-restructured .pre-tabs > .tab:hover:not(.active){
+  background: rgba(20,15,5,0.025) !important;
   color: #1A1A1A !important;
-  border-bottom-color: rgba(20,15,5,0.20) !important;
-  background: transparent !important;
-  transform: none !important;
-  box-shadow: none !important;
 }
+/* Active tab — saturated cream + terracotta accent rail underneath, shared
+   with the panel's top edge so the connection is visible. */
 #premorbid.ds-prem-restructured .pre-tabs > .tab.active,
 #premorbid.ds-prem-restructured .pre-tabs > .tab.active:hover{
   color: #1A1A1A !important;
   font-weight: 600 !important;
-  border-bottom-color: #1A1A1A !important; /* the accent underline */
-  background: transparent !important;
-  transform: none !important;
+  background: #F0E8D6 !important;
   box-shadow: none !important;
+  z-index: 2 !important;
+}
+#premorbid.ds-prem-restructured .pre-tabs > .tab.active::after{
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important; right: 0 !important;
+  bottom: -1px !important;
+  height: 3px !important;
+  background: #9C3D2A !important;
+  z-index: 3 !important;
 }
 /* Numbered chips are dropped — keep the rule defensive in case markup includes them */
 #premorbid.ds-prem-restructured .pre-tab-num{
@@ -3306,18 +3316,27 @@ input[type="text"].ds-inline-bar-input{
   white-space: nowrap !important;
 }
 /* The content panel below the tabs visually "owns" the tab strip:
-   share its top edge with the active tab's underline. */
+   share its top edge with the active tab's underline so the two read as
+   one folder shape. */
 #premorbid.ds-prem-restructured .pre-tab-content{
   border-top: none !important;
   margin-top: 0 !important;
+}
+#premorbid.ds-prem-restructured .pre-tab-content.active{
+  display: block !important;
+  background: linear-gradient(180deg, #F0E8D6 0%, #F7F2E6 80px, #FFFFFF 100%) !important;
+  border: 1px solid rgba(20,15,5,0.08) !important;
+  border-top: none !important;
+  border-radius: 0 0 var(--r-lg) var(--r-lg) !important;
+  box-shadow: 0 6px 18px rgba(20,15,5,0.05) !important;
+  padding: 22px 24px !important;
+  margin: 0 0 16px !important;
+  animation: change-panel-in 180ms var(--ease) both;
 }
 
 /* Hide the bottom Back/Next nav — with Inputs tab gone there's only 3 panes */
 #premorbid.ds-prem-restructured .pre-tab-nav{
   display: none !important;
-}
-#premorbid.ds-prem-restructured .pre-tab-content{
-  margin-top: 0 !important;
 }
 
 /* ---------- Font consistency on the Premorbid page ----------
@@ -4021,3 +4040,91 @@ input[type="text"].ds-inline-bar-input{
   pointer-events: none;
 }
 
+/* ============================================================================
+   CHANGE ANALYSIS — Bolder folder-tab connection
+   (superseded by the 2026-05-15 revamp in styles.css; this block is kept
+   only as a no-op so any historical references resolve.)
+   ============================================================================ */
+
+/* Decision-guide on the About panel — compact "data → method" list */
+#change-analysis .change-overview-guide{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(20,15,5,0.06);
+  border-radius: var(--r-md);
+}
+#change-analysis .change-overview-guide-eyebrow{
+  display: block;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7A766E;
+  margin-bottom: 2px;
+}
+#change-analysis .change-overview-guide-list{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+#change-analysis .change-overview-guide-row{
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+#change-analysis .change-overview-guide-row + .change-overview-guide-row{
+  border-top: 1px dashed rgba(20,15,5,0.08);
+}
+#change-analysis .change-overview-guide-data{
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: #3F3F3F;
+  line-height: 1.35;
+}
+#change-analysis .change-overview-guide-data em{
+  font-style: italic;
+  color: #1A1A1A;
+}
+#change-analysis .change-overview-guide-arrow{
+  font-family: var(--sans);
+  font-size: 13px;
+  color: #B7B0A4;
+}
+#change-analysis .change-overview-guide-pick{
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: #1A1A1A;
+  background: #FFFFFF;
+  border: 1px solid rgba(20,15,5,0.16);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  min-width: 130px;
+  text-align: center;
+}
+#change-analysis .change-overview-guide-pick:hover{
+  background: #1A1A1A;
+  color: #FFFFFF;
+  border-color: #1A1A1A;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 700px){
+  #change-analysis .change-overview-guide-row{
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  #change-analysis .change-overview-guide-arrow{ display: none; }
+}
