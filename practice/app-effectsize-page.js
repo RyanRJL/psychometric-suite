@@ -32,14 +32,23 @@
   if (!els['es-stat-type']) return;
   const esState = { statTouched: false, statAutoFilled: false, source: 'stat' };
   const SIMILAR_EFFECTS = [
-    { label: 'Heavy smokers vs never (lung cancer)', d: 2.60 },
-    { label: 'Smokers vs never (lung cancer)', d: 1.75 },
-    { label: 'UK male vs female height', d: 1.37 },
-    { label: 'Former vs never smoker (lung cancer)', d: 1.10 },
-    { label: 'Clozapine vs placebo (schizophrenia)', d: 0.89 },
-    { label: 'CBT vs usual care (social anxiety)', d: 0.44 },
-    { label: 'CBT vs usual care (depression)', d: 0.43 },
-    { label: 'Paracetamol vs placebo (headache)', d: 0.26 }
+    { label: 'Heavy smokers vs never smokers (lung cancer)',    d: 2.60 },
+    { label: 'UK male vs female adult height',                  d: 2.04 },
+    { label: 'Smokers vs never smokers (lung cancer)',          d: 1.75 },
+    { label: 'Cognitive therapy for PTSD',                      d: 1.63 },
+    { label: 'Former vs never smokers (lung cancer)',           d: 1.10 },
+    { label: 'Exposure therapy for PTSD',                       d: 1.08 },
+    { label: 'EMDR for PTSD',                                   d: 1.00 },
+    { label: 'Clozapine vs placebo (schizophrenia)',            d: 0.89 },
+    { label: 'CBT for depression',                              d: 0.80 },
+    { label: 'Methylphenidate for ADHD (children)',             d: 0.75 },
+    { label: 'CBT vs placebo for anxiety disorders',            d: 0.70 },
+    { label: 'CBT for depression (low-bias studies)',           d: 0.60 },
+    { label: 'Interpersonal Therapy for depression',            d: 0.50 },
+    { label: 'Antidepressants vs placebo',                      d: 0.30 },
+    { label: 'CBT vs treatment-as-usual for chronic pain',      d: 0.20 },
+    { label: 'CBT vs active control for chronic pain',          d: 0.10 },
+    { label: 'No or negligible effect',                         d: 0.00 }
   ];
 
   // Aux field per statistic (some conversions need N or pooled SD)

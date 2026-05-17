@@ -636,7 +636,7 @@
             <button type="button" class="topnav-drop-item nav-item" data-target="sdi" role="menuitem">Standard Deviation Index</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-basic" role="menuitem">Simple Reliable Change</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-practice" role="menuitem">Practice Effect-Adjusted</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">Standardised Regression-Based</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">McSweeney Regression-Based</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
@@ -778,7 +778,7 @@
           </li>
           <li class="home-pathway-tool">
             <span class="home-pathway-tool-num">07</span>
-            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;rci-srb&quot;]').click()">Standardised Regression-Based</span>
+            <span class="home-pathway-tool-name" onclick="event.stopPropagation();document.querySelector('.nav-item[data-target=&quot;rci-srb&quot;]').click()">McSweeney Regression-Based</span>
           </li>
           <li class="home-pathway-tool">
             <span class="home-pathway-tool-num">08</span>
@@ -1396,14 +1396,24 @@
           <p style="margin-bottom:8px;font-size:11.5px;color:var(--muted);font-style:italic;line-height:1.4">Use these published effect sizes to anchor your results. The values below span small to huge magnitudes so you can compare your finding against familiar clinical and epidemiological benchmarks.</p>
           <table class="es-examples-table">
             <tbody>
-              <tr><td>30+ daily vs never smokers, lung cancer (Pesch et al., 2011)</td><td>2.60</td></tr>
-              <tr><td>Smoking vs never, lung cancer (Pesch et al., 2011)</td><td>1.75</td></tr>
-              <tr><td>Male vs female height, UK (Health Survey, 2021)</td><td>1.37</td></tr>
-              <tr><td>Former vs never smoker, lung cancer (Pesch et al., 2011)</td><td>1.10</td></tr>
-              <tr><td>Clozapine vs placebo, schizophrenia (Cuijpers et al., 2016)</td><td>0.89</td></tr>
-              <tr><td>CBT vs care as usual, social anxiety (Cuijpers et al., 2016)</td><td>0.44</td></tr>
-              <tr><td>CBT vs care as usual, depression (Cuijpers et al., 2016)</td><td>0.43</td></tr>
-              <tr><td>Paracetamol vs placebo, headache (Alnasser et al., 2023)</td><td>0.26</td></tr>
+              <tr><td>Heavy smokers (30+/day) vs never smokers, lung cancer (Pesch et al., 2012)</td><td>2.60</td></tr>
+              <tr><td>UK male vs female adult height (UK Biobank; Lui et al., 2021)</td><td>2.04</td></tr>
+              <tr><td>Smokers (any) vs never smokers, lung cancer (Pesch et al., 2012)</td><td>1.75</td></tr>
+              <tr><td>Cognitive therapy vs control for PTSD (Watts et al., 2013)</td><td>1.63</td></tr>
+              <tr><td>Former smokers vs never smokers, lung cancer (Pesch et al., 2012)</td><td>1.10</td></tr>
+              <tr><td>Exposure therapy vs control for PTSD (Watts et al., 2013)</td><td>1.08</td></tr>
+              <tr><td>EMDR vs control for PTSD (Watts et al., 2013)</td><td>1.00</td></tr>
+              <tr><td>Clozapine vs placebo for schizophrenia (Huhn et al., 2019 Lancet)</td><td>0.89</td></tr>
+              <tr><td>CBT vs control for depression (Cuijpers et al., 2023 World Psychiatry)</td><td>0.80</td></tr>
+              <tr><td>Methylphenidate vs placebo for ADHD, children (Storebø et al., 2023 Cochrane)</td><td>0.75</td></tr>
+              <tr><td>CBT vs placebo for anxiety disorders (Hofmann &amp; Smits, 2008)</td><td>0.70</td></tr>
+              <tr><td>CBT for depression, low-risk-of-bias subset (Cuijpers et al., 2023)</td><td>0.60</td></tr>
+              <tr><td>Interpersonal Therapy for depression (Cuijpers et al., 2011)</td><td>0.50</td></tr>
+              <tr><td>Antidepressants vs placebo (Cipriani et al., 2018 Lancet)</td><td>0.30</td></tr>
+              <tr><td>CBT vs treatment-as-usual for chronic pain (Williams et al., 2020 Cochrane)</td><td>0.20</td></tr>
+              <tr><td>CBT vs active control for chronic pain (Williams et al., 2020 Cochrane)</td><td>0.10</td></tr>
+              <tr><td>Sugar on children's hyperactivity (Wolraich et al., 1995 JAMA)</td><td>0.00</td></tr>
+              <tr><td>No or negligible effect</td><td>0.00</td></tr>
             </tbody>
           </table>
         </div>
@@ -1688,7 +1698,7 @@
   <!-- ========== 06 SRB REGRESSION ========== -->
   <section class="section" id="rci-srb">
     <div class="eyebrow">Reliable Change Indices (RCI) · Regression-Based</div>
-    <h1 class="section-title">Standardised Regression-Based (SRB) <span class="ink">Reliable Change Index</span></h1>
+    <h1 class="section-title">McSweeney Regression-Based (SRB) <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">McSweeney et al. (1993). Predicts each patient's expected retest score from their baseline and the normative sample's regression parameters; the residual is standardised against the standard error of estimate.</p>
 
     <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
@@ -1998,7 +2008,7 @@
       <td class="psy">0.73</td>
       <td class="psy">9.11</td>
     </tr><tr>
-      <td class="model">OPIE-4 (prorated FSIQ): Vocab and/or Matrix</td>
+      <td class="model">OPIE-4: Vocab and/or Matrix</td>
       <td class="fsiq">-</td>
       <td class="num">-</td>
       <td class="num">-</td>
@@ -5994,8 +6004,8 @@
     {
       id:'rci-srb',
       label:'McSweeney Regression-Based',
-      title:'Standardised Regression-Based Change',
-      homeLabel:'McSweeneyStandardised Regression-Based',
+      title:'McSweeney Regression-Based Change',
+      homeLabel:'McSweeney Regression-Based',
       meta:'Level 4 · Baseline-predicted retest',
       stack:['REG','RTM','PE'],
       badge:'Model',
@@ -6005,7 +6015,7 @@
     {
       id:'rci-crawford',
       label:'Crawford Regression-Based',
-      title:'Crawford & Garthwaite Standardised Regression-Based (SRB) Change',
+      title:'Crawford & Garthwaite Regression-Based Change',
       homeLabel:'Crawford Regression-Based',
       meta:'Level 5 · Sample-size adjusted',
       stack:['REG','RTM','PE','N'],
@@ -6244,9 +6254,9 @@
           <span class="change-overview-feature is-on" title="Subtracts the average retest improvement seen in the normative sample.">Practice effect</span>
         </div>
       </article>
-      <article class="change-overview-card" data-target-method="rci-srb" tabindex="0" role="button" aria-label="Open Standardised Regression-Based method">
+      <article class="change-overview-card" data-target-method="rci-srb" tabindex="0" role="button" aria-label="Open McSweeney Regression-Based method">
         <div class="change-overview-meta"><span class="change-overview-num">04</span><span class="change-overview-level">Level 4 · Regression-based</span></div>
-        <h3>Standardised Regression-Based</h3>
+        <h3>McSweeney Regression-Based</h3>
         <p class="change-overview-cite">McSweeney et al. (1993)</p>
         <p>Predicts the patient's expected retest score from baseline using a normative regression equation, then standardises the residual against the standard error of estimate (SEE). <strong>Use when:</strong> regression to the mean is a concern - particularly relevant for patients with extreme baseline scores. Controls for practice effects and baseline-dependent regression simultaneously.</p>
         <div class="change-overview-features">

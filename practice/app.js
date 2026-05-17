@@ -1961,7 +1961,7 @@ function renderRciApa(method){
   const methodNote = {
     'rci-basic':    `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Jacobson and Truax (1991). Reliable change threshold = ${cvLabelZ}.`,
     'rci-practice': `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Iverson (2001) and adjusted for practice effects. Reliable change threshold = ${cvLabelZ}.`,
-    'rci-srb':      `Standardised Regression-Based RCI (z) per McSweeney et al. (1993). Ŷ₂ = predicted retest score from the regression model; RCI (z) tests whether Date 2 differs reliably from Ŷ₂. Reliable change threshold = ${cvLabelZ}.`,
+    'rci-srb':      `McSweeney Regression-Based RCI (z) per McSweeney et al. (1993). Ŷ₂ = predicted retest score from the regression model; RCI (z) tests whether Date 2 differs reliably from Ŷ₂. Reliable change threshold = ${cvLabelZ}.`,
     'rci-crawford': `<i>t</i>(RB) is the Crawford regression-based reliable-change statistic. Reliable change threshold = ${cvLabel} CI.`
   }[method];
   const safe = (calc, prop, digits=2) => calc ? fmt(calc[prop], digits) : '';
@@ -2748,14 +2748,14 @@ function calcPremorbid(){
   else if (hasVC) branch = 'VC';
   else if (hasMR) branch = 'MR';
 
-  let v4 = null, s4 = null, name4 = 'OPIE-4 (prorated FSIQ): Vocab and/or Matrix', tipKey4 = 'opieDefault';
+  let v4 = null, s4 = null, name4 = 'OPIE-4: Vocab and/or Matrix', tipKey4 = 'opieDefault';
   if (branch != null){
     const c = OPIE_PRORATED_FSIQ[branch];
     // Update label, tooltip and R/SEE from the branch alone (no age required)
     s4 = { see: c.see, r: c.r };
-    if (branch === 'VC_MR'){ name4 = 'OPIE-4 (prorated FSIQ): Vocab + Matrix'; tipKey4 = 'opieVCMR'; }
-    else if (branch === 'VC') { name4 = 'OPIE-4 (prorated FSIQ): Vocab only';  tipKey4 = 'opieVC'; }
-    else if (branch === 'MR') { name4 = 'OPIE-4 (prorated FSIQ): Matrix only'; tipKey4 = 'opieMR'; }
+    if (branch === 'VC_MR'){ name4 = 'OPIE-4: Vocab + Matrix'; tipKey4 = 'opieVCMR'; }
+    else if (branch === 'VC') { name4 = 'OPIE-4: Vocab only';  tipKey4 = 'opieVC'; }
+    else if (branch === 'MR') { name4 = 'OPIE-4: Matrix only'; tipKey4 = 'opieMR'; }
     // Compute prediction only once age is also available
     if (age != null){
       let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexEffect;
@@ -2965,13 +2965,13 @@ function getOpiePredictions(){
   }
 
   // FSIQ models
-  pushModel('FSIQ_VC_MR', 'Prorated FSIQ - Vocab + Matrix', OPIE_PRORATED_FSIQ.VC_MR, true, true, 'opiePredFSIQ_VCMR');
-  pushModel('FSIQ_VC', 'Prorated FSIQ - Vocab only', OPIE_PRORATED_FSIQ.VC, true, false, 'opiePredFSIQ_VC');
-  pushModel('FSIQ_MR', 'Prorated FSIQ - Matrix only', OPIE_PRORATED_FSIQ.MR, false, true, 'opiePredFSIQ_MR');
+  pushModel('FSIQ_VC_MR', 'FSIQ - Vocab + Matrix', OPIE_PRORATED_FSIQ.VC_MR, true, true, 'opiePredFSIQ_VCMR');
+  pushModel('FSIQ_VC', 'FSIQ - Vocab only', OPIE_PRORATED_FSIQ.VC, true, false, 'opiePredFSIQ_VC');
+  pushModel('FSIQ_MR', 'FSIQ - Matrix only', OPIE_PRORATED_FSIQ.MR, false, true, 'opiePredFSIQ_MR');
 
   // GAI models
-  pushModel('GAI_VC_MR', 'Prorated GAI - Vocab + Matrix', OPIE_PRORATED_GAI.VC_MR, true, true, 'opiePredGAI_VCMR');
-  pushModel('GAI_VC', 'Prorated GAI - Vocab only', OPIE_PRORATED_GAI.VC, true, false, 'opiePredGAI_VC');
+  pushModel('GAI_VC_MR', 'GAI - Vocab + Matrix', OPIE_PRORATED_GAI.VC_MR, true, true, 'opiePredGAI_VCMR');
+  pushModel('GAI_VC', 'GAI - Vocab only', OPIE_PRORATED_GAI.VC, true, false, 'opiePredGAI_VC');
 
   return list;
 }
@@ -5880,7 +5880,7 @@ refreshAll();
     sdi: 'Standard Deviation Index',
     'rci-basic': 'Simple Reliable Change',
     'rci-practice': 'Practice Effect-Adjusted',
-    'rci-srb': 'Standardised Regression-Based',
+    'rci-srb': 'McSweeney Regression-Based',
     'rci-crawford': 'Crawford Regression-Based',
     'change-analysis': 'Change Analysis',
     premorbid: 'Premorbid Estimation',
@@ -5954,7 +5954,7 @@ const ReportBundle = (function(){
     'sdi-apa':           'Standard Deviation Index',
     'rci-basic-apa':     'Simple Reliable Change',
     'rci-practice-apa':  'Practice-Adjusted RCI',
-    'rci-srb-apa':       'Standardised Regression-Based',
+    'rci-srb-apa':       'McSweeney Regression-Based',
     'rci-crawford-apa':  'Crawford Regression-Based',
     'pre-estimates-apa':    'Premorbid · Estimates',
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
@@ -5967,7 +5967,7 @@ const ReportBundle = (function(){
     'sdi-apa':              'Standard-Deviation Discrepancy',
     'rci-basic-apa':        'Reliable Change (Jacobson & Truax)',
     'rci-practice-apa':     'Practice-Adjusted Reliable Change',
-    'rci-srb-apa':          'Standardised Regression-Based Change',
+    'rci-srb-apa':          'McSweeney Regression-Based Change',
     'rci-crawford-apa':     'Crawford Regression-Based Change',
     'pre-estimates-apa':    'Premorbid Cognitive Estimate',
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',

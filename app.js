@@ -2353,7 +2353,7 @@ function renderRciApa(method){
   const methodNote = {
     'rci-basic':    `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Jacobson and Truax (1991). Reliable change threshold = ${cvLabelZ}.`,
     'rci-practice': `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Iverson (2001) and adjusted for practice effects. Reliable change threshold = ${cvLabelZ}.`,
-    'rci-srb':      `Standardised Regression-Based RCI (z) per McSweeney et al. (1993). Ŷ₂ = predicted retest score from the regression model; RCI (z) tests whether Date 2 differs reliably from Ŷ₂. Reliable change threshold = ${cvLabelZ}.`,
+    'rci-srb':      `McSweeney Regression-Based RCI (z) per McSweeney et al. (1993). Ŷ₂ = predicted retest score from the regression model; RCI (z) tests whether Date 2 differs reliably from Ŷ₂. Reliable change threshold = ${cvLabelZ}.`,
     'rci-crawford': `<i>t</i>(RB) is the Crawford regression-based reliable-change statistic. Reliable change threshold = ${cvLabel} CI.`
   }[method];
   const safe = (calc, prop, digits=2) => calc ? fmt(calc[prop], digits) : '';
@@ -3154,14 +3154,14 @@ function calcPremorbid(){
   else if (hasVC) branch = 'VC';
   else if (hasMR) branch = 'MR';
 
-  let v4 = null, s4 = null, name4 = 'OPIE-4 (prorated FSIQ): Vocab and/or Matrix', tipKey4 = 'opieDefault';
+  let v4 = null, s4 = null, name4 = 'OPIE-4: Vocab and/or Matrix', tipKey4 = 'opieDefault';
   if (branch != null){
     const c = OPIE_PRORATED_FSIQ[branch];
     // Update label, tooltip and R/SEE from the branch alone (no age required)
     s4 = { see: c.see, r: c.r };
-    if (branch === 'VC_MR'){ name4 = 'OPIE-4 (prorated FSIQ): Vocab + Matrix'; tipKey4 = 'opieVCMR'; }
-    else if (branch === 'VC') { name4 = 'OPIE-4 (prorated FSIQ): Vocab only';  tipKey4 = 'opieVC'; }
-    else if (branch === 'MR') { name4 = 'OPIE-4 (prorated FSIQ): Matrix only'; tipKey4 = 'opieMR'; }
+    if (branch === 'VC_MR'){ name4 = 'OPIE-4: Vocab + Matrix'; tipKey4 = 'opieVCMR'; }
+    else if (branch === 'VC') { name4 = 'OPIE-4: Vocab only';  tipKey4 = 'opieVC'; }
+    else if (branch === 'MR') { name4 = 'OPIE-4: Matrix only'; tipKey4 = 'opieMR'; }
     // Compute prediction only once age is also available
     if (age != null){
       let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexEffect;
@@ -3194,6 +3194,179 @@ function calcPremorbid(){
   preState.ciMult = mult;
   preState.ciPct = ciPct;
   renderPreEstimatesApa();
+  renderPremorbidForestPlot(rows, mult, ciPct);
+}
+
+/* === Forest plot rendering ===
+   Modern JAMA-style tabular figure. Five columns: Model · r · SEE ·
+   Estimate (CI) · Forest plot. Filled diamonds mark the point estimate
+   (sized by inverse SEE); horizontal whiskers span the CI; one thin
+   vertical reference at the population mean (FSIQ 100). All-charcoal
+   grayscale palette, IBM Plex Sans throughout, tabular figures for
+   clean column alignment. */
+function renderPremorbidForestPlot(rows, mult, ciPct){
+  const wrap = document.getElementById('pre-forest-plot-wrap');
+  const svg  = document.getElementById('pre-forest-plot');
+  if (!wrap || !svg) return;
+
+  // Figure is always visible — empty rows render with em-dash placeholders
+  // so the table scaffold (model names, r, SEE) shows even before any
+  // inputs are entered. Gives the user a preview of what's coming.
+  wrap.hidden = false;
+
+  const ciLabel = document.getElementById('pre-forest-ci-pct');
+  if (ciLabel) ciLabel.textContent = ciPct;
+
+  // ── Geometry ──────────────────────────────────────────────────────
+  // Modern JAMA-style tabular figure: numeric columns on the LEFT
+  // (Model · r · SEE · Estimate (CI)), forest plot zone on the RIGHT.
+  const W = 880;
+  const padTop = 42;            // headers + rule + breath
+  const padBottom = 52;         // axis ticks, labels, caption
+  const rowHeight = 40;         // generous breathing room
+  const plotHeight = rows.length * rowHeight;
+  const H = padTop + plotHeight + padBottom;
+
+  // Numeric column anchors — right-aligned x positions (except Model).
+  // Spacing balanced for even ~45px gaps between visible header edges.
+  const COL_MODEL_X       = 0;       // left-aligned, max ~270px
+  const COL_R_X           = 312;     // right-aligned
+  const COL_SEE_X         = 384;     // right-aligned (72 from R)
+  const COL_ESTIMATE_X    = 528;     // right-aligned (144 from SEE — wider content)
+
+  // Plot zone (right side). plotRight is pulled inward from the viewBox
+  // edge so the centred "145" tick label has room to render without
+  // being clipped by the SVG bounds.
+  const plotLeft  = 564;
+  const plotRight = W - 22;
+  const plotWidth = plotRight - plotLeft;
+
+  const xMin = 55, xMax = 145;
+  const xScale = (ss) => plotLeft + ((Math.max(xMin, Math.min(xMax, ss)) - xMin) / (xMax - xMin)) * plotWidth;
+
+  // Precision scaling: SEE ∈ [7.5, 10.5] → half-size ∈ [8, 5]
+  // (diamond's half-width = half-height = `s`, so full diameter = 2s)
+  function markerSize(see){
+    if (!Number.isFinite(see) || see <= 0) return 6;
+    const minS = 5, maxS = 8;
+    const minSEE = 7.5, maxSEE = 10.5;
+    const t = Math.max(0, Math.min(1, (see - minSEE) / (maxSEE - minSEE)));
+    return maxS - t * (maxS - minS);
+  }
+
+  // ── Palette ───────────────────────────────────────────────────────
+  // Soft charcoal grayscale throughout. No accent — the data itself is
+  // the focal point.
+  const INK      = '#1A1A1A';
+  const INK_SOFT = '#2E2E2E';
+  const MUTED    = '#6B6660';
+  const FAINT    = '#9A968D';
+  const RULE     = 'rgba(20,20,20,0.85)';
+  const RULE_LN  = 0.6;
+  const MEAN_LN  = 'rgba(20,20,20,0.18)';
+
+  const SANS = '"IBM Plex Sans", "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif';
+  // Helper: TXT(size, weight, fill, anchor, extra)
+  const TXT = (size, weight, fill, anchor, extra) =>
+    `font-family='${SANS}' font-size='${size}' font-weight='${weight || '400'}' fill='${fill}'`
+    + (anchor ? ` text-anchor='${anchor}'` : '')
+    + ` font-variant-numeric='tabular-nums' style='font-feature-settings:"tnum" 1'`
+    + (extra ? ` ${extra}` : '');
+
+  let out = '';
+
+  // ── Top rule (subtle) ─────────────────────────────────────────────
+  out += `<line x1="0" y1="2" x2="${W}" y2="2" stroke="${RULE}" stroke-width="${RULE_LN}"/>`;
+
+  // ── Column headers (uppercase, letterspaced, weight 600, muted) ───
+  const headerY = 22;
+  const headerAttrs = `letter-spacing='0.10em'`;
+  out += `<text x="${COL_MODEL_X}"            y="${headerY}" ${TXT('9.5', '600', MUTED, null, headerAttrs)}>MODEL</text>`;
+  out += `<text x="${COL_R_X}"                y="${headerY}" ${TXT('9.5', '600', MUTED, 'end', headerAttrs)}>R</text>`;
+  out += `<text x="${COL_SEE_X}"              y="${headerY}" ${TXT('9.5', '600', MUTED, 'end', headerAttrs)}>SEE</text>`;
+  out += `<text x="${COL_ESTIMATE_X}"         y="${headerY}" ${TXT('9.5', '600', MUTED, 'end', headerAttrs)}>ESTIMATE (${ciPct} CI)</text>`;
+  out += `<text x="${plotLeft + plotWidth/2}" y="${headerY}" ${TXT('9.5', '600', MUTED, 'middle', headerAttrs)}>FOREST PLOT</text>`;
+
+  // Header bottom rule
+  out += `<line x1="0" y1="${padTop - 10}" x2="${W}" y2="${padTop - 10}" stroke="${RULE}" stroke-width="${RULE_LN}"/>`;
+
+  // ── Population-mean reference ─────────────────────────────────────
+  const meanX = xScale(100);
+  out += `<line x1="${meanX}" y1="${padTop - 2}" x2="${meanX}" y2="${padTop + plotHeight + 2}" stroke="${MEAN_LN}" stroke-width="0.7"/>`;
+
+  // ── Data rows ─────────────────────────────────────────────────────
+  rows.forEach((row, i) => {
+    const y = padTop + rowHeight * (i + 0.5);
+    const baseline = y + 4;
+
+    // Model name
+    const nameText = row.name.replace(/&/g, '&amp;');
+    out += `<text x="${COL_MODEL_X}" y="${baseline}" ${TXT('12', '450', INK)}>${nameText}</text>`;
+
+    // r
+    if (row.r != null){
+      out += `<text x="${COL_R_X}" y="${baseline}" ${TXT('12', '400', INK_SOFT, 'end')}>${row.r.toFixed(2)}</text>`;
+    } else {
+      out += `<text x="${COL_R_X}" y="${baseline}" ${TXT('12', '400', FAINT, 'end')}>—</text>`;
+    }
+
+    // SEE
+    if (row.see != null){
+      out += `<text x="${COL_SEE_X}" y="${baseline}" ${TXT('12', '400', INK_SOFT, 'end')}>${row.see.toFixed(2)}</text>`;
+    } else {
+      out += `<text x="${COL_SEE_X}" y="${baseline}" ${TXT('12', '400', FAINT, 'end')}>—</text>`;
+    }
+
+    if (row.val != null && row.see != null){
+      const lo = row.val - mult * row.see;
+      const hi = row.val + mult * row.see;
+      const cx = xScale(row.val);
+      const x1 = xScale(lo);
+      const x2 = xScale(hi);
+
+      // Estimate (CI) — point estimate in weight-700 charcoal so it
+      // reads as the headline number; CI bounds in light muted grey
+      // so the eye locks on the answer first.
+      out += `<text x="${COL_ESTIMATE_X}" y="${baseline}" ${TXT('12.5', '700', INK, 'end')}>${Math.round(row.val)}`
+          +  `<tspan font-weight='400' fill='${MUTED}' font-size='11.5'>  (${Math.round(lo)}–${Math.round(hi)})</tspan></text>`;
+
+      // Whisker (charcoal, slightly thicker for cleaner read)
+      out += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${INK}" stroke-width="1" stroke-linecap="round"/>`;
+      // Small end caps
+      out += `<line x1="${x1}" y1="${y - 3.5}" x2="${x1}" y2="${y + 3.5}" stroke="${INK}" stroke-width="1" stroke-linecap="round"/>`;
+      out += `<line x1="${x2}" y1="${y - 3.5}" x2="${x2}" y2="${y + 3.5}" stroke="${INK}" stroke-width="1" stroke-linecap="round"/>`;
+
+      // Filled DIAMOND marker — pointed corners make the point estimate
+      // findable at a glance. Sized by precision. White stroke gives
+      // crisp separation from the whisker behind it.
+      const s = markerSize(row.see);
+      const dia = `${cx},${y - s} ${cx + s},${y} ${cx},${y + s} ${cx - s},${y}`;
+      out += `<polygon points="${dia}" fill="${INK}" stroke="#FFFFFF" stroke-width="1"/>`;
+    } else {
+      // Empty state — quiet em-dash. Plot zone stays empty for this row.
+      out += `<text x="${COL_ESTIMATE_X}" y="${baseline}" ${TXT('12', '400', FAINT, 'end')}>—</text>`;
+    }
+  });
+
+  // ── Data-block bottom rule ────────────────────────────────────────
+  const dataBottomY = padTop + plotHeight + 6;
+  out += `<line x1="0" y1="${dataBottomY}" x2="${W}" y2="${dataBottomY}" stroke="${RULE}" stroke-width="${RULE_LN}"/>`;
+
+  // ── Axis ──────────────────────────────────────────────────────────
+  const axisY = dataBottomY;
+  const ticks = [55, 70, 85, 100, 115, 130, 145];
+  ticks.forEach(t => {
+    const x = xScale(t);
+    const isMean = (t === 100);
+    out += `<line x1="${x}" y1="${axisY}" x2="${x}" y2="${axisY + (isMean ? 6 : 3.5)}" stroke="${INK}" stroke-width="0.7"/>`;
+    out += `<text x="${x}" y="${axisY + 18}" ${TXT('10.5', isMean ? '500' : '400', isMean ? INK : MUTED, 'middle')}>${t}</text>`;
+  });
+
+  // Axis caption — slim, refined, JAMA-style
+  out += `<text x="${plotLeft + plotWidth/2}" y="${axisY + 38}" ${TXT('10', '400', FAINT, 'middle', `letter-spacing='0.04em' font-style='italic'`)}>Estimated FSIQ — vertical reference at population mean (100)</text>`;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = out;
 }
 
 // === Predicted vs Actual calculation (ToPF-based) ===
@@ -3371,13 +3544,13 @@ function getOpiePredictions(){
   }
 
   // FSIQ models
-  pushModel('FSIQ_VC_MR', 'Prorated FSIQ - Vocab + Matrix', OPIE_PRORATED_FSIQ.VC_MR, true, true, 'opiePredFSIQ_VCMR');
-  pushModel('FSIQ_VC', 'Prorated FSIQ - Vocab only', OPIE_PRORATED_FSIQ.VC, true, false, 'opiePredFSIQ_VC');
-  pushModel('FSIQ_MR', 'Prorated FSIQ - Matrix only', OPIE_PRORATED_FSIQ.MR, false, true, 'opiePredFSIQ_MR');
+  pushModel('FSIQ_VC_MR', 'FSIQ - Vocab + Matrix', OPIE_PRORATED_FSIQ.VC_MR, true, true, 'opiePredFSIQ_VCMR');
+  pushModel('FSIQ_VC', 'FSIQ - Vocab only', OPIE_PRORATED_FSIQ.VC, true, false, 'opiePredFSIQ_VC');
+  pushModel('FSIQ_MR', 'FSIQ - Matrix only', OPIE_PRORATED_FSIQ.MR, false, true, 'opiePredFSIQ_MR');
 
   // GAI models
-  pushModel('GAI_VC_MR', 'Prorated GAI - Vocab + Matrix', OPIE_PRORATED_GAI.VC_MR, true, true, 'opiePredGAI_VCMR');
-  pushModel('GAI_VC', 'Prorated GAI - Vocab only', OPIE_PRORATED_GAI.VC, true, false, 'opiePredGAI_VC');
+  pushModel('GAI_VC_MR', 'GAI - Vocab + Matrix', OPIE_PRORATED_GAI.VC_MR, true, true, 'opiePredGAI_VCMR');
+  pushModel('GAI_VC', 'GAI - Vocab only', OPIE_PRORATED_GAI.VC, true, false, 'opiePredGAI_VC');
 
   return list;
 }
@@ -6307,7 +6480,7 @@ refreshAll();
     sdi: 'Standard Deviation Index',
     'rci-basic': 'Simple Reliable Change',
     'rci-practice': 'Practice Effect-Adjusted',
-    'rci-srb': 'Standardised Regression-Based',
+    'rci-srb': 'McSweeney Regression-Based',
     'rci-crawford': 'Crawford Regression-Based',
     'change-analysis': 'Change Analysis',
     premorbid: 'Premorbid Estimation',
@@ -6381,7 +6554,7 @@ const ReportBundle = (function(){
     'sdi-apa':           'Standard Deviation Index',
     'rci-basic-apa':     'Simple Reliable Change',
     'rci-practice-apa':  'Practice-Adjusted RCI',
-    'rci-srb-apa':       'Standardised Regression-Based',
+    'rci-srb-apa':       'McSweeney Regression-Based',
     'rci-crawford-apa':  'Crawford Regression-Based',
     'pre-estimates-apa':    'Premorbid · Estimates',
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
@@ -6394,7 +6567,7 @@ const ReportBundle = (function(){
     'sdi-apa':              'Standard-Deviation Discrepancy',
     'rci-basic-apa':        'Reliable Change (Jacobson & Truax)',
     'rci-practice-apa':     'Practice-Adjusted Reliable Change',
-    'rci-srb-apa':          'Standardised Regression-Based Change',
+    'rci-srb-apa':          'McSweeney Regression-Based Change',
     'rci-crawford-apa':     'Crawford Regression-Based Change',
     'pre-estimates-apa':    'Premorbid Cognitive Estimate',
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',

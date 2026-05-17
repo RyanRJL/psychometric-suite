@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260515av">
-<link rel="stylesheet" href="design-system.css?v=20260515av">
+<link rel="stylesheet" href="styles.css?v=20260517o">
+<link rel="stylesheet" href="design-system.css?v=20260517o">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -652,7 +652,7 @@
             <button type="button" class="topnav-drop-item nav-item" data-target="sdi" role="menuitem">Standard Deviation Index</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-basic" role="menuitem">Simple Reliable Change</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-practice" role="menuitem">Practice Effect-Adjusted</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">Standardised Regression-Based</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">McSweeney Regression-Based</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
@@ -1378,9 +1378,9 @@
           </div>
           <div class="es-result-card" data-tooltip="Correlation-style effect size (range −1 to +1), showing direction and strength of association."><div class="es-result-label">Pearson's r</div><div class="es-result-value" id="es-out-r">-</div><div class="es-result-desc" id="es-out-r-desc">-</div></div>
           <div class="es-result-card" data-tooltip="Variance explained by group difference (r squared), shown as a percentage."><div class="es-result-label">R²</div><div class="es-result-value" id="es-out-r2">-</div><div class="es-result-desc" id="es-out-r2-desc">-</div></div>
-          <div class="es-result-card" data-tooltip="ANOVA-style effect size. For two-group contrasts, f corresponds directly to d/2."><div class="es-result-label">Cohen's f</div><div class="es-result-value" id="es-out-f">-</div><div class="es-result-desc" id="es-out-f-desc">-</div></div>
-          <div class="es-result-card" data-tooltip="Fisher z-transform of r (atanh[r]); useful for meta-analysis and interval calculations."><div class="es-result-label">Fisher's z</div><div class="es-result-value" id="es-out-z">-</div></div>
-          <div class="es-result-card" data-tooltip="Odds in Group 1 divided by odds in Group 2 (OR > 1 favors Group 1)."><div class="es-result-label">Odds Ratio</div><div class="es-result-value" id="es-out-or">-</div></div>
+          <div class="es-result-card" data-tooltip="ANOVA-style effect size based on between-group variance. For a two-group contrast, f = d/2."><div class="es-result-label">Cohen's f</div><div class="es-result-value" id="es-out-f">-</div><div class="es-result-desc" id="es-out-f-desc">-</div></div>
+          <div class="es-result-card" data-tooltip="Fisher z-transform of Pearson's r, computed as atanh(r). Useful for meta-analysis and confidence-interval calculations because z is approximately normally distributed."><div class="es-result-label">Fisher's z</div><div class="es-result-value" id="es-out-z">-</div></div>
+          <div class="es-result-card" data-tooltip="Logistic odds ratio derived from Cohen's d (approx. OR = exp(d × π / √3)). OR > 1 favours Group 1. Treat as a rough conversion, not a substitute for an OR computed from binary outcome data."><div class="es-result-label">Odds Ratio</div><div class="es-result-value" id="es-out-or">-</div></div>
           <div class="es-result-card" data-tooltip="Estimated proportion of overlap between the two normal distributions."><div class="es-result-label">Overlap</div><div class="es-result-value" id="es-out-ovl">-</div></div>
           <div class="es-result-card" data-tooltip="Percent of Group 1 expected to score above the Group 2 mean."><div class="es-result-label">Cohen's U₃</div><div class="es-result-value" id="es-out-u3">-</div></div>
           <div class="es-result-card" data-tooltip="Common Language Effect Size: probability a random Group 1 score exceeds a random Group 2 score."><div class="es-result-label">CLES</div><div class="es-result-value" id="es-out-cles">-</div></div>
@@ -1418,14 +1418,24 @@
           <p style="margin-bottom:8px;font-size:11.5px;color:var(--muted);font-style:italic;line-height:1.4">Use these published effect sizes to anchor your results. The values below span small to huge magnitudes so you can compare your finding against familiar clinical and epidemiological benchmarks.</p>
           <table class="es-examples-table">
             <tbody>
-              <tr><td>30+ daily vs never smokers, lung cancer (Pesch et al., 2011)</td><td>2.60</td></tr>
-              <tr><td>Smoking vs never, lung cancer (Pesch et al., 2011)</td><td>1.75</td></tr>
-              <tr><td>Male vs female height, UK (Health Survey, 2021)</td><td>1.37</td></tr>
-              <tr><td>Former vs never smoker, lung cancer (Pesch et al., 2011)</td><td>1.10</td></tr>
-              <tr><td>Clozapine vs placebo, schizophrenia (Cuijpers et al., 2016)</td><td>0.89</td></tr>
-              <tr><td>CBT vs care as usual, social anxiety (Cuijpers et al., 2016)</td><td>0.44</td></tr>
-              <tr><td>CBT vs care as usual, depression (Cuijpers et al., 2016)</td><td>0.43</td></tr>
-              <tr><td>Paracetamol vs placebo, headache (Alnasser et al., 2023)</td><td>0.26</td></tr>
+              <tr><td>Heavy smokers (30+/day) vs never smokers, lung cancer (Pesch et al., 2012)</td><td>2.60</td></tr>
+              <tr><td>UK male vs female adult height (UK Biobank; Lui et al., 2021)</td><td>2.04</td></tr>
+              <tr><td>Smokers (any) vs never smokers, lung cancer (Pesch et al., 2012)</td><td>1.75</td></tr>
+              <tr><td>Cognitive therapy vs control for PTSD (Watts et al., 2013)</td><td>1.63</td></tr>
+              <tr><td>Former smokers vs never smokers, lung cancer (Pesch et al., 2012)</td><td>1.10</td></tr>
+              <tr><td>Exposure therapy vs control for PTSD (Watts et al., 2013)</td><td>1.08</td></tr>
+              <tr><td>EMDR vs control for PTSD (Watts et al., 2013)</td><td>1.00</td></tr>
+              <tr><td>Clozapine vs placebo for schizophrenia (Huhn et al., 2019 Lancet)</td><td>0.89</td></tr>
+              <tr><td>CBT vs control for depression (Cuijpers et al., 2023 World Psychiatry)</td><td>0.80</td></tr>
+              <tr><td>Methylphenidate vs placebo for ADHD, children (Storebø et al., 2023 Cochrane)</td><td>0.75</td></tr>
+              <tr><td>CBT vs placebo for anxiety disorders (Hofmann &amp; Smits, 2008)</td><td>0.70</td></tr>
+              <tr><td>CBT for depression, low-risk-of-bias subset (Cuijpers et al., 2023)</td><td>0.60</td></tr>
+              <tr><td>Interpersonal Therapy for depression (Cuijpers et al., 2011)</td><td>0.50</td></tr>
+              <tr><td>Antidepressants vs placebo (Cipriani et al., 2018 Lancet)</td><td>0.30</td></tr>
+              <tr><td>CBT vs treatment-as-usual for chronic pain (Williams et al., 2020 Cochrane)</td><td>0.20</td></tr>
+              <tr><td>CBT vs active control for chronic pain (Williams et al., 2020 Cochrane)</td><td>0.10</td></tr>
+              <tr><td>Sugar on children's hyperactivity (Wolraich et al., 1995 JAMA)</td><td>0.00</td></tr>
+              <tr><td>No or negligible effect</td><td>0.00</td></tr>
             </tbody>
           </table>
         </div>
@@ -1720,7 +1730,7 @@
   <!-- ========== 06 SRB REGRESSION ========== -->
   <section class="section" id="rci-srb">
     <div class="eyebrow">Reliable Change Indices (RCI) · Regression-Based</div>
-    <h1 class="section-title">Standardised Regression-Based (SRB) <span class="ink">Reliable Change Index</span></h1>
+    <h1 class="section-title">McSweeney Regression-Based (SRB) <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">McSweeney et al. (1993). Predicts each patient's expected retest score from their baseline and the normative sample's regression parameters; the residual is standardised against the standard error of estimate.</p>
 
     <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
@@ -1997,7 +2007,25 @@
 
     <!-- Tab 2: Premorbid Estimates -->
     <div class="pre-tab-content" id="pre-estimates">
-      <table class="pre-results-table" id="pre-results-table">
+      <!-- Forest plot: JAMA-style figure block.
+           HTML provides the responsive figure label and caption (so they
+           wrap on narrow screens); SVG renders the tabular figure with
+           columns Model · r · SEE · Estimate (CI) · Forest plot. -->
+      <figure class="pre-forest-plot-wrap" id="pre-forest-plot-wrap" hidden>
+        <header class="pre-forest-plot-head">
+          <p class="pre-forest-plot-label"><strong>Figure.</strong> Premorbid FSIQ estimates with <span id="pre-forest-ci-pct">90%</span> confidence intervals.</p>
+        </header>
+        <svg id="pre-forest-plot" class="pre-forest-plot" viewBox="0 0 880 320" aria-label="Forest plot of premorbid FSIQ estimates"></svg>
+        <figcaption class="pre-forest-plot-foot">
+          Four regression-based estimates of pre-injury cognitive ability. Filled diamonds mark the point estimate for each model, sized by inverse SEE (precision). Horizontal lines span the confidence interval. The vertical grey line marks the population mean (FSIQ 100).
+        </figcaption>
+      </figure>
+
+      <!-- Numeric table is fully redundant with the forest plot — visually
+           hidden, but kept in the DOM so the APA-copy JS (which reads cell
+           text from #pre-results-table) keeps working without refactor. -->
+      <div class="pre-results-table-hidden" aria-hidden="true">
+        <table class="pre-results-table" id="pre-results-table">
         <thead>
           <tr>
             <th>Model</th>
@@ -2030,14 +2058,15 @@
       <td class="psy">0.73</td>
       <td class="psy">9.11</td>
     </tr><tr>
-      <td class="model">OPIE-4 (prorated FSIQ): Vocab and/or Matrix</td>
+      <td class="model">OPIE-4: Vocab and/or Matrix</td>
       <td class="fsiq">-</td>
       <td class="num">-</td>
       <td class="num">-</td>
       <td class="psy">-</td>
       <td class="psy">-</td>
     </tr></tbody>
-      </table>
+        </table>
+      </div>
 
       <div class="info-box" style="margin-top:18px">
         <strong>Note.</strong> ToPF and Crawford &amp; Allan equations are based on UK data; OPIE-4 equations use the prorated WAIS-IV FSIQ US regression coefficients (Holdnack et al., 2013), adapted for UK use by omitting US-specific education, region and ethnicity terms (sex retained). The prorated equations are used because they remove part-whole correlation inflation. OPIE-4 requires age plus at least one of Vocabulary / Matrix Reasoning. Use the hover <strong>?</strong> beside each model for its required inputs and assumptions.
@@ -5984,9 +6013,9 @@
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260507ai"></script>
-<script src="app.js?v=20260515au"></script>
+<script src="app.js?v=20260517o"></script>
 <script src="design-system.js?v=20260512ad" defer></script>
-<script src="app-effectsize-page.js"></script>
+<script src="app-effectsize-page.js?v=20260516j"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
@@ -6039,8 +6068,8 @@
     {
       id:'rci-srb',
       label:'McSweeney Regression-Based',
-      title:'Standardised Regression-Based Change',
-      homeLabel:'McSweeneyStandardised Regression-Based',
+      title:'McSweeney Regression-Based Change',
+      homeLabel:'McSweeney Regression-Based',
       meta:'Level 4 · Baseline-predicted retest',
       stack:['REG','RTM','PE'],
       badge:'Model',
@@ -6050,7 +6079,7 @@
     {
       id:'rci-crawford',
       label:'Crawford Regression-Based',
-      title:'Crawford & Garthwaite Standardised Regression-Based (SRB) Change',
+      title:'Crawford & Garthwaite Regression-Based Change',
       homeLabel:'Crawford Regression-Based',
       meta:'Level 5 · Sample-size adjusted',
       stack:['REG','RTM','PE','N'],
@@ -6257,10 +6286,12 @@
   overviewPanel.className = 'change-method-panel change-method-panel-overview active';
   overviewPanel.id = 'overview';
 
-  /* Each method card shows the same 4 adjustment dimensions so they read
-     as a comparison grid. Filled green dots = method adjusts for it;
-     muted dots = no. SDI shows 0 filled — it is descriptive only and
-     makes no statistical adjustments. */
+  /* Comparison-table version of the About panel.
+     One row per method, four columns showing which adjustments it
+     handles (green tick = yes, hollow dot = no). Tick pattern level-ups
+     left → right; pick the rightmost row whose ticks match the data you
+     have. Click any row to jump to that method's tab. Each row also has
+     a "?" info button revealing a longer explainer on hover. */
   const ADJUST_DIMENSIONS = ['Measurement error', 'Practice effect', 'Regression to mean', 'Sample-size adj.'];
   const ADJUST_BY_METHOD = {
     'sdi':          [0,0,0,0],
@@ -6269,45 +6300,57 @@
     'rci-srb':      [1,1,1,0],
     'rci-crawford': [1,1,1,1]
   };
-  function indicatorRowsHtml(methodId){
-    const flags = ADJUST_BY_METHOD[methodId];
-    return ADJUST_DIMENSIONS.map((label, i) => {
-      const on = flags[i] === 1;
-      return `<li class="change-overview-indicator ${on ? 'is-on' : 'is-off'}">` +
-        `<span class="change-overview-dot" aria-hidden="true"></span>` +
-        `<span class="change-overview-indicator-label">${label}</span>` +
-      `</li>`;
-    }).join('');
-  }
-  function makeCard(id, level, title, tag, cite){
-    return `<article class="change-overview-card" data-target-method="${id}">
-      <header class="change-overview-card-head">
-        <span class="change-overview-num">${level.num}</span>
-        <span class="change-overview-level">${level.label}</span>
-      </header>
-      <h3 class="change-overview-title">${title}</h3>
-      <p class="change-overview-tag">${tag}</p>
-      ${cite ? `<p class="change-overview-cite">${cite}</p>` : ''}
-      <ul class="change-overview-indicators">${indicatorRowsHtml(id)}</ul>
-      <button type="button" class="change-overview-cta" data-target-method="${id}">
-        Use this method
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg>
-      </button>
-    </article>`;
+  const METHOD_EXPLAINERS = {
+    'sdi':          'A quick SD-based magnitude check. Treats the discrepancy purely as a descriptive distance from zero in standard-deviation units. No statistical adjustments — useful when no reliability or normative-change data are available.',
+    'rci-basic':    'The classic Reliable Change Index (Jacobson & Truax, 1991). Tests whether the observed change exceeds what would be expected from measurement error alone, using the test\'s reliability and standard deviation.',
+    'rci-practice': 'Simple RCI plus subtraction of the average practice gain observed in the normative retest sample (Iverson, 2001). Recommended when patients are retested with the same instrument and practice effects are documented.',
+    'rci-srb':      'Regression-based reliable change (McSweeney et al., 1993). Predicts each patient\'s expected retest score from their baseline using the norm sample\'s regression parameters, then standardises the residual against the SEE. Handles regression to the mean.',
+    'rci-crawford': 'Most rigorous. Crawford & Garthwaite (2007) extend the regression-based approach with a t-distributed test that incorporates the normative sample size and the patient\'s distance from the norm mean. Preferred when N is modest or the patient is far from the norm mean.'
+  };
+  const TICK_SVG = `<svg class="change-overview-tick" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,8.5 7,12 13,4"/></svg>`;
+  function makeRow(id, title, cite){
+    const flags = ADJUST_BY_METHOD[id];
+    const dotCells = flags.map(f =>
+      `<td class="change-overview-table-dot-cell">` +
+        (f ? TICK_SVG : `<span class="change-overview-dot is-off" aria-hidden="true"></span>`) +
+      `</td>`
+    ).join('');
+    const explainer = METHOD_EXPLAINERS[id] || '';
+    return `<tr class="change-overview-row" data-target-method="${id}" tabindex="0" role="button" aria-label="Open ${title}">
+      <td class="change-overview-table-method">
+        <div class="change-overview-table-titlerow">
+          <span class="change-overview-table-title">${title}</span>
+          ${explainer ? `<button type="button" class="change-overview-info" data-tooltip="${explainer}" aria-label="More about ${title}" tabindex="0">?</button>` : ''}
+        </div>
+        ${cite ? `<span class="change-overview-table-cite">${cite}</span>` : `<span class="change-overview-table-cite">Descriptive — no statistical adjustment</span>`}
+      </td>
+      ${dotCells}
+      <td class="change-overview-table-arrow" aria-hidden="true">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg>
+      </td>
+    </tr>`;
   }
 
   overviewPanel.innerHTML = `
-    <header class="change-overview-hero">
-      <h2 class="change-overview-h">Pick the method that fits your data</h2>
-      <p class="change-overview-sub">More adjustments = more rigorous, but each step needs more data. Compare the dot patterns below — the right answer for your case is the rightmost card whose dots match the data you've actually got.</p>
-    </header>
-    <div class="change-overview-cards">
-      ${makeCard('sdi',          { num:'01', label:'Level 1 — Descriptive'        }, 'Standard Deviation Index',     'A quick SD-based magnitude check. No statistical adjustments — useful when no reliability data is available.', null)}
-      ${makeCard('rci-basic',    { num:'02', label:'Level 2 — Measurement error'  }, 'Simple Reliable Change',       'The classic RCI. Tests whether change exceeds measurement error.',                                          'Jacobson &amp; Truax (1991)')}
-      ${makeCard('rci-practice', { num:'03', label:'Level 3 — Practice adjusted'  }, 'Practice Effect-Adjusted',     'Simple RCI plus subtraction of the average normative practice gain.',                                       'Iverson (2001)')}
-      ${makeCard('rci-srb',      { num:'04', label:'Level 4 — Regression-based'   }, 'Standardised Regression-Based','Regression-predicted retest standardised against SEE — handles regression to the mean.',                    'McSweeney et al. (1993)')}
-      ${makeCard('rci-crawford', { num:'05', label:'Level 5 — Sample-size robust' }, 'Crawford Regression-Based',    'Most rigorous. A t-distributed test that incorporates normative N and the patient&apos;s distance from the mean.', 'Crawford &amp; Garthwaite (2007)')}
-    </div>
+    <table class="change-overview-table">
+      <thead>
+        <tr>
+          <th class="change-overview-table-method-h">Method</th>
+          <th>Measurement<br>error</th>
+          <th>Practice<br>effect</th>
+          <th>Regression<br>to mean</th>
+          <th>Sample-size<br>adjustment</th>
+          <th aria-hidden="true"></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${makeRow('sdi',          'Standard Deviation Index',     null)}
+        ${makeRow('rci-basic',    'Simple Reliable Change',       'Jacobson &amp; Truax (1991)')}
+        ${makeRow('rci-practice', 'Practice Effect-Adjusted',     'Iverson (2001)')}
+        ${makeRow('rci-srb',      'McSweeney Regression-Based',   'McSweeney et al. (1993)')}
+        ${makeRow('rci-crawford', 'Crawford Regression-Based',    'Crawford &amp; Garthwaite (2007)')}
+      </tbody>
+    </table>
   `;
   body.insertBefore(overviewPanel, body.firstChild);
 
@@ -6347,15 +6390,26 @@
   // Set initial state to overview
   activateMethod('overview', { updateHash: false });
 
-  /* Overview cards are info-dense tiles — all content is always visible.
-     The "Use this method" CTA button is the only interactive element;
-     clicking it navigates to that method's tab. */
-  overviewPanel.querySelectorAll('.change-overview-cta[data-target-method]').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      const id = btn.dataset.targetMethod;
+  /* The whole row is clickable — click anywhere on a method row to jump
+     to that method's tab. Keyboard-accessible via tabindex + role=button.
+     The "?" info button stops propagation so hovering/clicking it doesn't
+     trigger the row's activate handler. */
+  overviewPanel.querySelectorAll('.change-overview-row[data-target-method]').forEach(row => {
+    const trigger = () => {
+      const id = row.dataset.targetMethod;
       if (id) activateMethod(id);
+    };
+    row.addEventListener('click', e => {
+      if (e.target.closest('.change-overview-info')) return;
+      e.stopPropagation(); trigger();
     });
+    row.addEventListener('keydown', e => {
+      if (e.target.closest('.change-overview-info')) return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger(); }
+    });
+  });
+  overviewPanel.querySelectorAll('.change-overview-info').forEach(btn => {
+    btn.addEventListener('click', e => e.stopPropagation());
   });
 
   function showChangeSection(navItem){

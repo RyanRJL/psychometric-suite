@@ -31,15 +31,29 @@
 
   if (!els['es-stat-type']) return;
   const esState = { statTouched: false, statAutoFilled: false, source: 'stat' };
+  /* Reference effect sizes drawn from high-quality meta-analyses and
+     landmark epidemiology. Used by the "Similar to" cell in the
+     conversion grid — for an input |d|, the closest reference wins
+     (first-encountered on ties, so order matters for d values exactly
+     between two anchors). Descending order matches the table layout. */
   const SIMILAR_EFFECTS = [
-    { label: 'Heavy smokers vs never (lung cancer)', d: 2.60 },
-    { label: 'Smokers vs never (lung cancer)', d: 1.75 },
-    { label: 'UK male vs female height', d: 1.37 },
-    { label: 'Former vs never smoker (lung cancer)', d: 1.10 },
-    { label: 'Clozapine vs placebo (schizophrenia)', d: 0.89 },
-    { label: 'CBT vs usual care (social anxiety)', d: 0.44 },
-    { label: 'CBT vs usual care (depression)', d: 0.43 },
-    { label: 'Paracetamol vs placebo (headache)', d: 0.26 }
+    { label: 'Heavy smokers vs never smokers (lung cancer)',    d: 2.60 }, // Pesch et al., 2012
+    { label: 'UK male vs female adult height',                  d: 2.04 }, // UK Biobank / Lui et al., 2021
+    { label: 'Smokers vs never smokers (lung cancer)',          d: 1.75 }, // Pesch et al., 2012
+    { label: 'Cognitive therapy for PTSD',                      d: 1.63 }, // Watts et al., 2013
+    { label: 'Former vs never smokers (lung cancer)',           d: 1.10 }, // Pesch et al., 2012
+    { label: 'Exposure therapy for PTSD',                       d: 1.08 }, // Watts et al., 2013
+    { label: 'EMDR for PTSD',                                   d: 1.00 }, // Watts et al., 2013
+    { label: 'Clozapine vs placebo (schizophrenia)',            d: 0.89 }, // Huhn et al., 2019
+    { label: 'CBT for depression',                              d: 0.80 }, // Cuijpers et al., 2023
+    { label: 'Methylphenidate for ADHD (children)',             d: 0.75 }, // Storebø et al., 2023 Cochrane
+    { label: 'CBT vs placebo for anxiety disorders',            d: 0.70 }, // Hofmann & Smits, 2008
+    { label: 'CBT for depression (low-bias studies)',           d: 0.60 }, // Cuijpers et al., 2023
+    { label: 'Interpersonal Therapy for depression',            d: 0.50 }, // Cuijpers et al., 2011
+    { label: 'Antidepressants vs placebo',                      d: 0.30 }, // Cipriani et al., 2018
+    { label: 'CBT vs treatment-as-usual for chronic pain',      d: 0.20 }, // Williams et al., 2020 Cochrane
+    { label: 'CBT vs active control for chronic pain',          d: 0.10 }, // Williams et al., 2020 Cochrane
+    { label: 'No or negligible effect',                         d: 0.00 }
   ];
 
   // Aux field per statistic (some conversions need N or pooled SD)

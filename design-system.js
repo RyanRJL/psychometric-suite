@@ -2066,7 +2066,7 @@
     'sdi':          'SD discrepancy analysis',
     'rci-basic':    'Simple Reliable Change Index',
     'rci-practice': 'Practice-Adjusted Reliable Change Index',
-    'rci-srb':      'Standardised Regression-Based change analysis',
+    'rci-srb':      'McSweeney Regression-Based change analysis',
     'rci-crawford': 'Crawford & Garthwaite regression-based change analysis'
   };
   /* Stat label used inside the per-test bracket. */

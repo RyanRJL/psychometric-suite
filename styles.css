@@ -8356,8 +8356,8 @@ body.rb-docked-active{padding-right:0}
      Row 1 left: Visual (spans 2 rows)   Row 1 right: Common Language
      Row 2 left: ↑ Visual continues       Row 2 right: Effect-size grid
      Row 3 full: Group comparison
-   The visual stretches down the left to balance against CL + grid stacked
-   on the right. align-items:start so cells don't stretch vertically. */
+   align-items:stretch so the conversion grid expands to match the visual's
+   height — bottom edges of both columns line up. */
 #effectsize .es-output-row{
   display:grid !important;
   grid-template-columns:1.3fr 1fr !important;
@@ -8367,7 +8367,7 @@ body.rb-docked-active{padding-right:0}
     "comp   comp" !important;
   gap:12px !important;
   margin-bottom:10px !important;
-  align-items:start !important;
+  align-items:stretch !important;
 }
 #effectsize .es-left-panel{
   display:contents !important;
@@ -8377,19 +8377,24 @@ body.rb-docked-active{padding-right:0}
 #effectsize .es-view-pane[data-view-pane="conversion"]{ grid-area:grid; order:unset !important; }
 #effectsize .es-view-pane[data-view-pane="comparison"]{ grid-area:comp; order:unset !important; }
 
-/* Conversion pane is unboxed — the grid cards form their own visual
-   structure, so the panel doesn't need its own card shell. Frees up
-   space for the grid to grow and fill the right column. */
+/* Conversion pane forms the body of the unified card. Closes the gap up
+   to the CL row via negative margin, then matches its plain border so
+   the two read as one continuous matrix. Flex-column so the inner grid
+   can stretch to fill the column height — bottoms align with the visual
+   on the left. */
 #effectsize .es-view-pane[data-view-pane="conversion"]{
-  background:transparent !important;
-  border:none !important;
-  border-radius:0 !important;
-  box-shadow:none !important;
+  background:#FFFFFF !important;
+  border:1px solid rgba(20,15,5,0.08) !important;
+  border-top:none !important;
+  border-radius:0 0 var(--r-lg) var(--r-lg) !important;
+  box-shadow:var(--shadow-1) !important;
   padding:0 !important;
-  margin:0 !important;
+  margin:-12px 0 0 !important;  /* eat the grid row-gap above */
+  display:flex !important;
+  flex-direction:column !important;
 }
-/* Group comparison keeps its card shell — it has form inputs and intro
-   text that benefit from being visually contained. */
+/* Group comparison keeps its card shell — form inputs + intro benefit
+   from being visually contained. */
 #effectsize .es-view-pane[data-view-pane="comparison"]{
   background:#FFFFFF !important;
   border:1px solid rgba(20,15,5,0.06) !important;
@@ -8399,15 +8404,15 @@ body.rb-docked-active{padding-right:0}
   margin:0 !important;
 }
 
-/* Curve panel — compact. The SVG is capped at 460px wide so it doesn't
-   blow up vertically on wide screens. Panel-kicker hidden because the
-   curve is self-evidently the "visual" (saves ~24px). */
+/* Curve panel — unboxed. The bell curve floats directly on the page
+   background. Panel-kicker hidden because the curve is self-evidently
+   the visual. */
 #effectsize .es-curve-panel{
-  background:#FFFFFF !important;
-  border:1px solid rgba(20,15,5,0.06) !important;
-  border-radius:var(--r-lg) !important;
-  box-shadow:var(--shadow-1) !important;
-  padding:10px 12px !important;
+  background:transparent !important;
+  border:none !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
   margin:0 !important;
   display:flex !important;
   flex-direction:column !important;
@@ -8437,16 +8442,18 @@ body.rb-docked-active{padding-right:0}
   color:var(--muted);
 }
 
-/* --- HERO CALLOUT: common-language pane ---
-       align-items:start on the grid makes this card size to content, so
-       padding alone determines its height. */
+/* --- Common-language pane = wide top row of the conversion grid ---
+       Same white card, same plain border, same neutral palette as the
+       result cells below. Sits flush against the conversion grid (no
+       gap, shared border) so visually it reads as the top row of one
+       unified matrix rather than a separate hero callout. */
 #effectsize .es-view-pane[data-view-pane="common-language"]{
-  background:linear-gradient(180deg, #F0E8D6 0%, #F7F2E6 100%) !important;
-  border:1px solid rgba(156,61,42,0.18) !important;
-  border-left:4px solid #9C3D2A !important;
-  border-radius:var(--r-lg) !important;
+  background:#FFFFFF !important;
+  border:1px solid rgba(20,15,5,0.08) !important;
+  border-bottom:1px solid rgba(20,15,5,0.08) !important;  /* row separator */
+  border-radius:var(--r-lg) var(--r-lg) 0 0 !important;
   box-shadow:var(--shadow-1) !important;
-  padding:12px 14px !important;
+  padding:14px 16px !important;
   margin:0 !important;
   display:flex !important;
   flex-direction:column !important;
@@ -8497,9 +8504,13 @@ body.rb-docked-active{padding-right:0}
 }
 
 /* --- Compress the input panel: slider + fields share ONE row in A mode.
-       (B mode is more complex, falls back to its native multi-row layout.) */
+       (B mode is more complex, falls back to its native multi-row layout.)
+       Unboxed — sits flat on the section background, no card shell. */
 #effectsize .es-input-panel{
-  padding:10px 14px !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:8px 0 !important;
   margin-bottom:10px !important;
 }
 /* In statistic mode (A), make the panel a single flex row with the slider
@@ -8544,12 +8555,20 @@ body.rb-docked-active{padding-right:0}
        rows = 12 cards. Cards are tall enough to fill the right column
        and roomy enough to read at a glance. */
 #effectsize .es-view-pane[data-view-pane="conversion"] .panel-kicker{ display:none !important; }
+/* Grid border stripped — the parent pane now provides the outer shell so
+   they read as one stacked card with the CL hero above. The internal
+   cell borders (right + bottom on each card) still form the matrix.
+   overflow:visible so per-card hover tooltips can escape the grid bounds.
+   flex:1 + 3 equal rows so the grid stretches to fill the pane and bottoms
+   align with the bell curve. */
 #effectsize .es-results-grid{
   grid-template-columns:repeat(4, 1fr) !important;
-  border:1px solid rgba(20,15,5,0.08) !important;
-  border-radius:var(--r-md) !important;
-  overflow:hidden !important;
-  background:rgba(20,15,5,0.06) !important;
+  grid-template-rows:1fr 1fr 1fr !important;
+  border:none !important;
+  border-radius:0 !important;
+  overflow:visible !important;
+  background:transparent !important;
+  flex:1 1 auto !important;
 }
 #effectsize .es-result-card{
   min-height:78px !important;
@@ -8562,6 +8581,50 @@ body.rb-docked-active{padding-right:0}
 #effectsize .es-result-value{ font-size:17px !important; line-height:1.15 !important; }
 #effectsize .es-result-desc{ font-size:9.5px !important; }
 #effectsize .es-result-similar-value{ font-size:12px !important; line-height:1.25 !important; }
+
+/* Tooltip positioning per column so they don't clip past the pane edge.
+   - Col 1 (1st card of each row): anchor LEFT, extend right
+   - Col 4 (last card of each row): anchor RIGHT, extend left
+   - Cols 2 & 3 (middle): centred on the card
+   The existing base rule sets `left:0` and `left:14px` for the arrow — these
+   per-column overrides win via specificity + later cascade order. */
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+1)::before{
+  left:0 !important; right:auto !important; transform:translateX(0) translateY(4px);
+}
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+1):hover::before,
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+1):focus-within::before{
+  transform:translateX(0) translateY(0);
+}
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+1)::after{
+  left:14px !important; right:auto !important;
+}
+
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n)::before{
+  right:0 !important; left:auto !important; transform:translateX(0) translateY(4px);
+}
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n):hover::before,
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n):focus-within::before{
+  transform:translateX(0) translateY(0);
+}
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n)::after{
+  right:14px !important; left:auto !important;
+}
+
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+2)::before,
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+3)::before{
+  left:50% !important; right:auto !important; transform:translateX(-50%) translateY(4px);
+}
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+2):hover::before,
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+2):focus-within::before,
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+3):hover::before,
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+3):focus-within::before{
+  transform:translateX(-50%) translateY(0);
+}
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+2)::after,
+#effectsize .es-results-grid .es-result-card[data-tooltip]:nth-child(4n+3)::after{
+  left:50% !important; right:auto !important; transform:translateX(-50%);
+}
+
 
 /* --- Compress group comparison into a flat horizontal strip --- */
 #effectsize .es-view-pane[data-view-pane="comparison"] .panel-kicker{ margin-bottom:6px !important; }
@@ -8610,6 +8673,295 @@ body.rb-docked-active{padding-right:0}
       "comp" !important;
   }
   #effectsize .es-results-grid{ grid-template-columns:repeat(3, 1fr) !important; }
+}
+
+/* =====================================================================
+   PREMORBID — Forest plot (modern JAMA-style)
+   Tabular figure with columns: Model · r · SEE · Estimate (CI) · Plot.
+   Soft charcoal (not pure black), IBM Plex Sans throughout, hairline
+   rules, generous breathing room. Single terracotta accent reserved
+   for the patient's achieved-FSIQ reference line.
+   ===================================================================== */
+#premorbid .pre-forest-plot-wrap{
+  margin:14px 0 28px !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:none !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+
+/* Figure label — slim, modern, "Figure n. Description..." */
+#premorbid .pre-forest-plot-head{
+  padding:0 0 14px;
+  margin:0;
+}
+#premorbid .pre-forest-plot-label{
+  font-family:"IBM Plex Sans", "Inter", system-ui, -apple-system, sans-serif;
+  font-size:12.5px;
+  line-height:1.55;
+  color:#1A1A1A;
+  margin:0;
+  letter-spacing:0.005em;
+  font-weight:400;
+  font-variant-numeric:tabular-nums;
+}
+#premorbid .pre-forest-plot-label strong{
+  font-weight:600;
+  letter-spacing:0.01em;
+}
+#premorbid .pre-forest-plot-label #pre-forest-ci-pct{
+  font-family:inherit;
+  font-weight:500;
+}
+
+#premorbid .pre-forest-plot{
+  display:block;
+  width:100%;
+  height:auto;
+}
+
+/* Figure caption — slim, modern, max-width for line-length comfort */
+#premorbid .pre-forest-plot-foot{
+  padding:14px 0 0;
+  margin:0;
+  font-family:"IBM Plex Sans", "Inter", system-ui, -apple-system, sans-serif;
+  font-size:11.5px;
+  line-height:1.6;
+  color:#4A4640;
+  letter-spacing:0.005em;
+  max-width:880px;
+  font-variant-numeric:tabular-nums;
+}
+
+
+/* Numeric table is hidden visually but stays in the DOM so the
+   APA-copy JS (which reads cell text from #pre-results-table) keeps
+   working without refactor. Forest plot above shows all the same data. */
+#premorbid .pre-results-table-hidden{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  clip-path:inset(50%);
+  white-space:nowrap;
+}
+
+/* =====================================================================
+   CHANGE ANALYSIS — About panel comparison table
+   Replaces the 5-card grid. One row per method × 4 dot columns + arrow.
+   Row is clickable to jump to that method's tab.
+   ===================================================================== */
+
+/* Hide the now-unused card hero + grid wrappers in case any are still in
+   the DOM (defensive — the JS no longer emits them). */
+#change-analysis .change-overview-hero,
+#change-analysis .change-overview-cards{ display:none !important; }
+
+#change-analysis .change-overview-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-lg);
+  /* overflow:visible — needed so the per-row "?" tooltips can escape the
+     table boundary. Corner rounding is reapplied to the individual thead
+     cells below to keep the rounded look. */
+  overflow:visible;
+  margin:8px 0 0;
+  font-family:var(--sans);
+}
+/* Reapply rounding to thead corner cells now that the table no longer clips */
+#change-analysis .change-overview-table thead tr th:first-child{
+  border-top-left-radius:var(--r-lg);
+}
+#change-analysis .change-overview-table thead tr th:last-child{
+  border-top-right-radius:var(--r-lg);
+}
+#change-analysis .change-overview-table thead th{
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#7A766E;
+  text-align:center;
+  padding:14px 12px 12px;
+  background:rgba(20,15,5,0.025);
+  border-bottom:1px solid rgba(20,15,5,0.08);
+  line-height:1.25;
+  white-space:nowrap;
+}
+#change-analysis .change-overview-table thead th.change-overview-table-method-h{
+  text-align:left;
+  padding-left:24px;
+}
+#change-analysis .change-overview-row{
+  cursor:pointer;
+  transition:background 140ms var(--ease);
+}
+#change-analysis .change-overview-row:hover,
+#change-analysis .change-overview-row:focus-visible{
+  background:#F7F2E6;
+  outline:none;
+}
+#change-analysis .change-overview-row:focus-visible{
+  box-shadow:inset 3px 0 0 #9C3D2A;
+}
+#change-analysis .change-overview-row + .change-overview-row > td{
+  border-top:1px solid rgba(20,15,5,0.05);
+}
+#change-analysis .change-overview-table td{
+  padding:14px 12px;
+  vertical-align:middle;
+}
+#change-analysis .change-overview-table-method{
+  padding-left:24px;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:240px;
+}
+#change-analysis .change-overview-table-title{
+  font-family:var(--serif);
+  font-size:15px;
+  font-weight:600;
+  color:#1A1A1A;
+  letter-spacing:-0.005em;
+}
+#change-analysis .change-overview-table-cite{
+  font-family:var(--sans);
+  font-size:11.5px;
+  font-style:italic;
+  color:#7A766E;
+}
+#change-analysis .change-overview-table-dot-cell{
+  text-align:center;
+  width:14%;
+}
+/* Green tick when the method handles that adjustment dimension */
+#change-analysis .change-overview-table-dot-cell .change-overview-tick{
+  display:inline-block;
+  width:20px;
+  height:20px;
+  color:#4F8552;
+  vertical-align:middle;
+}
+/* Hollow dot when it doesn't — keeps the column readable as "considered but
+   not addressed", clearer than a blank cell. */
+#change-analysis .change-overview-table-dot-cell .change-overview-dot.is-off{
+  display:inline-block;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:transparent;
+  border:1.5px solid rgba(20,15,5,0.16);
+  vertical-align:middle;
+}
+
+/* Method-title row: title on the left, info button pushed to the far right
+   of the cell so all "?" buttons sit in a single vertical column regardless
+   of title length. */
+#change-analysis .change-overview-table-titlerow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+#change-analysis .change-overview-table-title{
+  flex:0 1 auto;
+}
+#change-analysis .change-overview-info{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:rgba(20,15,5,0.08);
+  border:none;
+  color:#6B6B6B;
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:700;
+  cursor:help;
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  line-height:1;
+  flex:0 0 auto;
+  transition:background 140ms var(--ease), color 140ms var(--ease);
+}
+#change-analysis .change-overview-info:hover,
+#change-analysis .change-overview-info:focus-visible{
+  background:#9C3D2A;
+  color:#FFFFFF;
+  outline:none;
+}
+/* Tooltip popover — shows the longer per-method explainer on hover/focus */
+#change-analysis .change-overview-info::before{
+  content:attr(data-tooltip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:-8px;
+  width:340px;
+  padding:12px 14px;
+  background:#FFFFFF;
+  border:1px solid rgba(156,61,42,0.24);
+  border-radius:8px;
+  font-family:var(--sans);
+  font-size:12.5px;
+  line-height:1.55;
+  font-weight:400;
+  letter-spacing:0;
+  text-transform:none;
+  color:#1A1A1A;
+  text-align:left;
+  white-space:normal;
+  z-index:50;
+  opacity:0;
+  transform:translateY(4px);
+  pointer-events:none;
+  transition:opacity 160ms var(--ease), transform 160ms var(--ease);
+  box-shadow:0 10px 24px rgba(20,15,5,0.14);
+}
+#change-analysis .change-overview-info::after{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 2px);
+  left:6px;
+  border-width:6px 6px 0 6px;
+  border-style:solid;
+  border-color:#FFFFFF transparent transparent transparent;
+  z-index:51;
+  opacity:0;
+  transition:opacity 160ms var(--ease);
+}
+#change-analysis .change-overview-info:hover::before,
+#change-analysis .change-overview-info:hover::after,
+#change-analysis .change-overview-info:focus-visible::before,
+#change-analysis .change-overview-info:focus-visible::after{
+  opacity:1;
+  transform:translateY(0);
+}
+#change-analysis .change-overview-table-arrow{
+  width:48px;
+  text-align:center;
+  color:#9C3D2A;
+  opacity:0;
+  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+}
+#change-analysis .change-overview-table-arrow svg{
+  width:18px;
+  height:18px;
+  display:inline-block;
+  vertical-align:middle;
+}
+#change-analysis .change-overview-row:hover .change-overview-table-arrow,
+#change-analysis .change-overview-row:focus-visible .change-overview-table-arrow{
+  opacity:1;
+  transform:translateX(2px);
 }
 
 

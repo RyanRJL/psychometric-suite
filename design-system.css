@@ -3324,7 +3324,13 @@ input[type="text"].ds-inline-bar-input{
 }
 #premorbid.ds-prem-restructured .pre-tab-content.active{
   display: block !important;
-  background: linear-gradient(180deg, #F0E8D6 0%, #F7F2E6 80px, #FFFFFF 100%) !important;
+  /* Solid white substrate — no gradient. The cream/white transition
+     looked like a Microsoft-Paint artefact at every gradient length;
+     a clean white panel is JAMA-standard and lets figures read like
+     proper journal substrate. The folder-tab continuity is preserved
+     by the active tab's cream sitting against the white panel — a
+     deliberate boundary rather than a wash. */
+  background: #FFFFFF !important;
   border: 1px solid rgba(20,15,5,0.08) !important;
   border-top: none !important;
   border-radius: 0 0 var(--r-lg) var(--r-lg) !important;

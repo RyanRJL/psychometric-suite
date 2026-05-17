@@ -12464,7 +12464,7 @@ input[type="text"].ds-inline-bar-input{
             <button type="button" class="topnav-drop-item nav-item" data-target="sdi" role="menuitem">Standard Deviation Index</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-basic" role="menuitem">Simple Reliable Change</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-practice" role="menuitem">Practice Effect-Adjusted</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">Standardised Regression-Based</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">McSweeney Regression-Based</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
@@ -13230,14 +13230,24 @@ input[type="text"].ds-inline-bar-input{
           <p style="margin-bottom:8px;font-size:11.5px;color:var(--muted);font-style:italic;line-height:1.4">Use these published effect sizes to anchor your results. The values below span small to huge magnitudes so you can compare your finding against familiar clinical and epidemiological benchmarks.</p>
           <table class="es-examples-table">
             <tbody>
-              <tr><td>30+ daily vs never smokers, lung cancer (Pesch et al., 2011)</td><td>2.60</td></tr>
-              <tr><td>Smoking vs never, lung cancer (Pesch et al., 2011)</td><td>1.75</td></tr>
-              <tr><td>Male vs female height, UK (Health Survey, 2021)</td><td>1.37</td></tr>
-              <tr><td>Former vs never smoker, lung cancer (Pesch et al., 2011)</td><td>1.10</td></tr>
-              <tr><td>Clozapine vs placebo, schizophrenia (Cuijpers et al., 2016)</td><td>0.89</td></tr>
-              <tr><td>CBT vs care as usual, social anxiety (Cuijpers et al., 2016)</td><td>0.44</td></tr>
-              <tr><td>CBT vs care as usual, depression (Cuijpers et al., 2016)</td><td>0.43</td></tr>
-              <tr><td>Paracetamol vs placebo, headache (Alnasser et al., 2023)</td><td>0.26</td></tr>
+              <tr><td>Heavy smokers (30+/day) vs never smokers, lung cancer (Pesch et al., 2012)</td><td>2.60</td></tr>
+              <tr><td>UK male vs female adult height (UK Biobank; Lui et al., 2021)</td><td>2.04</td></tr>
+              <tr><td>Smokers (any) vs never smokers, lung cancer (Pesch et al., 2012)</td><td>1.75</td></tr>
+              <tr><td>Cognitive therapy vs control for PTSD (Watts et al., 2013)</td><td>1.63</td></tr>
+              <tr><td>Former smokers vs never smokers, lung cancer (Pesch et al., 2012)</td><td>1.10</td></tr>
+              <tr><td>Exposure therapy vs control for PTSD (Watts et al., 2013)</td><td>1.08</td></tr>
+              <tr><td>EMDR vs control for PTSD (Watts et al., 2013)</td><td>1.00</td></tr>
+              <tr><td>Clozapine vs placebo for schizophrenia (Huhn et al., 2019 Lancet)</td><td>0.89</td></tr>
+              <tr><td>CBT vs control for depression (Cuijpers et al., 2023 World Psychiatry)</td><td>0.80</td></tr>
+              <tr><td>Methylphenidate vs placebo for ADHD, children (Storebø et al., 2023 Cochrane)</td><td>0.75</td></tr>
+              <tr><td>CBT vs placebo for anxiety disorders (Hofmann &amp; Smits, 2008)</td><td>0.70</td></tr>
+              <tr><td>CBT for depression, low-risk-of-bias subset (Cuijpers et al., 2023)</td><td>0.60</td></tr>
+              <tr><td>Interpersonal Therapy for depression (Cuijpers et al., 2011)</td><td>0.50</td></tr>
+              <tr><td>Antidepressants vs placebo (Cipriani et al., 2018 Lancet)</td><td>0.30</td></tr>
+              <tr><td>CBT vs treatment-as-usual for chronic pain (Williams et al., 2020 Cochrane)</td><td>0.20</td></tr>
+              <tr><td>CBT vs active control for chronic pain (Williams et al., 2020 Cochrane)</td><td>0.10</td></tr>
+              <tr><td>Sugar on children's hyperactivity (Wolraich et al., 1995 JAMA)</td><td>0.00</td></tr>
+              <tr><td>No or negligible effect</td><td>0.00</td></tr>
             </tbody>
           </table>
         </div>
@@ -13532,7 +13542,7 @@ input[type="text"].ds-inline-bar-input{
   <!-- ========== 06 SRB REGRESSION ========== -->
   <section class="section" id="rci-srb">
     <div class="eyebrow">Reliable Change Indices (RCI) · Regression-Based</div>
-    <h1 class="section-title">Standardised Regression-Based (SRB) <span class="ink">Reliable Change Index</span></h1>
+    <h1 class="section-title">McSweeney Regression-Based (SRB) <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">McSweeney et al. (1993). Predicts each patient's expected retest score from their baseline and the normative sample's regression parameters; the residual is standardised against the standard error of estimate.</p>
 
     <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
@@ -13842,7 +13852,7 @@ input[type="text"].ds-inline-bar-input{
       <td class="psy">0.73</td>
       <td class="psy">9.11</td>
     </tr><tr>
-      <td class="model">OPIE-4 (prorated FSIQ): Vocab and/or Matrix</td>
+      <td class="model">OPIE-4: Vocab and/or Matrix</td>
       <td class="fsiq">-</td>
       <td class="num">-</td>
       <td class="num">-</td>
@@ -21116,7 +21126,7 @@ function renderRciApa(method){
   const methodNote = {
     'rci-basic':    `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Jacobson and Truax (1991). Reliable change threshold = ${cvLabelZ}.`,
     'rci-practice': `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Iverson (2001) and adjusted for practice effects. Reliable change threshold = ${cvLabelZ}.`,
-    'rci-srb':      `Standardised Regression-Based RCI (z) per McSweeney et al. (1993). Ŷ₂ = predicted retest score from the regression model; RCI (z) tests whether Date 2 differs reliably from Ŷ₂. Reliable change threshold = ${cvLabelZ}.`,
+    'rci-srb':      `McSweeney Regression-Based RCI (z) per McSweeney et al. (1993). Ŷ₂ = predicted retest score from the regression model; RCI (z) tests whether Date 2 differs reliably from Ŷ₂. Reliable change threshold = ${cvLabelZ}.`,
     'rci-crawford': `<i>t</i>(RB) is the Crawford regression-based reliable-change statistic. Reliable change threshold = ${cvLabel} CI.`
   }[method];
   const safe = (calc, prop, digits=2) => calc ? fmt(calc[prop], digits) : '';
@@ -21917,14 +21927,14 @@ function calcPremorbid(){
   else if (hasVC) branch = 'VC';
   else if (hasMR) branch = 'MR';
 
-  let v4 = null, s4 = null, name4 = 'OPIE-4 (prorated FSIQ): Vocab and/or Matrix', tipKey4 = 'opieDefault';
+  let v4 = null, s4 = null, name4 = 'OPIE-4: Vocab and/or Matrix', tipKey4 = 'opieDefault';
   if (branch != null){
     const c = OPIE_PRORATED_FSIQ[branch];
     // Update label, tooltip and R/SEE from the branch alone (no age required)
     s4 = { see: c.see, r: c.r };
-    if (branch === 'VC_MR'){ name4 = 'OPIE-4 (prorated FSIQ): Vocab + Matrix'; tipKey4 = 'opieVCMR'; }
-    else if (branch === 'VC') { name4 = 'OPIE-4 (prorated FSIQ): Vocab only';  tipKey4 = 'opieVC'; }
-    else if (branch === 'MR') { name4 = 'OPIE-4 (prorated FSIQ): Matrix only'; tipKey4 = 'opieMR'; }
+    if (branch === 'VC_MR'){ name4 = 'OPIE-4: Vocab + Matrix'; tipKey4 = 'opieVCMR'; }
+    else if (branch === 'VC') { name4 = 'OPIE-4: Vocab only';  tipKey4 = 'opieVC'; }
+    else if (branch === 'MR') { name4 = 'OPIE-4: Matrix only'; tipKey4 = 'opieMR'; }
     // Compute prediction only once age is also available
     if (age != null){
       let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexEffect;
@@ -22134,13 +22144,13 @@ function getOpiePredictions(){
   }
 
   // FSIQ models
-  pushModel('FSIQ_VC_MR', 'Prorated FSIQ - Vocab + Matrix', OPIE_PRORATED_FSIQ.VC_MR, true, true, 'opiePredFSIQ_VCMR');
-  pushModel('FSIQ_VC', 'Prorated FSIQ - Vocab only', OPIE_PRORATED_FSIQ.VC, true, false, 'opiePredFSIQ_VC');
-  pushModel('FSIQ_MR', 'Prorated FSIQ - Matrix only', OPIE_PRORATED_FSIQ.MR, false, true, 'opiePredFSIQ_MR');
+  pushModel('FSIQ_VC_MR', 'FSIQ - Vocab + Matrix', OPIE_PRORATED_FSIQ.VC_MR, true, true, 'opiePredFSIQ_VCMR');
+  pushModel('FSIQ_VC', 'FSIQ - Vocab only', OPIE_PRORATED_FSIQ.VC, true, false, 'opiePredFSIQ_VC');
+  pushModel('FSIQ_MR', 'FSIQ - Matrix only', OPIE_PRORATED_FSIQ.MR, false, true, 'opiePredFSIQ_MR');
 
   // GAI models
-  pushModel('GAI_VC_MR', 'Prorated GAI - Vocab + Matrix', OPIE_PRORATED_GAI.VC_MR, true, true, 'opiePredGAI_VCMR');
-  pushModel('GAI_VC', 'Prorated GAI - Vocab only', OPIE_PRORATED_GAI.VC, true, false, 'opiePredGAI_VC');
+  pushModel('GAI_VC_MR', 'GAI - Vocab + Matrix', OPIE_PRORATED_GAI.VC_MR, true, true, 'opiePredGAI_VCMR');
+  pushModel('GAI_VC', 'GAI - Vocab only', OPIE_PRORATED_GAI.VC, true, false, 'opiePredGAI_VC');
 
   return list;
 }
@@ -25070,7 +25080,7 @@ refreshAll();
     sdi: 'Standard Deviation Index',
     'rci-basic': 'Simple Reliable Change',
     'rci-practice': 'Practice Effect-Adjusted',
-    'rci-srb': 'Standardised Regression-Based',
+    'rci-srb': 'McSweeney Regression-Based',
     'rci-crawford': 'Crawford Regression-Based',
     'change-analysis': 'Change Analysis',
     premorbid: 'Premorbid Estimation',
@@ -25144,7 +25154,7 @@ const ReportBundle = (function(){
     'sdi-apa':           'Standard Deviation Index',
     'rci-basic-apa':     'Simple Reliable Change',
     'rci-practice-apa':  'Practice-Adjusted RCI',
-    'rci-srb-apa':       'Standardised Regression-Based',
+    'rci-srb-apa':       'McSweeney Regression-Based',
     'rci-crawford-apa':  'Crawford Regression-Based',
     'pre-estimates-apa':    'Premorbid · Estimates',
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
@@ -25157,7 +25167,7 @@ const ReportBundle = (function(){
     'sdi-apa':              'Standard-Deviation Discrepancy',
     'rci-basic-apa':        'Reliable Change (Jacobson & Truax)',
     'rci-practice-apa':     'Practice-Adjusted Reliable Change',
-    'rci-srb-apa':          'Standardised Regression-Based Change',
+    'rci-srb-apa':          'McSweeney Regression-Based Change',
     'rci-crawford-apa':     'Crawford Regression-Based Change',
     'pre-estimates-apa':    'Premorbid Cognitive Estimate',
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',
@@ -28765,7 +28775,7 @@ if (document.readyState === 'loading'){
     'sdi':          'SD discrepancy analysis',
     'rci-basic':    'Simple Reliable Change Index',
     'rci-practice': 'Practice-Adjusted Reliable Change Index',
-    'rci-srb':      'Standardised Regression-Based change analysis',
+    'rci-srb':      'McSweeney Regression-Based change analysis',
     'rci-crawford': 'Crawford & Garthwaite regression-based change analysis'
   };
   /* Stat label used inside the per-test bracket. */
@@ -29756,14 +29766,23 @@ if (document.readyState === 'loading'){
   if (!els['es-stat-type']) return;
   const esState = { statTouched: false, statAutoFilled: false, source: 'stat' };
   const SIMILAR_EFFECTS = [
-    { label: 'Heavy smokers vs never (lung cancer)', d: 2.60 },
-    { label: 'Smokers vs never (lung cancer)', d: 1.75 },
-    { label: 'UK male vs female height', d: 1.37 },
-    { label: 'Former vs never smoker (lung cancer)', d: 1.10 },
-    { label: 'Clozapine vs placebo (schizophrenia)', d: 0.89 },
-    { label: 'CBT vs usual care (social anxiety)', d: 0.44 },
-    { label: 'CBT vs usual care (depression)', d: 0.43 },
-    { label: 'Paracetamol vs placebo (headache)', d: 0.26 }
+    { label: 'Heavy smokers vs never smokers (lung cancer)',    d: 2.60 },
+    { label: 'UK male vs female adult height',                  d: 2.04 },
+    { label: 'Smokers vs never smokers (lung cancer)',          d: 1.75 },
+    { label: 'Cognitive therapy for PTSD',                      d: 1.63 },
+    { label: 'Former vs never smokers (lung cancer)',           d: 1.10 },
+    { label: 'Exposure therapy for PTSD',                       d: 1.08 },
+    { label: 'EMDR for PTSD',                                   d: 1.00 },
+    { label: 'Clozapine vs placebo (schizophrenia)',            d: 0.89 },
+    { label: 'CBT for depression',                              d: 0.80 },
+    { label: 'Methylphenidate for ADHD (children)',             d: 0.75 },
+    { label: 'CBT vs placebo for anxiety disorders',            d: 0.70 },
+    { label: 'CBT for depression (low-bias studies)',           d: 0.60 },
+    { label: 'Interpersonal Therapy for depression',            d: 0.50 },
+    { label: 'Antidepressants vs placebo',                      d: 0.30 },
+    { label: 'CBT vs treatment-as-usual for chronic pain',      d: 0.20 },
+    { label: 'CBT vs active control for chronic pain',          d: 0.10 },
+    { label: 'No or negligible effect',                         d: 0.00 }
   ];
 
   // Aux field per statistic (some conversions need N or pooled SD)
@@ -30326,8 +30345,8 @@ if (document.readyState === 'loading'){
     {
       id:'rci-srb',
       label:'McSweeney Regression-Based',
-      title:'Standardised Regression-Based Change',
-      homeLabel:'McSweeneyStandardised Regression-Based',
+      title:'McSweeney Regression-Based Change',
+      homeLabel:'McSweeney Regression-Based',
       meta:'Level 4 · Baseline-predicted retest',
       stack:['REG','RTM','PE'],
       badge:'Model',
@@ -30337,7 +30356,7 @@ if (document.readyState === 'loading'){
     {
       id:'rci-crawford',
       label:'Crawford Regression-Based',
-      title:'Crawford & Garthwaite Standardised Regression-Based (SRB) Change',
+      title:'Crawford & Garthwaite Regression-Based Change',
       homeLabel:'Crawford Regression-Based',
       meta:'Level 5 · Sample-size adjusted',
       stack:['REG','RTM','PE','N'],
@@ -30576,9 +30595,9 @@ if (document.readyState === 'loading'){
           <span class="change-overview-feature is-on" title="Subtracts the average retest improvement seen in the normative sample.">Practice effect</span>
         </div>
       </article>
-      <article class="change-overview-card" data-target-method="rci-srb" tabindex="0" role="button" aria-label="Toggle Standardised Regression-Based details">
+      <article class="change-overview-card" data-target-method="rci-srb" tabindex="0" role="button" aria-label="Toggle McSweeney Regression-Based details">
         <div class="change-overview-meta"><span class="change-overview-num">04</span><span class="change-overview-level">Level 4 · Regression-based</span></div>
-        <h3>Standardised Regression-Based</h3>
+        <h3>McSweeney Regression-Based</h3>
         <p class="change-overview-cite">McSweeney et al. (1993)</p>
         <p>Predicts the patient's expected retest score from baseline using a normative regression equation, then standardises the residual against the standard error of estimate (SEE). <strong>Use when:</strong> regression to the mean is a concern - particularly relevant for patients with extreme baseline scores. Controls for practice effects and baseline-dependent regression simultaneously.</p>
         <div class="change-overview-features">
