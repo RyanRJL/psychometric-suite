@@ -8676,6 +8676,155 @@ body.rb-docked-active{padding-right:0}
 }
 
 /* =====================================================================
+   EFFECT SIZES — Refinement pass (responding to UX feedback)
+   ===================================================================== */
+
+/* --- 1. Results grid: hierarchy + restraint ---
+   The default state shows 12 cells of "0.000 / VERY SMALL" creating
+   a wall of repetition. Mute the qualitative tags, shrink the numerics
+   so labels can breathe, give primary metrics (d, g) visual weight. */
+#effectsize .es-result-card{ padding:11px 13px !important; }
+#effectsize .es-result-label{
+  font-size:9px !important;
+  font-weight:600 !important;
+  letter-spacing:0.08em !important;
+  color:#8A867E !important;
+}
+#effectsize .es-result-value{
+  font-size:14px !important;
+  font-weight:500 !important;
+  line-height:1.2 !important;
+}
+#effectsize .es-result-desc{
+  font-size:8.5px !important;
+  font-weight:500 !important;
+  letter-spacing:0.05em !important;
+  color:#A8A29E !important;
+}
+#effectsize .es-result-similar-value{
+  font-size:11px !important;
+  font-weight:500 !important;
+}
+/* Primary cards (Cohen's d, Hedges' g) — slightly stronger weight on
+   the number, faint cream tint to anchor the eye. */
+#effectsize .es-result-primary{
+  background:#FAF7F0 !important;
+}
+#effectsize .es-result-primary .es-result-value{
+  font-size:16px !important;
+  font-weight:600 !important;
+  color:#1A1A1A !important;
+}
+#effectsize .es-result-primary .es-result-label{
+  color:#5A5A5A !important;
+}
+/* Faint horizontal hairline between the primary row (cards 1–4) and the
+   derived rows below — subtle group divider. */
+#effectsize .es-results-grid > .es-result-card:nth-child(5),
+#effectsize .es-results-grid > .es-result-card:nth-child(6),
+#effectsize .es-results-grid > .es-result-card:nth-child(7),
+#effectsize .es-results-grid > .es-result-card:nth-child(8){
+  border-top:1px solid rgba(20,15,5,0.10) !important;
+}
+
+/* --- 2. Curve panel — boxed to match the grid on the right.
+   Editorial unboxing made the two panels feel like disconnected widgets.
+   Matching shell + padding unifies them as one analysis. */
+#effectsize .es-curve-panel{
+  background:#FFFFFF !important;
+  border:1px solid rgba(20,15,5,0.08) !important;
+  border-radius:var(--r-lg) !important;
+  box-shadow:var(--shadow-1) !important;
+  padding:14px 18px 12px !important;
+}
+
+/* Bigger legend swatches so the colour is actually parseable */
+#effectsize .es-curve-legend .es-legend-swatch{
+  width:14px !important;
+  height:14px !important;
+  border-radius:3px !important;
+  margin-right:6px !important;
+  display:inline-block;
+  vertical-align:middle;
+}
+#effectsize .es-curve-legend{
+  font-size:11.5px !important;
+  gap:18px !important;
+  margin-top:6px;
+  color:#3A3A3A;
+}
+/* Curve caption — sentence-cased, not italic, slightly larger. Reads
+   as an annotation rather than a disclaimer. */
+#effectsize .es-curve-caption{
+  font-family:var(--sans);
+  font-size:11.5px !important;
+  font-style:normal !important;
+  color:#5A5A5A !important;
+  margin:4px 0 0 !important;
+  line-height:1.45;
+  letter-spacing:0;
+  text-align:center;
+}
+#effectsize .es-curve-caption em,
+#effectsize .es-curve-caption strong{ font-style:normal; font-weight:500; color:#1A1A1A; }
+
+/* --- 3. Input strip — give it visual presence ---
+   The slider + dropdown + value + clear-button row was a thin band
+   that almost disappeared. Subtle off-white container, slightly more
+   padding, and tighten the slider value to feel grouped with its track. */
+#effectsize .es-input-panel{
+  background:#FBF8F1 !important;
+  border:1px solid rgba(20,15,5,0.06) !important;
+  border-radius:var(--r-md) !important;
+  padding:14px 16px !important;
+  margin-bottom:14px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);
+}
+/* Slider-value readout — match the field input's typography so the
+   slider feels coupled to the value input rather than floating between. */
+#effectsize .es-d-slider-val-num{
+  font-family:var(--mono) !important;
+  font-size:13.5px !important;
+  font-weight:600 !important;
+  color:#1A1A1A !important;
+  min-width:48px;
+  text-align:right;
+  padding-left:12px;
+}
+
+/* --- 4. A/B segmented control — soften inactive contrast ---
+   Inactive was so faint it looked disabled. Give it real text colour
+   and a subtle background presence so it reads as "selectable" not "off". */
+#effectsize .es-tab:not(.is-active){
+  color:#3A3A3A !important;
+  background:rgba(20,15,5,0.04) !important;
+}
+#effectsize .es-tab:not(.is-active) .es-tab-num{
+  background:rgba(20,15,5,0.12) !important;
+  color:#5A5A5A !important;
+  font-weight:600 !important;
+}
+#effectsize .es-tab:not(.is-active) .es-tab-title{
+  color:#3A3A3A !important;
+  font-weight:500 !important;
+}
+
+/* --- 5. Group Comparison section header —
+   "Group comparison at a target value" was all-caps tiny text, which
+   visually flattened a major feature. Promote to sentence-case with
+   real type weight. */
+#effectsize .es-view-pane[data-view-pane="comparison"] .panel-kicker{
+  font-family:var(--serif) !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  letter-spacing:-0.005em !important;
+  text-transform:none !important;
+  color:#1A1A1A !important;
+  margin:0 0 10px !important;
+  display:block !important;
+}
+
+/* =====================================================================
    PREMORBID — Forest plot (modern JAMA-style)
    Tabular figure with columns: Model · r · SEE · Estimate (CI) · Plot.
    Soft charcoal (not pure black), IBM Plex Sans throughout, hairline
@@ -8733,6 +8882,7 @@ body.rb-docked-active{padding-right:0}
   max-width:880px;
   font-variant-numeric:tabular-nums;
 }
+
 
 
 /* Numeric table is hidden visually but stays in the DOM so the
@@ -8964,4 +9114,133 @@ body.rb-docked-active{padding-right:0}
   transform:translateX(2px);
 }
 
+/* =====================================================================
+   SCORE TABLES — refinement pass (responding to UX feedback)
+   - Classification cells as colour-coded chips by severity tier
+   - Stronger table presence (header, padding, row weight)
+   - Score-type tag in # column as a pill (not parenthetical italic)
+   - Improved row-delete affordance + visual separation of "Clear all"
+   - Better empty state when no rows are entered
+   ===================================================================== */
+
+/* --- Table presence: stronger header, more vertical padding,
+   subtle row separators (not zebra striping — keeps it calm). */
+#battery #bat-table thead th{
+  font-family:var(--sans) !important;
+  font-size:10.5px !important;
+  font-weight:700 !important;
+  letter-spacing:0.10em !important;
+  text-transform:uppercase !important;
+  color:#3A3A3A !important;
+  background:rgba(20,15,5,0.035) !important;
+  border-bottom:1.5px solid rgba(20,15,5,0.18) !important;
+  padding:10px 12px !important;
+}
+#battery #bat-table tbody td{
+  padding:8px 12px !important;
+  border-bottom:1px solid rgba(20,15,5,0.06) !important;
+  vertical-align:middle !important;
+}
+#battery #bat-table tbody tr:last-child td{
+  border-bottom:none !important;
+}
+#battery #bat-table tbody tr:hover td{
+  background:rgba(20,15,5,0.02) !important;
+}
+
+/* --- 3. Score-type tag in # column: parenthetical italic → pill.
+   Looks like a property of the row rather than incidental metadata. */
+#battery .bat-row-type-tag{
+  display:inline-block;
+  margin-left:6px;
+  padding:1px 6px;
+  border-radius:3px;
+  background:rgba(20,15,5,0.07);
+  color:#5A5A5A;
+  font-family:var(--mono);
+  font-size:9.5px;
+  font-weight:600;
+  font-style:normal;
+  letter-spacing:0.02em;
+  text-transform:none;
+  vertical-align:1px;
+}
+#battery .bat-row-type-tag::before{ content:''; }
+/* Strip any inherited italic from the # column */
+#battery .row-num{ font-style:normal !important; }
+
+/* --- 4. Row-delete affordance: visible enough to be findable, still
+   subordinate to the input cells. Hover reveals the destructive intent. */
+#battery #bat-table .row-actions button{
+  width:24px;
+  height:24px;
+  border-radius:4px;
+  background:transparent;
+  border:1px solid transparent;
+  color:#9A968D;
+  font-size:14px;
+  line-height:1;
+  cursor:pointer;
+  transition:background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+#battery #bat-table .row-actions button:hover{
+  background:rgba(156,61,42,0.10);
+  color:#9C3D2A;
+  border-color:rgba(156,61,42,0.20);
+}
+
+/* --- 5. Constructive vs destructive action separation.
+   "+ Add row" stays where it is. "Clear all rows" gets pushed to the
+   FAR RIGHT with a divider and a slightly different visual treatment
+   so the eye reads it as a destructive secondary action, not a peer
+   of the primary "+ Add row" button. */
+#battery .add-row-actions{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  margin-top:14px !important;
+  padding-top:12px !important;
+  border-top:1px solid rgba(20,15,5,0.06) !important;
+}
+#battery .add-row-actions .bat-add-wrap{
+  flex:0 0 auto;
+}
+#battery .add-row-actions .bat-add-repeat{
+  flex:0 0 auto;
+}
+#battery .add-row-actions .btn-clear{
+  margin-left:auto !important;
+  padding:6px 12px !important;
+  font-size:11.5px !important;
+  color:#9A968D !important;
+  background:transparent !important;
+  border:1px solid rgba(20,15,5,0.10) !important;
+  border-radius:4px !important;
+}
+#battery .add-row-actions .btn-clear:hover{
+  color:#9C3D2A !important;
+  border-color:rgba(156,61,42,0.30) !important;
+  background:rgba(156,61,42,0.04) !important;
+}
+
+/* --- 6. Empty-state message inside the table.
+   When no rows are entered, a quiet prompt appears via a ::before
+   pseudo on the empty tbody. Tells the user what to do without
+   demanding visual weight. */
+#battery #bat-table tbody:empty{
+  position:relative;
+}
+#battery #bat-table tbody:empty::before{
+  content:"No subtests yet. Use the search field above to autofill a test family, or click + Add row to enter manually.";
+  display:block;
+  padding:48px 24px;
+  text-align:center;
+  font-family:var(--sans);
+  font-size:13px;
+  font-style:italic;
+  color:#9A968D;
+  line-height:1.55;
+  background:rgba(20,15,5,0.015);
+  border-bottom:1px solid rgba(20,15,5,0.06);
+}
 

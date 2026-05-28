@@ -31,6 +31,55 @@
 
   if (!els['es-stat-type']) return;
   const esState = { statTouched: false, statAutoFilled: false, source: 'stat' };
+
+  /* Per-statistic slider configurations — the slider operates in the
+     currently-selected statistic's native units, with a sensible range.
+     Statistics that require an aux value (t, zstat, md) fall back to
+     Cohen's d units via dToStat — the slider still moves but the value
+     is converted on each tick. */
+  const SLIDER_CONFIGS = {
+    d:  { min: -3,    max: 3,    step: 0.01, decimals: 2, ticks: [-3, -2, -1, -0.8, -0.5, -0.2, 0, 0.2, 0.5, 0.8, 1, 2, 3], majors: [-3, 0, 3], zero: 0 },
+    g:  { min: -3,    max: 3,    step: 0.01, decimals: 2, ticks: [-3, -2, -1, -0.8, -0.5, -0.2, 0, 0.2, 0.5, 0.8, 1, 2, 3], majors: [-3, 0, 3], zero: 0 },
+    r:  { min: -0.99, max: 0.99, step: 0.01, decimals: 2, ticks: [-0.99, -0.5, -0.3, -0.1, 0, 0.1, 0.3, 0.5, 0.99],         majors: [-0.99, 0, 0.99], zero: 0 },
+    r2: { min: 0,     max: 0.99, step: 0.01, decimals: 2, ticks: [0, 0.01, 0.09, 0.25, 0.5, 0.99],                          majors: [0, 0.99], zero: 0 },
+    f:  { min: 0,     max: 2,    step: 0.01, decimals: 2, ticks: [0, 0.1, 0.25, 0.4, 0.8, 1.2, 2],                          majors: [0, 2], zero: 0 },
+    z:  { min: -3,    max: 3,    step: 0.01, decimals: 2, ticks: [-3, -2, -1, 0, 1, 2, 3],                                  majors: [-3, 0, 3], zero: 0 },
+    or: { min: -2,    max: 2,    step: 0.05, decimals: 2, ticks: [-2, -1, 0, 1, 2],                                          majors: [-2, 0, 2], zero: 0, log: true },
+    /* For these, the statistic value depends on an aux N or pooled SD.
+       Slider stays in d-units and writes converted value via dToStat. */
+    t:     null,
+    zstat: null,
+    md:    null
+  };
+
+  /* Apply the slider's range, step, and tick HTML for a given statistic.
+     Called whenever the statistic dropdown changes. */
+  function applySliderConfig(type){
+    const slider = els['es-d-slider'];
+    if (!slider) return;
+    const cfg = SLIDER_CONFIGS[type] || SLIDER_CONFIGS.d;
+    slider.min = String(cfg.min);
+    slider.max = String(cfg.max);
+    slider.step = String(cfg.step);
+
+    // Rebuild tick marks beneath the slider track
+    const ticksHost = slider.parentElement?.querySelector('.es-d-slider-ticks');
+    if (ticksHost){
+      const range = cfg.max - cfg.min;
+      const fmt = (v) => {
+        if (cfg.log) return (Math.pow(10, v)).toFixed(v <= -1 ? 2 : (v <= 0 ? 1 : 0));
+        const dec = Math.abs(v) >= 1 ? 0 : (cfg.decimals === 0 ? 0 : 1);
+        return (v === 0 ? '0' : (v > 0 ? '+' : '−') + Math.abs(v).toFixed(dec)).replace(/\.0$/, '');
+      };
+      ticksHost.innerHTML = cfg.ticks.map(v => {
+        const pct = ((v - cfg.min) / range) * 100;
+        const isMajor = cfg.majors.includes(v);
+        const isZero = v === cfg.zero;
+        const cls = `es-d-tick${isMajor ? ' es-d-tick-major' : ''}${isZero ? ' es-d-tick-zero' : ''}`;
+        return `<span class="${cls}" style="left:${pct}%" data-label="${fmt(v)}"></span>`;
+      }).join('');
+    }
+  }
   /* Reference effect sizes drawn from high-quality meta-analyses and
      landmark epidemiology. Used by the "Similar to" cell in the
      conversion grid — for an input |d|, the closest reference wins
@@ -104,6 +153,34 @@
         return (2*v) / Math.sqrt(a);
       case 'zstat': if (a == null || a <= 0) return null; return v / Math.sqrt(a);
       case 'md': if (a == null || a <= 0) return null; return v / a;
+      default: return null;
+    }
+  }
+
+  /* Inverse of statToD — convert a Cohen's d back to whichever statistic
+     the user has selected. Used by the slider so dragging updates the
+     CURRENT statistic's value, not just d. Returns null when the
+     statistic requires an aux value that isn't entered. */
+  function dToStat(type, d, aux){
+    if (!Number.isFinite(d)) return null;
+    const a = (aux === '' || aux === null || isNaN(aux)) ? null : Number(aux);
+    switch(type){
+      case 'd':  return d;
+      case 'g':
+        if (a == null || a < 4) return d;
+        return d * Math.sqrt(1 - 3/(4*a - 9));
+      case 'r':  return d / Math.sqrt(d*d + 4);
+      case 'r2': { const r = d / Math.sqrt(d*d + 4); return r * r; }
+      case 'f':  return d / 2;
+      case 'z': {
+        // d -> r -> Fisher's z
+        const r = d / Math.sqrt(d*d + 4);
+        return Math.atanh(Math.max(-0.99999, Math.min(0.99999, r)));
+      }
+      case 'or': return Math.exp(d * Math.PI / Math.sqrt(3));
+      case 't':     if (a == null || a <= 0) return null; return d * Math.sqrt(a) / 2;
+      case 'zstat': if (a == null || a <= 0) return null; return d * Math.sqrt(a);
+      case 'md':    if (a == null || a <= 0) return null; return d * a;
       default: return null;
     }
   }
@@ -309,14 +386,48 @@
     computeTarget(grp, d);
     renderCommonLanguage({ d, cles, u3, ovl, r });
     if (els['es-d-slider']){
-      const dClamp = Math.max(-3, Math.min(3, d));
-      els['es-d-slider'].value = String(dClamp);
-      const pct = ((dClamp + 3) / 6) * 100;
-      els['es-d-slider'].style.setProperty('--es-d-pct', pct + '%');
+      // Sync slider position to the CURRENT statistic's value (not d).
+      // For log-scaled statistics (OR), the slider position is log10(value).
+      const currentType = els['es-stat-type'].value;
+      const cfg = SLIDER_CONFIGS[currentType];
+      let sliderPos;
+      if (cfg){
+        const rawVal = Number(els['es-stat-value'].value);
+        const valForSlider = cfg.log
+          ? (rawVal > 0 ? Math.log10(rawVal) : cfg.min)
+          : rawVal;
+        sliderPos = Number.isFinite(valForSlider)
+          ? Math.max(cfg.min, Math.min(cfg.max, valForSlider))
+          : 0;
+        els['es-d-slider'].value = String(sliderPos);
+        const pct = ((sliderPos - cfg.min) / (cfg.max - cfg.min)) * 100;
+        els['es-d-slider'].style.setProperty('--es-d-pct', pct + '%');
+      } else {
+        // Aux-required statistic — slider in d-units
+        sliderPos = Math.max(-3, Math.min(3, d));
+        els['es-d-slider'].value = String(sliderPos);
+        const pct = ((sliderPos + 3) / 6) * 100;
+        els['es-d-slider'].style.setProperty('--es-d-pct', pct + '%');
+      }
     }
     if (els['es-d-slider-val']){
-      const sign = d > 0 ? '+' : (d < 0 ? '−' : '');
-      els['es-d-slider-val'].textContent = sign + Math.abs(d).toFixed(2);
+      const currentType = els['es-stat-type'].value;
+      const cfg = SLIDER_CONFIGS[currentType];
+      if (cfg){
+        const rawVal = Number(els['es-stat-value'].value);
+        if (Number.isFinite(rawVal)){
+          const sign = rawVal > 0 ? '+' : (rawVal < 0 ? '−' : '');
+          const abs = Math.abs(rawVal);
+          els['es-d-slider-val'].textContent = cfg.log
+            ? abs.toFixed(cfg.decimals)
+            : sign + abs.toFixed(cfg.decimals);
+        } else {
+          els['es-d-slider-val'].textContent = '-';
+        }
+      } else {
+        const sign = d > 0 ? '+' : (d < 0 ? '−' : '');
+        els['es-d-slider-val'].textContent = sign + Math.abs(d).toFixed(2);
+      }
     }
     if (els['es-d-slider-magnitude']){
       const a = Math.abs(d);
@@ -440,6 +551,12 @@
         esState.statAutoFilled = false;
         esState.source = 'stat';
       }
+      // When the statistic changes, reconfigure the slider for the new
+      // statistic's native range + tick marks BEFORE compute() runs (so
+      // compute can correctly sync slider position from the new value).
+      if (id === 'es-stat-type'){
+        applySliderConfig(el.value);
+      }
       compute();
     });
     el.addEventListener('change', () => {
@@ -448,9 +565,15 @@
         esState.statAutoFilled = false;
         esState.source = 'stat';
       }
+      if (id === 'es-stat-type'){
+        applySliderConfig(el.value);
+      }
       compute();
     });
   });
+
+  // Initialise the slider for whatever statistic is selected on first load
+  applySliderConfig(els['es-stat-type'].value);
   function switchEffectMode(mode){
     const tab = document.querySelector('#effectsize .es-tab[data-mode="' + mode + '"]');
     if (!tab) return;
@@ -517,28 +640,68 @@
       return         { label:'Very large', mag:'verylarge'  };
     }
     const onSlide = () => {
-      const d = Number(els['es-d-slider'].value);
-      els['es-stat-type'].value = 'd';
-      // 2-decimal precision matches the slider's step="0.01" so the input
-      // field doesn't visibly snap in 0.1 increments while the user drags.
-      els['es-stat-value'].value = d.toFixed(2);
-      els['es-stat-aux'].value = '';
+      const sliderVal = Number(els['es-d-slider'].value);
+      const currentType = els['es-stat-type'].value;
+      const cfg = SLIDER_CONFIGS[currentType];
+      const auxVal = els['es-stat-aux'] ? els['es-stat-aux'].value : '';
+
+      // dForClassify is the Cohen's d equivalent of the slider position —
+      // used for the magnitude label and the track fill percentage.
+      let dForClassify;
+      let displayValue;       // for the value input + readout
+
+      if (cfg){
+        // Slider operates in native units for this statistic.
+        // For OR with log scale, the slider value is log10(OR).
+        const valueInUnits = cfg.log ? Math.pow(10, sliderVal) : sliderVal;
+        displayValue = valueInUnits;
+        els['es-stat-value'].value = valueInUnits.toFixed(cfg.decimals);
+        // Convert to d for the magnitude label
+        const dEquiv = statToD(currentType, valueInUnits, auxVal);
+        dForClassify = Number.isFinite(dEquiv) ? dEquiv : 0;
+        // Track fill — relative position within slider's range
+        const pct = ((sliderVal - cfg.min) / (cfg.max - cfg.min)) * 100;
+        els['es-d-slider'].style.setProperty('--es-d-pct', pct + '%');
+      } else {
+        // Aux-required statistic (t / zstat / md) — slider in d-units,
+        // convert to the statistic via dToStat. If aux is missing,
+        // gracefully fall back to Cohen's d mode.
+        const d = sliderVal;
+        const convertedValue = dToStat(currentType, d, auxVal);
+        if (convertedValue !== null && Number.isFinite(convertedValue)){
+          els['es-stat-value'].value = convertedValue.toFixed(2);
+        } else {
+          els['es-stat-type'].value = 'd';
+          els['es-stat-value'].value = d.toFixed(2);
+          els['es-stat-aux'].value = '';
+          // Type changed → apply d config
+          applySliderConfig('d');
+        }
+        dForClassify = d;
+        displayValue = d;
+        const pct = ((d + 3) / 6) * 100;
+        els['es-d-slider'].style.setProperty('--es-d-pct', pct + '%');
+      }
+
       esState.statTouched = true;
       esState.statAutoFilled = false;
       esState.source = 'stat';
+
       if (els['es-d-slider-val']){
-        // Show sign explicitly so the user can see direction at a glance
-        const sign = d > 0 ? '+' : (d < 0 ? '−' : '');
-        els['es-d-slider-val'].textContent = sign + Math.abs(d).toFixed(2);
+        // Show the value in whatever units the slider is operating in
+        const sign = displayValue > 0 ? '+' : (displayValue < 0 ? '−' : '');
+        const abs = Math.abs(displayValue);
+        const decs = cfg ? cfg.decimals : 2;
+        // OR is positive-only and skips the sign prefix
+        els['es-d-slider-val'].textContent = (cfg && cfg.log)
+          ? abs.toFixed(decs)
+          : (sign + abs.toFixed(decs));
       }
       if (els['es-d-slider-magnitude']){
-        const c = classifyD(d);
+        const c = classifyD(dForClassify);
         els['es-d-slider-magnitude'].textContent = c.label;
         els['es-d-slider-magnitude'].dataset.mag = c.mag;
       }
-      // Live progress fill on the track (CSS variable picked up by ::before)
-      const pct = ((d + 3) / 6) * 100;
-      els['es-d-slider'].style.setProperty('--es-d-pct', pct + '%');
       switchEffectMode('stat');
       compute();
     };
