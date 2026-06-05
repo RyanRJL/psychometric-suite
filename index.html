@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!-- saved from url=(0188)file:///C:/Users/littler/AppData/Local/Temp/MicrosoftEdgeDownloads/868decdc-8e97-475e-b258-4e2556753ae7/Psychometric%20Calculators%20%C2%B7%20Clinical%20Suite%20-%20homepage%20default.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
@@ -6006,13 +6006,13 @@
     </div>
     <div class="ds-version-stamp" title="Build version and last update">
       <span class="ds-version-dot" aria-hidden="true"></span>
-      <span>v1.0 &middot; updated May 2026</span>
+      <span id="app-version">v0.1.4 &middot; updated June 2026</span>
     </div>
   </div>
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260507ai"></script>
+<script src="data.js?v=20260517w"></script>
 <script src="app.js?v=20260517t"></script>
 <script src="design-system.js?v=20260512ad" defer></script>
 <script src="app-effectsize-page.js?v=20260517v"></script>
@@ -6021,7 +6021,19 @@
      Only runs when served over http(s)://; skipped silently for file://
      so the bundled single-HTML version doesn't error in dev tools. -->
 <script>
-  if ('serviceWorker' in navigator && location.protocol !== 'file:'){
+  if (window.__TAURI__) {
+    // Desktop (Tauri) app: never use a service worker - assets are already local.
+    // Remove any leftover registration + caches so the page is always fresh and
+    // the auto-updater check runs on every launch.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations()
+        .then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+    }
+    if (window.caches && caches.keys) {
+      caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(() => {});
+    }
+  } else if ('serviceWorker' in navigator && location.protocol !== 'file:'){
+    // Real website / installable PWA: register the service worker as before.
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./service-worker.js')
         .catch(err => console.warn('[pwa] service worker registration failed:', err));
