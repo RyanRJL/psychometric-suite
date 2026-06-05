@@ -6590,6 +6590,16 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   60%  { transform:scale(1.05); box-shadow:0 0 0 16px rgba(156,61,42,0), 0 12px 26px rgba(0,0,0,0.22); }
   100% { transform:scale(1);    box-shadow:0 0 0 0 rgba(156,61,42,0),    0 6px 18px rgba(0,0,0,0.18); }
 }
+/* Count badge "+1" bump when a new table is captured */
+.rb-chip-count.rb-count-bump{ animation:rb-count-bump 460ms cubic-bezier(0.2,0.85,0.3,1.2); }
+@keyframes rb-count-bump{
+  0%   { transform:scale(1); }
+  40%  { transform:scale(1.5); }
+  100% { transform:scale(1); }
+}
+/* Copy buttons: brief green "Copied ✓" confirmation state */
+.is-copied{ background:#1f7a4d !important; border-color:#1f7a4d !important; color:#fff !important; transition:background 120ms ease; }
+.is-copied svg{ stroke:#fff !important; }
 
 /* Chip stays anchored to the bottom-right corner of the viewport in BOTH states.
    The drawer "pops up" out of and back into the chip's corner. */

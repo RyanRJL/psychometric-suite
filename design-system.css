@@ -2847,8 +2847,9 @@ input[type="text"].ds-inline-bar-input{
   50%       { transform: translateY(-7px); }
 }
 .rb-chip{
-  animation: rb-chip-ambient-glow 10s ease-in-out infinite,
-             rb-chip-float 3.2s ease-in-out infinite;
+  /* Calm at rest — no perpetual bob. Motion happens only on purpose:
+     the pulse when a table is captured, hover, and the count-badge bump. */
+  animation: none;
 }
 .ds-chip-recede .rb-chip{
   animation-play-state: paused;

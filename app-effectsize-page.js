@@ -107,10 +107,10 @@
 
   // Aux field per statistic (some conversions need N or pooled SD)
   const AUX_FOR = {
-    g:     { label: 'Total N (n1 + n2)', hint: 'N' },
-    t:     { label: 'Total N (df + 2)',  hint: 'N' },
-    md:    { label: 'Pooled SD',         hint: 'SD' },
-    zstat: { label: 'Total N',           hint: 'N' }
+    g:     { label: 'Total N (n1 + n2)',           hint: 'N' },
+    t:     { label: 'Total N (df + 2) — required', hint: 'e.g. 52' },
+    md:    { label: 'Pooled SD — required',        hint: 'SD' },
+    zstat: { label: 'Total N — required',          hint: 'N' }
   };
   function refreshAuxField(){
     const t = els['es-stat-type'].value;
@@ -325,7 +325,22 @@
     } else {
       d = hasStat ? dStat : null;
     }
+    // Prompt when an aux-required statistic (t, z-stat, mean difference) has a
+    // value but its required N/SD hasn't been entered yet — the most common
+    // reason the t-test conversion appears not to work.
     setMethodMessage('', '');
+    const curType = els['es-stat-type'].value;
+    const auxCfg = AUX_FOR[curType];
+    if (esState.source === 'stat' && auxCfg && (curType === 't' || curType === 'zstat' || curType === 'md')){
+      const valStr = els['es-stat-value'].value;
+      const auxStr = els['es-stat-aux'].value;
+      const hasValue = valStr !== '' && !isNaN(valStr);
+      const hasAux   = auxStr !== '' && !isNaN(auxStr);
+      if (hasValue && !hasAux){
+        const what = curType === 't' ? 'a t value' : (curType === 'zstat' ? 'a z statistic' : 'a mean difference');
+        setMethodMessage('info', `Also enter <strong>${auxCfg.label.replace(' — required','')}</strong> — it’s needed to convert ${what} into an effect size.`);
+      }
+    }
 
     if (d == null || isNaN(d) || !isFinite(d)){
       ['es-out-d','es-out-g','es-out-r','es-out-r2','es-out-f','es-out-z','es-out-or',
@@ -671,11 +686,11 @@
         if (convertedValue !== null && Number.isFinite(convertedValue)){
           els['es-stat-value'].value = convertedValue.toFixed(2);
         } else {
-          els['es-stat-type'].value = 'd';
-          els['es-stat-value'].value = d.toFixed(2);
-          els['es-stat-aux'].value = '';
-          // Type changed → apply d config
-          applySliderConfig('d');
+          // N/SD not entered yet — KEEP the chosen statistic selected rather
+          // than silently reverting to Cohen's d. Leave the value blank;
+          // compute() then shows the "enter N" prompt so the slider isn't a
+          // dead end. Once N is entered, the slider converts to t normally.
+          els['es-stat-value'].value = '';
         }
         dForClassify = d;
         displayValue = d;

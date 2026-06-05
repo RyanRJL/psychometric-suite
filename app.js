@@ -315,6 +315,17 @@ function showToast(msg, isError){
 }
 
 /* ---------- COPY TO CLIPBOARD (rich HTML) ---------- */
+// Briefly flip a copy button to a "Copied ✓" state for clear confirmation.
+function flashCopiedButton(btn){
+  if (!btn) return;
+  if (btn._restore != null){ clearTimeout(btn._timer); btn.innerHTML = btn._restore; }
+  btn._restore = btn.innerHTML;
+  btn.classList.add('is-copied');
+  btn.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4"/></svg> Copied';
+  btn._timer = setTimeout(() => {
+    btn.innerHTML = btn._restore; btn.classList.remove('is-copied'); btn._restore = null;
+  }, 1500);
+}
 async function copyApaTable(containerId){
   const container = document.getElementById(containerId);
   if (!container || !container.innerHTML.trim()){
@@ -335,6 +346,7 @@ async function copyApaTable(containerId){
       await navigator.clipboard.writeText(plain);
     }
     showToast('✓ Table copied - ready to paste into your report');
+    flashCopiedButton(document.querySelector(`[data-copy="${containerId}"]`));
     if (typeof ReportBundle !== 'undefined' && ReportBundle.showKofiPrompt) ReportBundle.showKofiPrompt();
   } catch(e){
     console.error(e);
@@ -393,11 +405,21 @@ function buildStandaloneHtml(container){
     const existing = td.getAttribute('style') || '';
     td.setAttribute('style', existing + 'padding-left:24pt;');
   });
-  // Bottom border on last body row
-  const lastRows = clone.querySelectorAll('.apa-table tbody tr:last-child td');
-  lastRows.forEach(td => {
-    const existing = td.getAttribute('style') || '';
-    td.setAttribute('style', existing + 'border-bottom:1.5pt solid #000;padding-bottom:3pt;');
+  // Bottom border under the last row that actually has CONTENT. Using the last
+  // non-empty row (rather than tbody tr:last-child) means the bottom rule never
+  // goes missing when a table happens to end with an empty/placeholder row.
+  clone.querySelectorAll('.apa-table tbody').forEach(tbody => {
+    const rows = [...tbody.querySelectorAll('tr')];
+    let lastRow = null;
+    for (let k = rows.length - 1; k >= 0; k--){
+      if (rows[k].textContent.trim()){ lastRow = rows[k]; break; }
+    }
+    if (lastRow){
+      lastRow.querySelectorAll('td, th').forEach(td => {
+        const existing = td.getAttribute('style') || '';
+        td.setAttribute('style', existing + 'border-bottom:1.5pt solid #000;padding-bottom:3pt;');
+      });
+    }
   });
   // Preserve emphasis on the expected-range star markers, but DO NOT bold
   // .bat-class-extreme - extremely-low scores should render in normal weight
@@ -2043,21 +2065,26 @@ document.getElementById('sdi-clear').addEventListener('click', clearSdi);
 // Defaults for the corrected-r toggle:
 //   - Simple RCI / Practice-Adjusted: ON  (corrected r is the better reliability estimate)
 //   - SRB / Crawford:                  OFF (raw r matches the regression equations as published)
+// All four RCI methods share ONE row set, so a person's scores and norms are
+// entered once and carry across every method. Each row holds the full superset
+// of fields; each method reads the subset it needs. NEVER reassign a method's
+// .rows (e.g. `= [...]`) — that breaks the shared link. Mutate in place instead.
+const RCI_SHARED_ROWS = [];
 const rciState = {
-  'rci-basic':    { rows:[], cv:0.95, useCorrectedR:true,  d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
-  'rci-practice': { rows:[], cv:0.95, useCorrectedR:true,  d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
-  'rci-srb':      { rows:[], cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
-  'rci-crawford': { rows:[], cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' }
+  'rci-basic':    { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:true,  d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  'rci-practice': { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:true,  d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  'rci-srb':      { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  'rci-crawford': { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' }
 };
+// Blank rows carry the full superset so any method can read/fill them.
 function newRciRow(method){
-  if (method === 'rci-basic') return { name:'', sd:'', r:'', t1:'', t2:'' };
-  if (method === 'rci-crawford') return { name:'', m1:'', sd1:'', m2:'', sd2:'', r:'', n:'', t1:'', t2:'' };
-  return { name:'', m1:'', sd1:'', m2:'', sd2:'', r:'', t1:'', t2:'' };
+  return { name:'', sd:'', m1:'', sd1:'', m2:'', sd2:'', r:'', rCorrected:'', n:'', t1:'', t2:'' };
 }
 function rciAddRow(method){ rciState[method].rows.push(newRciRow(method)); renderRci(method); }
 function rciRemove(method, i){ rciState[method].rows.splice(i, 1); renderRci(method); }
 function rciRemoveGroup(method, group){
-  rciState[method].rows = rciState[method].rows.filter(r => r.group !== group);
+  const rows = rciState[method].rows;
+  for (let i = rows.length - 1; i >= 0; i--){ if (rows[i].group === group) rows.splice(i, 1); }
   renderRci(method);
 }
 window.rciRemove = rciRemove;
@@ -2590,48 +2617,35 @@ function loadFamilyIntoMethod(method, family){
   const db = getMergedDB();
   if (!db[family]) return;
   const subtests = Object.entries(db[family]);
-  let newRows;
-  if (method === 'rci-basic'){
-    newRows = subtests.map(([name, p]) => ({
-      name, group:family,
-      sd: String(p.sd1),
-      r: String(p.r),
-      // Carry corrected r when present so the user-level toggle can pick it
-      rCorrected: (p.rCorrected != null ? String(p.rCorrected) : ''),
-      t1:'', t2:''
-    }));
-  } else if (method === 'rci-crawford'){
-    newRows = subtests.map(([name, p]) => ({
-      name,
-      group:family,
-      m1: String(p.m1), sd1: String(p.sd1),
-      m2: String(p.m2), sd2: String(p.sd2),
-      r: String(p.r),
-      // Carry corrected r when present so the user-level toggle can pick it
-      rCorrected: (p.rCorrected != null ? String(p.rCorrected) : ''),
-      n: (p.n != null ? String(p.n) : ''),
-      t1:'', t2:''
-    }));
-  } else { // rci-practice or rci-srb
-    newRows = subtests.map(([name, p]) => ({
-      name,
-      group:family,
-      m1: String(p.m1), sd1: String(p.sd1),
-      m2: String(p.m2), sd2: String(p.sd2),
-      r: String(p.r),
-      rCorrected: (p.rCorrected != null ? String(p.rCorrected) : ''),
-      t1:'', t2:''
-    }));
+  // Data is shared across all methods now — don't add the same family twice.
+  if (rciState[method].rows.some(r => r.group === family)){
+    if (typeof showToast === 'function') showToast(`${family} is already loaded`, true);
+    renderRci(method);
+    return;
   }
-  // Sweep out the stale placeholder row below the example, then append the
-  // autofilled tests (keeping any tests the user has already entered).
+  // Store the FULL superset on every row so each method reads the fields it
+  // needs (basic: sd + r; practice/SRB: m1/sd1/m2/sd2/r; Crawford also: n).
+  const newRows = subtests.map(([name, p]) => ({
+    name, group:family,
+    sd:  (p.sd1 != null ? String(p.sd1) : ''),
+    m1:  (p.m1  != null ? String(p.m1)  : ''),
+    sd1: (p.sd1 != null ? String(p.sd1) : ''),
+    m2:  (p.m2  != null ? String(p.m2)  : ''),
+    sd2: (p.sd2 != null ? String(p.sd2) : ''),
+    r:   (p.r   != null ? String(p.r)   : ''),
+    rCorrected: (p.rCorrected != null ? String(p.rCorrected) : ''),
+    n:   (p.n   != null ? String(p.n)   : ''),
+    t1:'', t2:''
+  }));
+  // Sweep out the stale placeholder row, then append in place — mutate the
+  // SHARED array (never reassign .rows, which would break the shared link).
   dropFirstBlankRow(rciState[method].rows);
-  rciState[method].rows = rciState[method].rows.concat(newRows);
+  rciState[method].rows.push(...newRows);
   renderRci(method);
   // Toast suppressed - the working-report pill is the single feedback channel
 }
 function clearMethodRows(method){
-  rciState[method].rows = [];
+  rciState[method].rows.length = 0;
   renderRci(method);
   const inp = document.querySelector(`.rci-family-input[data-method="${method}"]`);
   if (inp) inp.value = '';
@@ -4014,13 +4028,9 @@ function loadExampleRow(method){
     const example = {name:'Example subtest', raw:'25', score:'10', isExample:true};
     batteryRows.push(example); renderBattery(); showToast('Example row added'); return;
   }
-  const localExamples = {
-    'rci-basic': {name:'Example index score',sd:'15',r:'0.90',t1:'100',t2:'89',isExample:true},
-    'rci-practice': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89',isExample:true},
-    'rci-srb': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',t1:'100',t2:'89',isExample:true},
-    'rci-crawford': {name:'Example index score',m1:'100',sd1:'15',m2:'103',sd2:'15',r:'0.90',n:'100',t1:'100',t2:'89',isExample:true}
-  };
-  if (rciState[method]){ rciState[method].rows.push({...localExamples[method]}); renderRci(method); showToast('Example row added'); }
+  // Single superset example so the row is complete on every method (shared data).
+  const rciExample = {name:'Example index score', isExample:true, sd:'15', m1:'100', sd1:'15', m2:'103', sd2:'15', r:'0.90', rCorrected:'', n:'100', t1:'100', t2:'89'};
+  if (rciState[method]){ rciState[method].rows.push({...rciExample}); renderRci(method); showToast('Example row added'); }
 }
 
 /* ============================================================
@@ -6205,7 +6215,10 @@ sdiRows = [
     : {name:'Example memory score',t1:'9',t2:'6',isExample:true},
   {}
 ];
-['rci-basic', 'rci-practice', 'rci-srb', 'rci-crawford'].forEach(m => { rciState[m].rows = [{...examples[m]}, {}]; renderRci(m); });
+// One shared example + blank row across all RCI methods (mutate in place to keep the shared link).
+RCI_SHARED_ROWS.length = 0;
+RCI_SHARED_ROWS.push({name:'Example index score', isExample:true, sd:'15', m1:'100', sd1:'15', m2:'103', sd2:'15', r:'0.90', rCorrected:'', n:'100', t1:'100', t2:'89'}, {});
+['rci-basic', 'rci-practice', 'rci-srb', 'rci-crawford'].forEach(m => renderRci(m));
 renderBattery();
 renderSdi();
 applyCalculatorPolish();
@@ -6664,6 +6677,10 @@ const ReportBundle = (function(){
      Dismissable via backdrop click, the X, or Escape. */
   function maybeShowKofiToast(opts){
     const force = !!(opts && opts.force);
+    // Automatic "Saved you time today?" Ko-fi prompts are disabled by request.
+    // The toast only appears when the user explicitly opens it (e.g. the header
+    // "Buy me a coffee" button, which passes { force:true }).
+    if (!force) return;
     // Don't double-render while a modal is already on screen
     if (kofiToastShown) return;
     // Auto-triggers (export, copy, timer) respect the localStorage flag.
@@ -6873,12 +6890,31 @@ const ReportBundle = (function(){
     if (numEl) numEl.textContent = `Table ${num}`;
     return tmp.innerHTML;
   }
+  /* Ensure every table has a bottom rule under its last row WITH content — even
+     for items captured before this fix (their HTML snapshot is stored). Applied
+     at render/copy time so existing saved reports are corrected too. */
+  function ensureBottomRule(html){
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    tmp.querySelectorAll('.apa-table tbody').forEach(tbody => {
+      const rows = [...tbody.querySelectorAll('tr')];
+      let last = null;
+      for (let k = rows.length - 1; k >= 0; k--){ if (rows[k].textContent.trim()){ last = rows[k]; break; } }
+      if (!last) return;
+      last.querySelectorAll('td, th').forEach(td => {
+        const s = (td.getAttribute('style') || '').replace(/border-bottom\s*:[^;]*;?/gi, '');
+        td.setAttribute('style', s + 'border-bottom:1.5pt solid #000;padding-bottom:3pt;');
+      });
+    });
+    return tmp.innerHTML;
+  }
   function effectiveItemHtml(item, indexInReport){
     let html = applyHiddenColumns(item.html, item.hiddenColumns || []);
     html = applyHeaderOverrides(html, item.headerOverrides || []);
     if (typeof indexInReport === 'number'){
       html = renumberTable(html, indexInReport + 1);
     }
+    html = ensureBottomRule(html);
     return html;
   }
 
@@ -7205,9 +7241,109 @@ const ReportBundle = (function(){
   }
 
   /* ---------- exports ---------- */
+  // ---- Merge tables from the same battery into one combined table ----
+  let mergeBattery = true; // default ON (toggle in the report toolbar)
+  // Map a detected family name (e.g. "CVLT-3 Indices") to its battery in the
+  // catalog → full name + the sub-section label ("Indices").
+  function catalogBatteryFor(fam){
+    if (!fam || typeof REPORT_TEST_CATALOG === 'undefined') return null;
+    for (const t of REPORT_TEST_CATALOG){
+      const fams = t.families || [];
+      const base = fams.find(f => fam === f || fam.startsWith(f + ' ') || fam.startsWith(f));
+      if (base || fam === t.name || fam.startsWith(t.name + ' ')){
+        const stripFrom = base || t.name;
+        let sub = fam.slice(stripFrom.length).replace(/^[\s·•:.\-]+/, '').trim();
+        if (!sub) sub = fam.replace(t.name, '').replace(/^[\s·•:.\-]+/, '').trim();
+        return { id: t.id, name: t.name, longName: t.longName || t.name, subLabel: sub || t.name };
+      }
+    }
+    return null;
+  }
+  // Build one combined table from several same-battery tables, matching the
+  // mockup: full battery-name title, each source table's header row kept as a
+  // labelled sub-section, body rows beneath, one Note at the bottom.
+  function buildMergedTableHtml(longName, sections){
+    const wrap = document.createElement('div');
+    wrap.innerHTML =
+      `<div class="apa-table-num" style="font-family:'Times New Roman',serif;font-size:11pt;font-style:italic;color:#000;margin:0 0 2pt 0;">Table 1</div>` +
+      `<div class="apa-table-title" style="font-family:'Times New Roman',serif;font-size:11pt;font-style:italic;color:#000;margin:0 0 8pt 0;line-height:1.4;">${longName}</div>`;
+    const table = document.createElement('table');
+    table.className = 'apa-table';
+    table.setAttribute('style', "border-collapse:collapse;font-family:'Times New Roman',serif;font-size:11pt;color:#000;width:auto;");
+    const tbody = document.createElement('tbody');
+    let note = null;
+    sections.forEach((sec, si) => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = sec.html;
+      const src = tmp.querySelector('.apa-table');
+      if (!src) return;
+      // Header row(s) of this section (relabel the first column to the sub-label)
+      [...src.querySelectorAll('thead tr')].forEach((hr, hi) => {
+        const tr = hr.cloneNode(true);
+        if (hi === 0 && sec.subLabel){
+          const fc = tr.querySelector('th, td');
+          if (fc) fc.textContent = sec.subLabel;
+        }
+        if (hi === 0 && si > 0){
+          tr.querySelectorAll('th, td').forEach(c => {
+            const s = (c.getAttribute('style') || '').replace(/border-top\s*:[^;]*;?/gi, '');
+            c.setAttribute('style', s + 'border-top:1.5pt solid #000;');
+          });
+        }
+        tbody.appendChild(tr);
+      });
+      // Body rows (skip the bold "group label" row — the header now labels it)
+      [...src.querySelectorAll('tbody tr')].forEach(r => {
+        if (r.classList.contains('apa-group')) return;
+        tbody.appendChild(r.cloneNode(true));
+      });
+      if (!note){ const n = tmp.querySelector('.apa-note'); if (n) note = n.cloneNode(true); }
+    });
+    table.appendChild(tbody);
+    // Bottom rule under the last row with content
+    const rows = [...table.querySelectorAll('tbody tr')];
+    for (let k = rows.length - 1; k >= 0; k--){
+      if (rows[k].textContent.trim()){
+        rows[k].querySelectorAll('td, th').forEach(c => {
+          const s = (c.getAttribute('style') || '').replace(/border-bottom\s*:[^;]*;?/gi, '');
+          c.setAttribute('style', s + 'border-bottom:1.5pt solid #000;padding-bottom:3pt;');
+        });
+        break;
+      }
+    }
+    wrap.appendChild(table);
+    if (note) wrap.appendChild(note);
+    return wrap.innerHTML;
+  }
+  // Group report items by battery; merge groups of 2+, pass singles through.
+  function mergeReportBlocks(items){
+    const groups = [];
+    const byKey = new Map();
+    items.forEach(it => {
+      const processed = effectiveItemHtml(it); // processed but NOT renumbered yet
+      const info = catalogBatteryFor(detectTestFamily(processed));
+      const key = info ? info.id : null;
+      if (key && byKey.has(key)){
+        byKey.get(key).sections.push({ html: processed, subLabel: info.subLabel });
+      } else {
+        const g = { key, longName: info ? info.longName : null, sections: [{ html: processed, subLabel: info ? info.subLabel : '' }] };
+        groups.push(g);
+        if (key) byKey.set(key, g);
+      }
+    });
+    return groups.map(g => g.sections.length > 1 ? buildMergedTableHtml(g.longName, g.sections) : g.sections[0].html);
+  }
   function buildReportHtmlBody(){
     if (!state.items.length) return '<p style="color:#888;font-style:italic;">No items in the working report yet.</p>';
-    return state.items.map((it, i) => `<div style="page-break-inside:avoid;margin:0 0 28pt;">${effectiveItemHtml(it, i)}</div>`).join('');
+    // Word ignores margins on <div>s between pasted tables, so insert blank
+    // paragraphs between tables — that is the reliable way to add a visible gap.
+    const spacer = '<p style="margin:0;font-family:\'Times New Roman\',serif;font-size:12pt;line-height:12pt;">&nbsp;</p>';
+    const blocks = (mergeBattery && state.items.length > 1)
+      ? mergeReportBlocks(state.items)
+      : state.items.map(it => effectiveItemHtml(it));
+    return blocks
+      .map((html, i) => `<div style="page-break-inside:avoid;">${renumberTable(html, i + 1)}</div>`)
+      .join(spacer + spacer);
   }
   async function copyAll(){
     if (!state.items.length){
@@ -7230,6 +7366,7 @@ const ReportBundle = (function(){
         await navigator.clipboard.writeText(plain);
       }
       if (typeof showToast === 'function') showToast(`✓ ${state.items.length} table${state.items.length===1?'':'s'} copied`);
+      if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector('[data-rb-action="copy"]'));
       maybeShowKofiToast();
     } catch(e){
       console.error(e);
@@ -7408,6 +7545,9 @@ ${buildReportHtmlBody()}
             New report
           </button>
           <div class="rb-actions-right">
+            <button class="btn rb-action-merge" data-rb-action="toggle-merge" type="button" title="Combine tables from the same test battery into one (e.g. all CVLT-3 tables → one table)">
+              Merge by battery: On
+            </button>
             <button class="btn rb-action-copy" data-rb-action="copy" type="button">
               <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M2 9V3a1 1 0 0 1 1-1h6"/></svg>
               Copy all tables
@@ -7463,6 +7603,11 @@ ${buildReportHtmlBody()}
         else if (action === 'dismiss-onboarding') dismissOnboarding();
         else if (action === 'mode-edit')    setPreviewMode(false);
         else if (action === 'mode-preview') setPreviewMode(true);
+        else if (action === 'toggle-merge') {
+          mergeBattery = !mergeBattery;
+          rootEl.querySelectorAll('[data-rb-action="toggle-merge"]').forEach(b => { b.textContent = 'Merge by battery: ' + (mergeBattery ? 'On' : 'Off'); });
+          render();
+        }
         return;
       }
       // Per-item: Copy single table
@@ -7958,6 +8103,7 @@ ${buildReportHtmlBody()}
         await navigator.clipboard.writeText(plain);
       }
       if (typeof showToast === 'function') showToast('✓ Table copied to clipboard');
+      if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector(`[data-rb-item-copy="${id}"]`));
       maybeShowKofiToast();
     } catch(e){
       console.error(e);
@@ -8054,11 +8200,21 @@ ${buildReportHtmlBody()}
     `;}).join('');
   }
 
+  let rbPrevCount = 0;
   function render(){
     if (!rootEl) return;
     const drawer = rootEl.querySelector('.rb-drawer');
     const onboarding = rootEl.querySelector('[data-rb-onboarding]');
-    rootEl.querySelectorAll('[data-rb-count]').forEach(el => el.textContent = String(state.items.length));
+    const countNow = state.items.length;
+    rootEl.querySelectorAll('[data-rb-count]').forEach(el => {
+      el.textContent = String(countNow);
+      // Pop the badge when the count goes UP (a new table was captured).
+      if (countNow > rbPrevCount){
+        el.classList.remove('rb-count-bump'); void el.offsetWidth; el.classList.add('rb-count-bump');
+        setTimeout(() => el.classList.remove('rb-count-bump'), 500);
+      }
+    });
+    rbPrevCount = countNow;
     rootEl.querySelectorAll('[data-rb-count-text]').forEach(el => el.textContent = `${state.items.length} item${state.items.length === 1 ? '' : 's'}`);
     rootEl.querySelectorAll('[data-rb-action="clear"], [data-rb-action="copy"], [data-rb-action="export-word"], [data-rb-action="export-excel"]').forEach(b => b.disabled = !state.items.length);
     rootEl.dataset.state = state.minimized ? 'closed' : 'open';

@@ -1366,7 +1366,7 @@
         <div class="es-view-pane is-active" data-view-pane="conversion">
           <div class="panel-kicker">Effect-size results</div>
           <div class="es-results-grid">
-          <div class="es-result-card es-result-primary" data-tooltip="Standardized mean difference in SD units. Rough convention: 0.2 small, 0.5 medium, 0.8 large.">
+          <div class="es-result-card es-result-primary" data-tooltip="Standardised mean difference in SD units. Rough convention: 0.2 small, 0.5 medium, 0.8 large.">
             <div class="es-result-label">Cohen's d</div>
             <div class="es-result-value" id="es-out-d">-</div>
             <div class="es-result-desc" id="es-out-d-desc">-</div>
@@ -6006,7 +6006,7 @@
     </div>
     <div class="ds-version-stamp" title="Build version and last update">
       <span class="ds-version-dot" aria-hidden="true"></span>
-      <span id="app-version">v0.1.5 &middot; updated June 2026</span>
+      <span id="app-version">v0.1.6 &middot; updated June 2026</span>
     </div>
   </div>
 </footer>
@@ -6396,6 +6396,11 @@
       if (mainTitle && method) mainTitle.textContent = method.title;
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
       if (mainDesc && method) mainDesc.innerHTML = method.source;
+    }
+    // Shared data: re-render the RCI method we just switched to, so scores/norms
+    // entered on any other method appear here too (single shared data set).
+    if (id !== 'overview' && id !== 'sdi' && typeof renderRci === 'function' && typeof rciState !== 'undefined' && rciState[id]){
+      renderRci(id);
     }
   }
 
