@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Change Analysis · Option B preview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="design-system.css">
+<style>
+  body{ background:var(--bg, #F1F4F9); }
+  .preview-wrap{ max-width:1100px; margin:0 auto; padding:26px 28px 90px; }
+  .preview-banner{ background:#FFF3CD; border:1px solid #E7D9A8; color:#6b5a18; border-radius:10px; padding:10px 14px; font-size:13px; margin-bottom:22px; }
+  /* Method switcher (the only new control) */
+  .method-switch{ display:inline-flex; flex-wrap:wrap; gap:4px; background:#eef1f6; border:1px solid var(--border,#e3e8ef); border-radius:12px; padding:4px; margin:4px 0 20px; }
+  .ms-btn{ font-family:var(--sans,'Inter',sans-serif); font-size:13.5px; font-weight:600; color:var(--faint,#5b6472); background:transparent; border:none; border-radius:9px; padding:8px 16px; cursor:pointer; }
+  .ms-btn.is-active{ background:#fff; color:var(--ink-strong,#0F1218); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+  /* APA preview table */
+  #apa-out table{ border-collapse:collapse; width:100%; font-size:13.5px; font-family:var(--sans,'Inter',sans-serif); }
+  #apa-out th, #apa-out td{ padding:7px 10px; border-bottom:1px solid var(--border,#e6eaf0); text-align:left; }
+  #apa-out th{ font-weight:600; font-size:12px; color:var(--faint,#5b6472); }
+  #apa-out td.num{ text-align:right; font-family:var(--mono,'JetBrains Mono',monospace); }
+  #apa-out caption{ text-align:left; font-weight:600; margin-bottom:8px; }
+  .sig-no{ color:#5b6472; } .sig-improve{ color:#1f7a4d; } .sig-decline{ color:#b04a36; }
+  .out-await{ color:#b4bcc8; font-style:italic; }
+</style>
+</head>
+<body>
+<div class="preview-wrap">
+  <div class="preview-banner">⚙️ <strong>Option B preview</strong> — one Change Analysis page, pick the method up top, data stays put. Looks/behaves like your live page. Nothing here is saved or live.</div>
+
+  <section class="section active" id="rci">
+    <div class="eyebrow" id="rci-eyebrow">Reliable Change Indices (RCI)</div>
+    <h1 class="section-title">Change Analysis <span class="ink" id="rci-method-name">· Simple RCI</span></h1>
+    <p class="section-desc" id="rci-desc"></p>
+
+    <!-- NEW: method switcher -->
+    <div class="method-switch" id="method-switch">
+      <button class="ms-btn is-active" data-method="basic">Simple RCI</button>
+      <button class="ms-btn" data-method="practice">Practice-Adjusted</button>
+      <button class="ms-btn" data-method="srb">McSweeney SRB</button>
+      <button class="ms-btn" data-method="crawford">Crawford</button>
+    </div>
+
+    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box" id="rci-formula"></div></details>
+
+    <div class="panel">
+      <div class="field-row-3">
+        <div class="field">
+          <label>Significance threshold</label>
+          <select id="rci-cv">
+            <option value="0.95">95% confidence · critical value 1.96</option>
+            <option value="0.90">90% confidence · critical value 1.645</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Date 1 label <span class="hint">(optional)</span></label>
+          <input type="text" id="rci-d1" value="Date 1">
+        </div>
+        <div class="field">
+          <label>Date 2 label <span class="hint">(optional)</span></label>
+          <input type="text" id="rci-d2" value="Date 2">
+        </div>
+      </div>
+      <div class="field" style="margin-top:6px">
+        <label>Table title</label>
+        <input type="text" id="rci-title" value="Reliable change analysis">
+      </div>
+      <label class="rci-corr-toggle">
+        <input type="checkbox" id="rci-corrected" checked>
+        <span>Use corrected <em>r</em> (attenuation-adjusted) when available</span>
+      </label>
+    </div>
+
+    <div class="panel autofill-panel">
+      <div class="autofill-row">
+        <div class="field" style="flex:1;margin-bottom:0">
+          <label>Auto-fill from normative database <span class="hint">(populates subtests &amp; norms — shared across every method)</span></label>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <select id="family-select" style="flex:1"><option value="">Select a test family…</option></select>
+            <button class="add-row-btn" id="add-family" style="white-space:nowrap">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="block-title">Test data &amp; patient scores</h2>
+    <table class="input-table" id="rci-table">
+      <thead id="rci-thead"></thead>
+      <tbody id="rci-tbody"></tbody>
+    </table>
+    <div class="add-row-actions">
+      <button class="add-row-btn" id="add-row">+ Add test row</button>
+      <button class="btn btn-clear" id="clear-rows">Clear all rows</button>
+    </div>
+
+    <div class="apa-wrap">
+      <div class="apa-toolbar">
+        <div class="apa-toolbar-left"><span class="apa-toolbar-label">APA-formatted output</span></div>
+        <div></div>
+      </div>
+      <div class="apa-table-container" id="apa-out"><div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter test data and patient scores to preview the APA table.</div></div>
+    </div>
+  </section>
+</div>
+
+<script src="data.js"></script>
+<script>
+/* ===== stats (verbatim from app.js) ===== */
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;const t=1/(1+p*x);return s*(1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x));}
+function normCDF(z){return 0.5*(1+erf(z/Math.SQRT2));}
+function logGamma(z){const g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];if(z<0.5)return Math.log(Math.PI/Math.sin(Math.PI*z))-logGamma(1-z);z-=1;let x=c[0];for(let i=1;i<g+2;i++)x+=c[i]/(z+i);const t=z+g+0.5;return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);}
+function _betacf(x,a,b){const MAXIT=200,EPS=3e-7,FPMIN=1e-30;const qab=a+b,qap=a+1,qam=a-1;let c=1,d=1-qab*x/qap;if(Math.abs(d)<FPMIN)d=FPMIN;d=1/d;let h=d;for(let m=1;m<=MAXIT;m++){const m2=2*m;let aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<FPMIN)d=FPMIN;c=1+aa/c;if(Math.abs(c)<FPMIN)c=FPMIN;d=1/d;h*=d*c;aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<FPMIN)d=FPMIN;c=1+aa/c;if(Math.abs(c)<FPMIN)c=FPMIN;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<EPS)break;}return h;}
+function ibeta(x,a,b){if(x<=0)return 0;if(x>=1)return 1;const lnBT=logGamma(a+b)-logGamma(a)-logGamma(b)+a*Math.log(x)+b*Math.log(1-x);if(x<(a+1)/(a+b+2))return Math.exp(lnBT)*_betacf(x,a,b)/a;return 1-Math.exp(lnBT)*_betacf(1-x,b,a)/b;}
+function tCDF(t,df){if(df<=0||!isFinite(df))return NaN;const x=df/(df+t*t);return t>=0?1-0.5*ibeta(x,df/2,0.5):0.5*ibeta(x,df/2,0.5);}
+function tInv(p,df){if(p<=0||p>=1||df<=0)return NaN;if(p===0.5)return 0;let lo=-50,hi=50;for(let i=0;i<80;i++){const mid=0.5*(lo+hi);if(tCDF(mid,df)<p)lo=mid;else hi=mid;}return 0.5*(lo+hi);}
+
+function effR(r,uc){const rc=parseFloat(r.rCorrected),rr=parseFloat(r.r);if(uc&&Number.isFinite(rc))return rc;return rr;}
+function calcBasic(r,uc){const sd=+r.sd1,rel=effR(r,uc),t1=+r.t1,t2=+r.t2;if(isNaN(sd)||isNaN(rel)||isNaN(t1)||isNaN(t2)||rel<0||rel>=1||sd<=0)return null;const sem=sd*Math.sqrt(1-rel),sed=Math.sqrt(2*sem*sem),rci=(t2-t1)/sed;return{rci,p:2*(1-normCDF(Math.abs(rci)))};}
+function calcPractice(r,uc){const m1=+r.m1,sd1=+r.sd1,m2=+r.m2,sd2=+r.sd2,rel=effR(r,uc),t1=+r.t1,t2=+r.t2;if([m1,sd1,m2,sd2,rel,t1,t2].some(isNaN)||rel<0||rel>=1||sd1<=0||sd2<=0)return null;const s1=sd1*Math.sqrt(1-rel),s2=sd2*Math.sqrt(1-rel),sd=Math.sqrt(s1*s1+s2*s2);const rci=((t2-t1)-(m2-m1))/sd;return{rci,p:2*(1-normCDF(Math.abs(rci)))};}
+function calcSrb(r,uc){const m1=+r.m1,sd1=+r.sd1,m2=+r.m2,sd2=+r.sd2,rel=effR(r,uc),t1=+r.t1,t2=+r.t2;if([m1,sd1,m2,sd2,rel,t1,t2].some(isNaN)||rel<0||rel>=1||sd1<=0||sd2<=0)return null;const sl=rel*(sd2/sd1),ic=m2-sl*m1,pred=ic+sl*t1,see=sd2*Math.sqrt(1-rel*rel),rci=(t2-pred)/see;return{rci,p:2*(1-normCDF(Math.abs(rci))),pred};}
+function calcCrawford(r,uc){const m1=+r.m1,sd1=+r.sd1,m2=+r.m2,sd2=+r.sd2,rel=effR(r,uc),n=+r.n,t1=+r.t1,t2=+r.t2;if([m1,sd1,m2,sd2,rel,n,t1,t2].some(isNaN)||rel<0||rel>=1||sd1<=0||sd2<=0||n<3)return null;const sl=rel*(sd2/sd1),ic=m2-sl*m1,pred=ic+sl*t1,see=sd2*Math.sqrt(1-rel*rel),sep=see*Math.sqrt(1+1/n+Math.pow(t1-m1,2)/((n-1)*sd1*sd1)),df=n-2,t=(t2-pred)/sep;return{rci:t,p:2*(1-tCDF(Math.abs(t),df)),df,pred};}
+function rciOutcome(rci,cv,df){let crit=(df!=null&&isFinite(df)&&df>0)?tInv(cv===0.95?0.975:0.95,df):(cv===0.95?1.96:1.645);if(Math.abs(rci)<crit)return{label:'No reliable change',cls:'sig-no'};return rci>0?{label:'Reliable improvement',cls:'sig-improve'}:{label:'Reliable decline',cls:'sig-decline'};}
+
+/* ===== method definitions ===== */
+const METHODS = {
+  basic:    { name:'· Simple RCI', eyebrow:'Reliable Change Indices (RCI) · Simple', calc:calcBasic, stat:'z', corrected:true,
+    desc:'Jacobson &amp; Truax (1991). Computes whether observed change exceeds measurement error, using the test’s reliability coefficient and standard deviation.',
+    formula:'<strong>Formula.</strong> SEM = SD · √(1 − r) · S<sub>diff</sub> = √(2 · SEM²) · RCI = (X₂ − X₁) / S<sub>diff</sub>',
+    cols:['sd1','r'] },
+  practice: { name:'· Practice-Adjusted', eyebrow:'Reliable Change Indices (RCI) · Practice Effects', calc:calcPractice, stat:'z', corrected:true,
+    desc:'Iverson (2001). Adjusts the standard RCI to control for the average improvement (practice effect) observed between assessments in the normative sample.',
+    formula:'<strong>Formula.</strong> SEM<sub>i</sub> = SD<sub>i</sub> · √(1 − r) · S<sub>diff</sub> = √(SEM₁² + SEM₂²) · RCI = [(X₂ − X₁) − (M₂ − M₁)] / S<sub>diff</sub>',
+    cols:['m1','sd1','m2','sd2','r'] },
+  srb:      { name:'· McSweeney SRB', eyebrow:'Reliable Change Indices (RCI) · Regression-Based', calc:calcSrb, stat:'z', corrected:false, pred:true,
+    desc:'McSweeney et al. (1993). Predicts the retest score from baseline via linear regression; reliable change is the standardised residual.',
+    formula:'<strong>Formula.</strong> b = r · (SD₂/SD₁) · a = M₂ − b·M₁ · Ŷ₂ = a + b·X₁ · SEE = SD₂·√(1 − r²) · RCI = (X₂ − Ŷ₂) / SEE',
+    cols:['m1','sd1','m2','sd2','r'] },
+  crawford: { name:'· Crawford', eyebrow:'Reliable Change Indices (RCI) · Regression-Based', calc:calcCrawford, stat:'t', corrected:false, pred:true,
+    desc:'Crawford &amp; Garthwaite (2007). Regression-based with a sample-size-adjusted standard error of prediction; uses Student’s t with N − 2 degrees of freedom.',
+    formula:'<strong>Formula.</strong> Ŷ₂ = a + b·X₁ · SE<sub>pred</sub> = SEE·√(1 + 1/N + (X₁−M₁)²/((N−1)·SD₁²)) · t = (X₂ − Ŷ₂) / SE<sub>pred</sub>, df = N − 2',
+    cols:['m1','sd1','m2','sd2','r','n'] }
+};
+const COL_LABEL = { m1:'M₁', sd1:'SD₁', m2:'M₂', sd2:'SD₂', r:'r', n:'N' };
+
+/* ===== shared state ===== */
+let method='basic';
+let rows=[];
+function blankRow(){ return { name:'', m1:'', sd1:'', m2:'', sd2:'', r:'', rCorrected:'', n:'', t1:'', t2:'', group:'' }; }
+function fmt(x){ return (x==null||isNaN(x))?'':x.toFixed(2); }
+function fmtP(p){ if(p==null||isNaN(p))return ''; return p<0.001?'< .001':p.toFixed(3).replace(/^0/,''); }
+const $=id=>document.getElementById(id);
+
+/* ===== dropdown ===== */
+(function(){
+  const sel=$('family-select');
+  Object.keys(normDB||{}).filter(f=>{const s=normDB[f];const first=s&&Object.values(s)[0];return first&&typeof first.sd1==='number'&&typeof first.r==='number';}).sort()
+    .forEach(f=>{const o=document.createElement('option');o.value=f;o.textContent=f;sel.appendChild(o);});
+})();
+
+/* ===== switch method ===== */
+function setMethod(m){
+  method=m;
+  const M=METHODS[m];
+  document.querySelectorAll('.ms-btn').forEach(b=>b.classList.toggle('is-active', b.dataset.method===m));
+  $('rci-eyebrow').textContent=M.eyebrow;
+  $('rci-method-name').textContent=M.name;
+  $('rci-desc').innerHTML=M.desc;
+  $('rci-formula').innerHTML=M.formula;
+  $('rci-corrected').checked=M.corrected; // each method's default r preference
+  renderTable();
+}
+
+/* ===== table ===== */
+function renderTable(){
+  const M=METHODS[method];
+  const d1=$('rci-d1').value||'Date 1', d2=$('rci-d2').value||'Date 2';
+  // header
+  let head='<tr><th class="row-num">#</th><th style="min-width:170px">Subtest</th>';
+  M.cols.forEach(c=> head+=`<th style="width:74px">${c==='sd1'&&method==='basic'?'SD':COL_LABEL[c]}</th>`);
+  head+=`<th style="width:90px">${d1}</th><th style="width:90px">${d2}</th>`;
+  if(M.pred) head+='<th style="width:80px;text-align:right">Ŷ₂</th>';
+  head+=`<th style="width:80px;text-align:right">${M.stat==='t'?'t(RB)':'RCI (z)'}</th><th style="width:70px;text-align:right"><i>p</i></th><th style="width:150px">Outcome</th><th class="row-actions"></th></tr>`;
+  $('rci-thead').innerHTML=head;
+  // body
+  const tb=$('rci-tbody'); tb.innerHTML='';
+  if(!rows.length){ tb.innerHTML=`<tr><td colspan="20" style="color:var(--faint);font-style:italic;padding:14px 6px;font-size:13px">No rows yet — pick a test family above and click Add, or “+ Add test row”.</td></tr>`; renderApa(); return; }
+  const uc=$('rci-corrected').checked, cv=parseFloat($('rci-cv').value);
+  rows.forEach((r,i)=>{
+    const res=M.calc(r,uc);
+    const inp=(f)=>`<td><input type="number" step="any" data-i="${i}" data-f="${f}" value="${r[f]??''}" style="width:64px;text-align:right"></td>`;
+    let tr=`<tr><td class="row-num">${i+1}</td><td><input type="text" data-i="${i}" data-f="name" value="${(r.name||'').replace(/"/g,'&quot;')}" placeholder="Subtest" style="width:100%"></td>`;
+    M.cols.forEach(c=> tr+=inp(c));
+    tr+=inp('t1')+inp('t2');
+    if(M.pred) tr+=`<td class="num cell-pred" style="text-align:right">${res?fmt(res.pred):''}</td>`;
+    const oc = res ? rciOutcome(res.rci,cv,res.df) : null;
+    tr+=`<td class="cell-stat" style="text-align:right;font-family:var(--mono)">${res?fmt(res.rci):''}</td>`;
+    tr+=`<td class="cell-p" style="text-align:right;font-family:var(--mono)">${res?fmtP(res.p):''}</td>`;
+    tr+=`<td class="cell-outcome">${oc?`<span class="${oc.cls}" style="font-weight:600">${oc.label}</span>`:'<span class="out-await">Awaiting values</span>'}</td>`;
+    tr+=`<td class="row-actions"><button data-rm="${i}" style="color:#b04a36;background:none;border:none;cursor:pointer;font-size:16px">×</button></td></tr>`;
+    tb.insertAdjacentHTML('beforeend', tr);
+  });
+  renderApa();
+}
+
+/* ===== APA output ===== */
+function renderApa(){
+  const M=METHODS[method], uc=$('rci-corrected').checked, cv=parseFloat($('rci-cv').value);
+  const d1=$('rci-d1').value||'Date 1', d2=$('rci-d2').value||'Date 2', title=$('rci-title').value||'Reliable change analysis';
+  const scored=rows.filter(r=>r.t1!==''&&r.t2!==''&&M.calc(r,uc));
+  const out=$('apa-out');
+  if(!scored.length){ out.innerHTML='<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter test data and patient scores to preview the APA table.</div>'; return; }
+  const statHead=M.stat==='t'?'t':'RCI (z)';
+  let html=`<table><caption>${title.replace(/</g,'&lt;')}</caption><thead><tr><th>Measure</th><th>${d1}</th><th>${d2}</th><th>${statHead}</th><th>p</th><th>Outcome</th></tr></thead><tbody>`;
+  scored.forEach(r=>{ const res=M.calc(r,uc); const oc=rciOutcome(res.rci,cv,res.df);
+    html+=`<tr><td>${(r.name||'—').replace(/</g,'&lt;')}</td><td class="num">${r.t1}</td><td class="num">${r.t2}</td><td class="num">${fmt(res.rci)}</td><td class="num">${fmtP(res.p)}</td><td class="${oc.cls}">${oc.label}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  out.innerHTML=html;
+}
+
+/* ===== wiring ===== */
+$('method-switch').addEventListener('click',e=>{ const b=e.target.closest('.ms-btn'); if(b) setMethod(b.dataset.method); });
+$('add-family').addEventListener('click',()=>{ const sel=$('family-select'); const f=sel.value; if(!f||!normDB[f])return;
+  Object.entries(normDB[f]).forEach(([name,p])=>{ const row=blankRow(); row.name=name; row.group=f; row.m1=p.m1??''; row.sd1=p.sd1??''; row.m2=p.m2??''; row.sd2=p.sd2??''; row.r=p.r??''; row.rCorrected=(p.rCorrected!=null?p.rCorrected:''); row.n=(p.n!=null?p.n:''); rows.push(row); });
+  sel.value=''; renderTable();
+});
+$('add-row').addEventListener('click',()=>{ rows.push(blankRow()); renderTable(); });
+$('clear-rows').addEventListener('click',()=>{ rows=[]; renderTable(); });
+function updateRowResult(i, tr){
+  const M=METHODS[method], uc=$('rci-corrected').checked, cv=parseFloat($('rci-cv').value);
+  const res=M.calc(rows[i],uc);
+  const predCell=tr.querySelector('.cell-pred'); if(predCell) predCell.textContent=res?fmt(res.pred):'';
+  tr.querySelector('.cell-stat').textContent=res?fmt(res.rci):'';
+  tr.querySelector('.cell-p').textContent=res?fmtP(res.p):'';
+  const oc=res?rciOutcome(res.rci,cv,res.df):null;
+  tr.querySelector('.cell-outcome').innerHTML=oc?`<span class="${oc.cls}" style="font-weight:600">${oc.label}</span>`:'<span class="out-await">Awaiting values</span>';
+}
+$('rci-tbody').addEventListener('input',e=>{ const i=e.target.dataset.i,f=e.target.dataset.f; if(i==null)return; rows[+i][f]=e.target.value; updateRowResult(+i, e.target.closest('tr')); renderApa(); });
+$('rci-tbody').addEventListener('click',e=>{ const rm=e.target.dataset.rm; if(rm!=null){ rows.splice(+rm,1); renderTable(); } });
+['rci-cv','rci-corrected'].forEach(id=> $(id).addEventListener('change',renderTable));
+['rci-d1','rci-d2','rci-title'].forEach(id=> $(id).addEventListener('change',renderTable));
+
+setMethod('basic');
+</script>
+</body>
+</html>

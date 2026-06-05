@@ -919,6 +919,38 @@ function inferScoreType(familyName){
   if (n.includes('indic') || /\bindex\b/.test(n) || /\biq\b/.test(n)) return 'standard';
   return 'scaled';
 }
+// Infer the score type for an INDIVIDUAL subtest. A single test family can mix
+// metrics (e.g. D-KEFS Advanced Color-Word Interference has scaled "Net Correct
+// Responses" alongside standard-score "...Index" measures). We decide per subtest
+// using, in order of reliability:
+//   1. the subtest's own normative mean from the database (most reliable) -
+//      nearest standard metric: z≈0, scaled≈10, T≈50, standard≈100;
+//   2. keywords in the subtest's own name ("...Index", "IQ", "Quotient", etc.);
+//   3. the family-name heuristic (legacy fallback).
+function inferScoreTypeForSubtest(familyName, subtestName, stats){
+  // 1. Data-driven: classify by the normative mean's nearest standard metric.
+  let mean = null;
+  if (stats){
+    if (typeof stats.m1 === 'number') mean = stats.m1;
+    else if (typeof stats.m2 === 'number') mean = stats.m2;
+  }
+  if (mean != null && isFinite(mean)){
+    if (mean < 5)  return 'z';        // z-scores  (mean ≈ 0)
+    if (mean < 30) return 'scaled';   // scaled    (mean ≈ 10)
+    if (mean < 75) return 't';        // T-scores  (mean ≈ 50)
+    return 'standard';                // standard/index (mean ≈ 100)
+  }
+  // 2. Name-driven: the subtest's own name often states its metric.
+  const s = (subtestName || '').toLowerCase();
+  if (/\bindex\b/.test(s) || /\bindices\b/.test(s) || /\biq\b/.test(s) ||
+      /\bquotient\b/.test(s) || /\bcomposite\b/.test(s) || /\bstandard\s+score\b/.test(s)){
+    return 'standard';
+  }
+  if (/\bt[-\s]?score\b/.test(s)) return 't';
+  if (/\bscaled\b/.test(s)) return 'scaled';
+  // 3. Fall back to the family-level heuristic.
+  return inferScoreType(familyName);
+}
 // Strip age-band suffixes for compact group labels in editable and APA tables.
 function stripAgeRange(name){
   if (!name) return name;
@@ -1273,7 +1305,10 @@ function renderBattery(){
     if (r.group && r.group !== lastGroup){
       const ghr = document.createElement('tr');
       ghr.className = 'group-header';
-      const stLabel = scoreTypeLabel(r.scoreType || inferScoreType(r.group));
+      // A group can hold mixed score types (e.g. scaled subtests + standard indices).
+      // Show the shared label when uniform, otherwise "Mixed" (each row shows its own tag).
+      const groupTypes = new Set(batteryRows.filter(x => x.group === r.group).map(x => rowScoreType(x)));
+      const stLabel = groupTypes.size > 1 ? 'Mixed' : scoreTypeLabel([...groupTypes][0] || r.scoreType || inferScoreType(r.group));
       ghr.innerHTML = `<td colspan="8">${escapeHtml(stripAgeRange(r.group))} <span class="type-badge">· ${stLabel}</span><button class="group-remove" data-rm-group="${escapeAttr(r.group)}" title="Remove group">×</button></td>`;
       tbody.appendChild(ghr);
       lastGroup = r.group;
@@ -1448,13 +1483,15 @@ function loadFamilyIntoBattery(family){
     showToast(`${family} is already loaded`, true);
     return;
   }
-  const inferredType = inferScoreType(family);
   const names = Object.keys(db[family]);
   // Sweep out the stale placeholder row that sits below the example before
   // appending the autofilled tests.
   dropFirstBlankRow(batteryRows);
   names.forEach(name => {
-    batteryRows.push({ name, raw:'', score:'', group:family, scoreType:inferredType });
+    // Infer the score type PER subtest, not once for the whole family, so mixed
+    // families (e.g. scaled subtests + standard-score indices) categorise correctly.
+    const scoreType = inferScoreTypeForSubtest(family, name, db[family][name]);
+    batteryRows.push({ name, raw:'', score:'', group:family, scoreType });
   });
   renderBattery();
   // Toast suppressed - the working-report pill is the single feedback channel
@@ -1471,8 +1508,10 @@ function wireBatteryAutofill(){
   const inp = document.getElementById('bat-family-input');
   const list = document.getElementById('bat-family-list');
   if (!inp || !list) return;
+  // Read-only dropdown: clicking/focusing the field always opens the full list
+  // (typing is disabled, so there is no text filtering on this control).
   inp.addEventListener('focus', () => { list.classList.add('show'); filterFamilyListEl(list, ''); });
-  inp.addEventListener('input', () => { list.classList.add('show'); filterFamilyListEl(list, inp.value); });
+  inp.addEventListener('click', () => { list.classList.add('show'); filterFamilyListEl(list, ''); });
   inp.addEventListener('keydown', e => {
     if (e.key === 'Escape') list.classList.remove('show');
     if (e.key === 'Enter') {
@@ -5005,7 +5044,7 @@ function reportBuildMeasureOptions(){
         construct,
         common:domains.some(domainId => reportIsCommonOption(baseFamily, cleanSub, domainId, cluster)),
         aliases:[baseFamily, cleanSub, construct, testName, REPORT_CONSTRUCT_LABELS[cluster] || ''].join(' '),
-        scoreType:inferScoreType(baseFamily)
+        scoreType:inferScoreTypeForSubtest(family, subtest, tests[subtest])
       });
     });
   });
