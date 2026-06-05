@@ -7,7 +7,7 @@
    Bump CACHE_VERSION below whenever you ship changes you want to force-
    refresh — old caches will be deleted on activation. */
 
-const CACHE_VERSION = 'psyassist-v53-20260517w';
+const CACHE_VERSION = 'psyassist-0.1.5';
 
 /* Bare URLs (no ?v=...) — the SW also caches versioned variants on demand
    via the fetch handler below, so this list is just for first-paint speed. */

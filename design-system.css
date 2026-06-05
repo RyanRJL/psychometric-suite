@@ -495,12 +495,18 @@ select[aria-invalid="true"]:focus{
   margin-top: var(--ds-space-12) !important;
 }
 .site-footer-inner{
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: var(--ds-space-6);
   max-width: 1320px;
   margin: 0 auto;
+}
+/* Centre the version stamp: links sit in the left column, version in the
+   middle column (centred), the right column balances the layout. */
+.site-footer-inner .ds-version-stamp{
+  grid-column: 2;
+  justify-self: center;
 }
 .site-footer-links{
   display: flex;
