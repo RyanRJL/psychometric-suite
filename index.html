@@ -37,7 +37,7 @@
   #change-analysis.section{
     max-width:none;
     width:100%;
-    padding:44px 50px 80px;
+    padding:22px 50px 28px;
     font-size:13.5px;
   }
   #change-main-title{
@@ -728,7 +728,7 @@
 
     <header class="home-db-header">
       <h1 class="home-db-title">Psychometric <em>Assistant</em></h1>
-      <p class="home-db-sub">Neuropsychological calculators for clinical practice — APA-formatted output</p>
+      <p class="home-db-sub">Neuropsychological calculators for clinical practice, with APA-formatted output</p>
     </header>
 
     <div class="home-db-grid">
@@ -798,7 +798,7 @@
           </svg>
         </div>
         <div class="home-db-card-name">Effect Size Tools</div>
-        <div class="home-db-card-desc">Convert between and interpret effect sizes — Cohen's d, r, η², odds ratios and more</div>
+        <div class="home-db-card-desc">Convert between and interpret effect sizes: Cohen's d, r, η², odds ratios and more</div>
         <div class="home-db-card-arrow">→</div>
       </button>
 
@@ -1390,7 +1390,8 @@
         </div>
 
         <div class="es-view-pane" data-view-pane="comparison">
-          <div class="panel-kicker">Group comparison at a target value</div>
+          <details class="es-collapse">
+          <summary class="panel-kicker es-collapse-summary">Group comparison at a target value</summary>
           <div class="es-target-body">
             <div class="es-target-intro">
               <div>
@@ -1411,6 +1412,7 @@
             </div>
             <div class="es-target-help">Requires means and standard deviations. If standard errors are entered above, the app converts them to SDs using each group's sample size.</div>
           </div>
+          </details>
         </div>
 
         <div class="es-view-pane" data-view-pane="reference">
@@ -2016,9 +2018,6 @@
           <p class="pre-forest-plot-label"><strong>Figure.</strong> Premorbid FSIQ estimates with <span id="pre-forest-ci-pct">90%</span> confidence intervals.</p>
         </header>
         <svg id="pre-forest-plot" class="pre-forest-plot" viewBox="0 0 880 320" aria-label="Forest plot of premorbid FSIQ estimates"></svg>
-        <figcaption class="pre-forest-plot-foot">
-          Four regression-based estimates of pre-injury cognitive ability. Filled diamonds mark the point estimate for each model, sized by inverse SEE (precision). Horizontal lines span the confidence interval. The vertical grey line marks the population mean (FSIQ 100).
-        </figcaption>
       </figure>
 
       <!-- Numeric table is fully redundant with the forest plot — visually
@@ -6006,7 +6005,7 @@
     </div>
     <div class="ds-version-stamp" title="Build version and last update">
       <span class="ds-version-dot" aria-hidden="true"></span>
-      <span id="app-version">v0.1.6 &middot; updated June 2026</span>
+      <span id="app-version">v0.1.7 &middot; updated June 2026</span>
     </div>
   </div>
 </footer>
@@ -6313,7 +6312,7 @@
     'rci-crawford': [1,1,1,1]
   };
   const METHOD_EXPLAINERS = {
-    'sdi':          'A quick SD-based magnitude check. Treats the discrepancy purely as a descriptive distance from zero in standard-deviation units. No statistical adjustments — useful when no reliability or normative-change data are available.',
+    'sdi':          'A quick SD-based magnitude check. Treats the discrepancy purely as a descriptive distance from zero in standard-deviation units. No statistical adjustments. Useful when no reliability or normative-change data are available.',
     'rci-basic':    'The classic Reliable Change Index (Jacobson & Truax, 1991). Tests whether the observed change exceeds what would be expected from measurement error alone, using the test\'s reliability and standard deviation.',
     'rci-practice': 'Simple RCI plus subtraction of the average practice gain observed in the normative retest sample (Iverson, 2001). Recommended when patients are retested with the same instrument and practice effects are documented.',
     'rci-srb':      'Regression-based reliable change (McSweeney et al., 1993). Predicts each patient\'s expected retest score from their baseline using the norm sample\'s regression parameters, then standardises the residual against the SEE. Handles regression to the mean.',
@@ -6334,7 +6333,7 @@
           <span class="change-overview-table-title">${title}</span>
           ${explainer ? `<button type="button" class="change-overview-info" data-tooltip="${explainer}" aria-label="More about ${title}" tabindex="0">?</button>` : ''}
         </div>
-        ${cite ? `<span class="change-overview-table-cite">${cite}</span>` : `<span class="change-overview-table-cite">Descriptive — no statistical adjustment</span>`}
+        ${cite ? `<span class="change-overview-table-cite">${cite}</span>` : `<span class="change-overview-table-cite">Descriptive, no statistical adjustment</span>`}
       </td>
       ${dotCells}
       <td class="change-overview-table-arrow" aria-hidden="true">

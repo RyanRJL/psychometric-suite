@@ -981,6 +981,67 @@ function stripAgeRange(name){
     .replace(/\s*·\s*All\s+Ages\s*$/i, '')
     .replace(/\s*\(all ages\)\s*$/i, '');
 }
+/* Change-Analysis ONLY: the reliability-comparison qualifier for a family, so
+   the clinician sees which comparison the coefficients represent.
+   - CVLT-3 ships alternate-form reliability (Standard ↔ Alternate Form; CVLT-3
+     Manual, Delis et al., 2017, Table 3.4) — it publishes no same-form retest.
+   - RBANS data here is same-form test–retest (Form A → Form A; RBANS Update
+     Manual, Randolph 2012, Tables 3.8–3.9), NOT alternate-form.
+   Returns '' for families with no special qualifier. Used in the RCI dropdown,
+   table group headers, and footnote — NOT on Score Tables or any other page. */
+function caReliabilityQualifier(family){
+  const f = family || '';
+  if (/^CVLT-3\b/i.test(f)) return 'Standard to Alternate Form';
+  if (/^RBANS\b/i.test(f)){
+    const m = f.match(/\(Form ([BCD])\)/);          // alternate-form variants
+    if (m) return `Form A → Form ${m[1]} (alternate form)`;
+    return 'Form A → Form A (test-retest)';          // default = same-form retest
+  }
+  return '';
+}
+// True for RBANS alternate-form entries — change-analysis-only data (reliable
+// change with a different form). Filtered out of Score Tables and other single-
+// administration pages so they don't clutter them.
+function isAltFormFamily(name){
+  return /\(Form [BCD]\)/.test(name || '');
+}
+// Change-Analysis dropdown: the retest/delay interval the coefficients were
+// measured over, shown on each age-band item so the clinician can match it to
+// their own reassessment gap. Sources: CVLT-3 Manual Table 3.4; RBANS Update
+// Tables 3.8-3.12; WAIS-IV / WISC-V / WMS-IV / D-KEFS / CVLT-C technical manuals.
+// D-KEFS Advanced must be tested before plain D-KEFS (more specific prefix).
+function caIntervalLabel(family){
+  const f = family || '';
+  if (/^CVLT-3\b/i.test(f))          return 'median ~20 days';
+  if (/^CVLT-C\b/i.test(f))          return 'median ~28 days';
+  if (/^D-KEFS Advanced\b/i.test(f)) return 'mean ~28 days';
+  if (/^D-KEFS\b/i.test(f))          return 'mean ~25 days';
+  if (/^RBANS\b/i.test(f)){
+    if (/\(Form [BCD]\)/.test(f)) return '1-7 days';
+    if (/12-19/.test(f))          return '14-31 days';
+    if (/20-89/.test(f))          return '~9 months';
+  }
+  if (/^WAIS-IV\b/i.test(f)) return 'mean ~22 days';
+  if (/^WISC-V\b/i.test(f))  return 'mean ~26 days';
+  if (/^WMS-IV\b/i.test(f))  return 'mean ~23 days';
+  return '';
+}
+// Change-Analysis display rename for a family base name, where the visible
+// edition should differ from the shared normDB key. The RBANS data here is the
+// RBANS Update (Randolph, 2012), so show "RBANS Update" on this page only; the
+// internal "(Form B/C/D)" marker is dropped because the qualifier shows it.
+function caFamilyDisplayName(base){
+  return (base || '')
+    .replace(/\s*\(Form [BCD]\)/, '')
+    .replace(/^RBANS\b/, 'RBANS Update');
+}
+// Group-header display label for the Change-Analysis tables (base name, age
+// range stripped, edition rename + reliability qualifier appended when applicable).
+function caGroupDisplay(group){
+  const base = caFamilyDisplayName(stripAgeRange(group));
+  const q = caReliabilityQualifier(group);
+  return q ? `${base} · ${q}` : base;
+}
 function scoreTypeLabel(type){
   return {scaled:'Scaled Score', standard:'Standard Score', t:'T-Score', z:'Z-Score'}[type] || 'Score';
 }
@@ -1198,7 +1259,7 @@ function openPremorbidLinkPopover(){
   const options = getPremorbidEstimateOptions();
   if (!options.length){
     popover.innerHTML =
-      '<div class="bat-prem-link-empty">No estimates yet — open the <strong>Premorbid</strong> page and enter inputs to generate a model.</div>';
+      '<div class="bat-prem-link-empty">No estimates yet. Open the <strong>Premorbid</strong> page and enter inputs to generate a model.</div>';
   } else {
     popover.innerHTML = options.map((o, i) => {
       const range = (o.lo != null && o.hi != null) ? `${o.lo}–${o.hi}` : '—';
@@ -1426,7 +1487,7 @@ function updateApaColumnControls(outId, columns, renderFn){
     });
   });
 }
-function buildApaTableFromColumns(outId, columns, rows, groupLabelFn){
+function buildApaTableFromColumns(outId, columns, rows, groupLabelFn, groupDisplayFn){
   const visible = getApaVisibleColumns(outId, columns);
   const header = `<tr>${visible.map(c => {
     const cls = `${c.num ? 'num ' : ''}col-${c.key}`.trim();
@@ -1438,7 +1499,8 @@ function buildApaTableFromColumns(outId, columns, rows, groupLabelFn){
   rows.forEach(r => {
     const group = groupLabelFn ? groupLabelFn(r) : '';
     if (group && group !== lastGroup){
-      body += `<tr class="apa-group"><td colspan="${visible.length}">${escapeHtml(stripAgeRange(group))}</td></tr>`;
+      const groupText = groupDisplayFn ? groupDisplayFn(group) : stripAgeRange(group);
+      body += `<tr class="apa-group"><td colspan="${visible.length}">${escapeHtml(groupText)}</td></tr>`;
       lastGroup = group;
       inGroup = true;
     } else if (!group){
@@ -1553,13 +1615,14 @@ function comboFooterHtml(){
   return '<div class="combo-footer"><span class="combo-count">0 selected</span><button class="btn btn-ghost combo-clear" type="button">Clear</button><button class="btn btn-primary combo-add" type="button" disabled>Add selected tests</button></div>';
 }
 function comboAgeBandNoteHtml(){
-  return '<div class="combo-ageband-note"><span class="combo-ageband-note-icon">ℹ</span><span><strong>Specific age bands</strong> offer greater normative precision but rest on smaller samples, which reduces the stability of <em>r</em>. <strong>All Ages</strong> norms draw on larger <em>N</em>, yielding a more robust <em>r</em>, at the cost of age specificity.</span></div>';
+  return '<div class="combo-ageband-note"><span class="combo-ageband-note-icon">ℹ</span><span><strong>Age bands</strong>: more age-specific but smaller <em>N</em> (less stable <em>r</em>). <strong>All Ages</strong>: larger <em>N</em>, stronger <em>r</em>. <strong>Greyed time</strong> = the retest interval each <em>r</em> was measured over.</span></div>';
 }
-function comboCheckboxItemHtml(f, isCustom, indented, groupKey, displayLabel){
+function comboCheckboxItemHtml(f, isCustom, indented, groupKey, displayLabel, suffix){
   const cls = 'combo-item combo-check' + (indented ? ' combo-indented' : '');
-  const label = displayLabel
+  let label = displayLabel
     ? escapeHtml(displayLabel)
     : (indented ? ageBandLabel(f) : escapeHtml(f));
+  if (suffix) label += ` <span class="combo-interval">· ${escapeHtml(suffix)}</span>`;
   const groupAttr = groupKey ? ` data-group="${escapeAttr(groupKey)}"` : '';
   return `<label class="${cls}" data-family="${escapeAttr(f)}"${groupAttr}><input type="checkbox" value="${escapeAttr(f)}"><span class="combo-check-text">${label}${comboCustomTag(isCustom)}</span></label>`;
 }
@@ -1634,7 +1697,8 @@ function rebuildBatteryFamilyList(){
   const list = document.getElementById('bat-family-list');
   if (!list) return;
   const db = getMergedDB();
-  const families = Object.keys(db).sort();
+  // Hide change-analysis-only alternate-form entries from Score Tables.
+  const families = Object.keys(db).sort().filter(f => !isAltFormFamily(f));
   // Battery page: collapse age bands to a single entry per family, no
   // age-band note - norms don't affect the resulting table here.
   list.innerHTML = comboFooterHtml() + buildFamilyListHtml(families, { flat: true });
@@ -1991,7 +2055,8 @@ function rebuildSdiFamilyList(){
   const list = document.getElementById('sdi-family-list');
   if (!list) return;
   const db = getMergedDB();
-  const families = Object.keys(db).sort();
+  // Alternate-form entries are reliable-change (RCI) only; keep them out of SDI.
+  const families = Object.keys(db).sort().filter(f => !isAltFormFamily(f));
   list.innerHTML = comboFooterHtml() + buildFamilyListHtml(families);
   wireMultiSelectFamilyList(list, families => {
     families.forEach(loadFamilyIntoSdi);
@@ -2257,7 +2322,7 @@ function renderRci(method){
     if (r.group && r.group !== lastGroup){
       const ghr = document.createElement('tr');
       ghr.className = 'group-header';
-      ghr.innerHTML = `<td colspan="${colCount}">${escapeHtml(stripAgeRange(r.group))}<button class="group-remove" data-rm-rci-group="${escapeAttr(r.group)}" data-method="${method}" title="Remove group">×</button></td>`;
+      ghr.innerHTML = `<td colspan="${colCount}">${escapeHtml(caGroupDisplay(r.group))}<button class="group-remove" data-rm-rci-group="${escapeAttr(r.group)}" data-method="${method}" title="Remove group">×</button></td>`;
       tbody.appendChild(ghr);
       lastGroup = r.group;
     } else if (!r.group){
@@ -2485,11 +2550,25 @@ function renderRciApa(method){
       rNote = ' Calculations used the raw test-retest correlation.';
     }
   }
+  // Change-Analysis: state which reliability comparison + source was applied,
+  // per test family present (CVLT-3 = alternate-form, RBANS = same-form retest).
+  let formNote = '';
+  if (valid.some(r => /^CVLT-3\b/i.test(r.group || ''))){
+    formNote += ' CVLT-3 coefficients are alternate-form reliabilities (Standard to Alternate Form), median ~20-day retest interval (Delis et al., 2017, CVLT-3 Manual, Table 3.4).';
+  }
+  const rbansAA  = valid.some(r => /^RBANS\b/i.test(r.group || '') && !isAltFormFamily(r.group || ''));
+  const rbansAlt = valid.some(r => /^RBANS\b/i.test(r.group || '') &&  isAltFormFamily(r.group || ''));
+  if (rbansAA){
+    formNote += ' RBANS Update same-form coefficients are test-retest reliabilities (Form A → Form A; Randolph, 2012, RBANS Update Manual, Tables 3.8-3.9).';
+  }
+  if (rbansAlt){
+    formNote += ' RBANS Update alternate-form coefficients are Form A → Form B/C/D (Randolph, 2012, RBANS Update Manual, Tables 3.10-3.12).';
+  }
   out.innerHTML = `
     <div class="apa-table-num">Table 1</div>
     <div class="apa-table-title">${escapeHtml(st.title)}</div>
-    ${buildApaTableFromColumns(outId, columns, valid, r => r.group)}
-    <div class="apa-note"><strong>Note.</strong> ${methodNote}${rNote} <i>p</i>-values are two-tailed.</div>
+    ${buildApaTableFromColumns(outId, columns, valid, r => r.group, caGroupDisplay)}
+    <div class="apa-note"><strong>Note.</strong> ${methodNote}${rNote}${formNote} <i>p</i>-values are two-tailed.</div>
   `;
 }
 
@@ -2572,13 +2651,15 @@ function buildFamilyListHtml(families, opts){
       const canon = members.find(m => /·\s*All\s+Ages\s*$/i.test(m)) || members[0];
       html += comboCheckboxItemHtml(canon, isCustom(canon), false, groupKey, base);
     } else {
-      html += `<div class="combo-group-heading" data-group="${escapeAttr(groupKey)}">${escapeHtml(base)}</div>`;
+      const headingText = (opts && typeof opts.headingLabel === 'function') ? opts.headingLabel(base) : base;
+      html += `<div class="combo-group-heading" data-group="${escapeAttr(groupKey)}">${escapeHtml(headingText)}</div>`;
       // Wrap age-banded variants in a flex row so they render side-by-side
       // as compact pills instead of stacking - cuts vertical scroll roughly
       // in half on long family lists (e.g. CVLT-3 INDICES + TRIALS, etc.).
       html += `<div class="combo-indented-row" data-group="${escapeAttr(groupKey)}">`;
       members.forEach(f => {
-        html += comboCheckboxItemHtml(f, isCustom(f), true, groupKey);
+        const suffix = (opts && typeof opts.itemSuffix === 'function') ? opts.itemSuffix(f) : '';
+        html += comboCheckboxItemHtml(f, isCustom(f), true, groupKey, null, suffix);
       });
       html += `</div>`;
     }
@@ -2606,7 +2687,15 @@ function populateFamilyList(list){
   if (method === 'rci-crawford'){
     families = families.filter(f => familyHasN(db[f]));
   }
-  list.innerHTML = comboFooterHtml() + comboAgeBandNoteHtml() + buildFamilyListHtml(families);
+  // Change-Analysis dropdown: edition rename + reliability-comparison qualifier
+  // on the family heading (e.g. RBANS → "RBANS Update", CVLT-3 → "… Standard to
+  // Alternate Form").
+  const headingLabel = base => {
+    const name = caFamilyDisplayName(base);
+    const q = caReliabilityQualifier(base);
+    return q ? `${name} · ${q}` : name;
+  };
+  list.innerHTML = comboFooterHtml() + comboAgeBandNoteHtml() + buildFamilyListHtml(families, { headingLabel, itemSuffix: caIntervalLabel });
   wireMultiSelectFamilyList(list, families => {
     families.forEach(family => loadFamilyIntoMethod(method, family));
     const inp = document.querySelector(`.rci-family-input[data-method="${method}"]`);
@@ -3415,8 +3504,7 @@ function renderPremorbidForestPlot(rows, mult, ciPct){
     out += `<text x="${x}" y="${axisY + 18}" ${TXT('10.5', isMean ? '500' : '400', isMean ? INK : MUTED, 'middle')}>${t}</text>`;
   });
 
-  // Axis caption — slim, refined, JAMA-style
-  out += `<text x="${plotLeft + plotWidth/2}" y="${axisY + 38}" ${TXT('10', '400', FAINT, 'middle', `letter-spacing='0.04em' font-style='italic'`)}>Estimated FSIQ — vertical reference at population mean (100)</text>`;
+  // Axis caption removed per request — the plot's axis labels speak for themselves.
 
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.innerHTML = out;
@@ -6659,6 +6747,7 @@ const ReportBundle = (function(){
   let rootEl = null;
   const observers = new Map(); // sourceId -> MutationObserver
   let dragId = null;
+  let dragGroupIds = null; // when dragging a merged-battery group, all member ids
   let lastChangedItemId = null; // for auto-scroll on render
   const KOFI_SEEN_KEY = 'kofiPromptSeen_v1'; // localStorage flag - persists across tabs/sessions
   let kofiToastShown = false;   // in-memory guard for current page load
@@ -7270,36 +7359,77 @@ const ReportBundle = (function(){
     const table = document.createElement('table');
     table.className = 'apa-table';
     table.setAttribute('style', "border-collapse:collapse;font-family:'Times New Roman',serif;font-size:11pt;color:#000;width:auto;");
-    const tbody = document.createElement('tbody');
     let note = null;
-    sections.forEach((sec, si) => {
+
+    // Parse each section's source table once.
+    const parsed = sections.map(sec => {
       const tmp = document.createElement('div');
       tmp.innerHTML = sec.html;
       const src = tmp.querySelector('.apa-table');
-      if (!src) return;
-      // Header row(s) of this section (relabel the first column to the sub-label)
-      [...src.querySelectorAll('thead tr')].forEach((hr, hi) => {
-        const tr = hr.cloneNode(true);
-        if (hi === 0 && sec.subLabel){
-          const fc = tr.querySelector('th, td');
-          if (fc) fc.textContent = sec.subLabel;
+      const headRows = src ? [...src.querySelectorAll('thead tr')] : [];
+      const colRow = headRows.length ? headRows[headRows.length - 1] : null;
+      const bodyRows = src ? [...src.querySelectorAll('tbody tr')].filter(r => !r.classList.contains('apa-group')) : [];
+      const noteEl = tmp.querySelector('.apa-note');
+      return { sec, src, headRows, colRow, bodyRows, noteEl, colCount: colRow ? colRow.children.length : 0 };
+    }).filter(p => p.src);
+    parsed.forEach(p => { if (!note && p.noteEl) note = p.noteEl.cloneNode(true); });
+
+    // A single shared column-header row only works when every section has the
+    // same columns; otherwise fall back to per-section headers (legacy) to avoid
+    // misalignment.
+    const counts = parsed.map(p => p.colCount);
+    const uniform = parsed.length > 0 && counts.every(c => c > 0 && c === counts[0]);
+    const tbody = document.createElement('tbody');
+
+    if (uniform){
+      // One column-header row at the top (labels from the first section; its
+      // first cell already reads "Subtest"). Each sub-section becomes a
+      // full-width bold divider row, with data rows beneath.
+      const thead = document.createElement('thead');
+      thead.appendChild(parsed[0].colRow.cloneNode(true));
+      table.appendChild(thead);
+      const colspan = counts[0];
+      parsed.forEach((p, si) => {
+        if (p.sec.subLabel){
+          const dr = document.createElement('tr');
+          dr.className = 'apa-group';
+          const td = document.createElement('td');
+          td.setAttribute('colspan', String(colspan));
+          td.setAttribute('style', "font-family:'Times New Roman',serif;font-size:11pt;font-weight:bold;color:#000;text-align:left;padding:" + (si > 0 ? '10pt' : '4pt') + " 0 2pt;");
+          td.textContent = p.sec.subLabel;
+          dr.appendChild(td);
+          tbody.appendChild(dr);
         }
-        if (hi === 0 && si > 0){
-          tr.querySelectorAll('th, td').forEach(c => {
-            const s = (c.getAttribute('style') || '').replace(/border-top\s*:[^;]*;?/gi, '');
-            c.setAttribute('style', s + 'border-top:1.5pt solid #000;');
-          });
-        }
-        tbody.appendChild(tr);
+        p.bodyRows.forEach(r => tbody.appendChild(r.cloneNode(true)));
       });
-      // Body rows (skip the bold "group label" row — the header now labels it)
-      [...src.querySelectorAll('tbody tr')].forEach(r => {
-        if (r.classList.contains('apa-group')) return;
-        tbody.appendChild(r.cloneNode(true));
+    } else {
+      // Fallback: per-section header rows, sub-label in the first header cell.
+      parsed.forEach((p, si) => {
+        p.headRows.forEach((hr, hi) => {
+          const tr = hr.cloneNode(true);
+          if (hi === 0 && p.sec.subLabel){
+            const fc = tr.querySelector('th, td');
+            if (fc) fc.textContent = p.sec.subLabel;
+          }
+          if (hi === 0 && si > 0){
+            tr.querySelectorAll('th, td').forEach(c => {
+              const s = (c.getAttribute('style') || '').replace(/border-top\s*:[^;]*;?/gi, '');
+              c.setAttribute('style', s + 'border-top:1.5pt solid #000;');
+            });
+          }
+          tbody.appendChild(tr);
+        });
+        p.bodyRows.forEach(r => tbody.appendChild(r.cloneNode(true)));
       });
-      if (!note){ const n = tmp.querySelector('.apa-note'); if (n) note = n.cloneNode(true); }
-    });
+    }
     table.appendChild(tbody);
+    // Strip per-section bottom rules inherited from the source tables (these
+    // showed as lines between merged sections); only the final row should carry
+    // the closing rule, added below.
+    table.querySelectorAll('tbody td, tbody th').forEach(c => {
+      const s = (c.getAttribute('style') || '').replace(/border-bottom\s*:[^;]*;?/gi, '');
+      c.setAttribute('style', s);
+    });
     // Bottom rule under the last row with content
     const rows = [...table.querySelectorAll('tbody tr')];
     for (let k = rows.length - 1; k >= 0; k--){
@@ -7316,22 +7446,85 @@ const ReportBundle = (function(){
     return wrap.innerHTML;
   }
   // Group report items by battery; merge groups of 2+, pass singles through.
-  function mergeReportBlocks(items){
+  /* Group state.items into ordered render blocks. When merge is on, same-battery
+     items (2+) collapse into one block. Each block carries its member ids so the
+     edit view can attach group-level controls (reorder / remove / copy). The
+     html is processed (hidden cols, overrides, bottom rule, merge) but NOT yet
+     renumbered — callers renumber by block position. */
+  // The label shown on each merged section header (e.g. "Indices", "Core
+  // Subtests"). Prefer the catalog sub-label derived from the table's own group
+  // row; but split items keep only data rows (no group row), so detectTestFamily
+  // collapses to the bare battery name — in that case fall back to the item's
+  // sourceTool/title, which still carries the sub-section, and strip the battery
+  // name + age suffix off it.
+  function deriveSubLabel(it, info){
+    if (info && info.subLabel && info.subLabel !== info.name) return info.subLabel;
+    const raw = stripAgeRange(((it && (it.sourceTool || it.title)) || '')).trim();
+    if (info && info.name && raw){
+      const esc = info.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const stripped = raw.replace(new RegExp('^' + esc + '\\b'), '').replace(/^[\s·•:.\-]+/, '').trim();
+      if (stripped) return stripped;
+    }
+    return (info && info.subLabel) || raw || (info ? info.name : '');
+  }
+  // Default sub-section order within a merged battery: Indices → Core →
+  // Supplementary → Process → (anything else). CVLT trials sit just after the
+  // indices. Lower number = earlier.
+  function subSectionRank(subLabel){
+    const s = (subLabel || '').toLowerCase();
+    if (/index|indices|composite/.test(s)) return 0;
+    if (/core/.test(s))                    return 1;
+    if (/trial/.test(s))                   return 1;
+    if (/supplement/.test(s))              return 2;
+    if (/process/.test(s))                 return 3;
+    return 50;
+  }
+  function computeBlocks(items){
+    const list = items || state.items;
+    if (!(mergeBattery && list.length > 1)){
+      return list.map(it => ({ ids: [it.id], items: [it], isMerged: false, longName: null, html: effectiveItemHtml(it) }));
+    }
     const groups = [];
     const byKey = new Map();
-    items.forEach(it => {
-      const processed = effectiveItemHtml(it); // processed but NOT renumbered yet
+    list.forEach(it => {
+      const processed = effectiveItemHtml(it);
       const info = catalogBatteryFor(detectTestFamily(processed));
       const key = info ? info.id : null;
+      const member = { id: it.id, item: it, html: processed, subLabel: deriveSubLabel(it, info) };
       if (key && byKey.has(key)){
-        byKey.get(key).sections.push({ html: processed, subLabel: info.subLabel });
+        byKey.get(key).members.push(member);
       } else {
-        const g = { key, longName: info ? info.longName : null, sections: [{ html: processed, subLabel: info ? info.subLabel : '' }] };
+        const g = { key, longName: info ? info.longName : null, members: [member] };
         groups.push(g);
         if (key) byKey.set(key, g);
       }
     });
-    return groups.map(g => g.sections.length > 1 ? buildMergedTableHtml(g.longName, g.sections) : g.sections[0].html);
+    return groups.map(g => {
+      // Order members: a user-pinned mergeRank wins; otherwise the canonical
+      // sub-section order. Stable on insertion order as the tiebreak.
+      const ordered = g.members
+        .map((m, i) => ({ m, i }))
+        .sort((a, b) => {
+          const ka = Number.isFinite(a.m.item.mergeRank) ? a.m.item.mergeRank : subSectionRank(a.m.subLabel);
+          const kb = Number.isFinite(b.m.item.mergeRank) ? b.m.item.mergeRank : subSectionRank(b.m.subLabel);
+          return ka !== kb ? ka - kb : a.i - b.i;
+        })
+        .map(x => x.m);
+      const isMerged = ordered.length > 1;
+      return {
+        key: g.key,
+        ids: ordered.map(m => m.id),
+        items: ordered.map(m => m.item),
+        isMerged,
+        longName: g.longName,
+        html: isMerged
+          ? buildMergedTableHtml(g.longName, ordered.map(m => ({ html: m.html, subLabel: m.subLabel })))
+          : ordered[0].html
+      };
+    });
+  }
+  function mergeReportBlocks(items){
+    return computeBlocks(items).map(b => b.html);
   }
   function buildReportHtmlBody(){
     if (!state.items.length) return '<p style="color:#888;font-style:italic;">No items in the working report yet.</p>';
@@ -7662,6 +7855,50 @@ ${buildReportHtmlBody()}
         rootEl.querySelectorAll('.rb-item-menu.is-open').forEach(m => m.classList.remove('is-open'));
         return;
       }
+      // Block-level reorder (single item OR merged group) from the Options menu
+      const blockAct = e.target.closest('[data-rb-block-action]');
+      if (blockAct){
+        e.preventDefault();
+        e.stopPropagation();
+        moveBlockBy(blockAct.dataset.rbAnchor, blockAct.dataset.rbBlockAction);
+        rootEl.querySelectorAll('.rb-item-menu.is-open').forEach(m => m.classList.remove('is-open'));
+        return;
+      }
+      // Reorder a table WITHIN its merged group; keep the menu open to chain moves
+      const memberAct = e.target.closest('[data-rb-member-action]');
+      if (memberAct){
+        e.preventDefault();
+        e.stopPropagation();
+        const mid = memberAct.dataset.rbMemberId;
+        moveWithinGroup(mid, memberAct.dataset.rbMemberAction);
+        requestAnimationFrame(() => {
+          const cards = rootEl?.querySelectorAll('.rb-item-group') || [];
+          for (const card of cards){
+            if ((card.dataset.rbGroupIds || '').split(',').includes(mid)){
+              card.querySelector('.rb-item-menu')?.classList.add('is-open');
+              break;
+            }
+          }
+        });
+        return;
+      }
+      // Copy a whole merged group (the combined table)
+      const groupCopy = e.target.closest('[data-rb-group-copy]');
+      if (groupCopy){
+        e.preventDefault();
+        e.stopPropagation();
+        copyGroup(groupCopy.dataset.rbGroupCopy.split(','));
+        return;
+      }
+      // Remove a whole merged group (× or "Remove all")
+      const groupRemove = e.target.closest('[data-rb-group-remove]');
+      if (groupRemove){
+        e.preventDefault();
+        e.stopPropagation();
+        removeMany(groupRemove.dataset.rbGroupRemove.split(','));
+        rootEl.querySelectorAll('.rb-item-menu.is-open').forEach(m => m.classList.remove('is-open'));
+        return;
+      }
       const removeBtn = e.target.closest('[data-rb-remove]');
       if (removeBtn){
         e.preventDefault();
@@ -7693,6 +7930,7 @@ ${buildReportHtmlBody()}
       const item = grip.closest('.rb-item');
       if (!item) return;
       dragId = item.dataset.rbId;
+      dragGroupIds = item.dataset.rbGroupIds ? item.dataset.rbGroupIds.split(',') : [dragId];
       item.classList.add('is-dragging');
       lockDrawerHeight();
       body.classList.add('is-reorder-mode');
@@ -7710,10 +7948,11 @@ ${buildReportHtmlBody()}
       unlockDrawerHeight();
       body.querySelectorAll('.is-drop-before, .is-drop-after').forEach(el => el.classList.remove('is-drop-before','is-drop-after'));
       dragId = null;
+      dragGroupIds = null;
     });
     body.addEventListener('dragover', e => {
       const target = e.target.closest('.rb-item');
-      if (!target || !dragId || target.dataset.rbId === dragId) return;
+      if (!target || !dragId || (dragGroupIds || [dragId]).includes(target.dataset.rbId)) return;
       e.preventDefault();
       const rect = target.getBoundingClientRect();
       const after = (e.clientY - rect.top) > rect.height / 2;
@@ -7728,13 +7967,14 @@ ${buildReportHtmlBody()}
         el.classList.remove('is-drop-before', 'is-drop-after')
       );
       const target = e.target.closest('.rb-item');
-      if (!target || !dragId || target.dataset.rbId === dragId){ dragId = null; return; }
+      const fromIds = dragGroupIds || (dragId ? [dragId] : null);
+      if (!target || !fromIds || fromIds.includes(target.dataset.rbId)){ dragId = null; dragGroupIds = null; return; }
       e.preventDefault();
       const rect = target.getBoundingClientRect();
       const after = (e.clientY - rect.top) > rect.height / 2;
-      const fromId = dragId;
       dragId = null;
-      moveItem(fromId, target.dataset.rbId, after);
+      dragGroupIds = null;
+      moveBlock(fromIds, target.dataset.rbId, after);
     });
 
     // Keyboard reorder - focus a grip handle, then Alt+ArrowUp/Down to
@@ -7747,16 +7987,9 @@ ${buildReportHtmlBody()}
       if (!item) return;
       e.preventDefault();
       const id = item.dataset.rbId;
-      const idx = state.items.findIndex(x => x.id === id);
-      if (idx < 0) return;
-      const dir = e.key === 'ArrowUp' ? -1 : 1;
-      const target = idx + dir;
-      if (target < 0 || target >= state.items.length) return;
-      const [moved] = state.items.splice(idx, 1);
-      state.items.splice(target, 0, moved);
+      // Block-aware: moves the whole merged group when the card is a group.
+      moveBlockBy(id, e.key === 'ArrowUp' ? 'up' : 'down');
       lastChangedItemId = id;
-      save();
-      render();
       // Restore focus to the grip on the moved item so chained Alt+Arrow works
       requestAnimationFrame(() => {
         const newGrip = rootEl?.querySelector(`.rb-item[data-rb-id="${CSS.escape(id)}"] .rb-item-grip`);
@@ -7850,6 +8083,10 @@ ${buildReportHtmlBody()}
       btn.classList.toggle('is-active', shouldBeActive);
       btn.setAttribute('aria-selected', String(shouldBeActive));
     });
+    // Re-render the body so it switches between per-item edit cards and the
+    // merged, export-faithful preview document.
+    renderItems();
+    if (!previewMode) decorateEditableHeaders();
   }
   function flashChip(){
     if (!rootEl) return;
@@ -8111,7 +8348,208 @@ ${buildReportHtmlBody()}
     }
   }
 
+  /* ---------- merged-group (Edit view) operations ----------
+     A "block" is one render unit: a single item, or a merged battery group of
+     several items. These let group cards reorder / remove / copy as a unit. */
+  function blockIdsFor(id){
+    const b = computeBlocks().find(bl => bl.ids.includes(id));
+    return b ? b.ids : [id];
+  }
+  // Move a set of item ids so they sit (contiguously) before/after the target
+  // block. Used by both group drag and single-item drag, so a drop never lands
+  // in the middle of a merged group.
+  function moveBlock(fromIds, toId, dropAfter){
+    const idSet = new Set(fromIds);
+    if (idSet.has(toId)) return;
+    const targetIds = blockIdsFor(toId);
+    const moved = state.items.filter(i => idSet.has(i.id));
+    if (!moved.length) return;
+    const rest = state.items.filter(i => !idSet.has(i.id));
+    const targetIdxs = targetIds.map(id => rest.findIndex(i => i.id === id)).filter(x => x >= 0);
+    if (!targetIdxs.length){ state.items = rest.concat(moved); save(); render(); return; }
+    const insertAt = dropAfter ? Math.max(...targetIdxs) + 1 : Math.min(...targetIdxs);
+    rest.splice(insertAt, 0, ...moved);
+    state.items = rest;
+    save();
+    render();
+  }
+  // Reorder one member up/down WITHIN its merged group (swaps it with the
+  // adjacent group sibling), so e.g. the indices table can sit above core.
+  function moveWithinGroup(memberId, dir){
+    const block = computeBlocks().find(b => b.ids.includes(memberId));
+    if (!block) return;
+    const order = block.ids.slice();                 // current displayed order
+    const pos = order.indexOf(memberId);
+    const swapPos = dir === 'up' ? pos - 1 : pos + 1;
+    if (swapPos < 0 || swapPos >= order.length) return;
+    [order[pos], order[swapPos]] = [order[swapPos], order[pos]];
+    // Pin the new within-group order via mergeRank so it survives re-render and
+    // overrides the canonical default.
+    order.forEach((id, idx) => {
+      const it = state.items.find(i => i.id === id);
+      if (it) it.mergeRank = idx;
+    });
+    save();
+    render();
+  }
+  // Move the block that contains anchorId up/down one block via the Options menu.
+  function moveBlockBy(anchorId, dir){
+    const blocks = computeBlocks();
+    const idx = blocks.findIndex(b => b.ids.includes(anchorId));
+    if (idx < 0) return;
+    const swapWith = dir === 'up' ? idx - 1 : idx + 1;
+    if (swapWith < 0 || swapWith >= blocks.length) return;
+    moveBlock(blocks[idx].ids, blocks[swapWith].ids[0], dir === 'down');
+  }
+  function removeMany(ids){
+    const set = new Set(ids);
+    state.items = state.items.filter(i => !set.has(i.id));
+    save();
+    render();
+  }
+  async function copyGroup(ids){
+    const idKey = ids.join(',');
+    const block = computeBlocks().find(b => b.ids.join(',') === idKey)
+               || computeBlocks().find(b => ids.every(id => b.ids.includes(id)));
+    if (!block) return;
+    const inner = renumberTable(block.html, 1);
+    const html = `<div style="font-family:'Times New Roman',serif;font-size:11pt;color:#000;">${inner}</div>`;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = inner;
+    const plain = tmp.textContent.replace(/\s+/g, ' ').trim();
+    try {
+      if (navigator.clipboard && window.ClipboardItem){
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/html':  new Blob([html],  { type:'text/html' }),
+          'text/plain': new Blob([plain], { type:'text/plain' })
+        })]);
+      } else {
+        await navigator.clipboard.writeText(plain);
+      }
+      if (typeof showToast === 'function') showToast('✓ Merged table copied to clipboard');
+      if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector(`[data-rb-group-copy="${idKey}"]`));
+      maybeShowKofiToast();
+    } catch(e){
+      console.error(e);
+      if (typeof showToast === 'function') showToast('Copy failed - try selecting manually', true);
+    }
+  }
+
   /* ---------- rendering ---------- */
+  const RB_SVG = {
+    grip: '<svg class="rb-item-grip-icon" viewBox="0 0 14 18" fill="currentColor" aria-hidden="true"><circle cx="5" cy="4" r="1.4"/><circle cx="9" cy="4" r="1.4"/><circle cx="5" cy="9" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="5" cy="14" r="1.4"/><circle cx="9" cy="14" r="1.4"/></svg>',
+    copy: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M2 9V3a1 1 0 0 1 1-1h6"/></svg>',
+    options: '<svg viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><circle cx="3" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="11" cy="7" r="1.3"/></svg>',
+    up: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l4-4 4 4"/><path d="M7 2v10"/></svg>',
+    down: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2v10"/><path d="M3 8l4 4 4-4"/></svg>',
+    refresh: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7a5 5 0 0 1 9-3"/><path d="M11 1v3.5h-3"/><path d="M12 7a5 5 0 0 1-9 3"/><path d="M3 13V9.5h3"/></svg>',
+    trash: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h10"/><path d="M5.5 4V2.5h3V4"/><path d="M3 4l1 8h6l1-8"/></svg>',
+    close: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>'
+  };
+  const GRIP_ATTRS = 'draggable="true" title="Drag to reorder (or focus + Alt+↑/↓)" role="button" tabindex="0" aria-label="Drag to reorder. Keyboard: Alt + Arrow Up or Arrow Down."';
+
+  /* A single (non-merged) report item card — full per-item controls. */
+  function itemCardHtml(it, num, isFirst, isLast){
+    const id = escapeHtmlLocal(it.id);
+    const cols = getItemColumns(it);
+    const hidden = new Set(it.hiddenColumns || []);
+    const colsHtml = cols.length ? `
+      <div class="rb-item-menu-section">Columns</div>
+      ${cols.map(c => `
+        <button class="rb-item-menu-item rb-col-toggle" type="button" role="menuitemcheckbox"
+          aria-checked="${!hidden.has(c.idx)}"
+          data-rb-col-toggle="${c.idx}"
+          data-rb-item-id="${id}">
+          <span class="rb-col-check ${hidden.has(c.idx) ? '' : 'is-checked'}" aria-hidden="true">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5l2 2 4-5"/></svg>
+          </span>
+          <span class="rb-col-label">${escapeHtmlLocal(c.label)}</span>
+        </button>
+      `).join('')}
+      <div class="rb-item-menu-sep"></div>
+    ` : '';
+    return `
+    <article class="rb-item" data-rb-id="${id}">
+      <header class="rb-item-header">
+        <span class="rb-item-grip" ${GRIP_ATTRS}>${RB_SVG.grip}</span>
+        <span class="rb-item-num">${num}</span>
+        <div class="rb-item-meta">
+          <span class="rb-item-source">${escapeHtmlLocal(it.sourceTool)}</span>
+          <span class="rb-item-time" data-rb-time="${escapeHtmlLocal(it.updatedAt || it.addedAt)}">${formatRelative(it.updatedAt || it.addedAt)}</span>
+        </div>
+        <div class="rb-item-actions">
+          <button class="rb-item-actionbtn rb-item-copy" type="button" data-rb-item-copy="${id}" aria-label="Copy this table" title="Copy this table to clipboard">${RB_SVG.copy}<span>Copy</span></button>
+          <div class="rb-item-options-wrap">
+            <button class="rb-item-actionbtn rb-item-options" type="button" data-rb-item-options="${id}" aria-label="More options" title="More options">${RB_SVG.options}<span>Options</span></button>
+            <div class="rb-item-menu" data-rb-item-menu="${id}" role="menu">
+              ${colsHtml}
+              <button class="rb-item-menu-item" data-rb-block-action="up" data-rb-anchor="${id}" type="button" role="menuitem"${isFirst ? ' disabled' : ''}>${RB_SVG.up} Move up</button>
+              <button class="rb-item-menu-item" data-rb-block-action="down" data-rb-anchor="${id}" type="button" role="menuitem"${isLast ? ' disabled' : ''}>${RB_SVG.down} Move down</button>
+              <button class="rb-item-menu-item" data-rb-item-action="refresh" data-rb-item-id="${id}" type="button" role="menuitem">${RB_SVG.refresh} Refresh from source</button>
+              <div class="rb-item-menu-sep"></div>
+              <button class="rb-item-menu-item rb-item-menu-danger" data-rb-item-action="remove" data-rb-item-id="${id}" type="button" role="menuitem">${RB_SVG.trash} Remove</button>
+            </div>
+          </div>
+          <button class="rb-item-remove" type="button" data-rb-remove="${id}" aria-label="Remove this table from the report" title="Remove from report">${RB_SVG.close}</button>
+        </div>
+      </header>
+      <div class="rb-item-rendered">${effectiveItemHtml(it, num - 1)}</div>
+    </article>`;
+  }
+
+  /* A merged battery group card — group-level controls (one combined table,
+     reorder/copy/remove the group, plus per-member remove). */
+  function groupCardHtml(block, num, isFirst, isLast){
+    const idKey = escapeHtmlLocal(block.ids.join(','));
+    const anchor = escapeHtmlLocal(block.ids[0]);
+    // Stable menu id keyed to the battery, so it survives within-group reorders
+    // (the first member — and thus the anchor — can change as rows move).
+    const menuId = escapeHtmlLocal('grp-' + (block.key || block.ids[0]));
+    const title = escapeHtmlLocal(block.longName || 'Merged tables');
+    const count = block.items.length;
+    const members = block.items.map((it, mi) => {
+      const mid = escapeHtmlLocal(it.id);
+      const label = escapeHtmlLocal(it.sourceTool);
+      return `
+      <div class="rb-member-row">
+        <span class="rb-member-label" title="${label}">${label}</span>
+        <span class="rb-member-actions">
+          <button class="rb-member-btn" data-rb-member-action="up" data-rb-member-id="${mid}" type="button" title="Move up within group" aria-label="Move ${label} up within group"${mi === 0 ? ' disabled' : ''}>${RB_SVG.up}</button>
+          <button class="rb-member-btn" data-rb-member-action="down" data-rb-member-id="${mid}" type="button" title="Move down within group" aria-label="Move ${label} down within group"${mi === count - 1 ? ' disabled' : ''}>${RB_SVG.down}</button>
+          <button class="rb-member-btn rb-member-btn-danger" data-rb-item-action="remove" data-rb-item-id="${mid}" type="button" title="Remove from report" aria-label="Remove ${label}">${RB_SVG.close}</button>
+        </span>
+      </div>`;
+    }).join('');
+    return `
+    <article class="rb-item rb-item-group" data-rb-id="${anchor}" data-rb-group-ids="${idKey}">
+      <header class="rb-item-header">
+        <span class="rb-item-grip" ${GRIP_ATTRS}>${RB_SVG.grip}</span>
+        <span class="rb-item-num">${num}</span>
+        <div class="rb-item-meta">
+          <span class="rb-item-source">${title}<span class="rb-merge-badge">Merged</span></span>
+          <span class="rb-item-time">${count} tables combined</span>
+        </div>
+        <div class="rb-item-actions">
+          <button class="rb-item-actionbtn rb-item-copy" type="button" data-rb-group-copy="${idKey}" aria-label="Copy the merged table" title="Copy the merged table to clipboard">${RB_SVG.copy}<span>Copy</span></button>
+          <div class="rb-item-options-wrap">
+            <button class="rb-item-actionbtn rb-item-options" type="button" data-rb-item-options="${menuId}" aria-label="More options" title="More options">${RB_SVG.options}<span>Options</span></button>
+            <div class="rb-item-menu rb-item-menu-group" data-rb-item-menu="${menuId}" role="menu">
+              <button class="rb-item-menu-item" data-rb-block-action="up" data-rb-anchor="${anchor}" type="button" role="menuitem"${isFirst ? ' disabled' : ''}>${RB_SVG.up} Move group up</button>
+              <button class="rb-item-menu-item" data-rb-block-action="down" data-rb-anchor="${anchor}" type="button" role="menuitem"${isLast ? ' disabled' : ''}>${RB_SVG.down} Move group down</button>
+              <div class="rb-item-menu-sep"></div>
+              <div class="rb-item-menu-section">Order tables within this group</div>
+              ${members}
+              <div class="rb-item-menu-sep"></div>
+              <button class="rb-item-menu-item rb-item-menu-danger" data-rb-group-remove="${idKey}" type="button" role="menuitem">${RB_SVG.trash} Remove all (${count})</button>
+            </div>
+          </div>
+          <button class="rb-item-remove" type="button" data-rb-group-remove="${idKey}" aria-label="Remove the whole merged group" title="Remove the whole merged group">${RB_SVG.close}</button>
+        </div>
+      </header>
+      <div class="rb-item-rendered">${renumberTable(block.html, num)}</div>
+    </article>`;
+  }
+
   function renderItems(){
     const body = rootEl?.querySelector('[data-rb-body]');
     if (!body) return;
@@ -8130,74 +8568,27 @@ ${buildReportHtmlBody()}
         </div>`;
       return;
     }
-    body.innerHTML = state.items.map((it, i) => {
-      const cols = getItemColumns(it);
-      const hidden = new Set(it.hiddenColumns || []);
-      const colsHtml = cols.length ? `
-        <div class="rb-item-menu-section">Columns</div>
-        ${cols.map(c => `
-          <button class="rb-item-menu-item rb-col-toggle" type="button" role="menuitemcheckbox"
-            aria-checked="${!hidden.has(c.idx)}"
-            data-rb-col-toggle="${c.idx}"
-            data-rb-item-id="${escapeHtmlLocal(it.id)}">
-            <span class="rb-col-check ${hidden.has(c.idx) ? '' : 'is-checked'}" aria-hidden="true">
-              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5l2 2 4-5"/></svg>
-            </span>
-            <span class="rb-col-label">${escapeHtmlLocal(c.label)}</span>
-          </button>
-        `).join('')}
-        <div class="rb-item-menu-sep"></div>
-      ` : '';
-      return `
-      <article class="rb-item" data-rb-id="${escapeHtmlLocal(it.id)}">
-        <header class="rb-item-header">
-          <span class="rb-item-grip" draggable="true" title="Drag to reorder (or focus + Alt+↑/↓)" role="button" tabindex="0" aria-label="Drag to reorder. Keyboard: Alt + Arrow Up or Arrow Down.">
-            <svg class="rb-item-grip-icon" viewBox="0 0 14 18" fill="currentColor" aria-hidden="true"><circle cx="5" cy="4" r="1.4"/><circle cx="9" cy="4" r="1.4"/><circle cx="5" cy="9" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="5" cy="14" r="1.4"/><circle cx="9" cy="14" r="1.4"/></svg>
-          </span>
-          <span class="rb-item-num">${i + 1}</span>
-          <div class="rb-item-meta">
-            <span class="rb-item-source">${escapeHtmlLocal(it.sourceTool)}</span>
-            <span class="rb-item-time" data-rb-time="${escapeHtmlLocal(it.updatedAt || it.addedAt)}">${formatRelative(it.updatedAt || it.addedAt)}</span>
-          </div>
-          <div class="rb-item-actions">
-            <button class="rb-item-actionbtn rb-item-copy" type="button" data-rb-item-copy="${escapeHtmlLocal(it.id)}" aria-label="Copy this table" title="Copy this table to clipboard">
-              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M2 9V3a1 1 0 0 1 1-1h6"/></svg>
-              <span>Copy</span>
-            </button>
-            <div class="rb-item-options-wrap">
-              <button class="rb-item-actionbtn rb-item-options" type="button" data-rb-item-options="${escapeHtmlLocal(it.id)}" aria-label="More options" title="More options">
-                <svg viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><circle cx="3" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="11" cy="7" r="1.3"/></svg>
-                <span>Options</span>
-              </button>
-              <div class="rb-item-menu" data-rb-item-menu="${escapeHtmlLocal(it.id)}" role="menu">
-                ${colsHtml}
-                <button class="rb-item-menu-item" data-rb-item-action="up" data-rb-item-id="${escapeHtmlLocal(it.id)}" type="button" role="menuitem"${i === 0 ? ' disabled' : ''}>
-                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l4-4 4 4"/><path d="M7 2v10"/></svg>
-                  Move up
-                </button>
-                <button class="rb-item-menu-item" data-rb-item-action="down" data-rb-item-id="${escapeHtmlLocal(it.id)}" type="button" role="menuitem"${i === state.items.length - 1 ? ' disabled' : ''}>
-                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2v10"/><path d="M3 8l4 4 4-4"/></svg>
-                  Move down
-                </button>
-                <button class="rb-item-menu-item" data-rb-item-action="refresh" data-rb-item-id="${escapeHtmlLocal(it.id)}" type="button" role="menuitem">
-                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7a5 5 0 0 1 9-3"/><path d="M11 1v3.5h-3"/><path d="M12 7a5 5 0 0 1-9 3"/><path d="M3 13V9.5h3"/></svg>
-                  Refresh from source
-                </button>
-                <div class="rb-item-menu-sep"></div>
-                <button class="rb-item-menu-item rb-item-menu-danger" data-rb-item-action="remove" data-rb-item-id="${escapeHtmlLocal(it.id)}" type="button" role="menuitem">
-                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h10"/><path d="M5.5 4V2.5h3V4"/><path d="M3 4l1 8h6l1-8"/></svg>
-                  Remove
-                </button>
-              </div>
-            </div>
-            <button class="rb-item-remove" type="button" data-rb-remove="${escapeHtmlLocal(it.id)}" aria-label="Remove this table from the report" title="Remove from report">
-              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>
-            </button>
-          </div>
-        </header>
-        <div class="rb-item-rendered">${effectiveItemHtml(it, i)}</div>
-      </article>
-    `;}).join('');
+
+    const blocks = computeBlocks();
+
+    /* Preview mode renders the EXACT document that gets copied/exported —
+       battery-merging applied when the toggle is on — as Word-style pages,
+       with no editing chrome. */
+    if (previewMode){
+      body.innerHTML = blocks.map((b, i) =>
+        `<article class="rb-item rb-item-preview"><div class="rb-item-rendered">${renumberTable(b.html, i + 1)}</div></article>`
+      ).join('');
+      return;
+    }
+
+    /* Edit mode: one card per block. Single items keep full per-item controls;
+       merged battery groups render the combined table with group-level controls
+       (reorder / copy / remove the group, plus per-member remove). */
+    body.innerHTML = blocks.map((b, i) =>
+      b.isMerged
+        ? groupCardHtml(b, i + 1, i === 0, i === blocks.length - 1)
+        : itemCardHtml(b.items[0], i + 1, i === 0, i === blocks.length - 1)
+    ).join('');
   }
 
   let rbPrevCount = 0;

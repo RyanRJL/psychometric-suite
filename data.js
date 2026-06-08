@@ -204,8 +204,12 @@ const OPIE_BASE_RATES = {
 
 /* ============================================================
    NORMATIVE DATABASE
-   Test–retest parameters from published manuals/literature
-   m1/sd1 = Test, m2/sd2 = Retest, r = corrected reliability
+   Reliability parameters from published manuals/literature.
+   m1/sd1 = first administration, m2/sd2 = retest (or alternate form)
+   r = raw reliability, rCorrected = corrected reliability, n = sample size
+   Reliability TYPE varies by test (same-form test–retest vs alternate-form).
+   e.g. CVLT-3 = alternate-form (Standard ↔ Alternate Form), Manual Table 3.4.
+        RBANS  = same-form test–retest (Form A → Form A), Manual Tables 3.8–3.9.
    ============================================================ */
 ﻿normDB = {
   "CVLT-3 Indices · Ages 16-44": {
@@ -748,6 +752,33 @@ const OPIE_BASE_RATES = {
     "List Recognition": { m1:19.6, sd1:0.8, m2:19.8, sd2:0.5, r:0.27, n:40 },
     "Story Recall": { m1:11.6, sd1:2.3, m2:11.6, sd2:2.3, r:0.52, rCorrected:0.72, n:40 },
     "Figure Recall": { m1:10.4, sd1:3, m2:11.5, sd2:3, r:0.55, rCorrected:0.55, n:40 }
+  },
+  // RBANS alternate-form (index-level only). m1/sd1 = Form A, m2/sd2 = alt form.
+  // Change-Analysis only (filtered out of Score Tables). Randolph 2012:
+  // A→B Table 3.10 (ages 20-89), A→C Table 3.11 (all ages), A→D Table 3.12 (all ages).
+  "RBANS Indices (Form B) · Ages 20-89": {
+    "Immediate Memory": { m1:105.5, sd1:12.9, m2:105.7, sd2:13.2, r:0.56, rCorrected:0.68, n:100 },
+    "Visuospatial/Constructional": { m1:99.5, sd1:13.2, m2:100.5, sd2:12.9, r:0.54, rCorrected:0.65, n:100 },
+    "Attention": { m1:106.5, sd1:14.4, m2:108.7, sd2:13.4, r:0.78, rCorrected:0.8, n:100 },
+    "Language": { m1:105.6, sd1:14.2, m2:101.9, sd2:14.9, r:0.39, rCorrected:0.46, n:100 },
+    "Delayed Memory": { m1:105.2, sd1:14, m2:100.7, sd2:15.8, r:0.59, rCorrected:0.64, n:100 },
+    "Total Scale": { m1:106.2, sd1:13.8, m2:104.8, sd2:13, r:0.79, rCorrected:0.82, n:100 }
+  },
+  "RBANS Indices (Form C) · All Ages": {
+    "Immediate Memory": { m1:90.7, sd1:17.1, m2:87.3, sd2:14.8, r:0.75, rCorrected:0.61, n:135 },
+    "Visuospatial/Constructional": { m1:88.6, sd1:18.6, m2:92.9, sd2:19, r:0.77, rCorrected:0.57, n:135 },
+    "Attention": { m1:94.4, sd1:15.7, m2:87.2, sd2:18.2, r:0.59, rCorrected:0.53, n:135 },
+    "Language": { m1:96.5, sd1:16.9, m2:95.6, sd2:18.9, r:0.8, rCorrected:0.7, n:135 },
+    "Delayed Memory": { m1:88.3, sd1:18.7, m2:91.6, sd2:16.6, r:0.58, rCorrected:0.24, n:135 },
+    "Total Scale": { m1:88.6, sd1:16.5, m2:87.3, sd2:17.5, r:0.84, rCorrected:0.75, n:135 }
+  },
+  "RBANS Indices (Form D) · All Ages": {
+    "Immediate Memory": { m1:91.9, sd1:18.4, m2:96.4, sd2:16.1, r:0.75, rCorrected:0.64, n:146 },
+    "Visuospatial/Constructional": { m1:89.6, sd1:19.3, m2:90.9, sd2:20.8, r:0.75, rCorrected:0.61, n:146 },
+    "Attention": { m1:94.3, sd1:16.7, m2:97.9, sd2:17.1, r:0.68, rCorrected:0.63, n:146 },
+    "Language": { m1:94.9, sd1:16.6, m2:96.1, sd2:19.3, r:0.82, rCorrected:0.78, n:146 },
+    "Delayed Memory": { m1:91.5, sd1:18.6, m2:93.9, sd2:23.2, r:0.71, rCorrected:0.58, n:146 },
+    "Total Scale": { m1:89.2, sd1:19.3, m2:92.9, sd2:21, r:0.87, rCorrected:0.8, n:146 }
   },
   "WAIS-IV Core Subtests · Ages 16-29": {
     "Block Design": { m1:10.1, sd1:3, m2:11.3, sd2:2.9, r:0.81, rCorrected:0.81 },

@@ -108,9 +108,9 @@
   // Aux field per statistic (some conversions need N or pooled SD)
   const AUX_FOR = {
     g:     { label: 'Total N (n1 + n2)',           hint: 'N' },
-    t:     { label: 'Total N (df + 2) — required', hint: 'e.g. 52' },
-    md:    { label: 'Pooled SD — required',        hint: 'SD' },
-    zstat: { label: 'Total N — required',          hint: 'N' }
+    t:     { label: 'Total N (df + 2), required', hint: 'e.g. 52' },
+    md:    { label: 'Pooled SD, required',        hint: 'SD' },
+    zstat: { label: 'Total N, required',          hint: 'N' }
   };
   function refreshAuxField(){
     const t = els['es-stat-type'].value;
@@ -338,7 +338,7 @@
       const hasAux   = auxStr !== '' && !isNaN(auxStr);
       if (hasValue && !hasAux){
         const what = curType === 't' ? 'a t value' : (curType === 'zstat' ? 'a z statistic' : 'a mean difference');
-        setMethodMessage('info', `Also enter <strong>${auxCfg.label.replace(' — required','')}</strong> — it’s needed to convert ${what} into an effect size.`);
+        setMethodMessage('info', `Also enter <strong>${auxCfg.label.replace(', required','')}</strong>, it’s needed to convert ${what} into an effect size.`);
       }
     }
 

@@ -989,6 +989,8 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .combo-group-heading{padding:6px 12px 3px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--paper-2);border-top:1px solid var(--border-soft);pointer-events:none;user-select:none}
 .combo-item.combo-indented{padding-left:24px}
 .combo-item.combo-indented .combo-check-text{font-size:12.5px;color:var(--ink-2)}
+/* retest/delay interval shown after an age-band item (Change Analysis dropdown) */
+.combo-interval{color:var(--faint);font-size:0.85em;white-space:nowrap}
 .combo-ageband-note{flex:0 0 auto;display:flex;align-items:flex-start;gap:7px;padding:8px 11px;background:var(--note-bg);border-bottom:1px solid var(--border-soft);font-size:11px;color:var(--muted);line-height:1.45}
 .combo-ageband-note-icon{flex:0 0 auto;font-style:normal;font-size:12px;color:var(--accent);opacity:.7;margin-top:1px}
 
@@ -2538,14 +2540,17 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
   --topbar-nav-h:56px;
 }
 
-body{display:block;overflow:auto;background:var(--paper);font-size:13.5px}
+body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);font-size:13.5px}
 .sidebar{display:none!important}
 .main{
   margin-left:0;
   padding-top:var(--topbar-h);
   background:var(--paper);
   overflow:visible;
-  min-height:calc(100vh - var(--topbar-h));
+  /* Body is a flex column; main grows (flex:1) to fill the space above the
+     footer, so the footer always sits as a thin strip at the very bottom. */
+  flex:1 0 auto;
+  min-height:0;
 }
 
 /* ---- TOP BAR â€” two-tier (brand row + tabs row), Fisherman-style ---- */
@@ -4094,7 +4099,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* Section container: tighter padding for Home only */
 #home.section{
-  padding:24px 40px 32px!important;
+  padding:24px 40px 8px!important;
 }
 
 /* Hero: smaller (still confident) title, tighter description, less bottom margin */
@@ -7223,6 +7228,69 @@ body.rb-docked-active{padding-right:0}
   font-size:10.5px;
   color:#9A968D;
 }
+/* Merged battery group card: subtle accent + "Merged" badge */
+.rb-item-group .rb-item-header{
+  background:linear-gradient(180deg, rgba(156,61,42,0.05), rgba(156,61,42,0.02));
+}
+.rb-merge-badge{
+  display:inline-block;
+  margin-left:7px;
+  padding:1px 7px;
+  border-radius:9px;
+  background:rgba(156,61,42,0.12);
+  color:#9C3D2A;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  vertical-align:middle;
+}
+/* Per-member reorder rows inside a merged group's Options menu */
+.rb-member-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:4px 10px 4px 12px;
+}
+.rb-member-label{
+  flex:1 1 auto;
+  min-width:0;
+  font-family:var(--sans);
+  font-size:12px;
+  color:#3A372F;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.rb-member-actions{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+}
+.rb-member-btn{
+  width:22px;height:22px;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0;
+  border:1px solid rgba(20,15,5,0.14);
+  border-radius:6px;
+  background:#fff;
+  color:#6B675E;
+  cursor:pointer;
+  transition:background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.rb-member-btn svg{width:11px;height:11px;}
+.rb-member-btn:hover:not(:disabled){
+  background:rgba(156,61,42,0.08);
+  color:#9C3D2A;
+  border-color:rgba(156,61,42,0.30);
+}
+.rb-member-btn:disabled{opacity:0.32;cursor:default;}
+.rb-member-btn-danger:hover:not(:disabled){
+  background:rgba(214,58,47,0.08);
+  color:#B22A20;
+  border-color:rgba(214,58,47,0.30);
+}
 .rb-item-remove{
   flex:0 0 auto;
   width:24px;height:24px;
@@ -8119,10 +8187,9 @@ body.rb-docked-active{padding-right:0}
    with field-row, slider, classification, and footnote spanning both. */
 #converter .conv-unified-panel{
   display:grid !important;
-  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr) !important;
+  grid-template-columns: minmax(360px, 420px) minmax(0, 1fr) !important;
   grid-template-areas:
-    "fields  fields"
-    "slider  slider"
+    "fields  slider"
     "equiv   curve"
     "class   class"
     "foot    foot" !important;
@@ -8266,6 +8333,7 @@ body.rb-docked-active{padding-right:0}
 /* Compact the field-row and slider so they don't dominate */
 #converter .conv-unified-panel > .field-row{
   margin:0 !important;
+  grid-template-columns: 1.5fr 1fr !important;
 }
 
 /* Narrow viewports — collapse to a single column. Curve drops below the
@@ -8361,6 +8429,36 @@ body.rb-docked-active{padding-right:0}
 #effectsize .es-view-pane{ display:block !important; animation:none !important; }
 /* Reference values pane — hidden entirely per design */
 #effectsize .es-view-pane[data-view-pane="reference"]{ display:none !important; }
+/* Collapsible secondary panes (Group comparison, Common language description) —
+   collapsed by default so the main effect-size view fits on one screen. */
+#effectsize .es-collapse{
+  border:1px solid rgba(20,15,5,0.12);
+  border-radius:10px;
+  background:rgba(250,247,241,0.55);
+  margin-top:10px;
+  overflow:hidden;
+  transition:border-color 150ms ease, box-shadow 150ms ease;
+}
+#effectsize .es-collapse:hover{ border-color:rgba(156,61,42,0.35); }
+#effectsize .es-collapse[open]{ box-shadow:0 1px 4px rgba(20,15,5,0.05); }
+#effectsize .es-collapse-summary{
+  cursor:pointer; list-style:none; user-select:none;
+  display:flex; align-items:center; width:100%; box-sizing:border-box;
+  padding:14px 16px; margin:0 !important;
+  transition:background 150ms ease, color 150ms ease;
+}
+#effectsize .es-collapse-summary:hover{ background:rgba(156,61,42,0.06); color:var(--accent); }
+#effectsize .es-collapse-summary::-webkit-details-marker{ display:none; }
+/* right-aligned chevron that flips when the card opens */
+#effectsize .es-collapse-summary::after{
+  content:'\25BE'; margin-left:auto; flex-shrink:0;
+  color:var(--accent); font-size:13px;
+  transition:transform 180ms ease;
+}
+#effectsize .es-collapse[open] > .es-collapse-summary::after{ transform:rotate(180deg); }
+/* keep the body padded inside the card */
+#effectsize .es-collapse > .es-target-body,
+#effectsize .es-collapse > .info-box{ padding:0 16px 16px !important; margin-top:0 !important; }
 
 /* Two-column dashboard. Layout:
      Row 1 left: Visual (spans 2 rows)   Row 1 right: Common Language
