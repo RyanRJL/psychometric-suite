@@ -287,21 +287,97 @@ document.querySelectorAll('.nav-label').forEach(label => {
   });
 });
 
-document.querySelectorAll('.nav-item').forEach(el => {
-  el.addEventListener('click', () => {
-    const target = el.dataset.target;
-    if (target === 'custom-tests' && !isCustomTestsUnlocked()){
-      const ok = requestCustomTestsUnlock();
-      if (!ok) return;
-    }
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    el.classList.add('active');
-    const targetSection = document.getElementById(target);
-    if (targetSection) targetSection.classList.add('active');
-    openOnlyNavGroup(el.closest('.nav-group'));
-    document.querySelector('.main').scrollTop = 0;
+/* ---------- NAVIGATION ----------
+   Single entry point for switching top-level sections. Every path in — sidebar,
+   topnav, home cards, footer links, the auth overlay, and the browser's
+   back/forward buttons — goes through here, so the active section, the nav
+   highlight, the scroll position and the URL can never disagree.
+
+   opts.navItem  the element that was clicked, when there is one (decides which
+                 sidebar group to open, since several nav items share a target)
+   opts.history  false to change section without touching history (popstate)
+   opts.replace  true to replace the current entry instead of pushing one
+   opts.scroll   false to leave the scroll position alone                     */
+const NAV_DEFAULT_SECTION = 'home';
+
+function isNavigableSection(id){
+  const el = id && document.getElementById(id);
+  return !!(el && el.classList.contains('section'));
+}
+function sectionFromHash(){
+  const id = (location.hash || '').replace(/^#/, '');
+  return isNavigableSection(id) ? id : null;
+}
+function writeNavHistory(target){
+  const url = `#${target}`;
+  const state = { section: target };
+  // Re-selecting the current section replaces rather than pushes, so repeated
+  // clicks on the same nav item don't pile up identical history entries.
+  if (location.hash === url) history.replaceState(state, '', url);
+  else history.pushState(state, '', url);
+}
+
+function navigateTo(target, opts){
+  const o = opts || {};
+  if (!isNavigableSection(target)) return false;
+
+  // Gate before anything visible changes, so a declined unlock leaves the UI
+  // exactly as it was rather than half-navigated.
+  if (target === 'custom-tests' && !isCustomTestsUnlocked()){
+    if (!requestCustomTestsUnlock()) return false;
+  }
+
+  /* Highlight exactly one nav item. Several can share a target — the five
+     Change Analysis methods all point at #change-analysis — so lighting every
+     match would show all five as active at once. Prefer the one clicked;
+     otherwise take the first that points here. (The topnav highlight is driven
+     separately by syncTopnav, which observes the active section.) */
+  const matching = [...document.querySelectorAll(`.nav-item[data-target="${target}"]`)];
+  const chosen = (o.navItem && matching.includes(o.navItem)) ? o.navItem : matching[0];
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('active', n === chosen);
   });
+  document.querySelectorAll('.section').forEach(s => {
+    s.classList.toggle('active', s.id === target);
+  });
+
+  const groupNav = (chosen && chosen.closest('.nav-group'))
+    ? chosen
+    : document.querySelector(`.nav-group .nav-item[data-target="${target}"]`);
+  if (groupNav && typeof openOnlyNavGroup === 'function'){
+    openOnlyNavGroup(groupNav.closest('.nav-group'));
+  }
+
+  // The document scrolls, not .main — the redesign moved the scroll container
+  // to <body>, which left the old `.main.scrollTop = 0` a silent no-op and
+  // dropped you into the middle of every page you navigated to.
+  if (o.scroll !== false) window.scrollTo({ top: 0, behavior: 'auto' });
+
+  if (o.history !== false) writeNavHistory(target);
+  return true;
+}
+window.navigateTo = navigateTo;
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => navigateTo(el.dataset.target, { navItem: el }));
+});
+
+window.addEventListener('popstate', e => {
+  const target = (e.state && e.state.section) || sectionFromHash() || NAV_DEFAULT_SECTION;
+  navigateTo(target, { history: false });
+});
+
+/* Restore the section named in the URL on load, so a refresh or a shared link
+   lands where it should instead of always bouncing to Home. Runs on
+   DOMContentLoaded — late enough that the inline script which builds the
+   Change Analysis section has already added it. */
+document.addEventListener('DOMContentLoaded', () => {
+  const target = sectionFromHash();
+  const overlay = document.getElementById('auth-overlay');
+  const gated = overlay && !overlay.hidden && overlay.classList.contains('is-visible');
+  if (target && target !== NAV_DEFAULT_SECTION && !gated){
+    navigateTo(target, { history: false });
+  }
 });
 
 /* ---------- TOAST ---------- */
@@ -553,7 +629,10 @@ const examples = {
    Returns false for example rows so they're never accidentally swept out.
    Used by the autofill loaders to remove a stale placeholder when the
    user picks a test from the family list. */
-const ROW_BLANK_KEYS = ['name','group','raw','score','t1','t2','sd','m1','sd1','m2','sd2','r','rCorrected','n'];
+/* `groupKey` is included so that an as-yet-unfilled row belonging to a
+   user-created test group never counts as a stale placeholder — otherwise
+   starting a second custom test would sweep away the first one. */
+const ROW_BLANK_KEYS = ['name','group','groupKey','raw','score','t1','t2','sd','m1','sd1','m2','sd2','r','rCorrected','n'];
 function isRowBlank(r){
   if (!r) return true;
   if (r.isExample) return false;
@@ -922,13 +1001,64 @@ updateSliderTicks(document.getElementById('conv-type').value);
    02 · BATTERY TABLE
    ============================================================ */
 let batteryRows = [];
+
+/* Rows are grouped under a header by their group KEY, not their display name.
+   Autofilled rows use the database family name as both (no groupKey). Rows the
+   user creates get a synthetic, stable groupKey so the header stays a single
+   group while it is being renamed — and so two tests can share a name (or be
+   left unnamed) without silently merging into one block. */
+let batteryGroupSeq = 0;
+function batteryGroupKeyOf(r){ return (r && (r.groupKey || r.group)) || ''; }
+function batteryGroupNameOf(key){
+  const row = batteryRows.find(r => batteryGroupKeyOf(r) === key);
+  return row ? (row.group || '') : '';
+}
+function batteryGroupIsCustom(key){
+  return batteryRows.some(r => batteryGroupKeyOf(r) === key && r.groupKey);
+}
+/* Header text for a group: the user's name, the family name with its age band
+   stripped, or a placeholder while a new test is still unnamed. */
+function batteryGroupLabel(key){
+  const name = batteryGroupNameOf(key);
+  if (name) return stripAgeRange(name);
+  return batteryGroupIsCustom(key) ? 'Untitled test' : '';
+}
+
 function batteryAddRow(initial){
   batteryRows.push(initial || { name:'', raw:'', score:'' });
   renderBattery();
 }
+/* Start a new custom test: its own header, its own score type, ready to name. */
+function batteryAddGroup(scoreType){
+  const groupKey = `cg-${++batteryGroupSeq}`;
+  dropFirstBlankRow(batteryRows);
+  batteryRows.push({ name:'', raw:'', score:'', group:'', groupKey, scoreType });
+  renderBattery();
+  const input = document.querySelector(`#bat-table [data-group-rename="${groupKey}"]`);
+  if (input) input.focus();
+}
+/* Append one more row to an existing group, directly beneath its last row. */
+function batteryAddRowToGroup(key){
+  let lastIdx = -1;
+  batteryRows.forEach((r, i) => { if (batteryGroupKeyOf(r) === key) lastIdx = i; });
+  if (lastIdx < 0) return;
+  const sibling = batteryRows[lastIdx];
+  batteryRows.splice(lastIdx + 1, 0, {
+    name:'', raw:'', score:'',
+    group: sibling.group,
+    groupKey: sibling.groupKey,
+    scoreType: sibling.scoreType
+  });
+  renderBattery();
+  const inputs = document.querySelectorAll(`#bat-table tbody input[data-f="name"]`);
+  if (inputs[lastIdx + 1]) inputs[lastIdx + 1].focus();
+}
+function batteryRenameGroup(key, name){
+  batteryRows.forEach(r => { if (batteryGroupKeyOf(r) === key) r.group = name; });
+}
 function batteryRemove(i){ batteryRows.splice(i, 1); renderBattery(); }
-function batteryRemoveGroup(group){
-  batteryRows = batteryRows.filter(r => r.group !== group);
+function batteryRemoveGroup(key){
+  batteryRows = batteryRows.filter(r => batteryGroupKeyOf(r) !== key);
   renderBattery();
 }
 window.batteryRemove = batteryRemove;
@@ -1384,18 +1514,25 @@ function renderBattery(){
   if (repeatBtn && batteryRows.length === 0) repeatBtn.hidden = true;
   let lastGroup = null;
   batteryRows.forEach((r, i) => {
-    // Inject a group header when group changes
-    if (r.group && r.group !== lastGroup){
+    // Inject a group header when the group changes
+    const gKey = batteryGroupKeyOf(r);
+    if (gKey && gKey !== lastGroup){
       const ghr = document.createElement('tr');
       ghr.className = 'group-header';
       // A group can hold mixed score types (e.g. scaled subtests + standard indices).
       // Show the shared label when uniform, otherwise "Mixed" (each row shows its own tag).
-      const groupTypes = new Set(batteryRows.filter(x => x.group === r.group).map(x => rowScoreType(x)));
+      const groupTypes = new Set(batteryRows.filter(x => batteryGroupKeyOf(x) === gKey).map(x => rowScoreType(x)));
       const stLabel = groupTypes.size > 1 ? 'Mixed' : scoreTypeLabel([...groupTypes][0] || r.scoreType || inferScoreType(r.group));
-      ghr.innerHTML = `<td colspan="8">${escapeHtml(stripAgeRange(r.group))} <span class="type-badge">· ${stLabel}</span><button class="group-remove" data-rm-group="${escapeAttr(r.group)}" title="Remove group">×</button></td>`;
+      // Custom tests get an editable name; database families keep their fixed one.
+      const nameHtml = r.groupKey
+        ? `<input class="group-name-input" data-group-rename="${escapeAttr(gKey)}" value="${escapeAttr(r.group)}" placeholder="Name this test" aria-label="Test name" autocomplete="off">`
+        : escapeHtml(batteryGroupLabel(gKey));
+      ghr.innerHTML = `<td colspan="8">${nameHtml} <span class="type-badge">· ${stLabel}</span>` +
+        `<button class="group-add-row" data-add-to-group="${escapeAttr(gKey)}" title="Add a row to this test" aria-label="Add a row to this test">+</button>` +
+        `<button class="group-remove" data-rm-group="${escapeAttr(gKey)}" title="Remove group">×</button></td>`;
       tbody.appendChild(ghr);
-      lastGroup = r.group;
-    } else if (!r.group){
+      lastGroup = gKey;
+    } else if (!gKey){
       lastGroup = null;
     }
     const rowType = rowScoreType(r);
@@ -1405,7 +1542,7 @@ function renderBattery(){
     const ss = parseFloat(r.score);
     const ciHtml = ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : '';
     const tr = document.createElement('tr');
-    if (r.group) tr.className = 'in-group';
+    if (gKey) tr.className = 'in-group';
     const abbr = scoreTypeAbbr(rowType);
     const typeTag = abbr ? `<span class="bat-row-type-tag">(${abbr})</span>` : '';
     tr.innerHTML = `
@@ -1420,12 +1557,26 @@ function renderBattery(){
     `;
     tbody.appendChild(tr);
   });
-  // Wire group-remove buttons
+  // Wire group-header buttons
   tbody.querySelectorAll('[data-rm-group]').forEach(b => {
     b.addEventListener('click', () => batteryRemoveGroup(b.dataset.rmGroup));
   });
-  // In-place updates while typing
-  tbody.querySelectorAll('input').forEach(inp => {
+  tbody.querySelectorAll('[data-add-to-group]').forEach(b => {
+    b.addEventListener('click', () => batteryAddRowToGroup(b.dataset.addToGroup));
+  });
+  // Renaming a custom test updates state and the APA preview on every keystroke,
+  // but defers the full table rebuild to blur so the caret is not thrown away.
+  tbody.querySelectorAll('[data-group-rename]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      batteryRenameGroup(e.target.dataset.groupRename, e.target.value);
+      renderBatteryApa();
+    });
+    inp.addEventListener('blur', () => renderBattery());
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+  });
+  // In-place updates while typing. Scoped to data-r cells so the group-header
+  // name inputs (which carry no row index) don't fall through to here.
+  tbody.querySelectorAll('input[data-r]').forEach(inp => {
     inp.addEventListener('input', e => {
       const i = +e.target.dataset.r, f = e.target.dataset.f;
       batteryRows[i][f] = e.target.value;
@@ -1516,6 +1667,75 @@ function buildApaTableFromColumns(outId, columns, rows, groupLabelFn, groupDispl
   return `<table class="apa-table"><thead>${header}</thead><tbody>${body}</tbody></table>`;
 }
 
+/* ============================================================
+   APA TABLE NOTES — single source of truth
+   ------------------------------------------------------------
+   One canonical phrasing per table, all in one place. Each entry takes
+   the render context and returns an array of sentences; apaNoteHtml
+   drops the empty ones and joins them.
+
+   Keep them short. These are pasted into a report, where an over-long
+   note costs the clinician more to trim than it saves. State what a
+   reader cannot infer from the column headers, and nothing else.
+   ============================================================ */
+const APA_NOTES = {
+  'bat': ctx => [
+    `Classification follows ${ctx.classification === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.`,
+    ctx.mixedTypes ? 'Scores are reported in their native standardised metric.' : '',
+    ctx.ciLevel && ctx.ciLevel !== 'off' ? `Confidence intervals are ${ctx.ciLevel}%.` : '',
+    ctx.premorbid != null
+      ? `Asterisks mark scores below the premorbid estimate of ${ctx.premorbid}: * ≥ 1 SD, ** ≥ 1.5 SD, *** ≥ 2 SD.`
+      : ''
+  ],
+  'sdi': ctx => [
+    'SD Δ = (retest − test) ÷ SD.',
+    `Significance threshold = ${ctx.thresholdLabel}.`,
+    '<i>p</i>-values are two-tailed.'
+  ],
+  'rci': ctx => [
+    ctx.methodSentence,
+    `Reliable change threshold = ${ctx.thresholdLabel}.`,
+    ctx.rSentence,
+    ctx.formSentence,
+    '<i>p</i>-values are two-tailed.'
+  ],
+  'pre-estimates': ctx => [
+    'FSIQ = Full Scale IQ estimate.',
+    `CI = confidence interval based on ${ctx.ciMultiplier} × SEE.`,
+    '<i>r</i> = predictor-criterion correlation. SEE = standard error of estimate.'
+  ],
+  'pre-predict': () => [
+    'WAIS-IV indices are predicted from ToPF, education and sex; WMS-IV indices from ToPF and age.',
+    'Difference = Achieved − Predicted.',
+    'Base rate = % of the standardisation sample at or below this discrepancy (negative discrepancies only).'
+  ],
+  'pre-opiepredict': () => [
+    'OPIE-4 prorated scores are predicted from age with Vocabulary and/or Matrix Reasoning.',
+    'Difference = Achieved − Predicted.',
+    'Base rate = % of the US standardisation sample at or below this discrepancy.'
+  ]
+};
+/* Render a registered note as its APA block. Returns '' when every sentence
+   is empty, so a table with nothing to qualify carries no note at all. */
+function apaNoteHtml(id, ctx){
+  const build = APA_NOTES[id];
+  if (!build) return '';
+  const body = build(ctx || {}).filter(s => s && s.trim()).join(' ');
+  return body ? `<div class="apa-note"><strong>Note.</strong> ${body}</div>` : '';
+}
+/* Fill the on-screen info boxes that mirror an APA note, so the guidance beside
+   the interactive table and the note in the generated table stay identical.
+   Only context-free notes can be mirrored this way. */
+function renderStaticApaNotes(){
+  document.querySelectorAll('[data-apa-note]').forEach(el => {
+    const build = APA_NOTES[el.dataset.apaNote];
+    if (!build) return;
+    const body = build({}).filter(s => s && s.trim()).join(' ');
+    if (body) el.innerHTML = `<strong>Note.</strong> ${body}`;
+  });
+}
+document.addEventListener('DOMContentLoaded', renderStaticApaNotes);
+
 function renderBatteryApa(){
   const cls      = document.getElementById('bat-class').value;
   const title    = document.getElementById('bat-title').value || 'Test scores';
@@ -1549,12 +1769,16 @@ function renderBatteryApa(){
     return;
   }
   const prem = getBatteryPremorbidComparison();
-  const premNote = prem ? ` Premorbid estimate markers: * = at least 1 SD below the premorbid estimate, ** = at least 1.5 SD below, *** = at least 2 SD below (premorbid estimate Standard Score = ${fmt(prem.estimate, 1)}).` : '';
   out.innerHTML = `
     <div class="apa-table-num">Table 1</div>
     <div class="apa-table-title">${escapeHtml(title)}</div>
-    ${buildApaTableFromColumns('bat-apa', columns, valid, r => r.group)}
-    <div class="apa-note"><strong>Note.</strong> Classification follows ${cls === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.${types.size > 1 ? ' Subtest scores are reported in their native standardised metric (scaled-score subtests vs. standard-score indices).' : ''}${ciLevel !== 'off' ? ` Confidence intervals are ${ciLevel}%.` : ''}${premNote}</div>
+    ${buildApaTableFromColumns('bat-apa', columns, valid, batteryGroupKeyOf, batteryGroupLabel)}
+    ${apaNoteHtml('bat', {
+      classification: cls,
+      mixedTypes: types.size > 1,
+      ciLevel,
+      premorbid: prem ? fmt(prem.estimate, 0) : null
+    })}
   `;
 }
 
@@ -1562,21 +1786,39 @@ function renderBatteryApa(){
 function loadFamilyIntoBattery(family){
   const db = getMergedDB();
   if (!db[family]) return;
-  // Avoid duplicating an already-loaded group
-  if (batteryRows.some(r => r.group === family)){
+  const names = Object.keys(db[family]);
+  // A custom family created but not yet populated. Bail BEFORE dropping a blank
+  // row, or the user loses a row and sees nothing added.
+  if (!names.length){
+    showToast(`${family} has no tests yet - add some in the Norms Database`, true);
+    return;
+  }
+  // If the family is already on the table, append only the subtests that aren't
+  // there yet, so tests added to a custom family later can still be pulled in.
+  const present = new Set(batteryRows.filter(r => batteryGroupKeyOf(r) === family).map(r => r.name));
+  const missing = names.filter(n => !present.has(n));
+  if (!missing.length){
     showToast(`${family} is already loaded`, true);
     return;
   }
-  const names = Object.keys(db[family]);
-  // Sweep out the stale placeholder row that sits below the example before
-  // appending the autofilled tests.
-  dropFirstBlankRow(batteryRows);
-  names.forEach(name => {
-    // Infer the score type PER subtest, not once for the whole family, so mixed
-    // families (e.g. scaled subtests + standard-score indices) categorise correctly.
-    const scoreType = inferScoreTypeForSubtest(family, name, db[family][name]);
-    batteryRows.push({ name, raw:'', score:'', group:family, scoreType });
-  });
+  // Infer the score type PER subtest, not once for the whole family, so mixed
+  // families (e.g. scaled subtests + standard-score indices) categorise correctly.
+  const newRows = missing.map(name => ({
+    name, raw:'', score:'', group:family,
+    scoreType: inferScoreTypeForSubtest(family, name, db[family][name])
+  }));
+  if (present.size){
+    // Slot the new subtests in beneath the group's existing rows so they land
+    // under the header that is already there rather than starting a second one.
+    let lastIdx = -1;
+    batteryRows.forEach((r, i) => { if (batteryGroupKeyOf(r) === family) lastIdx = i; });
+    batteryRows.splice(lastIdx + 1, 0, ...newRows);
+  } else {
+    // Sweep out the stale placeholder row that sits below the example before
+    // appending the autofilled tests.
+    dropFirstBlankRow(batteryRows);
+    batteryRows.push(...newRows);
+  }
   renderBattery();
   // Toast suppressed - the working-report pill is the single feedback channel
   // for "things added to the report". (Old toast was a duplicate.)
@@ -1592,10 +1834,12 @@ function wireBatteryAutofill(){
   const inp = document.getElementById('bat-family-input');
   const list = document.getElementById('bat-family-list');
   if (!inp || !list) return;
-  // Read-only dropdown: clicking/focusing the field always opens the full list
-  // (typing is disabled, so there is no text filtering on this control).
-  inp.addEventListener('focus', () => { list.classList.add('show'); filterFamilyListEl(list, ''); });
-  inp.addEventListener('click', () => { list.classList.add('show'); filterFamilyListEl(list, ''); });
+  // Opening the list keeps whatever has been typed, rather than resetting the
+  // filter. The visible control is the design-system proxy input, which forwards
+  // its `input` events here — without the listener below, typing did nothing.
+  inp.addEventListener('focus', () => { list.classList.add('show'); filterFamilyListEl(list, inp.value || ''); });
+  inp.addEventListener('click', () => { list.classList.add('show'); filterFamilyListEl(list, inp.value || ''); });
+  inp.addEventListener('input', () => { list.classList.add('show'); filterFamilyListEl(list, inp.value || ''); });
   inp.addEventListener('keydown', e => {
     if (e.key === 'Escape') list.classList.remove('show');
     if (e.key === 'Enter') {
@@ -1609,7 +1853,9 @@ function wireBatteryAutofill(){
 }
 
 function comboCustomTag(isCustom){
-  return '';
+  // Custom families sort alphabetically among ~30 built-ins, so they need a mark
+  // to be findable. Styled by .combo-custom-tag in styles.css.
+  return isCustom ? '<span class="combo-custom-tag">Custom</span>' : '';
 }
 function comboFooterHtml(){
   return '<div class="combo-footer"><span class="combo-count">0 selected</span><button class="btn btn-ghost combo-clear" type="button">Clear</button><button class="btn btn-primary combo-add" type="button" disabled>Add selected tests</button></div>';
@@ -1709,15 +1955,19 @@ function rebuildBatteryFamilyList(){
   });
 }
 
-/* Popover for score type when adding a manual row */
+/* Popover for score type when adding a manual row. The same popover serves
+   "+ Add row" (a loose row) and "+ New test" (a row under its own new heading);
+   pendingMode records which button opened it. */
 (function(){
   const addBtn    = document.getElementById('bat-add');
+  const groupBtn  = document.getElementById('bat-add-group');
   const repeatBtn = document.getElementById('bat-add-repeat');
   const popover   = document.getElementById('bat-type-popover');
   if (!addBtn || !popover) return;
 
   const TYPE_LABELS = { scaled:'Scaled Score', standard:'Standard Score', t:'T-Score', z:'Z-Score' };
   let lastType = null;
+  let pendingMode = 'row';
 
   function setLastType(type){
     lastType = type;
@@ -1727,18 +1977,35 @@ function rebuildBatteryFamilyList(){
     }
   }
 
-  addBtn.addEventListener('click', e => {
+  function closePopover(){
+    popover.classList.remove('is-open');
+    addBtn.setAttribute('aria-expanded', 'false');
+    if (groupBtn) groupBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  function openFor(mode, trigger, e){
     e.stopPropagation();
-    const open = popover.classList.toggle('is-open');
-    addBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
+    const alreadyOpenForThis = popover.classList.contains('is-open') && pendingMode === mode;
+    closePopover();
+    if (alreadyOpenForThis) return;
+    pendingMode = mode;
+    popover.classList.add('is-open');
+    trigger.setAttribute('aria-expanded', 'true');
+  }
+
+  addBtn.addEventListener('click', e => openFor('row', addBtn, e));
+  if (groupBtn) groupBtn.addEventListener('click', e => openFor('group', groupBtn, e));
 
   popover.querySelectorAll('[data-add-type]').forEach(btn => {
     btn.addEventListener('click', () => {
-      popover.classList.remove('is-open');
-      addBtn.setAttribute('aria-expanded', 'false');
-      setLastType(btn.dataset.addType);
-      batteryAddRow({ name:'', raw:'', score:'', scoreType: btn.dataset.addType });
+      closePopover();
+      const type = btn.dataset.addType;
+      if (pendingMode === 'group'){
+        batteryAddGroup(type);
+      } else {
+        setLastType(type);
+        batteryAddRow({ name:'', raw:'', score:'', scoreType: type });
+      }
     });
   });
 
@@ -1749,9 +2016,8 @@ function rebuildBatteryFamilyList(){
   }
 
   document.addEventListener('click', e => {
-    if (!popover.contains(e.target) && e.target !== addBtn){
-      popover.classList.remove('is-open');
-      addBtn.setAttribute('aria-expanded', 'false');
+    if (!popover.contains(e.target) && e.target !== addBtn && e.target !== groupBtn){
+      closePopover();
     }
   });
 
@@ -2022,7 +2288,7 @@ function renderSdiApa(){
       </thead>
       <tbody>${rows}</tbody>
     </table>
-    <div class="apa-note"><strong>Note.</strong> SD Δ = standard-deviation change between assessments${raw ? ', calculated as (retest raw score − test raw score) ÷ SD' : ''}. <i>p</i>-values are two-tailed assuming normality. Significance threshold = ${cvDesc}.</div>
+    ${apaNoteHtml('sdi', { thresholdLabel: cvDesc })}
   `;
 }
 function sdiNormSd(p){
@@ -2481,12 +2747,13 @@ function renderRciApa(method){
   const valid = st.rows.filter(r => r.name && !r.isExample);
   const cvLabel = st.cv === 0.95 ? '95%' : '90%';
   const cvLabelZ = st.cv === 0.95 ? '95% (z = 1.96)' : '90% (z = 1.645)';
-  const methodNote = {
-    'rci-basic':    `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Jacobson and Truax (1991). Reliable change threshold = ${cvLabelZ}.`,
-    'rci-practice': `RCI (z) is the reliable-change statistic expressed as a standard-normal z value, computed per Iverson (2001) and adjusted for practice effects. Reliable change threshold = ${cvLabelZ}.`,
-    'rci-srb':      `McSweeney Regression-Based RCI (z) per McSweeney et al. (1993). Ŷ₂ = predicted retest score from the regression model; RCI (z) tests whether Date 2 differs reliably from Ŷ₂. Reliable change threshold = ${cvLabelZ}.`,
-    'rci-crawford': `<i>t</i>(RB) is the Crawford regression-based reliable-change statistic. Reliable change threshold = ${cvLabel} CI.`
+  const methodSentence = {
+    'rci-basic':    'RCI (z) is computed per Jacobson and Truax (1991).',
+    'rci-practice': 'RCI (z) is computed per Iverson (2001), adjusted for practice effects.',
+    'rci-srb':      'RCI (z) is computed per McSweeney et al. (1993); Ŷ₂ = predicted retest score.',
+    'rci-crawford': '<i>t</i>(RB) is the Crawford regression-based reliable-change statistic.'
   }[method];
+  const thresholdLabel = method === 'rci-crawford' ? `${cvLabel} CI` : cvLabelZ;
   const safe = (calc, prop, digits=2) => calc ? fmt(calc[prop], digits) : '';
   const safeP = calc => calc ? fmtP(calc.p) : '';
   const safeOutcome = calc => calc ? escapeHtml(rciOutcome(calc.rci, st.cv, calc.df).label) : '';
@@ -2532,43 +2799,48 @@ function renderRciApa(method){
   // Footnote on which r flavour was used (all 4 RCI methods). When the user
   // has the toggle ON but the active rows include any without a corrected r
   // value, append a "fell back to raw r" qualifier.
-  let rNote = '';
-  if (method === 'rci-basic' || method === 'rci-practice' || method === 'rci-srb' || method === 'rci-crawford'){
+  let rSentence = '';
+  {
     const defaultOn = method === 'rci-basic' || method === 'rci-practice';
     const wantCorrected = st.useCorrectedR === undefined ? defaultOn : st.useCorrectedR !== false;
-    if (wantCorrected){
+    if (!wantCorrected){
+      rSentence = 'Raw test-retest <i>r</i> was used.';
+    } else {
       const fallbackTests = valid
         .filter(r => !Number.isFinite(parseFloat(r.rCorrected)))
         .map(r => r.name);
       if (fallbackTests.length === 0){
-        rNote = ' Calculations used the corrected (attenuation-adjusted) test-retest correlation.';
+        rSentence = 'Corrected (attenuation-adjusted) test-retest <i>r</i> was used.';
       } else {
-        const list = fallbackTests.join(', ');
-        rNote = ' Calculations used the corrected (attenuation-adjusted) test-retest correlation where available; raw <i>r</i> was used for the following tests because no corrected <i>r</i> is published: ' + escapeHtml(list) + '.';
+        // Naming every fallback test made this note grow without limit — it is
+        // the reason the Change Analysis note ran to several hundred characters.
+        // Name a few, then count.
+        const named = fallbackTests.length <= 3
+          ? escapeHtml(fallbackTests.join(', '))
+          : `${fallbackTests.length} tests`;
+        rSentence = `Corrected (attenuation-adjusted) test-retest <i>r</i> was used where published; raw <i>r</i> for ${named}.`;
       }
-    } else {
-      rNote = ' Calculations used the raw test-retest correlation.';
     }
   }
   // Change-Analysis: state which reliability comparison + source was applied,
   // per test family present (CVLT-3 = alternate-form, RBANS = same-form retest).
-  let formNote = '';
+  const formParts = [];
   if (valid.some(r => /^CVLT-3\b/i.test(r.group || ''))){
-    formNote += ' CVLT-3 coefficients are alternate-form reliabilities (Standard to Alternate Form), median ~20-day retest interval (Delis et al., 2017, CVLT-3 Manual, Table 3.4).';
+    formParts.push('CVLT-3 coefficients are alternate-form reliabilities (Delis et al., 2017).');
   }
   const rbansAA  = valid.some(r => /^RBANS\b/i.test(r.group || '') && !isAltFormFamily(r.group || ''));
   const rbansAlt = valid.some(r => /^RBANS\b/i.test(r.group || '') &&  isAltFormFamily(r.group || ''));
   if (rbansAA){
-    formNote += ' RBANS Update same-form coefficients are test-retest reliabilities (Form A → Form A; Randolph, 2012, RBANS Update Manual, Tables 3.8-3.9).';
+    formParts.push('RBANS Update coefficients are Form A retest reliabilities (Randolph, 2012).');
   }
   if (rbansAlt){
-    formNote += ' RBANS Update alternate-form coefficients are Form A → Form B/C/D (Randolph, 2012, RBANS Update Manual, Tables 3.10-3.12).';
+    formParts.push('RBANS Update coefficients are Form A to B/C/D alternate-form reliabilities (Randolph, 2012).');
   }
   out.innerHTML = `
     <div class="apa-table-num">Table 1</div>
     <div class="apa-table-title">${escapeHtml(st.title)}</div>
     ${buildApaTableFromColumns(outId, columns, valid, r => r.group, caGroupDisplay)}
-    <div class="apa-note"><strong>Note.</strong> ${methodNote}${rNote}${formNote} <i>p</i>-values are two-tailed.</div>
+    ${apaNoteHtml('rci', { methodSentence, thresholdLabel, rSentence, formSentence: formParts.join(' ') })}
   `;
 }
 
@@ -2646,10 +2918,15 @@ function buildFamilyListHtml(families, opts){
     const groupKey = `grp:${base}`;
     if (members.length === 1 && !hasAgeBandSuffix(members[0])){
       html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false, groupKey);
-    } else if (flat){
+    } else if (flat && !members.some(isCustom)){
       // Pick the "All Ages" canonical entry if present, else the first.
       const canon = members.find(m => /·\s*All\s+Ages\s*$/i.test(m)) || members[0];
-      html += comboCheckboxItemHtml(canon, isCustom(canon), false, groupKey, base);
+      html += comboCheckboxItemHtml(canon, false, false, groupKey, base);
+    } else if (flat){
+      // Custom families sharing a base name are separate user-authored tests
+      // that can hold entirely different subtests — collapsing them to one
+      // canonical entry makes every variant but the first unselectable here.
+      members.forEach(f => { html += comboCheckboxItemHtml(f, isCustom(f), false, groupKey); });
     } else {
       const headingText = (opts && typeof opts.headingLabel === 'function') ? opts.headingLabel(base) : base;
       html += `<div class="combo-group-heading" data-group="${escapeAttr(groupKey)}">${escapeHtml(headingText)}</div>`;
@@ -3603,7 +3880,7 @@ function renderPreEstimatesApa(){
       </thead>
       <tbody>${rows}</tbody>
     </table>
-    <div class="apa-note"><strong>Note.</strong> FSIQ = Full Scale IQ estimate. CI = confidence interval based on ${ciPct === '95%' ? '1.96' : '1.645'} × SEE. <i>r</i> = correlation between predictor(s) and criterion. SEE = standard error of estimate.</div>
+    ${apaNoteHtml('pre-estimates', { ciMultiplier: ciPct === '95%' ? '1.96' : '1.645' })}
   `;
 }
 
@@ -3652,7 +3929,7 @@ function renderPrePredictApa(){
       </thead>
       <tbody>${body}</tbody>
     </table>
-    <div class="apa-note"><strong>Note.</strong> WAIS-IV indices predicted from ToPF, education, and sex; WMS-IV indices predicted from ToPF and age. Difference = Achieved − Predicted. Base rate = % of standardisation sample with discrepancy ≤ this value (negative discrepancies only).</div>
+    ${apaNoteHtml('pre-predict')}
   `;
 }
 
@@ -3844,7 +4121,7 @@ function renderOpiePredictApa(){
       </thead>
       <tbody>${body}</tbody>
     </table>
-    <div class="apa-note"><strong>Note.</strong> OPIE-4 prorated FSIQ and GAI predicted from age plus Vocabulary and/or Matrix Reasoning. Difference = Achieved − Predicted. Base rate = % of standardisation sample with discrepancy ≤ this value. Based on US norms.</div>
+    ${apaNoteHtml('pre-opiepredict')}
   `;
 }
 
@@ -6474,18 +6751,11 @@ refreshAll();
     catch(e){ return null; }
   }
 
+  /* Login/logout drops the user back to Home. Routed through navigateTo so this
+     path can't drift from the main one; history is left alone because an auth
+     transition isn't somewhere the back button should return to. */
   function activateHomePage(){
-    const homeNav = document.querySelector('.nav-item[data-target="home"]');
-    const homeSection = document.getElementById('home');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    if (homeNav) {
-      homeNav.classList.add('active');
-      if (typeof openOnlyNavGroup === 'function') openOnlyNavGroup(homeNav.closest('.nav-group'));
-    }
-    if (homeSection) homeSection.classList.add('active');
-    const main = document.querySelector('.main');
-    if (main) main.scrollTop = 0;
+    navigateTo('home', { history: false });
   }
 
   function setSession(user){
@@ -6703,7 +6973,7 @@ const ReportBundle = (function(){
   /* Method / tool names - combined with the detected test family to produce
      intelligent table titles like "Crawford Regression-Based Change: WAIS-IV". */
   const SOURCE_METHOD_NAMES = {
-    'bat-apa':              'Cognitive Outcomes',
+    'bat-apa':              'Results',
     'sdi-apa':              'Standard-Deviation Discrepancy',
     'rci-basic-apa':        'Reliable Change (Jacobson & Truax)',
     'rci-practice-apa':     'Practice-Adjusted Reliable Change',
@@ -6892,9 +7162,10 @@ const ReportBundle = (function(){
     return `${Math.round(hr / 24)}d ago`;
   }
   function getTitleFromContainer(container, fallback){
+    // Deliberately no .apa-table-num fallback — the report strips table numbers,
+    // so falling back to one would label the item "Table 1" for no reason.
     const titleEl = container.querySelector('.apa-table-title');
-    const numEl = container.querySelector('.apa-table-num');
-    return (titleEl?.textContent || numEl?.textContent || fallback || 'APA Table').trim();
+    return (titleEl?.textContent || fallback || 'APA Table').trim();
   }
   /* Replace the captured table's title text with an intelligent one of the form
      "Method: Test family" (e.g. "Crawford Regression-Based Change: WAIS-IV"). */
@@ -6969,14 +7240,15 @@ const ReportBundle = (function(){
     return tmp.innerHTML;
   }
 
-  /* Replace the captured "Table 1" number text with the item's position in
-     the report (Table 1 / Table 2 / Table 3 …). */
-  function renumberTable(html, num){
-    if (!Number.isFinite(num)) return html;
+  /* Drop the captured "Table N" line. The working report is pasted into a host
+     document that does its own numbering, so a number here is always wrong by
+     the time it lands. Stripped at render rather than at capture, so reports
+     saved before this change lose the number too (same approach as
+     ensureBottomRule below). The tool pages keep their own numbers. */
+  function stripTableNumber(html){
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
-    const numEl = tmp.querySelector('.apa-table-num');
-    if (numEl) numEl.textContent = `Table ${num}`;
+    tmp.querySelectorAll('.apa-table-num').forEach(el => el.remove());
     return tmp.innerHTML;
   }
   /* Ensure every table has a bottom rule under its last row WITH content — even
@@ -6997,12 +7269,10 @@ const ReportBundle = (function(){
     });
     return tmp.innerHTML;
   }
-  function effectiveItemHtml(item, indexInReport){
+  function effectiveItemHtml(item){
     let html = applyHiddenColumns(item.html, item.hiddenColumns || []);
     html = applyHeaderOverrides(html, item.headerOverrides || []);
-    if (typeof indexInReport === 'number'){
-      html = renumberTable(html, indexInReport + 1);
-    }
+    html = stripTableNumber(html);
     html = ensureBottomRule(html);
     return html;
   }
@@ -7354,7 +7624,6 @@ const ReportBundle = (function(){
   function buildMergedTableHtml(longName, sections){
     const wrap = document.createElement('div');
     wrap.innerHTML =
-      `<div class="apa-table-num" style="font-family:'Times New Roman',serif;font-size:11pt;font-style:italic;color:#000;margin:0 0 2pt 0;">Table 1</div>` +
       `<div class="apa-table-title" style="font-family:'Times New Roman',serif;font-size:11pt;font-style:italic;color:#000;margin:0 0 8pt 0;line-height:1.4;">${longName}</div>`;
     const table = document.createElement('table');
     table.className = 'apa-table';
@@ -7372,7 +7641,35 @@ const ReportBundle = (function(){
       const noteEl = tmp.querySelector('.apa-note');
       return { sec, src, headRows, colRow, bodyRows, noteEl, colCount: colRow ? colRow.children.length : 0 };
     }).filter(p => p.src);
-    parsed.forEach(p => { if (!note && p.noteEl) note = p.noteEl.cloneNode(true); });
+    /* Merge the sections' notes instead of keeping only the first. Sections of
+       one battery usually share a note, so dedupe on text — but where they
+       differ (a section using raw r, say) the caveat has to survive, and the
+       old first-note-wins rule silently dropped it. */
+    {
+      const seen = new Set();
+      const bodies = [];
+      parsed.forEach(p => {
+        if (!p.noteEl) return;
+        const key = (p.noteEl.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        const clone = p.noteEl.cloneNode(true);
+        // Drop the leading "Note." label from all but the first — one label
+        // introduces the combined note.
+        if (bodies.length){
+          const label = clone.querySelector('strong');
+          if (label) label.remove();
+        }
+        bodies.push(clone);
+      });
+      if (bodies.length){
+        note = bodies[0];
+        bodies.slice(1).forEach(extra => {
+          note.appendChild(document.createTextNode(' '));
+          while (extra.firstChild) note.appendChild(extra.firstChild);
+        });
+      }
+    }
 
     // A single shared column-header row only works when every section has the
     // same columns; otherwise fall back to per-section headers (legacy) to avoid
@@ -7531,11 +7828,8 @@ const ReportBundle = (function(){
     // Word ignores margins on <div>s between pasted tables, so insert blank
     // paragraphs between tables — that is the reliable way to add a visible gap.
     const spacer = '<p style="margin:0;font-family:\'Times New Roman\',serif;font-size:12pt;line-height:12pt;">&nbsp;</p>';
-    const blocks = (mergeBattery && state.items.length > 1)
-      ? mergeReportBlocks(state.items)
-      : state.items.map(it => effectiveItemHtml(it));
-    return blocks
-      .map((html, i) => `<div style="page-break-inside:avoid;">${renumberTable(html, i + 1)}</div>`)
+    return mergeReportBlocks(state.items)
+      .map(html => `<div style="page-break-inside:avoid;">${html}</div>`)
       .join(spacer + spacer);
   }
   async function copyAll(){
@@ -7544,9 +7838,12 @@ const ReportBundle = (function(){
       return;
     }
     const html = `<div style="font-family:'Times New Roman',serif;font-size:11pt;color:#000;">${buildReportHtmlBody()}</div>`;
-    const plain = state.items.map((it, i) => {
+    // Build the plain-text alternative from the SAME blocks as the HTML, so the
+    // two clipboard flavours agree on table count when battery merging is on.
+    const blocks = mergeReportBlocks(state.items);
+    const plain = blocks.map(blockHtml => {
       const tmp = document.createElement('div');
-      tmp.innerHTML = effectiveItemHtml(it, i);
+      tmp.innerHTML = blockHtml;
       return tmp.textContent.replace(/\s+/g, ' ').trim();
     }).join('\n\n---\n\n');
     try {
@@ -7558,7 +7855,7 @@ const ReportBundle = (function(){
       } else {
         await navigator.clipboard.writeText(plain);
       }
-      if (typeof showToast === 'function') showToast(`✓ ${state.items.length} table${state.items.length===1?'':'s'} copied`);
+      if (typeof showToast === 'function') showToast(`✓ ${blocks.length} table${blocks.length===1?'':'s'} copied`);
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector('[data-rb-action="copy"]'));
       maybeShowKofiToast();
     } catch(e){
@@ -7578,14 +7875,15 @@ const ReportBundle = (function(){
       const v = String(s == null ? '' : s);
       return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
     };
-    const sections = state.items.map((it, i) => {
+    // Same blocks as the HTML/Word output, so a merged battery exports as one
+    // section here too rather than as its individual source tables.
+    const sections = mergeReportBlocks(state.items).map((blockHtml, i) => {
       const tmp = document.createElement('div');
-      tmp.innerHTML = effectiveItemHtml(it, i);
+      tmp.innerHTML = blockHtml;
       const table = tmp.querySelector('table');
       if (!table) return '';
-      const numText = (tmp.querySelector('.apa-table-num')?.textContent || `Table ${i + 1}`).trim();
-      const titleText = (tmp.querySelector('.apa-table-title')?.textContent || '').trim();
-      const heading = titleText ? `${numText}: ${titleText}` : numText;
+      const heading = (tmp.querySelector('.apa-table-title')?.textContent || '').trim()
+                   || `Table ${i + 1}`;
       const lines = [csvCell(heading), ''];
       table.querySelectorAll('thead tr, tbody tr').forEach(tr => {
         const cells = [...tr.children].map(td =>
@@ -8325,7 +8623,7 @@ ${buildReportHtmlBody()}
     const idx = state.items.findIndex(i => i.id === id);
     if (idx < 0) return;
     const item = state.items[idx];
-    const itemHtml = effectiveItemHtml(item, idx);
+    const itemHtml = effectiveItemHtml(item);
     const html = `<div style="font-family:'Times New Roman',serif;font-size:11pt;color:#000;">${itemHtml}</div>`;
     const tmp = document.createElement('div');
     tmp.innerHTML = itemHtml;
@@ -8412,7 +8710,7 @@ ${buildReportHtmlBody()}
     const block = computeBlocks().find(b => b.ids.join(',') === idKey)
                || computeBlocks().find(b => ids.every(id => b.ids.includes(id)));
     if (!block) return;
-    const inner = renumberTable(block.html, 1);
+    const inner = block.html;
     const html = `<div style="font-family:'Times New Roman',serif;font-size:11pt;color:#000;">${inner}</div>`;
     const tmp = document.createElement('div');
     tmp.innerHTML = inner;
@@ -8493,7 +8791,7 @@ ${buildReportHtmlBody()}
           <button class="rb-item-remove" type="button" data-rb-remove="${id}" aria-label="Remove this table from the report" title="Remove from report">${RB_SVG.close}</button>
         </div>
       </header>
-      <div class="rb-item-rendered">${effectiveItemHtml(it, num - 1)}</div>
+      <div class="rb-item-rendered">${effectiveItemHtml(it)}</div>
     </article>`;
   }
 
@@ -8546,7 +8844,7 @@ ${buildReportHtmlBody()}
           <button class="rb-item-remove" type="button" data-rb-group-remove="${idKey}" aria-label="Remove the whole merged group" title="Remove the whole merged group">${RB_SVG.close}</button>
         </div>
       </header>
-      <div class="rb-item-rendered">${renumberTable(block.html, num)}</div>
+      <div class="rb-item-rendered">${block.html}</div>
     </article>`;
   }
 
@@ -8576,7 +8874,7 @@ ${buildReportHtmlBody()}
        with no editing chrome. */
     if (previewMode){
       body.innerHTML = blocks.map((b, i) =>
-        `<article class="rb-item rb-item-preview"><div class="rb-item-rendered">${renumberTable(b.html, i + 1)}</div></article>`
+        `<article class="rb-item rb-item-preview"><div class="rb-item-rendered">${b.html}</div></article>`
       ).join('');
       return;
     }

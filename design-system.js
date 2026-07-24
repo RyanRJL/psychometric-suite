@@ -770,10 +770,13 @@
       document.body.classList.remove(RECEDE_CLASS);
     }, RECEDE_DELAY);
   }
-  // Listen on the scrollable element used by the SPA - `<main>` in this app
+  // Listen on whatever actually scrolls. The redesign moved the scroll
+  // container from `.main` (now overflow:visible) to the document, so binding
+  // to `.main` meant this handler never fired at all.
   function attachChipFade(){
     const mainEl = document.querySelector('.main');
-    const target = mainEl || window;
+    const mainScrolls = mainEl && ['auto','scroll','overlay'].includes(getComputedStyle(mainEl).overflowY);
+    const target = mainScrolls ? mainEl : window;
     target.addEventListener('scroll', onScroll, { passive: true });
   }
   if (document.readyState === 'loading'){

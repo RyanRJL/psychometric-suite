@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260517v">
-<link rel="stylesheet" href="design-system.css?v=20260517v">
+<link rel="stylesheet" href="styles.css?v=20260724a">
+<link rel="stylesheet" href="design-system.css?v=20260724a">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1002,6 +1002,7 @@
       <div class="add-row-actions">
         <div class="bat-add-wrap">
           <button class="add-row-btn" id="bat-add">+ Add row</button>
+          <button class="add-row-btn" id="bat-add-group" title="Start a new test with its own heading">+ New test</button>
           <div class="bat-type-popover" id="bat-type-popover" role="menu">
             <p class="bat-type-popover-heading">Input Type</p>
             <button type="button" class="bat-type-opt" data-add-type="scaled" role="menuitem">Scaled Score <span class="bat-type-opt-sub">M=10, SD=3</span></button>
@@ -2068,7 +2069,7 @@
       </div>
 
       <div class="info-box" style="margin-top:18px">
-        <strong>Note.</strong> ToPF and Crawford &amp; Allan equations are based on UK data; OPIE-4 equations use the prorated WAIS-IV FSIQ US regression coefficients (Holdnack et al., 2013), adapted for UK use by omitting US-specific education, region and ethnicity terms (sex retained). The prorated equations are used because they remove part-whole correlation inflation. OPIE-4 requires age plus at least one of Vocabulary / Matrix Reasoning. Use the hover <strong>?</strong> beside each model for its required inputs and assumptions.
+        <strong>Note.</strong> ToPF and Crawford &amp; Allan equations use UK data. OPIE-4 uses the prorated WAIS-IV US coefficients (Holdnack et al., 2013), adapted for UK use by omitting the education, region and ethnicity terms; prorated equations avoid part-whole correlation inflation. Hover the <strong>?</strong> beside a model for its required inputs.
       </div>
 
       <div class="apa-wrap">
@@ -2167,9 +2168,9 @@
     </tr></tbody>
       </table>
 
-      <div class="info-box" style="margin-top:18px">
-        <strong>Note.</strong> WAIS-IV indices (FSIQ, VCI, PRI, WMI, PSI) are predicted from ToPF, education, and sex. WMS-IV indices (IMI, DMI, VWMI) are predicted from ToPF and age. Base rate = % of the standardisation sample obtaining a discrepancy ≤ this value.
-      </div>
+      <!-- Filled from the APA_NOTES registry in app.js so the on-screen note and
+           the note in the generated table can never drift apart. -->
+      <div class="info-box" style="margin-top:18px" data-apa-note="pre-predict"></div>
 
       <div class="apa-wrap">
         <div class="apa-toolbar">
@@ -2205,9 +2206,7 @@
         </tbody>
       </table>
 
-      <div class="info-box" style="margin-top:18px">
-        <strong>Note.</strong> OPIE-4 prorated FSIQ and GAI predicted from age plus Vocabulary and/or Matrix Reasoning. Difference = Achieved − Predicted. Base rate = % of standardisation sample with discrepancy ≤ this value. Based on US norms.
-      </div>
+      <div class="info-box" style="margin-top:18px" data-apa-note="pre-opiepredict"></div>
 
       <div class="apa-wrap">
         <div class="apa-toolbar">
@@ -6011,8 +6010,8 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260517w"></script>
-<script src="app.js?v=20260517t"></script>
+<script src="data.js?v=20260724a"></script>
+<script src="app.js?v=20260724a"></script>
 <script src="design-system.js?v=20260512ad" defer></script>
 <script src="app-effectsize-page.js?v=20260517v"></script>
 
@@ -6429,12 +6428,9 @@
   });
 
   function showChangeSection(navItem){
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    const section = document.getElementById('change-analysis');
-    if (section) section.classList.add('active');
-    if (navItem) navItem.classList.add('active');
-    if (navItem && typeof openOnlyNavGroup === 'function') openOnlyNavGroup(navItem.closest('.nav-group'));
+    // Delegates to the one navigation entry point in app.js rather than
+    // repeating the show/hide logic, which used to drift from it.
+    if (typeof navigateTo === 'function') navigateTo('change-analysis', { navItem });
   }
 
   tabs.addEventListener('click', event => {
