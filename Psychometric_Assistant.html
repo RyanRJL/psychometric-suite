@@ -4162,10 +4162,40 @@ input[type="range"]#conv-slider::-moz-range-thumb{
   /* Starts while the old page is still fading, so the two genuinely cross. */
   animation:pageEnter 280ms var(--ease) 70ms both;
 }
-/* The chrome outside .main — sidebar, topnav, report chip — keeps the browser's
-   default root crossfade. That is opacity only, so nothing slides, and it lets
-   the parts that do change (the topbar page title, the nav highlight) fade
-   between states instead of snapping at the end of the transition. */
+/* Every piece of persistent chrome needs its OWN transition group. Anything
+   left unnamed falls into the root snapshot, and the root snapshot spans the
+   entire scrollable document — whose height changes drastically between
+   sections (~400px on Score Tables, ~1700px on Methods & References). The root
+   group animates between those two sizes and drags its contents along, which
+   is what made the fixed top bar jump and smear during the transition.
+
+   Naming them pins each to its own box. That box doesn't change between pages,
+   so these groups have nothing to animate and simply hold still. */
+.topbar{view-transition-name:site-topbar}
+.sidebar{view-transition-name:site-sidebar}
+.site-footer{view-transition-name:site-footer}
+.rb-root{view-transition-name:report-chip}
+
+/* Chrome whose content is identical either side of a navigation shouldn't
+   crossfade at all — fading one image into a matching one only risks a flicker.
+   The top bar is deliberately excluded: its page title and nav highlight do
+   change, and crossfading those reads better than snapping. */
+::view-transition-group(site-sidebar),
+::view-transition-group(site-footer),
+::view-transition-group(report-chip),
+::view-transition-old(site-sidebar),
+::view-transition-new(site-sidebar),
+::view-transition-old(site-footer),
+::view-transition-new(site-footer),
+::view-transition-old(report-chip),
+::view-transition-new(report-chip){animation:none}
+
+/* The top bar does crossfade, so its page title and nav highlight change
+   smoothly rather than snapping — but kept short. A crossfade overlays both
+   states, and the longer that lasts the more the two read as a double image. */
+::view-transition-group(site-topbar){animation-duration:140ms}
+::view-transition-old(site-topbar),
+::view-transition-new(site-topbar){animation-duration:140ms}
 
 /* Fallback for browsers without View Transitions: the same two beats, run
    back to back on .main by navigateTo(). Kept deliberately shorter than the
