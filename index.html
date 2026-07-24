@@ -6237,8 +6237,9 @@
     wrap.appendChild(table);
   });
 
+  // 'sdi-table' is deliberately absent: its column count changes with the input
+  // mode, so renderSdi() owns its colgroup (see SDI_COL_WIDTHS in app.js).
   const tableColumnMaps = {
-    'sdi-table': [3, 30, 16, 16, 10, 10, 13, 2],
     'rci-basic-table': [2.5, 25, 9.5, 8.5, 10, 10, 9, 7, 15.5, 3],
     'rci-practice-table': [2, 18, 7, 7, 7, 7, 5.5, 8, 8, 8, 6.5, 13, 3],
     'rci-srb-table': [2, 16, 5.7, 5.7, 5.7, 5.7, 5.2, 9, 9, 7, 6.8, 5.2, 14, 3],

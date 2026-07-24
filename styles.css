@@ -9369,8 +9369,10 @@ body.rb-docked-active{padding-right:0}
 }
 
 /* --- 3. Score-type tag in # column: parenthetical italic → pill.
-   Looks like a property of the row rather than incidental metadata. */
-#battery .bat-row-type-tag{
+   Looks like a property of the row rather than incidental metadata.
+   Shared with the SDI table, where the tag names the SD each row is divided by. */
+#battery .bat-row-type-tag,
+#sdi .bat-row-type-tag{
   display:inline-block;
   margin-left:6px;
   padding:1px 6px;
@@ -9385,9 +9387,11 @@ body.rb-docked-active{padding-right:0}
   text-transform:none;
   vertical-align:1px;
 }
-#battery .bat-row-type-tag::before{ content:''; }
+#battery .bat-row-type-tag::before,
+#sdi .bat-row-type-tag::before{ content:''; }
 /* Strip any inherited italic from the # column */
-#battery .row-num{ font-style:normal !important; }
+#battery .row-num,
+#sdi .row-num{ font-style:normal !important; }
 
 /* --- 4. Row-delete affordance: visible enough to be findable, still
    subordinate to the input cells. Hover reveals the destructive intent. */

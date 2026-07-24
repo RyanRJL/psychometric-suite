@@ -1806,6 +1806,7 @@ const APA_NOTES = {
   ],
   'sdi': ctx => [
     'SD Δ = (retest − test) ÷ SD.',
+    ctx.mixedTypes ? 'Scores are reported in their native standardised metric.' : '',
     `Significance threshold = ${ctx.thresholdLabel}.`,
     '<i>p</i>-values are two-tailed.'
   ],
@@ -2174,6 +2175,14 @@ function sdiRemoveGroup(group){
 }
 window.sdiRemoveGroup = sdiRemoveGroup;
 function sdiSdUnit(type){ return {scaled:3, standard:15, t:10, z:1}[type]; }
+// The divisor is a property of the ROW, not of the table. A battery mixes metrics
+// (scaled subtests alongside standard-score indices), and dividing every row by one
+// shared SD silently rescales most of them. Rows carry their own .scoreType — set
+// from the Add-row popover, or inferred per subtest on auto-fill. The #sdi-type
+// select is only the default for rows that never got one. Mirrors rowScoreType().
+function sdiRowScoreType(r){
+  return (r && r.scoreType) || document.getElementById('sdi-type').value;
+}
 function sdiMode(){ return document.getElementById('sdi-mode').value; }
 function sdiCvHit(change, cv){
   if (cv === 0.90) return Math.abs(change) >= 1.645;
@@ -2190,7 +2199,7 @@ function sdiComputeChange(r){
     if (r.sd === '' || isNaN(r.sd) || parseFloat(r.sd) <= 0) return null;
     return (parseFloat(r.t2) - parseFloat(r.t1)) / parseFloat(r.sd);
   }
-  return (parseFloat(r.t2) - parseFloat(r.t1)) / sdiSdUnit(document.getElementById('sdi-type').value);
+  return (parseFloat(r.t2) - parseFloat(r.t1)) / sdiSdUnit(sdiRowScoreType(r));
 }
 function renderSdiHead(){
   const raw = sdiMode() === 'raw';
@@ -2270,11 +2279,37 @@ function renderSdiHead(){
     });
   });
 }
+/* The Change-Analysis tables are table-layout:fixed, so a <colgroup> — not the
+   cell widths — decides every column. renderSdi owns the SDI one because the
+   column COUNT changes with the mode: raw mode adds an SD column, and only
+   standardised mode carries the score-type pill in the # column, which needs
+   roughly the width Score Tables gives it. Percentages, summing to 100. */
+const SDI_COL_WIDTHS = {
+  //            #   Subtest  d1  d2  [SD]  SDΔ   p   Sig  ×
+  //  11% ≈ 127px: enough for a two-digit row number plus the longest pill,
+  //  "(Standard)", on one line. Below that it wraps under the number.
+  standardised: [11, 28,     13, 13,       10,  10,  13,  2],
+  raw:          [ 3, 28,     12, 12,  12,  10,  10,  11,  2]
+};
+function syncSdiColgroup(raw){
+  const table = document.getElementById('sdi-table');
+  if (!table) return;
+  const widths = SDI_COL_WIDTHS[raw ? 'raw' : 'standardised'];
+  let cg = table.querySelector('colgroup');
+  if (!cg){
+    cg = document.createElement('colgroup');
+    table.insertBefore(cg, table.firstChild);
+  }
+  while (cg.children.length > widths.length) cg.removeChild(cg.lastChild);
+  while (cg.children.length < widths.length) cg.appendChild(document.createElement('col'));
+  widths.forEach((w, i) => { cg.children[i].style.width = `${w}%`; });
+}
 function renderSdi(){
   const raw = sdiMode() === 'raw';
   const cv = parseFloat(document.getElementById('sdi-cv').value);
   document.getElementById('sdi-type-field').classList.toggle('is-hidden', raw);
   document.getElementById('sdi-raw-help').style.display = raw ? 'block' : 'none';
+  syncSdiColgroup(raw);
   renderSdiHead();
   const tbody = document.querySelector('#sdi-table tbody');
   tbody.innerHTML = '';
@@ -2284,7 +2319,16 @@ function renderSdi(){
       const ghr = document.createElement('tr');
       ghr.className = 'group-header';
       const colspan = raw ? 9 : 8;
-      ghr.innerHTML = `<td colspan="${colspan}">${escapeHtml(stripAgeRange(r.group))}<button class="group-remove" data-rm-sdi-group="${escapeAttr(r.group)}" title="Remove group">×</button></td>`;
+      // A group can hold mixed score types (e.g. scaled subtests + standard indices).
+      // Show the shared label when uniform, otherwise "Mixed" (each row shows its own tag).
+      // Raw mode divides by the SD typed into the row, so no metric applies.
+      let badge = '';
+      if (!raw){
+        const groupTypes = new Set(sdiRows.filter(x => x.group === r.group).map(x => sdiRowScoreType(x)));
+        const stLabel = groupTypes.size > 1 ? 'Mixed' : scoreTypeLabel([...groupTypes][0]);
+        badge = ` <span class="type-badge">· ${escapeHtml(stLabel)}</span>`;
+      }
+      ghr.innerHTML = `<td colspan="${colspan}">${escapeHtml(stripAgeRange(r.group))}${badge}<button class="group-remove" data-rm-sdi-group="${escapeAttr(r.group)}" title="Remove group">×</button></td>`;
       tbody.appendChild(ghr);
       lastGroup = r.group;
     } else if (!r.group){
@@ -2308,8 +2352,10 @@ function renderSdi(){
     if (r.group) tr.className = 'in-group';
     if (change === null && hasAnyRowValue(r)) tr.classList.add('row-check');
     else if (change === null) tr.classList.add('row-awaiting');
+    const abbr = raw ? '' : scoreTypeAbbr(sdiRowScoreType(r));
+    const typeTag = abbr ? `<span class="bat-row-type-tag">(${escapeHtml(abbr)})</span>` : '';
     tr.innerHTML = `
-      <td class="row-num">${i+1}</td>
+      <td class="row-num">${i+1}${typeTag}</td>
       <td><input type="text" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Subtest name"></td>
       <td><input type="number" step="any" data-r="${i}" data-f="t1" value="${escapeAttr(r.t1)}"></td>
       <td><input type="number" step="any" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
@@ -2405,7 +2451,7 @@ function renderSdiApa(){
       </thead>
       <tbody>${rows}</tbody>
     </table>
-    ${apaNoteHtml('sdi', { thresholdLabel: cvDesc })}
+    ${apaNoteHtml('sdi', { thresholdLabel: cvDesc, mixedTypes: !raw && new Set(named.map(sdiRowScoreType)).size > 1 })}
   `;
 }
 function sdiNormSd(p){
@@ -2422,8 +2468,13 @@ function loadFamilyIntoSdi(family){
   const raw = sdiMode() === 'raw';
   const subtests = Object.entries(db[family]);
   dropFirstBlankRow(sdiRows);
+  // Infer the score type PER subtest, not once for the whole family, so mixed
+  // families (e.g. scaled subtests + standard-score indices) divide by their own SD.
   subtests.forEach(([name, p]) => {
-    sdiRows.push({ name, t1:'', t2:'', sd: raw ? sdiNormSd(p) : '', group:family });
+    sdiRows.push({
+      name, t1:'', t2:'', sd: raw ? sdiNormSd(p) : '', group:family,
+      scoreType: inferScoreTypeForSubtest(family, name, p)
+    });
   });
   renderSdi();
   // Toast suppressed - the working-report pill is the single feedback channel
@@ -2468,16 +2519,14 @@ function wireSdiAutofill(){
   const addBtn    = document.getElementById('sdi-add');
   const repeatBtn = document.getElementById('sdi-add-repeat');
   const popover   = document.getElementById('sdi-type-popover');
-  const typeSelect = document.getElementById('sdi-type');
   const TYPE_LABELS = { standard:'Standard Score', scaled:'Scaled Score', t:'T-Score', z:'Z-Score' };
-  let lastType = typeSelect?.value || 'standard';
+  let lastType = null;
+  // Deliberately does NOT write back to #sdi-type. Doing so re-divided every row
+  // already on the table by the newly picked SD. The choice belongs to the row
+  // being added and travels on it as .scoreType.
   function setLastType(type){
     lastType = type;
     if (repeatBtn){ repeatBtn.textContent = `+ ${TYPE_LABELS[type] || type}`; repeatBtn.hidden = false; }
-    if (typeSelect && typeSelect.value !== type){
-      typeSelect.value = type;
-      typeSelect.dispatchEvent(new Event('change'));
-    }
   }
   addBtn.addEventListener('click', e => {
     e.stopPropagation();
@@ -2488,11 +2537,14 @@ function wireSdiAutofill(){
     btn.addEventListener('click', () => {
       popover.classList.remove('is-open');
       addBtn.setAttribute('aria-expanded', 'false');
-      setLastType(btn.dataset.sdiType);
-      sdiAddRow();
+      const type = btn.dataset.sdiType;
+      setLastType(type);
+      sdiAddRow({ name:'', t1:'', t2:'', sd:'', scoreType: type });
     });
   });
-  if (repeatBtn) repeatBtn.addEventListener('click', () => sdiAddRow());
+  if (repeatBtn) repeatBtn.addEventListener('click', () => {
+    if (lastType) sdiAddRow({ name:'', t1:'', t2:'', sd:'', scoreType: lastType });
+  });
   document.addEventListener('click', e => {
     if (!popover.contains(e.target) && e.target !== addBtn){
       popover.classList.remove('is-open');
@@ -2601,8 +2653,10 @@ function calcCrawfordRow(r, method){
   const slope = rel * (sd2 / sd1);
   const intercept = m2 - slope * m1;
   const predicted = intercept + slope * t1;
-  const see = sd2 * Math.sqrt(1 - rel*rel);
-  // Crawford & Garthwaite (2007) sample-size-adjusted standard error of prediction
+  // Crawford & Garthwaite (2007) Eq. 4. The (n-1)/(n-2) factor gives the unbiased
+  // residual SD, which is what the t reference distribution on n-2 df requires.
+  const see = sd2 * Math.sqrt((1 - rel*rel) * (n - 1) / (n - 2));
+  // Crawford & Garthwaite (2007) Eq. 5: standard error of prediction for a new case
   const sePred = see * Math.sqrt(1 + 1/n + Math.pow(t1 - m1, 2) / ((n - 1) * sd1 * sd1));
   const df = n - 2;
   const tStat = (t2 - predicted) / sePred;
@@ -4550,7 +4604,7 @@ function loadExampleRow(method){
   if (method === 'sdi'){
     const example = sdiMode() === 'raw'
       ? {name:'Example memory score',t1:'42',t2:'36',sd:'8',isExample:true}
-      : {name:'Example memory score',t1:'9',t2:'6',isExample:true};
+      : {name:'Example memory score',t1:'9',t2:'6',scoreType:'scaled',isExample:true};
     sdiRows.push(example); renderSdi(); showToast('Example row added'); return;
   }
   if (method === 'battery'){
@@ -6741,7 +6795,7 @@ batteryRows = [{name:'Example subtest', raw:'25', score:'10', isExample:true}, {
 sdiRows = [
   sdiMode() === 'raw'
     ? {name:'Example memory score',t1:'42',t2:'36',sd:'8',isExample:true}
-    : {name:'Example memory score',t1:'9',t2:'6',isExample:true},
+    : {name:'Example memory score',t1:'9',t2:'6',scoreType:'scaled',isExample:true},
   {}
 ];
 // One shared example + blank row across all RCI methods (mutate in place to keep the shared link).
