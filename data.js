@@ -34,28 +34,32 @@ const WMS_COEF = [
   {idx:'VWMI', label:'Visual Working Memory Index', intercept:87.994, b1:0.5265, age:-0.1783, see:12.165}
 ];
 
-// OPIE-4 R and SEE (prorated FSIQ - Schoenberg et al., 2011 Table 5.16, post-Age step)
-// Sex term included in equations; full-sample SEE used as a conservative CI estimate.
-const OPIE_STATS = {
-  noAge:   { MR:{r:0.57,see:11.98}, VC:{r:0.70,see:10.52}, MR_VC:{r:0.77,see:9.34} },
-  withAge: { MR:{r:0.66,see:10.96}, VC:{r:0.71,see:10.27}, MR_VC:{r:0.80,see:8.80} }
-};
-
 // OPIE-4 prorated FSIQ regression coefficients (Table eA5.8)
 // UK adaptation: US education, region, and ethnicity terms omitted.
 // Sex coding: Female = 0, Male = 1 (per OPIE-4 source)
 const OPIE_PRORATED_FSIQ = {
-  VC_MR: { intercept:65.77827122, vc:0.646258435, mr:1.182068623, age:-0.197692558, age3:0.0000373292, sex:1.955504838, r:0.80, see:8.80 },
-  VC:    { intercept:86.63733022, vc:0.825479066,                 age:-0.355783733, age3:0.0000373292, sex:2.795447219, r:0.71, see:10.27 },
-  MR:    { intercept:62.02281403,                mr:1.719384768,                    age3:0.0000275723, sex:1.509479923, r:0.66, see:10.96 }
+  // SEE from the chapter regression tables (Holdnack et al., 2013); used for the
+  // parametric prediction interval predicted ± round(z × SEE).
+  VC_MR: { intercept:65.77827122, vc:0.646258435, mr:1.182068623, age:-0.197692558, age3:0.0000373292, sex:1.955504838, r:0.80, see:8.44 },
+  VC:    { intercept:86.63733022, vc:0.825479066,                 age:-0.355783733, age3:0.0000373292, sex:2.795447219, r:0.71, see:9.61 },
+  MR:    { intercept:62.02281403,                mr:1.719384768,                    age3:0.0000275723, sex:1.509479923, r:0.66, see:10.10 }
 };
 
 // OPIE-4 prorated GAI regression coefficients (Table eA5.8)
 // MR-only branch omitted because the source column is partially truncated in the available source.
 // R/SEE from Table 5.19 (Prorated GAI), post-Age step.
 const OPIE_PRORATED_GAI = {
-  VC_MR: { intercept:60.14203956, vc:0.763136717, mr:1.127062322, age:-0.246247784, age3:0.0000416209, sex:4.708926488, r:0.79, see:9.25 },
-  VC:    { intercept:79.65445374, vc:0.921039566,                 age:-0.378906405, age3:0.0000399793, sex:5.001045997, r:0.75, see:9.86 }
+  VC_MR: { intercept:60.14203956, vc:0.763136717, mr:1.127062322, age:-0.246247784, age3:0.0000416209, sex:4.708926488, r:0.79, see:8.75 },
+  VC:    { intercept:79.65445374, vc:0.921039566,                 age:-0.378906405, age3:0.0000399793, sex:5.001045997, r:0.75, see:9.10 },
+  MR:    { intercept:56.74797323,                mr:1.722933286,                    age3:0.0000281088, sex:3.784565031, r:0.66, see:10.66 }
+};
+
+// OPIE-4 prorated VCI / PRI (single-index) regression coefficients (Table eA5.8).
+// VCI predicted from Vocabulary; PRI from Matrix Reasoning. NB: VCI is the only
+// equation with an Age⁶ term; PRI has no linear Age term (Age³ only).
+const OPIE_PRORATED_INDEX = {
+  VCI: { intercept:76.77718804, vc:1.046716258, age:-0.600717374, age3:0.0000888487, age6:-4.42948e-11, sex:4.196941127, r:0.74, see:8.46 },
+  PRI: { intercept:60.63732634,                mr:1.858062305,                        age3:0.0000287764,                  sex:4.162137929, r:0.62, see:12.34 }
 };
 
 const OCC_CODE = { 'Professional':1, 'Intermediate':2, 'Skilled':3, 'Semi Skilled':4, 'Unskilled':5 };
@@ -65,7 +69,7 @@ const PRE_MODEL_TOOLTIPS = {
   topfDemo: 'Assumes premorbid FSIQ is best estimated by combining ToPF performance with demographic predictors. Inputs required: ToPF raw score, years of education, and sex. Uses the cubic ToPF + education + sex regression equation; CI uses the model SEE.',
   crawfordAllan: 'Demographic-only estimate from Crawford & Allan (2001), intended for UK-normed demographic prediction. Inputs required: occupation class, years of education, and age. Does not use the ToPF score.',
   opieDefault: 'OPIE-4 estimate of prorated FSIQ. Inputs required: age plus Vocabulary raw and/or Matrix Reasoning raw (sex optional). Adapted for UK use: US education, region and ethnicity terms are omitted, so US-specific demographic adjustments are not applied. The equation automatically switches to the matching single- or two-subtest model. CI uses the branch-specific SEE.',
-  opieVCMR: 'OPIE-4 two-subtest estimate of prorated FSIQ (Schoenberg et al., 2011; Table eA5.8). Inputs required: Vocabulary raw, Matrix Reasoning raw, and age (sex optional). Predicts a prorated FSIQ that excludes Vocabulary and Matrix Reasoning, removing part-whole correlation inflation present in the standard-FSIQ equations. UK adaptation: US education, region and ethnicity terms omitted.',
+  opieVCMR: 'OPIE-4 two-subtest estimate of prorated FSIQ (Holdnack et al., 2013; Table eA5.8). Inputs required: Vocabulary raw, Matrix Reasoning raw, and age (sex optional). Predicts a prorated FSIQ that excludes Vocabulary and Matrix Reasoning, removing part-whole correlation inflation present in the standard-FSIQ equations. UK adaptation: US education, region and ethnicity terms omitted.',
   opieVC: 'OPIE-4 single-subtest estimate of prorated FSIQ (Vocabulary branch). Inputs required: Vocabulary raw and age (sex optional). UK adaptation: US education, region and ethnicity terms omitted; CI uses the Vocabulary-branch SEE.',
   opieMR: 'OPIE-4 single-subtest estimate of prorated FSIQ (Matrix Reasoning branch). Inputs required: Matrix Reasoning raw and age (sex optional). The published equation uses only Age³ (no linear age term) for this branch. UK adaptation: US education, region and ethnicity terms omitted; CI uses the Matrix-branch SEE.',
   predictWais: 'ToPF-predicted WAIS-IV index model. Inputs required: ToPF raw score, years of education, and sex. Difference is Achieved − Predicted; base rates are shown for negative discrepancies only.',
@@ -74,7 +78,10 @@ const PRE_MODEL_TOOLTIPS = {
   opiePredFSIQ_VC: 'OPIE-4-predicted prorated FSIQ (Vocabulary only). Compare against the patient\'s prorated FSIQ calculated excluding Vocabulary per WAIS-IV manual.',
   opiePredFSIQ_MR: 'OPIE-4-predicted prorated FSIQ (Matrix Reasoning only). Compare against the patient\'s prorated FSIQ calculated excluding Matrix Reasoning per WAIS-IV manual.',
   opiePredGAI_VCMR: 'OPIE-4-predicted prorated GAI (two-subtest). Compare against the patient\'s prorated GAI calculated excluding Vocabulary and Matrix Reasoning per WAIS-IV manual.',
-  opiePredGAI_VC: 'OPIE-4-predicted prorated GAI (Vocabulary only). Compare against the patient\'s prorated GAI calculated excluding Vocabulary per WAIS-IV manual.'
+  opiePredGAI_VC: 'OPIE-4-predicted prorated GAI (Vocabulary only). Compare against the patient\'s prorated GAI calculated excluding Vocabulary per WAIS-IV manual.',
+  opiePredGAI_MR: 'OPIE-4-predicted prorated GAI (Matrix Reasoning only). Compare against the patient\'s prorated GAI calculated excluding Matrix Reasoning per WAIS-IV manual.',
+  opiePredVCI: 'OPIE-4-predicted VCI (Vocabulary only). Compare against the patient\'s achieved VCI. The VCI equation is the only one carrying an Age⁶ term.',
+  opiePredPRI: 'OPIE-4-predicted PRI (Matrix Reasoning only). Compare against the patient\'s achieved PRI. This equation uses Age³ only, with no linear age term.'
 };
 
 // Base rates: discrepancy (negative integer) → proportion of standardisation sample
@@ -128,78 +135,80 @@ const OPIE_BASE_RATES = {
   '-37':{FSIQ_VC:0.001},
   '-36':{FSIQ_VC:0.002},
   '-35':{FSIQ_VC:0.0049,GAI_VC:0.001},
-  '-34':{FSIQ_VC:0.0049,GAI_VC:0.002},
-  '-33':{FSIQ_VC:0.0049,GAI_VC:0.002},
-  '-32':{FSIQ_VC:0.0049,GAI_VC:0.002},
-  '-31':{FSIQ_VC:0.0049,GAI_VC:0.0029},
-  '-30':{FSIQ_VC:0.0049,GAI_VC:0.0029},
-  '-29':{FSIQ_VC:0.0049,GAI_VC:0.0029},
-  '-28':{FSIQ_VC:0.0049,GAI_VC:0.0029},
-  '-27':{FSIQ_MR:0.0029,FSIQ_VC:0.0049,GAI_VC:0.0039,GAI_VC_MR:0.001},
-  '-26':{FSIQ_MR:0.0039,FSIQ_VC:0.0069,GAI_VC:0.0059,GAI_VC_MR:0.002},
-  '-25':{FSIQ_MR:0.0039,FSIQ_VC:0.0079,FSIQ_VC_MR:0.001,GAI_VC:0.0059,GAI_VC_MR:0.002},
-  '-24':{FSIQ_MR:0.0049,FSIQ_VC:0.0098,FSIQ_VC_MR:0.002,GAI_VC:0.0088,GAI_VC_MR:0.002},
-  '-23':{FSIQ_MR:0.0098,FSIQ_VC:0.0108,FSIQ_VC_MR:0.002,GAI_VC:0.0088,GAI_VC_MR:0.0039},
-  '-22':{FSIQ_MR:0.0118,FSIQ_VC:0.0108,FSIQ_VC_MR:0.0049,GAI_VC:0.0108,GAI_VC_MR:0.0059},
-  '-21':{FSIQ_MR:0.0157,FSIQ_VC:0.0177,FSIQ_VC_MR:0.0059,GAI_VC:0.0147,GAI_VC_MR:0.0069},
-  '-20':{FSIQ_MR:0.0216,FSIQ_VC:0.0216,FSIQ_VC_MR:0.0098,GAI_VC:0.0196,GAI_VC_MR:0.0098},
-  '-19':{FSIQ_MR:0.0265,FSIQ_VC:0.0295,FSIQ_VC_MR:0.0138,GAI_VC:0.0236,GAI_VC_MR:0.0167},
-  '-18':{FSIQ_MR:0.0432,FSIQ_VC:0.0373,FSIQ_VC_MR:0.0187,GAI_VC:0.0314,GAI_VC_MR:0.0216},
-  '-17':{FSIQ_MR:0.0501,FSIQ_VC:0.0462,FSIQ_VC_MR:0.0295,GAI_VC:0.0354,GAI_VC_MR:0.0314},
-  '-16':{FSIQ_MR:0.0619,FSIQ_VC:0.057,FSIQ_VC_MR:0.0354,GAI_VC:0.0452,GAI_VC_MR:0.0393},
-  '-15':{FSIQ_MR:0.0678,FSIQ_VC:0.0668,FSIQ_VC_MR:0.0432,GAI_VC:0.053,GAI_VC_MR:0.0472},
-  '-14':{FSIQ_MR:0.0806,FSIQ_VC:0.0796,FSIQ_VC_MR:0.0511,GAI_VC:0.0629,GAI_VC_MR:0.058},
-  '-13':{FSIQ_MR:0.0992,FSIQ_VC:0.0972,FSIQ_VC_MR:0.0639,GAI_VC:0.0756,GAI_VC_MR:0.0697},
-  '-12':{FSIQ_MR:0.1198,FSIQ_VC:0.113,FSIQ_VC_MR:0.0815,GAI_VC:0.0914,GAI_VC_MR:0.0855},
-  '-11':{FSIQ_MR:0.1395,FSIQ_VC:0.1277,FSIQ_VC_MR:0.0982,GAI_VC:0.1081,GAI_VC_MR:0.1051},
-  '-10':{FSIQ_MR:0.1739,FSIQ_VC:0.1483,FSIQ_VC_MR:0.1306,GAI_VC:0.1297,GAI_VC_MR:0.1306},
-  '-9':{FSIQ_MR:0.2004,FSIQ_VC:0.1709,FSIQ_VC_MR:0.1591,GAI_VC:0.1582,GAI_VC_MR:0.1591},
-  '-8':{FSIQ_MR:0.2358,FSIQ_VC:0.2073,FSIQ_VC_MR:0.1906,GAI_VC:0.1916,GAI_VC_MR:0.1945},
-  '-7':{FSIQ_MR:0.2692,FSIQ_VC:0.2387,FSIQ_VC_MR:0.223,GAI_VC:0.2269,GAI_VC_MR:0.2279},
-  '-6':{FSIQ_MR:0.3016,FSIQ_VC:0.2741,FSIQ_VC_MR:0.2495,GAI_VC:0.2593,GAI_VC_MR:0.2603},
-  '-5':{FSIQ_MR:0.336,FSIQ_VC:0.3104,FSIQ_VC_MR:0.3055,GAI_VC:0.3006,GAI_VC_MR:0.3075},
-  '-4':{FSIQ_MR:0.3644,FSIQ_VC:0.3448,FSIQ_VC_MR:0.3438,GAI_VC:0.3438,GAI_VC_MR:0.3566},
-  '-3':{FSIQ_MR:0.3998,FSIQ_VC:0.3772,FSIQ_VC_MR:0.3811,GAI_VC:0.389,GAI_VC_MR:0.3949},
-  '-2':{FSIQ_MR:0.446,FSIQ_VC:0.4293,FSIQ_VC_MR:0.4322,GAI_VC:0.4381,GAI_VC_MR:0.4381},
-  '-1':{FSIQ_MR:0.4971,FSIQ_VC:0.4725,FSIQ_VC_MR:0.4882,GAI_VC:0.4813,GAI_VC_MR:0.4882},
-  '+1':{FSIQ_MR:0.4725,FSIQ_VC:0.4872,FSIQ_VC_MR:0.4686,GAI_VC:0.4656,GAI_VC_MR:0.4617},
-  '+2':{FSIQ_MR:0.4303,FSIQ_VC:0.4489,FSIQ_VC_MR:0.4273,GAI_VC:0.4106,GAI_VC_MR:0.4194},
-  '+3':{FSIQ_MR:0.388,FSIQ_VC:0.3969,FSIQ_VC_MR:0.3821,GAI_VC:0.3752,GAI_VC_MR:0.3802},
-  '+4':{FSIQ_MR:0.3507,FSIQ_VC:0.3418,FSIQ_VC_MR:0.3399,GAI_VC:0.336,GAI_VC_MR:0.335},
-  '+5':{FSIQ_MR:0.3114,FSIQ_VC:0.3075,FSIQ_VC_MR:0.3065,GAI_VC:0.2849,GAI_VC_MR:0.2917},
-  '+6':{FSIQ_MR:0.2809,FSIQ_VC:0.2721,FSIQ_VC_MR:0.2603,GAI_VC:0.2574,GAI_VC_MR:0.2593},
-  '+7':{FSIQ_MR:0.2485,FSIQ_VC:0.2446,FSIQ_VC_MR:0.2151,GAI_VC:0.2308,GAI_VC_MR:0.2191},
-  '+8':{FSIQ_MR:0.222,FSIQ_VC:0.2033,FSIQ_VC_MR:0.1857,GAI_VC:0.2033,GAI_VC_MR:0.1906},
-  '+9':{FSIQ_MR:0.1916,FSIQ_VC:0.1827,FSIQ_VC_MR:0.1532,GAI_VC:0.1768,GAI_VC_MR:0.1532},
-  '+10':{FSIQ_MR:0.168,FSIQ_VC:0.1552,FSIQ_VC_MR:0.1257,GAI_VC:0.1483,GAI_VC_MR:0.1267},
-  '+11':{FSIQ_MR:0.1424,FSIQ_VC:0.1306,FSIQ_VC_MR:0.0992,GAI_VC:0.1277,GAI_VC_MR:0.1022},
-  '+12':{FSIQ_MR:0.1257,FSIQ_VC:0.1081,FSIQ_VC_MR:0.0776,GAI_VC:0.1022,GAI_VC_MR:0.0796},
-  '+13':{FSIQ_MR:0.111,FSIQ_VC:0.0923,FSIQ_VC_MR:0.0629,GAI_VC:0.0835,GAI_VC_MR:0.0648},
-  '+14':{FSIQ_MR:0.0953,FSIQ_VC:0.0707,FSIQ_VC_MR:0.0501,GAI_VC:0.0697,GAI_VC_MR:0.0521},
-  '+15':{FSIQ_MR:0.0806,FSIQ_VC:0.0599,FSIQ_VC_MR:0.0373,GAI_VC:0.0589,GAI_VC_MR:0.0452},
-  '+16':{FSIQ_MR:0.0678,FSIQ_VC:0.0511,FSIQ_VC_MR:0.0334,GAI_VC:0.0472,GAI_VC_MR:0.0363},
-  '+17':{FSIQ_MR:0.054,FSIQ_VC:0.0413,FSIQ_VC_MR:0.0265,GAI_VC:0.0363,GAI_VC_MR:0.0314},
-  '+18':{FSIQ_MR:0.0452,FSIQ_VC:0.0373,FSIQ_VC_MR:0.0236,GAI_VC:0.0255,GAI_VC_MR:0.0275},
-  '+19':{FSIQ_MR:0.0403,FSIQ_VC:0.0265,FSIQ_VC_MR:0.0196,GAI_VC:0.0187,GAI_VC_MR:0.0196},
-  '+20':{FSIQ_MR:0.0344,FSIQ_VC:0.0196,FSIQ_VC_MR:0.0147,GAI_VC:0.0177,GAI_VC_MR:0.0147},
-  '+21':{FSIQ_MR:0.0265,FSIQ_VC:0.0147,FSIQ_VC_MR:0.0088,GAI_VC:0.0138,GAI_VC_MR:0.0128},
-  '+22':{FSIQ_MR:0.0216,FSIQ_VC:0.0108,FSIQ_VC_MR:0.0059,GAI_VC:0.0079,GAI_VC_MR:0.0088},
-  '+23':{FSIQ_MR:0.0177,FSIQ_VC:0.0108,FSIQ_VC_MR:0.0039,GAI_VC:0.0079,GAI_VC_MR:0.0088},
-  '+24':{FSIQ_MR:0.0138,FSIQ_VC:0.0108,FSIQ_VC_MR:0.0029,GAI_VC:0.0059,GAI_VC_MR:0.0088},
-  '+25':{FSIQ_MR:0.0118,FSIQ_VC:0.0059,FSIQ_VC_MR:0.0029,GAI_VC:0.0039,GAI_VC_MR:0.0039},
-  '+26':{FSIQ_MR:0.0079,FSIQ_VC:0.0059,FSIQ_VC_MR:0.0029,GAI_VC:0.0039,GAI_VC_MR:0.0039},
-  '+27':{FSIQ_MR:0.0069,FSIQ_VC:0.0049,FSIQ_VC_MR:0.0029,GAI_VC:0.0029,GAI_VC_MR:0.0039},
-  '+28':{FSIQ_MR:0.0049,FSIQ_VC:0.0039,FSIQ_VC_MR:0.002,GAI_VC:0.0029,GAI_VC_MR:0.0039},
-  '+29':{FSIQ_MR:0.0039,FSIQ_VC:0.002,FSIQ_VC_MR:0.002,GAI_VC:0.0029,GAI_VC_MR:0.0039},
-  '+30':{FSIQ_MR:0.0029,FSIQ_VC:0.001,FSIQ_VC_MR:0.002,GAI_VC:0.0029,GAI_VC_MR:0.0029},
-  '+31':{FSIQ_MR:0.002,FSIQ_VC_MR:0.001,GAI_VC:0.002,GAI_VC_MR:0.0029},
-  '+32':{FSIQ_MR:0.002,GAI_VC_MR:0.0029},
-  '+33':{FSIQ_MR:0.001,GAI_VC_MR:0.002},
-  '+34':{GAI_VC_MR:0.002},
-  '+35':{GAI_VC_MR:0.002},
-  '+36':{GAI_VC_MR:0.002},
-  '+37':{GAI_VC_MR:0.002},
-  '+38':{GAI_VC_MR:0.001}
+  '-34':{FSIQ_VC:0.0049,GAI_VC:0.002,PRI:0.0005},
+  '-33':{FSIQ_VC:0.0049,GAI_VC:0.002,PRI:0.0015},
+  '-32':{FSIQ_VC:0.0049,GAI_VC:0.002,PRI:0.0015},
+  '-31':{FSIQ_VC:0.0049,GAI_VC:0.0029,PRI:0.0025},
+  '-30':{FSIQ_VC:0.0049,GAI_VC:0.0029,PRI:0.003},
+  '-29':{FSIQ_VC:0.0049,GAI_VC:0.0029,PRI:0.003},
+  '-28':{FSIQ_VC:0.0049,GAI_VC:0.0029,GAI_MR:0.001,PRI:0.0034},
+  '-27':{FSIQ_VC:0.0049,FSIQ_MR:0.0029,GAI_VC_MR:0.001,GAI_VC:0.0039,GAI_MR:0.002,VCI:0.001,PRI:0.0044},
+  '-26':{FSIQ_VC:0.0069,FSIQ_MR:0.0039,GAI_VC_MR:0.002,GAI_VC:0.0059,GAI_MR:0.0039,VCI:0.0049,PRI:0.0064},
+  '-25':{FSIQ_VC_MR:0.001,FSIQ_VC:0.0079,FSIQ_MR:0.0039,GAI_VC_MR:0.002,GAI_VC:0.0059,GAI_MR:0.0088,VCI:0.0049,PRI:0.0098},
+  '-24':{FSIQ_VC_MR:0.002,FSIQ_VC:0.0098,FSIQ_MR:0.0049,GAI_VC_MR:0.002,GAI_VC:0.0088,GAI_MR:0.0088,VCI:0.0049,PRI:0.0113},
+  '-23':{FSIQ_VC_MR:0.002,FSIQ_VC:0.0108,FSIQ_MR:0.0098,GAI_VC_MR:0.0039,GAI_VC:0.0088,GAI_MR:0.0138,VCI:0.0049,PRI:0.0153},
+  '-22':{FSIQ_VC_MR:0.0049,FSIQ_VC:0.0108,FSIQ_MR:0.0118,GAI_VC_MR:0.0059,GAI_VC:0.0108,GAI_MR:0.0138,VCI:0.0049,PRI:0.0202},
+  '-21':{FSIQ_VC_MR:0.0059,FSIQ_VC:0.0177,FSIQ_MR:0.0157,GAI_VC_MR:0.0069,GAI_VC:0.0147,GAI_MR:0.0177,VCI:0.0059,PRI:0.0276},
+  '-20':{FSIQ_VC_MR:0.0098,FSIQ_VC:0.0216,FSIQ_MR:0.0216,GAI_VC_MR:0.0098,GAI_VC:0.0196,GAI_MR:0.0216,VCI:0.0088,PRI:0.033},
+  '-19':{FSIQ_VC_MR:0.0138,FSIQ_VC:0.0295,FSIQ_MR:0.0265,GAI_VC_MR:0.0167,GAI_VC:0.0236,GAI_MR:0.0255,VCI:0.0118,PRI:0.0389},
+  '-18':{FSIQ_VC_MR:0.0187,FSIQ_VC:0.0373,FSIQ_MR:0.0432,GAI_VC_MR:0.0216,GAI_VC:0.0314,GAI_MR:0.0324,VCI:0.0187,PRI:0.0507},
+  '-17':{FSIQ_VC_MR:0.0295,FSIQ_VC:0.0462,FSIQ_MR:0.0501,GAI_VC_MR:0.0314,GAI_VC:0.0354,GAI_MR:0.0452,VCI:0.0246,PRI:0.064},
+  '-16':{FSIQ_VC_MR:0.0354,FSIQ_VC:0.057,FSIQ_MR:0.0619,GAI_VC_MR:0.0393,GAI_VC:0.0452,GAI_MR:0.0629,VCI:0.0314,PRI:0.0763},
+  '-15':{FSIQ_VC_MR:0.0432,FSIQ_VC:0.0668,FSIQ_MR:0.0678,GAI_VC_MR:0.0472,GAI_VC:0.053,GAI_MR:0.0747,VCI:0.0413,PRI:0.0891},
+  '-14':{FSIQ_VC_MR:0.0511,FSIQ_VC:0.0796,FSIQ_MR:0.0806,GAI_VC_MR:0.058,GAI_VC:0.0629,GAI_MR:0.0943,VCI:0.0511,PRI:0.1068},
+  '-13':{FSIQ_VC_MR:0.0639,FSIQ_VC:0.0972,FSIQ_MR:0.0992,GAI_VC_MR:0.0697,GAI_VC:0.0756,GAI_MR:0.1169,VCI:0.0668,PRI:0.1216},
+  '-12':{FSIQ_VC_MR:0.0815,FSIQ_VC:0.113,FSIQ_MR:0.1198,GAI_VC_MR:0.0855,GAI_VC:0.0914,GAI_MR:0.1297,VCI:0.0796,PRI:0.1437},
+  '-11':{FSIQ_VC_MR:0.0982,FSIQ_VC:0.1277,FSIQ_MR:0.1395,GAI_VC_MR:0.1051,GAI_VC:0.1081,GAI_MR:0.1611,VCI:0.1012,PRI:0.1698},
+  '-10':{FSIQ_VC_MR:0.1306,FSIQ_VC:0.1483,FSIQ_MR:0.1739,GAI_VC_MR:0.1306,GAI_VC:0.1297,GAI_MR:0.1896,VCI:0.1238,PRI:0.2013},
+  '-9':{FSIQ_VC_MR:0.1591,FSIQ_VC:0.1709,FSIQ_MR:0.2004,GAI_VC_MR:0.1591,GAI_VC:0.1582,GAI_MR:0.2279,VCI:0.1473,PRI:0.2343},
+  '-8':{FSIQ_VC_MR:0.1906,FSIQ_VC:0.2073,FSIQ_MR:0.2358,GAI_VC_MR:0.1945,GAI_VC:0.1916,GAI_MR:0.2525,VCI:0.1758,PRI:0.2648},
+  '-7':{FSIQ_VC_MR:0.223,FSIQ_VC:0.2387,FSIQ_MR:0.2692,GAI_VC_MR:0.2279,GAI_VC:0.2269,GAI_MR:0.2898,VCI:0.2092,PRI:0.2933},
+  '-6':{FSIQ_VC_MR:0.2495,FSIQ_VC:0.2741,FSIQ_MR:0.3016,GAI_VC_MR:0.2603,GAI_VC:0.2593,GAI_MR:0.3193,VCI:0.2544,PRI:0.3209},
+  '-5':{FSIQ_VC_MR:0.3055,FSIQ_VC:0.3104,FSIQ_MR:0.336,GAI_VC_MR:0.3075,GAI_VC:0.3006,GAI_MR:0.3536,VCI:0.2976,PRI:0.3484},
+  '-4':{FSIQ_VC_MR:0.3438,FSIQ_VC:0.3448,FSIQ_MR:0.3644,GAI_VC_MR:0.3566,GAI_VC:0.3438},
+  '-3':{FSIQ_VC_MR:0.3811,FSIQ_VC:0.3772,FSIQ_MR:0.3998,GAI_VC_MR:0.3949,GAI_VC:0.389},
+  '-2':{FSIQ_VC_MR:0.4322,FSIQ_VC:0.4293,FSIQ_MR:0.446,GAI_VC_MR:0.4381,GAI_VC:0.4381},
+  '-1':{FSIQ_VC_MR:0.4882,FSIQ_VC:0.4725,FSIQ_MR:0.4971,GAI_VC_MR:0.4882,GAI_VC:0.4813},
+  '+1':{FSIQ_VC_MR:0.4686,FSIQ_VC:0.4872,FSIQ_MR:0.4725,GAI_VC_MR:0.4617,GAI_VC:0.4656},
+  '+2':{FSIQ_VC_MR:0.4273,FSIQ_VC:0.4489,FSIQ_MR:0.4303,GAI_VC_MR:0.4194,GAI_VC:0.4106},
+  '+3':{FSIQ_VC_MR:0.3821,FSIQ_VC:0.3969,FSIQ_MR:0.388,GAI_VC_MR:0.3802,GAI_VC:0.3752},
+  '+4':{FSIQ_VC_MR:0.3399,FSIQ_VC:0.3418,FSIQ_MR:0.3507,GAI_VC_MR:0.335,GAI_VC:0.336},
+  '+5':{FSIQ_VC_MR:0.3065,FSIQ_VC:0.3075,FSIQ_MR:0.3114,GAI_VC_MR:0.2917,GAI_VC:0.2849,GAI_MR:0.333,VCI:0.2898,PRI:0.3376},
+  '+6':{FSIQ_VC_MR:0.2603,FSIQ_VC:0.2721,FSIQ_MR:0.2809,GAI_VC_MR:0.2593,GAI_VC:0.2574,GAI_MR:0.2917,VCI:0.2475,PRI:0.3056},
+  '+7':{FSIQ_VC_MR:0.2151,FSIQ_VC:0.2446,FSIQ_MR:0.2485,GAI_VC_MR:0.2191,GAI_VC:0.2308,GAI_MR:0.2593,VCI:0.2102,PRI:0.2781},
+  '+8':{FSIQ_VC_MR:0.1857,FSIQ_VC:0.2033,FSIQ_MR:0.222,GAI_VC_MR:0.1906,GAI_VC:0.2033,GAI_MR:0.2279,VCI:0.1768,PRI:0.2451},
+  '+9':{FSIQ_VC_MR:0.1532,FSIQ_VC:0.1827,FSIQ_MR:0.1916,GAI_VC_MR:0.1532,GAI_VC:0.1768,GAI_MR:0.2083,VCI:0.1375,PRI:0.2165},
+  '+10':{FSIQ_VC_MR:0.1257,FSIQ_VC:0.1552,FSIQ_MR:0.168,GAI_VC_MR:0.1267,GAI_VC:0.1483,GAI_MR:0.1876,VCI:0.1159,PRI:0.1929},
+  '+11':{FSIQ_VC_MR:0.0992,FSIQ_VC:0.1306,FSIQ_MR:0.1424,GAI_VC_MR:0.1022,GAI_VC:0.1277,GAI_MR:0.1572,VCI:0.0972,PRI:0.1688},
+  '+12':{FSIQ_VC_MR:0.0776,FSIQ_VC:0.1081,FSIQ_MR:0.1257,GAI_VC_MR:0.0796,GAI_VC:0.1022,GAI_MR:0.1316,VCI:0.0756,PRI:0.1471},
+  '+13':{FSIQ_VC_MR:0.0629,FSIQ_VC:0.0923,FSIQ_MR:0.111,GAI_VC_MR:0.0648,GAI_VC:0.0835,GAI_MR:0.1218,VCI:0.0648,PRI:0.1284},
+  '+14':{FSIQ_VC_MR:0.0501,FSIQ_VC:0.0707,FSIQ_MR:0.0953,GAI_VC_MR:0.0521,GAI_VC:0.0697,GAI_MR:0.1031,VCI:0.0521,PRI:0.1112},
+  '+15':{FSIQ_VC_MR:0.0373,FSIQ_VC:0.0599,FSIQ_MR:0.0806,GAI_VC_MR:0.0452,GAI_VC:0.0589,GAI_MR:0.0855,VCI:0.0452,PRI:0.0969},
+  '+16':{FSIQ_VC_MR:0.0334,FSIQ_VC:0.0511,FSIQ_MR:0.0678,GAI_VC_MR:0.0363,GAI_VC:0.0472,GAI_MR:0.0727,VCI:0.0413,PRI:0.0856},
+  '+17':{FSIQ_VC_MR:0.0265,FSIQ_VC:0.0413,FSIQ_MR:0.054,GAI_VC_MR:0.0314,GAI_VC:0.0363,GAI_MR:0.0619,VCI:0.0334,PRI:0.0773},
+  '+18':{FSIQ_VC_MR:0.0236,FSIQ_VC:0.0373,FSIQ_MR:0.0452,GAI_VC_MR:0.0275,GAI_VC:0.0255,GAI_MR:0.055,VCI:0.0285,PRI:0.0689},
+  '+19':{FSIQ_VC_MR:0.0196,FSIQ_VC:0.0265,FSIQ_MR:0.0403,GAI_VC_MR:0.0196,GAI_VC:0.0187,GAI_MR:0.0481,VCI:0.0226,PRI:0.0625},
+  '+20':{FSIQ_VC_MR:0.0147,FSIQ_VC:0.0196,FSIQ_MR:0.0344,GAI_VC_MR:0.0147,GAI_VC:0.0177,GAI_MR:0.0393,VCI:0.0167,PRI:0.0507},
+  '+21':{FSIQ_VC_MR:0.0088,FSIQ_VC:0.0147,FSIQ_MR:0.0265,GAI_VC_MR:0.0128,GAI_VC:0.0138,GAI_MR:0.0324,VCI:0.0118,PRI:0.0389},
+  '+22':{FSIQ_VC_MR:0.0059,FSIQ_VC:0.0108,FSIQ_MR:0.0216,GAI_VC_MR:0.0088,GAI_VC:0.0079,GAI_MR:0.0285,VCI:0.0118,PRI:0.033},
+  '+23':{FSIQ_VC_MR:0.0039,FSIQ_VC:0.0108,FSIQ_MR:0.0177,GAI_VC_MR:0.0088,GAI_VC:0.0079,GAI_MR:0.0255,VCI:0.0088,PRI:0.0285},
+  '+24':{FSIQ_VC_MR:0.0029,FSIQ_VC:0.0108,FSIQ_MR:0.0138,GAI_VC_MR:0.0088,GAI_VC:0.0059,GAI_MR:0.0226,VCI:0.0069,PRI:0.0241},
+  '+25':{FSIQ_VC_MR:0.0029,FSIQ_VC:0.0059,FSIQ_MR:0.0118,GAI_VC_MR:0.0039,GAI_VC:0.0039,GAI_MR:0.0177,VCI:0.0069,PRI:0.0182},
+  '+26':{FSIQ_VC_MR:0.0029,FSIQ_VC:0.0059,FSIQ_MR:0.0079,GAI_VC_MR:0.0039,GAI_VC:0.0039,GAI_MR:0.0147,VCI:0.0059,PRI:0.0153},
+  '+27':{FSIQ_VC_MR:0.0029,FSIQ_VC:0.0049,FSIQ_MR:0.0069,GAI_VC_MR:0.0039,GAI_VC:0.0029,GAI_MR:0.0108,VCI:0.0049,PRI:0.0123},
+  '+28':{FSIQ_VC_MR:0.002,FSIQ_VC:0.0039,FSIQ_MR:0.0049,GAI_VC_MR:0.0039,GAI_VC:0.0029,GAI_MR:0.0098,VCI:0.0049,PRI:0.0103},
+  '+29':{FSIQ_VC_MR:0.002,FSIQ_VC:0.002,FSIQ_MR:0.0039,GAI_VC_MR:0.0039,GAI_VC:0.0029,GAI_MR:0.0079,VCI:0.0029,PRI:0.0079},
+  '+30':{FSIQ_VC_MR:0.002,FSIQ_VC:0.001,FSIQ_MR:0.0029,GAI_VC_MR:0.0029,GAI_VC:0.0029,GAI_MR:0.0079,VCI:0.002,PRI:0.0054},
+  '+31':{FSIQ_VC_MR:0.001,FSIQ_MR:0.002,GAI_VC_MR:0.0029,GAI_VC:0.002,GAI_MR:0.0069,VCI:0.002,PRI:0.003},
+  '+32':{FSIQ_MR:0.002,GAI_VC_MR:0.0029,GAI_MR:0.0059,VCI:0.002,PRI:0.0025},
+  '+33':{FSIQ_MR:0.001,GAI_VC_MR:0.002,GAI_MR:0.0049,VCI:0.002,PRI:0.0025},
+  '+34':{GAI_VC_MR:0.002,GAI_MR:0.0039,VCI:0.002,PRI:0.0025},
+  '+35':{GAI_VC_MR:0.002,GAI_MR:0.0039,VCI:0.001,PRI:0.0025},
+  '+36':{GAI_VC_MR:0.002,GAI_MR:0.0039,PRI:0.002},
+  '+37':{GAI_VC_MR:0.002,GAI_MR:0.0039,PRI:0.002},
+  '+38':{GAI_VC_MR:0.001,GAI_MR:0.0039,PRI:0.002},
+  '+39':{GAI_MR:0.0039,PRI:0.0015},
+  '+40':{GAI_MR:0.0039,PRI:0.0015}
 };
 
 /* ============================================================

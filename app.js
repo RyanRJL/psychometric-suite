@@ -3507,11 +3507,11 @@ function buildPredictTable(){
     tbody.appendChild(tr);
   });
 
-  // Wire achieved inputs
+  // Wire achieved inputs — shared by index, so a change here autofills the
+  // matching OPIE-4 rows too (and vice versa) via setSharedAchieved.
   document.querySelectorAll('[data-pre-ach]').forEach(inp => {
     inp.addEventListener('input', e => {
-      preState.achieved[e.target.dataset.preAch] = e.target.value;
-      calcPredict();
+      setSharedAchieved(e.target.dataset.preAch, e.target.value, e.target);
     });
   });
 }
@@ -3528,7 +3528,7 @@ function calcPremorbid(){
   const ci   = preStr('pre-ci') || '0.90';
   // Sex coding differs between models:
   //   TOPF / WAIS-IV manual demographic equations:  Female = 1, Male = 2
-  //   OPIE-4 (Schoenberg et al., 2011):             Female = 0, Male = 1
+  //   OPIE-4 (Holdnack et al., 2013):               Female = 0, Male = 1
   const sexC_topf = sex === 'Female' ? 1 : sex === 'Male' ? 2 : null;
   const sexC_opie = sex === 'Female' ? 0 : sex === 'Male' ? 1 : null;
   const occC = occ ? OCC_CODE[occ] : null;
@@ -3949,6 +3949,7 @@ function getOpiePredictions(){
 
   function predict(c){
     let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexEffect;
+    if (c.age6 != null) pred += c.age6 * Math.pow(age, 6);   // VCI only
     if (c.vc != null && hasVC) pred += c.vc * vc;
     if (c.mr != null && hasMR) pred += c.mr * mr;
     return pred;
@@ -3969,6 +3970,11 @@ function getOpiePredictions(){
   // GAI models
   pushModel('GAI_VC_MR', 'GAI - Vocab + Matrix', OPIE_PRORATED_GAI.VC_MR, true, true, 'opiePredGAI_VCMR');
   pushModel('GAI_VC', 'GAI - Vocab only', OPIE_PRORATED_GAI.VC, true, false, 'opiePredGAI_VC');
+  pushModel('GAI_MR', 'GAI - Matrix only', OPIE_PRORATED_GAI.MR, false, true, 'opiePredGAI_MR');
+
+  // Single-index models (VCI from Vocabulary, PRI from Matrix Reasoning)
+  pushModel('VCI', 'VCI - Vocab', OPIE_PRORATED_INDEX.VCI, true, false, 'opiePredVCI');
+  pushModel('PRI', 'PRI - Matrix', OPIE_PRORATED_INDEX.PRI, false, true, 'opiePredPRI');
 
   return list;
 }
@@ -3978,10 +3984,61 @@ function opieBaseRateFor(rowKey, diff){
   const key = diff > 0 ? `+${diff}` : String(diff);
   const row = OPIE_BASE_RATES[key];
   if (row && row[rowKey] != null) return fmtPctBr(row[rowKey]);
+  // Differences < 5 points are not tabulated in Table eA5.12 - always 'common'.
+  if (Math.abs(diff) < 5) return 'common';
   // Beyond the range of the published table - for negative discrepancies this means
   // the base rate is smaller than the minimum tabulated value (< 0.1%)
   if (diff < 0) return '< 0.1%';
   return '-';
+}
+
+// ----- Shared achieved scores across premorbid methods -----
+// The patient's obtained index scores are the same whichever premorbid model
+// predicted them, so every achieved-score input (ToPF tab + OPIE-4 tab) reads
+// and writes ONE store keyed by index (preState.achieved). Entering a score on
+// one method autofills it on the others (FSIQ / VCI / PRI are shared; the three
+// FSIQ rows and three GAI rows within the OPIE tab also share a single value).
+function opieModelIndex(key){
+  if (/^FSIQ_/.test(key)) return 'FSIQ';
+  if (/^GAI_/.test(key))  return 'GAI';
+  return key; // VCI, PRI
+}
+// Recompute the OPIE-4 table's difference / base-rate cells in place (no input
+// rebuild, so focus is preserved), then refresh its APA output.
+function refreshOpieDerived(){
+  const tb = preGet('pre-opiepredict-tbody');
+  if (tb){
+    (preState.opieRows || []).forEach(row => {
+      const inp = tb.querySelector(`[data-pre-opie-ach="${row.key}"]`);
+      const tr = inp ? inp.closest('tr') : null;
+      if (!tr) return;
+      const diffCell = tr.querySelector('.diff');
+      const brCell = tr.querySelector('.opie-base-rate');
+      const raw = preState.achieved[opieModelIndex(row.key)];
+      const achVal = (raw != null && raw !== '' && !isNaN(parseFloat(raw))) ? parseFloat(raw) : null;
+      if (diffCell) diffCell.className = 'num diff';
+      if (achVal == null || row.val == null || !Number.isFinite(row.val)){
+        if (diffCell) diffCell.textContent = '-';
+        if (brCell) brCell.textContent = '-';
+      } else {
+        const diff = Math.round(achVal - row.val);
+        if (diffCell){ diffCell.textContent = (diff > 0 ? '+' : '') + diff; if (diff < 0) diffCell.classList.add('neg'); else if (diff > 0) diffCell.classList.add('pos'); }
+        if (brCell) brCell.textContent = opieBaseRateFor(row.key, diff);
+      }
+    });
+  }
+  renderOpiePredictApa();
+}
+// Single entry point for any achieved-score change: store it, mirror it into
+// every other input for that index, and recompute both methods' outputs.
+function setSharedAchieved(idx, value, sourceEl){
+  preState.achieved[idx] = value;
+  document.querySelectorAll(`[data-pre-ach="${idx}"]`).forEach(el => { if (el !== sourceEl) el.value = value; });
+  document.querySelectorAll('[data-pre-opie-ach]').forEach(el => {
+    if (el !== sourceEl && opieModelIndex(el.dataset.preOpieAch) === idx) el.value = value;
+  });
+  if (typeof calcPredict === 'function') calcPredict();   // ToPF derived cells + APA
+  refreshOpieDerived();                                   // OPIE derived cells + APA
 }
 
 function calcOpiePredict(){
@@ -3998,9 +4055,10 @@ function calcOpiePredict(){
   preState.opieRows = rows;
   preState.ciPct = ciPct;
 
-  // Group: FSIQ rows, then GAI rows
+  // Group: FSIQ rows, then GAI rows, then single-index (VCI / PRI) rows
   const fsiq = rows.filter(r => r.key.startsWith('FSIQ_'));
   const gai  = rows.filter(r => r.key.startsWith('GAI_'));
+  const idx  = rows.filter(r => r.key === 'VCI' || r.key === 'PRI');
 
   function modelCell(row){
     const tip = PRE_MODEL_TOOLTIPS[row.tipKey] || '';
@@ -4008,11 +4066,14 @@ function calcOpiePredict(){
   }
 
   function rowHtml(row){
-    const ach = preState.opieAchieved[row.key];
+    const ach = preState.achieved[opieModelIndex(row.key)];
     const achVal = (ach != null && ach !== '') ? parseFloat(ach) : null;
     const hasPred = row.val != null && Number.isFinite(row.val);
-    const lo = hasPred ? fmtIntOrDash(row.val - mult * row.see) : '-';
-    const hi = hasPred ? fmtIntOrDash(row.val + mult * row.see) : '-';
+    // Parametric prediction interval: round the point estimate and the margin
+    // separately so the bounds are symmetric — round(predicted) ± round(z·SEE).
+    const margin = Math.round(mult * row.see);
+    const lo = hasPred ? String(Math.round(row.val) - margin) : '-';
+    const hi = hasPred ? String(Math.round(row.val) + margin) : '-';
     let diffHtml = '<td class="num diff">-</td>';
     let brHtml = '<td class="num opie-base-rate">-</td>';
     if (hasPred && achVal != null && !isNaN(achVal)){
@@ -4043,36 +4104,18 @@ function calcOpiePredict(){
     html += '<tr class="group-row"><td colspan="7">GAI predictions</td></tr>';
     html += gai.map(rowHtml).join('');
   }
+  if (idx.length){
+    html += '<tr class="group-row"><td colspan="7">Index predictions (VCI / PRI)</td></tr>';
+    html += idx.map(rowHtml).join('');
+  }
   tbody.innerHTML = html;
 
-  // Wire the achieved inputs (re-wired each render because rows are rebuilt)
+  // Wire the achieved inputs (re-wired each render because rows are rebuilt).
+  // Achieved scores are shared by index, so a change autofills the matching
+  // rows here AND the ToPF tab via setSharedAchieved.
   tbody.querySelectorAll('[data-pre-opie-ach]').forEach(inp => {
     inp.addEventListener('input', e => {
-      preState.opieAchieved[e.target.dataset.preOpieAch] = e.target.value;
-      const tr = e.target.closest('tr');
-      if (!tr) return;
-      const row = (preState.opieRows || []).find(r => r.key === e.target.dataset.preOpieAch);
-      if (!row) return;
-      const diffCell = tr.querySelector('.diff');
-      const brCell = tr.querySelector('.opie-base-rate');
-      const achVal = e.target.value !== '' ? parseFloat(e.target.value) : null;
-      diffCell.className = 'num diff';
-      if (achVal == null || isNaN(achVal)){
-        diffCell.textContent = '-';
-        if (brCell) brCell.textContent = '-';
-      } else {
-        if (row.val == null || !Number.isFinite(row.val)){
-          diffCell.textContent = '-';
-          if (brCell) brCell.textContent = '-';
-        } else {
-          const diff = Math.round(achVal - row.val);
-          diffCell.textContent = (diff > 0 ? '+' : '') + diff;
-          if (diff < 0) diffCell.classList.add('neg');
-          else if (diff > 0) diffCell.classList.add('pos');
-          if (brCell) brCell.textContent = opieBaseRateFor(row.key, diff);
-        }
-      }
-      renderOpiePredictApa();
+      setSharedAchieved(opieModelIndex(e.target.dataset.preOpieAch), e.target.value, e.target);
     });
   });
 
@@ -4087,22 +4130,26 @@ function renderOpiePredictApa(){
   const mult = preCiMult();
   const rows = preState.opieRows || [];
 
-  const byGroup = { FSIQ:[], GAI:[] };
+  const byGroup = { FSIQ:[], GAI:[], INDEX:[] };
   rows.forEach(r => {
     if (r.key.startsWith('FSIQ_')) byGroup.FSIQ.push(r);
     else if (r.key.startsWith('GAI_')) byGroup.GAI.push(r);
+    else if (r.key === 'VCI' || r.key === 'PRI') byGroup.INDEX.push(r);
   });
+  const groupLabels = { FSIQ:'Prorated FSIQ', GAI:'Prorated GAI', INDEX:'Index (VCI / PRI)' };
 
   let body = '';
-  ['FSIQ','GAI'].forEach(group => {
+  ['FSIQ','GAI','INDEX'].forEach(group => {
     if (!byGroup[group].length) return;
-    body += `<tr><td colspan="7" style="font-style:italic;padding-top:6px;padding-bottom:2px">Prorated ${group}</td></tr>`;
+    body += `<tr><td colspan="7" style="font-style:italic;padding-top:6px;padding-bottom:2px">${groupLabels[group]}</td></tr>`;
     byGroup[group].forEach(r => {
-      const achRaw = preState.opieAchieved[r.key];
+      const achRaw = preState.achieved[opieModelIndex(r.key)];
       const ach = achRaw != null && achRaw !== '' && !isNaN(parseFloat(achRaw)) ? parseFloat(achRaw) : null;
       const hasPred = r.val != null && Number.isFinite(r.val);
-      const lo = hasPred ? Math.round(r.val - mult * r.see) : '-';
-      const hi = hasPred ? Math.round(r.val + mult * r.see) : '-';
+      // Parametric PI: round(predicted) ± round(z × SEE) — symmetric.
+      const margin = Math.round(mult * r.see);
+      const lo = hasPred ? Math.round(r.val) - margin : '-';
+      const hi = hasPred ? Math.round(r.val) + margin : '-';
       const diff = (!hasPred || ach == null) ? null : Math.round(ach - r.val);
       const diffText = diff == null ? '-' : `${diff > 0 ? '+' : ''}${diff}`;
       const br = diff == null ? '-' : opieBaseRateFor(r.key, diff);
