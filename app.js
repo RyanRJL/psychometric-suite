@@ -336,6 +336,10 @@ const STAGGER_STEP_MS = 45;
 const STAGGER_MAX = 6;
 function staggerSectionContent(section){
   if (!section) return;
+  // Only for the fallback transition. Where View Transitions are available the
+  // crossfade already carries the arrival, and staggering underneath it reads
+  // as two competing animations rather than one move.
+  if (document.startViewTransition) return;
   const blocks = [...section.children].filter(el => el.nodeType === 1).slice(0, STAGGER_MAX);
   blocks.forEach((el, i) => {
     el.classList.remove('stagger-in');
@@ -377,6 +381,18 @@ function runPageTransition(swap){
     swap();
     return;
   }
+
+  /* Preferred path. The browser snapshots the page, applies the swap, then
+     crossfades the two — no dead frame between out and in, and the section's
+     height change happens under the fade rather than snapping the layout.
+     Styled by the ::view-transition-* rules in styles.css. */
+  if (document.startViewTransition){
+    ++navAnimToken;                 // cancel any in-flight fallback animation
+    main.classList.remove('is-leaving', 'is-entering');
+    document.startViewTransition(() => swap());
+    return;
+  }
+
   const token = ++navAnimToken;
   main.classList.remove('is-entering');
   main.classList.add('is-leaving');

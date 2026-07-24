@@ -4126,30 +4126,68 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 .home-pathway-tool-badge::before{display:none!important}
 
 /* ---------- PAGE SWITCHING ----------
-   Switching sections is a two-beat move: the outgoing page drops away, then
-   the incoming one rises into place. Because only one .section is ever
-   displayed, the two beats run on the shared .main container rather than on
-   the sections themselves — animating both sections at once would need them
-   displayed simultaneously, which would shift the layout mid-transition.
+   Two easings are in play here, and the distinction is the whole trick:
+   leaving accelerates away (ease-in), arriving decelerates into place
+   (expo-out, the project's --ease). Using a decelerating curve on the exit —
+   as this did originally — makes the outgoing page look like it hesitates.
 
-   navigateTo() in app.js drives this: it adds .is-leaving, swaps the section
-   when that animation ends, then adds .is-entering. Both classes are removed
-   when their animation finishes, so an interrupted navigation just restarts. */
-.main.is-leaving{animation:pageLeave var(--t-fast) var(--ease) both}
-.main.is-entering{animation:pageEnter var(--t-slow) var(--ease) both}
+   Preferred path is the View Transitions API. Giving .main its own
+   view-transition-name puts the page in its own transition group, so the
+   sidebar, topnav and report chip hold perfectly still while only the page
+   crossfades. Old and new overlap rather than running end to end, which
+   removes the dead frame between them, and because the browser animates
+   snapshots, the large height differences between sections (Score Tables is
+   ~400px, Methods & References ~1700px) resolve under the fade instead of
+   snapping the page. */
+.main{view-transition-name:page-main}
+
+/* Sections differ enormously in height. Left alone, the transition group
+   animates its box between the two sizes and both snapshots stretch to fit,
+   which reads as a squash rather than a fade. Pinning them to their natural
+   size, anchored top, keeps it a clean crossfade. */
+::view-transition-group(page-main){animation-duration:280ms}
+::view-transition-image-pair(page-main){isolation:auto}
+::view-transition-old(page-main),
+::view-transition-new(page-main){
+  width:100%;
+  height:auto;
+  object-fit:none;
+  object-position:top center;
+  mix-blend-mode:normal;
+}
+::view-transition-old(page-main){
+  animation:pageLeave 180ms cubic-bezier(0.4,0,1,1) both;
+}
+::view-transition-new(page-main){
+  /* Starts while the old page is still fading, so the two genuinely cross. */
+  animation:pageEnter 280ms var(--ease) 70ms both;
+}
+/* The chrome outside .main — sidebar, topnav, report chip — keeps the browser's
+   default root crossfade. That is opacity only, so nothing slides, and it lets
+   the parts that do change (the topbar page title, the nav highlight) fade
+   between states instead of snapping at the end of the transition. */
+
+/* Fallback for browsers without View Transitions: the same two beats, run
+   back to back on .main by navigateTo(). Kept deliberately shorter than the
+   crossfade above, because without the overlap the total reads as slower. */
+.main.is-leaving{animation:pageLeave 130ms cubic-bezier(0.4,0,1,1) both}
+.main.is-entering{animation:pageEnter 240ms var(--ease) both}
+
 @keyframes pageLeave{
-  from{opacity:1;transform:translateY(0)}
-  to{opacity:0;transform:translateY(-6px)}
+  from{opacity:1;transform:translateY(0) scale(1)}
+  to{opacity:0;transform:translateY(-8px) scale(0.995)}
 }
 @keyframes pageEnter{
-  from{opacity:0;transform:translateY(8px)}
-  to{opacity:1;transform:translateY(0)}
+  from{opacity:0;transform:translateY(10px) scale(0.995)}
+  to{opacity:1;transform:translateY(0) scale(1)}
 }
 
-/* Content inside the arriving page settles in a beat behind it. The delay is
-   set inline by JS, and cleared entirely under reduced motion — the global
-   reduce rule zeroes durations but NOT delays, so a stagger left in place
-   would strand these invisible for the full delay. */
+/* Content inside the arriving page settles a beat behind it. Only used on the
+   fallback path — under View Transitions the crossfade already carries the
+   arrival, and running both together reads as busy. The delay is set inline by
+   JS and cleared entirely under reduced motion, because the global reduce rule
+   zeroes durations but NOT delays: a stagger left in place would strand these
+   invisible for the full delay. */
 .section.active > .stagger-in{animation:sectionFadeIn var(--t-base) var(--ease) both}
 @keyframes sectionFadeIn{
   from{opacity:0;transform:translateY(6px)}
@@ -20913,6 +20951,10 @@ const STAGGER_STEP_MS = 45;
 const STAGGER_MAX = 6;
 function staggerSectionContent(section){
   if (!section) return;
+  // Only for the fallback transition. Where View Transitions are available the
+  // crossfade already carries the arrival, and staggering underneath it reads
+  // as two competing animations rather than one move.
+  if (document.startViewTransition) return;
   const blocks = [...section.children].filter(el => el.nodeType === 1).slice(0, STAGGER_MAX);
   blocks.forEach((el, i) => {
     el.classList.remove('stagger-in');
@@ -20954,6 +20996,18 @@ function runPageTransition(swap){
     swap();
     return;
   }
+
+  /* Preferred path. The browser snapshots the page, applies the swap, then
+     crossfades the two — no dead frame between out and in, and the section's
+     height change happens under the fade rather than snapping the layout.
+     Styled by the ::view-transition-* rules in styles.css. */
+  if (document.startViewTransition){
+    ++navAnimToken;                 // cancel any in-flight fallback animation
+    main.classList.remove('is-leaving', 'is-entering');
+    document.startViewTransition(() => swap());
+    return;
+  }
+
   const token = ++navAnimToken;
   main.classList.remove('is-entering');
   main.classList.add('is-leaving');
