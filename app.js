@@ -317,6 +317,96 @@ function writeNavHistory(target){
   else history.pushState(state, '', url);
 }
 
+/* The global reduce rule in design-system.css zeroes animation DURATIONS but
+   not delays, and it can't tell JS not to schedule work. Anything timed from
+   script has to ask directly. */
+const reducedMotionQuery = window.matchMedia
+  ? window.matchMedia('(prefers-reduced-motion: reduce)')
+  : null;
+function prefersReducedMotion(){
+  return !!(reducedMotionQuery && reducedMotionQuery.matches);
+}
+
+/* Stagger the arriving page's own blocks a beat behind the page itself.
+   Delays are set inline rather than in CSS so they can be omitted entirely
+   under reduced motion — a delay left in place there would leave these
+   elements invisible for its full duration, since `both` holds the from-state
+   and the reduce rule only collapses the duration. */
+const STAGGER_STEP_MS = 45;
+const STAGGER_MAX = 6;
+function staggerSectionContent(section){
+  if (!section) return;
+  const blocks = [...section.children].filter(el => el.nodeType === 1).slice(0, STAGGER_MAX);
+  blocks.forEach((el, i) => {
+    el.classList.remove('stagger-in');
+    el.style.animationDelay = '';
+    if (prefersReducedMotion()) return;
+    // Force a reflow so re-navigating to the same section replays the animation
+    // rather than being ignored as an unchanged class list.
+    void el.offsetWidth;
+    el.style.animationDelay = `${i * STAGGER_STEP_MS}ms`;
+    el.classList.add('stagger-in');
+    // Clear on animationend, but also on a timer: animationend never arrives if
+    // the element is replaced mid-flight or the tab stops compositing, and the
+    // class uses `both`, so a stranded one would pin the element's final frame.
+    let cleared = false;
+    const clear = () => {
+      if (cleared) return;
+      cleared = true;
+      el.classList.remove('stagger-in');
+      el.style.animationDelay = '';
+      el.removeEventListener('animationend', clear);
+    };
+    el.addEventListener('animationend', clear);
+    setTimeout(clear, i * STAGGER_STEP_MS + 600);
+  });
+}
+
+/* Run the page-switch animation around `swap`. The section change itself stays
+   synchronous from the caller's point of view when motion is off, and is
+   deferred by one short beat when it's on. Guarded by a timeout as well as
+   animationend, because an animation on a hidden or replaced element may never
+   fire the event — the swap must happen regardless. */
+let navAnimToken = 0;
+function runPageTransition(swap){
+  const main = document.querySelector('.main');
+  // Skip the animation when it can't be seen. A hidden tab doesn't composite,
+  // so animationend never arrives and setTimeout is throttled to ~1s — waiting
+  // on either would stall the swap for a second with nothing to show for it.
+  if (!main || prefersReducedMotion() || !main.animate || document.hidden){
+    swap();
+    return;
+  }
+  const token = ++navAnimToken;
+  main.classList.remove('is-entering');
+  main.classList.add('is-leaving');
+
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    // A newer navigation started mid-flight; let that one own the animation.
+    if (token !== navAnimToken){ swap(); return; }
+    main.classList.remove('is-leaving');
+    swap();
+    void main.offsetWidth;
+    main.classList.add('is-entering');
+    const endEnter = e => {
+      if (e && e.target !== main) return;
+      main.classList.remove('is-entering');
+      main.removeEventListener('animationend', endEnter);
+    };
+    main.addEventListener('animationend', endEnter);
+    setTimeout(() => { if (token === navAnimToken) endEnter(); }, 600);
+  };
+  main.addEventListener('animationend', function out(e){
+    if (e.target !== main) return;
+    main.removeEventListener('animationend', out);
+    finish();
+  });
+  setTimeout(finish, 200);
+}
+
 function navigateTo(target, opts){
   const o = opts || {};
   if (!isNavigableSection(target)) return false;
@@ -337,9 +427,6 @@ function navigateTo(target, opts){
   document.querySelectorAll('.nav-item').forEach(n => {
     n.classList.toggle('active', n === chosen);
   });
-  document.querySelectorAll('.section').forEach(s => {
-    s.classList.toggle('active', s.id === target);
-  });
 
   const groupNav = (chosen && chosen.closest('.nav-group'))
     ? chosen
@@ -348,12 +435,26 @@ function navigateTo(target, opts){
     openOnlyNavGroup(groupNav.closest('.nav-group'));
   }
 
-  // The document scrolls, not .main — the redesign moved the scroll container
-  // to <body>, which left the old `.main.scrollTop = 0` a silent no-op and
-  // dropped you into the middle of every page you navigated to.
-  if (o.scroll !== false) window.scrollTo({ top: 0, behavior: 'auto' });
-
+  // Nav highlight and history update immediately; only the section swap itself
+  // waits for the outgoing page to clear, so the URL and the sidebar never lag
+  // behind the click.
   if (o.history !== false) writeNavHistory(target);
+
+  const alreadyThere = document.getElementById(target).classList.contains('active');
+  const swap = () => {
+    document.querySelectorAll('.section').forEach(s => {
+      s.classList.toggle('active', s.id === target);
+    });
+    // The document scrolls, not .main — the redesign moved the scroll container
+    // to <body>, which left the old `.main.scrollTop = 0` a silent no-op and
+    // dropped you into the middle of every page you navigated to.
+    if (o.scroll !== false) window.scrollTo({ top: 0, behavior: 'auto' });
+    staggerSectionContent(document.getElementById(target));
+  };
+
+  // Re-selecting the page you're already on shouldn't flash it away and back.
+  if (alreadyThere) swap();
+  else runPageTransition(swap);
   return true;
 }
 window.navigateTo = navigateTo;

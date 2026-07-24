@@ -173,7 +173,8 @@ body{display:flex;min-height:100vh;overflow:hidden;zoom:0.9}
 /* MAIN */
 .main{flex:1;overflow-y:auto;background:var(--paper)}
 .section{display:none;max-width:980px;margin:0 auto;padding:48px 56px 80px}
-.section.active{display:block;animation:fadeIn 240ms ease}
+/* Just reveal it — the arrival animation runs on .main (see PAGE SWITCHING). */
+.section.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
 .eyebrow{
@@ -3713,8 +3714,9 @@ a:focus-visible{
   border:none!important;
 }
 
-/* ---- SMOOTH SECTION TRANSITIONS ---- */
-.section{transition:opacity 240ms var(--ease)!important}
+/* Section transitions live with the page-switch rules further down. The
+   opacity transition that used to sit here could never fire: .section is
+   display:none when inactive, and display cancels transitions. */
 
 /* ---- HOVER ON DROPDOWN ITEMS: scale subtle ---- */
 .topnav-drop-item:hover{
@@ -4091,11 +4093,34 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 }
 .home-pathway-tool-badge::before{display:none!important}
 
-/* ---------- COMMON MICRO-INTERACTION POLISH ---------- */
-/* Soft fade-in for sections when activated (only if not already active) */
-.section.active{animation:sectionFadeIn 280ms var(--ease) both}
+/* ---------- PAGE SWITCHING ----------
+   Switching sections is a two-beat move: the outgoing page drops away, then
+   the incoming one rises into place. Because only one .section is ever
+   displayed, the two beats run on the shared .main container rather than on
+   the sections themselves — animating both sections at once would need them
+   displayed simultaneously, which would shift the layout mid-transition.
+
+   navigateTo() in app.js drives this: it adds .is-leaving, swaps the section
+   when that animation ends, then adds .is-entering. Both classes are removed
+   when their animation finishes, so an interrupted navigation just restarts. */
+.main.is-leaving{animation:pageLeave var(--t-fast) var(--ease) both}
+.main.is-entering{animation:pageEnter var(--t-slow) var(--ease) both}
+@keyframes pageLeave{
+  from{opacity:1;transform:translateY(0)}
+  to{opacity:0;transform:translateY(-6px)}
+}
+@keyframes pageEnter{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Content inside the arriving page settles in a beat behind it. The delay is
+   set inline by JS, and cleared entirely under reduced motion — the global
+   reduce rule zeroes durations but NOT delays, so a stagger left in place
+   would strand these invisible for the full delay. */
+.section.active > .stagger-in{animation:sectionFadeIn var(--t-base) var(--ease) both}
 @keyframes sectionFadeIn{
-  from{opacity:0;transform:translateY(4px)}
+  from{opacity:0;transform:translateY(6px)}
   to{opacity:1;transform:translateY(0)}
 }
 
