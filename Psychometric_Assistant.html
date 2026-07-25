@@ -22106,10 +22106,18 @@ function getBatteryPremorbidComparison(){
        *** below estimate − 2.576·SEE   (99% CI lower bound)
    SEE mode silently falls back to SD mode when SEE is not available.    */
 const PREMORBID_CI_Z = { ninety: 1.645, ninetyFive: 1.960, ninetyNine: 2.576 };
+/* The EFFECTIVE premorbid flagging mode, which is not always the selected one:
+   SEE mode silently falls back to SD mode when the linked model has no usable
+   SEE. Every consumer must ask this function rather than reading the control
+   directly, or one of them ends up describing a mode the table is not using —
+   which is exactly how the exported APA note came to misstate the asterisks. */
+function batteryPremorbidMode(prem){
+  const selected = document.getElementById('bat-prem-threshold')?.value === 'see' ? 'see' : 'sd';
+  return (selected === 'see' && prem && Number.isFinite(prem.see) && prem.see > 0) ? 'see' : 'sd';
+}
 function batteryPremorbidStars(ss, prem){
   if (!prem || !Number.isFinite(ss) || !Number.isFinite(prem.estimate)) return '';
-  const mode = document.getElementById('bat-prem-threshold')?.value === 'see' ? 'see' : 'sd';
-  if (mode === 'see' && Number.isFinite(prem.see) && prem.see > 0){
+  if (batteryPremorbidMode(prem) === 'see'){
     const t90 = prem.estimate - PREMORBID_CI_Z.ninety      * prem.see;
     const t95 = prem.estimate - PREMORBID_CI_Z.ninetyFive  * prem.see;
     const t99 = prem.estimate - PREMORBID_CI_Z.ninetyNine  * prem.see;
@@ -22152,11 +22160,25 @@ function getPremorbidEstimateOptions(){
   });
   return out;
 }
-function getPremorbidCiLevel(){
-  const sel = document.getElementById('pre-ci');
-  const v = sel ? sel.value : '90';
-  return v === '95' ? '95% CI' : '90% CI';
+/* Single source of truth for the #pre-ci control, which emits "0.90" / "0.95".
+   FIVE places used to parse this value independently, and one of them compared
+   it against '95' — a string the <select> can never produce — so it returned
+   the 90% branch unconditionally while the bounds printed beside it were
+   computed at 1.96. A genuine 95% interval was labelled "90% CI" on the
+   Battery premorbid link. Route everything through here; do not re-parse the
+   control anywhere else. Accepts either "0.95" or "95" so a future change to
+   the option values cannot resurrect the mismatch. */
+function premorbidCi(){
+  const el = document.getElementById('pre-ci');
+  const n = parseFloat(el ? el.value : '');
+  const is95 = Number.isFinite(n) && (n > 1 ? n : n * 100) >= 95;
+  return {
+    mult:  is95 ? 1.96    : 1.645,   // z multiplier for the bounds
+    label: is95 ? '95% CI' : '90% CI', // "90% CI" form, for the battery link
+    short: is95 ? '95%'    : '90%'     // "90%" form, for table column headers
+  };
 }
+function getPremorbidCiLevel(){ return premorbidCi().label; }
 /* Update the link-status block beside the autofill button. When a link
    is active, the autofill button hides and the status block takes its
    slot in the source row. The status shows all three asterisk-threshold
@@ -22184,7 +22206,7 @@ function updatePremorbidLinkStatus(){
   if (linkWrap) linkWrap.style.display = linkActive ? 'none' : '';
 
   if (Number.isFinite(see) && see > 0 && Number.isFinite(est) && label){
-    const mode = document.getElementById('bat-prem-threshold')?.value === 'see' ? 'see' : 'sd';
+    const mode = batteryPremorbidMode({ see });
     let t1, t2, t3;
     if (mode === 'see'){
       t1 = Math.round(est - 1.645 * see);
@@ -22645,8 +22667,14 @@ const APA_NOTES = {
     `Classification follows ${ctx.classification === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.`,
     ctx.mixedTypes ? 'Scores are reported in their native standardised metric.' : '',
     ctx.ciLevel && ctx.ciLevel !== 'off' ? `Confidence intervals are ${ctx.ciLevel}%.` : '',
+    // Must follow the EFFECTIVE flagging mode (batteryPremorbidMode). This
+    // previously described the SD thresholds unconditionally, so with SEE
+    // flagging active the exported note misstated what the asterisks in its
+    // own table meant.
     ctx.premorbid != null
-      ? `Asterisks mark scores below the premorbid estimate of ${ctx.premorbid}: * ≥ 1 SD, ** ≥ 1.5 SD, *** ≥ 2 SD.`
+      ? (ctx.premorbidMode === 'see'
+          ? `Asterisks mark scores falling below the premorbid estimate of ${ctx.premorbid} by more than the model's standard error of estimate: * beyond the 90% bound, ** beyond the 95% bound, *** beyond the 99% bound.`
+          : `Asterisks mark scores below the premorbid estimate of ${ctx.premorbid}: * ≥ 1 SD, ** ≥ 1.5 SD, *** ≥ 2 SD.`)
       : ''
   ],
   'sdi': ctx => [
@@ -22742,7 +22770,8 @@ function renderBatteryApa(){
       classification: cls,
       mixedTypes: types.size > 1,
       ciLevel,
-      premorbid: prem ? fmt(prem.estimate, 0) : null
+      premorbid: prem ? fmt(prem.estimate, 0) : null,
+      premorbidMode: prem ? batteryPremorbidMode(prem) : null
     })}
   `;
 }
@@ -24348,10 +24377,7 @@ function preStr(id){
   const el = preGet(id);
   return el && el.value ? el.value : null;
 }
-function preCiMult(){
-  const ci = preStr('pre-ci');
-  return ci === '0.95' ? 1.96 : 1.645;
-}
+function preCiMult(){ return premorbidCi().mult; }
 function fmtIntOrDash(v){
   if (v == null || isNaN(v)) return '-';
   return Math.round(v).toString();
@@ -24514,7 +24540,7 @@ function calcPremorbid(){
   const edu  = preNum('pre-edu');
   const age  = preNum('pre-age');
   const occ  = preStr('pre-occ');
-  const ci   = preStr('pre-ci') || '0.90';
+  // CI level comes from premorbidCi() — see its note; do not re-parse #pre-ci.
   // Sex coding differs between models:
   //   TOPF / WAIS-IV manual demographic equations:  Female = 1, Male = 2
   //   OPIE-4 (Holdnack et al., 2013):               Female = 0, Male = 1
@@ -24522,7 +24548,7 @@ function calcPremorbid(){
   const sexC_opie = sex === 'Female' ? 0 : sex === 'Male' ? 1 : null;
   const occC = occ ? OCC_CODE[occ] : null;
   const mult = preCiMult();
-  const ciPct = ci === '0.95' ? '95%' : '90%';
+  const ciPct = premorbidCi().short;
 
   preGet('pre-ci-lo-hdr').textContent = `Lower ${ciPct}`;
   preGet('pre-ci-hi-hdr').textContent = `Upper ${ciPct}`;
@@ -24793,11 +24819,11 @@ function calcPredict(){
   const sex  = preStr('pre-sex');
   const edu  = preNum('pre-edu');
   const age  = preNum('pre-age');
-  const ci   = preStr('pre-ci') || '0.90';
+  // CI level comes from premorbidCi() — see its note; do not re-parse #pre-ci.
   // ToPF-predicted WAIS-IV indices use the WAIS-IV manual sex coding: F = 1, M = 2.
   const sexC_topf = sex === 'Female' ? 1 : sex === 'Male' ? 2 : null;
   const mult = preCiMult();
-  const ciPct = ci === '0.95' ? '95%' : '90%';
+  const ciPct = premorbidCi().short;
 
   document.querySelectorAll('.pre-ci-lo-hdr-2').forEach(e => e.textContent = `Lower ${ciPct}`);
   document.querySelectorAll('.pre-ci-hi-hdr-2').forEach(e => e.textContent = `Upper ${ciPct}`);
@@ -25054,9 +25080,9 @@ function calcOpiePredict(){
   const tbody = preGet('pre-opiepredict-tbody');
   if (!tbody) return;
 
-  const ci = preStr('pre-ci') || '0.90';
+  // CI level comes from premorbidCi() — see its note; do not re-parse #pre-ci.
   const mult = preCiMult();
-  const ciPct = ci === '0.95' ? '95%' : '90%';
+  const ciPct = premorbidCi().short;
   document.querySelectorAll('.pre-ci-lo-hdr-3').forEach(e => e.textContent = `Lower ${ciPct}`);
   document.querySelectorAll('.pre-ci-hi-hdr-3').forEach(e => e.textContent = `Upper ${ciPct}`);
 

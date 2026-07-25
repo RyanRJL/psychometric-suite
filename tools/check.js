@@ -738,10 +738,101 @@ check('missing n falls back to equal weighting, flagged as such', () => {
 });
 
 /* ==========================================================================
-   12. Documentation contracts
+   12. Premorbid CI level and battery flagging mode
+   Both of these are DOM-reading functions, so they are extracted from app.js
+   and run against a minimal document stub. Both previously described a
+   setting other than the one actually in force.
+   ========================================================================== */
+heading('12. Premorbid CI level and battery flagging mode');
+
+// Minimal stub: just enough for premorbidCi / batteryPremorbidMode to read a
+// control value. If either grows a real DOM dependency, this fails loudly.
+function withControls(values, fnNames, body) {
+  const ctx = {
+    document: {
+      getElementById: (id) => (id in values ? { value: values[id] } : null)
+    }
+  };
+  vm.createContext(ctx);
+  vm.runInContext(
+    fnNames.map((n) => extractFn(APP_SRC, n)).join('\n') +
+      '\n;globalThis.__P = { ' + fnNames.join(', ') + ' };',
+    ctx
+  );
+  return body(ctx.__P);
+}
+
+check('premorbidCi label, multiplier and header all agree', () => {
+  const cases = [
+    ['0.90', '90% CI', '90%', 1.645],
+    ['0.95', '95% CI', '95%', 1.96],
+    // Accepts the bare-percent encoding too, so a change to the <select>
+    // option values cannot resurrect the original mismatch.
+    ['90',   '90% CI', '90%', 1.645],
+    ['95',   '95% CI', '95%', 1.96],
+  ];
+  for (const [val, label, short, mult] of cases) {
+    const got = withControls({ 'pre-ci': val }, ['premorbidCi'], (P) => P.premorbidCi());
+    if (got.label !== label || got.short !== short || Math.abs(got.mult - mult) > 1e-12) {
+      return 'value ' + JSON.stringify(val) + ' gave ' + JSON.stringify(got);
+    }
+  }
+  return true;
+});
+
+check('premorbidCi defaults to 90% when the control is absent or unparseable', () => {
+  for (const stub of [{}, { 'pre-ci': '' }, { 'pre-ci': 'abc' }]) {
+    const got = withControls(stub, ['premorbidCi'], (P) => P.premorbidCi());
+    if (got.label !== '90% CI' || Math.abs(got.mult - 1.645) > 1e-12) {
+      return JSON.stringify(stub) + ' gave ' + JSON.stringify(got);
+    }
+  }
+  return true;
+});
+
+check('batteryPremorbidMode falls back to sd when SEE mode has no usable SEE', () => {
+  const run = (ctrl, prem) =>
+    withControls({ 'bat-prem-threshold': ctrl }, ['batteryPremorbidMode'], (P) => P.batteryPremorbidMode(prem));
+  const cases = [
+    ['sd',  { estimate: 110, see: 9.87 }, 'sd'],
+    ['see', { estimate: 110, see: 9.87 }, 'see'],
+    ['see', { estimate: 110 },            'sd'],   // no SEE at all
+    ['see', { estimate: 110, see: 0 },    'sd'],   // SEE present but unusable
+    ['see', null,                         'sd'],
+  ];
+  for (const [ctrl, prem, want] of cases) {
+    const got = run(ctrl, prem);
+    if (got !== want) return 'control=' + ctrl + ' prem=' + JSON.stringify(prem) + ' -> ' + got + ', want ' + want;
+  }
+  return true;
+});
+
+check('the battery APA note describes the flagging mode actually in force', () => {
+  // APA_NOTES is an object literal; brace-match it the same way as a function.
+  const start = APP_SRC.indexOf('const APA_NOTES = {');
+  if (start === -1) return 'could not locate APA_NOTES in app.js';
+  let depth = 0, src = null;
+  for (let j = APP_SRC.indexOf('{', start); j < APP_SRC.length; j++) {
+    if (APP_SRC[j] === '{') depth++;
+    else if (APP_SRC[j] === '}') { depth--; if (depth === 0) { src = APP_SRC.slice(start, j + 1); break; } }
+  }
+  if (!src) return 'unbalanced braces in APA_NOTES';
+  const c = {}; vm.createContext(c);
+  vm.runInContext(src + ';globalThis.__N = APA_NOTES;', c);
+  const noteFor = (mode) => c.__N.bat({ classification: 'wechsler', mixedTypes: false,
+    ciLevel: 'off', premorbid: '110', premorbidMode: mode }).filter(Boolean).join(' ');
+  const sd = noteFor('sd'), see = noteFor('see');
+  if (!/1 SD/.test(sd) || /standard error/.test(sd)) return 'sd-mode note is wrong: ' + sd;
+  if (!/standard error/.test(see) || /1 SD/.test(see)) return 'see-mode note is wrong: ' + see;
+  if (sd === see) return 'the note does not vary with the mode';
+  return true;
+});
+
+/* ==========================================================================
+   13. Documentation contracts
    Text that must stay in step with the code.
    ========================================================================== */
-heading('12. Documentation contracts');
+heading('13. Documentation contracts');
 
 check('every OPIE tooltip warns it is illustrative only in a UK context', () => {
   const keys = Object.keys(D.PRE_MODEL_TOOLTIPS).filter(k => /^opie/i.test(k));
