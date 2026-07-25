@@ -547,10 +547,113 @@ check('OCC_CODE maps the five occupational classes to 1-5', () => {
 });
 
 /* ==========================================================================
-   10. Documentation contracts
+   10. Percentile display at the distribution tails
+   A percentile rank lives in the OPEN interval (0, 100). Rounding the extreme
+   tails to 2dp once produced "0.00" and "100.00", which reached report text as
+   "0th percentile" / "100th percentile" and also broke conversion back to a
+   standard score (toZ rejects v <= 0 || v >= 100). Mirrors app.js fmtPct and
+   reportOrdinal.
+   ========================================================================== */
+heading('10. Percentile display at the tails');
+
+// Unlike the rest of this file, these two are pulled STRAIGHT OUT OF app.js and
+// executed, rather than re-implemented. Both are pure (no DOM, no globals), so
+// extracting them is safe — and it means this section tests the shipped code
+// rather than a copy that could silently drift away from it.
+// If app.js is refactored so these are no longer top-level pure functions, the
+// extraction fails loudly rather than silently passing.
+function extractFn(source, name) {
+  const start = source.indexOf('function ' + name + '(');
+  if (start === -1) throw new Error('could not find function ' + name + ' in app.js');
+  let depth = 0, i = source.indexOf('{', start);
+  if (i === -1) throw new Error('malformed function ' + name);
+  for (let j = i; j < source.length; j++) {
+    if (source[j] === '{') depth++;
+    else if (source[j] === '}') { depth--; if (depth === 0) return source.slice(start, j + 1); }
+  }
+  throw new Error('unbalanced braces in ' + name);
+}
+
+const APP_SRC = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
+const appFns = {};
+vm.createContext(appFns);
+vm.runInContext(
+  extractFn(APP_SRC, 'fmtPct') + '\n' + extractFn(APP_SRC, 'reportOrdinal') +
+    '\n;globalThis.__F = { fmtPct, reportOrdinal };',
+  appFns
+);
+// app.js emits HTML entities and <sup> tags; normalise so the expectations below
+// read as plain ordinals.
+const rawFmtPct = appFns.__F.fmtPct;
+const rawOrdinal = appFns.__F.reportOrdinal;
+const fmtPctCheck = (p) => rawFmtPct(p);
+const reportOrdinalCheck = (v) =>
+  String(rawOrdinal(v))
+    .replace(/<sup>|<\/sup>/g, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+const pctOf = (z) => normCDF(z) * 100;
+
+check('fmtPct never emits an impossible rank (0.00 or 100.00)', () => {
+  // Sweep the whole reachable z range, well past the Wechsler limits.
+  for (let z = -6; z <= 6; z += 0.001) {
+    const s = fmtPctCheck(pctOf(z));
+    if (s === '0.00' || s === '100.00') return 'emitted ' + s + ' at z=' + z.toFixed(3);
+    const v = parseFloat(s);
+    if (!(v > 0 && v < 100)) return 'outside the open interval: ' + s + ' at z=' + z.toFixed(3);
+  }
+  return true;
+});
+
+check('Wechsler floor and ceiling read as bounded ordinals, not 0th/100th', () => {
+  const cases = [
+    ['FSIQ 40',  (40 - 100) / 15,  '<1st'],
+    ['FSIQ 160', (160 - 100) / 15, '>99th'],
+    ['T = 90',   (90 - 50) / 10,   '>99th'],
+    ['FSIQ 45',  (45 - 100) / 15,  '<1st'],
+    ['FSIQ 155', (155 - 100) / 15, '>99th'],
+  ];
+  for (const [label, z, want] of cases) {
+    const got = reportOrdinalCheck(fmtPctCheck(pctOf(z)));
+    if (got !== want) return label + ' gave ' + JSON.stringify(got) + ', want ' + want;
+  }
+  return true;
+});
+
+check('tail percentiles still convert back to a standard score', () => {
+  // toZ returns null for v <= 0 || v >= 100, so a clamped value must stay inside.
+  for (const z of [-6, -4, -3.6667, 0, 3.6667, 4, 6]) {
+    const v = parseFloat(fmtPctCheck(pctOf(z)));
+    if (!(v > 0 && v < 100)) return 'z=' + z + ' produced ' + v + ', which toZ would reject';
+  }
+  return true;
+});
+
+check('reportOrdinal handles user-typed and empty percentile values', () => {
+  const cases = [['', ''], [null, ''], ['0', '<1st'], ['100', '>99th'], ['1', '1st'],
+                 ['99', '99th'], ['50', '50th'], ['11', '11th'], ['abc', '']];
+  for (const [input, want] of cases) {
+    const got = reportOrdinalCheck(input);
+    if (got !== want) return JSON.stringify(input) + ' gave ' + JSON.stringify(got) + ', want ' + JSON.stringify(want);
+  }
+  return true;
+});
+
+check('ordinal suffixes are correct through the teens', () => {
+  const want = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 11: '11th', 12: '12th', 13: '13th',
+                 21: '21st', 22: '22nd', 23: '23rd', 31: '31st', 42: '42nd', 53: '53rd' };
+  for (const n in want) {
+    const got = reportOrdinalCheck(n);
+    if (got !== want[n]) return n + ' gave ' + got + ', want ' + want[n];
+  }
+  return true;
+});
+
+/* ==========================================================================
+   11. Documentation contracts
    Text that must stay in step with the code.
    ========================================================================== */
-heading('10. Documentation contracts');
+heading('11. Documentation contracts');
 
 check('every OPIE tooltip warns it is illustrative only in a UK context', () => {
   const keys = Object.keys(D.PRE_MODEL_TOOLTIPS).filter(k => /^opie/i.test(k));

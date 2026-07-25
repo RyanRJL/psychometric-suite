@@ -20888,8 +20888,16 @@ function fmt(n, dp = 2){
 }
 function fmtPct(p){
   if (p == null || isNaN(p)) return '-';
-  if (p < 0.1) return p.toFixed(2);
-  if (p > 99.9) return p.toFixed(2);
+  // A percentile rank lives in the OPEN interval (0, 100) — 0 and 100 are both
+  // impossible. Rounding the extreme tails to 2dp used to emit "0.00" and
+  // "100.00", with two consequences: report narrative printed "0th percentile"
+  // / "100th percentile" via reportOrdinal, and toZ (which returns null for
+  // v <= 0 || v >= 100) could no longer convert a percentile-typed row back to
+  // a standard score at all. Clamp inside the interval instead.
+  // Only reachable at the Wechsler floor/ceiling (FSIQ 40 -> 0.0032th,
+  // FSIQ 160 -> 99.9968th) and at T = 90; FSIQ 45 / 155 already resolve fine.
+  if (p < 0.1)  return Math.max(p, 0.01).toFixed(2);
+  if (p > 99.9) return Math.min(p, 99.99).toFixed(2);
   if (p < 1 || p > 99) return p.toFixed(1);
   return Math.round(p).toString();
 }
@@ -25955,9 +25963,18 @@ function reportDisplayName(){
   return reportReference().name;
 }
 function reportOrdinal(value){
+  if (value == null || String(value).trim() === '') return '';
   const raw = Number(value);
-  if (raw > 0 && raw < 1) return '&lt;1<sup>st</sup>';
-  if (raw > 99 && raw < 100) return '&gt;99<sup>th</sup>';
+  if (!Number.isFinite(raw)) return '';
+  // Deliberately open-ended rather than bounded at 0 and 100. A percentile rank
+  // can never be exactly 0 or 100, so anything at or below 1 reads "<1st" and
+  // anything at or above 99 reads ">99th". The previous strict guards
+  // (raw > 0 && raw < 1, raw > 99 && raw < 100) let a value that had rounded to
+  // 0.00 or 100.00 fall through to the generic suffix branch, so generated
+  // report text asserted "0th percentile" / "100th percentile" — impossible
+  // ranks. A user typing 0 or 100 into the percentile field hits this too.
+  if (raw < 1)  return '&lt;1<sup>st</sup>';
+  if (raw > 99) return '&gt;99<sup>th</sup>';
   const n = Math.round(raw);
   if (!Number.isFinite(n)) return '';
   const mod100 = n % 100;
