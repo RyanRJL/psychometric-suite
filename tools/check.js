@@ -829,10 +829,73 @@ check('the battery APA note describes the flagging mode actually in force', () =
 });
 
 /* ==========================================================================
-   13. Documentation contracts
+   13. Score Tables confidence intervals
+   getBatteryCiHtml is extracted from app.js and run against a stubbed
+   getMergedDB (returning the real normDB) and a minimal document.
+   ========================================================================== */
+heading('13. Score Tables confidence intervals');
+
+const batteryCi = (() => {
+  const boundsSrc = APP_SRC.match(/const BATTERY_SCORE_BOUNDS = \{[^;]*;/);
+  if (!boundsSrc) throw new Error('BATTERY_SCORE_BOUNDS not found in app.js');
+  const ctx = {
+    normDB: D.normDB,
+    getMergedDB: () => D.normDB,
+    document: { getElementById: () => ({ value: 'scaled' }) }
+  };
+  vm.createContext(ctx);
+  vm.runInContext(
+    boundsSrc[0] + '\n' +
+      ['getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml'].map((n) => extractFn(APP_SRC, n)).join('\n') +
+      '\n;globalThis.__B = getBatteryCiHtml;',
+    ctx
+  );
+  return ctx.__B;
+})();
+
+const SCALED_ROW   = { name: 'Block Design', group: 'WAIS-IV Core Subtests · All Ages', scoreType: 'scaled' };
+const STANDARD_ROW = { name: 'Full Scale IQ', group: 'WAIS-IV Indices · All Ages',      scoreType: 'standard' };
+
+check('scaled-score intervals never exceed the 1-19 scale limits', () => {
+  // A score of 19 previously produced "17-21"; 21 is not a possible scaled score.
+  for (let ss = 1; ss <= 19; ss++) {
+    const out = batteryCi(ss, SCALED_ROW, '90');
+    const [lo, hi] = out.split('–').map(Number);
+    if (!(lo >= 1 && hi <= 19)) return 'score ' + ss + ' gave ' + out;
+  }
+  return true;
+});
+check('the scaled-score ceiling actually binds at the top of the scale', () => {
+  // Guards against the cap being silently removed: at 19 the upper end must
+  // be pinned to 19 rather than floating above it.
+  const out = batteryCi(19, SCALED_ROW, '90');
+  return out.endsWith('–19') || 'score 19 gave ' + out;
+});
+check('standard-metric intervals are NOT capped at 19', () => {
+  // The cap is a property of the scaled-score scale only. Applying it to
+  // index scores would be catastrophic, so pin that it does not happen.
+  const out = batteryCi(160, STANDARD_ROW, '90');
+  const hi = Number(out.split('–')[1]);
+  return hi > 19 || 'FSIQ 160 gave ' + out;
+});
+check('the interval depends on the row NAME, not just the score', () => {
+  // The reliability is looked up by subtest name, which is why the on-screen
+  // cell must refresh on a rename. Two subtests in the same family with
+  // different reliabilities must give different intervals at the same score.
+  const mr = batteryCi(10, { ...SCALED_ROW, name: 'Matrix Reasoning' }, '90');
+  const vc = batteryCi(10, { ...SCALED_ROW, name: 'Vocabulary' }, '90');
+  return mr !== vc || 'Matrix Reasoning and Vocabulary both gave ' + mr;
+});
+check('an unknown subtest name yields no interval rather than a wrong one', () => {
+  const out = batteryCi(10, { ...SCALED_ROW, name: 'Not A Real Subtest' }, '90');
+  return out === '' || 'got ' + JSON.stringify(out);
+});
+
+/* ==========================================================================
+   14. Documentation contracts
    Text that must stay in step with the code.
    ========================================================================== */
-heading('13. Documentation contracts');
+heading('14. Documentation contracts');
 
 check('every OPIE tooltip warns it is illustrative only in a UK context', () => {
   const keys = Object.keys(D.PRE_MODEL_TOOLTIPS).filter(k => /^opie/i.test(k));

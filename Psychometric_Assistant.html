@@ -22465,6 +22465,13 @@ function getBatteryRowReliability(row){
   const sd = Number.isFinite(entry.sd1)         ? entry.sd1         : null;
   return (r !== null && sd !== null) ? { r, sd } : null;
 }
+/* Hard limits imposed by the score scale itself, used to keep an interval from
+   printing a value the scale cannot produce. Only scaled scores have a
+   universal ceiling (Wechsler subtests run 1-19); "standard" and T are generic
+   metrics whose usable range varies by instrument, so no ceiling is asserted
+   for them, and z is unbounded. */
+const BATTERY_SCORE_BOUNDS = { scaled: { min: 1, max: 19 } };
+
 function getBatteryCiHtml(ss, row, level){
   if (!Number.isFinite(ss)) return '';
   const rel = getBatteryRowReliability(row);
@@ -22474,8 +22481,14 @@ function getBatteryCiHtml(ss, row, level){
   const loRaw  = ss - zMult * sem;
   const hiRaw  = ss + zMult * sem;
   const type   = rowScoreType(row);
-  const lo     = type === 'z' ? Math.round(loRaw * 10) / 10 : Math.max(1, Math.round(loRaw));
-  const hi     = type === 'z' ? Math.round(hiRaw * 10) / 10 : Math.round(hiRaw);
+  if (type === 'z'){
+    return `${Math.round(loRaw * 10) / 10}–${Math.round(hiRaw * 10) / 10}`;
+  }
+  // The lower end was already floored, but nothing capped the upper end, so a
+  // scaled score of 19 printed "17-21" — a value above the top of the scale.
+  const bounds = BATTERY_SCORE_BOUNDS[type];
+  const lo = Math.max(bounds ? bounds.min : 1, Math.round(loRaw));
+  const hi = bounds ? Math.min(bounds.max, Math.round(hiRaw)) : Math.round(hiRaw);
   return `${lo}–${hi}`;
 }
 
@@ -22570,7 +22583,15 @@ function renderBattery(){
       const details = batteryClassificationDetails(batteryRows[i], cls);
       clsCell.className = `computed ${details.className}`.trim();
       clsCell.innerHTML = details.html;
-      if (f === 'score' && ciCell){
+      // Refresh unconditionally. The interval depends on the score AND on the
+      // row name (the reliability is looked up by subtest name) AND on the
+      // row's score type. Gating this on `f === 'score'` meant renaming a row
+      // left the previous subtest's interval on screen while renderBatteryApa()
+      // below rebuilt the APA preview with the new name — two visible tables
+      // disagreeing. Recomputing on every keystroke is cheap; an explicit
+      // field list would just reintroduce the same bug the next time a field
+      // starts feeding the interval.
+      if (ciCell){
         ciCell.innerHTML = ciLevel !== 'off' ? getBatteryCiHtml(parseFloat(batteryRows[i].score), batteryRows[i], ciLevel) : '';
       }
       renderBatteryApa();
