@@ -19616,10 +19616,25 @@ input[type="text"].ds-inline-bar-input{
       Score conversions assume an approximately normal reference distribution. Wechsler descriptor bands follow WAIS-IV/WMS-IV manual conventions; AACN descriptor labels follow Guilmette et al. (2020). SDI and RCI <em>p</em>-values are two-tailed. Jacobson &amp; Truax (1991), Iverson (2001), and McSweeney et al. (1993) implementations use the standard normal distribution; Crawford &amp; Garthwaite (2007) uses the Student <i>t</i> distribution with <i>N</i>−2 degrees of freedom.
     </p>
     <p class="section-body-text">
-      The auto-fill normative database includes published retest parameters for major batteries (including D-KEFS, WAIS-IV, WMS-IV, CVLT-3, RBANS, and WISC-V), with normative <i>N</i> where reported. <i>N</i> is required for Crawford/Garthwaite calculations and may need manual entry when unavailable. Clinicians should verify all imported parameters against the latest manual and local service standards before interpretation.
+      The auto-fill normative database includes published retest parameters for major batteries (including D-KEFS, WAIS-IV, WMS-IV, CVLT-3, CVLT-C, RBANS, and WISC-V), with normative <i>N</i> where reported. <i>N</i> is required for Crawford/Garthwaite calculations and may need manual entry when unavailable. Clinicians should verify all imported parameters against the latest manual and local service standards before interpretation.
     </p>
     <p class="section-body-text">
-      Premorbid estimates combine ToPF-based and demographic equations with OPIE-4 prorated models, and include predicted-versus-achieved discrepancy outputs with confidence intervals, base-rate lookups, and APA-formatted export tables. OPIE-4 regression terms are adapted for UK use by omitting US-specific education, region, and ethnicity terms; interpretation in UK settings should remain cautious because underlying normative regression data are US-derived.
+      <strong>Confidence intervals and standard errors of measurement.</strong> Intervals on the Clinical Outcomes Table are calculated as the obtained score ± <i>z</i> × SEM, where SEM = SD × √(1 − <i>r</i>), centred on the obtained score rather than on an estimated true score. The reliability <i>r</i> is the <strong>test–retest coefficient</strong> held in the normative database, corrected for the normative sample's variability where the publisher reports a corrected value. Test–retest reliability is used for every instrument, for two reasons: it keeps a single, stated basis across a table that may mix batteries, and it is the appropriate coefficient for the many timed measures in the database, since split-half and alpha are not valid reliability estimates for speeded tests. The WAIS-IV manual itself uses test–retest coefficients for Coding, Symbol Search and Cancellation for exactly this reason, and the values used here for those three subtests are identical to the ones it publishes.
+    </p>
+    <p class="section-body-text">
+      One consequence should be borne in mind when comparing output against a test manual: because manuals derive their published intervals from internal-consistency reliability wherever it is available, and internal consistency is almost always the higher coefficient, the intervals shown here are <strong>somewhat wider</strong> than the manual's. For WAIS-IV index scores the difference is up to roughly 2.5 points at each end — largest for Perceptual Reasoning and Working Memory, around 1 point for Full Scale IQ, and negligible for Verbal Comprehension and Processing Speed. The intervals here are therefore the more conservative of the two, and answer the question <em>how much would this score be expected to move on retesting</em> rather than <em>how precisely was it measured on the day</em>.
+    </p>
+    <p class="section-body-text">
+      Reliable-change calculations use the same test–retest coefficients, paired with the standard deviation from the same retest sample so that both terms describe one population. Where a publisher reports a coefficient corrected to the normative sample's variability, that corrected value is offered as an option but is not the default, because it describes a differently-distributed population from the standard deviation it would be multiplied by. Reliability type varies by instrument and is stated in the notes beneath each generated table (for example, CVLT-3 coefficients are alternate-form, and RBANS Form A coefficients are same-form retest).
+    </p>
+    <p class="section-body-text">
+      Premorbid estimates combine ToPF-based and demographic equations with OPIE-4 prorated models, and include predicted-versus-achieved discrepancy outputs with confidence intervals, base-rate lookups, and APA-formatted export tables.
+    </p>
+    <p class="section-body-text">
+      <strong>OPIE-4 is provided for illustration only in a UK context and its output should not be quoted as a concrete premorbid estimate.</strong> The regression terms reproduce Holdnack et al. (2013), Table eA5.8, but the published equations also carry US education, ethnicity and region terms that are not applied here, which fixes every prediction at the US reference category (12th-grade high-school graduate, not African-American, not resident in the western US). Those terms are omitted rather than mapped because the education dummies encode how unusual a given attainment level is <em>within the US population the model was fitted on</em>, not years of schooling, and that does not transfer: the US reference category corresponds to A-levels if matched by years but to GCSE/O-level if matched by population position, and UK school-leaving age was raised to 16 only in 1972, so leaving school without qualifications was normative for older cohorts in a way it was not in the US sample. Expect estimates to run high for patients who left school early and low for graduates, by an amount this tool cannot quantify. For a UK demographic estimate, use the Crawford &amp; Allan (2001) model.
+    </p>
+    <p class="section-body-text">
+      <strong>Base rates.</strong> The ToPF predicted-difference base rates are estimated from a normal model with SD equal to the model's standard error of estimate, not transcribed from observed standardisation-sample frequencies; they are labelled as such wherever they appear. Benchmarked against the empirical ACS discrepancy table, the parametric values run roughly 10% relatively low across the −5 to −20 band, so a given discrepancy is shown as marginally rarer than observed data suggest. The OPIE-4 discrepancy base rates (ACS Table eA5.12) are empirical.
     </p>
 
     <div class="references">
@@ -19632,7 +19647,11 @@ input[type="text"].ds-inline-bar-input{
       <p>Iverson, G. L. (2001). Interpreting change on the WAIS-III/WMS-III in clinical samples. <i>Archives of Clinical Neuropsychology, 16</i>(2), 183–191.</p>
       <p>Jacobson, N. S., &amp; Truax, P. (1991). Clinical significance: A statistical approach to defining meaningful change in psychotherapy research. <i>Journal of Consulting and Clinical Psychology, 59</i>(1), 12–19.</p>
       <p>McSweeney, A. J., Naugle, R. I., Chelune, G. J., &amp; Lüders, H. (1993). "T scores for change": An illustration of a regression approach to depicting change in clinical neuropsychology. <i>The Clinical Neuropsychologist, 7</i>(3), 300–312.</p>
+      <p>Wechsler, D. (2010). <i>Wechsler Adult Intelligence Scale – Fourth UK Edition (WAIS–IV<sup>UK</sup>): Technical and interpretive manual.</i> London: Pearson Assessment. [Reliability coefficients, standard errors of measurement, and test–retest stability parameters: Tables 4.1, 4.3 and 4.5.]</p>
       <p>Wechsler, D. (2011). <i>Test of Premorbid Functioning (TOPF-UK) manual.</i> London: Pearson Assessment.</p>
+      <p>Randolph, C. (2012). <i>Repeatable Battery for the Assessment of Neuropsychological Status Update (RBANS Update): Manual.</i> Bloomington, MN: Pearson.</p>
+      <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test – Third Edition (CVLT-3): Manual.</i> Bloomington, MN: Pearson.</p>
+      <p>Cohen, J. (1988). <i>Statistical power analysis for the behavioral sciences</i> (2nd ed.). Hillsdale, NJ: Lawrence Erlbaum.</p>
       <p>Alnasser, A., Alamuddin, R., Algahtani, H., Alenezi, W., Alanazi, A., Almegren, J., Alsoudi, A., Alhazmi, A., Alsawah, A., Alnasser, H., Alruwaili, T., Al-Qattan, R., Al-Turki, M., Aljazeeri, Y., Al-Khushail, I., Alrashed, S., &amp; Aldahal, T. (2023). Paracetamol versus ibuprofen in treating episodic tension-type headache: a systematic review and network meta-analysis. <i>JAMA Network Open, 6</i>(11), e2343849.</p>
       <p>Cuijpers, P., Cristea, I. A., Karyotaki, E., Reijnders, M., &amp; Huibers, M. J. (2016). How effective are cognitive behavioural therapies for major depression and anxiety disorders? A meta-analytic update of the evidence. <i>World Psychiatry, 15</i>(3), 245–254.</p>
       <p>Furukawa, T. A., Cipriani, A., Barbui, C., &amp; Geddes, J. R. (2011). Phi index as a measure of clinical importance in meta-analysis: How to interpret a number needed to treat. <i>The Journal of Clinical Psychiatry, 72</i>(12), 1642–1648.</p>
@@ -22687,7 +22706,14 @@ const APA_NOTES = {
   'bat': ctx => [
     `Classification follows ${ctx.classification === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.`,
     ctx.mixedTypes ? 'Scores are reported in their native standardised metric.' : '',
-    ctx.ciLevel && ctx.ciLevel !== 'off' ? `Confidence intervals are ${ctx.ciLevel}%.` : '',
+    // States the BASIS, not just the level. These intervals use test-retest
+    // reliability, so they run wider than manual-published intervals (which
+    // use internal consistency); without this line a reader comparing against
+    // the manual has no way to know why the numbers differ. Full rationale is
+    // in Methods & References.
+    ctx.ciLevel && ctx.ciLevel !== 'off'
+      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM using test–retest reliability; these are wider than manual-published intervals based on internal consistency.`
+      : '',
     // Must follow the EFFECTIVE flagging mode (batteryPremorbidMode). This
     // previously described the SD thresholds unconditionally, so with SEE
     // flagging active the exported note misstated what the asterisks in its

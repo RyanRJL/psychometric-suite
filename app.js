@@ -1935,7 +1935,14 @@ const APA_NOTES = {
   'bat': ctx => [
     `Classification follows ${ctx.classification === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.`,
     ctx.mixedTypes ? 'Scores are reported in their native standardised metric.' : '',
-    ctx.ciLevel && ctx.ciLevel !== 'off' ? `Confidence intervals are ${ctx.ciLevel}%.` : '',
+    // States the BASIS, not just the level. These intervals use test-retest
+    // reliability, so they run wider than manual-published intervals (which
+    // use internal consistency); without this line a reader comparing against
+    // the manual has no way to know why the numbers differ. Full rationale is
+    // in Methods & References.
+    ctx.ciLevel && ctx.ciLevel !== 'off'
+      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM using test–retest reliability; these are wider than manual-published intervals based on internal consistency.`
+      : '',
     // Must follow the EFFECTIVE flagging mode (batteryPremorbidMode). This
     // previously described the SD thresholds unconditionally, so with SEE
     // flagging active the exported note misstated what the asterisks in its
