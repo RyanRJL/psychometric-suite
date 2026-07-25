@@ -1557,37 +1557,117 @@ function batteryClassificationDetails(r, cls){
     stars
   };
 }
-function setupBatteryContextualTabbing(tbody){
-  if (!tbody) return;
+/* ---------- TABLE KEYBOARD NAVIGATION ----------
+   One model for every data-entry table in the app.
 
-  tbody.querySelectorAll('input[data-f]').forEach(el => {
-    el.addEventListener('keydown', e => {
-      if (e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;
+   Tab follows the shape of the source you are reading from. Patient scores are
+   transcribed one document at a time - all the baseline scores from one report,
+   then all the retest scores from another - so Tab runs DOWN a score column and
+   wraps to the top of the next one. Normative parameters (M, SD, r, N) come from
+   a single row of a test manual, so Tab runs ACROSS the row and on to the next.
 
-      const currentField = el.dataset.f;
-      if (!currentField) return;
+   Enter / Shift+Enter always step down / up the current column.
+   Ctrl (or Cmd) + arrows move freely around the grid.
 
-      const focusables = Array.from(tbody.querySelectorAll(`input[data-f="${currentField}"]`))
-        .filter(input =>
-          input.offsetParent !== null &&
-          !input.disabled
-        );
+   Plain arrows are deliberately left alone: Left/Right must stay available for
+   fixing a typo mid-word, and Up/Down still drive the number spinners. */
+function tknCells(scope, sel){
+  return Array.from(scope.querySelectorAll(sel))
+    .filter(el => el.offsetParent !== null && !el.disabled && !el.readOnly);
+}
+function tknFocus(el){
+  if (!el) return true;
+  el.focus();
+  if (typeof el.select === 'function') el.select();
+  return true;
+}
+function setupTableKeyNav(scope, config){
+  if (!scope) return;
+  /* Delegated on the container so it survives the innerHTML re-render that every
+     render* function performs. Guarded so repeated setup calls don't stack. */
+  if (scope.dataset.tknWired === '1') return;
+  scope.dataset.tknWired = '1';
 
-      const idx = focusables.indexOf(el);
-      if (idx === -1 || focusables.length < 2) return;
+  const sel   = config.selector;
+  const keyOf = config.keyOf;
+  const resolve = v => (typeof v === 'function' ? v() : (v || []));
 
-      e.preventDefault();
+  const columnCells = field => tknCells(scope, sel).filter(el => keyOf(el) === field);
+  const groupFor = field => resolve(config.rowGroups).find(g => g.includes(field)) || null;
 
-      const nextIdx = e.shiftKey
-        ? (idx - 1 + focusables.length) % focusables.length
-        : (idx + 1) % focusables.length;
+  function tabTarget(el, back){
+    const field = keyOf(el);
+    const group = groupFor(field);
+    if (group){
+      /* Row-wise: flattening the group in DOM order runs across the row and then
+         continues onto the next row, which is how a manual's table reads. */
+      const cells = tknCells(scope, sel).filter(x => group.includes(keyOf(x)));
+      const i = cells.indexOf(el);
+      if (i === -1 || cells.length < 2) return null;
+      return cells[(i + (back ? -1 : 1) + cells.length) % cells.length];
+    }
+    const cols = resolve(config.columns);
+    const ci = cols.indexOf(field);
+    if (ci === -1) return null;
+    const cells = columnCells(field);
+    const i = cells.indexOf(el);
+    if (i === -1) return null;
+    if (!back && i < cells.length - 1) return cells[i + 1];
+    if (back && i > 0) return cells[i - 1];
+    /* Off the end of this column - carry on at the adjacent column, skipping any
+       column that is currently empty or hidden (SDI drops SD outside raw mode). */
+    const n = cols.length;
+    for (let step = 1; step <= n; step++){
+      const at = (((ci + (back ? -step : step)) % n) + n) % n;
+      const next = columnCells(cols[at]);
+      if (next.length) return back ? next[next.length - 1] : next[0];
+    }
+    return null;
+  }
 
-      focusables[nextIdx].focus();
+  function stepColumn(el, delta){
+    const cells = columnCells(keyOf(el));
+    const i = cells.indexOf(el);
+    if (i === -1 || cells.length < 2) return null;
+    return cells[(i + delta + cells.length) % cells.length];
+  }
 
-      if (typeof focusables[nextIdx].select === 'function') {
-        focusables[nextIdx].select();
-      }
-    });
+  function stepGrid(el, dx, dy){
+    const grid = Array.from(scope.querySelectorAll('tr'))
+      .map(tr => tknCells(tr, sel))
+      .filter(cells => cells.length);
+    let r = -1, c = -1;
+    grid.forEach((row, ri) => { const ci = row.indexOf(el); if (ci !== -1){ r = ri; c = ci; } });
+    if (r === -1) return null;
+    if (dy){
+      const row = grid[r + dy];
+      return row ? (row[Math.min(c, row.length - 1)] || null) : null;
+    }
+    return grid[r][c + dx] || null;
+  }
+
+  scope.addEventListener('keydown', e => {
+    const el = e.target.closest(sel);
+    if (!el || !scope.contains(el)) return;
+    const mod = e.ctrlKey || e.metaKey;
+
+    if (e.key === 'Tab' && !e.altKey && !mod){
+      const t = tabTarget(el, e.shiftKey);
+      if (t){ e.preventDefault(); tknFocus(t); }
+      return;
+    }
+    if (e.key === 'Enter' && !e.altKey && !mod){
+      const t = stepColumn(el, e.shiftKey ? -1 : 1);
+      if (t){ e.preventDefault(); tknFocus(t); }
+      return;
+    }
+    if (mod && !e.altKey && e.key.indexOf('Arrow') === 0){
+      const t = e.key === 'ArrowUp'   ? stepGrid(el,  0, -1)
+              : e.key === 'ArrowDown' ? stepGrid(el,  0,  1)
+              : e.key === 'ArrowLeft' ? stepGrid(el, -1,  0)
+              :                         stepGrid(el,  1,  0);
+      if (t){ e.preventDefault(); tknFocus(t); }
+    }
   });
 }
 function getBatteryRowReliability(row){
@@ -1714,7 +1794,12 @@ function renderBattery(){
       renderBatteryApa();
     });
   });
-    setupBatteryContextualTabbing(tbody);
+    /* Raw and scaled scores are both transcribed a column at a time. */
+    setupTableKeyNav(tbody, {
+      selector: 'input[data-f]',
+      keyOf: el => el.dataset.f,
+      columns: ['name', 'raw', 'score']
+    });
   renderBatteryApa();
 }
 
@@ -2231,53 +2316,6 @@ function renderSdiHead(){
     sdiLabelState.d2 = e.target.value;
     renderSdiApa();
   });
-}function setupSdiContextualTabbing(tbody){
-  if (!tbody) return;
-
-  function fieldsFor(field){
-    const raw = sdiMode() === 'raw';
-
-    if (field === 'name') {
-      return ['name'];
-    }
-
-    if (field === 't1' || field === 't2' || field === 'sd') {
-      return raw ? ['t1', 't2', 'sd'] : ['t1', 't2'];
-    }
-
-    return [];
-  }
-
-  tbody.querySelectorAll('input[data-f]').forEach(el => {
-    el.addEventListener('keydown', e => {
-      if (e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;
-
-      const allowed = fieldsFor(el.dataset.f);
-      if (!allowed.length) return;
-
-      const focusables = Array.from(tbody.querySelectorAll('input[data-f]'))
-        .filter(input =>
-          allowed.includes(input.dataset.f) &&
-          input.offsetParent !== null &&
-          !input.disabled
-        );
-
-      const idx = focusables.indexOf(el);
-      if (idx === -1 || focusables.length < 2) return;
-
-      e.preventDefault();
-
-      const nextIdx = e.shiftKey
-        ? (idx - 1 + focusables.length) % focusables.length
-        : (idx + 1) % focusables.length;
-
-      focusables[nextIdx].focus();
-
-      if (typeof focusables[nextIdx].select === 'function') {
-        focusables[nextIdx].select();
-      }
-    });
-  });
 }
 /* The Change-Analysis tables are table-layout:fixed, so a <colgroup> — not the
    cell widths — decides every column. renderSdi owns the SDI one because the
@@ -2378,7 +2416,13 @@ function renderSdi(){
       renderSdiApa();
     });
   });
-  setupSdiContextualTabbing(tbody);
+  /* SD is a per-row normative value, but it is still entered a column at a time,
+     and it only exists in raw mode. */
+  setupTableKeyNav(tbody, {
+    selector: 'input[data-f]',
+    keyOf: el => el.dataset.f,
+    columns: () => sdiMode() === 'raw' ? ['name', 't1', 't2', 'sd'] : ['name', 't1', 't2']
+  });
   renderSdiApa();
   addColumnTitles();
 }
@@ -2684,36 +2728,28 @@ function rciOutcome(rci, cv, df){
 // If the cursor is in the test/normative fields, Tab stays within those fields.
 function setupRciContextualTabbing(tbody){
   if (!tbody) return;
-  const fieldsFor = current => (current === 't1' || current === 't2')
-    ? ['t1','t2']
-    : ['name','sd','r','m1','sd1','m2','sd2','n'];
 
   tbody.querySelectorAll('input[data-f]').forEach(el => {
     const field = el.dataset.f;
     el.tabIndex = 0;
     if (field === 't1' || field === 't2'){
       el.classList.add('patient-score-tab-target');
-      el.title = 'Fast entry: Tab moves between Date 1 and Date 2 score cells.';
+      el.title = 'Tab moves down this score column, then on to the next column.';
       el.setAttribute('aria-label', field === 't1' ? 'Date 1 score' : 'Date 2 score');
     } else {
       el.classList.add('norm-tab-target');
-      el.title = 'Norm entry: Tab moves through the test and normative fields.';
+      el.title = 'Tab moves across the normative fields, then on to the next test.';
     }
+  });
 
-    el.addEventListener('keydown', e => {
-      if (e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;
-      const allowed = fieldsFor(field);
-      const focusables = Array.from(tbody.querySelectorAll('input[data-f]'))
-        .filter(input => allowed.includes(input.dataset.f) && input.offsetParent !== null && !input.disabled);
-      const idx = focusables.indexOf(el);
-      if (idx === -1 || focusables.length < 2) return;
-      e.preventDefault();
-      const nextIdx = e.shiftKey
-        ? (idx - 1 + focusables.length) % focusables.length
-        : (idx + 1) % focusables.length;
-      focusables[nextIdx].focus();
-      if (typeof focusables[nextIdx].select === 'function') focusables[nextIdx].select();
-    });
+  /* Patient scores are read off two separate reports, so Tab runs down one column
+     at a time. The normative fields come from one row of a manual, so Tab runs
+     across them. See setupTableKeyNav. */
+  setupTableKeyNav(tbody, {
+    selector: 'input[data-f]',
+    keyOf: el => el.dataset.f,
+    columns: ['t1', 't2'],
+    rowGroups: [['name', 'sd', 'r', 'm1', 'sd1', 'm2', 'sd2', 'n']]
   });
 }
 
@@ -3354,6 +3390,13 @@ function ctRenderRows(rows){
   const body = document.getElementById('ct-entry-body');
   if (!body) return;
   body.innerHTML = rows.map((r, i) => ctEntryRowHtml(i, r)).join('');
+  /* Pure normative entry - every value on a row is read off one row of a test
+     manual, so Tab runs across the row and then on to the next. */
+  setupTableKeyNav(body, {
+    selector: 'input[data-k]',
+    keyOf: el => el.dataset.k,
+    rowGroups: [['name', 'm1', 'sd1', 'm2', 'sd2', 'r', 'n']]
+  });
 }
 function ctReadRows(){
   const body = document.getElementById('ct-entry-body');
@@ -6678,26 +6721,10 @@ function setupReportWriter(){
     scoresTable.querySelectorAll('.is-dragging').forEach(el => el.classList.remove('is-dragging'));
   });
   // Column-major Tab navigation: Score₁ → Score₂ → … → Pct₁ → Pct₂ → … → CI₁ → CI₂ → …
-  scoresTable?.addEventListener('keydown', e => {
-    if (e.key !== 'Tab') return;
-    const cell = e.target.closest('[data-rw-col]');
-    if (!cell) return;
-    const cols = ['score','percentile','ci'];
-    const currentCol = cell.dataset.rwCol;
-    const colIdx = cols.indexOf(currentCol);
-    if (colIdx === -1) return;
-    const allInCol = (colName) => Array.from(scoresTable.querySelectorAll(`[data-rw-col="${colName}"]`));
-    const colNodes = allInCol(currentCol);
-    const rowIdx = colNodes.indexOf(cell);
-    let nextNode = null;
-    if (e.shiftKey){
-      if (rowIdx > 0) nextNode = colNodes[rowIdx - 1];
-      else if (colIdx > 0){ const prevCol = allInCol(cols[colIdx - 1]); nextNode = prevCol[prevCol.length - 1] || null; }
-    } else {
-      if (rowIdx < colNodes.length - 1) nextNode = colNodes[rowIdx + 1];
-      else if (colIdx < cols.length - 1){ const nextCol = allInCol(cols[colIdx + 1]); nextNode = nextCol[0] || null; }
-    }
-    if (nextNode){ e.preventDefault(); nextNode.focus(); nextNode.select?.(); }
+  setupTableKeyNav(scoresTable, {
+    selector: '[data-rw-col]',
+    keyOf: el => el.dataset.rwCol,
+    columns: ['score', 'percentile', 'ci']
   });
 
   // Subtabs (Build / Scores) - clicking switches active section, × deletes the domain
