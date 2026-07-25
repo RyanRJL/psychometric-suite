@@ -892,10 +892,72 @@ check('an unknown subtest name yields no interval rather than a wrong one', () =
 });
 
 /* ==========================================================================
-   14. Documentation contracts
+   14. Reliable-change reliability cell
+   The displayed coefficient must be the one the calculation uses, and the
+   cell must edit that same field. Extracted from app.js and run against a
+   stubbed rciState.
+   ========================================================================== */
+heading('14. Reliable-change reliability cell');
+
+function rciCellFns(toggleOn) {
+  const ctx = { rciState: { 'rci-basic': { useCorrectedR: toggleOn } } };
+  vm.createContext(ctx);
+  vm.runInContext(
+    ['escapeHtml', 'escapeAttr', 'rciReliabilityField', 'rciReliabilityCell', 'rciEffectiveR']
+      .map((n) => extractFn(APP_SRC, n)).join('\n') +
+      '\n;globalThis.__R = { rciReliabilityField, rciReliabilityCell, rciEffectiveR };',
+    ctx
+  );
+  return ctx.__R;
+}
+const cellValue = (html) => (html.match(/value="([^"]*)"/) || [])[1];
+const cellField = (html) => (html.match(/data-f="([^"]*)"/) || [])[1];
+
+check('the displayed coefficient is always the one used in the calculation', () => {
+  const rows = [
+    ['corrected present and differing', { r: '0.95', rCorrected: '0.96' }],
+    ['no corrected value',              { r: '0.83', rCorrected: '' }],
+    ['corrected field absent',          { r: '0.70' }],
+  ];
+  for (const toggle of [false, true]) {
+    const F = rciCellFns(toggle);
+    for (const [label, row] of rows) {
+      const shown = parseFloat(cellValue(F.rciReliabilityCell('rci-basic', 0, row)));
+      const used = F.rciEffectiveR('rci-basic', row).value;
+      if (!(Math.abs(shown - used) < 1e-12)) {
+        return 'toggle=' + toggle + ' ' + label + ': shows ' + shown + ' but uses ' + used;
+      }
+    }
+  }
+  return true;
+});
+
+check('the cell edits the field the calculation reads', () => {
+  // The generic RCI input handler writes rciState[m].rows[i][dataset.f], so
+  // data-f must name the field in force or an edit is silently discarded.
+  const on = rciCellFns(true), off = rciCellFns(false);
+  const withCorr = { r: '0.95', rCorrected: '0.96' };
+  const without  = { r: '0.83', rCorrected: '' };
+  if (cellField(on.rciReliabilityCell('rci-basic', 0, withCorr)) !== 'rCorrected') return 'toggle on, corrected present: should bind rCorrected';
+  if (cellField(on.rciReliabilityCell('rci-basic', 0, without))  !== 'r')          return 'toggle on, none present: should fall back to r';
+  if (cellField(off.rciReliabilityCell('rci-basic', 0, withCorr)) !== 'r')         return 'toggle off: should always bind r';
+  return true;
+});
+
+check('the field decision is per row, not per column', () => {
+  // Within one table some rows carry a corrected value and some do not, so a
+  // column-level treatment would misdescribe the mixed case.
+  const F = rciCellFns(true);
+  const a = F.rciReliabilityField('rci-basic', { r: '0.9', rCorrected: '0.92' });
+  const b = F.rciReliabilityField('rci-basic', { r: '0.9', rCorrected: '' });
+  return (a === 'rCorrected' && b === 'r') || 'got ' + a + ' and ' + b;
+});
+
+/* ==========================================================================
+   15. Documentation contracts
    Text that must stay in step with the code.
    ========================================================================== */
-heading('14. Documentation contracts');
+heading('15. Documentation contracts');
 
 check('every OPIE tooltip warns it is illustrative only in a UK context', () => {
   const keys = Object.keys(D.PRE_MODEL_TOOLTIPS).filter(k => /^opie/i.test(k));

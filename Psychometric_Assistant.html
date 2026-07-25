@@ -23516,6 +23516,37 @@ function calcPracticeRow(r, method){
    rciState. Turning it ON rescales the reliability to the normative population
    without rescaling the SD it is paired with, so it is offered for comparison
    rather than as the default basis. */
+/* Which reliability FIELD is in force for a given row — 'rCorrected' only when
+   the toggle is on AND that row actually has a corrected value, otherwise 'r'.
+   The table binds its reliability cell to this, so the cell shows and edits the
+   coefficient the calculation is really using.
+
+   Two things previously went wrong without it. The cell was hard-bound to
+   data-f="r", so with the toggle on it displayed the raw coefficient while the
+   maths used the corrected one; and because the generic input handler writes
+   rciState[m].rows[i][f], overtyping that cell wrote to `r` — a field the
+   calculation was ignoring — so the edit appeared to be accepted and changed
+   nothing.
+
+   Note this is deliberately per ROW, not per column: within one table some
+   rows carry a corrected value and some do not (357 of the 590 database
+   entries have none), so a column-level label would misdescribe the mixed
+   case. The APA note already words this as "where published". */
+function rciReliabilityField(method, row){
+  const wantCorrected = !!(rciState[method] && rciState[method].useCorrectedR === true);
+  return (wantCorrected && Number.isFinite(parseFloat(row.rCorrected))) ? 'rCorrected' : 'r';
+}
+/* Render the reliability cell against whichever field is in force. */
+function rciReliabilityCell(method, i, row){
+  const field = rciReliabilityField(method, row);
+  const isCorrected = field === 'rCorrected';
+  const title = isCorrected
+    ? 'Corrected (attenuation-adjusted) test-retest r. This is the value in use; editing it changes the result. Untick "Use corrected r" to enter a raw coefficient instead.'
+    : 'Raw test-retest r. This is the value in use; editing it changes the result.';
+  return `<td><input type="number" step="0.01" min="0" max="1" data-m="${method}" data-r="${i}"`
+       + ` data-f="${field}"${isCorrected ? ' data-r-corrected="1"' : ''}`
+       + ` title="${escapeAttr(title)}" value="${escapeAttr(row[field])}"></td>`;
+}
 function rciEffectiveR(method, row){
   const wantCorrected = !!(rciState[method] && rciState[method].useCorrectedR === true);
   const rCorr = parseFloat(row.rCorrected);
@@ -23590,7 +23621,14 @@ function setupRciContextualTabbing(tbody){
       el.setAttribute('aria-label', field === 't1' ? 'Date 1 score' : 'Date 2 score');
     } else {
       el.classList.add('norm-tab-target');
-      el.title = 'Tab moves across the normative fields, then on to the next test.';
+      // Append rather than replace: some normative cells carry a more specific
+      // tooltip set in their own markup (the reliability cell states which
+      // coefficient it holds and that editing it changes the result), and
+      // overwriting it silently discarded that. Guarded so repeated calls
+      // cannot stack the hint.
+      const tabHint = 'Tab moves across the normative fields, then on to the next test.';
+      const existing = (el.getAttribute('title') || '').trim();
+      el.title = existing && !existing.includes(tabHint) ? existing + ' ' + tabHint : tabHint;
     }
   });
 
@@ -23674,7 +23712,7 @@ function renderRci(method){
         <td class="row-num">${i+1}</td>
         <td><input type="text" data-m="${method}" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Test name"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd" value="${escapeAttr(r.sd)}"></td>
-        <td><input type="number" step="0.01" min="0" max="1" data-m="${method}" data-r="${i}" data-f="r" value="${escapeAttr(r.r)}"></td>
+        ${rciReliabilityCell(method, i, r)}
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t1" value="${escapeAttr(r.t1)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
         <td class="computed">${rciStr}</td>
@@ -23690,7 +23728,7 @@ function renderRci(method){
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd1" value="${escapeAttr(r.sd1)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="m2" value="${escapeAttr(r.m2)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd2" value="${escapeAttr(r.sd2)}"></td>
-        <td><input type="number" step="0.01" min="0" max="1" data-m="${method}" data-r="${i}" data-f="r" value="${escapeAttr(r.r)}"></td>
+        ${rciReliabilityCell(method, i, r)}
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t1" value="${escapeAttr(r.t1)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
         <td class="computed">${rciStr}</td>
@@ -23706,7 +23744,7 @@ function renderRci(method){
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd1" value="${escapeAttr(r.sd1)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="m2" value="${escapeAttr(r.m2)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd2" value="${escapeAttr(r.sd2)}"></td>
-        <td><input type="number" step="0.01" min="0" max="1" data-m="${method}" data-r="${i}" data-f="r" value="${escapeAttr(r.r)}"></td>
+        ${rciReliabilityCell(method, i, r)}
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t1" value="${escapeAttr(r.t1)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
         <td class="computed">${predStr}</td>
@@ -23723,7 +23761,7 @@ function renderRci(method){
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd1" value="${escapeAttr(r.sd1)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="m2" value="${escapeAttr(r.m2)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="sd2" value="${escapeAttr(r.sd2)}"></td>
-        <td><input type="number" step="0.01" min="0" max="1" data-m="${method}" data-r="${i}" data-f="r" value="${escapeAttr(r.r)}"></td>
+        ${rciReliabilityCell(method, i, r)}
         <td><input type="number" step="1" min="3" data-m="${method}" data-r="${i}" data-f="n" value="${escapeAttr(r.n)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t1" value="${escapeAttr(r.t1)}"></td>
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
