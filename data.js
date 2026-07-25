@@ -34,9 +34,61 @@ const WMS_COEF = [
   {idx:'VWMI', label:'Visual Working Memory Index', intercept:87.994, b1:0.5265, age:-0.1783, see:12.165}
 ];
 
-// OPIE-4 prorated FSIQ regression coefficients (Table eA5.8)
-// UK adaptation: US education, region, and ethnicity terms omitted.
-// Sex coding: Female = 0, Male = 1 (per OPIE-4 source)
+/* ============================================================================
+   OPIE-4 (Holdnack, Schoenberg, Lange & Iverson, 2013; Table eA5.8)
+
+   ⚠ ILLUSTRATIVE ONLY IN A UK CONTEXT. Do not quote these numbers as concrete
+   premorbid estimates in a UK report. Reason below.
+
+   The coefficients in the three tables that follow have each been checked
+   against Table eA5.8 and reproduce it exactly — intercepts, subtest weights,
+   Age, Age³, Age⁶ and Sex. Nothing here is mistranscribed.
+
+   What is NOT applied: the published equations also carry Education, Ethnicity
+   (African-American) and Region (West) terms, all dummy-coded (1 = belongs to
+   group, 0 = does not). Those terms are deliberately omitted, which fixes every
+   prediction at the US reference category:
+
+       12th-grade high-school graduate · not African-American · not US West
+
+   Omitting them is not a rounding detail. In the source table the education
+   block spans up to 18.9 points (Matrix-only FSIQ, K–7th grade −11.57 through
+   Bachelor's +7.13) and the African-American term reaches −8.31.
+
+   Why they are not mapped to UK equivalents: the dummies encode how unusual a
+   given attainment level is *within the US population they were fitted on*, not
+   years of schooling, and that does not transfer.
+     · The US reference (12th grade, leaving at 18) has no clean UK counterpart —
+       matched by years it is A-levels, matched by population position it is
+       GCSE/O-level. One whole category apart, worth ~3 points.
+     · UK school leaving age was 14, then 15 (1947), then 16 only from 1972, so
+       "no qualifications" runs from ~11% of UK 16–24s to ~45% of the over-75s.
+       The US "K–7th grade" coefficient of −11.57 is large precisely because that
+       group is a small, heavily selected ~5% of Americans. Applying it to a UK
+       80-year-old — for whom leaving school at 14 was normative — would
+       under-estimate premorbid ability by ~11 points and hide real decline.
+     · UK Level 4+ includes HNC/HND, which is sub-bachelor's, so it is a broader
+       and less selected group than the US Bachelor's category.
+
+   Doing this properly would mean percentile-equating the UK cohort-specific
+   qualification distribution against the US 2008 distribution — a novel
+   adaptation that would need validating before it informed a report.
+
+   For the UK demographic angle use Crawford & Allan (2001), already in this
+   file's model set and UK-normed. Treat OPIE-4 as a subtest-based estimate.
+
+   Sex coding: Female = 0, Male = 1 (per the source table). Because Female is
+   coded 0, a blank Sex field would silently return the female equation — so
+   app.js requires Sex before computing any OPIE-4 value.
+
+   Fitted age range 16–90 (OPIE_AGE_MIN/MAX); the Age³ and Age⁶ terms are
+   unbounded and extrapolate wildly outside it.
+   ============================================================================ */
+const OPIE_AGE_MIN = 16;
+const OPIE_AGE_MAX = 90;
+
+// OPIE-4 prorated FSIQ regression coefficients (Table eA5.8). Verified against
+// source. See the block above before using these numbers in a UK context.
 const OPIE_PRORATED_FSIQ = {
   // SEE from the chapter regression tables (Holdnack et al., 2013); used for the
   // parametric prediction interval predicted ± round(z × SEE).
@@ -45,9 +97,11 @@ const OPIE_PRORATED_FSIQ = {
   MR:    { intercept:62.02281403,                mr:1.719384768,                    age3:0.0000275723, sex:1.509479923, r:0.66, see:10.10 }
 };
 
-// OPIE-4 prorated GAI regression coefficients (Table eA5.8)
-// MR-only branch omitted because the source column is partially truncated in the available source.
-// R/SEE from Table 5.19 (Prorated GAI), post-Age step.
+// OPIE-4 prorated GAI regression coefficients (Table eA5.8). Verified against
+// source, including the MR-only branch — an earlier comment here claimed that
+// column was truncated and omitted; it is present and complete in the table, and
+// the coefficients below match it. R/SEE from Table 5.19 (Prorated GAI),
+// post-Age step. See the block above OPIE_PRORATED_FSIQ before using in the UK.
 const OPIE_PRORATED_GAI = {
   VC_MR: { intercept:60.14203956, vc:0.763136717, mr:1.127062322, age:-0.246247784, age3:0.0000416209, sex:4.708926488, r:0.79, see:8.75 },
   VC:    { intercept:79.65445374, vc:0.921039566,                 age:-0.378906405, age3:0.0000399793, sex:5.001045997, r:0.75, see:9.10 },
@@ -55,8 +109,10 @@ const OPIE_PRORATED_GAI = {
 };
 
 // OPIE-4 prorated VCI / PRI (single-index) regression coefficients (Table eA5.8).
-// VCI predicted from Vocabulary; PRI from Matrix Reasoning. NB: VCI is the only
-// equation with an Age⁶ term; PRI has no linear Age term (Age³ only).
+// Verified against source. VCI predicted from Vocabulary; PRI from Matrix
+// Reasoning. NB: VCI is the only equation with an Age⁶ term; PRI has no linear
+// Age term (Age³ only). See the block above OPIE_PRORATED_FSIQ before using in
+// the UK — the omitted education block reaches −6.56 on PRI and −4.44 on VCI.
 const OPIE_PRORATED_INDEX = {
   VCI: { intercept:76.77718804, vc:1.046716258, age:-0.600717374, age3:0.0000888487, age6:-4.42948e-11, sex:4.196941127, r:0.74, see:8.46 },
   PRI: { intercept:60.63732634,                mr:1.858062305,                        age3:0.0000287764,                  sex:4.162137929, r:0.62, see:12.34 }
@@ -68,24 +124,40 @@ const PRE_MODEL_TOOLTIPS = {
   topfRaw: 'Assumes the ToPF word-reading raw score is a resistant estimate of premorbid ability. Input required: ToPF raw score only. The FSIQ estimate is returned from the ToPF raw-score look-up table; CI uses the model SEE.',
   topfDemo: 'Assumes premorbid FSIQ is best estimated by combining ToPF performance with demographic predictors. Inputs required: ToPF raw score, years of education, and sex. Uses the cubic ToPF + education + sex regression equation; CI uses the model SEE.',
   crawfordAllan: 'Demographic-only estimate from Crawford & Allan (2001), intended for UK-normed demographic prediction. Inputs required: occupation class, years of education, and age. Does not use the ToPF score.',
-  opieDefault: 'OPIE-4 estimate of prorated FSIQ. Inputs required: age plus Vocabulary raw and/or Matrix Reasoning raw (sex optional). Adapted for UK use: US education, region and ethnicity terms are omitted, so US-specific demographic adjustments are not applied. The equation automatically switches to the matching single- or two-subtest model. CI uses the branch-specific SEE.',
-  opieVCMR: 'OPIE-4 two-subtest estimate of prorated FSIQ (Holdnack et al., 2013; Table eA5.8). Inputs required: Vocabulary raw, Matrix Reasoning raw, and age (sex optional). Predicts a prorated FSIQ that excludes Vocabulary and Matrix Reasoning, removing part-whole correlation inflation present in the standard-FSIQ equations. UK adaptation: US education, region and ethnicity terms omitted.',
-  opieVC: 'OPIE-4 single-subtest estimate of prorated FSIQ (Vocabulary branch). Inputs required: Vocabulary raw and age (sex optional). UK adaptation: US education, region and ethnicity terms omitted; CI uses the Vocabulary-branch SEE.',
-  opieMR: 'OPIE-4 single-subtest estimate of prorated FSIQ (Matrix Reasoning branch). Inputs required: Matrix Reasoning raw and age (sex optional). The published equation uses only Age³ (no linear age term) for this branch. UK adaptation: US education, region and ethnicity terms omitted; CI uses the Matrix-branch SEE.',
+  opieDefault: 'ILLUSTRATIVE ONLY in a UK context - do not quote as a concrete premorbid estimate. OPIE-4 estimate of prorated FSIQ. Inputs required: age (16-90), sex, plus Vocabulary raw and/or Matrix Reasoning raw. The equation switches automatically to the matching single- or two-subtest model. The published equation also carries US education, ethnicity and region terms which are NOT applied, so every patient is scored as a US 12th-grade high-school graduate, not African-American, not resident in the US West. Those US categories have no valid UK equivalent, so no substitute adjustment is made. Expect the estimate to run high for patients who left school early and low for graduates. CI uses the branch-specific SEE.',
+  opieVCMR: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4 two-subtest estimate of prorated FSIQ (Holdnack et al., 2013; Table eA5.8). Inputs required: Vocabulary raw, Matrix Reasoning raw, age (16-90) and sex. Predicts a prorated FSIQ that excludes Vocabulary and Matrix Reasoning, removing part-whole correlation inflation present in the standard-FSIQ equations. US education, ethnicity and region terms are not applied - see the Vocab and/or Matrix model note.',
+  opieVC: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4 single-subtest estimate of prorated FSIQ (Vocabulary branch). Inputs required: Vocabulary raw, age (16-90) and sex. US education, ethnicity and region terms are not applied; the omitted education block spans -6.68 to +5.50 points on this branch. CI uses the Vocabulary-branch SEE.',
+  opieMR: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4 single-subtest estimate of prorated FSIQ (Matrix Reasoning branch). Inputs required: Matrix Reasoning raw, age (16-90) and sex. The published equation uses only Age3 (no linear age term) for this branch. US education, ethnicity and region terms are not applied; the omitted education block spans -11.57 to +7.37 points on this branch, the widest of any model here. CI uses the Matrix-branch SEE.',
   predictWais: 'ToPF-predicted WAIS-IV index model. Inputs required: ToPF raw score, years of education, and sex. Difference is Achieved − Predicted; base rates are shown for negative discrepancies only.',
   predictWms: 'ToPF-predicted WMS-IV index model. Inputs required: ToPF raw score and age. Difference is Achieved − Predicted; base rates are shown for negative discrepancies only.',
-  opiePredFSIQ_VCMR: 'OPIE-4-predicted prorated FSIQ (two-subtest). Compare against the patient\'s prorated FSIQ calculated excluding Vocabulary and Matrix Reasoning per WAIS-IV manual.',
-  opiePredFSIQ_VC: 'OPIE-4-predicted prorated FSIQ (Vocabulary only). Compare against the patient\'s prorated FSIQ calculated excluding Vocabulary per WAIS-IV manual.',
-  opiePredFSIQ_MR: 'OPIE-4-predicted prorated FSIQ (Matrix Reasoning only). Compare against the patient\'s prorated FSIQ calculated excluding Matrix Reasoning per WAIS-IV manual.',
-  opiePredGAI_VCMR: 'OPIE-4-predicted prorated GAI (two-subtest). Compare against the patient\'s prorated GAI calculated excluding Vocabulary and Matrix Reasoning per WAIS-IV manual.',
-  opiePredGAI_VC: 'OPIE-4-predicted prorated GAI (Vocabulary only). Compare against the patient\'s prorated GAI calculated excluding Vocabulary per WAIS-IV manual.',
-  opiePredGAI_MR: 'OPIE-4-predicted prorated GAI (Matrix Reasoning only). Compare against the patient\'s prorated GAI calculated excluding Matrix Reasoning per WAIS-IV manual.',
-  opiePredVCI: 'OPIE-4-predicted VCI (Vocabulary only). Compare against the patient\'s achieved VCI. The VCI equation is the only one carrying an Age⁶ term.',
-  opiePredPRI: 'OPIE-4-predicted PRI (Matrix Reasoning only). Compare against the patient\'s achieved PRI. This equation uses Age³ only, with no linear age term.'
+  opiePredFSIQ_VCMR: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted prorated FSIQ (two-subtest). Compare against the patient\'s prorated FSIQ calculated excluding Vocabulary and Matrix Reasoning per WAIS-IV manual. Note the three FSIQ rows predict three DIFFERENT prorated criteria, so they are not interchangeable and are not expected to agree.',
+  opiePredFSIQ_VC: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted prorated FSIQ (Vocabulary only). Compare against the patient\'s prorated FSIQ calculated excluding Vocabulary per WAIS-IV manual - not against the ordinary FSIQ.',
+  opiePredFSIQ_MR: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted prorated FSIQ (Matrix Reasoning only). Compare against the patient\'s prorated FSIQ calculated excluding Matrix Reasoning per WAIS-IV manual - not against the ordinary FSIQ. This branch carries the widest omitted education block (-11.57 to +7.37).',
+  opiePredGAI_VCMR: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted prorated GAI (two-subtest). Compare against the patient\'s prorated GAI calculated excluding Vocabulary and Matrix Reasoning per WAIS-IV manual.',
+  opiePredGAI_VC: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted prorated GAI (Vocabulary only). Compare against the patient\'s prorated GAI calculated excluding Vocabulary per WAIS-IV manual.',
+  opiePredGAI_MR: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted prorated GAI (Matrix Reasoning only). Compare against the patient\'s prorated GAI calculated excluding Matrix Reasoning per WAIS-IV manual. Omitted education block spans -9.41 to +8.10 on this branch.',
+  opiePredVCI: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted VCI (Vocabulary only). Compare against the patient\'s achieved VCI. The VCI equation is the only one carrying an Age⁶ term.',
+  opiePredPRI: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted PRI (Matrix Reasoning only). Compare against the patient\'s achieved PRI. This equation uses Age³ only, with no linear age term.'
 };
 
-// Base rates: discrepancy (negative integer) → proportion of standardisation sample
-// WAIS-IV indices (FSIQ, VCI, PRI, WMI, PSI) and WMS-IV indices (IMI, DMI, VWMI)
+/* Discrepancy (negative integer) → estimated proportion scoring at or below it.
+   WAIS-IV indices (FSIQ, VCI, PRI, WMI, PSI) and WMS-IV indices (IMI, DMI, VWMI).
+
+   NB these are NOT transcribed standardisation-sample frequencies. Every one of
+   the 298 cells reproduces round(Φ(d / SEE), 4) exactly, using the SEE stored in
+   WAIS_COEF / WMS_COEF above — i.e. a parametric normal model, not observed data.
+   Verified by reconstruction: 294 cells match to 4 dp, the other 4 differ only in
+   the last digit.
+
+   They are close to, but not the same as, real frequencies. Benchmarked against
+   the genuinely empirical OPIE_BASE_RATES below (which sits on a ~1/1020 count
+   grid) for a model with an almost identical SEE, the normal model runs ~10%
+   relatively low across the decisive −5 to −20 band: e.g. d = −15 gives 3.78%
+   here against ~4.3% empirically. Net effect is to make a discrepancy look
+   slightly rarer, and so slightly more pathological, than it is.
+
+   Labelled as "estimated from a normal model" wherever displayed. Replace with
+   the published ToPF/ACS predicted-difference tables if they can be transcribed. */
 const BASE_RATES = {
   '-1':{FSIQ:.4528,VCI:.4571,PRI:.4678,WMI:.4625,PSI:.4669,IMI:.4669,DMI:.4679,VWMI:.4672},
   '-2':{FSIQ:.4064,VCI:.4147,PRI:.4358,WMI:.4253,PSI:.434, IMI:.434, DMI:.436, VWMI:.4347},

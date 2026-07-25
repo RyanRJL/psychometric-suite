@@ -1910,12 +1910,14 @@ const APA_NOTES = {
   'pre-predict': () => [
     'WAIS-IV indices are predicted from ToPF, education and sex; WMS-IV indices from ToPF and age.',
     'Difference = Achieved − Predicted.',
-    'Base rate = % of the standardisation sample at or below this discrepancy (negative discrepancies only).'
+    'Base rate = estimated % at or below this discrepancy, from a normal model with SD = SEE (negative discrepancies only). These are parametric estimates, not observed standardisation-sample frequencies, and run slightly low against published empirical figures.'
   ],
   'pre-opiepredict': () => [
-    'OPIE-4 prorated scores are predicted from age with Vocabulary and/or Matrix Reasoning.',
+    'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
+    'Illustrative only in a UK context; these values should not be quoted as concrete premorbid estimates. The published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Those categories have no valid UK equivalent.',
+    'The three FSIQ rows predict three different prorated criteria, as do the three GAI rows; they are not interchangeable and are not expected to agree.',
     'Difference = Achieved − Predicted.',
-    'Base rate = % of the US standardisation sample at or below this discrepancy.'
+    'Base rate = % of the US standardisation sample at or below this discrepancy (ACS Table eA5.12).'
   ]
 };
 /* Render a registered note as its APA block. Returns '' when every sentence
@@ -3779,9 +3781,15 @@ function calcPremorbid(){
 
   // 4. OPIE-4 - prorated FSIQ, uses OPIE sex coding F=0, M=1
   // Label, R and SEE update as soon as subtest inputs are present (branch alone).
-  // FSIQ computation also requires age; sex term contributes 0 if not entered.
-  const sexEffect = sexC_opie != null ? sexC_opie : 0;
+  // Computing a value additionally requires age AND sex:
+  //   - age must fall in the fitted 16-90 range; the Age3 term is unbounded and
+  //     a mistyped age extrapolates hard (age 110 inflates FSIQ by ~18 points).
+  //   - sex is NOT optional. OPIE-4 codes Female = 0, so defaulting a blank
+  //     field to 0 silently returned the FEMALE equation rather than no answer,
+  //     under-stating male patients by up to 5 points with nothing on screen to
+  //     signal it. Gate on it the same way age is gated.
   const hasVC = vc != null, hasMR = mr != null;
+  const opieAgeOk = age != null && age >= OPIE_AGE_MIN && age <= OPIE_AGE_MAX;
   let branch = null;
   if (hasVC && hasMR) branch = 'VC_MR';
   else if (hasVC) branch = 'VC';
@@ -3795,9 +3803,9 @@ function calcPremorbid(){
     if (branch === 'VC_MR'){ name4 = 'OPIE-4: Vocab + Matrix'; tipKey4 = 'opieVCMR'; }
     else if (branch === 'VC') { name4 = 'OPIE-4: Vocab only';  tipKey4 = 'opieVC'; }
     else if (branch === 'MR') { name4 = 'OPIE-4: Matrix only'; tipKey4 = 'opieMR'; }
-    // Compute prediction only once age is also available
-    if (age != null){
-      let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexEffect;
+    // Compute prediction only once age (in range) and sex are also available
+    if (opieAgeOk && sexC_opie != null){
+      let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexC_opie;
       if (c.vc != null && hasVC) pred += c.vc * vc;
       if (c.mr != null && hasMR) pred += c.mr * mr;
       v4 = pred;
@@ -3809,8 +3817,13 @@ function calcPremorbid(){
   const tbody = document.querySelector('#pre-results-table tbody');
   tbody.innerHTML = rows.map(row => {
     const fsiq = fmtIntOrDash(row.val);
-    const lo   = (row.val == null || row.see == null) ? '-' : fmtIntOrDash(row.val - mult*row.see);
-    const hi   = (row.val == null || row.see == null) ? '-' : fmtIntOrDash(row.val + mult*row.see);
+    // Round the point estimate and the margin separately so the bounds stay
+    // symmetric about the printed estimate. Must match calcOpiePredict's
+    // convention exactly or the same model prints different bounds on the
+    // Estimates tab and the OPIE-4 tab (it disagreed on ~21% of inputs).
+    const margin = (row.see == null) ? null : Math.round(mult*row.see);
+    const lo   = (row.val == null || margin == null) ? '-' : String(Math.round(row.val) - margin);
+    const hi   = (row.val == null || margin == null) ? '-' : String(Math.round(row.val) + margin);
     const rStr = row.r != null ? row.r.toFixed(2) : '-';
     const seeStr = row.see != null ? row.see.toFixed(2) : '-';
     return `<tr>
@@ -4079,8 +4092,12 @@ function renderPreEstimatesApa(){
   const ciPct = preState.ciPct || '90%';
   const mult = preState.ciMult || 1.645;
   const rows = valid.map(r => {
-    const lo = (r.see != null) ? Math.round(r.val - mult*r.see) : '-';
-    const hi = (r.see != null) ? Math.round(r.val + mult*r.see) : '-';
+    // Same rounding convention as the on-screen table (calcPremorbid) and the
+    // OPIE-4 tab: round(estimate) ± round(z·SEE). Keeps the report text and the
+    // screen in agreement — they previously differed by a point on ~21% of values.
+    const margin = (r.see != null) ? Math.round(mult*r.see) : null;
+    const lo = (margin != null) ? Math.round(r.val) - margin : '-';
+    const hi = (margin != null) ? Math.round(r.val) + margin : '-';
     const rStr = r.r != null ? r.r.toFixed(2) : '-';
     const seeStr = r.see != null ? r.see.toFixed(2) : '-';
     return `<tr><td>${escapeHtml(r.name)}</td><td class="num">${Math.round(r.val)}</td><td class="num">${lo}</td><td class="num">${hi}</td><td class="num">${rStr}</td><td class="num">${seeStr}</td></tr>`;
@@ -4158,11 +4175,10 @@ function getOpiePredictions(){
   const sex = preStr('pre-sex');
   const sexC_opie = sex === 'Female' ? 0 : sex === 'Male' ? 1 : null;
 
-  const sexEffect = sexC_opie != null ? sexC_opie : 0;
   const hasVC = vc != null, hasMR = mr != null;
 
   function predict(c){
-    let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexEffect;
+    let pred = c.intercept + (c.age != null ? c.age * age : 0) + c.age3 * Math.pow(age, 3) + c.sex * sexC_opie;
     if (c.age6 != null) pred += c.age6 * Math.pow(age, 6);   // VCI only
     if (c.vc != null && hasVC) pred += c.vc * vc;
     if (c.mr != null && hasMR) pred += c.mr * mr;
@@ -4170,7 +4186,10 @@ function getOpiePredictions(){
   }
 
   const list = [];
-  const canUseAge = age != null;
+  // Age must be inside the fitted 16-90 range (the Age3/Age6 terms are unbounded
+  // and extrapolate hard), and sex must be present — Female is coded 0, so a
+  // blank field previously produced the female equation silently.
+  const canUseAge = age != null && age >= OPIE_AGE_MIN && age <= OPIE_AGE_MAX && sexC_opie != null;
   function pushModel(key, label, c, needVC, needMR, tipKey){
     const canPredict = canUseAge && (!needVC || hasVC) && (!needMR || hasMR);
     list.push({ key, label, val: canPredict ? predict(c) : null, see: c.see, r: c.r, tipKey });
@@ -4194,7 +4213,10 @@ function getOpiePredictions(){
 }
 
 function opieBaseRateFor(rowKey, diff){
-  if (!diff) return '-';
+  // NB `if (!diff)` treated a difference of exactly 0 as missing data and printed
+  // '-', even though 0 is the single most likely outcome and -1 / +1 both resolve
+  // to 'common'. Test for absence explicitly instead.
+  if (diff == null || !Number.isFinite(diff)) return '-';
   const key = diff > 0 ? `+${diff}` : String(diff);
   const row = OPIE_BASE_RATES[key];
   if (row && row[rowKey] != null) return fmtPctBr(row[rowKey]);
