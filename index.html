@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260725b">
+<link rel="stylesheet" href="styles.css?v=20260725c">
 <link rel="stylesheet" href="design-system.css?v=20260724i">
 
 <style>
@@ -1587,8 +1587,8 @@
         <label>Table title</label>
         <input type="text" class="rci-title" data-target="rci-basic" placeholder="California Verbal Learning Test–III" value="Reliable change analysis">
       </div>
-      <label class="rci-corr-toggle" title="Use the corrected (attenuation-adjusted) test-retest correlation when available. Falls back to the raw r when corrected r is not provided for a given test.">
-        <input type="checkbox" class="rci-use-corrected-r" data-target="rci-basic" checked>
+      <label class="rci-corr-toggle" title="Off by default. Jacobson &amp; Truax specify the test-retest correlation and the standard deviation of the initial testing from the same study, which is what the raw r gives you. The corrected r is that correlation rescaled to the normative sample's variability, so it describes a population with SD 15 or 3 rather than the retest sample whose SD is used here; ticking this pairs figures from two different groups and narrows the interval by roughly 5%.">
+        <input type="checkbox" class="rci-use-corrected-r" data-target="rci-basic">
         <span>Use corrected <em>r</em> (attenuation-adjusted) when available</span>
       </label>
     </div>
@@ -1673,8 +1673,8 @@
         <label>Table title</label>
         <input type="text" class="rci-title" data-target="rci-practice" value="Reliable change analysis">
       </div>
-      <label class="rci-corr-toggle" title="Use the corrected (attenuation-adjusted) test-retest correlation when available. Falls back to the raw r when corrected r is not provided for a given test.">
-        <input type="checkbox" class="rci-use-corrected-r" data-target="rci-practice" checked>
+      <label class="rci-corr-toggle" title="Off by default. Iverson's Sdiff combines SEM at each testing, each built from that testing's own standard deviation, so the reliability must describe the same retest sample — which is what the raw r gives you. The corrected r is that correlation rescaled to the normative sample's variability, so ticking this pairs figures from two different groups and narrows the interval by roughly 5%.">
+        <input type="checkbox" class="rci-use-corrected-r" data-target="rci-practice">
         <span>Use corrected <em>r</em> (attenuation-adjusted) when available</span>
       </label>
     </div>
@@ -6023,8 +6023,8 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260725a"></script>
-<script src="app.js?v=20260725a"></script>
+<script src="data.js?v=20260725c"></script>
+<script src="app.js?v=20260725c"></script>
 <script src="design-system.js?v=20260512ad" defer></script>
 <script src="app-effectsize-page.js?v=20260517v"></script>
 

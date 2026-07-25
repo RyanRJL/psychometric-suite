@@ -2617,8 +2617,20 @@ document.getElementById('sdi-clear').addEventListener('click', clearSdi);
 // .rows (e.g. `= [...]`) — that breaks the shared link. Mutate in place instead.
 const RCI_SHARED_ROWS = [];
 const rciState = {
-  'rci-basic':    { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:true,  d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
-  'rci-practice': { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:true,  d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  // useCorrectedR defaults OFF on all four methods. The corrected r is the
+  // retest correlation rescaled to the normative sample's variability, so it
+  // describes a population with SD 15 / 3 — not the retest sample whose SD
+  // (sd1, sd2) is what these formulas multiply it by. Pairing the two mixes
+  // populations and understates the error variance by ~20%. WAIS-IV FSIQ:
+  //   13.8^2 x (1 - .95) = 9.52   sample SD with the sample's own r   OK
+  //   15.0^2 x (1 - .96) = 9.00   normative SD with the corrected r   OK
+  //   13.8^2 x (1 - .96) = 7.62   the mix this default used to give   wrong
+  // Raw r is also what the source methods specify: Jacobson & Truax take the
+  // test-retest correlation and the variance of the initial testing in the
+  // study itself; Iverson, McSweeney and Crawford likewise work from the
+  // retest sample's own statistics.
+  'rci-basic':    { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
+  'rci-practice': { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
   'rci-srb':      { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
   'rci-crawford': { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' }
 };
@@ -2663,11 +2675,13 @@ function calcPracticeRow(r, method){
   const p = 2 * (1 - normCDF(Math.abs(rci)));
   return { sem1, sem2, sdiff, rci, p, usedR: rel, usedCorrected: rEff.fromCorrected, rFallback: !!rEff.fallbackBecauseMissing };
 }
-/* Session-level "use corrected r" toggle. Defaults differ by method:
-   ON for Simple RCI + Practice-Adjusted, OFF for SRB + Crawford. The toggle
-   is stored on rciState[method].useCorrectedR, falling back to true. */
+/* Session-level "use corrected r" toggle, stored on
+   rciState[method].useCorrectedR. OFF for all four methods — see the note on
+   rciState. Turning it ON rescales the reliability to the normative population
+   without rescaling the SD it is paired with, so it is offered for comparison
+   rather than as the default basis. */
 function rciEffectiveR(method, row){
-  const wantCorrected = !rciState[method] || rciState[method].useCorrectedR !== false;
+  const wantCorrected = !!(rciState[method] && rciState[method].useCorrectedR === true);
   const rCorr = parseFloat(row.rCorrected);
   const r     = parseFloat(row.r);
   if (wantCorrected && Number.isFinite(rCorr)) return { value: rCorr, fromCorrected: true };
@@ -3010,8 +3024,7 @@ function renderRciApa(method){
   // value, append a "fell back to raw r" qualifier.
   let rSentence = '';
   {
-    const defaultOn = method === 'rci-basic' || method === 'rci-practice';
-    const wantCorrected = st.useCorrectedR === undefined ? defaultOn : st.useCorrectedR !== false;
+    const wantCorrected = st.useCorrectedR === true;   // OFF on all four methods
     if (!wantCorrected){
       rSentence = 'Raw test-retest <i>r</i> was used.';
     } else {
@@ -3066,7 +3079,7 @@ document.querySelectorAll('.rci-d2').forEach(inp => {
 document.querySelectorAll('.rci-title').forEach(inp => {
   inp.addEventListener('input', e => { rciState[e.target.dataset.target].title = e.target.value; renderRciApa(e.target.dataset.target); });
 });
-// Use corrected r toggle (SRB + Crawford only)
+// Use corrected r toggle (present on all four RCI methods; unticked by default)
 document.querySelectorAll('.rci-use-corrected-r').forEach(cb => {
   cb.addEventListener('change', e => {
     const m = e.target.dataset.target;
