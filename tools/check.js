@@ -650,10 +650,98 @@ check('ordinal suffixes are correct through the teens', () => {
 });
 
 /* ==========================================================================
-   11. Documentation contracts
+   11. Effect-size calculator (app-effectsize-page.js)
+   As in section 10, functions are extracted from the shipped file and
+   executed, not re-implemented. All expectations are either algebraic
+   identities, internal-consistency requirements (two branches of the same
+   file that must agree), or round trips against the file's own output.
+   ========================================================================== */
+heading('11. Effect-size calculator');
+
+const ES_SRC = fs.readFileSync(path.join(ROOT, 'app-effectsize-page.js'), 'utf8');
+const esFns = {};
+vm.createContext(esFns);
+vm.runInContext(
+  ['normPdf', 'normCdf', 'statToD', 'dToStat', 'descD', 'ciString', 'sdFrom', 'targetShares']
+    .map((n) => extractFn(ES_SRC, n)).join('\n') +
+    '\n;globalThis.__ES = { statToD, dToStat, descD, ciString, sdFrom, targetShares };',
+  esFns
+);
+const ES = esFns.__ES;
+
+check('zstat and t branches agree (both d = 2·stat/√N)', () => {
+  // t ≈ z for any reasonable N, so identical inputs must give identical d.
+  // The zstat branch previously returned z/√N — Rosenthal's r, half of d.
+  for (const [v, N] of [[2.5, 100], [1.96, 64], [3.0, 200]]) {
+    const dt = ES.statToD('t', v, N), dz = ES.statToD('zstat', v, N);
+    if (Math.abs(dt - dz) > 1e-12) return 'v=' + v + ' N=' + N + ': t->' + dt + ' vs zstat->' + dz;
+  }
+  return true;
+});
+check('every aux statistic round-trips through dToStat', () => {
+  for (const [type, v, a] of [['zstat', 2.5, 100], ['t', 2.5, 100], ['g', 0.8, 52], ['md', 7.5, 15]]) {
+    const back = ES.dToStat(type, ES.statToD(type, v, a), a);
+    if (Math.abs(back - v) > 1e-9) return type + ' round trip gave ' + back + ', want ' + v;
+  }
+  return true;
+});
+check('g conversion uses plain Hedges J, matching compute()\'s output grid', () => {
+  // g = J·d with J = 1 − 3/(4N − 9); the file previously used √J here while
+  // the output grid used J, an internal contradiction.
+  const N = 52, J = 1 - 3 / (4 * N - 9);
+  const d = ES.statToD('g', 1, N);
+  return Math.abs(d - 1 / J) < 1e-9 || 'statToD(g,1,52) = ' + d + ', want 1/J = ' + (1 / J);
+});
+checkClose('CI-upper input round-trips the file\'s own displayed CI (SD 15, not SE 3)',
+  ES.sdFrom('ciu', 105.88, 25, 100), 15, 1e-6, 'ciString(100,15,25) upper = 105.88');
+check('CI-upper without n returns null rather than a silent SE', () =>
+  ES.sdFrom('ciu', 105.88, null, 100) === null || 'returned a value with no n');
+check('descD uses Cohen/Sawilowsky anchors as bin floors', () => {
+  const want = [[0.005, 'Negligible'], [0.05, 'Very Small'], [0.30, 'Small'], [0.65, 'Medium'],
+                [1.00, 'Large'], [1.50, 'Very Large'], [2.50, 'Huge'],
+                [0.20, 'Small'], [0.50, 'Medium'], [0.80, 'Large'], [-0.65, 'Medium']];
+  for (const [d, label] of want) {
+    const got = ES.descD(d).label;
+    if (got !== label) return 'descD(' + d + ') = ' + got + ', want ' + label;
+  }
+  return true;
+});
+check('descD agrees with the slider/classifyD bands at the shared anchors', () => {
+  // The other two classifiers are coarser (they collapse <0.2 and >=1.2), but
+  // within 0.2–1.2 all three must give the same word.
+  const slider = (d) => { const a = Math.abs(d);
+    return a >= 1.2 ? 'Very Large' : a >= 0.8 ? 'Large' : a >= 0.5 ? 'Medium' : a >= 0.2 ? 'Small' : 'Negligible'; };
+  for (const d of [0.2, 0.35, 0.5, 0.65, 0.8, 1.0, 1.19]) {
+    if (ES.descD(d).label !== slider(d)) return 'disagree at d=' + d + ': ' + ES.descD(d).label + ' vs ' + slider(d);
+  }
+  return true;
+});
+check('target shares are weighted by group size (screening scenario)', () => {
+  // n1=40 M=70 SD=10 vs n2=400 M=100 SD=10, cut 85 (midpoint, equal densities):
+  // membership must follow the 40:400 prior -> 1/11 and 10/11.
+  const ts = ES.targetShares(70, 10, 40, 100, 10, 400, 85);
+  if (Math.abs(ts.share1 - 1 / 11) > 1e-9) return 'share1 = ' + ts.share1 + ', want ' + (1 / 11);
+  if (Math.abs(ts.share1 + ts.share2 - 1) > 1e-12) return 'shares do not sum to 1';
+  return true;
+});
+check('likelihood ratio stays density-based (priors-free) after the share fix', () => {
+  // At the midpoint the densities are equal, so the LR must be exactly 1
+  // regardless of the 40:400 group sizes. Deriving it from the weighted
+  // shares would turn it into posterior odds and break this.
+  const ts = ES.targetShares(70, 10, 40, 100, 10, 400, 85);
+  return Math.abs(ts.ratio - 1) < 1e-9 || 'ratio = ' + ts.ratio;
+});
+check('missing n falls back to equal weighting, flagged as such', () => {
+  const ts = ES.targetShares(70, 10, null, 100, 10, 400, 85);
+  return (Math.abs(ts.share1 - 0.5) < 1e-9 && ts.weightedByN === false) ||
+    'share1 = ' + ts.share1 + ', weightedByN = ' + ts.weightedByN;
+});
+
+/* ==========================================================================
+   12. Documentation contracts
    Text that must stay in step with the code.
    ========================================================================== */
-heading('11. Documentation contracts');
+heading('12. Documentation contracts');
 
 check('every OPIE tooltip warns it is illustrative only in a UK context', () => {
   const keys = Object.keys(D.PRE_MODEL_TOOLTIPS).filter(k => /^opie/i.test(k));

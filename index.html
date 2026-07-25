@@ -1401,7 +1401,7 @@
               <button class="btn btn-ghost es-target-explain-btn" id="es-target-explain-toggle" type="button" aria-expanded="false" aria-controls="es-target-explain">Explainer</button>
             </div>
             <div class="es-target-explain" id="es-target-explain" hidden>
-              <strong>Preloaded height example.</strong> Use this to compare the two normal distributions at a chosen value. The target is set to <strong>175.9 cm</strong>, approximately the average male height in the example. The readouts show how much of each group is at or above that value, and how likely that exact value is to come from each group under the normal-distribution model.
+              <strong>Preloaded height example.</strong> Use this to compare the two normal distributions at a chosen value. The target is set to <strong>175.9 cm</strong>, approximately the average male height in the example. The readouts show how much of each group is at or above that value, and how likely that exact value is to come from each group under the normal-distribution model. The &ldquo;of people at this value&rdquo; readouts are weighted by the entered group sizes (n), so unequal groups shift them accordingly; if either n is missing, the groups are weighted equally. The likelihood ratio compares the two curves&rsquo; densities alone and ignores group size by design.
             </div>
             <div class="es-target-grid">
               <div class="field"><label>Target value</label><input type="number" id="es-target" step="any" placeholder="e.g. 175.9" value="175.9"></div>
@@ -6026,7 +6026,7 @@
 <script src="data.js?v=20260725d"></script>
 <script src="app.js?v=20260725d"></script>
 <script src="design-system.js?v=20260512ad" defer></script>
-<script src="app-effectsize-page.js?v=20260517v"></script>
+<script src="app-effectsize-page.js?v=20260725a"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

@@ -132,8 +132,12 @@
     switch(type){
       case 'd':  return v;
       case 'g':
+        // Hedges g = J * d with J = 1 - 3/(4N - 9), so d = g / J.
+        // (Previously divided by sqrt(J), contradicting the output grid in
+        // compute(), which multiplies by plain J. J is a direct multiplier on
+        // the effect size, not on a variance, so no square root is involved.)
         if (a == null || a < 4) return v;
-        return v / Math.sqrt(1 - 3/(4*a - 9));
+        return v / (1 - 3/(4*a - 9));
       case 'r':  if (Math.abs(v) >= 1) return null; return 2*v / Math.sqrt(1 - v*v);
       case 'r2': if (v < 0 || v >= 1) return null; return 2*Math.sqrt(v) / Math.sqrt(1 - v);
       case 'f':  return 2*v;
@@ -151,7 +155,14 @@
         // With total N=a (df=a-2), d = 2t/sqrt(a)
         if (a == null || a <= 0) return null;
         return (2*v) / Math.sqrt(a);
-      case 'zstat': if (a == null || a <= 0) return null; return v / Math.sqrt(a);
+      case 'zstat':
+        // Same equal-groups structure as the t branch above: the test statistic
+        // is (M1-M2)/SE(diff), so d = 2z/sqrt(N) — mirroring d = 2t/sqrt(N).
+        // (Previously z/sqrt(N), which is Rosenthal's r — a correlation, not d —
+        // so every Z-derived effect size came out roughly halved, and the same
+        // 2.5 entered as t vs as Z gave different answers.)
+        if (a == null || a <= 0) return null;
+        return (2*v) / Math.sqrt(a);
       case 'md': if (a == null || a <= 0) return null; return v / a;
       default: return null;
     }
@@ -167,8 +178,9 @@
     switch(type){
       case 'd':  return d;
       case 'g':
+        // Exact inverse of statToD's g branch: g = J * d, J = 1 - 3/(4N - 9).
         if (a == null || a < 4) return d;
-        return d * Math.sqrt(1 - 3/(4*a - 9));
+        return d * (1 - 3/(4*a - 9));
       case 'r':  return d / Math.sqrt(d*d + 4);
       case 'r2': { const r = d / Math.sqrt(d*d + 4); return r * r; }
       case 'f':  return d / 2;
@@ -179,7 +191,7 @@
       }
       case 'or': return Math.exp(d * Math.PI / Math.sqrt(3));
       case 't':     if (a == null || a <= 0) return null; return d * Math.sqrt(a) / 2;
-      case 'zstat': if (a == null || a <= 0) return null; return d * Math.sqrt(a);
+      case 'zstat': if (a == null || a <= 0) return null; return d * Math.sqrt(a) / 2; // inverse of d = 2z/sqrt(N)
       case 'md':    if (a == null || a <= 0) return null; return d * a;
       default: return null;
     }
@@ -196,7 +208,13 @@
       if (val == null) return null;
       if (disp === 'sd')  return val;
       if (disp === 'se')  return n != null && n > 0 ? val * Math.sqrt(n) : null;
-      if (disp === 'ciu') return mean != null ? (val - mean) / 1.96 : null;
+      // The 95% CI shown in each group panel (ciString) is a CI for the MEAN:
+      // mean ± 1.96·SD/√n. Inverting it therefore needs the same √n step as
+      // the SE branch above: (upper − mean)/1.96 alone recovers the standard
+      // ERROR, not the SD, leaving every downstream statistic (pooled SD, d,
+      // g, r, OR, U3, CLES, NNT) wrong by a factor of √n. Round trip: n=25,
+      // M=100, SD=15 displays upper 105.88; this must map back to 15, not 3.
+      if (disp === 'ciu') return (mean != null && n != null && n > 0) ? (val - mean) * Math.sqrt(n) / 1.96 : null;
       return null;
     }
     const sd1 = sdFrom(dt1, dv1, n1, m1);
@@ -228,14 +246,21 @@
     return (mean - 1.96*se).toFixed(2) + ', ' + (mean + 1.96*se).toFixed(2);
   }
   function descD(d){
+    // Cohen (1988) / Sawilowsky (2009) anchors used as bin FLOORS: a value
+    // between anchors takes the label of the anchor at or below it, so
+    // 0.2 ≤ |d| < 0.5 is Small, etc. The previous version treated each anchor
+    // as a bin CEILING (|d| <= 0.50 → 'Medium'), which labelled the whole
+    // interior of every band one magnitude too strong and contradicted the
+    // other two classifiers in this file (the slider badge and classifyD),
+    // as well as descR/descR2/descF just below, which all use floors.
     const a = Math.abs(d);
-    if (a <= 0.01) return { label: 'Very Small', mag: 0 };
-    if (a <= 0.20) return { label: 'Small',      mag: 1 };
-    if (a <= 0.50) return { label: 'Medium',     mag: 2 };
-    if (a <= 0.80) return { label: 'Large',      mag: 3 };
-    if (a <= 1.20) return { label: 'Very Large', mag: 4 };
-    if (a <= 2.00) return { label: 'Huge',       mag: 5 };
-    return                 { label: 'Huge',      mag: 6 };
+    if (a < 0.01) return { label: 'Negligible', mag: 0 };
+    if (a < 0.20) return { label: 'Very Small', mag: 1 };
+    if (a < 0.50) return { label: 'Small',      mag: 2 };
+    if (a < 0.80) return { label: 'Medium',     mag: 3 };
+    if (a < 1.20) return { label: 'Large',      mag: 4 };
+    if (a < 2.00) return { label: 'Very Large', mag: 5 };
+    return              { label: 'Huge',       mag: 6 };
   }
   function descR(r){
     const a = Math.abs(r);
@@ -531,6 +556,40 @@
     }
   }
 
+  /* Pure maths for the target-value readouts, kept DOM-free so tools/check.js
+     can extract and exercise the shipped code directly.
+
+     shares — "Of people at this value, what fraction came from each group?" is
+     a MEMBERSHIP probability, so it must be weighted by how many people each
+     group contains: share1 = n1·f1 / (n1·f1 + n2·f2). The previous version
+     used densities alone, silently imposing a 50/50 base rate even though both
+     n's were already entered — a screening scenario of 40 impaired vs 400
+     healthy at the midpoint cut read "50% / 50%" where the entered numbers
+     give 9.1% / 90.9%. When either n is missing the equal-weight behaviour is
+     kept, and the UI explainer states which basis is in use.
+
+     ratio — the "Smaller-to-larger likelihood ratio" stays DENSITY-based
+     (f1/f2, no priors) deliberately: a likelihood ratio is priors-free by
+     definition, and with equal weighting it equalled the density ratio anyway,
+     so its meaning and its label are unchanged by the share fix. Do not derive
+     it from the weighted shares — that would silently turn it into posterior
+     odds. */
+  function targetShares(m1, sd1, n1, m2, sd2, n2, t){
+    const z1 = (t - m1)/sd1, z2 = (t - m2)/sd2;
+    const dens1 = normPdf(z1) / sd1, dens2 = normPdf(z2) / sd2;
+    const haveNs = n1 != null && n1 > 0 && n2 != null && n2 > 0;
+    const w1 = haveNs ? n1 * dens1 : dens1;
+    const w2 = haveNs ? n2 * dens2 : dens2;
+    const total = w1 + w2;
+    const share1 = total > 0 ? w1/total : null, share2 = total > 0 ? w2/total : null;
+    const ratio = dens1 > 0 && dens2 > 0 ? Math.min(dens1/dens2, dens2/dens1) : null;
+    return {
+      above1: 1 - normCdf(z1),
+      above2: 1 - normCdf(z2),
+      share1, share2, ratio, weightedByN: haveNs
+    };
+  }
+
   function computeTarget(grp, d){
     const t = els['es-target'].value === '' ? null : Number(els['es-target'].value);
     const can = grp.m1 != null && grp.m2 != null && grp.sd1 != null && grp.sd2 != null && grp.sd1 > 0 && grp.sd2 > 0 && t != null;
@@ -539,18 +598,12 @@
         .forEach(k => els[k].textContent = '-');
       return;
     }
-    const z1 = (t - grp.m1)/grp.sd1, z2 = (t - grp.m2)/grp.sd2;
-    const above1 = 1 - normCdf(z1), above2 = 1 - normCdf(z2);
-    const dens1 = normPdf(z1) / grp.sd1, dens2 = normPdf(z2) / grp.sd2;
-    const total = dens1 + dens2;
-    const share1 = total > 0 ? dens1/total : null, share2 = total > 0 ? dens2/total : null;
-    const ratio = share1 != null && share2 != null && share1 > 0 && share2 > 0
-      ? Math.min(share1/share2, share2/share1) : null;
-    els['es-tgt-g1-above'].textContent = fmtPct(above1);
-    els['es-tgt-g2-above'].textContent = fmtPct(above2);
-    els['es-tgt-share-g1'].textContent = fmtPct(share1);
-    els['es-tgt-share-g2'].textContent = fmtPct(share2);
-    els['es-tgt-ratio'].textContent = ratio != null ? ratio.toFixed(3) : '-';
+    const ts = targetShares(grp.m1, grp.sd1, grp.n1, grp.m2, grp.sd2, grp.n2, t);
+    els['es-tgt-g1-above'].textContent = fmtPct(ts.above1);
+    els['es-tgt-g2-above'].textContent = fmtPct(ts.above2);
+    els['es-tgt-share-g1'].textContent = fmtPct(ts.share1);
+    els['es-tgt-share-g2'].textContent = fmtPct(ts.share2);
+    els['es-tgt-ratio'].textContent = ts.ratio != null ? ts.ratio.toFixed(3) : '-';
   }
 
   const watched = ['es-stat-type','es-stat-value','es-stat-aux',
