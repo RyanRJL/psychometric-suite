@@ -23717,13 +23717,24 @@ function renderDbList(){
     refreshAll();
   }));
 }
+/* Rebuilds every consumer of the normative database after a custom test is
+   added, deleted or imported. Also runs once at top level during boot.
+
+   Nothing may be called from here that is not defined. This function is a
+   TOP-LEVEL init statement, so a throw inside it kills every top-level
+   statement that follows it in the file - which is roughly a third of the app,
+   including the whole Working Report bundle. It used to end with a call to
+   refreshReportWriterOptions(), deleted with the Report Writer while the call
+   site stayed, and that is exactly what happened: everything after the
+   refreshAll() call at the bottom of this file silently stopped running.
+   check.js section 17 now asserts that every project function called anywhere
+   in the source actually exists. */
 function refreshAll(selectedFamily){
   refreshFamilySelect(selectedFamily);
   renderDbList();
   rebuildAllFamilyLists();
   rebuildBatteryFamilyList();
   rebuildSdiFamilyList();
-  refreshReportWriterOptions();
 }
 function ctEntryRowHtml(i, seed){
   const row = seed || {};

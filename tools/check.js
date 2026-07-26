@@ -1241,6 +1241,116 @@ check('SRB and Crawford treat r as a regression slope, so cannot use corrected r
   return bad.length === 0 || bad.join('; ');
 });
 
+/* ==========================================================================
+   17. Every project function that is called actually exists
+
+   Section 16 asks whether the init functions are CALLED. It cannot tell you
+   whether the call SUCCEEDS, and that is a different failure with the same
+   blast radius.
+
+   Removing the Report Writer deleted refreshReportWriterOptions() but left
+   the call to it at the end of refreshAll(). refreshAll() is itself a
+   top-level init statement, so it threw during boot and every top-level
+   statement after it stopped running - about a third of app.js, including
+   the entire Working Report bundle, the "Clear all tables" handler and the
+   Score Converter's Distribution tab. All 107 checks passed throughout,
+   because a source scan sees the call and is satisfied.
+
+   This check closes that gap without a DOM: collect every name BOUND
+   anywhere in the shipped scripts (function declarations, const/let/var,
+   and parameter lists), then assert that every bare call to a name in the
+   project's own naming families resolves to one of them.
+
+   Bare calls only - `foo(` and not `obj.foo(` - so DOM and builtin methods
+   are not candidates. The prefix list is deliberately conservative: it
+   omits get/is/has/show/add/open/close, which collide with globals such as
+   getComputedStyle and getSelection.
+   ========================================================================== */
+heading('17. Called functions exist');
+
+const PROJECT_SCRIPTS = ['app.js', 'design-system.js', 'app-effectsize-page.js', 'data.js'];
+
+/* Comments are not call sites. Without this, a comment recording WHY a
+   function was removed - which is exactly the documentation this outage
+   deserves - would fail the check that the removal is complete. Line comments
+   are only stripped when the `//` is not preceded by a colon, so URLs survive. */
+function stripComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+}
+
+const ALL_SRC = stripComments(
+  PROJECT_SCRIPTS.map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n;\n')
+);
+
+// Names the project binds, gathered generously so a miss means "bound nowhere".
+function collectBoundNames(src) {
+  const bound = new Set();
+  for (const m of src.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)/g)) bound.add(m[1]);
+  for (const m of src.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)) bound.add(m[1]);
+  // Parameter lists of both `function (a, b)` and `(a, b) =>`, plus single
+  // `x =>`. Params can shadow or supply a callable, so they count as bound.
+  for (const m of src.matchAll(/\(([^()]*)\)\s*(?:=>|\{)/g)) {
+    for (const p of m[1].split(',')) {
+      const id = p.trim().replace(/[=.].*$/, '').replace(/^\.\.\./, '').trim();
+      if (/^[A-Za-z_$][\w$]*$/.test(id)) bound.add(id);
+    }
+  }
+  for (const m of src.matchAll(/(?:^|[^.\w$])([A-Za-z_$][\w$]*)\s*=>/g)) bound.add(m[1]);
+  return bound;
+}
+
+// Function-name families used in this codebase. See CLAUDE.md, "Navigating app.js".
+const PROJECT_PREFIXES =
+  /^(refresh|render|calc|setup|wire|rebuild|populate|infer|apa|rci|sdi|bat|battery|opie|premorbid|update|sync|enhance|draw|fmt|load|clear|ensure|extract|split|merge|build)[A-Z_]/;
+
+// Globals that match a project prefix but are supplied by the platform.
+const PLATFORM_GLOBALS = new Set(['clearTimeout', 'clearInterval', 'clearImmediate']);
+
+check('every project function that is called is defined somewhere', () => {
+  const bound = collectBoundNames(ALL_SRC);
+  const missing = new Map();
+  // A bare call: not preceded by a dot, and not itself a declaration keyword.
+  for (const m of ALL_SRC.matchAll(/(^|[^.\w$])([A-Za-z_$][\w$]*)\s*\(/g)) {
+    const name = m[2];
+    if (!PROJECT_PREFIXES.test(name)) continue;
+    if (PLATFORM_GLOBALS.has(name)) continue;
+    if (bound.has(name)) continue;
+    if (!missing.has(name)) {
+      const line = ALL_SRC.slice(0, m.index).split('\n').length;
+      missing.set(name, line);
+    }
+  }
+  return missing.size === 0
+    || 'called but never defined: ' +
+       [...missing].map(([n, l]) => n + '() (first call at combined line ' + l + ')').join(', ');
+});
+
+/* The specific shape of the outage: refreshAll() runs at top level, so
+   anything it calls must resolve or the rest of the file dies with it. */
+check('refreshAll() calls nothing that is undefined', () => {
+  const bound = collectBoundNames(ALL_SRC);
+  const src = stripComments(extractFn(APP_SRC, 'refreshAll'));
+  const bad = [];
+  for (const m of src.matchAll(/(^|[^.\w$])([A-Za-z_$][\w$]*)\s*\(/g)) {
+    const name = m[2];
+    if (name === 'refreshAll' || PLATFORM_GLOBALS.has(name)) continue;
+    if (!bound.has(name)) bad.push(name);
+  }
+  return bad.length === 0 || 'refreshAll() calls undefined: ' + bad.join(', ');
+});
+
+check('no Report Writer leftovers remain in the shipped scripts', () => {
+  const hits = [];
+  if (/refreshReportWriterOptions|setupReportWriter|\brwAuto[A-Za-z]*/.test(ALL_SRC)) {
+    for (const m of ALL_SRC.matchAll(/refreshReportWriterOptions|setupReportWriter|\brwAuto[A-Za-z]*/g)) {
+      hits.push(m[0]);
+    }
+  }
+  return hits.length === 0 || 'leftover references: ' + [...new Set(hits)].join(', ');
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
