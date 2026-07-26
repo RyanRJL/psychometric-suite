@@ -583,7 +583,11 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
    only needs to shed the weight — it labels a column, it is not a heading in
    its own right. Standalone class, so nothing in design-system.css competes. */
 .apa-table tr.apa-group td.apa-group-col-label{
-  font-weight:400;font-size:0.9em;color:#333;text-align:right;
+  font-weight:400;font-size:0.9em;color:#333;
+  /* No text-align here on purpose: the cell keeps the column's own classes
+     (.num / .col-*), so it inherits that column's alignment and lines up with
+     the values beneath it. Setting it here made the label sit off-centre from
+     the numbers it labels. */
 }
 .apa-table tr.apa-grouped-row td:first-child{padding-left:24px}
 /* Note. label: bold italic per APA 7 Â§7.14 */
@@ -9143,6 +9147,6 @@ body.rb-docked-active{padding-right:0}
    a section divider — see detectTestFamily. */
 .apa-table tr.apa-col-label-row td{
   padding:2px 12px 4px;border:none;
-  font-family:var(--serif);font-size:0.9em;font-style:italic;
-  color:#333;text-align:right;
+  font-family:var(--serif);font-size:0.9em;font-style:italic;color:#333;
+  /* Alignment deliberately unset — see .apa-group-col-label above. */
 }

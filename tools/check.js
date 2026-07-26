@@ -2380,6 +2380,40 @@ check('splitting a table into report items preserves a section\'s column label',
   return bad.length === 0 || bad.join('; ');
 });
 
+/* A column label that does not line up with the numbers beneath it is worse
+   than no label — it reads as belonging to the neighbouring column. Alignment
+   is therefore never restated; it is taken from the column itself. */
+check('a section column label inherits its column\'s alignment, never its own', () => {
+  const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
+  const bad = [];
+  for (const sel of ['apa-group-col-label', 'apa-col-label-row']) {
+    const m = new RegExp('\\.apa-table tr[^{]*' + sel + '[^{]*\\{([^}]*)\\}').exec(css);
+    if (!m) { bad.push(sel + ' rule missing'); continue; }
+    // strip comments — the rule explains WHY it sets no alignment
+    const decls = m[1].replace(/\/\*[\s\S]*?\*\//g, '');
+    if (/text-align/.test(decls)) bad.push(sel + ' sets its own text-align');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('labels built after style inlining copy padding and alignment from their column', () => {
+  const bad = [];
+  const split = extractFn(APP_SRC, 'extractGroupsFromHtml');
+  if (!/text-align\\s\*:\\s\*\(\[\^;\]\+\)/.test(split) && !/text-align/.test(split)) {
+    bad.push('the split label does not copy alignment from a reference cell');
+  }
+  if (!/section\.rows\[0\]/.test(split)) bad.push('the split label has no reference cell');
+  const merged = extractFn(APP_SRC, 'buildMergedTableHtml');
+  if (!/p\.bodyRows\[0\]/.test(merged)) bad.push('the merged label has no reference cell');
+  /* buildStandaloneHtml rewrites every group-row cell as a bold left-aligned
+     section name; the label needs restoring after that or it inherits it. */
+  const inliner = extractFn(APP_SRC, 'buildStandaloneHtml');
+  if (!/apa-group-col-label/.test(inliner)) {
+    bad.push('the Word inliner leaves the label styled as a section name');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('detectTestFamily reads only a group row\'s FIRST cell', () => {
   const src = extractFn(APP_SRC, 'detectTestFamily');
   if (/querySelectorAll\('table tbody tr\.apa-group td'\)/.test(src)) {

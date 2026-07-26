@@ -624,6 +624,18 @@ function buildStandaloneHtml(container){
   clone.querySelectorAll('.apa-table tbody tr.apa-group td').forEach(td => {
     td.setAttribute('style', "padding:5pt 7pt 2.5pt;border:none;font-family:'Times New Roman',serif;color:#000;font-style:italic;font-weight:bold;line-height:1.05;");
   });
+  /* A section that relabels one column carries that label on its group row.
+     The rule above has just overwritten it as a bold, left-aligned section
+     name — but it is a COLUMN heading, so it has to sit over its own column
+     exactly as that column's data cells do, and not read as part of the
+     section name. Same 7pt horizontal padding, and centred wherever the column
+     is numeric, which is how td.num is styled above. */
+  clone.querySelectorAll('.apa-table tbody tr.apa-group td.apa-group-col-label').forEach(td => {
+    const centred = td.classList.contains('num') ? 'text-align:center;' : '';
+    td.setAttribute('style',
+      "padding:5pt 7pt 2.5pt;border:none;font-family:'Times New Roman',serif;color:#333;"
+      + "font-style:italic;font-weight:normal;font-size:9.5pt;line-height:1.05;" + centred);
+  });
   // Indent the first cell of grouped subtest rows
   clone.querySelectorAll('.apa-table tbody tr.apa-grouped-row td:first-child').forEach(td => {
     const existing = td.getAttribute('style') || '';
@@ -6225,11 +6237,24 @@ const ReportBundle = (function(){
            "Base rate" as the test family and the battery merge stopped
            matching. */
         lr.className = 'apa-col-label-row';
+        /* This row is built AFTER buildStandaloneHtml has inlined every style,
+           so it gets none of that treatment. Rather than restate the padding
+           and alignment and risk drifting from it, each label copies them off
+           the first data cell of its own column — which is exactly the column
+           it labels, so the two line up by construction. */
+        const refRow = section.rows[0];
         section.colLabels.forEach((label, i) => {
           const td = document.createElement('td');
           if (i > 0){
             td.className = 'apa-group-col-label';
-            td.setAttribute('style', "font-family:'Times New Roman',serif;font-size:10pt;font-style:italic;color:#333;text-align:right;");
+            const ref = refRow && refRow.children[i];
+            const refStyle = ref ? (ref.getAttribute('style') || '') : '';
+            const pad   = /padding\s*:\s*([^;]+)/i.exec(refStyle);
+            const align = /text-align\s*:\s*([^;]+)/i.exec(refStyle);
+            td.setAttribute('style',
+              (pad ? 'padding:' + pad[1].trim() + ';' : '')
+              + (align ? 'text-align:' + align[1].trim() + ';' : '')
+              + "font-family:'Times New Roman',serif;font-size:9.5pt;font-style:italic;color:#333;");
             td.textContent = label || '';
           }
           lr.appendChild(td);
@@ -6596,7 +6621,20 @@ const ReportBundle = (function(){
                 td.setAttribute('style', nameStyle);
                 td.textContent = p.sec.subLabel;
               } else {
-                td.setAttribute('style', "font-family:'Times New Roman',serif;font-size:10pt;font-style:italic;color:#333;text-align:right;padding:" + pad + ";");
+                /* Copy padding and alignment from this column's own data cells
+                   so the label sits over the numbers it describes. Falls back
+                   to the divider's padding when the section has no rows yet. */
+                const ref = p.bodyRows[0] && p.bodyRows[0].children[ci];
+                const refStyle = ref ? (ref.getAttribute('style') || '') : '';
+                const rPad   = /padding\s*:\s*([^;]+)/i.exec(refStyle);
+                const rAlign = /text-align\s*:\s*([^;]+)/i.exec(refStyle);
+                /* font-weight:normal is explicit: this cell sits on a row
+                   classed .apa-group, whose stylesheet rule bolds it as a
+                   section name. It is a column label, not a heading. */
+                td.setAttribute('style',
+                  'padding:' + (rPad ? rPad[1].trim() : pad) + ';'
+                  + (rAlign ? 'text-align:' + rAlign[1].trim() + ';' : '')
+                  + "font-family:'Times New Roman',serif;font-size:9.5pt;font-style:italic;font-weight:normal;color:#333;");
                 td.textContent = p.colLabels[ci] || '';
               }
               dr.appendChild(td);
