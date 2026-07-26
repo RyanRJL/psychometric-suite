@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260725h">
-<link rel="stylesheet" href="design-system.css?v=20260724i">
+<link rel="stylesheet" href="styles.css?v=20260726a">
+<link rel="stylesheet" href="design-system.css?v=20260726a">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -656,18 +656,6 @@
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
-        <!-- REPORT WRITER topnav — hidden, remove comment tags to restore
-        <button type="button" class="topnav-item nav-item" data-target="report-writer" data-bucket="report">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 2.5h7l3 3v12a1 1 0 01-1 1H5a1 1 0 01-1-1V3.5a1 1 0 011-1z"/>
-            <polyline points="12,2.5 12,5.5 15,5.5"/>
-            <line x1="6.5" y1="10" x2="13" y2="10"/>
-            <line x1="6.5" y1="13" x2="13" y2="13"/>
-          </svg>
-          <span>Report Writer</span>
-          <span class="nav-dev-tag" aria-label="In development">In dev</span>
-        </button>
-        -->
         <button type="button" class="topnav-item nav-item" data-target="converter" data-bucket="converter">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3,7 14,7 11.5,4.5"/>
@@ -705,9 +693,6 @@
     <div class="nav-item" data-target="premorbid"><span class="nav-item-num">01</span>Premorbid Estimate</div>
     <div class="nav-item" data-target="battery"><span class="nav-item-num">02</span>Score Tables</div>
     <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">03</span>Change Analysis</div>
-    <!-- REPORT WRITER sidebar nav — hidden, remove comment tags to restore
-    <div class="nav-item" data-target="report-writer"><span class="nav-item-num">04</span>Report Writer<span class="nav-dev-tag" aria-label="In development">In dev</span></div>
-    -->
     <div class="nav-item" data-target="converter"><span class="nav-item-num">05</span>Score Converter</div>
     <div class="nav-item" data-target="effectsize"><span class="nav-item-num">06</span>Effect Size Tools</div>
     <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Norms Database</div>
@@ -1029,206 +1014,6 @@
         </button>
       </div>
       <div class="apa-table-container" id="bat-apa"><div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least one subtest with a score to preview the APA table.</div></div>
-    </div>
-  </section>
-
-  <!-- ========== 03 REPORT WRITER ========== -->
-  <section class="section" id="report-writer">
-    <div class="eyebrow">Narrative drafting · Descriptive report text</div>
-    <h1 class="section-title">Report <em>Writer</em></h1>
-    <p class="section-desc">A descriptive narrative is generated automatically from the scores you enter elsewhere on the site. Adjust the reference and descriptor system below; everything else updates live.</p>
-
-    <!-- ===== AUTO-GENERATED REPORT (TRIAL) ===== -->
-    <div class="rwauto-shell" id="rwauto-shell">
-      <div class="rwauto-toolbar">
-        <div class="rwauto-toolbar-group">
-          <label class="rwauto-toolbar-label">Reference</label>
-          <select class="rwauto-toolbar-select" id="rwauto-reference"></select>
-        </div>
-        <div class="rwauto-toolbar-group">
-          <label class="rwauto-toolbar-label">Descriptor system</label>
-          <select class="rwauto-toolbar-select" id="rwauto-descriptor"></select>
-        </div>
-        <div class="rwauto-toolbar-group rwauto-toolbar-toggles">
-          <span class="rwauto-toolbar-label">Brackets</span>
-          <label class="rwauto-pill-toggle">
-            <input type="checkbox" id="rwauto-show-std" checked>
-            <span>Standard score</span>
-          </label>
-          <label class="rwauto-pill-toggle">
-            <input type="checkbox" id="rwauto-show-pct">
-            <span>Percentile</span>
-          </label>
-        </div>
-        <div class="rwauto-toolbar-spacer"></div>
-        <button type="button" class="rwauto-btn rwauto-btn-primary" id="rwauto-copy">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M2 9V3a1 1 0 0 1 1-1h6"/></svg>
-          <span>Copy report</span>
-        </button>
-      </div>
-      <article class="rwauto-paper" id="rwauto-paper">
-        <!-- generated text renders here -->
-      </article>
-    </div>
-
-    <div class="report-writer-shell rw-legacy-shell">
-      <div class="tabs rw-tabs" role="tablist" aria-label="Report Writer views">
-        <div class="tab active" data-rw-tab="setup" role="tab" tabindex="0"><span class="rw-tab-num">1</span><span>Setup</span></div>
-        <div class="tab" data-rw-tab="build" role="tab" tabindex="0"><span class="rw-tab-num">2</span><span>Build</span></div>
-        <div class="tab" data-rw-tab="scores" role="tab" tabindex="0"><span class="rw-tab-num">3</span><span>Scores</span></div>
-      </div>
-
-      <!-- ========== TAB 1 : SETUP ========== -->
-      <div class="rw-tab-content active" id="rw-tab-setup" role="tabpanel">
-        <div class="rw-setup-grid">
-          <div class="panel report-panel report-options-panel">
-            <div class="panel-kicker">Options</div>
-            <div class="report-options-stack">
-              <div class="field">
-                <label>Reference</label>
-                <select id="rw-reference">
-                  <option value="mrs" selected>Mrs Doe (she/her)</option>
-                  <option value="mr">Mr Doe (he/him)</option>
-                  <option value="you">You (first person)</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Descriptor system</label>
-                <select id="rw-descriptor-system">
-                  <option value="wechsler" selected>Wechsler</option>
-                  <option value="aan">AACN</option>
-                </select>
-              </div>
-              <div class="field rw-domain-field">
-                <label>Add domains to report structure</label>
-                <div class="rw-domain-checklist" id="rw-domain-checklist" role="group" aria-label="Available domains"></div>
-              </div>
-            </div>
-          </div>
-
-          <aside class="panel report-panel report-section-list-panel">
-            <div class="report-panel-head-row">
-              <div class="panel-kicker">Report Structure</div>
-              <button class="btn rw-sort-btn" id="rw-sort-convention" type="button" title="Reorder sections by typical neuropsych report convention">⇅ Sort by convention</button>
-            </div>
-            <div class="report-section-list" id="rw-section-list"></div>
-          </aside>
-        </div>
-      </div>
-
-      <!-- ========== TAB 2 : BUILD ========== -->
-      <div class="rw-tab-content" id="rw-tab-build" role="tabpanel">
-        <div class="rw-subtabs" id="rw-build-subtabs" role="tablist" aria-label="Sections"></div>
-        <div class="rw-build-grid">
-          <div class="panel report-panel report-measure-panel">
-            <div class="report-test-picker">
-              <div class="report-picker-bar">
-                <div class="report-search-shell">
-                  <svg class="report-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="7" cy="7" r="4.5"/>
-                    <path d="M11 11l3 3"/>
-                  </svg>
-                  <input type="text" id="rw-test-search" class="report-test-search-inline" placeholder="Search tests, trials, aliases, or abilities" aria-label="Search tests">
-                  <button type="button" class="report-search-clear" id="rw-test-search-clear" aria-label="Clear search" tabindex="-1" hidden>
-                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-                      <path d="M3 3l8 8M11 3l-8 8"/>
-                    </svg>
-                  </button>
-                </div>
-                <div class="report-filter-chips" id="rw-filter-chips" aria-label="Filter mapped tests"></div>
-              </div>
-              <div class="report-test-browser" id="rw-test-list"></div>
-              <div class="report-picker-floating-add" id="rw-picker-floating-add" hidden>
-                <span class="report-picker-floating-count" id="rw-picker-floating-count"></span>
-                <button class="btn" id="rw-clear-selection" type="button">Clear</button>
-                <button class="btn btn-primary" id="rw-add-mapped" type="button">Add</button>
-              </div>
-              <!-- legacy id retained for compatibility, not visible -->
-              <button class="btn btn-ghost is-hidden" id="rw-add-visible" type="button" aria-hidden="true" tabindex="-1">Add visible</button>
-            </div>
-
-            <details class="report-manual-entry-details">
-              <summary>Add custom test / trial</summary>
-              <div class="report-manual-entry">
-                <div class="field">
-                  <label>Custom test / trial</label>
-                  <input type="text" id="rw-manual-test" placeholder="e.g. Rey Complex Figure Copy">
-                </div>
-                <div class="field">
-                  <label>Ability wording</label>
-                  <input type="text" id="rw-manual-construct" placeholder="e.g. visuoconstructional ability">
-                </div>
-                <button class="btn" id="rw-add-manual" type="button">Add custom</button>
-              </div>
-            </details>
-          </div>
-
-          <aside class="panel report-panel report-selected-panel">
-            <div class="panel-kicker">In this section</div>
-            <div class="report-selected-list" id="rw-selected-list" aria-label="Selected measures for this section"></div>
-          </aside>
-        </div>
-      </div>
-
-      <!-- ========== TAB 3 : SCORES ========== -->
-      <div class="rw-tab-content" id="rw-tab-scores" role="tabpanel">
-        <div class="rw-subtabs" id="rw-scores-subtabs" role="tablist" aria-label="Sections"></div>
-        <div class="panel report-panel report-scores-panel">
-          <div class="report-panel-head">
-            <div>
-              <div class="panel-kicker">Score Entry</div>
-              <h2 class="report-active-title" id="rw-scores-title">Add measures first</h2>
-              <p class="report-mini-copy">Tab moves down columns (Score → Percentile → CI). Shift+Tab reverses.</p>
-            </div>
-          </div>
-          <div class="report-table-wrap">
-            <table class="input-table report-scores-table" id="rw-scores-table">
-              <thead>
-                <tr>
-                  <th style="width:24px"></th>
-                  <th style="width:28%">Test / trial</th>
-                  <th style="width:14%">Score type</th>
-                  <th style="width:11%">Score</th>
-                  <th style="width:11%">Percentile</th>
-                  <th style="width:13%" title="Optional 95% confidence interval, e.g. 95–107">95% CI</th>
-                  <th style="width:14%">Descriptor</th>
-                  <th class="row-actions"></th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Persistent wizard nav (shared across tabs, sticky to viewport bottom) -->
-      <div class="rw-wizard-nav rw-wizard-nav-sticky" id="rw-wizard-nav">
-        <button class="btn rw-clear-btn" id="rw-reset" type="button" title="Clear all sections, measures, and saved state">↺ Clear all</button>
-        <button class="btn btn-secondary" type="button" data-rw-wizard="prev">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px;margin-right:6px;vertical-align:-2px"><polyline points="10,3 5,8 10,13"/></svg>
-          <span class="rw-wizard-prev-label">Back</span>
-        </button>
-        <span class="rw-wizard-progress" id="rw-wizard-progress"></span>
-        <button class="btn btn-primary" type="button" data-rw-wizard="next">
-          <span class="rw-wizard-next-label">Next</span>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px;margin-left:6px;vertical-align:-2px"><polyline points="6,3 11,8 6,13"/></svg>
-        </button>
-      </div>
-
-      <div class="panel report-panel report-output-panel">
-        <div class="report-output-toolbar">
-          <div>
-            <div class="panel-kicker">Generated Draft</div>
-            <p class="report-mini-copy">Descriptors are italicised, percentile suffixes superscripted. Lock to preserve manual edits, then click Regenerate when ready.</p>
-          </div>
-          <div class="report-output-actions">
-            <label class="report-toggle"><input type="checkbox" id="rw-lock"> Lock edits</label>
-            <button class="btn btn-ghost" id="rw-regenerate" type="button" title="Re-run generation, overwriting locked edits">Regenerate</button>
-            <button class="btn" id="rw-copy-report" type="button">Copy text</button>
-          </div>
-        </div>
-        <div class="report-output" id="rw-output" contenteditable="true"></div>
-      </div>
     </div>
   </section>
 
@@ -6043,8 +5828,8 @@
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260725d"></script>
-<script src="app.js?v=20260725i"></script>
-<script src="design-system.js?v=20260512ad" defer></script>
+<script src="app.js?v=20260726a"></script>
+<script src="design-system.js?v=20260726a" defer></script>
 <script src="app-effectsize-page.js?v=20260725a"></script>
 
 <!-- PWA: register the service worker for offline support + installability.

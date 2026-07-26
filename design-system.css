@@ -1660,12 +1660,6 @@ label[required-marker]::after{
 }
 
 /* Report Writer */
-#report-writer .panel,
-#report-writer .panel-emphasis{
-  background: var(--ds-surface) !important;
-  background-image: none !important;
-  border-color: var(--ds-border) !important;
-}
 
 /* Auto-fill panels in EVERY tool — strip the warm wrapper, keep input */
 #battery .autofill-panel,
@@ -3492,11 +3486,6 @@ input[type="text"].ds-inline-bar-input{
         toolbar (Reference, Descriptor) over a paper-style output card.
         Legacy markup is hidden so its JS bindings don't error.
    ============================================================================ */
-
-#report-writer .rw-legacy-shell{ display: none !important; }
-#report-writer{
-  max-width: min(880px, calc(100vw - 48px)) !important;
-}
 
 .rwauto-shell{
   display: flex;

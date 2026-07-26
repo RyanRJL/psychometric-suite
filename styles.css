@@ -1069,38 +1069,9 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .apa-table .bat-expected-stars{color:#000!important;font-weight:700}
 
 /* Report Writer */
-#report-writer.section{max-width:1280px}
 .report-writer-shell{display:grid;gap:14px}
-#report-writer .rw-tabs{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 14px;padding:8px;
-  border:1px solid var(--border);border-radius:8px;background:var(--paper-2);box-shadow:var(--shadow-soft);
-}
-#report-writer .rw-tabs .tab{
-  display:flex;align-items:center;gap:9px;min-height:48px;margin:0;padding:10px 12px;
-  border:1px solid var(--border-soft);border-radius:6px;background:var(--paper);color:var(--ink-2);
-  font-size:12.5px;font-weight:500;line-height:1.25;
-}
-#report-writer .rw-tabs .tab:hover{
-  transform:translateY(-1px);border-color:rgba(156,61,42,0.28);color:var(--accent);
-  box-shadow:0 6px 16px rgba(60,40,20,0.05);
-}
-#report-writer .rw-tabs .tab.active{
-  border-color:rgba(156,61,42,0.42);background:var(--accent-tint);color:var(--accent);
-  box-shadow:inset 0 0 0 1px rgba(156,61,42,0.08);
-}
-#report-writer .rw-tab-num{
-  flex:0 0 24px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;
-  border:1px solid var(--border);border-radius:999px;background:var(--paper-2);color:var(--muted);
-  font-family:var(--mono);font-size:11px;font-weight:700;
-}
-#report-writer .rw-tabs .tab.active .rw-tab-num{
-  border-color:var(--accent);background:var(--accent);color:var(--paper);
-}
-.rw-tab-content{display:none}
-.rw-tab-content.active{display:block;animation:fadeIn 200ms ease}
 
 /* Tab 1 layout: Options (left) + Report Structure (right) */
-.rw-setup-grid{display:grid;grid-template-columns:minmax(240px,.36fr) minmax(0,1fr);gap:14px;align-items:start}
 .report-options-stack{display:flex;flex-direction:column;gap:10px}
 .report-options-stack .field{margin-bottom:0;gap:4px}
 .report-options-stack .field label{font-size:11.5px}
@@ -1111,67 +1082,15 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   height:32px;padding:0 18px;font-size:12.5px;box-sizing:border-box;
   display:inline-flex;align-items:center;justify-content:center;line-height:1;align-self:end;
 }
-.rw-domain-field .btn{
-  height:32px;padding:0 18px;font-size:12.5px;box-sizing:border-box;
-  display:inline-flex;align-items:center;justify-content:center;line-height:1;
-  margin-top:8px;align-self:flex-start;
-}
-.rw-domain-checklist{
-  display:flex;flex-direction:column;gap:4px;border:1px solid var(--border-soft);border-radius:6px;
-  background:var(--paper);padding:6px 10px;max-height:240px;overflow-y:auto;
-}
-.rw-domain-check{
-  display:flex;align-items:center;gap:8px;padding:3px 2px;cursor:pointer;font-size:12.5px;color:var(--ink-2);
-}
-.rw-domain-check input{margin:0;width:auto;accent-color:var(--accent)}
-.rw-domain-check:hover{color:var(--ink)}
-.rw-domain-check input:checked + span{color:var(--accent);font-weight:500}
-.rw-domain-checklist-empty{font-size:11.5px;color:var(--faint);font-style:italic;padding:8px 4px;text-align:center}
-@media (max-width:900px){.rw-setup-grid{grid-template-columns:1fr}}
+@media (max-width:900px){}
 
 /* Tab 2 layout: Picker (left) + Selected list (right) */
-.rw-build-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.42fr);gap:14px;align-items:start}
 .report-selected-panel{padding:14px}
-@media (max-width:1000px){.rw-build-grid{grid-template-columns:1fr}}
+@media (max-width:1000px){}
 @media (max-width:900px){
-  #report-writer .rw-tabs{grid-template-columns:1fr}
 }
 
 /* Sub-tab strip â€” domain tabs (numbered, prominent) */
-.rw-subtabs{
-  display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;padding:8px;
-  border:1px solid var(--border);border-radius:8px;background:var(--paper-2);
-}
-.rw-subtab{
-  display:inline-flex;align-items:center;gap:9px;padding:9px 14px;border:1px solid var(--border-soft);
-  border-radius:7px;background:var(--paper);color:var(--ink-2);font-family:var(--sans);font-size:13px;
-  font-weight:500;cursor:pointer;line-height:1.2;transition:all 120ms ease;
-}
-.rw-subtab:hover{transform:translateY(-1px);border-color:rgba(156,61,42,.32);color:var(--accent);box-shadow:0 4px 10px rgba(60,40,20,.05)}
-.rw-subtab.active{
-  background:var(--accent-tint);border-color:rgba(156,61,42,.42);color:var(--accent);font-weight:600;
-  box-shadow:inset 0 0 0 1px rgba(156,61,42,0.12);
-}
-.rw-subtab-num{
-  flex:0 0 auto;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;
-  padding:0 7px;border:1px solid var(--border);border-radius:11px;background:var(--paper-2);color:var(--muted);
-  font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.02em;
-}
-.rw-subtab.active .rw-subtab-num{border-color:var(--accent);background:var(--accent);color:var(--paper)}
-.rw-subtab-count{
-  font-family:var(--mono);font-size:10px;font-weight:600;color:var(--faint);
-  border:1px solid var(--border);border-radius:999px;padding:1px 7px;background:var(--paper-2);
-}
-.rw-subtab.active .rw-subtab-count{background:var(--paper);border-color:rgba(156,61,42,.32);color:var(--accent)}
-.rw-subtab.is-empty .rw-subtab-count{color:var(--warn);border-color:rgba(156,61,42,.32)}
-.rw-subtab-remove{
-  display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
-  border-radius:50%;color:var(--faint);font-size:13px;line-height:1;cursor:pointer;
-  margin-left:2px;opacity:.5;transition:opacity 120ms ease,background 120ms ease,color 120ms ease;
-}
-.rw-subtab:hover .rw-subtab-remove{opacity:1}
-.rw-subtab-remove:hover{background:rgba(156,61,42,.12);color:var(--warn);opacity:1}
-.rw-subtabs-empty{font-size:12px;color:var(--faint);font-style:italic;padding:4px 6px}
 
 /* Numbered prefix on section cards (Tab 1) */
 .report-section-num{
@@ -1181,28 +1100,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .report-section-item.active .report-section-num{color:var(--accent)}
 
 /* Wizard nav â€” shared across tabs, sticky to viewport bottom so Next is always visible */
-.rw-wizard-nav{
-  display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:14px;
-  margin:14px 0;padding:10px 16px;border:1px solid var(--border);border-radius:8px;
-  background:var(--paper);box-shadow:0 6px 16px rgba(60,40,20,0.06);
-}
-.rw-wizard-nav .rw-clear-btn{
-  height:34px;padding:0 14px;font-size:11.5px;font-weight:600;letter-spacing:.02em;
-  color:var(--muted);border:1px solid var(--border-soft);background:transparent;
-  display:inline-flex;align-items:center;justify-content:center;line-height:1;box-sizing:border-box;
-  margin-right:6px;
-}
-.rw-wizard-nav .rw-clear-btn:hover{color:var(--warn);border-color:rgba(156,61,42,.4);background:var(--accent-tint)}
-.rw-wizard-nav .btn{height:34px;padding:0 18px;font-size:12.5px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;line-height:1}
-.rw-wizard-nav [data-rw-wizard="prev"]{
-  background:var(--paper);color:var(--accent);border:1px solid rgba(156,61,42,.42);font-weight:600;
-}
-.rw-wizard-nav [data-rw-wizard="prev"]:hover:not([disabled]){background:var(--accent-tint);border-color:var(--accent)}
-.rw-wizard-nav .rw-wizard-progress{
-  text-align:center;font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.06em;
-}
-.rw-wizard-nav-sticky{position:sticky;bottom:8px;z-index:5}
-.rw-wizard-nav button[disabled]{opacity:.4;cursor:not-allowed}
 
 /* Combined search + chip filter bar */
 .report-picker-bar{
@@ -1373,17 +1270,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 /* Options panel â€” head row with Reset button */
 .report-panel-head-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
 .report-panel-head-row .panel-kicker{margin-bottom:0}
-.rw-reset-btn,.rw-sort-btn,.rw-autofill-btn{
-  font-size:11.5px;height:28px;padding:0 12px;color:var(--accent);border:1px solid rgba(156,61,42,.4);
-  background:var(--paper);font-weight:600;letter-spacing:.02em;line-height:1;
-  display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
-}
-.rw-reset-btn:hover,.rw-sort-btn:hover,.rw-autofill-btn:hover{background:var(--accent-tint);border-color:var(--accent);color:var(--accent)}
-.rw-autofill-btn{
-  /* dashed border to flag this as a temporary dev affordance */
-  border-style:dashed;color:var(--muted);border-color:var(--border);
-}
-.rw-autofill-btn:hover{color:var(--accent);border-color:var(--accent);border-style:solid}
 
 /* Selected-measures compact list (Build tab â€” replaces full table) */
 .report-selected-list{
@@ -3845,83 +3731,9 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 }
 
 /* ---------- REPORT WRITER ---------- */
-#report-writer .rw-subtabs{
-  display:grid!important;
-  grid-template-columns:repeat(3,1fr)!important;
-  gap:0!important;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.06);
-  border-radius:var(--r-lg);
-  box-shadow:var(--shadow-1);
-  overflow:hidden;
-  margin-bottom:24px;
-}
-#report-writer .rw-subtabs > *{
-  background:transparent;
-  border:none;
-  border-right:1px solid rgba(20,15,5,0.06);
-  padding:16px 20px;
-  display:flex;align-items:center;gap:12px;
-  cursor:pointer;
-  position:relative;
-  transition:background var(--t-fast) var(--ease);
-}
-#report-writer .rw-subtabs > *:last-child{border-right:none}
-#report-writer .rw-subtabs > *:hover{background:rgba(20,15,5,0.025)}
-#report-writer .rw-subtabs > .active,
-#report-writer .rw-subtabs > [aria-selected="true"]{
-  background:linear-gradient(180deg, #FAF7F0 0%, #F4F1E9 100%);
-}
-#report-writer .rw-subtabs > .active::before,
-#report-writer .rw-subtabs > [aria-selected="true"]::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg, transparent 0%, #1A1A1A 20%, #1A1A1A 80%, transparent 100%);
-}
 /* Number badge */
-#report-writer .rw-tab-num{
-  width:24px;height:24px;border-radius:50%;
-  background:rgba(20,15,5,0.08);color:#737373;
-  font-family:var(--sans);font-size:11px;font-weight:600;
-  display:inline-flex;align-items:center;justify-content:center;
-  flex-shrink:0;
-}
-#report-writer .rw-subtabs > .active .rw-tab-num{
-  background:#1A1A1A;color:#FFFFFF;
-}
 /* Drag handles in report-section list */
-#report-writer .report-section-list,
-#report-writer .report-selected-list{
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.06);
-  border-radius:var(--r-md);
-  overflow:hidden;
-}
-#report-writer .report-section-list > *,
-#report-writer .report-selected-list > *{
-  background:rgba(20,15,5,0.025);
-  border-bottom:1px solid rgba(20,15,5,0.04);
-  padding:12px 14px;
-  display:flex;align-items:center;gap:12px;
-  transition:background var(--t-fast) var(--ease);
-}
-#report-writer .report-section-list > *:last-child,
-#report-writer .report-selected-list > *:last-child{border-bottom:none}
-#report-writer .report-section-list > *:hover,
-#report-writer .report-selected-list > *:hover{background:rgba(20,15,5,0.05)}
 /* Output panel (the right-side preview) */
-#report-writer .report-output-panel,
-#report-writer .report-output{
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.06);
-  border-radius:var(--r-md);
-  box-shadow:var(--shadow-1);
-}
-#report-writer .report-options-panel{
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.06);
-  border-radius:var(--r-md);
-  box-shadow:var(--shadow-1);
-}
 
 /* ---------- PREMORBID ---------- */
 #premorbid .pre-form-section{
@@ -4844,132 +4656,11 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
    PHASE 11 â€” Report Writer wizard nav (match Premorbid sticky style)
    ===================================================================== */
 
-#report-writer .rw-wizard-nav{
-  display:grid!important;
-  grid-template-columns:auto auto 1fr auto!important;
-  align-items:center;
-  gap:14px!important;
-  position:sticky!important;
-  bottom:0!important;
-  z-index:30!important;
-  background:rgba(255,255,255,0.96)!important;
-  backdrop-filter:blur(14px) saturate(180%)!important;
-  -webkit-backdrop-filter:blur(14px) saturate(180%)!important;
-  border:1px solid rgba(20,15,5,0.08)!important;
-  border-bottom:none!important;
-  border-radius:var(--r-lg) var(--r-lg) 0 0!important;
-  margin:28px -16px 0!important;
-  padding:16px 24px!important;
-  box-shadow:0 -8px 24px rgba(20,15,5,0.08), 0 -1px 0 rgba(20,15,5,0.04)!important;
-}
-#report-writer .rw-wizard-nav::before{
-  content:"";
-  position:absolute;
-  top:-1px;left:0;right:0;height:2px;
-  background:linear-gradient(90deg, transparent 0%, rgba(20,15,5,0.18) 30%, rgba(20,15,5,0.18) 70%, transparent 100%);
-  pointer-events:none;
-}
-
 /* Clear-all stays subtle, semantic-warn on hover */
-#report-writer .rw-wizard-nav .rw-clear-btn{
-  background:#D63A2F!important;
-  border:1px solid #B22A20!important;
-  color:#FFFFFF!important;
-  font-size:12px!important;
-  font-weight:600!important;
-  letter-spacing:0.01em!important;
-  padding:8px 16px!important;
-  height:auto!important;
-  box-shadow:0 1px 2px rgba(178,42,32,0.30), 0 2px 6px rgba(214,58,47,0.25)!important;
-  transition:background 160ms ease, border-color 160ms ease, transform 120ms ease, box-shadow 160ms ease!important;
-}
-#report-writer .rw-wizard-nav .rw-clear-btn:hover{
-  background:#E84A3D!important;
-  border-color:#C2342A!important;
-  color:#FFFFFF!important;
-  box-shadow:0 2px 4px rgba(178,42,32,0.35), 0 4px 12px rgba(214,58,47,0.40)!important;
-  transform:translateY(-1px);
-}
-#report-writer .rw-wizard-nav .rw-clear-btn:active{
-  background:#B22A20!important;
-  border-color:#8E2118!important;
-  transform:translateY(0);
-  box-shadow:0 1px 2px rgba(178,42,32,0.30) inset!important;
-}
-#report-writer .rw-wizard-nav .rw-clear-btn:focus-visible{
-  outline:3px solid rgba(214,58,47,0.45);
-  outline-offset:2px;
-}
 
 /* Prev/Next buttons match Premorbid nav */
-#report-writer .rw-wizard-nav .btn{
-  height:auto!important;
-  padding:11px 20px!important;
-  font-size:13.5px!important;
-  font-weight:500!important;
-  display:inline-flex;align-items:center;
-  letter-spacing:0!important;
-  border-radius:var(--r-md)!important;
-}
-#report-writer .rw-wizard-nav [data-rw-wizard="prev"]{
-  background:#FFFFFF!important;
-  color:#1A1A1A!important;
-  border:1px solid rgba(20,15,5,0.18)!important;
-  font-weight:500!important;
-  box-shadow:var(--shadow-1)!important;
-}
-#report-writer .rw-wizard-nav [data-rw-wizard="prev"]:hover:not([disabled]){
-  background:#F4F1E9!important;
-  border-color:#3A3A3A!important;
-  box-shadow:var(--shadow-2)!important;
-}
-#report-writer .rw-wizard-nav [data-rw-wizard="next"]{
-  background:linear-gradient(180deg, #3DA56B 0%, #2E8552 100%)!important;
-  border:1px solid #246B43!important;
-  color:#FFFFFF!important;
-  font-weight:600!important;
-  box-shadow:0 1px 2px rgba(36,107,67,0.30), 0 4px 12px rgba(46,133,82,0.28), inset 0 1px 0 rgba(255,255,255,0.18)!important;
-  transition:background 160ms ease, transform 120ms ease, box-shadow 160ms ease!important;
-}
-#report-writer .rw-wizard-nav [data-rw-wizard="next"]:hover:not([disabled]){
-  background:linear-gradient(180deg, #45B375 0%, #34935C 100%)!important;
-  border-color:#1F5D3A!important;
-  box-shadow:0 2px 4px rgba(36,107,67,0.35), 0 8px 18px rgba(46,133,82,0.40), inset 0 1px 0 rgba(255,255,255,0.20)!important;
-  transform:translateY(-1px);
-}
-#report-writer .rw-wizard-nav [data-rw-wizard="next"]:active{
-  background:linear-gradient(180deg, #2E8552 0%, #246B43 100%)!important;
-  transform:translateY(0);
-  box-shadow:0 1px 2px rgba(36,107,67,0.30) inset!important;
-}
-#report-writer .rw-wizard-nav [data-rw-wizard="next"]:focus-visible{
-  outline:3px solid rgba(46,133,82,0.45);
-  outline-offset:2px;
-}
-#report-writer .rw-wizard-nav [data-rw-wizard="next"][disabled]{
-  background:linear-gradient(180deg, #BFD8C9 0%, #A6C4B3 100%)!important;
-  border-color:#9DBDAA!important;
-  box-shadow:none!important;
-  cursor:not-allowed;
-}
 
 /* Progress label â€” bigger, clearer, more presence */
-#report-writer .rw-wizard-nav .rw-wizard-progress{
-  text-align:center!important;
-  font-family:var(--sans)!important;
-  font-size:12.5px!important;
-  font-weight:600!important;
-  letter-spacing:0.06em!important;
-  color:#5A5A5A!important;
-  text-transform:none!important;
-  padding:0 14px!important;
-  white-space:nowrap;
-}
-
-#report-writer .rw-wizard-nav button[disabled]{
-  opacity:0.35!important;
-  cursor:not-allowed!important;
-}
 
 /* =====================================================================
    PHASE 12 â€” Change Analysis page polish
@@ -5610,115 +5301,30 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
    - Tighter panel padding so the two-column setup grid fits
    ===================================================================== */
 
-#report-writer > .eyebrow,
-#report-writer > .section-title{display:none!important}
-#report-writer > .section-desc{
-  display:block!important;
-  font-family:var(--sans)!important;
-  font-size:13px!important;
-  font-style:italic!important;
-  color:#6B6B6B!important;
-  line-height:1.55!important;
-  max-width:780px;
-  margin:0 0 16px!important;
-  padding:0!important;
-  background:transparent!important;
-  border:none!important;
-}
-
-#report-writer.section{
-  max-width:1320px!important;
-  margin-left:auto;
-  margin-right:auto;
-  padding:24px 40px 60px!important;
-}
-
 /* 3-step tabs (Setup / Build / Scores) â€” slightly more compact */
-#report-writer .rw-tabs{
-  margin-bottom:16px!important;
-}
 
 /* Setup-grid panels â€” tighter padding to fit more content */
-#report-writer .rw-setup-grid{
-  margin-bottom:18px!important;
-}
-#report-writer .report-panel{
-  padding:18px 20px!important;
-}
-#report-writer .report-options-panel,
-#report-writer .report-section-list-panel,
-#report-writer .report-measure-panel,
-#report-writer .report-selected-panel,
-#report-writer .report-scores-panel{
-  background:#FFFFFF!important;
-  border:1px solid rgba(20,15,5,0.06)!important;
-  border-radius:var(--r-lg)!important;
-  box-shadow:var(--shadow-1)!important;
-}
 
 /* Panel kicker labels â€” consistent with other pages */
-#report-writer .panel-kicker{
-  font-family:var(--sans)!important;
-  font-size:10.5px!important;
-  font-weight:600!important;
-  letter-spacing:0.10em!important;
-  text-transform:uppercase!important;
-  color:#7A766E!important;
-  margin-bottom:10px!important;
-}
 
 /* Field labels inside the Options panel â€” tighter */
-#report-writer .field label{
-  font-family:var(--sans)!important;
-  font-size:10.5px!important;
-  font-weight:600!important;
-  letter-spacing:0.08em!important;
-  text-transform:uppercase!important;
-  color:#5A5A5A!important;
-  margin-bottom:5px!important;
-}
 
 /* Compact the Options stack so all 3 fields fit comfortably */
-#report-writer .report-options-stack{
-  gap:12px!important;
-}
-#report-writer .report-options-stack .field{
-  margin-bottom:0!important;
-}
 
 /* Domain checklist â€” tighter */
-#report-writer .rw-domain-checklist{
-  gap:6px!important;
-  padding-top:4px!important;
-}
 
 /* Report-structure list rows â€” slightly tighter */
-#report-writer .report-section-list > *{
-  padding:10px 12px!important;
-}
 
 /* Generated Draft (the APA-style output below) keeps its width but
    we don't constrain the section here â€” user said it's OK to scroll for it */
-#report-writer .report-output-panel{
-  margin-top:18px;
-}
 
 /* Build/Scores grid â€” compact */
-#report-writer .rw-build-grid{
-  margin-bottom:18px!important;
-}
 
 /* Shrink the test-picker browser so the whole Build tab fits without
    page-scrolling â€” internal scroll handles overflow within the box. */
-#report-writer .report-test-browser{
-  max-height:200px!important;
-}
 
 /* Hide the redundant "Options" kicker on the Setup tab â€” the field labels
    inside (Reference / Descriptor system / Add domains) are self-explanatory */
-#report-writer .report-options-panel > .panel-kicker{
-  display:none!important;
-}
 
 /* =====================================================================
    SCORE CONVERTER â€” same polish as other inner pages + view tabs
@@ -5843,16 +5449,6 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* Fix descender clipping in dropdowns/inputs (e.g. "Mrs Doe (she/her)") â€”
    override the legacy height:32px / padding:0 rule on report-options-stack */
-#report-writer .report-options-stack .field select,
-#report-writer .report-options-stack .field input,
-#report-writer select,
-#report-writer input[type="text"],
-#report-writer input[type="number"]{
-  height:auto!important;
-  min-height:38px!important;
-  line-height:1.4!important;
-  padding:9px 12px!important;
-}
 
 /* =====================================================================
    Norms visual-lock toggle â€” aesthetic fade + input lock, no layout shift

@@ -615,10 +615,12 @@ check('OCC_CODE maps the five occupational classes to 1-5', () => {
 /* ==========================================================================
    10. Percentile display at the distribution tails
    A percentile rank lives in the OPEN interval (0, 100). Rounding the extreme
-   tails to 2dp once produced "0.00" and "100.00", which reached report text as
-   "0th percentile" / "100th percentile" and also broke conversion back to a
-   standard score (toZ rejects v <= 0 || v >= 100). Mirrors app.js fmtPct and
-   reportOrdinal.
+   tails to 2dp once produced "0.00" and "100.00", which broke conversion back
+   to a standard score (toZ rejects v <= 0 || v >= 100) and, while the Report
+   Writer existed, reached its narrative as "0th percentile" / "100th
+   percentile". That page has since been removed along with reportOrdinal, but
+   fmtPct still feeds the Score Converter, Score Tables and the battery
+   percentile column, so the clamp still matters. Extracted from app.js.
    ========================================================================== */
 heading('10. Percentile display at the tails');
 
@@ -626,20 +628,10 @@ heading('10. Percentile display at the tails');
 const appFns = {};
 vm.createContext(appFns);
 vm.runInContext(
-  extractFn(APP_SRC, 'fmtPct') + '\n' + extractFn(APP_SRC, 'reportOrdinal') +
-    '\n;globalThis.__F = { fmtPct, reportOrdinal };',
+  extractFn(APP_SRC, 'fmtPct') + '\n;globalThis.__F = { fmtPct };',
   appFns
 );
-// app.js emits HTML entities and <sup> tags; normalise so the expectations below
-// read as plain ordinals.
-const rawFmtPct = appFns.__F.fmtPct;
-const rawOrdinal = appFns.__F.reportOrdinal;
-const fmtPctCheck = (p) => rawFmtPct(p);
-const reportOrdinalCheck = (v) =>
-  String(rawOrdinal(v))
-    .replace(/<sup>|<\/sup>/g, '')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
+const fmtPctCheck = appFns.__F.fmtPct;
 const pctOf = (z) => normCDF(z) * 100;
 
 check('fmtPct never emits an impossible rank (0.00 or 100.00)', () => {
@@ -653,20 +645,6 @@ check('fmtPct never emits an impossible rank (0.00 or 100.00)', () => {
   return true;
 });
 
-check('Wechsler floor and ceiling read as bounded ordinals, not 0th/100th', () => {
-  const cases = [
-    ['FSIQ 40',  (40 - 100) / 15,  '<1st'],
-    ['FSIQ 160', (160 - 100) / 15, '>99th'],
-    ['T = 90',   (90 - 50) / 10,   '>99th'],
-    ['FSIQ 45',  (45 - 100) / 15,  '<1st'],
-    ['FSIQ 155', (155 - 100) / 15, '>99th'],
-  ];
-  for (const [label, z, want] of cases) {
-    const got = reportOrdinalCheck(fmtPctCheck(pctOf(z)));
-    if (got !== want) return label + ' gave ' + JSON.stringify(got) + ', want ' + want;
-  }
-  return true;
-});
 
 check('tail percentiles still convert back to a standard score', () => {
   // toZ returns null for v <= 0 || v >= 100, so a clamped value must stay inside.
@@ -677,25 +655,7 @@ check('tail percentiles still convert back to a standard score', () => {
   return true;
 });
 
-check('reportOrdinal handles user-typed and empty percentile values', () => {
-  const cases = [['', ''], [null, ''], ['0', '<1st'], ['100', '>99th'], ['1', '1st'],
-                 ['99', '99th'], ['50', '50th'], ['11', '11th'], ['abc', '']];
-  for (const [input, want] of cases) {
-    const got = reportOrdinalCheck(input);
-    if (got !== want) return JSON.stringify(input) + ' gave ' + JSON.stringify(got) + ', want ' + JSON.stringify(want);
-  }
-  return true;
-});
 
-check('ordinal suffixes are correct through the teens', () => {
-  const want = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 11: '11th', 12: '12th', 13: '13th',
-                 21: '21st', 22: '22nd', 23: '23rd', 31: '31st', 42: '42nd', 53: '53rd' };
-  for (const n in want) {
-    const got = reportOrdinalCheck(n);
-    if (got !== want[n]) return n + ' gave ' + got + ', want ' + want[n];
-  }
-  return true;
-});
 
 /* ==========================================================================
    11. Effect-size calculator (app-effectsize-page.js)
