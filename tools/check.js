@@ -52,6 +52,28 @@ vm.runInContext(
 const D = sandbox.__EXPORTS;
 
 // ---------------------------------------------------------------------------
+// Source extraction. Several checks pull a function STRAIGHT OUT of the shipped
+// file and execute it, rather than re-implementing it, so that they test what
+// actually ships. Only safe for pure functions (no DOM, no globals) or ones
+// whose dependencies are stubbed at the call site. If a target is refactored
+// so it is no longer a top-level function, extraction throws rather than
+// silently passing.
+// ---------------------------------------------------------------------------
+function extractFn(source, name) {
+  const start = source.indexOf('function ' + name + '(');
+  if (start === -1) throw new Error('could not find function ' + name + ' in app.js');
+  let depth = 0, i = source.indexOf('{', start);
+  if (i === -1) throw new Error('malformed function ' + name);
+  for (let j = i; j < source.length; j++) {
+    if (source[j] === '{') depth++;
+    else if (source[j] === '}') { depth--; if (depth === 0) return source.slice(start, j + 1); }
+  }
+  throw new Error('unbalanced braces in ' + name);
+}
+
+const APP_SRC = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
+
+// ---------------------------------------------------------------------------
 // Tiny harness
 // ---------------------------------------------------------------------------
 let passed = 0;
@@ -436,6 +458,50 @@ check('Iverson Sdiff never exceeds the observed difference SD', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
+check('the outcome label reports significance only, never a direction', () => {
+  // Extracted from app.js so this tests the shipped function. normDB carries
+  // 119 higher-is-worse measures (intrusions, perseverations, errors, false
+  // positives, repetitions); mapping the sign of the statistic onto
+  // "improvement" / "decline" asserts the wrong clinical conclusion for every
+  // one of them. The signed statistic is displayed separately, so direction
+  // remains visible without the app interpreting it.
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(
+    ['erf', 'normCDF', 'tInv', 'rciOutcome'].map((n) => extractFn(APP_SRC, n)).join('\n') +
+      ';globalThis.__O = rciOutcome;',
+    c
+  );
+  const outcome = c.__O;
+  const banned = /improve|decline|deteriorat|worse|better|gain|loss/i;
+  for (const cv of [0.95, 0.90]) {
+    for (const r of [-5, -3.2, -2.5, -1.96, -1.645, -1, 0, 1, 1.645, 1.96, 2.5, 3.2, 5]) {
+      const o = outcome(r, cv);
+      if (banned.test(o.label)) return 'directional label at rci=' + r + ': ' + o.label;
+      // and the verdict must depend only on magnitude, not sign
+      const mirror = outcome(-r, cv);
+      if (o.label !== mirror.label) return 'asymmetric at rci=' + r + ': ' + o.label + ' vs ' + mirror.label;
+    }
+  }
+  return true;
+});
+check('the outcome still separates significant from non-significant', () => {
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(
+    ['erf', 'normCDF', 'tInv', 'rciOutcome'].map((n) => extractFn(APP_SRC, n)).join('\n') +
+      ';globalThis.__O = rciOutcome;',
+    c
+  );
+  // Neutral wording must not collapse the two verdicts into one.
+  const sig = c.__O(2.5, 0.95), ns = c.__O(1.0, 0.95);
+  if (sig.label === ns.label) return 'both verdicts read "' + sig.label + '"';
+  if (sig.cls === ns.cls) return 'both verdicts share the class ' + sig.cls;
+  // and the z threshold must still bite in the right place
+  if (c.__O(1.95, 0.95).label === sig.label) return '1.95 was called significant at 95%';
+  if (c.__O(1.97, 0.95).label !== sig.label) return '1.97 was not called significant at 95%';
+  return true;
+});
 check('McSweeney SRB slope and SEE are computable for every entry', () => {
   const bad = [];
   eachNormEntry((e, g, n) => {
@@ -556,25 +622,7 @@ check('OCC_CODE maps the five occupational classes to 1-5', () => {
    ========================================================================== */
 heading('10. Percentile display at the tails');
 
-// Unlike the rest of this file, these two are pulled STRAIGHT OUT OF app.js and
-// executed, rather than re-implemented. Both are pure (no DOM, no globals), so
-// extracting them is safe — and it means this section tests the shipped code
-// rather than a copy that could silently drift away from it.
-// If app.js is refactored so these are no longer top-level pure functions, the
-// extraction fails loudly rather than silently passing.
-function extractFn(source, name) {
-  const start = source.indexOf('function ' + name + '(');
-  if (start === -1) throw new Error('could not find function ' + name + ' in app.js');
-  let depth = 0, i = source.indexOf('{', start);
-  if (i === -1) throw new Error('malformed function ' + name);
-  for (let j = i; j < source.length; j++) {
-    if (source[j] === '{') depth++;
-    else if (source[j] === '}') { depth--; if (depth === 0) return source.slice(start, j + 1); }
-  }
-  throw new Error('unbalanced braces in ' + name);
-}
-
-const APP_SRC = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
+// (extractFn and APP_SRC are defined near the top of this file.)
 const appFns = {};
 vm.createContext(appFns);
 vm.runInContext(

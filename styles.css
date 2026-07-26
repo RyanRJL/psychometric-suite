@@ -470,6 +470,11 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 .input-table .computed.muted{color:var(--faint)}
 .input-table .computed.sig-yes{color:var(--warn);font-weight:500}
 .input-table .computed.sig-no{color:var(--good)}
+/* DEAD as of the rciOutcome direction fix — nothing emits sig-improve or
+   sig-decline any more. Change Analysis now reports significance only
+   (sig-yes / sig-no), because inferring "improvement" vs "decline" from the
+   sign of the statistic is wrong for higher-is-worse measures. Kept only so
+   any stray markup degrades gracefully; do not reintroduce these classes. */
 .input-table .computed.sig-improve{color:var(--good);font-weight:500}
 .input-table .computed.sig-decline{color:var(--warn);font-weight:500}
 /* "+ Add row / Add subtest" buttons — green, matching the forward-progress

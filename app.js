@@ -2828,9 +2828,23 @@ function rciOutcome(rci, cv, df){
     crit = cv === 0.95 ? 1.96 : 1.645;
   }
   if (Math.abs(rci) < crit) return { label:'No reliable change', cls:'sig-no' };
-  return rci > 0
-    ? { label:'Reliable improvement', cls:'sig-improve' }
-    : { label:'Reliable decline', cls:'sig-decline' };
+  /* Reports significance only, NOT a clinical direction.
+     This used to map the sign of the statistic straight onto "Reliable
+     improvement" / "Reliable decline", which is wrong for any measure where a
+     higher score is a worse result — and normDB carries 119 such entries
+     (intrusions, perseverations, errors, false positives, repetitions). A
+     patient making 16 recall intrusions at T1 and 2 at T2 has plainly
+     improved, but the statistic is negative, so the table asserted "Reliable
+     decline" in a report.
+     Rather than infer valence from a per-measure direction flag the database
+     does not have, the label states only that the change exceeded the
+     threshold. The signed statistic sits in the adjacent column (fmt(calc.rci,
+     2)), so the direction of movement remains visible and the clinician
+     applies their own knowledge of which way is better for that measure.
+     Uses sig-yes / sig-no, the same neutral pair the SDI table already uses
+     for the same question; sig-improve and sig-decline are no longer emitted
+     by anything. */
+  return { label:'Reliable change', cls:'sig-yes' };
 }
 
 
