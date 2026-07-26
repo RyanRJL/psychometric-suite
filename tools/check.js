@@ -1672,6 +1672,68 @@ check('getCustom survives malformed localStorage instead of throwing', () => {
   return true;
 });
 
+/* ==========================================================================
+   20. Working Report: a hidden column is hidden in EVERY output
+
+   applyHiddenColumns used to set display:none. That only works for consumers
+   that render CSS. The screen and the Word/HTML output honoured it; the two
+   text-based outputs could not see it, because they read the DOM directly:
+   exportExcel maps over tr.children, and copyAll's text/plain flavour uses
+   textContent, which returns the text of display:none nodes. A column hidden
+   in the working report therefore reappeared in the Excel export and in any
+   plain-text paste — a silent disagreement between the table on screen and
+   the table that reaches the report.
+
+   These are structural: applyHiddenColumns is DOM-bound, so it is verified in
+   the browser. What is asserted here is that the mechanism cannot regress to a
+   CSS-only one, and that every export still routes through it.
+   ========================================================================== */
+heading('20. Working Report hidden columns');
+
+check('hidden columns are REMOVED, not just styled out of sight', () => {
+  const src = extractFn(APP_SRC, 'applyHiddenColumns');
+  if (/display\s*:\s*none/i.test(src)){
+    return 'applyHiddenColumns sets display:none again — the Excel export and '
+         + 'plain-text paste cannot see that, so the column comes back';
+  }
+  if (!/\.remove\(\)/.test(src)) return 'applyHiddenColumns no longer removes any cell';
+  return true;
+});
+
+check('cells spanning several columns are narrowed, not dropped wholesale', () => {
+  const src = extractFn(APP_SRC, 'applyHiddenColumns');
+  if (!/colspan/i.test(src)) return 'applyHiddenColumns ignores colspan';
+  if (!/setAttribute\('colspan'/.test(src)) return 'a partly-hidden spanner is never narrowed';
+  if (!/dropped >= span/.test(src)) return 'a fully-hidden spanner is not removed';
+  return true;
+});
+
+/* Every output must go through effectiveItemHtml, which is what applies the
+   filter. A new export that reads item.html directly would bypass it. */
+check('screen, clipboard, Excel and Word all render through effectiveItemHtml', () => {
+  const uses = (APP_SRC.match(/effectiveItemHtml\(/g) || []).length;
+  // 1 definition + at least 4 call sites (computeBlocks x2, item card, drawer render)
+  return uses >= 5 || 'only ' + uses + ' references to effectiveItemHtml; an output may be bypassing it';
+});
+
+check('the CSV export builds its rows from the filtered block, not the raw item', () => {
+  const start = APP_SRC.indexOf('function exportExcel(');
+  if (start === -1) return 'exportExcel not found';
+  const src = APP_SRC.slice(start, start + 1600);
+  if (!/mergeReportBlocks\(/.test(src)) return 'exportExcel no longer uses mergeReportBlocks';
+  if (/item\.html/.test(src)) return 'exportExcel reads item.html directly, bypassing the column filter';
+  return true;
+});
+
+check('the plain-text clipboard flavour uses the same blocks as the HTML one', () => {
+  const start = APP_SRC.indexOf('async function copyAll(');
+  if (start === -1) return 'copyAll not found';
+  const src = APP_SRC.slice(start, start + 1400);
+  if (!/mergeReportBlocks\(/.test(src)) return 'copyAll no longer uses mergeReportBlocks';
+  if (/item\.html/.test(src)) return 'copyAll reads item.html directly, bypassing the column filter';
+  return true;
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

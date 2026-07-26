@@ -5726,32 +5726,44 @@ const ReportBundle = (function(){
     }));
   }
   /* Apply the per-item hiddenColumns filter to a captured-HTML string by
-     setting display:none on cells at hidden indices. Inline style so this
-     also carries through to clipboard / Word export. Skips spanner rows
-     in <thead> (we only target the last header row, where actual column
-     labels live, plus all body rows). */
+     REMOVING the cells at hidden indices.
+
+     This used to set display:none instead, which only works for consumers that
+     render CSS. The screen and the Word/HTML output honoured it, but the two
+     text-based outputs read the DOM directly and cannot see it:
+     exportExcel maps over tr.children, and copyAll's text/plain flavour calls
+     textContent — and textContent returns the text of display:none nodes. So a
+     column hidden in the working report came back in the Excel export and in
+     any plain-text paste. Removing the cell is the only form of "hidden" that
+     every consumer agrees on, and it also removes the dependency on Word's
+     HTML importer honouring display:none, which is not something this app can
+     verify.
+
+     Column indices are counted in GRID columns, not in cells, so a cell that
+     spans several columns is narrowed rather than dropped. Two rows in these
+     tables need that: the "Scores"/"Interpretation" spanner above the column
+     labels, and the full-width group rows that carry a test family name. Under
+     the old display:none approach their colspans were left untouched and
+     silently over-spanned by one for every hidden column. */
   function applyHiddenColumns(html, hiddenColumns){
     if (!hiddenColumns || !hiddenColumns.length) return html;
     const hidden = new Set(hiddenColumns);
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
-    const hideCell = cell => {
-      const existing = cell.getAttribute('style') || '';
-      if (!/display\s*:\s*none/i.test(existing)){
-        cell.setAttribute('style', existing + ';display:none;');
-      }
-    };
     tmp.querySelectorAll('table').forEach(table => {
-      const headRows = table.querySelectorAll('thead tr');
-      if (headRows.length){
-        const lastHead = headRows[headRows.length - 1];
-        [...lastHead.children].forEach((cell, idx) => {
-          if (hidden.has(idx)) hideCell(cell);
-        });
-      }
-      table.querySelectorAll('tbody tr').forEach(tr => {
-        [...tr.children].forEach((cell, idx) => {
-          if (hidden.has(idx)) hideCell(cell);
+      table.querySelectorAll('tr').forEach(tr => {
+        let col = 0;
+        [...tr.children].forEach(cell => {
+          const span = Math.max(1, parseInt(cell.getAttribute('colspan') || '1', 10));
+          let dropped = 0;
+          for (let k = col; k < col + span; k++) if (hidden.has(k)) dropped++;
+          if (dropped >= span) cell.remove();
+          else if (dropped > 0){
+            const left = span - dropped;
+            if (left > 1) cell.setAttribute('colspan', String(left));
+            else cell.removeAttribute('colspan');
+          }
+          col += span;
         });
       });
     });
