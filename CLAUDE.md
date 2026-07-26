@@ -68,8 +68,8 @@ then navigate again. This bites roughly every second session.
 
 ### The CSS cascade will silently eat your rule
 
-Two stylesheets load in order: `styles.css` (9.5k lines, ~1700 `!important`) then
-`design-system.css` (4.1k lines, ~590 `!important`), which is a later restyling layer
+Two stylesheets load in order: `styles.css` (9.1k lines, ~1600 `!important`) then
+`design-system.css` (4.1k lines, ~580 `!important`), which is a later restyling layer
 that deliberately overrides the first. About **70 class selectors are defined in both
 files**, and `.input-table` alone is declared ~86 times within `styles.css`.
 
@@ -111,14 +111,21 @@ the page is branded Iverson (2001) in six places.
 | File | Lines | Role |
 |---|---|---|
 | `data.js` | 1.1k | All constants, coefficients, lookup tables and `normDB`. Plain script, defines globals. Loads first. |
-| `app.js` | 9.3k | Every calculator. 291 top-level functions, 12 numbered section banners. |
-| `design-system.js` | 3.0k | Page titles, microcopy, FOUC handling, and the **report writer** (62 `rwAuto*` functions that turn scores into narrative sentences). |
-| `app-effectsize-page.js` | 0.7k | The effect-size calculator, self-contained. |
-| `index.html` | 6.5k | All pages in one document; sections shown/hidden by nav. |
-| `styles.css` | 9.5k | Original stylesheet. |
+| `app.js` | 7.1k | Every calculator. 206 top-level functions, 11 section banners. |
+| `design-system.js` | 1.1k | Page titles, microcopy, FOUC handling, the inline control bars. |
+| `app-effectsize-page.js` | 0.8k | The effect-size calculator, self-contained. |
+| `index.html` | 6.3k | All pages in one document; sections shown/hidden by nav. |
+| `styles.css` | 9.1k | Original stylesheet. |
 | `design-system.css` | 4.1k | Later restyling layer that overrides the above. |
 | `service-worker.js` | 79 | Cache-first PWA worker. |
 | `tools/check.js` | — | Headless numeric regression checks. |
+
+The **Report Writer** — a page that generated descriptive narrative prose from
+entered scores, ~2.3k lines in `app.js` plus ~2.0k in `design-system.js` — was
+removed in July 2026. If you find a stray `rwAuto*` reference or `.rw-` CSS rule,
+it is a leftover and can go. Do not confuse it with the **Working Report bundle**
+(`app.js`, "WORKING REPORT BUNDLE v2"), which is live and collects APA tables from
+every calculator into a drawer.
 
 ### Navigating `app.js`
 
@@ -126,23 +133,26 @@ Section banners (`/* ====`) mark the boundaries:
 
 | Line | Section |
 |---|---|
-| ~1117 | Battery table |
-| ~1872 | APA table notes — single source of truth |
-| ~2252 | SDI |
-| ~2608 | RCI calculators (Basic / Practice / SRB / Crawford) |
-| ~3096 | Per-method autofill from the normative database |
-| ~3284 | Custom tests database management |
-| ~3566 | Premorbid estimation |
-| ~4697 | Report writer — descriptive narrative builder |
-| ~7231 | Working report bundle |
+| ~1125 | Battery table (Score Tables page) |
+| ~1923 | APA table notes — single source of truth |
+| ~2317 | SDI |
+| ~2673 | RCI calculators (Basic / Practice / SRB / Crawford) |
+| ~3213 | Per-method autofill from the normative database |
+| ~3401 | Custom tests database management |
+| ~3683 | Premorbid estimation |
+| ~4811 | Auth overlay |
+| ~4957 | Top-bar navigation bucket sync |
+| ~5029 | Score Converter view-mode tabs |
+| ~5048 | Working report bundle |
 
-Function-name families make grep effective: `calc*` computes, `render*` draws,
-`get*` derives, `fmt*` formats, and page prefixes are `pre*` (premorbid), `rci*`,
-`sdi*`, `bat*` (battery), `opie*`. To find any calculator, grep the prefix.
+Line numbers drift with every edit — treat them as a starting point and grep to
+confirm. Function-name families make grep effective: `calc*` computes, `render*`
+draws, `get*` derives, `fmt*` formats, and page prefixes are `pre*` (premorbid),
+`rci*`, `sdi*`, `bat*` (battery), `opie*`. To find any calculator, grep the prefix.
 
 Statistical primitives sit at the top: `erf` (~7), `normCDF` (~16), `tInv` (~73).
-General formatters follow at ~132–144 (`fmt`, `fmtPct`, `fmtP`). Note that
-`fmtIntOrDash` and `fmtPctBr` are **not** there — they are premorbid-local, at ~3595.
+General formatters follow at ~132–152 (`fmt`, `fmtPct`, `fmtP`). Note that
+`fmtIntOrDash` and `fmtPctBr` are **not** there — they are premorbid-local, at ~3709.
 
 Pages hold state in module-level objects: `preState`, `rciState`, `batteryRows`,
 `sdiRows`. Note that tables are sometimes **updated in place** rather than re-rendered,
@@ -174,7 +184,23 @@ this app is `SD × √(1 − reliability)`, which is only a valid error variance
 terms describe the same group. `rCorrected` belongs with a normative SD (15 / 3 / 10 / 1);
 `r` belongs with `sd1`/`sd2`. Pairing `sd1` with `rCorrected` understates the error
 variance by ~20% and is what the RCI pages used to do. All four RCI methods now default
-to raw `r`. `tools/check.js` guards this.
+to raw `r`, and the reliability cell renders whichever field is actually in force, so
+what is displayed is what is used. `tools/check.js` guards both.
+
+Note `r` does not play the same role in all four methods. In Jacobson & Truax and
+Iverson it is purely an error term. In McSweeney and Crawford it is a **fitted
+regression slope** (`slope = r × sd2/sd1`), so substituting a population-corrected
+value there changes the predicted score, not just the interval — it yields a
+regression line that was never fitted to anything. The corrected-`r` option is
+therefore defensible only on the Basic page, and then only if the SD is also set to
+the normative value.
+
+**Change outcomes report significance only** — "Reliable change" / "No reliable
+change", never "improvement" or "decline". `normDB` holds 119 higher-is-worse
+measures (intrusions, perseverations, errors, false positives, repetitions) and no
+score-direction flag, so inferring valence from the sign of the statistic asserts the
+wrong clinical conclusion for all of them. The signed statistic is displayed
+alongside, so direction stays visible without the app interpreting it.
 
 Field coverage: `m1`, `sd1`, `m2`, `sd2` and `r` are present on **all 590** entries;
 `rCorrected` on only **233** — D-KEFS, CVLT-C and WISC-V have none at all, so any feature
@@ -206,9 +232,9 @@ separate sites that must agree.
 
 The user-facing CI selector offers **90% (z 1.645) and 95% (z 1.960) only**. Separately,
 premorbid-vs-achieved significance flagging uses a three-tier `*`/`**`/`***` scheme at
-1.645 / 1.960 / 2.576 — see `PREMORBID_CI_Z` (~1348). Do not conflate the two.
+1.645 / 1.960 / 2.576 — see `PREMORBID_CI_Z` (~1356). Do not conflate the two.
 
-**APA notes** live in the `APA_NOTES` object (~line 1883, under its banner at ~1872) and
+**APA notes** live in the `APA_NOTES` object (~line 1934, under its banner at ~1923) and
 render via `apaNoteHtml`.
 That is the single source of truth for the note text under every exported table — change
 methodology there, not in the markup.
@@ -231,10 +257,12 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 67 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 93 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Table 4.5, OPIE-4 coefficients pinned to Table eA5.8, worked OPIE predictions, reliable-
-change thresholds, base-rate reconstruction and monotonicity, and documentation contracts.
+change thresholds and direction-neutral outcome labels, base-rate reconstruction and
+monotonicity, percentile-tail clamping, the effect-size calculator, Score Tables
+confidence intervals, and documentation contracts.
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is
