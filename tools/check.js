@@ -526,6 +526,38 @@ check('the outcome still separates significant from non-significant', () => {
   if (c.__O(1.97, 0.95).label !== sig.label) return '1.97 was not called significant at 95%';
   return true;
 });
+check('the Crawford threshold is labelled as t, not as a fixed z', () => {
+  // Crawford is the only method here that uses a t critical value, on
+  // df = N - 2. Quoting "1.96" on its dropdown named a number that is never
+  // applied: with the smallest norms shipped (N = 25) the real 95% threshold
+  // is 2.069, so a statistic of 2.02 read as significant against the label
+  // while the app correctly called it non-significant.
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const m = html.match(/<select class="rci-cv" data-target="rci-crawford"[^>]*>([\s\S]*?)<\/select>/);
+  if (!m) return 'Crawford significance dropdown not found';
+  if (/1\.96|1\.645/.test(m[1])) return 'dropdown still quotes a fixed z value: ' + m[1].replace(/\s+/g, ' ').trim();
+  if (!/t\(N−2\)|t\(N-2\)/.test(m[1])) return 'dropdown no longer names the t distribution';
+  // The SRB dropdown genuinely IS z-based, so its 1.96 must stay.
+  const srb = html.match(/<select class="rci-cv" data-target="rci-srb"[^>]*>([\s\S]*?)<\/select>/);
+  if (!srb || !/1\.96/.test(srb[1])) return 'the SRB dropdown should still state 1.96 — it really does use z';
+  return true;
+});
+check('the gap the Crawford label hid is real across the shipped norms', () => {
+  // Guards the reasoning: if tInv ever collapsed to the normal value this
+  // would stop being true and the relabel would look unmotivated.
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(APP_SRC.split('\n').slice(0, 105).join('\n') + ';globalThis.t = tInv;', c);
+  const ns = [];
+  eachNormEntry((e) => { if (Number.isFinite(e.n)) ns.push(e.n); });
+  if (!ns.length) return 'no entries carry an N';
+  const smallest = Math.min(...ns);
+  const gap = c.t(0.975, smallest - 2) - 1.96;
+  if (!(gap > 0.05)) return 'at the smallest shipped N (' + smallest + ') the gap is only ' + gap.toFixed(4);
+  // and it must shrink toward zero as N grows
+  if (!(c.t(0.975, 296) - 1.96 < gap)) return 'the gap does not shrink with N';
+  return true;
+});
 check('McSweeney SRB slope and SEE are computable for every entry', () => {
   const bad = [];
   eachNormEntry((e, g, n) => {

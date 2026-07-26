@@ -14845,9 +14845,16 @@ input[type="text"].ds-inline-bar-input{
       <div class="field-row-3">
         <div class="field">
           <label>Significance threshold</label>
-          <select class="rci-cv" data-target="rci-crawford">
-            <option value="0.95">95% confidence · critical value 1.96</option>
-            <option value="0.90">90% confidence · critical value 1.645</option>
+          <!-- Crawford is the only method here that uses a t distribution: its
+               critical value depends on the normative N (df = N − 2), so it
+               cannot be quoted as a fixed number the way the other three can.
+               These options used to read "critical value 1.96 / 1.645", which
+               is never what gets applied — at N = 25 the real threshold is
+               2.069, so a statistic of 2.02 reads as significant against the
+               label while the app correctly calls it non-significant. -->
+          <select class="rci-cv" data-target="rci-crawford" title="Crawford's method uses a t critical value based on the normative sample size (df = N − 2), not a fixed z. Smaller norms give a higher threshold: at N = 25 the 95% value is 2.069, at N = 100 it is 1.985, converging on 1.96 as N grows.">
+            <option value="0.95">95% confidence · critical value t(N−2)</option>
+            <option value="0.90">90% confidence · critical value t(N−2)</option>
           </select>
         </div>
         <div class="field">
@@ -23266,7 +23273,12 @@ function renderRciApa(method){
     'rci-srb':      'RCI (z) is computed per McSweeney et al. (1993); Ŷ₂ = predicted retest score.',
     'rci-crawford': '<i>t</i>(RB) is the Crawford regression-based reliable-change statistic.'
   }[method];
-  const thresholdLabel = method === 'rci-crawford' ? `${cvLabel} CI` : cvLabelZ;
+  /* Crawford's critical value is a t quantile on df = N − 2, so it varies by
+     row and cannot be stated as a single number the way the z-based methods
+     can. Name the distribution instead of quoting a value that is never used. */
+  const thresholdLabel = method === 'rci-crawford'
+    ? `${cvLabel} (two-tailed <i>t</i>, df = <i>N</i> − 2)`
+    : cvLabelZ;
   const safe = (calc, prop, digits=2) => calc ? fmt(calc[prop], digits) : '';
   const safeP = calc => calc ? fmtP(calc.p) : '';
   const safeOutcome = calc => calc ? escapeHtml(rciOutcome(calc.rci, st.cv, calc.df).label) : '';

@@ -3120,7 +3120,12 @@ function renderRciApa(method){
     'rci-srb':      'RCI (z) is computed per McSweeney et al. (1993); Ŷ₂ = predicted retest score.',
     'rci-crawford': '<i>t</i>(RB) is the Crawford regression-based reliable-change statistic.'
   }[method];
-  const thresholdLabel = method === 'rci-crawford' ? `${cvLabel} CI` : cvLabelZ;
+  /* Crawford's critical value is a t quantile on df = N − 2, so it varies by
+     row and cannot be stated as a single number the way the z-based methods
+     can. Name the distribution instead of quoting a value that is never used. */
+  const thresholdLabel = method === 'rci-crawford'
+    ? `${cvLabel} (two-tailed <i>t</i>, df = <i>N</i> − 2)`
+    : cvLabelZ;
   const safe = (calc, prop, digits=2) => calc ? fmt(calc[prop], digits) : '';
   const safeP = calc => calc ? fmtP(calc.p) : '';
   const safeOutcome = calc => calc ? escapeHtml(rciOutcome(calc.rci, st.cv, calc.df).label) : '';
