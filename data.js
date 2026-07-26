@@ -881,32 +881,32 @@ const OPIE_BASE_RATES = {
     "Total Scale": { m1:106.7, sd1:13.9, m2:110.6, sd2:13.2, r:0.81, rCorrected:0.84, n:40 }
   },
   "RBANS Subtests · Ages 12-19": {
-    "List Learning": { m1:10.2, sd1:3.1, m2:13.4, sd2:3.2, r:0.68, rCorrected:0.66, n:55, metric:'raw' },
-    "Story Memory": { m1:9.8, sd1:2.7, m2:13, sd2:2.6, r:0.65, rCorrected:0.72, n:55, metric:'raw' },
-    "Figure Copy": { m1:10, sd1:2.7, m2:10, sd2:2.5, r:0.46, rCorrected:0.57, n:55, metric:'raw' },
+    "List Learning": { m1:10.2, sd1:3.1, m2:13.4, sd2:3.2, r:0.68, rCorrected:0.66, n:55 },
+    "Story Memory": { m1:9.8, sd1:2.7, m2:13, sd2:2.6, r:0.65, rCorrected:0.72, n:55 },
+    "Figure Copy": { m1:10, sd1:2.7, m2:10, sd2:2.5, r:0.46, rCorrected:0.57, n:55 },
     "Line Orientation": { m1:16.7, sd1:3, m2:16.9, sd2:2.9, r:0.72, n:55, metric:'raw' },
     "Picture Naming": { m1:9.1, sd1:1, m2:9.2, sd2:0.9, r:0.73, n:55, metric:'raw' },
-    "Semantic Fluency": { m1:10, sd1:3.1, m2:10.8, sd2:3, r:0.67, rCorrected:0.65, n:55, metric:'raw' },
-    "Digit Span": { m1:9.8, sd1:2.7, m2:10, sd2:3.2, r:0.59, rCorrected:0.67, n:55, metric:'raw' },
-    "Coding": { m1:10.2, sd1:2.7, m2:11.2, sd2:3.1, r:0.75, rCorrected:0.79, n:55, metric:'raw' },
+    "Semantic Fluency": { m1:10, sd1:3.1, m2:10.8, sd2:3, r:0.67, rCorrected:0.65, n:55 },
+    "Digit Span": { m1:9.8, sd1:2.7, m2:10, sd2:3.2, r:0.59, rCorrected:0.67, n:55 },
+    "Coding": { m1:10.2, sd1:2.7, m2:11.2, sd2:3.1, r:0.75, rCorrected:0.79, n:55 },
     "List Recall": { m1:6.8, sd1:1.8, m2:8.2, sd2:1.8, r:0.66, n:55, metric:'raw' },
     "List Recognition": { m1:19.9, sd1:0.5, m2:19.9, sd2:0.4, r:0.7, n:55, metric:'raw' },
-    "Story Recall": { m1:10, sd1:3, m2:11.7, sd2:3.1, r:0.48, rCorrected:0.49, n:55, metric:'raw' },
-    "Figure Recall": { m1:10.2, sd1:2.5, m2:11.2, sd2:3.1, r:0.58, rCorrected:0.71, n:55, metric:'raw' }
+    "Story Recall": { m1:10, sd1:3, m2:11.7, sd2:3.1, r:0.48, rCorrected:0.49, n:55 },
+    "Figure Recall": { m1:10.2, sd1:2.5, m2:11.2, sd2:3.1, r:0.58, rCorrected:0.71, n:55 }
   },
   "RBANS Subtests · Ages 20-89": {
-    "List Learning": { m1:11.5, sd1:2.9, m2:11.2, sd2:3.3, r:0.49, rCorrected:0.52, n:40, metric:'raw' },
-    "Story Memory": { m1:11.6, sd1:1.8, m2:12.5, sd2:2.4, r:0.45, rCorrected:0.8, n:40, metric:'raw' },
-    "Figure Copy": { m1:9.6, sd1:2.8, m2:11.9, sd2:2.6, r:0.47, rCorrected:0.54, n:40, metric:'raw' },
+    "List Learning": { m1:11.5, sd1:2.9, m2:11.2, sd2:3.3, r:0.49, rCorrected:0.52, n:40 },
+    "Story Memory": { m1:11.6, sd1:1.8, m2:12.5, sd2:2.4, r:0.45, rCorrected:0.8, n:40 },
+    "Figure Copy": { m1:9.6, sd1:2.8, m2:11.9, sd2:2.6, r:0.47, rCorrected:0.54, n:40 },
     "Line Orientation": { m1:16, sd1:3.4, m2:16.4, sd2:3.7, r:0.49, n:40, metric:'raw' },
     "Picture Naming": { m1:9.8, sd1:0.4, m2:9.7, sd2:0.5, r:0.5, n:40, metric:'raw' },
-    "Semantic Fluency": { m1:11.1, sd1:2.9, m2:11.2, sd2:3.3, r:0.49, rCorrected:0.52, n:40, metric:'raw' },
-    "Digit Span": { m1:10.4, sd1:3.5, m2:10.1, sd2:3.7, r:0.73, rCorrected:0.63, n:40, metric:'raw' },
-    "Coding": { m1:10.8, sd1:2.5, m2:11.7, sd2:2.8, r:0.76, rCorrected:0.83, n:40, metric:'raw' },
+    "Semantic Fluency": { m1:11.1, sd1:2.9, m2:11.2, sd2:3.3, r:0.49, rCorrected:0.52, n:40 },
+    "Digit Span": { m1:10.4, sd1:3.5, m2:10.1, sd2:3.7, r:0.73, rCorrected:0.63, n:40 },
+    "Coding": { m1:10.8, sd1:2.5, m2:11.7, sd2:2.8, r:0.76, rCorrected:0.83, n:40 },
     "List Recall": { m1:6.2, sd1:2.4, m2:5.8, sd2:2.7, r:0.6, n:40, metric:'raw' },
     "List Recognition": { m1:19.6, sd1:0.8, m2:19.8, sd2:0.5, r:0.27, n:40, metric:'raw' },
-    "Story Recall": { m1:11.6, sd1:2.3, m2:11.6, sd2:2.3, r:0.52, rCorrected:0.72, n:40, metric:'raw' },
-    "Figure Recall": { m1:10.4, sd1:3, m2:11.5, sd2:3, r:0.55, rCorrected:0.55, n:40, metric:'raw' }
+    "Story Recall": { m1:11.6, sd1:2.3, m2:11.6, sd2:2.3, r:0.52, rCorrected:0.72, n:40 },
+    "Figure Recall": { m1:10.4, sd1:3, m2:11.5, sd2:3, r:0.55, rCorrected:0.55, n:40 }
   },
   // RBANS alternate-form (index-level only). m1/sd1 = Form A, m2/sd2 = alt form.
   // Change-Analysis only (filtered out of Score Tables). Randolph 2012:

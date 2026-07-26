@@ -240,13 +240,28 @@ standard metric the raw mean sat nearest. `metric:'raw'` exists to stop it guess
 
 | Group | Entries |
 |---|---|
-| `CVLT-C Subtests (Raw Scores) · Age 8 / 12 / 16` | 39 |
-| `RBANS Subtests · Ages 12-19 / Ages 20-89` | 24 |
+| `CVLT-C Subtests (Raw Scores) · Age 8 / 12 / 16` | 39 (all of them) |
+| `RBANS Subtests · Ages 12-19 / Ages 20-89` | 4 of 12 per band |
 
-CVLT-C declares it in the family name. For RBANS the data settles it — `Picture Naming`
-has SD 0.4 and `List Recognition` SD 0.8, and **no standardised metric in this app has
-an SD below 1**. `check.js` states that as an invariant: any entry with `sd1 < 1` must
-be tagged.
+CVLT-C declares it in the family name, so those three groups are raw throughout.
+
+**RBANS is a genuinely MIXED family — do not tag it wholesale.** Only these four are
+raw: `Line Orientation`, `Picture Naming`, `List Recognition`, `List Recall`. The other
+eight are scaled scores and must keep producing a percentile. Tagging the whole family
+was an early mistake here and it silently killed the derived scores on eight good
+measures per band.
+
+What settles it without the manual: **the eight scaled measures cluster between 9.6 and
+11.6 despite raw maxima of 12, 16, 20, 24, 40 and 89.** Raw scores on scales that
+different cannot all land near 10 — that only happens on a shared metric. `Coding` is
+the clearest case: raw max 89, mean 10.8. The four raw ones break the cluster —
+`Line Orientation` sits at 80% of a 20-point scale, `List Recognition` at 98% with
+SD 0.8, `Picture Naming` at 98% with SD 0.4, and `List Recall` at 6.2, which no
+normative sample would average on a scaled metric.
+
+Two invariants in `check.js` §18 hold that shape: any entry with `sd1 < 1` must be
+tagged (**no standardised metric in this app has an SD below 1**), and every *untagged*
+RBANS subtest must have `m1` within 3 of 10 and `sd1` between 1.5 and 4.5.
 
 `toZ`/`fromZ` return `null` for `'raw'` in both directions, so percentile and
 classification go blank rather than being invented. **Do not give `'raw'` a fallback** —
@@ -342,7 +357,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 150 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 152 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Table 4.5, OPIE-4 coefficients pinned to Table eA5.8, worked OPIE predictions, reliable-
 change thresholds and direction-neutral outcome labels, base-rate reconstruction and

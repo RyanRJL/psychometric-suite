@@ -1378,30 +1378,71 @@ check('no Report Writer leftovers remain in the shipped scripts', () => {
    ========================================================================== */
 heading('18. Raw-score measures carry no derived scores');
 
-const RAW_FAMILIES = [
+/* CVLT-C declares it in the family name, so those three groups are raw
+   throughout. RBANS is NOT: it is a genuinely mixed family, and treating the
+   whole of it as raw was an over-generalisation that made eight perfectly good
+   scaled measures per age band stop producing a percentile.
+
+   What settles it without the manual: the eight scaled measures cluster
+   between 9.6 and 11.6 despite having raw maxima of 12, 16, 20, 24, 40 and 89.
+   Raw scores on scales that different cannot all land near 10 — that only
+   happens on a shared metric. Coding is the clearest case, raw max 89 with a
+   mean of 10.8. The four listed below break the cluster and are raw. */
+const RAW_FAMILIES_WHOLE = [
   'CVLT-C Subtests (Raw Scores) · Age 8',
   'CVLT-C Subtests (Raw Scores) · Age 12',
   'CVLT-C Subtests (Raw Scores) · Age 16',
-  'RBANS Subtests · Ages 12-19',
-  'RBANS Subtests · Ages 20-89',
 ];
+const RBANS_RAW_SUBTESTS = ['Line Orientation', 'Picture Naming', 'List Recognition', 'List Recall'];
+const RBANS_GROUPS = ['RBANS Subtests · Ages 12-19', 'RBANS Subtests · Ages 20-89'];
 
-check('the five raw-score families are tagged metric:\'raw\' on every entry', () => {
+check('the CVLT-C raw-score families are tagged on every entry', () => {
   const bad = [];
-  for (const fam of RAW_FAMILIES) {
+  for (const fam of RAW_FAMILIES_WHOLE) {
     const g = D.normDB[fam];
     if (!g) { bad.push(fam + ' missing from normDB'); continue; }
     for (const name in g) {
-      if (g[name] && typeof g[name] === 'object' && g[name].metric !== 'raw') {
-        bad.push(fam + ' / ' + name);
-      }
+      if (g[name] && typeof g[name] === 'object' && g[name].metric !== 'raw') bad.push(fam + ' / ' + name);
     }
   }
   return bad.length === 0 || bad.length + ' untagged, first: ' + bad[0];
 });
 
-check('exactly 63 entries are tagged raw, and none outside those families', () => {
-  const fams = new Set(RAW_FAMILIES);
+check('RBANS is tagged as the mixed family it is: 4 raw per band, 8 scaled', () => {
+  const bad = [];
+  for (const fam of RBANS_GROUPS) {
+    const g = D.normDB[fam];
+    if (!g) { bad.push(fam + ' missing'); continue; }
+    for (const name in g) {
+      const e = g[name];
+      if (!e || typeof e !== 'object') continue;
+      const shouldBeRaw = RBANS_RAW_SUBTESTS.includes(name);
+      const isRaw = e.metric === 'raw';
+      if (shouldBeRaw && !isRaw) bad.push(fam + ' / ' + name + ' should be raw');
+      if (!shouldBeRaw && isRaw) bad.push(fam + ' / ' + name + ' is tagged raw but is on a scaled metric');
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The cluster argument, stated as an invariant so it cannot silently rot: on a
+   shared standardised metric the untagged RBANS means must sit near 10, and
+   they must do so regardless of how different their raw ceilings are. */
+check('every untagged RBANS subtest has a mean consistent with a scaled score', () => {
+  const bad = [];
+  for (const fam of RBANS_GROUPS) {
+    for (const name in D.normDB[fam]) {
+      const e = D.normDB[fam][name];
+      if (!e || typeof e !== 'object' || e.metric === 'raw') continue;
+      if (Math.abs(e.m1 - 10) > 3) bad.push(fam + ' / ' + name + ' m1=' + e.m1);
+      if (!(e.sd1 >= 1.5 && e.sd1 <= 4.5)) bad.push(fam + ' / ' + name + ' sd1=' + e.sd1);
+    }
+  }
+  return bad.length === 0 || 'not scaled-like: ' + bad.join('; ');
+});
+
+check('exactly 47 entries are tagged raw, and none outside the known groups', () => {
+  const fams = new Set([...RAW_FAMILIES_WHOLE, ...RBANS_GROUPS]);
   let n = 0; const stray = [];
   eachNormEntry((e, g, name) => {
     if (e.metric !== 'raw') return;
@@ -1409,7 +1450,7 @@ check('exactly 63 entries are tagged raw, and none outside those families', () =
     if (!fams.has(g)) stray.push(g + ' / ' + name);
   });
   if (stray.length) return 'tagged raw outside the known families: ' + stray.join(', ');
-  return n === 63 || 'got ' + n + ' tagged raw, expected 63';
+  return n === 47 || 'got ' + n + ' tagged raw, expected 47 (39 CVLT-C + 8 RBANS)';
 });
 
 /* No standardised metric in this app has an SD below 1, so an entry whose sd1
