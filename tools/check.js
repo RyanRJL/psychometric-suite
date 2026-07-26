@@ -2216,11 +2216,65 @@ check('a base-rate row is scored by lookup, not by its metric', () => {
     || 'the metric conversion is tried first, so a raw span would return null before the lookup runs';
 });
 
-check('screen, in-place edit and APA export all use batteryRowPercentile', () => {
-  const uses = (APP_SRC.match(/batteryRowPercentile\(/g) || []).length;
-  // 1 definition + 3 call sites
-  return uses >= 4 || 'only ' + uses + ' references; a percentile site is still computing its own';
+/* All three display sites go through batteryRowPctCell, which is the single
+   place that decides percentile-vs-base-rate and formats accordingly. Named
+   rather than counted, so a refactor that moves calls around cannot pass while
+   a site quietly computes its own. */
+check('screen, in-place edit and APA export all render via batteryRowPctCell', () => {
+  const missing = ['renderBattery', 'renderBatteryApa'].filter(fn => {
+    let src; try { src = extractFn(APP_SRC, fn); } catch (e) { return true; }
+    return !/batteryRowPctCell\(/.test(src);
+  });
+  /* The in-place handler lives inside renderBattery, so it is covered above,
+     but assert its own path explicitly since it is the one that can go stale
+     while the full render stays correct — and it must refresh EVERY cell when
+     the mode flips, not only the row being typed into. */
+  const rb = extractFn(APP_SRC, 'renderBattery');
+  if (!/rowsToRefresh/.test(rb)) missing.push('in-place update');
+  if (!/liveMode === pctMode \? \[i\] : batteryRows\.map/.test(rb)) {
+    missing.push('in-place update does not rewrite the other rows when the mode flips');
+  }
+  return missing.length === 0
+    || 'these do not use batteryRowPctCell: ' + missing.join(', ');
 });
+
+check('batteryRowPctCell is the only thing that picks between the two quantities', () => {
+  const src = extractFn(APP_SRC, 'batteryRowPctCell');
+  if (!/baseRateAtOrAbove\(/.test(src)) return 'it no longer reports the published base rate';
+  if (!/batteryRowPercentile\(/.test(src)) return 'it no longer falls back to the percentile rank';
+  return true;
+});
+
+/* A base rate and a percentile run in opposite directions, so the heading must
+   follow whatever the cells are actually holding. */
+check('the column heading follows the quantity, and flips back when mixed', () => {
+  const mode = extractFn(APP_SRC, 'batteryPctColumnMode');
+  if (!/every\(r => batteryBaseRateEntry\(r\)\)/.test(mode)) {
+    return 'the mode no longer requires EVERY scored row to be a base-rate row, so a '
+         + 'mixed table could print base rates under a "Percentile" heading';
+  }
+  const rb = extractFn(APP_SRC, 'renderBattery');
+  return /updateBatteryPctHeader\(/.test(rb) || 'renderBattery never sets the heading';
+});
+
+check('base rates are not run through fmtPct, which clamps 100 away', () => {
+  const src = extractFn(APP_SRC, 'batteryRowPctCell');
+  const brBranch = src.slice(0, src.indexOf('batteryRowPercentile'));
+  return !/fmtPct\(/.test(brBranch)
+    || 'the base-rate branch uses fmtPct, which would print a published 100% as 99.99';
+});
+
+{
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(extractFn(APP_SRC, 'fmtBaseRate') + ';globalThis.__F = fmtBaseRate;', ctx);
+  const F = ctx.__F;
+  check('fmtBaseRate keeps the published precision, including a flat 100', () => {
+    const cases = [[100, '100'], [99.5, '99.5'], [79, '79'], [61.5, '61.5'], [3, '3'], [0, '0']];
+    const bad = cases.filter(([v, want]) => F(v) !== want).map(([v]) => v + ' -> ' + F(v));
+    return bad.length === 0 || bad.join(', ');
+  });
+}
 
 /* Score Tables collapses age-banded families to one entry, on the grounds that
    the band does not change the resulting table. True when the score comes from

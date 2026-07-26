@@ -301,10 +301,32 @@ assumed: for a whole-number score E[X] = Σ P(X ≥ x), and reconstructing the m
 that way reproduces every printed `m1` across all 51 measure-bands to within
 0.055. `check.js` §22 re-runs it, so flipping the table to "or lower" fails loudly.
 
-The Percentile column reports **the percentage scoring below**, using the midpoint
-convention for a discrete score — `P(X < v) + ½·P(X = v)`. The published "or
-higher" figure is converted rather than shown raw, because a column that silently
-reversed direction for some rows would be a trap. The APA note cites the table.
+**That column reports one of two quantities, and its heading says which.** A base
+rate and a percentile run in opposite directions — the manual's 79 for a longest
+span of 6 means 79% scored 6 *or more*, while the percentile rank for the same
+score is 30, because 30% scored *below* it. Printing one under the other's
+heading would be badly misread: 79 sitting beside an FSIQ at the 25th percentile
+looks like the best score on the page, when a span of 6 is slightly below average.
+
+So the column follows its rows, the same rule the score column already uses:
+
+| Table | Heading | Shows |
+|---|---|---|
+| every scored row is a base-rate row | **Base rate** | the published figure, e.g. 79 |
+| any other mix | **Percentile** | percentile rank, e.g. 30 |
+
+Mixed tables convert rather than relabel, because one column cannot carry two
+directions safely. The APA note has a matching sentence for each mode.
+
+The percentile rank uses the **midpoint convention** for a discrete score —
+`P(X < v) + ½·P(X = v)`, so 21 + 8.75 = 29.75 for that span of 6. Not
+`100 − P(X ≥ v)`, which sounds simpler but runs 6–16 points below the percentile
+the same measure's published M and SD would give, and returns exactly 0 at the
+bottom of the scale — a percentile the app treats as impossible (see `fmtPct`).
+
+`fmtBaseRate`, not `fmtPct`, formats a base rate: `fmtPct` clamps into
+(0.01, 99.99) to keep percentiles inside the open interval, and a published base
+rate legitimately reaches 100.
 
 Three things follow, each with a check:
 
@@ -451,7 +473,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 180 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 184 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Table 4.5, OPIE-4 coefficients pinned to Table eA5.8, worked OPIE predictions, reliable-
 change thresholds and direction-neutral outcome labels, base-rate reconstruction and

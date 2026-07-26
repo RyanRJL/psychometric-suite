@@ -1729,6 +1729,59 @@ function batteryRowPercentile(r){
   const z = toZ(r.score, rowScoreType(r));
   return z == null ? null : normCDF(z) * 100;
 }
+
+/* ---------- PERCENTILE vs BASE RATE: what that column reports ----------
+   A base rate and a percentile run in OPPOSITE directions. The manual's 79 for
+   a longest span of 6 means 79% scored 6 or more; the percentile rank for the
+   same score is 30, because 30% scored below it. Both are right, and printing
+   one under the other's heading would be badly misread — 79 sitting beside an
+   FSIQ at the 25th percentile reads as the best score on the page, when a span
+   of 6 is actually slightly below average for that age.
+
+   So the column follows its rows, the same rule the score column already uses:
+
+     every scored row is a base-rate row  ->  "Base rate", published figure
+     any other mix                        ->  "Percentile", percentile rank
+
+   Mixed tables convert rather than relabel, because one column cannot carry two
+   directions safely. A longest-span table entered on its own — the normal case —
+   therefore shows the manual's number under the manual's name. */
+function batteryPctColumnMode(rows){
+  const scored = (rows || batteryRows).filter(r =>
+    !r.isExample && r.name && r.score !== '' && !isNaN(r.score));
+  if (!scored.length) return 'percentile';
+  return scored.every(r => batteryBaseRateEntry(r)) ? 'baseRate' : 'percentile';
+}
+function batteryPctColumnLabel(mode){
+  return mode === 'baseRate' ? 'Base rate' : 'Percentile';
+}
+/* Base rates are published to 0.5 and legitimately reach 100 — fmtPct must not
+   be used, as it clamps the tails into (0.01, 99.99) to keep percentiles inside
+   the open interval. 100% of a sample really can score at or above the floor. */
+function fmtBaseRate(v){
+  if (v == null || isNaN(v)) return '-';
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+/* The cell value in whichever quantity the column is currently reporting. */
+function batteryRowPctCell(r, mode){
+  const entry = batteryBaseRateEntry(r);
+  if (mode === 'baseRate' && entry){
+    const v = parseFloat(r.score);
+    if (!Number.isFinite(v) || !Number.isInteger(v)) return null;
+    return { value: baseRateAtOrAbove(entry, v), text: fmtBaseRate(baseRateAtOrAbove(entry, v)) };
+  }
+  const p = batteryRowPercentile(r);
+  return p == null ? null : { value: p, text: fmtPct(p) };
+}
+function updateBatteryPctHeader(mode){
+  const label = batteryPctColumnLabel(mode);
+  document.querySelectorAll('#bat-table .bat-pct-head').forEach(th => {
+    th.textContent = label;
+    th.title = mode === 'baseRate'
+      ? 'Percentage of the normative sample obtaining this score or higher, as published (WAIS-IV Manual, Tables C.4–C.5). A HIGH base rate means a common, and therefore lower, score.'
+      : 'Percentage of the normative sample scoring below this score.';
+  });
+}
 function batteryClassificationDetails(r, cls){
   /* A base-rate measure has a real percentile but no metric, so its z comes
      BACK from that percentile rather than from the score. The classification
@@ -1947,6 +2000,10 @@ function getBatteryCiHtml(ss, row, level){
 function renderBattery(){
   syncBatteryPremorbidControls();
   updateBatteryScoreHeader();
+  /* let, not const: the in-place input handler reassigns it when typing flips
+     the table between all-base-rate and mixed. */
+  let pctMode = batteryPctColumnMode();
+  updateBatteryPctHeader(pctMode);
   const cls     = document.getElementById('bat-class').value;
   const ciLevel = document.getElementById('bat-ci-level')?.value || 'off';
   const tbody = document.querySelector('#bat-table tbody');
@@ -1981,8 +2038,8 @@ function renderBattery(){
     }
     const rowType = rowScoreType(r);
     const z = toZ(r.score, rowType);
-    const pctVal = batteryRowPercentile(r);
-    const pct = pctVal == null ? '' : fmtPct(pctVal);
+    const pctCellVal = batteryRowPctCell(r, pctMode);
+    const pct = pctCellVal ? pctCellVal.text : '';
     const details = batteryClassificationDetails(r, cls);
     const ss = parseFloat(r.score);
     const ciHtml = ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : '';
@@ -2030,10 +2087,25 @@ function renderBattery(){
       const z = toZ(batteryRows[i].score, rowType);
       const cells = tr.querySelectorAll('.computed');
       const ciCell = cells[0]; // bat-ci-cell
-      const pctCell = cells[1];
-      const clsCell = cells[2];
-      const pctVal = batteryRowPercentile(batteryRows[i]);
-      pctCell.textContent = pctVal == null ? '' : fmtPct(pctVal);
+      const clsCell = cells[2];  // cells[1] is the percentile/base-rate cell,
+                                 // rewritten by the loop below rather than here
+      /* Typing a score into an empty row can flip the whole table from
+         all-base-rate to mixed, which changes what this column reports. When
+         that happens EVERY percentile cell has to be rewritten, not just this
+         one — otherwise the other rows keep showing base rates under a
+         "Percentile" heading. Done in place rather than by re-rendering,
+         because a full render would take the caret with it. */
+      const liveMode = batteryPctColumnMode();
+      updateBatteryPctHeader(liveMode);
+      const rowsToRefresh = liveMode === pctMode ? [i] : batteryRows.map((_, n) => n);
+      pctMode = liveMode;
+      const allRows = tbody.querySelectorAll('tr:not(.group-header)');
+      rowsToRefresh.forEach(n => {
+        const cell = allRows[n] && allRows[n].querySelectorAll('.computed')[1];
+        if (!cell) return;
+        const v = batteryRowPctCell(batteryRows[n], liveMode);
+        cell.textContent = v ? v.text : '';
+      });
       const details = batteryClassificationDetails(batteryRows[i], cls);
       clsCell.className = `computed ${details.className}`.trim();
       clsCell.innerHTML = details.html;
@@ -2151,7 +2223,13 @@ const APA_NOTES = {
     /* Names the source, because these percentiles come from a published table
        rather than from a metric conversion, and says which direction they run
        in — the manual tabulates "or higher", the column reports "below". */
-    ctx.hasBaseRates
+    /* Two different sentences, because the column holds two different
+       quantities that run in opposite directions. Getting these the wrong way
+       round in an exported report would invert the reader's interpretation. */
+    ctx.hasBaseRates && ctx.pctMode === 'baseRate'
+      ? 'Base rate = percentage of the normative sample obtaining the same score or higher (WAIS-IV Administration and Scoring Manual, Tables C.4–C.5). A higher base rate indicates a more common, and therefore lower, score.'
+      : '',
+    ctx.hasBaseRates && ctx.pctMode !== 'baseRate'
       ? 'Percentiles for longest-span measures are derived from the published cumulative percentages of the normative sample (WAIS-IV Administration and Scoring Manual, Tables C.4–C.5) and give the percentage scoring below.'
       : '',
     /* Without this the em-dash in the classification column reads as missing
@@ -2239,6 +2317,7 @@ document.addEventListener('DOMContentLoaded', renderStaticApaNotes);
 
 function renderBatteryApa(){
   const cls      = document.getElementById('bat-class').value;
+  const pctMode  = batteryPctColumnMode();
   const title    = document.getElementById('bat-title').value || 'Test scores';
   const out      = document.getElementById('bat-apa');
   const ciLevel  = document.getElementById('bat-ci-level')?.value || 'off';
@@ -2261,7 +2340,7 @@ function renderBatteryApa(){
     { key:'raw',            label:'Raw Score',       group:'Scores', num:true,  defaultVisible:!rawHidden, render:r => escapeHtml(r.raw || '-') },
     { key:'score',          label:headerLabel,       group:'Scores', num:true,  render:r => escapeHtml(r.score || '') },
     { key:'ci',             label:ciLabel,           group:'Scores', num:true,  defaultVisible:ciLevel !== 'off', render:r => { const ss = parseFloat(r.score); return ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : ''; }},
-    { key:'percentile',     label:'Percentile',      group:'Scores', num:true,  render:r => { const p = batteryRowPercentile(r); return p == null ? '' : fmtPct(p); }},
+    { key:'percentile',     label:batteryPctColumnLabel(pctMode), group:'Scores', num:true,  render:r => { const c = batteryRowPctCell(r, pctMode); return c ? c.text : ''; }},
     { key:'classification', label:'Classification',  group:'Interpretation', num:false, render:r => batteryClassificationDetails(r, cls).html }
   ];
   updateApaColumnControls('bat-apa', columns, renderBatteryApa);
@@ -2279,6 +2358,7 @@ function renderBatteryApa(){
       mixedTypes: types.size > 1,
       hasRaw: valid.some(r => rowScoreType(r) === 'raw' && !batteryBaseRateEntry(r)),
       hasBaseRates: valid.some(r => batteryBaseRateEntry(r) && r.score !== '' && !isNaN(r.score)),
+      pctMode,
       hasHigherIsWorse: valid.some(r => r.higherIsWorse && r.score !== '' && !isNaN(r.score)),
       ciLevel,
       premorbid: prem ? fmt(prem.estimate, 0) : null,
