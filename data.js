@@ -291,6 +291,32 @@ const OPIE_BASE_RATES = {
    Reliability TYPE varies by test (same-form test–retest vs alternate-form).
    e.g. CVLT-3 = alternate-form (Standard ↔ Alternate Form), Manual Table 3.4.
         RBANS  = same-form test–retest (Form A → Form A), Manual Tables 3.8–3.9.
+
+   metric:'raw'
+   -------------
+   Present on 63 entries across five groups. Marks a measure that is NOT on a
+   standardised metric, so no percentile or classification can be derived from
+   the score alone.
+
+   Without it the score type had to be guessed from the normative mean
+   (inferScoreTypeForSubtest), which has no concept of a raw score and typed
+   these as scaled/T/standard/z. On Score Tables that produced badly wrong
+   output in both directions: RBANS List Recognition (M 19.6, SD 0.8, raw out
+   of 20) at a raw 19 is the 23rd percentile, but was read as a scaled score
+   and printed as the 99.9th, "Very Superior" — 56 standard-score points out,
+   with the sign inverted.
+
+   The five groups, and why they are certainly raw:
+     CVLT-C Subtests (Raw Scores) · Age 8 / 12 / 16   — declared in the name
+     RBANS Subtests · Ages 12-19 / 20-89              — Picture Naming has
+       SD 0.4 and List Recognition SD 0.8; no standardised metric in this app
+       has an SD below 1, so these cannot be scaled scores.
+
+   Consumers must degrade gracefully: toZ returns null for 'raw', so the
+   percentile and classification cells stay blank rather than being invented.
+   The reliability parameters themselves are unaffected and remain correct —
+   the Change Analysis pages use m1/sd1/m2/sd2/r directly and never needed a
+   metric, which is why they were never wrong.
    ============================================================ */
 ﻿normDB = {
   "CVLT-3 Indices · Ages 16-44": {
@@ -340,49 +366,49 @@ const OPIE_BASE_RATES = {
     "Total Repetitions": { m1:9.7, sd1:3.1, m2:10, sd2:3.4, r:0.72, rCorrected:0.7, n:122 }
   },
   "CVLT-C Subtests (Raw Scores) · Age 8": {
-    "List A Trials 1-5 Total": { m1:42.47, sd1:9.55, m2:48.32, sd2:9.09, r:0.73, n:35 },
-    "List B Free-Recall Trial": { m1:5.26, sd1:1.71, m2:5.39, sd2:2.16, r:0.59, n:35 },
-    "Short-Delay Free Recall": { m1:8.5, sd1:2.04, m2:9.91, sd2:2.37, r:0.4, n:35 },
-    "Short-Delay Cued Recall": { m1:8.35, sd1:2.07, m2:9.51, sd2:2.79, r:0.75, n:35 },
-    "Long-Delay Free Recall": { m1:8.94, sd1:2.3, m2:10.14, sd2:2.59, r:0.59, n:35 },
-    "Long-Delay Cued Recall": { m1:8.42, sd1:2.21, m2:10.15, sd2:3.09, r:0.69, n:35 },
-    "Semantic Cluster Ratio": { m1:1.44, sd1:0.44, m2:1.83, sd2:0.63, r:0.56, n:35 },
-    "Perseverations": { m1:7.35, sd1:6.94, m2:7.54, sd2:6.39, r:0.9, n:35 },
-    "Free-Recall Intrusions": { m1:5.11, sd1:5.55, m2:4.97, sd2:5.99, r:0.74, n:35 },
-    "Cued-Recall Intrusions": { m1:2.83, sd1:4.33, m2:2.31, sd2:3.31, r:0.59, n:35 },
-    "Recognition Hits": { m1:13.67, sd1:1.45, m2:13.84, sd2:1.33, r:0.38, n:35 },
-    "Discriminability": { m1:92.76, sd1:5.69, m2:94.52, sd2:5.9, r:0.55, n:35 },
-    "False Positives": { m1:1.82, sd1:2.38, m2:1.16, sd2:2, r:0.62, n:35 }
+    "List A Trials 1-5 Total": { m1:42.47, sd1:9.55, m2:48.32, sd2:9.09, r:0.73, n:35, metric:'raw' },
+    "List B Free-Recall Trial": { m1:5.26, sd1:1.71, m2:5.39, sd2:2.16, r:0.59, n:35, metric:'raw' },
+    "Short-Delay Free Recall": { m1:8.5, sd1:2.04, m2:9.91, sd2:2.37, r:0.4, n:35, metric:'raw' },
+    "Short-Delay Cued Recall": { m1:8.35, sd1:2.07, m2:9.51, sd2:2.79, r:0.75, n:35, metric:'raw' },
+    "Long-Delay Free Recall": { m1:8.94, sd1:2.3, m2:10.14, sd2:2.59, r:0.59, n:35, metric:'raw' },
+    "Long-Delay Cued Recall": { m1:8.42, sd1:2.21, m2:10.15, sd2:3.09, r:0.69, n:35, metric:'raw' },
+    "Semantic Cluster Ratio": { m1:1.44, sd1:0.44, m2:1.83, sd2:0.63, r:0.56, n:35, metric:'raw' },
+    "Perseverations": { m1:7.35, sd1:6.94, m2:7.54, sd2:6.39, r:0.9, n:35, metric:'raw' },
+    "Free-Recall Intrusions": { m1:5.11, sd1:5.55, m2:4.97, sd2:5.99, r:0.74, n:35, metric:'raw' },
+    "Cued-Recall Intrusions": { m1:2.83, sd1:4.33, m2:2.31, sd2:3.31, r:0.59, n:35, metric:'raw' },
+    "Recognition Hits": { m1:13.67, sd1:1.45, m2:13.84, sd2:1.33, r:0.38, n:35, metric:'raw' },
+    "Discriminability": { m1:92.76, sd1:5.69, m2:94.52, sd2:5.9, r:0.55, n:35, metric:'raw' },
+    "False Positives": { m1:1.82, sd1:2.38, m2:1.16, sd2:2, r:0.62, n:35, metric:'raw' }
   },
   "CVLT-C Subtests (Raw Scores) · Age 12": {
-    "List A Trials 1-5 Total": { m1:50.64, sd1:7.19, m2:56.47, sd2:8.92, r:0.73, n:40 },
-    "List B Free-Recall Trial": { m1:6.24, sd1:1.58, m2:6.82, sd2:1.57, r:0.26, n:40 },
-    "Short-Delay Free Recall": { m1:9.89, sd1:2.44, m2:12.24, sd2:2.62, r:0.77, n:40 },
-    "Short-Delay Cued Recall": { m1:11.13, sd1:2.21, m2:12.15, sd2:3.14, r:0.49, n:40 },
-    "Long-Delay Free Recall": { m1:10.77, sd1:2.32, m2:12.3, sd2:2.54, r:0.62, n:40 },
-    "Long-Delay Cued Recall": { m1:11.26, sd1:2.18, m2:12.74, sd2:2.53, r:0.69, n:40 },
-    "Semantic Cluster Ratio": { m1:1.49, sd1:0.43, m2:1.83, sd2:0.6, r:0.58, n:40 },
-    "Perseverations": { m1:4.55, sd1:4.32, m2:5.6, sd2:5.7, r:0.32, n:40 },
-    "Free-Recall Intrusions": { m1:0.97, sd1:1.44, m2:1.64, sd2:2.67, r:0.56, n:40 },
-    "Cued-Recall Intrusions": { m1:0.69, sd1:1.14, m2:0.56, sd2:1.02, r:0.17, n:40 },
-    "Recognition Hits": { m1:14.21, sd1:1.02, m2:14.67, sd2:0.82, r:0.24, n:40 },
-    "Discriminability": { m1:96.71, sd1:3.53, m2:98.06, sd2:3.25, r:0.37, n:40 },
-    "False Positives": { m1:0.55, sd1:0.86, m2:0.55, sd2:1.03, r:0.35, n:40 }
+    "List A Trials 1-5 Total": { m1:50.64, sd1:7.19, m2:56.47, sd2:8.92, r:0.73, n:40, metric:'raw' },
+    "List B Free-Recall Trial": { m1:6.24, sd1:1.58, m2:6.82, sd2:1.57, r:0.26, n:40, metric:'raw' },
+    "Short-Delay Free Recall": { m1:9.89, sd1:2.44, m2:12.24, sd2:2.62, r:0.77, n:40, metric:'raw' },
+    "Short-Delay Cued Recall": { m1:11.13, sd1:2.21, m2:12.15, sd2:3.14, r:0.49, n:40, metric:'raw' },
+    "Long-Delay Free Recall": { m1:10.77, sd1:2.32, m2:12.3, sd2:2.54, r:0.62, n:40, metric:'raw' },
+    "Long-Delay Cued Recall": { m1:11.26, sd1:2.18, m2:12.74, sd2:2.53, r:0.69, n:40, metric:'raw' },
+    "Semantic Cluster Ratio": { m1:1.49, sd1:0.43, m2:1.83, sd2:0.6, r:0.58, n:40, metric:'raw' },
+    "Perseverations": { m1:4.55, sd1:4.32, m2:5.6, sd2:5.7, r:0.32, n:40, metric:'raw' },
+    "Free-Recall Intrusions": { m1:0.97, sd1:1.44, m2:1.64, sd2:2.67, r:0.56, n:40, metric:'raw' },
+    "Cued-Recall Intrusions": { m1:0.69, sd1:1.14, m2:0.56, sd2:1.02, r:0.17, n:40, metric:'raw' },
+    "Recognition Hits": { m1:14.21, sd1:1.02, m2:14.67, sd2:0.82, r:0.24, n:40, metric:'raw' },
+    "Discriminability": { m1:96.71, sd1:3.53, m2:98.06, sd2:3.25, r:0.37, n:40, metric:'raw' },
+    "False Positives": { m1:0.55, sd1:0.86, m2:0.55, sd2:1.03, r:0.35, n:40, metric:'raw' }
   },
   "CVLT-C Subtests (Raw Scores) · Age 16": {
-    "List A Trials 1-5 Total": { m1:53.53, sd1:6.15, m2:62.94, sd2:10.94, r:0.61, n:31 },
-    "List B Free-Recall Trial": { m1:6.67, sd1:1.7, m2:7.6, sd2:2.19, r:0.66, n:31 },
-    "Short-Delay Free Recall": { m1:11.61, sd1:2.09, m2:13.52, sd2:1.91, r:0.48, n:31 },
-    "Short-Delay Cued Recall": { m1:12, sd1:1.52, m2:13.71, sd2:1.59, r:0.59, n:31 },
-    "Long-Delay Free Recall": { m1:11.9, sd1:1.9, m2:13.5, sd2:1.87, r:0.6, n:31 },
-    "Long-Delay Cued Recall": { m1:12.57, sd1:1.72, m2:14, sd2:1.58, r:0.59, n:31 },
-    "Semantic Cluster Ratio": { m1:1.55, sd1:0.53, m2:2.3, sd2:0.66, r:0.53, n:31 },
-    "Perseverations": { m1:3.84, sd1:3.03, m2:5.42, sd2:5.76, r:0.31, n:31 },
-    "Free-Recall Intrusions": { m1:2.28, sd1:4.22, m2:2.19, sd2:4.13, r:0.85, n:31 },
-    "Cued-Recall Intrusions": { m1:0.66, sd1:1.68, m2:0.84, sd2:1.59, r:0.74, n:31 },
-    "Recognition Hits": { m1:14.59, sd1:0.82, m2:14.79, sd2:0.62, r:0.8, n:31 },
-    "Discriminability": { m1:97.2, sd1:4.17, m2:98.9, sd2:2.23, r:0.78, n:31 },
-    "False Positives": { m1:0.68, sd1:1.51, m2:0.35, sd2:0.91, r:0.78, n:31 }
+    "List A Trials 1-5 Total": { m1:53.53, sd1:6.15, m2:62.94, sd2:10.94, r:0.61, n:31, metric:'raw' },
+    "List B Free-Recall Trial": { m1:6.67, sd1:1.7, m2:7.6, sd2:2.19, r:0.66, n:31, metric:'raw' },
+    "Short-Delay Free Recall": { m1:11.61, sd1:2.09, m2:13.52, sd2:1.91, r:0.48, n:31, metric:'raw' },
+    "Short-Delay Cued Recall": { m1:12, sd1:1.52, m2:13.71, sd2:1.59, r:0.59, n:31, metric:'raw' },
+    "Long-Delay Free Recall": { m1:11.9, sd1:1.9, m2:13.5, sd2:1.87, r:0.6, n:31, metric:'raw' },
+    "Long-Delay Cued Recall": { m1:12.57, sd1:1.72, m2:14, sd2:1.58, r:0.59, n:31, metric:'raw' },
+    "Semantic Cluster Ratio": { m1:1.55, sd1:0.53, m2:2.3, sd2:0.66, r:0.53, n:31, metric:'raw' },
+    "Perseverations": { m1:3.84, sd1:3.03, m2:5.42, sd2:5.76, r:0.31, n:31, metric:'raw' },
+    "Free-Recall Intrusions": { m1:2.28, sd1:4.22, m2:2.19, sd2:4.13, r:0.85, n:31, metric:'raw' },
+    "Cued-Recall Intrusions": { m1:0.66, sd1:1.68, m2:0.84, sd2:1.59, r:0.74, n:31, metric:'raw' },
+    "Recognition Hits": { m1:14.59, sd1:0.82, m2:14.79, sd2:0.62, r:0.8, n:31, metric:'raw' },
+    "Discriminability": { m1:97.2, sd1:4.17, m2:98.9, sd2:2.23, r:0.78, n:31, metric:'raw' },
+    "False Positives": { m1:0.68, sd1:1.51, m2:0.35, sd2:0.91, r:0.78, n:31, metric:'raw' }
   },
   "D-KEFS Colour-Word Interference · Ages 20-49": {
     "Colour Naming": { m1:9.63, sd1:3.15, m2:10.6, sd2:2.58, r:0.86, n:35 },
@@ -807,32 +833,32 @@ const OPIE_BASE_RATES = {
     "Total Scale": { m1:106.7, sd1:13.9, m2:110.6, sd2:13.2, r:0.81, rCorrected:0.84, n:40 }
   },
   "RBANS Subtests · Ages 12-19": {
-    "List Learning": { m1:10.2, sd1:3.1, m2:13.4, sd2:3.2, r:0.68, rCorrected:0.66, n:55 },
-    "Story Memory": { m1:9.8, sd1:2.7, m2:13, sd2:2.6, r:0.65, rCorrected:0.72, n:55 },
-    "Figure Copy": { m1:10, sd1:2.7, m2:10, sd2:2.5, r:0.46, rCorrected:0.57, n:55 },
-    "Line Orientation": { m1:16.7, sd1:3, m2:16.9, sd2:2.9, r:0.72, n:55 },
-    "Picture Naming": { m1:9.1, sd1:1, m2:9.2, sd2:0.9, r:0.73, n:55 },
-    "Semantic Fluency": { m1:10, sd1:3.1, m2:10.8, sd2:3, r:0.67, rCorrected:0.65, n:55 },
-    "Digit Span": { m1:9.8, sd1:2.7, m2:10, sd2:3.2, r:0.59, rCorrected:0.67, n:55 },
-    "Coding": { m1:10.2, sd1:2.7, m2:11.2, sd2:3.1, r:0.75, rCorrected:0.79, n:55 },
-    "List Recall": { m1:6.8, sd1:1.8, m2:8.2, sd2:1.8, r:0.66, n:55 },
-    "List Recognition": { m1:19.9, sd1:0.5, m2:19.9, sd2:0.4, r:0.7, n:55 },
-    "Story Recall": { m1:10, sd1:3, m2:11.7, sd2:3.1, r:0.48, rCorrected:0.49, n:55 },
-    "Figure Recall": { m1:10.2, sd1:2.5, m2:11.2, sd2:3.1, r:0.58, rCorrected:0.71, n:55 }
+    "List Learning": { m1:10.2, sd1:3.1, m2:13.4, sd2:3.2, r:0.68, rCorrected:0.66, n:55, metric:'raw' },
+    "Story Memory": { m1:9.8, sd1:2.7, m2:13, sd2:2.6, r:0.65, rCorrected:0.72, n:55, metric:'raw' },
+    "Figure Copy": { m1:10, sd1:2.7, m2:10, sd2:2.5, r:0.46, rCorrected:0.57, n:55, metric:'raw' },
+    "Line Orientation": { m1:16.7, sd1:3, m2:16.9, sd2:2.9, r:0.72, n:55, metric:'raw' },
+    "Picture Naming": { m1:9.1, sd1:1, m2:9.2, sd2:0.9, r:0.73, n:55, metric:'raw' },
+    "Semantic Fluency": { m1:10, sd1:3.1, m2:10.8, sd2:3, r:0.67, rCorrected:0.65, n:55, metric:'raw' },
+    "Digit Span": { m1:9.8, sd1:2.7, m2:10, sd2:3.2, r:0.59, rCorrected:0.67, n:55, metric:'raw' },
+    "Coding": { m1:10.2, sd1:2.7, m2:11.2, sd2:3.1, r:0.75, rCorrected:0.79, n:55, metric:'raw' },
+    "List Recall": { m1:6.8, sd1:1.8, m2:8.2, sd2:1.8, r:0.66, n:55, metric:'raw' },
+    "List Recognition": { m1:19.9, sd1:0.5, m2:19.9, sd2:0.4, r:0.7, n:55, metric:'raw' },
+    "Story Recall": { m1:10, sd1:3, m2:11.7, sd2:3.1, r:0.48, rCorrected:0.49, n:55, metric:'raw' },
+    "Figure Recall": { m1:10.2, sd1:2.5, m2:11.2, sd2:3.1, r:0.58, rCorrected:0.71, n:55, metric:'raw' }
   },
   "RBANS Subtests · Ages 20-89": {
-    "List Learning": { m1:11.5, sd1:2.9, m2:11.2, sd2:3.3, r:0.49, rCorrected:0.52, n:40 },
-    "Story Memory": { m1:11.6, sd1:1.8, m2:12.5, sd2:2.4, r:0.45, rCorrected:0.8, n:40 },
-    "Figure Copy": { m1:9.6, sd1:2.8, m2:11.9, sd2:2.6, r:0.47, rCorrected:0.54, n:40 },
-    "Line Orientation": { m1:16, sd1:3.4, m2:16.4, sd2:3.7, r:0.49, n:40 },
-    "Picture Naming": { m1:9.8, sd1:0.4, m2:9.7, sd2:0.5, r:0.5, n:40 },
-    "Semantic Fluency": { m1:11.1, sd1:2.9, m2:11.2, sd2:3.3, r:0.49, rCorrected:0.52, n:40 },
-    "Digit Span": { m1:10.4, sd1:3.5, m2:10.1, sd2:3.7, r:0.73, rCorrected:0.63, n:40 },
-    "Coding": { m1:10.8, sd1:2.5, m2:11.7, sd2:2.8, r:0.76, rCorrected:0.83, n:40 },
-    "List Recall": { m1:6.2, sd1:2.4, m2:5.8, sd2:2.7, r:0.6, n:40 },
-    "List Recognition": { m1:19.6, sd1:0.8, m2:19.8, sd2:0.5, r:0.27, n:40 },
-    "Story Recall": { m1:11.6, sd1:2.3, m2:11.6, sd2:2.3, r:0.52, rCorrected:0.72, n:40 },
-    "Figure Recall": { m1:10.4, sd1:3, m2:11.5, sd2:3, r:0.55, rCorrected:0.55, n:40 }
+    "List Learning": { m1:11.5, sd1:2.9, m2:11.2, sd2:3.3, r:0.49, rCorrected:0.52, n:40, metric:'raw' },
+    "Story Memory": { m1:11.6, sd1:1.8, m2:12.5, sd2:2.4, r:0.45, rCorrected:0.8, n:40, metric:'raw' },
+    "Figure Copy": { m1:9.6, sd1:2.8, m2:11.9, sd2:2.6, r:0.47, rCorrected:0.54, n:40, metric:'raw' },
+    "Line Orientation": { m1:16, sd1:3.4, m2:16.4, sd2:3.7, r:0.49, n:40, metric:'raw' },
+    "Picture Naming": { m1:9.8, sd1:0.4, m2:9.7, sd2:0.5, r:0.5, n:40, metric:'raw' },
+    "Semantic Fluency": { m1:11.1, sd1:2.9, m2:11.2, sd2:3.3, r:0.49, rCorrected:0.52, n:40, metric:'raw' },
+    "Digit Span": { m1:10.4, sd1:3.5, m2:10.1, sd2:3.7, r:0.73, rCorrected:0.63, n:40, metric:'raw' },
+    "Coding": { m1:10.8, sd1:2.5, m2:11.7, sd2:2.8, r:0.76, rCorrected:0.83, n:40, metric:'raw' },
+    "List Recall": { m1:6.2, sd1:2.4, m2:5.8, sd2:2.7, r:0.6, n:40, metric:'raw' },
+    "List Recognition": { m1:19.6, sd1:0.8, m2:19.8, sd2:0.5, r:0.27, n:40, metric:'raw' },
+    "Story Recall": { m1:11.6, sd1:2.3, m2:11.6, sd2:2.3, r:0.52, rCorrected:0.72, n:40, metric:'raw' },
+    "Figure Recall": { m1:10.4, sd1:3, m2:11.5, sd2:3, r:0.55, rCorrected:0.55, n:40, metric:'raw' }
   },
   // RBANS alternate-form (index-level only). m1/sd1 = Form A, m2/sd2 = alt form.
   // Change-Analysis only (filtered out of Score Tables). Randolph 2012:

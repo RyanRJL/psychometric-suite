@@ -1351,6 +1351,132 @@ check('no Report Writer leftovers remain in the shipped scripts', () => {
   return hits.length === 0 || 'leftover references: ' + [...new Set(hits)].join(', ');
 });
 
+/* ==========================================================================
+   18. Raw-score measures are never given a standardised metric
+
+   normDB holds 63 measures that are not on a standardised scale. Before
+   metric:'raw' existed, inferScoreTypeForSubtest guessed the score type from
+   the normative mean, which has no raw category, so it picked whichever
+   standard metric the raw mean sat nearest. Score Tables then converted with
+   that metric's constants and printed a percentile and a Wechsler
+   classification.
+
+   Worst case, verified in the running page: RBANS List Recognition (raw,
+   M 19.6, SD 0.8, out of 20). A raw 19 is z = (19-19.6)/0.8 = -0.75, the 23rd
+   percentile. Read as a scaled score it is z = (19-10)/3 = +3.00, the 99.9th
+   percentile, "Very Superior" — 56.3 standard-score points out, sign inverted.
+   ========================================================================== */
+heading('18. Raw-score measures carry no derived scores');
+
+const RAW_FAMILIES = [
+  'CVLT-C Subtests (Raw Scores) · Age 8',
+  'CVLT-C Subtests (Raw Scores) · Age 12',
+  'CVLT-C Subtests (Raw Scores) · Age 16',
+  'RBANS Subtests · Ages 12-19',
+  'RBANS Subtests · Ages 20-89',
+];
+
+check('the five raw-score families are tagged metric:\'raw\' on every entry', () => {
+  const bad = [];
+  for (const fam of RAW_FAMILIES) {
+    const g = D.normDB[fam];
+    if (!g) { bad.push(fam + ' missing from normDB'); continue; }
+    for (const name in g) {
+      if (g[name] && typeof g[name] === 'object' && g[name].metric !== 'raw') {
+        bad.push(fam + ' / ' + name);
+      }
+    }
+  }
+  return bad.length === 0 || bad.length + ' untagged, first: ' + bad[0];
+});
+
+check('exactly 63 entries are tagged raw, and none outside those families', () => {
+  const fams = new Set(RAW_FAMILIES);
+  let n = 0; const stray = [];
+  eachNormEntry((e, g, name) => {
+    if (e.metric !== 'raw') return;
+    n++;
+    if (!fams.has(g)) stray.push(g + ' / ' + name);
+  });
+  if (stray.length) return 'tagged raw outside the known families: ' + stray.join(', ');
+  return n === 63 || 'got ' + n + ' tagged raw, expected 63';
+});
+
+/* No standardised metric in this app has an SD below 1, so an entry whose sd1
+   is under 1 cannot be a standardised score. This is the evidence the RBANS
+   families are raw, stated as an invariant rather than taken on trust. */
+check('every entry with sd1 < 1 is tagged raw', () => {
+  const bad = [];
+  eachNormEntry((e, g, name) => {
+    if (e.sd1 < 1 && e.metric !== 'raw') bad.push(g + ' / ' + name + ' sd1=' + e.sd1);
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+{
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(
+    ['toZ', 'fromZ', 'normInv', 'normCDF', 'erf', 'inferScoreTypeForSubtest', 'inferScoreType',
+     'scoreTypeLabel', 'scoreTypeAbbr', 'sdiSdUnit']
+      .map(n => extractFn(APP_SRC, n)).join('\n') +
+    ';globalThis.__E={toZ,fromZ,inferScoreTypeForSubtest,scoreTypeLabel,scoreTypeAbbr,sdiSdUnit};',
+    ctx
+  );
+  const A = ctx.__E;
+
+  check('inferScoreTypeForSubtest returns \'raw\' for every tagged entry', () => {
+    const bad = [];
+    eachNormEntry((e, g, name) => {
+      if (e.metric !== 'raw') return;
+      const t = A.inferScoreTypeForSubtest(g, name, e);
+      if (t !== 'raw') bad.push(g + ' / ' + name + ' -> ' + t);
+    });
+    return bad.length === 0 || bad.length + ' wrong, first: ' + bad[0];
+  });
+
+  check('toZ and fromZ refuse the raw metric in both directions', () => {
+    const problems = [];
+    for (const v of [0, 1, 5, 19, 42, 92.76, -3]) {
+      if (A.toZ(v, 'raw') !== null) problems.push('toZ(' + v + ') = ' + A.toZ(v, 'raw'));
+    }
+    for (const z of [-3, -0.75, 0, 1, 3]) {
+      if (A.fromZ(z, 'raw') !== null) problems.push('fromZ(' + z + ') = ' + A.fromZ(z, 'raw'));
+    }
+    return problems.length === 0 || problems.join('; ');
+  });
+
+  /* The specific number this closes. Pinned to normDB rather than typed in,
+     so it moves if the data does. */
+  check('RBANS List Recognition raw 19 yields no percentile, not the 99.9th', () => {
+    const e = D.normDB['RBANS Subtests · Ages 20-89']['List Recognition'];
+    const t = A.inferScoreTypeForSubtest('RBANS Subtests · Ages 20-89', 'List Recognition', e);
+    if (t !== 'raw') return 'typed as ' + t + ', not raw';
+    if (A.toZ(19, t) !== null) return 'toZ returned ' + A.toZ(19, t);
+    // and show the arithmetic the tag prevents
+    const wrongZ = (19 - 10) / 3;                  // read as a scaled score
+    const trueZ  = (19 - e.m1) / e.sd1;            // against its own norms
+    const gap = Math.abs(15 * (wrongZ - trueZ));
+    return gap > 50 || 'expected the averted error to exceed 50 SS points, got ' + gap.toFixed(1);
+  });
+
+  check('sdiSdUnit has no divisor for raw, so index mode cannot score it', () => {
+    return A.sdiSdUnit('raw') === undefined || 'got ' + A.sdiSdUnit('raw');
+  });
+
+  check('the raw metric has its own visible label, not the "Score" fallback', () => {
+    if (A.scoreTypeLabel('raw') !== 'Raw Score') return 'label is ' + A.scoreTypeLabel('raw');
+    if (A.scoreTypeAbbr('raw') !== 'Raw') return 'abbr is ' + A.scoreTypeAbbr('raw');
+    return true;
+  });
+}
+
+check('sdiComputeChange rejects a row whose metric has no SD unit', () => {
+  const src = extractFn(APP_SRC, 'sdiComputeChange');
+  return /Number\.isFinite\(unit\)/.test(src)
+    || 'sdiComputeChange no longer guards a missing SD unit — a raw row would divide by undefined';
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

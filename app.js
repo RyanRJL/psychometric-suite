@@ -104,6 +104,12 @@ function normInv(p){
 
 /* ---------- SCORE CONVERSIONS ---------- */
 // Convert any input score type to z
+/* 'raw' is a deliberate no-conversion case, not an oversight. A raw score
+   carries no metric, so there is no z, no percentile and no classification to
+   be had from the number alone — see the metric:'raw' note in data.js. Both
+   directions return null so every derived cell downstream stays blank instead
+   of showing a figure derived from the wrong scale. Do not give 'raw' a
+   fallback: falling through to 'scaled' is the exact bug this closes. */
 function toZ(value, type){
   if (value === '' || value == null || isNaN(value)) return null;
   const v = parseFloat(value);
@@ -115,6 +121,7 @@ function toZ(value, type){
     case 'percentile':
       if (v <= 0 || v >= 100) return null;
       return normInv(v / 100);
+    case 'raw': return null;
     default: return null;
   }
 }
@@ -126,6 +133,7 @@ function fromZ(z, type){
     case 'standard': return 100 + 15*z;
     case 'scaled': return 10 + 3*z;
     case 'percentile': return normCDF(z) * 100;
+    case 'raw': return null;
     default: return null;
   }
 }
@@ -1233,6 +1241,13 @@ function inferScoreType(familyName){
 //   2. keywords in the subtest's own name ("...Index", "IQ", "Quotient", etc.);
 //   3. the family-name heuristic (legacy fallback).
 function inferScoreTypeForSubtest(familyName, subtestName, stats){
+  /* 0. Declared, and therefore not a guess. Entries carrying metric:'raw' are
+     not on a standardised metric at all, so the mean-based heuristic below
+     cannot classify them — it has no raw category and would pick whichever
+     standard metric the raw mean happens to sit nearest. That is how RBANS
+     List Recognition (raw, M 19.6, SD 0.8) came to be read as a scaled score.
+     See the metric:'raw' note in data.js. */
+  if (stats && stats.metric === 'raw') return 'raw';
   // 1. Data-driven: classify by the normative mean's nearest standard metric.
   let mean = null;
   if (stats){
@@ -1326,10 +1341,10 @@ function caGroupDisplay(group){
   return q ? `${base} · ${q}` : base;
 }
 function scoreTypeLabel(type){
-  return {scaled:'Scaled Score', standard:'Standard Score', t:'T-Score', z:'Z-Score'}[type] || 'Score';
+  return {scaled:'Scaled Score', standard:'Standard Score', t:'T-Score', z:'Z-Score', raw:'Raw Score'}[type] || 'Score';
 }
 function scoreTypeAbbr(type){
-  return {scaled:'Scaled', standard:'Standard', t:'T-Score', z:'Z-Score'}[type] || '';
+  return {scaled:'Scaled', standard:'Standard', t:'T-Score', z:'Z-Score', raw:'Raw'}[type] || '';
 }
 function updateBatteryScoreHeader(){
   const type = document.getElementById('bat-type')?.value;
@@ -1773,7 +1788,14 @@ function getBatteryCiHtml(ss, row, level){
   const loRaw  = ss - zMult * sem;
   const hiRaw  = ss + zMult * sem;
   const type   = rowScoreType(row);
-  if (type === 'z'){
+  /* z and raw share one treatment: 1dp, no floor and no ceiling.
+     The interval itself is valid for a raw score — sd1 is in raw units, so
+     SD x sqrt(1-r) is a raw-unit SEM — but the integer floor of 1 applied
+     below would be wrong for the many raw measures whose scale starts at 0
+     (intrusions, perseverations, false positives all have normative means
+     under 6), and no raw ceiling can be asserted without knowing each
+     measure's maximum. */
+  if (type === 'z' || type === 'raw'){
     return `${Math.round(loRaw * 10) / 10}–${Math.round(hiRaw * 10) / 10}`;
   }
   // The lower end was already floored, but nothing capped the upper end, so a
@@ -1979,6 +2001,13 @@ const APA_NOTES = {
   'bat': ctx => [
     `Classification follows ${ctx.classification === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.`,
     ctx.mixedTypes ? 'Scores are reported in their native standardised metric.' : '',
+    /* Raw rows print a score but no percentile or classification, because a raw
+       score carries no metric to derive them from. Without this line the blank
+       cells read as an oversight rather than as the deliberate refusal they
+       are. */
+    ctx.hasRaw
+      ? 'Raw-score measures are reported as obtained; percentile and classification are not derived, as these measures are not on a standardised metric.'
+      : '',
     // States the BASIS, not just the level. These intervals use test-retest
     // reliability, so they run wider than manual-published intervals (which
     // use internal consistency); without this line a reader comparing against
@@ -2000,6 +2029,12 @@ const APA_NOTES = {
   'sdi': ctx => [
     'SD Δ = (retest − test) ÷ SD.',
     ctx.mixedTypes ? 'Scores are reported in their native standardised metric.' : '',
+    /* Index mode has no divisor for a raw-score row, so those rows compute
+       nothing. Say so, and say where they DO work, rather than leaving a row
+       of blanks with no explanation. */
+    ctx.hasRawInIndexMode
+      ? 'Raw-score measures are not scored in index mode, which divides by the metric’s SD; use raw mode, which divides by the normative SD entered for each measure.'
+      : '',
     `Significance threshold = ${ctx.thresholdLabel}.`,
     '<i>p</i>-values are two-tailed.'
   ],
@@ -2089,6 +2124,7 @@ function renderBatteryApa(){
     ${apaNoteHtml('bat', {
       classification: cls,
       mixedTypes: types.size > 1,
+      hasRaw: valid.some(r => rowScoreType(r) === 'raw'),
       ciLevel,
       premorbid: prem ? fmt(prem.estimate, 0) : null,
       premorbidMode: prem ? batteryPremorbidMode(prem) : null
@@ -2371,6 +2407,10 @@ function sdiRemoveGroup(group){
   renderSdi();
 }
 window.sdiRemoveGroup = sdiRemoveGroup;
+/* Returns undefined for 'raw' (and anything unrecognised) BY DESIGN — a raw
+   score has no metric SD to divide by. sdiComputeChange must therefore treat a
+   missing unit as "cannot compute" rather than dividing and producing NaN, or
+   worse, having a unit invented for it. */
 function sdiSdUnit(type){ return {scaled:3, standard:15, t:10, z:1}[type]; }
 // The divisor is a property of the ROW, not of the table. A battery mixes metrics
 // (scaled subtests alongside standard-score indices), and dividing every row by one
@@ -2396,7 +2436,17 @@ function sdiComputeChange(r){
     if (r.sd === '' || isNaN(r.sd) || parseFloat(r.sd) <= 0) return null;
     return (parseFloat(r.t2) - parseFloat(r.t1)) / parseFloat(r.sd);
   }
-  return (parseFloat(r.t2) - parseFloat(r.t1)) / sdiSdUnit(sdiRowScoreType(r));
+  /* Index mode divides by the metric's SD, which only exists for a
+     standardised score. Raw-score rows (metric:'raw' in normDB) have no such
+     unit, so they are refused here rather than scored against a borrowed one.
+     Dividing RBANS List Recognition — a raw score with SD 0.8 — by the scaled
+     unit of 3 understated every change by a factor of 3.75, turning a 2-point
+     drop (2.5 SD, clearly reliable) into 0.67 SD, "not significant".
+     Raw mode still handles these correctly: it uses the row's own SD, which
+     autofill populates from sd1. */
+  const unit = sdiSdUnit(sdiRowScoreType(r));
+  if (!Number.isFinite(unit) || unit <= 0) return null;
+  return (parseFloat(r.t2) - parseFloat(r.t1)) / unit;
 }
 function renderSdiHead(){
   const raw = sdiMode() === 'raw';
@@ -2607,7 +2657,11 @@ function renderSdiApa(){
       </thead>
       <tbody>${rows}</tbody>
     </table>
-    ${apaNoteHtml('sdi', { thresholdLabel: cvDesc, mixedTypes: !raw && new Set(named.map(sdiRowScoreType)).size > 1 })}
+    ${apaNoteHtml('sdi', {
+      thresholdLabel: cvDesc,
+      mixedTypes: !raw && new Set(named.map(sdiRowScoreType)).size > 1,
+      hasRawInIndexMode: !raw && named.some(r => sdiRowScoreType(r) === 'raw')
+    })}
   `;
 }
 function sdiNormSd(p){
