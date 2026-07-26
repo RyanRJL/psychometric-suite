@@ -1592,14 +1592,45 @@ check('the four higher-is-worse CVLT-C measures are flagged, and only those', ()
   return bad.length === 0 || bad.join('; ');
 });
 
-check('a higher-is-worse row gets no merit classification', () => {
+/* The classification describes PERFORMANCE, so on an error measure it is
+   computed from the reflected score. The percentile is deliberately left
+   unreflected — 98th is what z +2.0 gives and what a reader checking against
+   the manual will calculate. */
+check('a higher-is-worse row classifies on the REFLECTED score', () => {
   const src = extractFn(APP_SRC, 'batteryClassificationDetails');
   if (!/r\.higherIsWorse/.test(src)) return 'the classification cell ignores higherIsWorse';
-  // it must bail BEFORE computing a descriptor, or the label leaks out
-  const guardAt = src.indexOf('r.higherIsWorse');
-  const descAt  = src.indexOf('wechslerDesc');
-  return (guardAt !== -1 && guardAt < descAt)
-    || 'higherIsWorse is checked after the descriptor is built, so the label still escapes';
+  if (!/fromZ\(-z, 'standard'\)/.test(src)) return 'the score is no longer reflected for the label';
+  // the descriptor must be built from the reflected value, not the raw one
+  if (!/wechslerDesc\(perfSs\)/.test(src) || !/aanDesc\(perfSs\)/.test(src)) {
+    return 'the descriptor is built from the unreflected score, so an error measure reads as a merit';
+  }
+  return true;
+});
+
+check('the percentile column is NOT reflected for error measures', () => {
+  // the percentile renderer must know nothing about direction
+  const bat = extractFn(APP_SRC, 'renderBattery');
+  const apa = extractFn(APP_SRC, 'renderBatteryApa');
+  const bad = [];
+  if (/higherIsWorse/.test(bat.match(/const pct = [^\n]*/)?.[0] || '')) bad.push('renderBattery');
+  if (/higherIsWorse[^\n]*normCDF|normCDF[^\n]*higherIsWorse/.test(apa)) bad.push('renderBatteryApa');
+  return bad.length === 0
+    || 'the percentile is being reflected in ' + bad.join(', ') + '; it must stay reproducible from z';
+});
+
+check('no premorbid asterisks are asserted on an error measure', () => {
+  const src = extractFn(APP_SRC, 'batteryClassificationDetails');
+  return /r\.higherIsWorse \? '' : batteryPremorbidStars/.test(src)
+    || 'error measures are being compared against a premorbid estimate, which has no meaning for an error count';
+});
+
+check('the APA note explains the high-percentile / low-classification pairing', () => {
+  const notes = APP_SRC.slice(APP_SRC.indexOf('const APA_NOTES'), APP_SRC.indexOf('const APA_NOTES') + 4000);
+  if (!/hasHigherIsWorse/.test(notes)) return 'the note never mentions error measures';
+  if (!/classification/i.test(notes.match(/hasHigherIsWorse[\s\S]{0,400}/)?.[0] || '')) {
+    return 'the note does not say how to read the classification on these rows';
+  }
+  return true;
 });
 
 check('autofill carries higherIsWorse onto the row', () => {

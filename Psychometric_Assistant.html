@@ -1123,11 +1123,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .bat-premorbid-help{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px;max-width:820px}
 .bat-premorbid-panel input:disabled,.bat-premorbid-panel select:disabled{opacity:.55;cursor:not-allowed;background:var(--paper-2)}
 .bat-class-extreme{text-align:left!important;background:transparent!important}
-/* Withheld classification on a higher-is-worse measure. Standalone class so
-   nothing in design-system.css competes for it. Muted rather than hidden: the
-   reader should see that the cell is deliberately empty, not that data is
-   missing — the APA note explains why. */
-.bat-class-directionless{color:var(--faint);font-style:normal}
 .bat-expected-stars{font-weight:700;letter-spacing:0.04em;margin-left:1px;color:var(--ink)}
 .apa-table .bat-class-extreme{font-weight:inherit}
 .apa-table .bat-expected-stars{color:#000!important;font-weight:700}
@@ -21938,26 +21933,32 @@ function batteryClassificationDetails(r, cls){
   const z = toZ(r.score, rowScoreType(r));
   if (z == null) return { text:'', html:'', className:'' };
   const ss = fromZ(z, 'standard');
-  /* On a higher-is-worse measure the score runs the other way, so a merit label
-     would state the opposite of what the number means. CVLT-C Perseverations is
-     scored so that MORE perseverations give a HIGHER standardised score (Manual
-     Table A.2: z -1.0 maps to 0-3 perseverations, z +5.0 to 45 or more), so a
-     child at z +2.0 has made more perseverations than 98% of their age group -
-     and would otherwise have been labelled "Very Superior".
+  /* On a higher-is-worse measure the score runs the other way: CVLT-C
+     Perseverations is scored so that MORE perseverations give a HIGHER
+     standardised score (Manual Table A.2 maps z -1.0 to 0-3 perseverations and
+     z +5.0 to 45 or more). A child at z +2.0 has made more perseverations than
+     98% of their age group, so the merit bands would label a poor result
+     "Very Superior".
 
-     The PERCENTILE is kept, because it remains factually true: the score is
-     higher than 98% of the norm group. It is the classification that asserts
-     merit, so only that is withheld. Same reasoning as the change-outcome
-     labels, which report significance without claiming improvement or decline.
-     The APA note says which way to read these rows. */
-  if (r.higherIsWorse){
-    return { text:'', html:'<span class="bat-class-directionless" title="Higher scores indicate more errors on this measure, so a classification is not applied.">&mdash;</span>',
-             className:'', ss, prem:getBatteryPremorbidComparison(), stars:'' };
-  }
-  const desc = cls === 'wechsler' ? wechslerDesc(ss) : aanDesc(ss);
+     The classification therefore describes PERFORMANCE, computed from the
+     reflected score — z +2.0 classifies as z -2.0 does, "Extremely Low", which
+     is what a clinician would write. The PERCENTILE is deliberately NOT
+     reflected: 98th is what z +2.0 gives and what anyone checking the working
+     against the manual will calculate, and a number that cannot be reproduced
+     is worth less in a report than one that needs a footnote. The APA note
+     carries the convention so the pairing does not read as a contradiction.
+
+     Blanking the label was tried first and rejected: the column exists to
+     summarise performance, and a dash reads as missing data rather than as a
+     deliberate choice. */
+  const perfSs = r.higherIsWorse ? fromZ(-z, 'standard') : ss;
+  const desc = cls === 'wechsler' ? wechslerDesc(perfSs) : aanDesc(perfSs);
   const prem = getBatteryPremorbidComparison();
-  const extreme = ss < 70;
-  const stars = batteryPremorbidStars(ss, prem);
+  const extreme = perfSs < 70;
+  /* No premorbid asterisks on an error measure. The stars mean "this ability
+     falls short of the premorbid estimate", and a perseveration count is not
+     an ability being predicted — the comparison has no meaning to assert. */
+  const stars = r.higherIsWorse ? '' : batteryPremorbidStars(ss, prem);
   const className = `${extreme ? ' bat-class-extreme' : ''}`.trim();
   const descriptor = `${escapeHtml(desc)}${stars ? `<span class="bat-expected-stars">${stars}</span>` : ''}`;
   return {
@@ -22333,8 +22334,10 @@ const APA_NOTES = {
       : '',
     /* Without this the em-dash in the classification column reads as missing
        data rather than as a deliberate refusal. */
+    /* Without this the pairing of a high percentile with a low classification
+       reads as a contradiction rather than as the convention it is. */
     ctx.hasHigherIsWorse
-      ? 'On error measures (perseverations, intrusions, false positives) a higher score indicates more errors, so the percentile is reported without a classification.'
+      ? 'On error measures (perseverations, intrusions, false positives) a higher score indicates more errors. Percentiles are reported as obtained; classifications describe performance, so a high percentile corresponds to a low classification.'
       : '',
     // States the BASIS, not just the level. These intervals use test-retest
     // reliability, so they run wider than manual-published intervals (which

@@ -299,10 +299,25 @@ Flagged on four measures: `Perseverations`, `Free-Recall Intrusions`,
 `Cued-Recall Intrusions`, `False Positives`. `Recognition Hits` and `Discriminability`
 run the normal way and must **not** be flagged.
 
-The **percentile is still shown** — it stays factually true, the score really is higher
-than 98% of the norm group. Only the **classification** is withheld, because that is
-what asserts merit. Same reasoning as the direction-neutral change outcomes above. The
-APA note explains the blank so it does not read as missing data.
+The two columns are treated differently, on purpose:
+
+- **Classification describes performance**, so it is computed from the **reflected**
+  score. z +2.0 classifies as z −2.0 does. A child with more perseverations than 98% of
+  their age group reads "Borderline", which is what a clinician would write. It works
+  both ways: `Cued-Recall Intrusions` at z −1.0 — fewer intrusions than average — reads
+  "High Average".
+- **The percentile is NOT reflected.** 98th is what z +2.0 gives and what anyone
+  checking the working against the manual will calculate. A number that cannot be
+  reproduced is worth less in a report than one that needs a footnote.
+
+So an error row pairs a **high percentile with a low classification**. The APA note
+carries that convention so the pairing does not read as a contradiction. Blanking the
+classification was tried first and rejected: the column exists to summarise performance,
+and a dash reads as missing data rather than as a deliberate choice.
+
+**No premorbid asterisks** are placed on these rows. The stars mean "this ability falls
+short of the premorbid estimate", and an error count is not an ability being predicted,
+so there is no comparison to assert.
 
 `toZ`/`fromZ` return `null` for `'raw'` in both directions, so percentile and
 classification go blank rather than being invented. **Do not give `'raw'` a fallback** —
@@ -398,7 +413,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 162 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 165 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Table 4.5, OPIE-4 coefficients pinned to Table eA5.8, worked OPIE predictions, reliable-
 change thresholds and direction-neutral outcome labels, base-rate reconstruction and
