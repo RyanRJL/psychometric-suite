@@ -111,6 +111,21 @@ first, and diff the list of top-level statements before and after.** `check.js`
 section 16 now guards this, but it only knows about the calls listed in
 `INIT_CALLS` — add to that list when you add init code.
 
+It bit a second time, in a subtler form. The same deletion removed
+`refreshReportWriterOptions()` but left the **call** to it at the end of
+`refreshAll()` — and `refreshAll()` is itself a top-level init statement, so it
+threw during boot and every top-level statement after it stopped running. That
+is 2,350 lines: the whole Working Report bundle, "Clear all tables", the Score
+Converter's Distribution tab, and the top-bar nav sync. No console error was
+surfaced, and all 107 checks passed, because section 16 verifies that init
+functions are *called* — it cannot tell whether the call *succeeds*.
+
+`check.js` section 17 closes that: every bare call to a name in the project's
+own naming families must resolve to something bound in the four shipped
+scripts. **If a `typeof SomeConst` throws `ReferenceError` instead of returning
+`"undefined"`, that const's declaration never ran** — a top-level statement
+above it threw. That probe is the fastest way to find the boundary.
+
 ### On-screen text is a contract
 
 Every calculator **prints its own formula** in a `<details class="formula-disclosure">`
@@ -197,6 +212,42 @@ MIDDLE DOT**, not a hyphen. Entries look like:
 - `rCorrected` — `r` rescaled to the **normative population's** variability
   (Allen & Yen / Magnusson)
 - `n` — retest sample size, present only where published
+- `metric` — present only as `'raw'`, on 63 entries. See below.
+
+### `metric:'raw'` — the entries that carry no scale
+
+Most entries are on a standardised metric, but `normDB` does not record which one.
+Everything except these 63 entries has its score type **inferred from the normative
+mean** by `inferScoreTypeForSubtest` (nearest of z≈0, scaled≈10, T≈50, standard≈100).
+
+That heuristic has no raw category, so for a raw score it silently returned whichever
+standard metric the raw mean sat nearest. `metric:'raw'` exists to stop it guessing:
+
+| Group | Entries |
+|---|---|
+| `CVLT-C Subtests (Raw Scores) · Age 8 / 12 / 16` | 39 |
+| `RBANS Subtests · Ages 12-19 / Ages 20-89` | 24 |
+
+CVLT-C declares it in the family name. For RBANS the data settles it — `Picture Naming`
+has SD 0.4 and `List Recognition` SD 0.8, and **no standardised metric in this app has
+an SD below 1**. `check.js` states that as an invariant: any entry with `sd1 < 1` must
+be tagged.
+
+`toZ`/`fromZ` return `null` for `'raw'` in both directions, so percentile and
+classification go blank rather than being invented. **Do not give `'raw'` a fallback** —
+falling through to `scaled` is the bug this closes: RBANS `List Recognition` at a raw 19
+is the 23rd percentile, but read as a scaled score it printed the 99.9th, "Very
+Superior" — 56 standard-score points out, with the sign inverted.
+
+The confidence interval is still shown for raw rows and is valid (`sd1` is in raw units,
+so `SD × √(1−r)` is a raw-unit SEM), but takes the z-score treatment — 1 dp, no floor,
+no ceiling — because many raw measures start at 0. SDI **index** mode refuses raw rows
+(no metric SD to divide by); SDI **raw** mode scores them correctly from the row's own SD.
+
+Beware the near-miss: `D-KEFS Sorting Test · Ages 8-19` has SD ≈ 1.6 against a scaled
+unit of 3 and looks raw. It is not — the Ages 20-49 band of the same test shows SD ≈ 3.2,
+so it is a scaled score in a range-restricted retest sample. Check a sibling age band
+before tagging anything new.
 
 **`r` and `rCorrected` describe different populations, and this matters.** Every SEM in
 this app is `SD × √(1 − reliability)`, which is only a valid error variance when both
@@ -276,12 +327,13 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 93 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 119 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Table 4.5, OPIE-4 coefficients pinned to Table eA5.8, worked OPIE predictions, reliable-
 change thresholds and direction-neutral outcome labels, base-rate reconstruction and
 monotonicity, percentile-tail clamping, the effect-size calculator, Score Tables
-confidence intervals, and documentation contracts.
+confidence intervals, documentation contracts, wiring (§16–17) and the raw-score
+metric (§18).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is
