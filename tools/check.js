@@ -1709,11 +1709,20 @@ check('cells spanning several columns are narrowed, not dropped wholesale', () =
 });
 
 /* Every output must go through effectiveItemHtml, which is what applies the
-   filter. A new export that reads item.html directly would bypass it. */
-check('screen, clipboard, Excel and Word all render through effectiveItemHtml', () => {
-  const uses = (APP_SRC.match(/effectiveItemHtml\(/g) || []).length;
-  // 1 definition + at least 4 call sites (computeBlocks x2, item card, drawer render)
-  return uses >= 5 || 'only ' + uses + ' references to effectiveItemHtml; an output may be bypassing it';
+   filter. A new export that read item.html directly would bypass it.
+   Named rather than counted: a count breaks whenever the call sites are
+   refactored (removing the battery merge dropped one) without telling you
+   whether an OUTPUT lost its filtering, which is the thing that matters.
+   The three consumers are: computeBlocks (feeds copyAll / exportExcel /
+   exportWord), copyItem (single-table copy), itemCardHtml (drawer render). */
+check('every output path renders through effectiveItemHtml', () => {
+  const missing = ['computeBlocks', 'copyItem', 'itemCardHtml'].filter(fn => {
+    let src;
+    try { src = extractFn(APP_SRC, fn); } catch (e) { return true; }
+    return !/effectiveItemHtml\(/.test(src);
+  });
+  return missing.length === 0
+    || 'these render item HTML without the hidden-column filter: ' + missing.join(', ');
 });
 
 check('the CSV export builds its rows from the filtered block, not the raw item', () => {
@@ -1731,6 +1740,26 @@ check('the plain-text clipboard flavour uses the same blocks as the HTML one', (
   const src = APP_SRC.slice(start, start + 1400);
   if (!/mergeReportBlocks\(/.test(src)) return 'copyAll no longer uses mergeReportBlocks';
   if (/item\.html/.test(src)) return 'copyAll reads item.html directly, bypassing the column filter';
+  return true;
+});
+
+/* ---- the removed "Merge by battery" feature ----
+   It keyed off a REPORT_TEST_CATALOG that never existed in this app, so
+   catalogBatteryFor() always returned null and the merge never fired - while
+   the toolbar showed a "Merge by battery: On" button that did nothing. */
+check('no Merge-by-battery leftovers remain', () => {
+  const src = stripComments(APP_SRC);
+  const hits = ['mergeBattery', 'catalogBatteryFor', 'buildMergedTableHtml',
+                'subSectionRank', 'toggle-merge', 'REPORT_TEST_CATALOG']
+    .filter(n => new RegExp(n.replace(/[-]/g, '\\-')).test(src));
+  return hits.length === 0 || 'still referenced: ' + hits.join(', ');
+});
+
+check('computeBlocks is a straight pass-through, one block per item', () => {
+  const src = stripComments(extractFn(APP_SRC, 'computeBlocks'));
+  if (/isMerged:\s*true/.test(src)) return 'computeBlocks can still report a merged block';
+  if (!/isMerged:\s*false/.test(src)) return 'computeBlocks no longer states isMerged';
+  if (/groups|byKey/.test(src)) return 'the grouping pass is back without a catalog to key it on';
   return true;
 });
 
