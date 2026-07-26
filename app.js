@@ -137,6 +137,13 @@ function fromZ(z, type){
     default: return null;
   }
 }
+/* Every score type the app understands. 'percentile' is deliberately absent:
+   it is an OUTPUT of the converter, not a metric a stored measure sits on, and
+   it is not offered by any row-type selector. Used to validate a declared
+   metric on a database entry, so an unrecognised value is rejected at the door
+   rather than silently ignored downstream. */
+const SCORE_METRICS = new Set(['z', 't', 'scaled', 'standard', 'raw']);
+
 function fmt(n, dp = 2){
   if (n == null || isNaN(n)) return '-';
   /* Every caller is a clinical display column — score conversions, SD Index
@@ -1241,13 +1248,18 @@ function inferScoreType(familyName){
 //   2. keywords in the subtest's own name ("...Index", "IQ", "Quotient", etc.);
 //   3. the family-name heuristic (legacy fallback).
 function inferScoreTypeForSubtest(familyName, subtestName, stats){
-  /* 0. Declared, and therefore not a guess. Entries carrying metric:'raw' are
-     not on a standardised metric at all, so the mean-based heuristic below
-     cannot classify them — it has no raw category and would pick whichever
-     standard metric the raw mean happens to sit nearest. That is how RBANS
-     List Recognition (raw, M 19.6, SD 0.8) came to be read as a scaled score.
-     See the metric:'raw' note in data.js. */
-  if (stats && stats.metric === 'raw') return 'raw';
+  /* 0. Declared, and therefore not a guess — it wins over everything below.
+
+     metric:'raw' is the case that forced this to exist: a raw score is not on
+     a standardised metric at all, and the mean-based heuristic has no raw
+     category, so it picked whichever standard metric the raw mean sat nearest.
+     That is how RBANS List Recognition (raw, M 19.6, SD 0.8) came to be read
+     as a scaled score. See the metric:'raw' note in data.js.
+
+     The other four values are accepted too, so a custom test can also correct
+     a standardised metric the heuristic gets wrong — the Norms Database score
+     type column writes this field. normDB itself only ever uses 'raw'. */
+  if (stats && SCORE_METRICS.has(stats.metric)) return stats.metric;
   // 1. Data-driven: classify by the normative mean's nearest standard metric.
   let mean = null;
   if (stats){
@@ -3571,9 +3583,15 @@ function ctValidateEntry(raw){
     if (!(Number.isFinite(n) && Math.floor(n) === n && n >= 3)) return { ok:false, reason:`N must be a whole number >= 3, got ${raw.n}` };
     entry.n = n;
   }
-  // Only 'raw' is meaningful; anything else would be silently ignored downstream.
-  if (raw.metric === 'raw') entry.metric = 'raw';
-  else if (raw.metric != null && raw.metric !== '') return { ok:false, reason:`metric may only be "raw", got "${raw.metric}"` };
+  /* A declared metric overrides the mean-based guess, so an unrecognised value
+     must be refused rather than stored and silently ignored. '' / absent means
+     "work it out from the mean", which is the default. */
+  if (raw.metric != null && raw.metric !== ''){
+    if (!SCORE_METRICS.has(raw.metric)){
+      return { ok:false, reason:`metric must be one of ${[...SCORE_METRICS].join(', ')}, got "${raw.metric}"` };
+    }
+    entry.metric = raw.metric;
+  }
   return { ok:true, entry };
 }
 
@@ -3634,7 +3652,7 @@ function renderDbList(){
         </div>
         ${subsToShow.map(([name, p]) => `
           <div class="db-subtest-row">
-            <span class="name">${escapeHtml(name)}</span>
+            <span class="name">${escapeHtml(name)}${p.metric ? `<span class="db-metric-tag">${escapeHtml(scoreTypeAbbr(p.metric) || p.metric)}</span>` : ''}</span>
             <span class="num">${fmt(p.m1, 2)}</span>
             <span class="num">${fmt(p.sd1, 2)}</span>
             <span class="num">${fmt(p.m2, 2)}</span>
@@ -3680,8 +3698,31 @@ function refreshAll(selectedFamily){
   rebuildBatteryFamilyList();
   rebuildSdiFamilyList();
 }
+/* Score types a custom entry may declare. '' means "work it out from the mean",
+   which is the old behaviour and stays the default so nothing changes for
+   entries already saved.
+
+   This column exists because the mean-based guess has no way to recognise a
+   raw score. A user-created test with raw norms — say a recognition total out
+   of 20, M 19.6, SD 0.8 — was read as a scaled score, and a genuinely
+   below-average 19 printed as the 99.9th percentile, "Very Superior". The
+   built-in raw families are tagged in normDB; this is the same escape hatch
+   for tests the clinician enters. It also lets any other misclassification be
+   corrected by hand rather than argued with. */
+const CT_METRIC_OPTIONS = [
+  { value:'',         label:'Auto (from mean)' },
+  { value:'scaled',   label:'Scaled (M 10, SD 3)' },
+  { value:'standard', label:'Standard (M 100, SD 15)' },
+  { value:'t',        label:'T (M 50, SD 10)' },
+  { value:'z',        label:'z (M 0, SD 1)' },
+  { value:'raw',      label:'Raw — no percentile' },
+];
 function ctEntryRowHtml(i, seed){
   const row = seed || {};
+  const sel = String(row.metric == null ? '' : row.metric);
+  const opts = CT_METRIC_OPTIONS.map(o =>
+    `<option value="${escapeAttr(o.value)}"${o.value === sel ? ' selected' : ''}>${escapeHtml(o.label)}</option>`
+  ).join('');
   return `<tr>
     <td class="ct-row-num">${i + 1}</td>
     <td><input class="ct-subtest-name" type="text" data-k="name" placeholder="Test name" value="${escapeAttr(row.name || '')}"></td>
@@ -3691,6 +3732,7 @@ function ctEntryRowHtml(i, seed){
     <td><input type="number" step="any" data-k="sd2" value="${row.sd2 != null ? escapeAttr(row.sd2) : ''}"></td>
     <td><input type="number" step="0.01" min="0" max="0.99" data-k="r" value="${row.r != null ? escapeAttr(row.r) : ''}"></td>
     <td><input type="number" step="1" min="3" data-k="n" value="${row.n != null ? escapeAttr(row.n) : ''}"></td>
+    <td><select class="ct-metric-select" data-k="metric" title="The score type this measure is reported on. Leave on Auto unless the app gets it wrong, or the measure is a raw score.">${opts}</select></td>
     <td><button type="button" class="btn btn-ghost btn-icon" data-ct-del-row title="Delete row">×</button></td>
   </tr>`;
 }
@@ -3708,6 +3750,10 @@ function ctRenderRows(rows){
   body.innerHTML = rows.map((r, i) => ctEntryRowHtml(i, r)).join('');
   /* Pure normative entry - every value on a row is read off one row of a test
      manual, so Tab runs across the row and then on to the next. */
+  /* The metric cell is a <select>, so it is deliberately OUTSIDE the tab group:
+     tabbing across a row should run through the numbers read off one row of a
+     manual, and a dropdown in the middle of that would interrupt the rhythm.
+     It is still reachable by tab in normal DOM order. */
   setupTableKeyNav(body, {
     selector: 'input[data-k]',
     keyOf: el => el.dataset.k,
@@ -3722,9 +3768,13 @@ function ctReadRows(){
     const get = k => tr.querySelector(`[data-k="${k}"]`)?.value?.trim() || '';
     const name = get('name');
     const m1s = get('m1'), sd1s = get('sd1'), m2s = get('m2'), sd2s = get('sd2'), rs = get('r'), ns = get('n');
+    const metric = get('metric');
+    /* The metric select always has a value ('' for Auto), so it must NOT count
+       towards "has the user put anything in this row" — otherwise every blank
+       row would look filled and the trailing placeholder would be submitted. */
     const any = [name,m1s,sd1s,m2s,sd2s,rs,ns].some(v => v !== '');
     if (!any) return;
-    out.push({ name, m1s, sd1s, m2s, sd2s, rs, ns });
+    out.push({ name, m1s, sd1s, m2s, sd2s, rs, ns, metric });
   });
   return out;
 }
@@ -3732,7 +3782,7 @@ function ctInitEntryRows(){
   ctRenderRows([{ name:'Example index score', m1:100, sd1:15, m2:103, sd2:15, r:0.90, n:100 }, {}]);
   const body = document.getElementById('ct-entry-body');
   const addBlankRow = () => {
-    const rows = ctReadRows().map(r => ({ name:r.name, m1:r.m1s, sd1:r.sd1s, m2:r.m2s, sd2:r.sd2s, r:r.rs, n:r.ns }));
+    const rows = ctReadRows().map(r => ({ name:r.name, m1:r.m1s, sd1:r.sd1s, m2:r.m2s, sd2:r.sd2s, r:r.rs, n:r.ns, metric:r.metric }));
     rows.push({});
     ctRenderRows(rows);
   };
@@ -3740,7 +3790,7 @@ function ctInitEntryRows(){
     addBlankRow();
   });
   document.getElementById('ct-load-example')?.addEventListener('click', () => {
-    const rows = ctReadRows().map(r => ({ name:r.name, m1:r.m1s, sd1:r.sd1s, m2:r.m2s, sd2:r.sd2s, r:r.rs, n:r.ns }));
+    const rows = ctReadRows().map(r => ({ name:r.name, m1:r.m1s, sd1:r.sd1s, m2:r.m2s, sd2:r.sd2s, r:r.rs, n:r.ns, metric:r.metric }));
     rows.push({ name:'Example trial', m1:10, sd1:3, m2:11, sd2:3, r:0.80, n:100 });
     ctRenderRows(rows);
   });
@@ -3816,6 +3866,16 @@ document.getElementById('ct-add-subtest').addEventListener('click', () => {
     if (n !== null && (!Number.isFinite(n) || n < 3)) return showToast(`N must be ≥ 3 for "${subtest}"`, true);
     const entry = { m1, sd1, m2, sd2, r: rel };
     if (n !== null) entry.n = n;
+    /* Only store a declared metric when the user actually chose one. '' means
+       Auto, and writing metric:'' would look like a declaration to every
+       consumer while resolving to nothing. */
+    const metric = (r.metric || '').trim();
+    if (metric){
+      if (!CT_METRIC_OPTIONS.some(o => o.value === metric)){
+        return showToast(`Unknown score type for "${subtest}"`, true);
+      }
+      entry.metric = metric;
+    }
     c[family][subtest] = entry;
     added += 1;
   }

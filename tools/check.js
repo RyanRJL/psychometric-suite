@@ -73,6 +73,16 @@ function extractFn(source, name) {
 
 const APP_SRC = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
 
+/* Pull a top-level `const NAME = ...;` declaration straight out of the shipped
+   file, so a sandbox gets the REAL value rather than a copy that can drift.
+   Same contract as extractFn: throws rather than silently passing. */
+function extractConst(source, name) {
+  const re = new RegExp('^const\\s+' + name + '\\s*=[^\\n]*(?:\\n(?!const |function |let |var )[^\\n]*)*?;\\s*$', 'm');
+  const m = source.match(re);
+  if (!m) throw new Error('could not find const ' + name + ' in app.js');
+  return m[0];
+}
+
 // ---------------------------------------------------------------------------
 // Tiny harness
 // ---------------------------------------------------------------------------
@@ -1417,6 +1427,7 @@ check('every entry with sd1 < 1 is tagged raw', () => {
   const ctx = {};
   vm.createContext(ctx);
   vm.runInContext(
+    extractConst(APP_SRC, 'SCORE_METRICS') + '\n' +
     ['toZ', 'fromZ', 'normInv', 'normCDF', 'erf', 'inferScoreTypeForSubtest', 'inferScoreType',
      'scoreTypeLabel', 'scoreTypeAbbr', 'sdiSdUnit']
       .map(n => extractFn(APP_SRC, n)).join('\n') +
@@ -1495,7 +1506,9 @@ heading('19. Custom-test entry validation');
 {
   const ctx = {};
   vm.createContext(ctx);
-  vm.runInContext(extractFn(APP_SRC, 'ctValidateEntry') + ';globalThis.__V = ctValidateEntry;', ctx);
+  vm.runInContext(
+    extractConst(APP_SRC, 'SCORE_METRICS') + '\n' +
+    extractFn(APP_SRC, 'ctValidateEntry') + ';globalThis.__V = ctValidateEntry;', ctx);
   const V = ctx.__V;
   const good = { m1: 100, sd1: 15, m2: 103, sd2: 15, r: 0.9, n: 100 };
 
@@ -1554,13 +1567,24 @@ heading('19. Custom-test entry validation');
     return bad.length === 0 || bad.join(', ');
   });
 
-  /* An imported file must not be able to smuggle in a metric the app does not
-     handle, and 'raw' must survive an export/import round trip. */
-  check('metric only accepts \'raw\', and survives a round trip', () => {
-    if (V({ ...good, metric: 'raw' }).entry?.metric !== 'raw') return 'raw was dropped';
-    if (V({ ...good, metric: 'scaled' }).ok) return 'accepted metric "scaled"';
-    if (V(good).entry.metric !== undefined) return 'invented a metric';
-    return true;
+  /* An imported file must not smuggle in a metric the app cannot resolve, and
+     every metric the UI can produce must survive an export/import round trip. */
+  check('every metric the score-type column offers survives a round trip', () => {
+    const bad = [];
+    for (const m of ['z', 't', 'scaled', 'standard', 'raw']) {
+      if (V({ ...good, metric: m }).entry?.metric !== m) bad.push(m + ' was dropped');
+    }
+    return bad.length === 0 || bad.join(', ');
+  });
+
+  check('an unresolvable metric is refused, not stored and ignored', () => {
+    const bad = [];
+    for (const m of ['percentile', 'Scaled', 'sten', 'raw ', 0, true]) {
+      if (V({ ...good, metric: m }).ok) bad.push(JSON.stringify(m));
+    }
+    if (V(good).entry.metric !== undefined) bad.push('invented a metric when none was given');
+    if (V({ ...good, metric: '' }).entry.metric !== undefined) bad.push('empty string became a declaration');
+    return bad.length === 0 || 'accepted ' + bad.join(', ');
   });
 
   check('non-objects are rejected rather than spread into the database', () => {
@@ -1589,6 +1613,56 @@ check('the import try block covers parsing only, not refreshAll()', () => {
   const guarded = src.slice(tryStart, tryEnd);
   return !/refreshAll\s*\(/.test(guarded)
     || 'refreshAll() is inside the try again - a successful import will report "Invalid JSON file"';
+});
+
+/* ---- the Norms Database score-type column ----
+   The last route into the raw-score bug: a user-created test with raw norms
+   was guessed from the mean, because the entry form had nowhere to say what
+   the score type was. A custom "Recognition total" (M 19.6, SD 0.8) at 19 -
+   genuinely the 23rd percentile - printed as the 99.9th, "Very Superior". */
+check('the custom-test entry form offers a score type for every metric', () => {
+  const src = extractFn(APP_SRC, 'ctEntryRowHtml');
+  if (!/data-k="metric"/.test(src)) return 'no metric control on the entry row';
+  const opts = [...APP_SRC.matchAll(/\{\s*value:'([a-z]*)',\s*label:/g)].map(m => m[1]);
+  const want = ['', 'scaled', 'standard', 't', 'z', 'raw'];
+  const missing = want.filter(w => !opts.includes(w));
+  return missing.length === 0
+    || 'CT_METRIC_OPTIONS missing: ' + missing.map(m => m === '' ? '(auto)' : m).join(', ');
+});
+
+check('the score-type column is in the entry table markup', () => {
+  return /Score type<\/th>/.test(HTML_SRC) || 'no "Score type" header in the ct entry table';
+});
+
+check('ctReadRows carries the metric through, but blank rows stay blank', () => {
+  const src = extractFn(APP_SRC, 'ctReadRows');
+  if (!/get\('metric'\)/.test(src)) return 'ctReadRows does not read the metric cell';
+  if (!/out\.push\(\{[^}]*metric/.test(src)) return 'ctReadRows does not return the metric';
+  /* The select always has a value, so it must not count towards "is this row
+     used" - otherwise the trailing placeholder row would submit itself. */
+  const anyLine = src.match(/const any = \[([^\]]*)\]/);
+  if (!anyLine) return 'could not find the row-is-used test';
+  return !/metric/.test(anyLine[1])
+    || 'metric counts towards "row is used"; every blank row would submit';
+});
+
+check('a declared metric overrides the mean-based guess', () => {
+  const src = extractFn(APP_SRC, 'inferScoreTypeForSubtest');
+  if (!/SCORE_METRICS\.has\(stats\.metric\)/.test(src)) return 'declared metric is no longer honoured';
+  // and it must come BEFORE the mean heuristic, or the guess wins
+  const declaredAt = src.indexOf('SCORE_METRICS.has(stats.metric)');
+  const meanAt = src.indexOf("return 'z'");
+  return (declaredAt !== -1 && declaredAt < meanAt)
+    || 'the declared metric is checked after the mean heuristic, so the guess wins';
+});
+
+check('the save handler stores only a metric the app can resolve', () => {
+  const start = APP_SRC.indexOf("getElementById('ct-add-subtest')");
+  if (start === -1) return 'add-subtest handler not found';
+  const src = APP_SRC.slice(start, start + 2200);
+  if (!/CT_METRIC_OPTIONS\.some/.test(src)) return 'handler no longer validates the chosen metric';
+  if (!/if \(metric\)\{/.test(src)) return 'handler no longer skips the Auto case';
+  return true;
 });
 
 check('getCustom survives malformed localStorage instead of throwing', () => {

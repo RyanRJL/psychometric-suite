@@ -998,6 +998,33 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .db-subtest-row .name{color:var(--ink)}
 .db-subtest-row .num{font-family:var(--mono);color:var(--ink-2);text-align:right}
 .db-subtest-row .num-label{font-size:10px;color:var(--faint);text-align:right}
+/* Score-type picker in the custom-test entry table.
+
+   The global `input[type=text], input[type=number], ..., select, textarea`
+   rule sets width:100%, and the entry table is auto-layout, so the column
+   collapsed to whatever the other cells left over — 61px, which renders the
+   select as an unreadable 36px stub. The inline width:170px on the <th> does
+   not survive that.
+
+   min-width on the CONTROL is what forces the column open in auto layout:
+   it wins over the shared width:100% without !important (min-width always
+   beats width), and it is a standalone class, so nothing in
+   design-system.css is competing for it. */
+.ct-metric-select{ min-width:158px; }
+
+/* Score type badge on a database row that DECLARES its metric rather than
+   letting it be worked out from the normative mean. Standalone class on
+   purpose: .db-subtest-row is a 9-column grid declared here and again in the
+   responsive block, so adding a real column would mean editing the template in
+   two places and risking design-system.css overriding one of them. Sitting
+   inside the existing name cell sidesteps the grid entirely. */
+.db-metric-tag{
+  display:inline-block;margin-left:6px;padding:1px 5px;
+  font-family:var(--mono);font-size:9px;line-height:1.5;
+  text-transform:uppercase;letter-spacing:0.06em;
+  color:var(--ink-2);background:var(--surface-2,rgba(0,0,0,0.05));
+  border:1px solid var(--border-soft);border-radius:3px;vertical-align:middle;
+}
 .ct-entry-table th,.ct-entry-table td{text-align:center}
 .ct-entry-table th:nth-child(2),.ct-entry-table td:nth-child(2){text-align:left}
 .ct-entry-table input{width:100%;min-width:72px}
