@@ -1710,11 +1710,8 @@ check('cells spanning several columns are narrowed, not dropped wholesale', () =
 
 /* Every output must go through effectiveItemHtml, which is what applies the
    filter. A new export that read item.html directly would bypass it.
-   Named rather than counted: a count breaks whenever the call sites are
-   refactored (removing the battery merge dropped one) without telling you
-   whether an OUTPUT lost its filtering, which is the thing that matters.
-   The three consumers are: computeBlocks (feeds copyAll / exportExcel /
-   exportWord), copyItem (single-table copy), itemCardHtml (drawer render). */
+   Named rather than counted: a count tells you the number moved, not whether
+   an OUTPUT lost its filtering, which is the only thing this check is for. */
 check('every output path renders through effectiveItemHtml', () => {
   const missing = ['computeBlocks', 'copyItem', 'itemCardHtml'].filter(fn => {
     let src;
@@ -1743,25 +1740,114 @@ check('the plain-text clipboard flavour uses the same blocks as the HTML one', (
   return true;
 });
 
-/* ---- the removed "Merge by battery" feature ----
-   It keyed off a REPORT_TEST_CATALOG that never existed in this app, so
-   catalogBatteryFor() always returned null and the merge never fired - while
-   the toolbar showed a "Merge by battery: On" button that did nothing. */
-check('no Merge-by-battery leftovers remain', () => {
-  const src = stripComments(APP_SRC);
-  const hits = ['mergeBattery', 'catalogBatteryFor', 'buildMergedTableHtml',
-                'subSectionRank', 'toggle-merge', 'REPORT_TEST_CATALOG']
-    .filter(n => new RegExp(n.replace(/[-]/g, '\\-')).test(src));
-  return hits.length === 0 || 'still referenced: ' + hits.join(', ');
+/* ==========================================================================
+   21. Working Report: Merge by battery
+
+   The toolbar button existed and did nothing for want of REPORT_TEST_CATALOG,
+   which was referenced but had never been defined. The catalog now exists, so
+   these guard the two ways it can silently stop working again: a battery whose
+   `name` no longer matches what detectTestFamily() produces, and a normDB
+   family that no catalog entry claims.
+   ========================================================================== */
+heading('21. Merge by battery');
+
+const CATALOG = (() => {
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(extractConst(
+    fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8'), 'REPORT_TEST_CATALOG')
+    + ';globalThis.__C = REPORT_TEST_CATALOG;', ctx);
+  return ctx.__C;
+})();
+
+check('REPORT_TEST_CATALOG exists and every entry is complete', () => {
+  if (!Array.isArray(CATALOG) || !CATALOG.length) return 'catalog missing or empty';
+  const bad = [];
+  CATALOG.forEach(t => {
+    for (const f of ['id', 'name', 'longName']) {
+      if (!t[f] || typeof t[f] !== 'string') bad.push((t.id || '?') + ' missing ' + f);
+    }
+    if (!Array.isArray(t.families) || !t.families.length) bad.push((t.id || '?') + ' has no families');
+  });
+  return bad.length === 0 || bad.join('; ');
 });
 
-check('computeBlocks is a straight pass-through, one block per item', () => {
-  const src = stripComments(extractFn(APP_SRC, 'computeBlocks'));
-  if (/isMerged:\s*true/.test(src)) return 'computeBlocks can still report a merged block';
-  if (!/isMerged:\s*false/.test(src)) return 'computeBlocks no longer states isMerged';
-  if (/groups|byKey/.test(src)) return 'the grouping pass is back without a catalog to key it on';
-  return true;
+check('catalog ids are unique, so two batteries cannot collide', () => {
+  const ids = CATALOG.map(t => t.id);
+  const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+  return dupes.length === 0 || 'duplicate ids: ' + [...new Set(dupes)].join(', ');
 });
+
+/* detectTestFamily() can only ever return a TEST_FAMILY_PATTERNS entry, so a
+   catalog name outside that list is unreachable — the battery would simply
+   never merge, silently, which is the exact failure this feature just had. */
+check('every catalog battery name is one detectTestFamily can actually produce', () => {
+  const m = APP_SRC.match(/const TEST_FAMILY_PATTERNS = \[([\s\S]*?)\];/);
+  if (!m) return 'TEST_FAMILY_PATTERNS not found in app.js';
+  const patterns = [...m[1].matchAll(/'([^']+)'/g)].map(x => x[1]);
+  const unreachable = CATALOG.filter(t => !patterns.includes(t.name)).map(t => t.name);
+  return unreachable.length === 0
+    || 'not in TEST_FAMILY_PATTERNS, so never detected: ' + unreachable.join(', ');
+});
+
+check('every normDB family is claimed by exactly one battery', () => {
+  const bad = [];
+  Object.keys(D.normDB).forEach(group => {
+    const hits = CATALOG.filter(t =>
+      t.families.some(f => group === f || group.startsWith(f + ' ')) ||
+      group.startsWith(t.name + ' '));
+    if (hits.length === 0) bad.push(group + ' -> no battery');
+    else if (hits.length > 1) bad.push(group + ' -> ' + hits.map(h => h.id).join(' AND '));
+  });
+  return bad.length === 0 || bad.length + ' problems, first: ' + bad[0];
+});
+
+/* Premorbid tables name WAIS-IV / WMS-IV as the PREDICTED criterion, so
+   family detection reads them as Wechsler tables. Merging one into an
+   achieved-score table would put predicted and obtained scores in one column. */
+check('premorbid tables are refused a battery, so they can never merge in', () => {
+  const src = extractFn(APP_SRC, 'mergeableBattery');
+  return /startsWith\('pre-'\)/.test(src) && /return null/.test(src)
+    || 'mergeableBattery no longer refuses pre-* sources';
+});
+
+check('the merge key includes the parent tool, not the battery alone', () => {
+  const src = extractFn(APP_SRC, 'computeBlocks');
+  return /sourceId \|\| ''\)\.split\('::'\)\[0\]/.test(src)
+    || 'blocks are keyed on the battery alone; a results table could fuse with '
+     + 'a reliable-change table for the same instrument';
+});
+
+{
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(extractFn(APP_SRC, 'mergedHiddenColumns') + ';globalThis.__M = mergedHiddenColumns;', ctx);
+  const M = ctx.__M;
+
+  /* Members that disagreed about a hidden column produced a table whose
+     sections had different column counts — a Full Scale IQ row printing
+     "100 | Average" under "Score | Percentile | Classification". */
+  check('a merged block hides a column only where every member hides it', () => {
+    const cases = [
+      [[{ hiddenColumns: [2] }, { hiddenColumns: [] }],      [],     'one hides, one does not'],
+      [[{ hiddenColumns: [2] }, { hiddenColumns: [2] }],     [2],    'both hide the same'],
+      [[{ hiddenColumns: [1, 2] }, { hiddenColumns: [2, 3] }], [2],  'partial overlap'],
+      [[{ hiddenColumns: [] }, { hiddenColumns: [] }],       [],     'neither hides'],
+      [[{ hiddenColumns: [1] }, {}],                          [],    'member with no list at all'],
+    ];
+    const bad = cases.filter(([items, want]) =>
+      JSON.stringify(M(items).sort()) !== JSON.stringify(want.sort()));
+    return bad.length === 0
+      || 'wrong for: ' + bad.map(c => c[2] + ' (got ' + JSON.stringify(M(c[0])) + ')').join('; ');
+  });
+
+  check('merged members are re-rendered against that common column set', () => {
+    const src = extractFn(APP_SRC, 'computeBlocks');
+    if (!/mergedHiddenColumns\(/.test(src)) return 'computeBlocks never computes a common set';
+    return /effectiveItemHtml\(m\.item, common\)/.test(src)
+      || 'the common set is computed but the members are not re-rendered with it';
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Summary

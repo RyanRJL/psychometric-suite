@@ -157,7 +157,22 @@ the page is branded Iverson (2001) in six places.
 The **Report Writer** — a page that generated descriptive narrative prose from
 entered scores, ~2.3k lines in `app.js` plus ~2.0k in `design-system.js` — was
 removed in July 2026. If you find a stray `rwAuto*` reference or `.rw-` CSS rule,
-it is a leftover and can go. Do not confuse it with the **Working Report bundle**
+it is a leftover and can go.
+
+**`REPORT_TEST_CATALOG`** (`data.js`) is what lets the Working Report's "Merge by
+battery" button work. The report auto-splits a Score Tables table into one item per
+test family, and the merge puts same-instrument items back together as one table with
+a labelled sub-section each. The catalog was referenced by the merge code but had never
+been defined, so `catalogBatteryFor()` always returned `null` and the button did nothing
+— silently, with no error. Two invariants keep it honest, both in `check.js` §21: every
+catalog `name` must appear in `TEST_FAMILY_PATTERNS` (`app.js`), because that is the only
+thing `detectTestFamily()` can return; and every `normDB` group must be claimed by
+exactly one battery. ToPF and OPIE are deliberately **not** catalogued — their tables
+name WAIS-IV/WMS-IV as the *predicted* criterion, and merging one into an achieved-score
+table would put predicted and obtained scores in the same column. `mergeableBattery()`
+refuses `pre-*` sources outright for the same reason.
+
+Do not confuse the Report Writer with the **Working Report bundle**
 (`app.js`, "WORKING REPORT BUNDLE v2"), which is live and collects APA tables from
 every calculator into a drawer.
 
@@ -327,7 +342,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 119 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 150 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Table 4.5, OPIE-4 coefficients pinned to Table eA5.8, worked OPIE predictions, reliable-
 change thresholds and direction-neutral outcome labels, base-rate reconstruction and

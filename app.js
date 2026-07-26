@@ -5815,19 +5815,40 @@ const ReportBundle = (function(){
     });
     return tmp.innerHTML;
   }
-  function effectiveItemHtml(item){
-    let html = applyHiddenColumns(item.html, item.hiddenColumns || []);
+  /* hiddenOverride lets a merged block impose ONE column set on all its
+     members. Without it each member applied its own, and two members that
+     disagreed produced a table whose sections had different column counts —
+     a Full Scale IQ row printing "100 | Average" under headings
+     "Score | Percentile | Classification", i.e. a value sitting under the
+     wrong heading in an exported report. See mergedHiddenColumns(). */
+  function effectiveItemHtml(item, hiddenOverride){
+    const hidden = hiddenOverride || item.hiddenColumns || [];
+    let html = applyHiddenColumns(item.html, hidden);
     html = applyHeaderOverrides(html, item.headerOverrides || []);
     html = stripTableNumber(html);
     html = ensureBottomRule(html);
     return html;
+  }
+  /* The column set a merged block shows: a column is hidden only where EVERY
+     member hides it. Intersection rather than union, deliberately — hiding is
+     a presentation preference, so resolving a disagreement by showing the
+     column costs the reader a column they did not want, while resolving it the
+     other way would silently drop a member's data from the report. */
+  function mergedHiddenColumns(items){
+    const sets = items.map(it => new Set(it.hiddenColumns || []));
+    if (!sets.length) return [];
+    return [...sets[0]].filter(idx => sets.every(s => s.has(idx)));
   }
 
   /* Detect the test family name (CVLT-3, WAIS-IV, etc.) from a captured APA
      table's content. Used to label the "Added to report" pill with the
      actual test rather than the analysis type. */
   const TEST_FAMILY_PATTERNS = [
-    'CVLT-3', 'CVLT-II', 'CVLT',
+    /* Order matters: the first match wins, so the more specific edition must
+       come before the bare abbreviation. CVLT-C sat missing here while being
+       catalogued as its own battery, so a split CVLT-C item resolved to plain
+       'CVLT' and never matched anything in REPORT_TEST_CATALOG. */
+    'CVLT-3', 'CVLT-C', 'CVLT-II', 'CVLT',
     'D-KEFS',
     'RBANS',
     'WAIS-IV', 'WAIS-V', 'WAIS-III', 'WAIS',
@@ -6146,27 +6167,254 @@ const ReportBundle = (function(){
   }
 
   /* ---------- exports ---------- */
-  /* The "Merge by battery" feature was removed in July 2026. It grouped report
-     items from the same test battery into one combined table, keyed off a
-     REPORT_TEST_CATALOG that no longer exists anywhere in the app - a Report
-     Writer leftover. catalogBatteryFor() guarded on
-     typeof REPORT_TEST_CATALOG === "undefined" and so always returned null,
-     which meant every item became its own group of one and the merge never
-     fired. It failed silently: no error, tables simply stayed separate, while
-     the toolbar carried a "Merge by battery: On" button that did nothing.
-     Removed rather than revived: nothing in the app has ever supplied the
-     catalog, so there is no behaviour here to preserve. */
-  /* One render block per report item. The block shape (ids / items / isMerged /
-     longName / html) is kept because the edit view, the drag-reorder handlers
-     and the exports all read it; isMerged is now always false, which is what it
-     evaluated to at runtime before the merge feature was removed, so nothing
-     downstream changes. */
+  // ---- Merge tables from the same battery into one combined table ----
+  let mergeBattery = true; // default ON (toggle in the report toolbar)
+  // Map a detected family name (e.g. "CVLT-3 Indices") to its battery in the
+  // catalog → full name + the sub-section label ("Indices").
+  function catalogBatteryFor(fam){
+    if (!fam || typeof REPORT_TEST_CATALOG === 'undefined') return null;
+    for (const t of REPORT_TEST_CATALOG){
+      const fams = t.families || [];
+      const base = fams.find(f => fam === f || fam.startsWith(f + ' ') || fam.startsWith(f));
+      if (base || fam === t.name || fam.startsWith(t.name + ' ')){
+        const stripFrom = base || t.name;
+        let sub = fam.slice(stripFrom.length).replace(/^[\s·•:.\-]+/, '').trim();
+        if (!sub) sub = fam.replace(t.name, '').replace(/^[\s·•:.\-]+/, '').trim();
+        return { id: t.id, name: t.name, longName: t.longName || t.name, subLabel: sub || t.name };
+      }
+    }
+    return null;
+  }
+  // Build one combined table from several same-battery tables, matching the
+  // mockup: full battery-name title, each source table's header row kept as a
+  // labelled sub-section, body rows beneath, one Note at the bottom.
+  function buildMergedTableHtml(longName, sections){
+    const wrap = document.createElement('div');
+    wrap.innerHTML =
+      `<div class="apa-table-title" style="font-family:'Times New Roman',serif;font-size:11pt;font-style:italic;color:#000;margin:0 0 8pt 0;line-height:1.4;">${longName}</div>`;
+    const table = document.createElement('table');
+    table.className = 'apa-table';
+    table.setAttribute('style', "border-collapse:collapse;font-family:'Times New Roman',serif;font-size:11pt;color:#000;width:auto;");
+    let note = null;
+
+    // Parse each section's source table once.
+    const parsed = sections.map(sec => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = sec.html;
+      const src = tmp.querySelector('.apa-table');
+      const headRows = src ? [...src.querySelectorAll('thead tr')] : [];
+      const colRow = headRows.length ? headRows[headRows.length - 1] : null;
+      const bodyRows = src ? [...src.querySelectorAll('tbody tr')].filter(r => !r.classList.contains('apa-group')) : [];
+      const noteEl = tmp.querySelector('.apa-note');
+      return { sec, src, headRows, colRow, bodyRows, noteEl, colCount: colRow ? colRow.children.length : 0 };
+    }).filter(p => p.src);
+    /* Merge the sections' notes instead of keeping only the first. Sections of
+       one battery usually share a note, so dedupe on text — but where they
+       differ (a section using raw r, say) the caveat has to survive, and the
+       old first-note-wins rule silently dropped it. */
+    {
+      const seen = new Set();
+      const bodies = [];
+      parsed.forEach(p => {
+        if (!p.noteEl) return;
+        const key = (p.noteEl.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        const clone = p.noteEl.cloneNode(true);
+        // Drop the leading "Note." label from all but the first — one label
+        // introduces the combined note.
+        if (bodies.length){
+          const label = clone.querySelector('strong');
+          if (label) label.remove();
+        }
+        bodies.push(clone);
+      });
+      if (bodies.length){
+        note = bodies[0];
+        bodies.slice(1).forEach(extra => {
+          note.appendChild(document.createTextNode(' '));
+          while (extra.firstChild) note.appendChild(extra.firstChild);
+        });
+      }
+    }
+
+    // A single shared column-header row only works when every section has the
+    // same columns; otherwise fall back to per-section headers (legacy) to avoid
+    // misalignment.
+    const counts = parsed.map(p => p.colCount);
+    const uniform = parsed.length > 0 && counts.every(c => c > 0 && c === counts[0]);
+    const tbody = document.createElement('tbody');
+
+    if (uniform){
+      // One column-header row at the top (labels from the first section; its
+      // first cell already reads "Subtest"). Each sub-section becomes a
+      // full-width bold divider row, with data rows beneath.
+      const thead = document.createElement('thead');
+      thead.appendChild(parsed[0].colRow.cloneNode(true));
+      table.appendChild(thead);
+      const colspan = counts[0];
+      parsed.forEach((p, si) => {
+        if (p.sec.subLabel){
+          const dr = document.createElement('tr');
+          dr.className = 'apa-group';
+          const td = document.createElement('td');
+          td.setAttribute('colspan', String(colspan));
+          td.setAttribute('style', "font-family:'Times New Roman',serif;font-size:11pt;font-weight:bold;color:#000;text-align:left;padding:" + (si > 0 ? '10pt' : '4pt') + " 0 2pt;");
+          td.textContent = p.sec.subLabel;
+          dr.appendChild(td);
+          tbody.appendChild(dr);
+        }
+        p.bodyRows.forEach(r => tbody.appendChild(r.cloneNode(true)));
+      });
+    } else {
+      // Fallback: per-section header rows, sub-label in the first header cell.
+      parsed.forEach((p, si) => {
+        p.headRows.forEach((hr, hi) => {
+          const tr = hr.cloneNode(true);
+          if (hi === 0 && p.sec.subLabel){
+            const fc = tr.querySelector('th, td');
+            if (fc) fc.textContent = p.sec.subLabel;
+          }
+          if (hi === 0 && si > 0){
+            tr.querySelectorAll('th, td').forEach(c => {
+              const s = (c.getAttribute('style') || '').replace(/border-top\s*:[^;]*;?/gi, '');
+              c.setAttribute('style', s + 'border-top:1.5pt solid #000;');
+            });
+          }
+          tbody.appendChild(tr);
+        });
+        p.bodyRows.forEach(r => tbody.appendChild(r.cloneNode(true)));
+      });
+    }
+    table.appendChild(tbody);
+    // Strip per-section bottom rules inherited from the source tables (these
+    // showed as lines between merged sections); only the final row should carry
+    // the closing rule, added below.
+    table.querySelectorAll('tbody td, tbody th').forEach(c => {
+      const s = (c.getAttribute('style') || '').replace(/border-bottom\s*:[^;]*;?/gi, '');
+      c.setAttribute('style', s);
+    });
+    // Bottom rule under the last row with content
+    const rows = [...table.querySelectorAll('tbody tr')];
+    for (let k = rows.length - 1; k >= 0; k--){
+      if (rows[k].textContent.trim()){
+        rows[k].querySelectorAll('td, th').forEach(c => {
+          const s = (c.getAttribute('style') || '').replace(/border-bottom\s*:[^;]*;?/gi, '');
+          c.setAttribute('style', s + 'border-bottom:1.5pt solid #000;padding-bottom:3pt;');
+        });
+        break;
+      }
+    }
+    wrap.appendChild(table);
+    if (note) wrap.appendChild(note);
+    return wrap.innerHTML;
+  }
+  // Group report items by battery; merge groups of 2+, pass singles through.
+  /* Group state.items into ordered render blocks. When merge is on, same-battery
+     items (2+) collapse into one block. Each block carries its member ids so the
+     edit view can attach group-level controls (reorder / remove / copy). The
+     html is processed (hidden cols, overrides, bottom rule, merge) but NOT yet
+     renumbered — callers renumber by block position. */
+  // The label shown on each merged section header (e.g. "Indices", "Core
+  // Subtests"). Prefer the catalog sub-label derived from the table's own group
+  // row; but split items keep only data rows (no group row), so detectTestFamily
+  // collapses to the bare battery name — in that case fall back to the item's
+  // sourceTool/title, which still carries the sub-section, and strip the battery
+  // name + age suffix off it.
+  function deriveSubLabel(it, info){
+    if (info && info.subLabel && info.subLabel !== info.name) return info.subLabel;
+    const raw = stripAgeRange(((it && (it.sourceTool || it.title)) || '')).trim();
+    if (info && info.name && raw){
+      const esc = info.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const stripped = raw.replace(new RegExp('^' + esc + '\\b'), '').replace(/^[\s·•:.\-]+/, '').trim();
+      if (stripped) return stripped;
+    }
+    return (info && info.subLabel) || raw || (info ? info.name : '');
+  }
+  // Default sub-section order within a merged battery: Indices → Core →
+  // Supplementary → Process → (anything else). CVLT trials sit just after the
+  // indices. Lower number = earlier.
+  function subSectionRank(subLabel){
+    const s = (subLabel || '').toLowerCase();
+    if (/index|indices|composite/.test(s)) return 0;
+    if (/core/.test(s))                    return 1;
+    if (/trial/.test(s))                   return 1;
+    if (/supplement/.test(s))              return 2;
+    if (/process/.test(s))                 return 3;
+    return 50;
+  }
+  /* The battery an item may be merged under, or null if it must stand alone.
+
+     Premorbid tables are refused outright. Their content names WAIS-IV and
+     WMS-IV because those are the PREDICTED criteria, so detectTestFamily reads
+     them as Wechsler tables and the merge would stack a predicted-score table
+     into an achieved-score one — the two sets of numbers side by side in one
+     column, which is the single worst thing this feature could do. Same reason
+     buildIntelligentTitle and pillLabelFor skip family detection for pre-*. */
+  function mergeableBattery(item, processedHtml){
+    const parentId = (item.sourceId || '').split('::')[0];
+    if (parentId.startsWith('pre-')) return null;
+    return catalogBatteryFor(detectTestFamily(processedHtml));
+  }
   function computeBlocks(items){
     const list = items || state.items;
-    return list.map(it => ({
-      ids: [it.id], items: [it], isMerged: false, longName: null,
-      html: effectiveItemHtml(it)
-    }));
+    if (!(mergeBattery && list.length > 1)){
+      return list.map(it => ({ ids: [it.id], items: [it], isMerged: false, longName: null, html: effectiveItemHtml(it) }));
+    }
+    const groups = [];
+    const byKey = new Map();
+    list.forEach(it => {
+      const processed = effectiveItemHtml(it);
+      const info = mergeableBattery(it, processed);
+      /* Key on the battery AND the parent tool. Two tables merge only when they
+         are the same instrument AND the same analysis — which is exactly the
+         case the split creates, one Score Tables entry arriving as "WAIS-IV
+         Indices" + "WAIS-IV Core Subtests".
+
+         Keying on the battery alone would also fuse a Score Tables results
+         table with a reliable-change table for the same instrument. Those carry
+         different columns and answer different questions, and stacking them
+         under one title would misrepresent both. */
+      const key = info ? `${(it.sourceId || '').split('::')[0]}::${info.id}` : null;
+      const member = { id: it.id, item: it, html: processed, subLabel: deriveSubLabel(it, info) };
+      if (key && byKey.has(key)){
+        byKey.get(key).members.push(member);
+      } else {
+        const g = { key, longName: info ? info.longName : null, members: [member] };
+        groups.push(g);
+        if (key) byKey.set(key, g);
+      }
+    });
+    return groups.map(g => {
+      // Order members: a user-pinned mergeRank wins; otherwise the canonical
+      // sub-section order. Stable on insertion order as the tiebreak.
+      const ordered = g.members
+        .map((m, i) => ({ m, i }))
+        .sort((a, b) => {
+          const ka = Number.isFinite(a.m.item.mergeRank) ? a.m.item.mergeRank : subSectionRank(a.m.subLabel);
+          const kb = Number.isFinite(b.m.item.mergeRank) ? b.m.item.mergeRank : subSectionRank(b.m.subLabel);
+          return ka !== kb ? ka - kb : a.i - b.i;
+        })
+        .map(x => x.m);
+      const isMerged = ordered.length > 1;
+      /* Re-render the members against ONE column set before combining them.
+         Each was processed above with its own hiddenColumns, and members that
+         disagreed produced sections of different widths in the same table. */
+      if (isMerged){
+        const common = mergedHiddenColumns(ordered.map(m => m.item));
+        ordered.forEach(m => { m.html = effectiveItemHtml(m.item, common); });
+      }
+      return {
+        key: g.key,
+        ids: ordered.map(m => m.id),
+        items: ordered.map(m => m.item),
+        isMerged,
+        longName: g.longName,
+        html: isMerged
+          ? buildMergedTableHtml(g.longName, ordered.map(m => ({ html: m.html, subLabel: m.subLabel })))
+          : ordered[0].html
+      };
+    });
   }
   function mergeReportBlocks(items){
     return computeBlocks(items).map(b => b.html);
@@ -6384,6 +6632,9 @@ ${buildReportHtmlBody()}
             New report
           </button>
           <div class="rb-actions-right">
+            <button class="btn rb-action-merge" data-rb-action="toggle-merge" type="button" title="Combine tables from the same test battery into one (e.g. all CVLT-3 tables → one table)">
+              Merge by battery: On
+            </button>
             <button class="btn rb-action-copy" data-rb-action="copy" type="button">
               <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M2 9V3a1 1 0 0 1 1-1h6"/></svg>
               Copy all tables
@@ -6439,6 +6690,11 @@ ${buildReportHtmlBody()}
         else if (action === 'dismiss-onboarding') dismissOnboarding();
         else if (action === 'mode-edit')    setPreviewMode(false);
         else if (action === 'mode-preview') setPreviewMode(true);
+        else if (action === 'toggle-merge') {
+          mergeBattery = !mergeBattery;
+          rootEl.querySelectorAll('[data-rb-action="toggle-merge"]').forEach(b => { b.textContent = 'Merge by battery: ' + (mergeBattery ? 'On' : 'Off'); });
+          render();
+        }
         return;
       }
       // Per-item: Copy single table
@@ -7137,14 +7393,6 @@ ${buildReportHtmlBody()}
 
   /* A merged battery group card — group-level controls (one combined table,
      reorder/copy/remove the group, plus per-member remove). */
-  /* UNREACHABLE since the "Merge by battery" feature was removed: computeBlocks
-     now always reports isMerged false, so render() never takes this branch.
-     Kept, along with moveWithinGroup / copyGroup / removeMany and their
-     delegated handlers, because they are the scaffolding a revived merge would
-     need, and because removing them means surgery on the event-delegation block
-     for no behavioural gain. Nothing emits the data-rb-member-action /
-     data-rb-group-copy / data-rb-group-remove attributes those handlers look
-     for, so they are inert rather than merely unused. */
   function groupCardHtml(block, num, isFirst, isLast){
     const idKey = escapeHtmlLocal(block.ids.join(','));
     const anchor = escapeHtmlLocal(block.ids[0]);

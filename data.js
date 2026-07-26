@@ -5,6 +5,54 @@
 
 let normDB = {}; // populated below + custom
 
+/* ============================================================
+   REPORT_TEST_CATALOG — batteries the Working Report may merge
+
+   The Working Report auto-splits a Score Tables table into one item per test
+   family, so a battery entered in one go arrives as several items ("WAIS-IV
+   Indices", "WAIS-IV Core Subtests", …). "Merge by battery" puts them back
+   together as one table with a labelled sub-section per family, which is how a
+   report presents a battery.
+
+   This list is what tells the merge which families belong to the same
+   instrument. It was referenced by the code but had never existed — the merge
+   silently did nothing for want of it.
+
+   Each entry:
+     id        stable key the merge groups on; never shown
+     name      the abbreviation detectTestFamily() finds in the table text.
+               MUST match a TEST_FAMILY_PATTERNS entry in app.js or nothing
+               will ever resolve to this battery.
+     longName  the merged table's title, so a medico-legal reader gets the
+               instrument in full rather than an abbreviation
+     families  prefixes that map onto this battery. Kept separate from `name`
+               so an instrument whose normDB groups do not start with the
+               abbreviation can still be attached.
+
+   Only the seven instrument families in normDB are listed. ToPF and OPIE are
+   deliberately absent: they are premorbid PREDICTORS, and their tables name
+   WAIS-IV / WMS-IV as the predicted criterion. Cataloguing them would let a
+   predicted-score table merge into an achieved-score one. The merge also
+   refuses pre-* sources outright — belt and braces, since that particular
+   confusion would put predicted and obtained scores in one column.
+   ============================================================ */
+const REPORT_TEST_CATALOG = [
+  { id:'wais-iv', name:'WAIS-IV', families:['WAIS-IV'],
+    longName:'Wechsler Adult Intelligence Scale – Fourth Edition (WAIS-IV)' },
+  { id:'wms-iv',  name:'WMS-IV',  families:['WMS-IV'],
+    longName:'Wechsler Memory Scale – Fourth Edition (WMS-IV)' },
+  { id:'wisc-v',  name:'WISC-V',  families:['WISC-V'],
+    longName:'Wechsler Intelligence Scale for Children – Fifth Edition (WISC-V)' },
+  { id:'cvlt-3',  name:'CVLT-3',  families:['CVLT-3'],
+    longName:'California Verbal Learning Test – Third Edition (CVLT-3)' },
+  { id:'cvlt-c',  name:'CVLT-C',  families:['CVLT-C'],
+    longName:'California Verbal Learning Test – Children’s Version (CVLT-C)' },
+  { id:'d-kefs',  name:'D-KEFS',  families:['D-KEFS'],
+    longName:'Delis–Kaplan Executive Function System (D-KEFS)' },
+  { id:'rbans',   name:'RBANS',   families:['RBANS'],
+    longName:'Repeatable Battery for the Assessment of Neuropsychological Status (RBANS Update)' },
+];
+
 // ToPF Raw (0-70) → estimated FSIQ
 const TOPF_TO_FSIQ = [
   42,45,48,51,54,57,59,62,64,66,
