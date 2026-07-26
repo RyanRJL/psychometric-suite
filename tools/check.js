@@ -2227,13 +2227,9 @@ check('screen, in-place edit and APA export all render via batteryRowPctCell', (
   });
   /* The in-place handler lives inside renderBattery, so it is covered above,
      but assert its own path explicitly since it is the one that can go stale
-     while the full render stays correct — and it must refresh EVERY cell when
-     the mode flips, not only the row being typed into. */
+     while the full render stays correct. */
   const rb = extractFn(APP_SRC, 'renderBattery');
-  if (!/rowsToRefresh/.test(rb)) missing.push('in-place update');
-  if (!/liveMode === pctMode \? \[i\] : batteryRows\.map/.test(rb)) {
-    missing.push('in-place update does not rewrite the other rows when the mode flips');
-  }
+  if (!/pctCell\.textContent = cellVal/.test(rb)) missing.push('in-place update');
   return missing.length === 0
     || 'these do not use batteryRowPctCell: ' + missing.join(', ');
 });
@@ -2245,16 +2241,58 @@ check('batteryRowPctCell is the only thing that picks between the two quantities
   return true;
 });
 
-/* A base rate and a percentile run in opposite directions, so the heading must
-   follow whatever the cells are actually holding. */
-check('the column heading follows the quantity, and flips back when mixed', () => {
-  const mode = extractFn(APP_SRC, 'batteryPctColumnMode');
-  if (!/every\(r => batteryBaseRateEntry\(r\)\)/.test(mode)) {
-    return 'the mode no longer requires EVERY scored row to be a base-rate row, so a '
-         + 'mixed table could print base rates under a "Percentile" heading';
+/* A base-rate measure must report a base rate REGARDLESS of what else is in the
+   table. An earlier version switched the whole column between the two
+   quantities depending on the other rows, which meant a longest-span value
+   silently changed meaning when an unrelated subtest was entered — and, because
+   the switch ignored seeded example rows while still rendering them, a table
+   could print "Base rate" above a cell holding a percentile. */
+check('a base-rate row reports a base rate whatever else is in the table', () => {
+  const src = extractFn(APP_SRC, 'batteryRowPctCell');
+  if (/mode/.test(src)) {
+    return 'batteryRowPctCell takes a mode again, so a base-rate row can be converted '
+         + 'depending on its neighbours';
   }
+  // the base-rate branch must come first and return unconditionally
+  const brAt = src.indexOf('batteryBaseRateEntry');
+  const pctAt = src.indexOf('batteryRowPercentile');
+  return (brAt !== -1 && brAt < pctAt)
+    || 'the percentile path is reached before the base-rate one';
+});
+
+/* Because the quantity is per-measure, the label has to be per-section too. */
+check('a base-rate section carries its own column heading, on screen and in export', () => {
+  const bad = [];
   const rb = extractFn(APP_SRC, 'renderBattery');
-  return /updateBatteryPctHeader\(/.test(rb) || 'renderBattery never sets the heading';
+  if (!/batteryGroupIsBaseRate\(gKey\)/.test(rb)) bad.push('editable table emits no section heading');
+  if (!/group-col-header/.test(rb)) bad.push('editable table heading row has no class');
+  const apa = extractFn(APP_SRC, 'buildApaTableFromColumns');
+  if (!/groupLabel/.test(apa)) bad.push('APA builder ignores per-section column labels');
+  if (!/apa-group-cols/.test(apa)) bad.push('APA section heading row has no class');
+  if (!/groupLabel: g => \(batteryGroupIsBaseRate\(g\)/.test(APP_SRC)) {
+    bad.push('the percentile column defines no groupLabel, so the export loses the distinction');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the main column heading is fixed and never switches quantity', () => {
+  if (/batteryPctColumnMode|updateBatteryPctHeader/.test(APP_SRC)) {
+    return 'the toggling heading is back; a longest-span row would change quantity '
+         + 'when an unrelated subtest is entered';
+  }
+  return /const BAT_PCT_LABEL = 'Percentile'/.test(APP_SRC)
+    || 'the fixed heading constant is gone';
+});
+
+/* The example row is seeded with isExample and is still rendered. Any rule that
+   decides how to LABEL a column must therefore account for it, or the heading
+   and the cells disagree — which is exactly how this broke the first time. */
+check('seeded example rows cannot desynchronise a heading from its cells', () => {
+  // with a per-row quantity there is no table-wide decision to get wrong
+  const src = extractFn(APP_SRC, 'batteryRowPctCell');
+  return !/isExample/.test(src)
+    || 'batteryRowPctCell inspects isExample, which means the quantity is being '
+     + 'decided table-wide again';
 });
 
 check('base rates are not run through fmtPct, which clamps 100 away', () => {

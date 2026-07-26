@@ -402,6 +402,20 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 .input-table .row-num{width:28px;color:var(--faint);font-family:var(--mono);font-size:11px;text-align:center;padding-left:0}
 .input-table .row-actions{width:34px;text-align:center}
 .input-table td input[type="number"]{text-align:center;font-family:var(--mono)}
+/* Per-section column heading in the editable table, for a section that reports
+   a different quantity from the rest of the table. Deliberately quieter than
+   the real thead: it labels one column for the rows below it, and should not
+   read as the table starting again. Standalone classes — no shared selector is
+   touched, so nothing in design-system.css can override it. */
+.input-table tr.group-col-header td{
+  background:transparent;border-top:none;border-bottom:none;
+  padding:0 10px 4px;
+}
+.input-table tr.group-col-header td.group-col-label{
+  font-family:var(--sans);font-size:9.5px;font-weight:600;
+  letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--faint);text-align:right;white-space:nowrap;
+}
 .input-table tr.group-header td{
   background:transparent;
   font-family:var(--sans);font-size:10.5px;
@@ -563,6 +577,12 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 .apa-table tbody tr:first-child td{padding-top:8px}
 .apa-note{font-family:var(--serif);font-size:12.5px;font-style:italic;color:#000;margin-top:10px;line-height:1.45}
 .apa-table tr.apa-group td{padding:10px 12px 4px;border:none;font-style:italic;font-weight:600;font-family:var(--serif);color:#000}
+/* Column heading belonging to one section, where that section reports a
+   different quantity from the rest of the table (base rate, not percentile).
+   Standalone classes so nothing in design-system.css competes: it must read as
+   a heading for the rows beneath, not as a second table header, so it is set
+   smaller and lighter than .apa-group above it. */
+.apa-table tr.apa-group-cols td{padding:2px 12px 4px;border:none;font-size:0.85em;font-style:italic;color:#333}
 .apa-table tr.apa-grouped-row td:first-child{padding-left:24px}
 /* Note. label: bold italic per APA 7 Â§7.14 */
 .apa-note strong{font-weight:700;font-style:italic}
