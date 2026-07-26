@@ -3525,8 +3525,57 @@ document.querySelectorAll('[data-clear]').forEach(btn => {
 /* ============================================================
    08 · CUSTOM TESTS DATABASE MANAGEMENT
    ============================================================ */
-function getCustom(){ return JSON.parse(localStorage.getItem('customTests') || '{}'); }
+/* A corrupt or hand-edited localStorage value must not take the app down.
+   getCustom() is reached from getMergedDB(), which every autofill path and the
+   Score Tables reliability lookup call, so a throw here is not a local failure.
+   JSON.parse also returns non-objects for valid JSON ("null", "[1,2]", a bare
+   string), and spreading those into the merged database produced families
+   named "0" and "1". Anything that is not a plain object is discarded. */
+function getCustom(){
+  let parsed;
+  try { parsed = JSON.parse(localStorage.getItem('customTests') || '{}'); }
+  catch (e){ console.warn('customTests is not valid JSON; ignoring it', e); return {}; }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+  return parsed;
+}
 function saveCustom(c){ localStorage.setItem('customTests', JSON.stringify(c)); }
+
+/* The SAME rules the "Add subtest" form enforces (see the ct-add-subtest
+   handler), applied to one entry and returned rather than shown as a toast, so
+   the import path can reuse them.
+
+   Import used to apply none of these. A hand-edited or shared file could put a
+   negative sd1 into the clinical database, which passes Number.isFinite and
+   then prints a confidence interval whose lower bound sits ABOVE its upper
+   bound; or an r of 1.5, which makes sqrt(1-r) NaN. Export/import is the
+   intended way to move a database between machines, so the file is not a
+   trusted input.
+
+   Returns { ok:true, entry } with a clean, numeric-typed entry, or
+   { ok:false, reason }. */
+function ctValidateEntry(raw){
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { ok:false, reason:'not an object' };
+  const num = v => (typeof v === 'number' ? v : (typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN));
+  const m1 = num(raw.m1), sd1 = num(raw.sd1), m2 = num(raw.m2), sd2 = num(raw.sd2), r = num(raw.r);
+  if (![m1, sd1, m2, sd2, r].every(Number.isFinite)) return { ok:false, reason:'m1, sd1, m2, sd2 and r must all be numbers' };
+  if (!(r >= 0 && r < 1))   return { ok:false, reason:`r must be in [0, 1), got ${r}` };
+  if (!(sd1 > 0 && sd2 > 0)) return { ok:false, reason:'SDs must be positive' };
+  const entry = { m1, sd1, m2, sd2, r };
+  if (raw.rCorrected != null && raw.rCorrected !== ''){
+    const rc = num(raw.rCorrected);
+    if (!(Number.isFinite(rc) && rc >= 0 && rc < 1)) return { ok:false, reason:`rCorrected must be in [0, 1), got ${raw.rCorrected}` };
+    entry.rCorrected = rc;
+  }
+  if (raw.n != null && raw.n !== ''){
+    const n = num(raw.n);
+    if (!(Number.isFinite(n) && Math.floor(n) === n && n >= 3)) return { ok:false, reason:`N must be a whole number >= 3, got ${raw.n}` };
+    entry.n = n;
+  }
+  // Only 'raw' is meaningful; anything else would be silently ignored downstream.
+  if (raw.metric === 'raw') entry.metric = 'raw';
+  else if (raw.metric != null && raw.metric !== '') return { ok:false, reason:`metric may only be "raw", got "${raw.metric}"` };
+  return { ok:true, entry };
+}
 
 function refreshFamilySelect(selectedFamily){
   const sel = document.getElementById('ct-family-select');
@@ -3796,20 +3845,59 @@ document.getElementById('ct-import').addEventListener('change', e => {
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
+    /* The try covers PARSING ONLY. It used to wrap refreshAll() too, so when
+       refreshAll() threw, a successful import saved the data, announced
+       success, then announced "Invalid JSON file" from the catch. Anything
+       that is not a parse failure must stay outside this block. */
+    let data;
     try {
-      const data = JSON.parse(reader.result);
-      if (typeof data !== 'object') throw 0;
-      // Merge with existing custom
-      const c = getCustom();
-      Object.entries(data).forEach(([fam, subs]) => {
-        c[fam] = { ...(c[fam] || {}), ...subs };
-      });
-      saveCustom(c);
-      showToast('✓ Imported custom tests');
-      refreshAll();
+      data = JSON.parse(reader.result);
     } catch (err) {
       showToast('Invalid JSON file', true);
+      return;
     }
+    /* typeof null is 'object', and so is an array - both used to get past the
+       old guard and produce families keyed "0", "1", ... */
+    if (!data || typeof data !== 'object' || Array.isArray(data)){
+      showToast('That file is not a custom-test database', true);
+      return;
+    }
+
+    /* Validate every entry against the same rules the on-screen form enforces,
+       and import only what passes. A partially-bad file imports its good rows
+       and names what it dropped, rather than being rejected wholesale or - as
+       before - accepted wholesale. */
+    const c = getCustom();
+    let accepted = 0;
+    const rejected = [];
+    Object.entries(data).forEach(([fam, subs]) => {
+      if (!fam || !subs || typeof subs !== 'object' || Array.isArray(subs)){
+        rejected.push(`${fam || '(unnamed family)'}: not a family of subtests`);
+        return;
+      }
+      const clean = {};
+      Object.entries(subs).forEach(([name, raw]) => {
+        const v = ctValidateEntry(raw);
+        if (v.ok){ clean[name] = v.entry; accepted++; }
+        else rejected.push(`${fam} / ${name}: ${v.reason}`);
+      });
+      if (Object.keys(clean).length) c[fam] = { ...(c[fam] || {}), ...clean };
+    });
+
+    if (rejected.length){
+      console.warn('Custom test import skipped ' + rejected.length + ' entr' +
+                   (rejected.length === 1 ? 'y' : 'ies') + ':\n  ' + rejected.join('\n  '));
+    }
+    if (!accepted){
+      showToast(rejected.length ? `No valid entries - ${rejected[0]}` : 'File contained no test data', true);
+      return;
+    }
+    saveCustom(c);
+    refreshAll();
+    showToast(rejected.length
+      ? `✓ Imported ${accepted}; skipped ${rejected.length} invalid (see console)`
+      : `✓ Imported ${accepted} entr${accepted === 1 ? 'y' : 'ies'}`,
+      rejected.length > 0);
   };
   reader.readAsText(file);
   e.target.value = '';

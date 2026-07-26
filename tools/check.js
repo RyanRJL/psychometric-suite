@@ -1477,6 +1477,127 @@ check('sdiComputeChange rejects a row whose metric has no SD unit', () => {
     || 'sdiComputeChange no longer guards a missing SD unit — a raw row would divide by undefined';
 });
 
+/* ==========================================================================
+   19. Imported custom tests are validated like typed ones
+
+   The "Add subtest" form checks that m1/sd1/m2/sd2/r are all present and
+   numeric, that r is in [0,1), that the SDs are positive and that N (if given)
+   is a whole number >= 3. Import applied NONE of that and merged the file
+   straight into the clinical database, so a negative sd1 - which passes
+   Number.isFinite - produced a confidence interval with its lower bound above
+   its upper bound, and an r of 1.5 made sqrt(1-r) NaN.
+
+   ctValidateEntry now holds those rules once. These checks pin it to the same
+   thresholds the form uses.
+   ========================================================================== */
+heading('19. Custom-test entry validation');
+
+{
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(extractFn(APP_SRC, 'ctValidateEntry') + ';globalThis.__V = ctValidateEntry;', ctx);
+  const V = ctx.__V;
+  const good = { m1: 100, sd1: 15, m2: 103, sd2: 15, r: 0.9, n: 100 };
+
+  check('a well-formed entry is accepted and returned numeric-typed', () => {
+    const v = V(good);
+    if (!v.ok) return 'rejected: ' + v.reason;
+    const e = v.entry;
+    const bad = ['m1','sd1','m2','sd2','r','n'].filter(k => typeof e[k] !== 'number');
+    return bad.length === 0 || 'not coerced to number: ' + bad.join(', ');
+  });
+
+  check('numeric strings are accepted and coerced, as the form does', () => {
+    const v = V({ m1:'100', sd1:'15', m2:'103', sd2:'15', r:'0.9' });
+    return (v.ok && v.entry.sd1 === 15 && v.entry.r === 0.9) || 'got ' + JSON.stringify(v);
+  });
+
+  check('the reliability bounds match the form: r must be in [0, 1)', () => {
+    const cases = [[-0.1, false], [0, true], [0.5, true], [0.999, true], [1, false], [1.5, false]];
+    const bad = cases.filter(([r, want]) => V({ ...good, r }).ok !== want).map(([r]) => 'r=' + r);
+    return bad.length === 0 || 'wrong verdict for ' + bad.join(', ');
+  });
+
+  check('negative and zero SDs are rejected, in both sd1 and sd2', () => {
+    const bad = [];
+    for (const sd of [-15, 0]) {
+      if (V({ ...good, sd1: sd }).ok) bad.push('sd1=' + sd);
+      if (V({ ...good, sd2: sd }).ok) bad.push('sd2=' + sd);
+    }
+    return bad.length === 0 || 'accepted ' + bad.join(', ');
+  });
+
+  check('N must be a whole number >= 3 when present, and may be omitted', () => {
+    const bad = [];
+    if (!V({ m1:100, sd1:15, m2:103, sd2:15, r:0.9 }).ok) bad.push('omitted N rejected');
+    for (const [n, want] of [[2, false], [3, true], [100, true], [10.5, false], ['abc', false]]) {
+      if (V({ ...good, n }).ok !== want) bad.push('n=' + n);
+    }
+    return bad.length === 0 || bad.join(', ');
+  });
+
+  check('a missing required field is rejected, not defaulted', () => {
+    const bad = [];
+    for (const k of ['m1', 'sd1', 'm2', 'sd2', 'r']) {
+      const e = { ...good }; delete e[k];
+      if (V(e).ok) bad.push('accepted without ' + k);
+    }
+    return bad.length === 0 || bad.join(', ');
+  });
+
+  check('rCorrected, when supplied, is held to the same [0, 1) bound as r', () => {
+    const bad = [];
+    if (!V({ ...good, rCorrected: 0.93 }).ok) bad.push('valid rCorrected rejected');
+    if (V({ ...good, rCorrected: 1.2 }).ok) bad.push('rCorrected 1.2 accepted');
+    if (V({ ...good, rCorrected: -0.1 }).ok) bad.push('rCorrected -0.1 accepted');
+    if (V({ ...good, rCorrected: '' }).entry?.rCorrected !== undefined) bad.push('empty rCorrected became a value');
+    return bad.length === 0 || bad.join(', ');
+  });
+
+  /* An imported file must not be able to smuggle in a metric the app does not
+     handle, and 'raw' must survive an export/import round trip. */
+  check('metric only accepts \'raw\', and survives a round trip', () => {
+    if (V({ ...good, metric: 'raw' }).entry?.metric !== 'raw') return 'raw was dropped';
+    if (V({ ...good, metric: 'scaled' }).ok) return 'accepted metric "scaled"';
+    if (V(good).entry.metric !== undefined) return 'invented a metric';
+    return true;
+  });
+
+  check('non-objects are rejected rather than spread into the database', () => {
+    const bad = [null, undefined, 42, 'x', [1, 2], []].filter(v => V(v).ok);
+    return bad.length === 0 || 'accepted: ' + JSON.stringify(bad);
+  });
+}
+
+check('the import handler validates every entry before saving', () => {
+  const start = APP_SRC.indexOf("getElementById('ct-import')");
+  if (start === -1) return 'import handler not found';
+  const src = APP_SRC.slice(start, start + 2600);
+  if (!/ctValidateEntry\(/.test(src)) return 'import no longer calls ctValidateEntry';
+  if (!/Array\.isArray\(data\)/.test(src)) return 'import no longer rejects a top-level array';
+  return true;
+});
+
+/* The bug where a successful import reported failure: refreshAll() sat inside
+   the try, so anything it threw was caught by the "Invalid JSON file" handler. */
+check('the import try block covers parsing only, not refreshAll()', () => {
+  const start = APP_SRC.indexOf("getElementById('ct-import')");
+  const src = APP_SRC.slice(start, start + 2600);
+  const tryStart = src.indexOf('try {');
+  const tryEnd = src.indexOf('catch', tryStart);
+  if (tryStart === -1 || tryEnd === -1) return 'could not locate the try/catch';
+  const guarded = src.slice(tryStart, tryEnd);
+  return !/refreshAll\s*\(/.test(guarded)
+    || 'refreshAll() is inside the try again - a successful import will report "Invalid JSON file"';
+});
+
+check('getCustom survives malformed localStorage instead of throwing', () => {
+  const src = extractFn(APP_SRC, 'getCustom');
+  if (!/try\s*\{/.test(src)) return 'getCustom no longer guards JSON.parse';
+  if (!/Array\.isArray/.test(src)) return 'getCustom no longer rejects a parsed array';
+  return true;
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
