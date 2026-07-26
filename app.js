@@ -805,12 +805,21 @@ function renderConverter(){
 
   drawCurve(z, type);
 }
+/* Horizontal geometry of the converter curve, shared by the code that DRAWS it
+   and the code that maps a click back to a z score. These were duplicated, and
+   drifted: the drag handler still held the pre-redesign 640/94/48 while the
+   curve was being drawn at 940/70/36, so clicking the gridline at 70 entered
+   63.4 — out by up to 6.6 standard-score points. One source of truth so they
+   cannot diverge again. Height and vertical padding stay local to drawCurve;
+   only the horizontal mapping is shared. */
+const CURVE_GEOM = { W: 940, padL: 70, padR: 36, xMin: -3.5, xMax: 3.5 };
+
 function drawCurve(z, scoreType){
   const svg = document.getElementById('conv-curve');
   /* Cockpit layout: viewBox is ~2.6:1 so when the SVG fills the right column
      (~830px wide) it renders ~320px tall — matching the equivalents column's
      natural height for a balanced row with no dead vertical space. */
-  const W = 940, H = 360, padL = 70, padR = 36;
+  const W = CURVE_GEOM.W, H = 360, padL = CURVE_GEOM.padL, padR = CURVE_GEOM.padR;
   /* bottomPad was 124 to leave room for the per-row conversion table beneath
      the baseline (Standard / Scaled / T / z / Percentile / Classification).
      The cockpit layout shows that information in the side column instead,
@@ -824,7 +833,7 @@ function drawCurve(z, scoreType){
      the −1 SD / +1 SD labels above the curve. */
   const topPad = 16;
   const curveH = H - topPad - bottomPad;
-  const xMin = -3.5, xMax = 3.5;
+  const xMin = CURVE_GEOM.xMin, xMax = CURVE_GEOM.xMax;
   const xScale = x => padL + (x - xMin) / (xMax - xMin) * (W - padL - padR);
   const yMax = 0.42;
   const base = H - bottomPad;
@@ -1066,8 +1075,9 @@ updateSliderTicks(document.getElementById('conv-type').value);
 (function setupCurveDrag(){
   const svg = document.getElementById('conv-curve');
   if (!svg) return;
-  const W = 640, padL = 94, padR = 48;
-  const xMin = -3.5, xMax = 3.5;
+  // Geometry comes from CURVE_GEOM so this can never drift from what
+  // drawCurve actually renders — see the note there.
+  const { W, padL, padR, xMin, xMax } = CURVE_GEOM;
   let dragging = false;
 
   function clientToZ(clientX){
@@ -1329,7 +1339,10 @@ function syncBatteryPremorbidControls(){
 function getBatteryPremorbidComparison(){
   const enabled = document.getElementById('bat-prem-enable')?.checked;
   const scoreEl = document.getElementById('bat-prem-score');
-  const estimate = parseFloat(scoreEl?.value);
+  /* Prefer the unrounded estimate carried by applyPremorbidLink; fall back to
+     the box itself when the user has typed a value in by hand. */
+  const exact = parseFloat(scoreEl?.dataset.estimateExact);
+  const estimate = Number.isFinite(exact) ? exact : parseFloat(scoreEl?.value);
   if (!enabled || isNaN(estimate)) return null;
   const lo  = parseFloat(scoreEl.dataset.lowerBound);
   const hi  = parseFloat(scoreEl.dataset.upperBound);
@@ -1385,26 +1398,33 @@ function batteryPremorbidStars(ss, prem){
    results table. Returns an array of {label, fsiq, lo, hi, see}. Rows
    that haven't been computed (showing "-") are skipped. SEE is needed
    to derive multi-tier CI thresholds for the asterisk logic. */
+/* Premorbid estimates offered to the Score Tables asterisk logic.
+
+   Reads preState.estimateRows, NOT the rendered table. calcPremorbid caches the
+   rows there with `val` unrounded, whereas the table displays fmtIntOrDash(val)
+   — already rounded to a whole number. Scraping the cell fed a rounded figure
+   into a further calculation and could flip an asterisk tier: a true estimate
+   of 104.6 renders as 105, and against a score of 90 that turns 0.973 SD (no
+   asterisk) into exactly 1.000 SD (asterisk).
+
+   The CI bounds are still derived the same way the table derives them, so the
+   status line beside the link keeps matching what the Estimates tab shows. */
 function getPremorbidEstimateOptions(){
+  const rows = (typeof preState === 'object' && preState) ? preState.estimateRows : null;
+  if (!Array.isArray(rows)) return [];
+  const mult = Number.isFinite(preState.ciMult) ? preState.ciMult : 1.645;
   const out = [];
-  const rows = document.querySelectorAll('#pre-results-table tbody tr');
-  rows.forEach(tr => {
-    const tds = tr.querySelectorAll('td');
-    if (tds.length < 4) return;
-    const rawLabel = (tds[0]?.textContent || '').replace(/\?\s*$/, '').trim();
-    const fsiq = parseFloat((tds[1]?.textContent || '').replace(/[^\d.\-]/g, ''));
-    const lo   = parseFloat((tds[2]?.textContent || '').replace(/[^\d.\-]/g, ''));
-    const hi   = parseFloat((tds[3]?.textContent || '').replace(/[^\d.\-]/g, ''));
-    const see  = parseFloat((tds[5]?.textContent || '').replace(/[^\d.\-]/g, ''));
-    if (rawLabel && Number.isFinite(fsiq)){
-      out.push({
-        label: rawLabel,
-        fsiq,
-        lo:  Number.isFinite(lo)  ? lo  : null,
-        hi:  Number.isFinite(hi)  ? hi  : null,
-        see: Number.isFinite(see) ? see : null
-      });
-    }
+  rows.forEach(r => {
+    if (!r || !r.name || !Number.isFinite(r.val)) return;
+    const see = Number.isFinite(r.see) ? r.see : null;
+    const margin = see != null ? Math.round(mult * see) : null;
+    out.push({
+      label: r.name,
+      fsiq: r.val,                                        // unrounded
+      lo: margin != null ? Math.round(r.val) - margin : null,
+      hi: margin != null ? Math.round(r.val) + margin : null,
+      see
+    });
   });
   return out;
 }
@@ -1507,7 +1527,13 @@ function applyPremorbidLink(option){
      clear-on-input handler doesn't wipe the data attributes we're about to
      set. */
   scoreEl.dataset.programmaticUpdate = '1';
-  scoreEl.value = String(option.fsiq);
+  /* The visible box shows the rounded estimate, matching the Estimates tab.
+     The unrounded value rides along in a data attribute and is what the
+     asterisk thresholds actually use — rounding 104.6 to 105 was enough to
+     turn 0.973 SD into exactly 1.000 SD and add an asterisk that should not
+     be there. Cleared on manual edit alongside the other link metadata. */
+  scoreEl.value = String(Math.round(option.fsiq));
+  scoreEl.dataset.estimateExact = String(option.fsiq);
   if (option.lo != null) scoreEl.dataset.lowerBound = String(option.lo);
   else delete scoreEl.dataset.lowerBound;
   if (option.hi != null) scoreEl.dataset.upperBound = String(option.hi);
@@ -1542,7 +1568,7 @@ function openPremorbidLinkPopover(){
       const range = (o.lo != null && o.hi != null) ? `${o.lo}–${o.hi}` : '—';
       return `<button type="button" class="bat-prem-link-option" data-idx="${i}">` +
         `<span class="bat-prem-link-option-name">${escapeHtml(o.label)}</span>` +
-        `<span class="bat-prem-link-option-stats">FSIQ ${o.fsiq} · ${getPremorbidCiLevel()} ${range}</span>` +
+        `<span class="bat-prem-link-option-stats">FSIQ ${Math.round(o.fsiq)} · ${getPremorbidCiLevel()} ${range}</span>` +
       '</button>';
     }).join('');
     popover.querySelectorAll('.bat-prem-link-option').forEach(btn => {
@@ -2307,6 +2333,7 @@ document.getElementById('bat-prem-score').addEventListener('input', e => {
   delete e.target.dataset.see;
   delete e.target.dataset.modelLabel;
   delete e.target.dataset.ciLabel;
+  delete e.target.dataset.estimateExact;   // else it would shadow the typed value
   updatePremorbidLinkStatus();
   renderBattery();
 });

@@ -52,6 +52,22 @@
     md:    null
   };
 
+  /* Format a slider value for the statistic's own input box.
+
+     Fixed decimals are fine on a linear scale but destroy a log one. The OR
+     slider steps 0.05 in log10 space — about 12% per notch — so near the
+     bottom of its range four consecutive positions (true ORs 0.0100, 0.0112,
+     0.0126, 0.0141) all rounded to "0.01" at 2dp and produced an identical
+     effect size: the handle moved and nothing changed. Scale the precision
+     with the magnitude instead, keeping roughly three significant figures. */
+  function formatSliderValue(v, cfg){
+    if (!cfg.log) return v.toFixed(cfg.decimals);
+    const abs = Math.abs(v);
+    if (!(abs > 0)) return v.toFixed(cfg.decimals);
+    const dp = Math.max(cfg.decimals, Math.min(6, Math.ceil(-Math.log10(abs)) + 2));
+    return v.toFixed(dp);
+  }
+
   /* Apply the slider's range, step, and tick HTML for a given statistic.
      Called whenever the statistic dropdown changes. */
   function applySliderConfig(type){
@@ -209,12 +225,13 @@
       if (disp === 'sd')  return val;
       if (disp === 'se')  return n != null && n > 0 ? val * Math.sqrt(n) : null;
       // The 95% CI shown in each group panel (ciString) is a CI for the MEAN:
-      // mean ± 1.96·SD/√n. Inverting it therefore needs the same √n step as
-      // the SE branch above: (upper − mean)/1.96 alone recovers the standard
-      // ERROR, not the SD, leaving every downstream statistic (pooled SD, d,
-      // g, r, OR, U3, CLES, NNT) wrong by a factor of √n. Round trip: n=25,
-      // M=100, SD=15 displays upper 105.88; this must map back to 15, not 3.
-      if (disp === 'ciu') return (mean != null && n != null && n > 0) ? (val - mean) * Math.sqrt(n) / 1.96 : null;
+      // mean ± k·SD/√n. Inverting it needs BOTH the √n step (the SE branch
+      // above already has it — without it this returns the standard ERROR, not
+      // the SD, leaving every downstream statistic wrong by a factor of √n)
+      // AND the SAME multiplier ciString used. That multiplier is the t value
+      // for n-1 df, so it must come from ciMultiplier rather than a hard-coded
+      // 1.96, or the panel's own displayed CI stops round-tripping.
+      if (disp === 'ciu') return (mean != null && n != null && n > 0) ? (val - mean) * Math.sqrt(n) / ciMultiplier(n) : null;
       return null;
     }
     const sd1 = sdFrom(dt1, dv1, n1, m1);
@@ -240,10 +257,27 @@
     if (v == null || isNaN(v) || !isFinite(v)) return '-';
     return (v*100).toFixed(digits != null ? digits : 2) + '%';
   }
+  /* Two-tailed 95% multiplier for a mean based on n observations.
+     Uses the t distribution on n-1 df, not a flat 1.96. With small samples the
+     spread itself is estimated imprecisely and the interval has to widen to
+     account for it: at n=5 the correct interval is 41% wider than the normal
+     approximation gives, and the old fixed 1.96 reported 86.85-113.15 where
+     81.38-118.62 is right. The gap closes as n grows (94% of correct width at
+     n=20, 98% at n=60), so this only really bites on the small samples common
+     in single-case and small-group work — which is exactly where it matters.
+     tInv comes from app.js, which is a plain script loaded before this file. */
+  function ciMultiplier(n){
+    if (typeof tInv === 'function'){
+      const t = tInv(0.975, n - 1);
+      if (Number.isFinite(t)) return t;
+    }
+    return 1.96;   // only if the primitive is somehow unavailable
+  }
   function ciString(mean, sd, n){
     if (mean == null || sd == null || n == null || n < 2) return '-';
     const se = sd / Math.sqrt(n);
-    return (mean - 1.96*se).toFixed(2) + ', ' + (mean + 1.96*se).toFixed(2);
+    const k = ciMultiplier(n);
+    return (mean - k*se).toFixed(2) + ', ' + (mean + k*se).toFixed(2);
   }
   function descD(d){
     // Cohen (1988) / Sawilowsky (2009) anchors used as bin FLOORS: a value
@@ -459,7 +493,7 @@
           const sign = rawVal > 0 ? '+' : (rawVal < 0 ? '−' : '');
           const abs = Math.abs(rawVal);
           els['es-d-slider-val'].textContent = cfg.log
-            ? abs.toFixed(cfg.decimals)
+            ? formatSliderValue(abs, cfg)
             : sign + abs.toFixed(cfg.decimals);
         } else {
           els['es-d-slider-val'].textContent = '-';
@@ -723,7 +757,7 @@
         // For OR with log scale, the slider value is log10(OR).
         const valueInUnits = cfg.log ? Math.pow(10, sliderVal) : sliderVal;
         displayValue = valueInUnits;
-        els['es-stat-value'].value = valueInUnits.toFixed(cfg.decimals);
+        els['es-stat-value'].value = formatSliderValue(valueInUnits, cfg);
         // Convert to d for the magnitude label
         const dEquiv = statToD(currentType, valueInUnits, auxVal);
         dForClassify = Number.isFinite(dEquiv) ? dEquiv : 0;

@@ -217,6 +217,30 @@ check('z -> scale -> z round-trips for every scale', () => {
   }
   return true;
 });
+check('the curve drag maps a click back to the z it was drawn at', () => {
+  // drawCurve and the drag handler used to hold separate copies of the plot
+  // geometry and had drifted (640/94/48 against 940/70/36), so clicking the
+  // gridline at 70 entered 63.4 — out by up to 6.6 standard-score points. Both
+  // now read CURVE_GEOM; this asserts the mapping is its own inverse.
+  const m = APP_SRC.match(/const CURVE_GEOM = \{[^}]*\}/);
+  if (!m) return 'CURVE_GEOM not found in app.js — did the shared constant go?';
+  const c = {}; vm.createContext(c);
+  vm.runInContext(m[0] + ';globalThis.G = CURVE_GEOM;', c);
+  const G = c.G;
+  const span = G.W - G.padL - G.padR;
+  const xOf = (z) => G.padL + ((z - G.xMin) / (G.xMax - G.xMin)) * span;
+  const cssWidth = 830;                                   // rendered width; cancels out
+  const clientToZ = (z) => {
+    const localX = (xOf(z) * cssWidth / G.W) * (G.W / cssWidth);   // app.js line 1075
+    return G.xMin + (localX - G.padL) / span * (G.xMax - G.xMin);
+  };
+  for (const z of [-3, -2, -1, 0, 1, 2, 3]) {
+    const err = Math.abs(clientToZ(z) - z) * 15;           // in standard-score points
+    if (err > 1e-9) return 'click at z=' + z + ' returns ' + clientToZ(z).toFixed(4) +
+                           ' (' + err.toFixed(2) + ' standard-score points out)';
+  }
+  return true;
+});
 check('percentile -> z -> percentile round-trips', () => {
   // invert normCDF by bisection; a drift here means the curve is wrong
   const inv = (p) => {
@@ -669,10 +693,14 @@ heading('11. Effect-size calculator');
 const ES_SRC = fs.readFileSync(path.join(ROOT, 'app-effectsize-page.js'), 'utf8');
 const esFns = {};
 vm.createContext(esFns);
+// ciMultiplier calls tInv, which lives in app.js and is a plain global there —
+// app.js loads before this module in index.html. Supply app.js's primitives
+// block (lines 1-105) so the extracted code runs as it does in the page.
 vm.runInContext(
-  ['normPdf', 'normCdf', 'statToD', 'dToStat', 'descD', 'ciString', 'sdFrom', 'targetShares']
-    .map((n) => extractFn(ES_SRC, n)).join('\n') +
-    '\n;globalThis.__ES = { statToD, dToStat, descD, ciString, sdFrom, targetShares };',
+  APP_SRC.split('\n').slice(0, 105).join('\n') + '\n' +
+    ['normPdf', 'normCdf', 'statToD', 'dToStat', 'descD', 'ciMultiplier', 'ciString', 'sdFrom', 'targetShares']
+      .map((n) => extractFn(ES_SRC, n)).join('\n') +
+    '\n;globalThis.__ES = { statToD, dToStat, descD, ciMultiplier, ciString, sdFrom, targetShares };',
   esFns
 );
 const ES = esFns.__ES;
@@ -700,8 +728,35 @@ check('g conversion uses plain Hedges J, matching compute()\'s output grid', () 
   const d = ES.statToD('g', 1, N);
   return Math.abs(d - 1 / J) < 1e-9 || 'statToD(g,1,52) = ' + d + ', want 1/J = ' + (1 / J);
 });
-checkClose('CI-upper input round-trips the file\'s own displayed CI (SD 15, not SE 3)',
-  ES.sdFrom('ciu', 105.88, 25, 100), 15, 1e-6, 'ciString(100,15,25) upper = 105.88');
+check('CI-upper input round-trips the file\'s own displayed CI', () => {
+  // Feed ciString's own upper bound straight back into sdFrom and require the
+  // original SD out. This was pinned to the literal 105.88, which silently
+  // assumed the old fixed 1.96 multiplier and would have masked the switch to
+  // a t value; a round trip stays valid whatever multiplier is in use.
+  for (const [m, sd, n] of [[100, 15, 25], [100, 15, 5], [50, 10, 12], [105, 15, 60]]) {
+    const upper = Number(ES.ciString(m, sd, n).split(', ')[1]);
+    const back = ES.sdFrom('ciu', upper, n, m);
+    // ciString prints to 2dp, so the bound carries up to half a unit in the
+    // last place. Inverting multiplies that by sqrt(n)/k, which is the exact
+    // amount the round trip can lose — derive the tolerance from it rather
+    // than picking a number that happens to pass.
+    const tol = 1.5 * 0.005 * Math.sqrt(n) / ES.ciMultiplier(n);
+    if (Math.abs(back - sd) > tol) {
+      return 'n=' + n + ': upper ' + upper + ' mapped back to SD ' + back.toFixed(4) +
+             ', want ' + sd + ' (tol ' + tol.toFixed(4) + ')';
+    }
+  }
+  return true;
+});
+check('the CI multiplier is the t value for n-1 df, not a flat 1.96', () => {
+  const want = { 5: 2.776, 10: 2.262, 20: 2.093, 30: 2.045, 60: 2.001 };  // published
+  for (const n in want) {
+    const got = ES.ciMultiplier(Number(n));
+    if (Math.abs(got - want[n]) > 5e-3) return 'n=' + n + ' gave ' + got.toFixed(4) + ', want ' + want[n];
+  }
+  if (Math.abs(ES.ciMultiplier(100000) - 1.96) > 1e-3) return 'does not converge to 1.96 at large n';
+  return true;
+});
 check('CI-upper without n returns null rather than a silent SE', () =>
   ES.sdFrom('ciu', 105.88, null, 100) === null || 'returned a value with no n');
 check('descD uses Cohen/Sawilowsky anchors as bin floors', () => {
@@ -812,6 +867,30 @@ check('batteryPremorbidMode falls back to sd when SEE mode has no usable SEE', (
     const got = run(ctrl, prem);
     if (got !== want) return 'control=' + ctrl + ' prem=' + JSON.stringify(prem) + ' -> ' + got + ', want ' + want;
   }
+  return true;
+});
+
+check('the premorbid anchor is read unrounded, not scraped from the table', () => {
+  // getPremorbidEstimateOptions used to parse the rendered cell, which
+  // fmtIntOrDash had already rounded. A true estimate of 104.6 became 105, and
+  // against a score of 90 that turns 0.973 SD into exactly 1.000 SD — an
+  // asterisk that should not be there. It must read preState.estimateRows.
+  const src = extractFn(APP_SRC, 'getPremorbidEstimateOptions');
+  if (/querySelectorAll|textContent/.test(src)) {
+    return 'still reads the DOM rather than preState.estimateRows';
+  }
+  const c = { preState: { estimateRows: [
+        { name: 'ToPF Raw Score', val: 104.6, see: 9.867 },
+        { name: 'No estimate yet', val: null,  see: 9.11 }
+      ], ciMult: 1.645 } };
+  vm.createContext(c);
+  vm.runInContext(src + ';globalThis.__G = getPremorbidEstimateOptions;', c);
+  const opts = c.__G();
+  if (opts.length !== 1) return 'expected 1 usable option, got ' + opts.length;
+  if (Math.abs(opts[0].fsiq - 104.6) > 1e-9) return 'fsiq came back as ' + opts[0].fsiq + ', want 104.6 unrounded';
+  // and the tier that the rounding used to flip must now resolve correctly
+  const diffSd = (opts[0].fsiq - 90) / 15;
+  if (!(diffSd < 1)) return 'diffSd = ' + diffSd.toFixed(4) + ' — the rounding artefact is back';
   return true;
 });
 
