@@ -146,6 +146,10 @@ function gammp(a, x) {
   return 1 - Math.exp(-x + a * Math.log(x) - lgamma(a)) * h;
 }
 function normCDF(z) {
+  // The incomplete-gamma route returns NaN at the infinities; app.js's erf
+  // route handles them, so match it rather than diverging on the edge cases.
+  if (z === Infinity) return 1;
+  if (z === -Infinity) return 0;
   const t = Math.abs(z) / Math.SQRT2;
   const e = gammp(0.5, t * t);
   return 0.5 * (1 + (z >= 0 ? e : -e));
@@ -614,6 +618,80 @@ check('BASE_RATES decrease monotonically as the discrepancy grows more negative'
   return bad.length === 0 || bad.join('; ');
 });
 
+check('past the tabulated range the base rate is computed, not floored at 0.01%', () => {
+  // "< 0.01%" was asserted for any discrepancy beyond the table. That is false
+  // for seven of the eight columns: one row past the last entry the model gives
+  // PRI 0.081%, PSI 0.060%, DMI 0.048%, VWMI 0.038%, IMI 0.033%, VCI 0.019%,
+  // WMI 0.012%. Only FSIQ, with the narrowest SEE, is genuinely under 0.01%.
+  const see = {};
+  D.WAIS_COEF.forEach((c) => { see[c.idx] = c.see; });
+  D.WMS_COEF.forEach((c) => { see[c.idx] = c.see; });
+  const lastRow = {};
+  for (const d in D.BASE_RATES) {
+    for (const k in D.BASE_RATES[d]) {
+      const n = Number(d);
+      if (lastRow[k] == null || n < lastRow[k]) lastRow[k] = n;
+    }
+  }
+  const overstated = [];
+  for (const k in see) {
+    const d = lastRow[k] - 1;
+    const p = normCDF(d / see[k]) * 100;
+    if (p >= 0.01) overstated.push(k + ' at d=' + d + ' is ' + p.toFixed(3) + '%');
+  }
+  // The point of the check: most columns DO exceed the old bound, so a floor
+  // would be a false claim. If this ever stops holding the fix is unmotivated.
+  if (overstated.length < 5) return 'expected most columns to exceed 0.01%, got ' + overstated.length;
+  // And FSIQ must remain the exception where the bound is honest.
+  const fsiq = normCDF((lastRow.FSIQ - 1) / see.FSIQ) * 100;
+  if (fsiq >= 0.01) return 'FSIQ at d=' + (lastRow.FSIQ - 1) + ' is ' + fsiq.toFixed(4) + '%, no longer under the bound';
+  return true;
+});
+check('the base-rate cell can never print a rounded-to-zero percentage', () => {
+  // fmtPctBr rounds to 2dp, so a computed tail would show "0.00%" — asserting
+  // zero, which is worse than the bound it replaced. Below 0.01% the display
+  // must fall back to "< 0.01%", which is then true.
+  const render = (p) => (p < 0.0001 ? '< 0.01%' : (p * 100).toFixed(2) + '%');
+  for (const d of [-33, -39, -41, -50, -60, -80, -100]) {
+    for (const s of [8.441, 9.277, 10.617, 12.038, 12.165, 12.368, 12.42]) {
+      const out = render(normCDF(d / s));
+      if (out === '0.00%') return 'd=' + d + ' SEE=' + s + ' printed 0.00%';
+    }
+  }
+  return true;
+});
+check('fmt never emits a negative zero or scientific notation', () => {
+  // fmt feeds score conversions, SD Index changes, RCI statistics and predicted
+  // scores. It used to print "-0.00" and, below 0.0001, values like "-6.67e-5"
+  // in the middle of a two-decimal column.
+  const f = (() => {
+    const c = {}; vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'fmt') + ';globalThis.__F = fmt;', c);
+    return c.__F;
+  })();
+  const cases = [[-0.00066667, 2], [-0.000066667, 2], [0.00004, 2], [-0.004, 2], [-0.4, 0], [0, 2]];
+  for (const [v, dp] of cases) {
+    const out = f(v, dp);
+    if (/e[-+]/i.test(out)) return 'fmt(' + v + ',' + dp + ') = ' + out + ' — scientific notation';
+    if (/^-0(\.0*)?$/.test(out)) return 'fmt(' + v + ',' + dp + ') = ' + out + ' — negative zero';
+  }
+  // and it must still keep the sign where the value does not round away
+  for (const [v, dp, want] of [[-0.006, 2, '-0.01'], [-0.05, 1, '-0.1'], [-1.42, 2, '-1.42']]) {
+    if (f(v, dp) !== want) return 'fmt(' + v + ',' + dp + ') = ' + f(v, dp) + ', want ' + want;
+  }
+  return true;
+});
+check('the curve band labels are derived and sum to 100%', () => {
+  // The two outer labels were hard-coded 2.14% — P(2<|Z|<3) — applied to bands
+  // running to the edge of the plot, so the six summed to 99.72%.
+  if (/pct:\s*'2\.14%'/.test(APP_SRC)) return 'the hard-coded 2.14% label is back';
+  const edges = [-Infinity, -2, -1, 0, 1, 2, Infinity];
+  let total = 0;
+  for (let i = 0; i < edges.length - 1; i++) {
+    total += Number(((normCDF(edges[i + 1]) - normCDF(edges[i])) * 100).toFixed(2));
+  }
+  return Math.abs(total - 100) < 0.005 || 'labels would sum to ' + total.toFixed(2) + '%';
+});
 check('OPIE_BASE_RATES values sit on an empirical count grid (unlike BASE_RATES)', () => {
   // Genuinely empirical: values fall on ~1/1020 and ~1/2040 steps. This is the
   // contrast that proves BASE_RATES is parametric.

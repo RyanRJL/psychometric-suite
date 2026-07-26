@@ -131,8 +131,16 @@ function fromZ(z, type){
 }
 function fmt(n, dp = 2){
   if (n == null || isNaN(n)) return '-';
-  if (Math.abs(n) < 0.0001 && n !== 0) return n.toExponential(2);
-  return n.toFixed(dp);
+  /* Every caller is a clinical display column — score conversions, SD Index
+     changes, RCI statistics, predicted scores. Two old behaviours misfired
+     there. Values under 0.0001 switched to exponential notation, so a column
+     of figures like -1.42 could suddenly contain "-6.67e-5"; and toFixed keeps
+     the sign when a small negative rounds away, printing "-0.00", which is not
+     a number anyone writes. A value that rounds to zero at the requested
+     precision is displayed as zero, unsigned. Anything genuinely needing more
+     precision should ask for more decimal places, not a different notation. */
+  const out = n.toFixed(dp);
+  return /^-0(\.0*)?$/.test(out) ? out.slice(1) : out;
 }
 function fmtPct(p){
   if (p == null || isNaN(p)) return '-';
@@ -904,14 +912,24 @@ function drawCurve(z, scoreType){
   }
 
   // Band percentage labels
-  const bandPcts = [
-    { zMid:-2.5, pct:'2.14%'  },
-    { zMid:-1.5, pct:'13.59%' },
-    { zMid:-0.5, pct:'34.13%' },
-    { zMid: 0.5, pct:'34.13%' },
-    { zMid: 1.5, pct:'13.59%' },
-    { zMid: 2.5, pct:'2.14%'  },
-  ];
+  /* Percentage of the distribution in each SD band, DERIVED rather than typed.
+     The two outer labels used to read 2.14%, which is P(2 < |Z| < 3) — the
+     figure for a band stopping at 3 SD, applied to bands that run to the edge
+     of the plot and beyond. The tail past 3 SD was simply dropped, so the six
+     labels summed to 99.72% instead of 100%. Computing them from the same
+     normal CDF the curve is drawn with keeps them honest and makes them follow
+     xMin/xMax automatically if the plot range ever changes. The outer bands are
+     deliberately integrated to infinity, not to the plot edge: they label
+     "beyond 2 SD", and the sliver past the edge belongs to that band. */
+  const bandEdges = [-Infinity, -2, -1, 0, 1, 2, Infinity];
+  const bandPcts = bandEdges.slice(0, -1).map((lo, i) => {
+    const hi = bandEdges[i + 1];
+    const area = (normCDF(hi) - normCDF(lo)) * 100;
+    return {
+      zMid: [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5][i],
+      pct: area.toFixed(2) + '%'
+    };
+  });
   let pctLabels = '';
   bandPcts.forEach(({ zMid, pct: p }) => {
     const bx = xScale(zMid);
@@ -4235,7 +4253,22 @@ function updatePredictRow(idx, pred, mult, see){
   // Base rate only meaningful for negative discrepancies
   const row = BASE_RATES[String(diff)];
   if (row && row[idx] != null) brEl.textContent = fmtPctBr(row[idx]);
-  else brEl.textContent = diff < 0 ? '< 0.01%' : '-';
+  else if (diff < 0 && Number.isFinite(see) && see > 0){
+    /* Past the end of the tabulated range. This used to assert "< 0.01%",
+       which is false for seven of the eight columns — one row past the last
+       entry the model gives PRI 0.081%, PSI 0.060%, DMI 0.048%, VWMI 0.038%,
+       IMI 0.033%, VCI 0.019% and WMI 0.012%. Only FSIQ, with the narrowest
+       SEE, actually falls under 0.01% there.
+       BASE_RATES is itself round(Phi(d / SEE), 4) — see the note above it in
+       data.js — so continuing the same model past the table is exact rather
+       than an approximation, and keeps the column internally consistent.
+       fmtPctBr rounds to 2dp, so genuinely tiny values would print "0.00%" —
+       asserting zero, which is worse than the bound it replaced. Fall back to
+       "< 0.01%" only where that is actually true. */
+    const p = normCDF(diff / see);
+    brEl.textContent = p < 0.0001 ? '< 0.01%' : fmtPctBr(p);
+  }
+  else brEl.textContent = '-';
 }
 
 // === APA Output: Premorbid Estimates ===
