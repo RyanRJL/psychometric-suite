@@ -4873,6 +4873,145 @@ function loadExampleRow(method){
   if (rciState[method]){ rciState[method].rows.push({...rciExample}); renderRci(method); showToast('Example row added'); }
 }
 
+/* ---------- INITIAL POPULATION ---------- */
+// Add a starter example row (purely illustrative, excluded from analyses)
+// and one blank row to each editable table.
+batteryRows = [{name:'Example subtest', raw:'25', score:'10', isExample:true}, {name:'', raw:'', score:''}];
+sdiRows = [
+  sdiMode() === 'raw'
+    ? {name:'Example memory score',t1:'42',t2:'36',sd:'8',isExample:true}
+    : {name:'Example memory score',t1:'9',t2:'6',scoreType:'scaled',isExample:true},
+  {}
+];
+// One shared example + blank row across all RCI methods (mutate in place to keep the shared link).
+RCI_SHARED_ROWS.length = 0;
+RCI_SHARED_ROWS.push({name:'Example index score', isExample:true, sd:'15', m1:'100', sd1:'15', m2:'103', sd2:'15', r:'0.90', rCorrected:'', n:'100', t1:'100', t2:'89'}, {});
+['rci-basic', 'rci-practice', 'rci-srb', 'rci-crawford'].forEach(m => renderRci(m));
+renderBattery();
+renderSdi();
+applyCalculatorPolish();
+enhanceCalculatorWorkflow();
+enhanceApaToolbars();
+
+buildDescCarousels();
+renderConverter();
+
+/* Premorbid panel - fade fields when comparison is off (kept always visible) */
+(function setupBatteryPremorbidDisable(){
+  const block = document.getElementById('bat-premorbid-block');
+  const checkbox = document.getElementById('bat-prem-enable');
+  if (!block || !checkbox) return;
+  function sync(){ block.dataset.enabled = String(checkbox.checked); }
+  checkbox.addEventListener('change', sync);
+  sync();
+})();
+
+/* Premorbid → Score-Tables auto-link: picker button + popover wiring.
+   Uses document-level delegation because the design-system rebuilds the
+   ds-prem-card later, replacing the original button. Delegation keeps the
+   handler attached regardless of when the markup arrives. */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('#bat-prem-link-btn');
+  if (!btn || btn.disabled) return;
+  e.stopPropagation();
+  const popover = document.getElementById('bat-prem-link-popover');
+  if (popover && popover.classList.contains('show')) closePremorbidLinkPopover();
+  else openPremorbidLinkPopover();
+});
+
+// Premorbid setup
+setupPreTabs();
+buildPredictTable();
+setupPremorbidListeners();
+calcPremorbid();
+calcPredict();
+calcOpiePredict();
+
+// Battery autofill input wiring (combobox listeners)
+wireBatteryAutofill();
+wireSdiAutofill();
+
+// Final initialization
+refreshAll();
+
+/* ---------- GLOBAL CLEAR — Topbar "Clear all tables" button ----------
+   Wipes every tool's session data in one action: battery rows, SDI rows,
+   the four RCI methods, premorbid inputs, working report items.
+
+   The auto-add MutationObserver on each APA container is suppressed during
+   the clear cascade so the residual table HTML doesn't sneak items back
+   into the bundle after we wipe it. */
+(function wireGlobalClear(){
+  const btn = document.getElementById('topbar-clear-all');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const ok = confirm('Are you sure?\n\nThis clears every table you\'ve been working on across all tools, including the Working Report. It cannot be undone.');
+    if (!ok) return;
+
+    // Suppress the observers BEFORE any clearing happens. The 350ms debounce
+    // means handlers from changes triggered during the cascade can fire well
+    // after we've finished, so we keep suppression on for ~700ms to be safe.
+    if (typeof ReportBundle !== 'undefined' && ReportBundle.setSuppressed){
+      ReportBundle.setSuppressed(true);
+    }
+
+    // Battery / Neuropsych Tables
+    try { batteryRows.length = 0; renderBattery(); } catch(e){}
+    // SDI
+    try { if (typeof clearSdi === 'function') clearSdi(); } catch(e){}
+    // All four RCI methods
+    try {
+      ['rci-basic','rci-practice','rci-srb','rci-crawford'].forEach(m => {
+        if (typeof clearMethodRows === 'function') clearMethodRows(m);
+      });
+    } catch(e){}
+    // Premorbid inputs (predictors + demographics)
+    try {
+      ['pre-topf','pre-vc','pre-mr','pre-sex','pre-occ','pre-edu','pre-age'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = '';
+        el.dispatchEvent(new Event('input',  { bubbles:true }));
+        el.dispatchEvent(new Event('change', { bubbles:true }));
+      });
+      // Premorbid achieved-score cells (per-index)
+      document.querySelectorAll('[data-pre-ach]').forEach(inp => {
+        inp.value = '';
+        inp.dispatchEvent(new Event('input',  { bubbles:true }));
+        inp.dispatchEvent(new Event('change', { bubbles:true }));
+      });
+      document.querySelectorAll('[data-pre-opie-ach]').forEach(inp => {
+        inp.value = '';
+        inp.dispatchEvent(new Event('input',  { bubbles:true }));
+        inp.dispatchEvent(new Event('change', { bubbles:true }));
+      });
+    } catch(e){}
+
+    // Working Report bundle - clear after the tools so any pending observer
+    // tasks fire against an empty state.
+    try {
+      if (typeof ReportBundle !== 'undefined' && ReportBundle.clearSilent){
+        ReportBundle.clearSilent();
+      }
+    } catch(e){}
+
+    // Re-clear after the debounce window in case any observer queued an
+    // add during the cascade. Then turn observers back on.
+    setTimeout(() => {
+      try {
+        if (typeof ReportBundle !== 'undefined' && ReportBundle.clearSilent){
+          ReportBundle.clearSilent();
+        }
+        if (typeof ReportBundle !== 'undefined' && ReportBundle.setSuppressed){
+          ReportBundle.setSuppressed(false);
+        }
+      } catch(e){}
+    }, 700);
+
+    if (typeof showToast === 'function') showToast('All tables cleared');
+  });
+})();
+
 /* ============================================================
    AUTH OVERLAY · prototype-ready login/register behaviour
    ============================================================ */
