@@ -20214,6 +20214,156 @@ const OPIE_BASE_RATES = {
     "Symbol Search": { m1:10, sd1:2.7, m2:11.5, sd2:3.2, r:0.76, n:209 },
     "Cancellation": { m1:9.8, sd1:2.9, m2:11.1, sd2:3.2, r:0.79, n:209 }
   },
+
+  /* ---- WAIS-IV Longest Span, process level -------------------------------
+     Source: WAIS-IV Administration and Scoring Manual (GB), Tables C.4 and
+     C.5 — cumulative percentages of the normative sample obtaining each raw
+     longest span, by age group.
+
+     baseRates[x] is the percentage scoring x OR HIGHER. That direction is not
+     an assumption: for a whole-number score E[X] = the sum of P(X >= x), and
+     reconstructing the mean that way reproduces every printed mean across all
+     51 measure-bands to within 0.055, which is rounding. check.js re-runs it.
+
+     singleAdministration marks these as having NO retest data — there are no
+     reliability coefficients published for longest span, so they carry no
+     m2/sd2/r and must stay out of the Change Analysis pages.
+
+     The age bands are the NORMATIVE ones and deliberately do not match the
+     "WAIS-IV Process Scores" families, which use the retest study bands
+     (16-29, 30-54, 55-69, 70-90). They cannot be merged for that reason.
+     Letter-Number Sequence stops at 65-69 in the published table.
+     -------------------------------------------------------------------- */
+  "WAIS-IV Longest Span (Process) · Ages 16-17": {
+    "Longest Digit Span Forward": { m1:6.5, sd1:1.2, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:5.5,8:19,7:50.5,6:77,5:97.5,4:99.5,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.8, sd1:1.2, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3.5,7:9,6:22.5,5:53,4:89,3:99,2:99.5,0:100} },
+    "Longest Digit Span Sequence": { m1:5.9, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:1.5,8:10,7:26.5,6:71.5,5:85.5,4:98.5,3:99.5,2:99.5,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.3, sd1:1.2, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:4.5,7:14.5,6:44,5:76.5,4:96,3:99,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 18-19": {
+    "Longest Digit Span Forward": { m1:6.8, sd1:1.2, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:9,8:26.5,7:64.5,6:84.5,5:98,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:5, sd1:1.4, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3.5,7:15.5,6:34.5,5:57.5,4:90.5,3:97.5,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:6, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:5,8:13,7:28.5,6:73,5:88.5,4:97.5,3:99,2:100,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.6, sd1:1.2, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{8:5,7:21,6:54,5:84.5,4:95.5,3:98.5,2:99.5,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 20-24": {
+    "Longest Digit Span Forward": { m1:6.9, sd1:1.3, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:11,8:33.5,7:63.5,6:82,5:97.5,4:98.5,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:5.1, sd1:1.3, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3.5,7:15,6:32,5:64.5,4:92,3:99,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:6, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:7,8:12,7:27.5,6:74,5:87.5,4:97,3:98.5,2:99.5,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.6, sd1:1.2, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{8:4.5,7:21.5,6:52,5:83.5,4:97,3:99,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 25-29": {
+    "Longest Digit Span Forward": { m1:6.9, sd1:1.3, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:17.5,8:27,7:62,6:86,5:97,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.9, sd1:1.5, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:7,7:18.5,6:32,5:56,4:83.5,3:97.5,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:6, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:2.5,8:10.5,7:30,6:72.5,5:86.5,4:97.5,3:99.5,2:100,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.5, sd1:1.2, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:6,7:19.5,6:49,5:84,4:95,3:99.5,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 30-34": {
+    "Longest Digit Span Forward": { m1:6.8, sd1:1.4, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:11,8:30,7:60.5,6:82.5,5:97.5,4:99,3:99.5,2:99.5,0:100} },
+    "Longest Digit Span Backward": { m1:5.1, sd1:1.5, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:6.5,7:18.5,6:32.5,5:63,4:90,3:97,2:99.5,0:100} },
+    "Longest Digit Span Sequence": { m1:6, sd1:1.5, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:5.5,8:11,7:32,6:68.5,5:86.5,4:96,3:98,2:99,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.5, sd1:1.3, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:8,7:23,6:49,5:81,4:97,3:98.5,2:99,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 35-44": {
+    "Longest Digit Span Forward": { m1:6.8, sd1:1.4, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:14,8:32,7:61.5,6:81,5:95.5,4:99.5,3:99.5,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.9, sd1:1.5, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:6.5,7:15.5,6:36,5:56.5,4:85.5,3:96.5,2:99,0:100} },
+    "Longest Digit Span Sequence": { m1:5.9, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:3.5,8:11,7:25,6:70.5,5:83,4:96.5,3:98.5,2:99.5,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.4, sd1:1.2, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:5.5,7:15,6:44.5,5:77,4:95.5,3:99,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 45-54": {
+    "Longest Digit Span Forward": { m1:6.8, sd1:1.4, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:14,8:30,7:61.5,6:79,5:96,4:99.5,3:99.5,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.8, sd1:1.5, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3,7:16.5,6:31,5:55.5,4:82,3:96,2:99.5,0:100} },
+    "Longest Digit Span Sequence": { m1:5.7, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:2,8:7.5,7:23,6:66,5:82,4:95.5,3:97.5,2:99.5,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.4, sd1:1.3, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:6,7:19,6:46,5:76,4:93,3:97.5,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 55-64": {
+    "Longest Digit Span Forward": { m1:6.5, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:7,8:20,7:48,6:75.5,5:94.5,4:100,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.5, sd1:1.3, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:2,7:8.5,6:23.5,5:45,4:79.5,3:97,2:99.5,0:100} },
+    "Longest Digit Span Sequence": { m1:5.6, sd1:1.2, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:1.5,8:4.5,7:15,6:63,5:81.5,4:96.5,3:98,2:100,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.2, sd1:1.1, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:2.5,7:10.5,6:40.5,5:74.5,4:92.5,3:99.5,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 65-69": {
+    "Longest Digit Span Forward": { m1:6.5, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:6,8:26,7:49.5,6:70,5:95.5,4:100,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.5, sd1:1.3, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:0.5,7:10.5,6:21.5,5:46,4:76.5,3:96,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:5.5, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:0.5,8:4.5,7:15.5,6:59,5:78,4:92.5,3:96,2:99.5,0:100} },
+    "Longest Letter-Number Sequence": { m1:5, sd1:1.2, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3,7:10,6:34,5:68,4:88.5,3:99.5,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 70-74": {
+    "Longest Digit Span Forward": { m1:6.2, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:8,8:17,7:41,6:68,5:90,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.3, sd1:1.3, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:2,7:7,6:12,5:43,4:74,3:95,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:5.2, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:0,8:4,7:8,6:52,5:74,4:86,3:93,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 75-79": {
+    "Longest Digit Span Forward": { m1:6.3, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:6,8:18,7:41,6:69,5:95,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.4, sd1:1.3, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:1,7:7,6:20,5:45,4:76,3:95,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:5, sd1:1.5, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:0,8:3,7:8,6:51,5:68,4:84,3:92,2:99,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 80-84": {
+    "Longest Digit Span Forward": { m1:6.1, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:5,8:15,7:35,6:66,5:93,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.1, sd1:1.1, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:0,7:1,6:9,5:33,4:77,3:90,2:99,0:100} },
+    "Longest Digit Span Sequence": { m1:4.7, sd1:1.4, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{9:0,8:0,7:3,6:36,5:59,4:84,3:91,2:99,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 85-90": {
+    "Longest Digit Span Forward": { m1:6, sd1:1.2, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:3,8:11,7:26,6:63,5:94,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:3.8, sd1:1.2, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:1,7:2,6:8,5:27,4:55,3:89,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:4.3, sd1:1.6, median:4.5,
+      metric:'raw', singleAdministration:true, baseRates:{9:0,8:0,7:2,6:31,5:50,4:67,3:80,2:98,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · All Ages": {
+    "Longest Digit Span Forward": { m1:6.6, sd1:1.3, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:9.6,8:25,7:53.9,6:77.3,5:95.9,4:99.3,3:99.9,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.7, sd1:1.4, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3.5,7:12.4,6:26.4,5:51.9,4:82.7,3:96.4,2:99.7,0:100} },
+    "Longest Digit Span Sequence": { m1:5.7, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:2.6,8:8,7:21.2,6:63.9,5:80.4,4:93.5,3:96.6,2:99.5,0:100} }
+  },
   "WMS-IV Indices · Ages 16-69": {
     "Auditory Memory Index": { m1:100.1, sd1:14.1, m2:111.6, sd2:14.4, r:0.81, rCorrected:0.83, n:168 },
     "Visual Memory Index": { m1:100, sd1:14.8, m2:112.1, sd2:16.6, r:0.8, rCorrected:0.81, n:144 },
@@ -21590,6 +21740,20 @@ function caReliabilityQualifier(family){
 function isAltFormFamily(name){
   return /\(Form [BCD]\)/.test(name || '');
 }
+/* True for families with no retest data at all — every entry lacks m2/sd2/r,
+   because none is published. WAIS-IV longest span is the first of these: the
+   manual gives normative base rates but no reliability coefficient.
+
+   They must be kept out of the Change Analysis and SD Index dropdowns. Loading
+   one there produces a table of rows that can never compute anything, which
+   reads as the app being broken rather than as data being absent. */
+function isSingleAdministrationFamily(name){
+  const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
+  const fam = db && db[name];
+  if (!fam) return false;
+  const entries = Object.values(fam).filter(e => e && typeof e === 'object');
+  return entries.length > 0 && entries.every(e => e.singleAdministration);
+}
 // Change-Analysis dropdown: the retest/delay interval the coefficients were
 // measured over, shown on each age-band item so the clinician can match it to
 // their own reassessment gap. Sources: CVLT-3 Manual Table 3.4; RBANS Update
@@ -21929,8 +22093,68 @@ function premorbidLinkOutsideClick(e){
   if (pop.contains(e.target) || (btn && btn.contains(e.target))) return;
   closePremorbidLinkPopover();
 }
-function batteryClassificationDetails(r, cls){
+/* ---------- PUBLISHED BASE-RATE LOOKUP ----------
+   Some measures are raw counts with no metric to convert — WAIS-IV longest
+   span is the case this was built for. They cannot be scored by formula, but
+   the manual publishes the cumulative percentage of the normative sample at
+   each raw score, so the percentile can be read off instead of derived.
+
+   Preferred over the normal approximation not because it is more accurate —
+   computing from the printed M/SD lands within about 3 percentile points at
+   every span — but because it IS the published figure. In a report that gets
+   scrutinised, a number citable to Table C.4 needs no defending. */
+function batteryBaseRateEntry(row){
+  if (!row || !row.group || !row.name) return null;
+  const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
+  const e = db && db[row.group] && db[row.group][row.name];
+  return (e && e.baseRates && typeof e.baseRates === 'object') ? e : null;
+}
+/* baseRates[x] is the percentage scoring x OR HIGHER, so P(X >= v) is the
+   value at the smallest tabulated span that is at least v. Spans the table
+   skips (there is no row for 1) therefore inherit the next one up, which is
+   correct: nobody scores between two adjacent whole spans. */
+function baseRateAtOrAbove(entry, v){
+  const spans = Object.keys(entry.baseRates).map(Number).filter(Number.isFinite);
+  const atOrAbove = spans.filter(s => s >= v);
+  if (!atOrAbove.length) return 0;               // above the top of the table
+  return entry.baseRates[Math.min(...atOrAbove)];
+}
+/* Percentile RANK, i.e. the percentage scoring below, using the midpoint
+   convention for a discrete score: P(X < v) + 0.5 * P(X = v). The column means
+   "percentage scoring below" everywhere else in the app, so the published
+   "or higher" figure is converted rather than shown raw — a column that
+   silently reverses direction for some rows would be a trap. */
+function baseRatePercentile(entry, value){
+  const v = parseFloat(value);
+  if (!Number.isFinite(v) || !Number.isInteger(v)) return null;   // spans are whole numbers
+  const pGe = baseRateAtOrAbove(entry, v);
+  const pGt = baseRateAtOrAbove(entry, v + 1);
+  return (100 - pGe) + 0.5 * (pGe - pGt);
+}
+/* One answer for "what percentile is this row", used by the table, the in-place
+   update and the APA export so the three cannot drift. */
+function batteryRowPercentile(r){
+  const entry = batteryBaseRateEntry(r);
+  if (entry) return baseRatePercentile(entry, r.score);
   const z = toZ(r.score, rowScoreType(r));
+  return z == null ? null : normCDF(z) * 100;
+}
+function batteryClassificationDetails(r, cls){
+  /* A base-rate measure has a real percentile but no metric, so its z comes
+     BACK from that percentile rather than from the score. The classification
+     bands are defined on standard scores, and reading an empirical percentile
+     onto them ("performance at the 5th percentile") is ordinary practice. */
+  const brEntry = batteryBaseRateEntry(r);
+  let z;
+  if (brEntry){
+    const pct = baseRatePercentile(brEntry, r.score);
+    if (pct == null) return { text:'', html:'', className:'' };
+    // clamp inside the open interval: normInv is undefined at 0 and 100, and
+    // the table legitimately reaches both ends.
+    z = normInv(Math.min(99.99, Math.max(0.01, pct)) / 100);
+  } else {
+    z = toZ(r.score, rowScoreType(r));
+  }
   if (z == null) return { text:'', html:'', className:'' };
   const ss = fromZ(z, 'standard');
   /* On a higher-is-worse measure the score runs the other way: CVLT-C
@@ -22167,7 +22391,8 @@ function renderBattery(){
     }
     const rowType = rowScoreType(r);
     const z = toZ(r.score, rowType);
-    const pct = z == null ? '' : fmtPct(normCDF(z) * 100);
+    const pctVal = batteryRowPercentile(r);
+    const pct = pctVal == null ? '' : fmtPct(pctVal);
     const details = batteryClassificationDetails(r, cls);
     const ss = parseFloat(r.score);
     const ciHtml = ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : '';
@@ -22217,7 +22442,8 @@ function renderBattery(){
       const ciCell = cells[0]; // bat-ci-cell
       const pctCell = cells[1];
       const clsCell = cells[2];
-      pctCell.textContent = z == null ? '' : fmtPct(normCDF(z) * 100);
+      const pctVal = batteryRowPercentile(batteryRows[i]);
+      pctCell.textContent = pctVal == null ? '' : fmtPct(pctVal);
       const details = batteryClassificationDetails(batteryRows[i], cls);
       clsCell.className = `computed ${details.className}`.trim();
       clsCell.innerHTML = details.html;
@@ -22332,6 +22558,12 @@ const APA_NOTES = {
     ctx.hasRaw
       ? 'Raw-score measures are reported as obtained; percentile and classification are not derived, as these measures are not on a standardised metric.'
       : '',
+    /* Names the source, because these percentiles come from a published table
+       rather than from a metric conversion, and says which direction they run
+       in — the manual tabulates "or higher", the column reports "below". */
+    ctx.hasBaseRates
+      ? 'Percentiles for longest-span measures are derived from the published cumulative percentages of the normative sample (WAIS-IV Administration and Scoring Manual, Tables C.4–C.5) and give the percentage scoring below.'
+      : '',
     /* Without this the em-dash in the classification column reads as missing
        data rather than as a deliberate refusal. */
     /* Without this the pairing of a high percentile with a low classification
@@ -22439,7 +22671,7 @@ function renderBatteryApa(){
     { key:'raw',            label:'Raw Score',       group:'Scores', num:true,  defaultVisible:!rawHidden, render:r => escapeHtml(r.raw || '-') },
     { key:'score',          label:headerLabel,       group:'Scores', num:true,  render:r => escapeHtml(r.score || '') },
     { key:'ci',             label:ciLabel,           group:'Scores', num:true,  defaultVisible:ciLevel !== 'off', render:r => { const ss = parseFloat(r.score); return ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : ''; }},
-    { key:'percentile',     label:'Percentile',      group:'Scores', num:true,  render:r => { const z = toZ(r.score, rowScoreType(r)); return z == null ? '' : fmtPct(normCDF(z) * 100); }},
+    { key:'percentile',     label:'Percentile',      group:'Scores', num:true,  render:r => { const p = batteryRowPercentile(r); return p == null ? '' : fmtPct(p); }},
     { key:'classification', label:'Classification',  group:'Interpretation', num:false, render:r => batteryClassificationDetails(r, cls).html }
   ];
   updateApaColumnControls('bat-apa', columns, renderBatteryApa);
@@ -22455,7 +22687,8 @@ function renderBatteryApa(){
     ${apaNoteHtml('bat', {
       classification: cls,
       mixedTypes: types.size > 1,
-      hasRaw: valid.some(r => rowScoreType(r) === 'raw'),
+      hasRaw: valid.some(r => rowScoreType(r) === 'raw' && !batteryBaseRateEntry(r)),
+      hasBaseRates: valid.some(r => batteryBaseRateEntry(r) && r.score !== '' && !isNaN(r.score)),
       hasHigherIsWorse: valid.some(r => r.higherIsWorse && r.score !== '' && !isNaN(r.score)),
       ciLevel,
       premorbid: prem ? fmt(prem.estimate, 0) : null,
@@ -23044,8 +23277,11 @@ function rebuildSdiFamilyList(){
   const list = document.getElementById('sdi-family-list');
   if (!list) return;
   const db = getMergedDB();
-  // Alternate-form entries are reliable-change (RCI) only; keep them out of SDI.
-  const families = Object.keys(db).sort().filter(f => !isAltFormFamily(f));
+  /* Alternate-form entries are reliable-change (RCI) only; keep them out of SDI.
+     Single-administration families (base rates, no reliability) are excluded
+     for the opposite reason — they have no second administration to compare. */
+  const families = Object.keys(db).sort()
+    .filter(f => !isAltFormFamily(f) && !isSingleAdministrationFamily(f));
   list.innerHTML = comboFooterHtml() + buildFamilyListHtml(families);
   wireMultiSelectFamilyList(list, families => {
     families.forEach(loadFamilyIntoSdi);
@@ -23709,6 +23945,19 @@ function ageBandLabel(f){
 // labelled by the base name. The chosen value is the "All Ages" variant when
 // available, otherwise the first member. Used on the Neuropsych Tables page
 // where age bands don't change the resulting table and just clutter the UI.
+//
+// That last clause is only true for families scored by converting a metric —
+// the age band picks which normative sample the m1/sd1 came from, and Score
+// Tables never touches those. It is NOT true for a family scored from a
+// published base-rate table, where the band IS the lookup. Collapsing WAIS-IV
+// longest span would have scored every patient against All Ages: Longest Digit
+// Span Backward at a span of 4 is the 22nd percentile at 20-24 and the 59th at
+// 85-90, so up to 37 percentile points would have gone silently wrong.
+function familyScoredByAgeBand(name){
+  const fam = normDB[name];
+  if (!fam) return false;
+  return Object.values(fam).some(e => e && typeof e === 'object' && e.baseRates);
+}
 function buildFamilyListHtml(families, opts){
   const flat = !!(opts && opts.flat);
   const isCustom = f => !normDB[f];
@@ -23726,10 +23975,19 @@ function buildFamilyListHtml(families, opts){
     const groupKey = `grp:${base}`;
     if (members.length === 1 && !hasAgeBandSuffix(members[0])){
       html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false, groupKey);
-    } else if (flat && !members.some(isCustom)){
+    } else if (flat && !members.some(isCustom) && !members.some(familyScoredByAgeBand)){
       // Pick the "All Ages" canonical entry if present, else the first.
       const canon = members.find(m => /·\s*All\s+Ages\s*$/i.test(m)) || members[0];
       html += comboCheckboxItemHtml(canon, false, false, groupKey, base);
+    } else if (flat && members.some(familyScoredByAgeBand)){
+      /* Age band changes the score here, so it has to stay selectable even on
+         the flat list. Rendered as the indented age-band pills the Change
+         Analysis pages use, which is the existing pattern for "the band
+         matters". */
+      html += `<div class="combo-group-heading" data-group="${escapeAttr(groupKey)}">${escapeHtml(base)}</div>`;
+      html += `<div class="combo-indented-row" data-group="${escapeAttr(groupKey)}">`;
+      members.forEach(f => { html += comboCheckboxItemHtml(f, isCustom(f), true, groupKey); });
+      html += `</div>`;
     } else if (flat){
       // Custom families sharing a base name are separate user-authored tests
       // that can hold entirely different subtests — collapsing them to one
@@ -23765,7 +24023,10 @@ function familyHasN(familyEntries){
 function populateFamilyList(list){
   const db = getMergedDB();
   const method = list.dataset.method;
-  let families = Object.keys(db).sort();
+  /* Every Change Analysis method needs a second administration and a
+     reliability coefficient. Families that publish neither cannot be scored
+     here at all, so they are not offered. */
+  let families = Object.keys(db).sort().filter(f => !isSingleAdministrationFamily(f));
   // Crawford method requires N for the t-distributed test statistic - hide
   // families where no subtest carries a usable N. CVLT-3 now ships an N=100
   // holding value so it qualifies; WAIS-IV age-band data still doesn't.

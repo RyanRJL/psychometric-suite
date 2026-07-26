@@ -1330,6 +1330,20 @@ function caReliabilityQualifier(family){
 function isAltFormFamily(name){
   return /\(Form [BCD]\)/.test(name || '');
 }
+/* True for families with no retest data at all — every entry lacks m2/sd2/r,
+   because none is published. WAIS-IV longest span is the first of these: the
+   manual gives normative base rates but no reliability coefficient.
+
+   They must be kept out of the Change Analysis and SD Index dropdowns. Loading
+   one there produces a table of rows that can never compute anything, which
+   reads as the app being broken rather than as data being absent. */
+function isSingleAdministrationFamily(name){
+  const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
+  const fam = db && db[name];
+  if (!fam) return false;
+  const entries = Object.values(fam).filter(e => e && typeof e === 'object');
+  return entries.length > 0 && entries.every(e => e.singleAdministration);
+}
 // Change-Analysis dropdown: the retest/delay interval the coefficients were
 // measured over, shown on each age-band item so the clinician can match it to
 // their own reassessment gap. Sources: CVLT-3 Manual Table 3.4; RBANS Update
@@ -1669,8 +1683,68 @@ function premorbidLinkOutsideClick(e){
   if (pop.contains(e.target) || (btn && btn.contains(e.target))) return;
   closePremorbidLinkPopover();
 }
-function batteryClassificationDetails(r, cls){
+/* ---------- PUBLISHED BASE-RATE LOOKUP ----------
+   Some measures are raw counts with no metric to convert — WAIS-IV longest
+   span is the case this was built for. They cannot be scored by formula, but
+   the manual publishes the cumulative percentage of the normative sample at
+   each raw score, so the percentile can be read off instead of derived.
+
+   Preferred over the normal approximation not because it is more accurate —
+   computing from the printed M/SD lands within about 3 percentile points at
+   every span — but because it IS the published figure. In a report that gets
+   scrutinised, a number citable to Table C.4 needs no defending. */
+function batteryBaseRateEntry(row){
+  if (!row || !row.group || !row.name) return null;
+  const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
+  const e = db && db[row.group] && db[row.group][row.name];
+  return (e && e.baseRates && typeof e.baseRates === 'object') ? e : null;
+}
+/* baseRates[x] is the percentage scoring x OR HIGHER, so P(X >= v) is the
+   value at the smallest tabulated span that is at least v. Spans the table
+   skips (there is no row for 1) therefore inherit the next one up, which is
+   correct: nobody scores between two adjacent whole spans. */
+function baseRateAtOrAbove(entry, v){
+  const spans = Object.keys(entry.baseRates).map(Number).filter(Number.isFinite);
+  const atOrAbove = spans.filter(s => s >= v);
+  if (!atOrAbove.length) return 0;               // above the top of the table
+  return entry.baseRates[Math.min(...atOrAbove)];
+}
+/* Percentile RANK, i.e. the percentage scoring below, using the midpoint
+   convention for a discrete score: P(X < v) + 0.5 * P(X = v). The column means
+   "percentage scoring below" everywhere else in the app, so the published
+   "or higher" figure is converted rather than shown raw — a column that
+   silently reverses direction for some rows would be a trap. */
+function baseRatePercentile(entry, value){
+  const v = parseFloat(value);
+  if (!Number.isFinite(v) || !Number.isInteger(v)) return null;   // spans are whole numbers
+  const pGe = baseRateAtOrAbove(entry, v);
+  const pGt = baseRateAtOrAbove(entry, v + 1);
+  return (100 - pGe) + 0.5 * (pGe - pGt);
+}
+/* One answer for "what percentile is this row", used by the table, the in-place
+   update and the APA export so the three cannot drift. */
+function batteryRowPercentile(r){
+  const entry = batteryBaseRateEntry(r);
+  if (entry) return baseRatePercentile(entry, r.score);
   const z = toZ(r.score, rowScoreType(r));
+  return z == null ? null : normCDF(z) * 100;
+}
+function batteryClassificationDetails(r, cls){
+  /* A base-rate measure has a real percentile but no metric, so its z comes
+     BACK from that percentile rather than from the score. The classification
+     bands are defined on standard scores, and reading an empirical percentile
+     onto them ("performance at the 5th percentile") is ordinary practice. */
+  const brEntry = batteryBaseRateEntry(r);
+  let z;
+  if (brEntry){
+    const pct = baseRatePercentile(brEntry, r.score);
+    if (pct == null) return { text:'', html:'', className:'' };
+    // clamp inside the open interval: normInv is undefined at 0 and 100, and
+    // the table legitimately reaches both ends.
+    z = normInv(Math.min(99.99, Math.max(0.01, pct)) / 100);
+  } else {
+    z = toZ(r.score, rowScoreType(r));
+  }
   if (z == null) return { text:'', html:'', className:'' };
   const ss = fromZ(z, 'standard');
   /* On a higher-is-worse measure the score runs the other way: CVLT-C
@@ -1907,7 +1981,8 @@ function renderBattery(){
     }
     const rowType = rowScoreType(r);
     const z = toZ(r.score, rowType);
-    const pct = z == null ? '' : fmtPct(normCDF(z) * 100);
+    const pctVal = batteryRowPercentile(r);
+    const pct = pctVal == null ? '' : fmtPct(pctVal);
     const details = batteryClassificationDetails(r, cls);
     const ss = parseFloat(r.score);
     const ciHtml = ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : '';
@@ -1957,7 +2032,8 @@ function renderBattery(){
       const ciCell = cells[0]; // bat-ci-cell
       const pctCell = cells[1];
       const clsCell = cells[2];
-      pctCell.textContent = z == null ? '' : fmtPct(normCDF(z) * 100);
+      const pctVal = batteryRowPercentile(batteryRows[i]);
+      pctCell.textContent = pctVal == null ? '' : fmtPct(pctVal);
       const details = batteryClassificationDetails(batteryRows[i], cls);
       clsCell.className = `computed ${details.className}`.trim();
       clsCell.innerHTML = details.html;
@@ -2072,6 +2148,12 @@ const APA_NOTES = {
     ctx.hasRaw
       ? 'Raw-score measures are reported as obtained; percentile and classification are not derived, as these measures are not on a standardised metric.'
       : '',
+    /* Names the source, because these percentiles come from a published table
+       rather than from a metric conversion, and says which direction they run
+       in — the manual tabulates "or higher", the column reports "below". */
+    ctx.hasBaseRates
+      ? 'Percentiles for longest-span measures are derived from the published cumulative percentages of the normative sample (WAIS-IV Administration and Scoring Manual, Tables C.4–C.5) and give the percentage scoring below.'
+      : '',
     /* Without this the em-dash in the classification column reads as missing
        data rather than as a deliberate refusal. */
     /* Without this the pairing of a high percentile with a low classification
@@ -2179,7 +2261,7 @@ function renderBatteryApa(){
     { key:'raw',            label:'Raw Score',       group:'Scores', num:true,  defaultVisible:!rawHidden, render:r => escapeHtml(r.raw || '-') },
     { key:'score',          label:headerLabel,       group:'Scores', num:true,  render:r => escapeHtml(r.score || '') },
     { key:'ci',             label:ciLabel,           group:'Scores', num:true,  defaultVisible:ciLevel !== 'off', render:r => { const ss = parseFloat(r.score); return ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : ''; }},
-    { key:'percentile',     label:'Percentile',      group:'Scores', num:true,  render:r => { const z = toZ(r.score, rowScoreType(r)); return z == null ? '' : fmtPct(normCDF(z) * 100); }},
+    { key:'percentile',     label:'Percentile',      group:'Scores', num:true,  render:r => { const p = batteryRowPercentile(r); return p == null ? '' : fmtPct(p); }},
     { key:'classification', label:'Classification',  group:'Interpretation', num:false, render:r => batteryClassificationDetails(r, cls).html }
   ];
   updateApaColumnControls('bat-apa', columns, renderBatteryApa);
@@ -2195,7 +2277,8 @@ function renderBatteryApa(){
     ${apaNoteHtml('bat', {
       classification: cls,
       mixedTypes: types.size > 1,
-      hasRaw: valid.some(r => rowScoreType(r) === 'raw'),
+      hasRaw: valid.some(r => rowScoreType(r) === 'raw' && !batteryBaseRateEntry(r)),
+      hasBaseRates: valid.some(r => batteryBaseRateEntry(r) && r.score !== '' && !isNaN(r.score)),
       hasHigherIsWorse: valid.some(r => r.higherIsWorse && r.score !== '' && !isNaN(r.score)),
       ciLevel,
       premorbid: prem ? fmt(prem.estimate, 0) : null,
@@ -2784,8 +2867,11 @@ function rebuildSdiFamilyList(){
   const list = document.getElementById('sdi-family-list');
   if (!list) return;
   const db = getMergedDB();
-  // Alternate-form entries are reliable-change (RCI) only; keep them out of SDI.
-  const families = Object.keys(db).sort().filter(f => !isAltFormFamily(f));
+  /* Alternate-form entries are reliable-change (RCI) only; keep them out of SDI.
+     Single-administration families (base rates, no reliability) are excluded
+     for the opposite reason — they have no second administration to compare. */
+  const families = Object.keys(db).sort()
+    .filter(f => !isAltFormFamily(f) && !isSingleAdministrationFamily(f));
   list.innerHTML = comboFooterHtml() + buildFamilyListHtml(families);
   wireMultiSelectFamilyList(list, families => {
     families.forEach(loadFamilyIntoSdi);
@@ -3449,6 +3535,19 @@ function ageBandLabel(f){
 // labelled by the base name. The chosen value is the "All Ages" variant when
 // available, otherwise the first member. Used on the Neuropsych Tables page
 // where age bands don't change the resulting table and just clutter the UI.
+//
+// That last clause is only true for families scored by converting a metric —
+// the age band picks which normative sample the m1/sd1 came from, and Score
+// Tables never touches those. It is NOT true for a family scored from a
+// published base-rate table, where the band IS the lookup. Collapsing WAIS-IV
+// longest span would have scored every patient against All Ages: Longest Digit
+// Span Backward at a span of 4 is the 22nd percentile at 20-24 and the 59th at
+// 85-90, so up to 37 percentile points would have gone silently wrong.
+function familyScoredByAgeBand(name){
+  const fam = normDB[name];
+  if (!fam) return false;
+  return Object.values(fam).some(e => e && typeof e === 'object' && e.baseRates);
+}
 function buildFamilyListHtml(families, opts){
   const flat = !!(opts && opts.flat);
   const isCustom = f => !normDB[f];
@@ -3466,10 +3565,19 @@ function buildFamilyListHtml(families, opts){
     const groupKey = `grp:${base}`;
     if (members.length === 1 && !hasAgeBandSuffix(members[0])){
       html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false, groupKey);
-    } else if (flat && !members.some(isCustom)){
+    } else if (flat && !members.some(isCustom) && !members.some(familyScoredByAgeBand)){
       // Pick the "All Ages" canonical entry if present, else the first.
       const canon = members.find(m => /·\s*All\s+Ages\s*$/i.test(m)) || members[0];
       html += comboCheckboxItemHtml(canon, false, false, groupKey, base);
+    } else if (flat && members.some(familyScoredByAgeBand)){
+      /* Age band changes the score here, so it has to stay selectable even on
+         the flat list. Rendered as the indented age-band pills the Change
+         Analysis pages use, which is the existing pattern for "the band
+         matters". */
+      html += `<div class="combo-group-heading" data-group="${escapeAttr(groupKey)}">${escapeHtml(base)}</div>`;
+      html += `<div class="combo-indented-row" data-group="${escapeAttr(groupKey)}">`;
+      members.forEach(f => { html += comboCheckboxItemHtml(f, isCustom(f), true, groupKey); });
+      html += `</div>`;
     } else if (flat){
       // Custom families sharing a base name are separate user-authored tests
       // that can hold entirely different subtests — collapsing them to one
@@ -3505,7 +3613,10 @@ function familyHasN(familyEntries){
 function populateFamilyList(list){
   const db = getMergedDB();
   const method = list.dataset.method;
-  let families = Object.keys(db).sort();
+  /* Every Change Analysis method needs a second administration and a
+     reliability coefficient. Families that publish neither cannot be scored
+     here at all, so they are not offered. */
+  let families = Object.keys(db).sort().filter(f => !isSingleAdministrationFamily(f));
   // Crawford method requires N for the t-distributed test statistic - hide
   // families where no subtest carries a usable N. CVLT-3 now ships an N=100
   // holding value so it qualifies; WAIS-IV age-band data still doesn't.

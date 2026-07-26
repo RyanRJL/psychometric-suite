@@ -212,7 +212,7 @@ for the pattern. Follow it when touching a table that contains inputs.
 
 ## `normDB`
 
-The reliability database: 99 groups, 590 entries, seven instrument families (D-KEFS,
+The reliability database: 113 groups, 641 entries, seven instrument families (D-KEFS,
 CVLT-3, CVLT-C, RBANS, WAIS-IV, WISC-V, WMS-IV).
 
 Group keys are `"<Instrument> <Category> · <Age band>"` — the separator is **U+00B7
@@ -287,6 +287,44 @@ heuristic. Score Tables and the SD Index ask the entry question, so they get
 `reportedAs`; Change Analysis reads `m1`/`sd1` directly and is unaffected. Because
 these standardised scores are already age-corrected, the age band chosen on autofill
 does not change a Score Tables percentile — it only matters for Change Analysis.
+
+### `baseRates` — measures scored by lookup rather than by conversion
+
+**WAIS-IV Longest Span (Process)** is the first family scored from a published
+table instead of a formula, and the first with **no retest data at all**. Source:
+WAIS-IV Administration and Scoring Manual (GB), Tables C.4 and C.5 — 14 age bands
+× Longest Digit Span Forward / Backward / Sequence, plus Longest Letter-Number
+Sequence for the nine bands 16-17 to 65-69, which is all the manual publishes.
+
+`baseRates[x]` is **the percentage scoring x or higher**. That is derived, not
+assumed: for a whole-number score E[X] = Σ P(X ≥ x), and reconstructing the mean
+that way reproduces every printed `m1` across all 51 measure-bands to within
+0.055. `check.js` §22 re-runs it, so flipping the table to "or lower" fails loudly.
+
+The Percentile column reports **the percentage scoring below**, using the midpoint
+convention for a discrete score — `P(X < v) + ½·P(X = v)`. The published "or
+higher" figure is converted rather than shown raw, because a column that silently
+reversed direction for some rows would be a trap. The APA note cites the table.
+
+Three things follow, each with a check:
+
+- **`singleAdministration:true`** marks entries with no `m2`/`sd2`/`r`, because
+  none is published. They are filtered out of Change Analysis and the SD Index —
+  loading one there gives rows that can never compute, which reads as the app
+  being broken rather than as data being absent.
+- **The age bands are the normative ones** (16-17, 18-19, …, 85-90) and
+  deliberately do **not** match `WAIS-IV Process Scores`, which uses the retest
+  study's bands (16-29, 30-54, 55-69, 70-90). They cannot be merged.
+- **Score Tables must not collapse these age bands.** Its flat dropdown normally
+  shows one entry per family, on the grounds that the band does not change the
+  table — true for a metric conversion, false when the band *is* the lookup.
+  Longest Digit Span Backward at a span of 4 is the **22nd** percentile at 20-24
+  and the **59th** at 85-90. `familyScoredByAgeBand()` exempts them.
+
+Note the table was not adopted for accuracy: computing from the printed M/SD
+lands within ~3 percentile points at every span. It was adopted because it is the
+**published, citable** figure, which is worth more in a report than a close
+approximation.
 
 ### `higherIsWorse` — measures where a high score is a bad result
 
@@ -413,7 +451,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 165 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 180 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Table 4.5, OPIE-4 coefficients pinned to Table eA5.8, worked OPIE predictions, reliable-
 change thresholds and direction-neutral outcome labels, base-rate reconstruction and

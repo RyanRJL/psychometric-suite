@@ -1118,6 +1118,156 @@ const OPIE_BASE_RATES = {
     "Symbol Search": { m1:10, sd1:2.7, m2:11.5, sd2:3.2, r:0.76, n:209 },
     "Cancellation": { m1:9.8, sd1:2.9, m2:11.1, sd2:3.2, r:0.79, n:209 }
   },
+
+  /* ---- WAIS-IV Longest Span, process level -------------------------------
+     Source: WAIS-IV Administration and Scoring Manual (GB), Tables C.4 and
+     C.5 — cumulative percentages of the normative sample obtaining each raw
+     longest span, by age group.
+
+     baseRates[x] is the percentage scoring x OR HIGHER. That direction is not
+     an assumption: for a whole-number score E[X] = the sum of P(X >= x), and
+     reconstructing the mean that way reproduces every printed mean across all
+     51 measure-bands to within 0.055, which is rounding. check.js re-runs it.
+
+     singleAdministration marks these as having NO retest data — there are no
+     reliability coefficients published for longest span, so they carry no
+     m2/sd2/r and must stay out of the Change Analysis pages.
+
+     The age bands are the NORMATIVE ones and deliberately do not match the
+     "WAIS-IV Process Scores" families, which use the retest study bands
+     (16-29, 30-54, 55-69, 70-90). They cannot be merged for that reason.
+     Letter-Number Sequence stops at 65-69 in the published table.
+     -------------------------------------------------------------------- */
+  "WAIS-IV Longest Span (Process) · Ages 16-17": {
+    "Longest Digit Span Forward": { m1:6.5, sd1:1.2, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:5.5,8:19,7:50.5,6:77,5:97.5,4:99.5,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.8, sd1:1.2, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3.5,7:9,6:22.5,5:53,4:89,3:99,2:99.5,0:100} },
+    "Longest Digit Span Sequence": { m1:5.9, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:1.5,8:10,7:26.5,6:71.5,5:85.5,4:98.5,3:99.5,2:99.5,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.3, sd1:1.2, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:4.5,7:14.5,6:44,5:76.5,4:96,3:99,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 18-19": {
+    "Longest Digit Span Forward": { m1:6.8, sd1:1.2, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:9,8:26.5,7:64.5,6:84.5,5:98,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:5, sd1:1.4, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3.5,7:15.5,6:34.5,5:57.5,4:90.5,3:97.5,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:6, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:5,8:13,7:28.5,6:73,5:88.5,4:97.5,3:99,2:100,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.6, sd1:1.2, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{8:5,7:21,6:54,5:84.5,4:95.5,3:98.5,2:99.5,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 20-24": {
+    "Longest Digit Span Forward": { m1:6.9, sd1:1.3, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:11,8:33.5,7:63.5,6:82,5:97.5,4:98.5,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:5.1, sd1:1.3, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3.5,7:15,6:32,5:64.5,4:92,3:99,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:6, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:7,8:12,7:27.5,6:74,5:87.5,4:97,3:98.5,2:99.5,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.6, sd1:1.2, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{8:4.5,7:21.5,6:52,5:83.5,4:97,3:99,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 25-29": {
+    "Longest Digit Span Forward": { m1:6.9, sd1:1.3, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:17.5,8:27,7:62,6:86,5:97,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.9, sd1:1.5, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:7,7:18.5,6:32,5:56,4:83.5,3:97.5,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:6, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:2.5,8:10.5,7:30,6:72.5,5:86.5,4:97.5,3:99.5,2:100,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.5, sd1:1.2, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:6,7:19.5,6:49,5:84,4:95,3:99.5,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 30-34": {
+    "Longest Digit Span Forward": { m1:6.8, sd1:1.4, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:11,8:30,7:60.5,6:82.5,5:97.5,4:99,3:99.5,2:99.5,0:100} },
+    "Longest Digit Span Backward": { m1:5.1, sd1:1.5, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:6.5,7:18.5,6:32.5,5:63,4:90,3:97,2:99.5,0:100} },
+    "Longest Digit Span Sequence": { m1:6, sd1:1.5, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:5.5,8:11,7:32,6:68.5,5:86.5,4:96,3:98,2:99,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.5, sd1:1.3, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:8,7:23,6:49,5:81,4:97,3:98.5,2:99,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 35-44": {
+    "Longest Digit Span Forward": { m1:6.8, sd1:1.4, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:14,8:32,7:61.5,6:81,5:95.5,4:99.5,3:99.5,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.9, sd1:1.5, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:6.5,7:15.5,6:36,5:56.5,4:85.5,3:96.5,2:99,0:100} },
+    "Longest Digit Span Sequence": { m1:5.9, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:3.5,8:11,7:25,6:70.5,5:83,4:96.5,3:98.5,2:99.5,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.4, sd1:1.2, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:5.5,7:15,6:44.5,5:77,4:95.5,3:99,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 45-54": {
+    "Longest Digit Span Forward": { m1:6.8, sd1:1.4, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:14,8:30,7:61.5,6:79,5:96,4:99.5,3:99.5,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.8, sd1:1.5, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3,7:16.5,6:31,5:55.5,4:82,3:96,2:99.5,0:100} },
+    "Longest Digit Span Sequence": { m1:5.7, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:2,8:7.5,7:23,6:66,5:82,4:95.5,3:97.5,2:99.5,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.4, sd1:1.3, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:6,7:19,6:46,5:76,4:93,3:97.5,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 55-64": {
+    "Longest Digit Span Forward": { m1:6.5, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:7,8:20,7:48,6:75.5,5:94.5,4:100,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.5, sd1:1.3, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:2,7:8.5,6:23.5,5:45,4:79.5,3:97,2:99.5,0:100} },
+    "Longest Digit Span Sequence": { m1:5.6, sd1:1.2, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:1.5,8:4.5,7:15,6:63,5:81.5,4:96.5,3:98,2:100,0:100} },
+    "Longest Letter-Number Sequence": { m1:5.2, sd1:1.1, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:2.5,7:10.5,6:40.5,5:74.5,4:92.5,3:99.5,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 65-69": {
+    "Longest Digit Span Forward": { m1:6.5, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:6,8:26,7:49.5,6:70,5:95.5,4:100,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.5, sd1:1.3, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:0.5,7:10.5,6:21.5,5:46,4:76.5,3:96,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:5.5, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:0.5,8:4.5,7:15.5,6:59,5:78,4:92.5,3:96,2:99.5,0:100} },
+    "Longest Letter-Number Sequence": { m1:5, sd1:1.2, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3,7:10,6:34,5:68,4:88.5,3:99.5,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 70-74": {
+    "Longest Digit Span Forward": { m1:6.2, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:8,8:17,7:41,6:68,5:90,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.3, sd1:1.3, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:2,7:7,6:12,5:43,4:74,3:95,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:5.2, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:0,8:4,7:8,6:52,5:74,4:86,3:93,2:100,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 75-79": {
+    "Longest Digit Span Forward": { m1:6.3, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:6,8:18,7:41,6:69,5:95,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.4, sd1:1.3, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:1,7:7,6:20,5:45,4:76,3:95,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:5, sd1:1.5, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:0,8:3,7:8,6:51,5:68,4:84,3:92,2:99,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 80-84": {
+    "Longest Digit Span Forward": { m1:6.1, sd1:1.3, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:5,8:15,7:35,6:66,5:93,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.1, sd1:1.1, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:0,7:1,6:9,5:33,4:77,3:90,2:99,0:100} },
+    "Longest Digit Span Sequence": { m1:4.7, sd1:1.4, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{9:0,8:0,7:3,6:36,5:59,4:84,3:91,2:99,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · Ages 85-90": {
+    "Longest Digit Span Forward": { m1:6, sd1:1.2, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:3,8:11,7:26,6:63,5:94,4:99,3:100,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:3.8, sd1:1.2, median:4,
+      metric:'raw', singleAdministration:true, baseRates:{8:1,7:2,6:8,5:27,4:55,3:89,2:100,0:100} },
+    "Longest Digit Span Sequence": { m1:4.3, sd1:1.6, median:4.5,
+      metric:'raw', singleAdministration:true, baseRates:{9:0,8:0,7:2,6:31,5:50,4:67,3:80,2:98,0:100} }
+  },
+  "WAIS-IV Longest Span (Process) · All Ages": {
+    "Longest Digit Span Forward": { m1:6.6, sd1:1.3, median:7,
+      metric:'raw', singleAdministration:true, baseRates:{9:9.6,8:25,7:53.9,6:77.3,5:95.9,4:99.3,3:99.9,2:100,0:100} },
+    "Longest Digit Span Backward": { m1:4.7, sd1:1.4, median:5,
+      metric:'raw', singleAdministration:true, baseRates:{8:3.5,7:12.4,6:26.4,5:51.9,4:82.7,3:96.4,2:99.7,0:100} },
+    "Longest Digit Span Sequence": { m1:5.7, sd1:1.4, median:6,
+      metric:'raw', singleAdministration:true, baseRates:{9:2.6,8:8,7:21.2,6:63.9,5:80.4,4:93.5,3:96.6,2:99.5,0:100} }
+  },
   "WMS-IV Indices · Ages 16-69": {
     "Auditory Memory Index": { m1:100.1, sd1:14.1, m2:111.6, sd2:14.4, r:0.81, rCorrected:0.83, n:168 },
     "Visual Memory Index": { m1:100, sd1:14.8, m2:112.1, sd2:16.6, r:0.8, rCorrected:0.81, n:144 },

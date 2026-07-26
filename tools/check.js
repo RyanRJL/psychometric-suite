@@ -276,23 +276,49 @@ check('percentile -> z -> percentile round-trips', () => {
    ========================================================================== */
 heading('3. normDB structural integrity');
 
-check('99 groups and 590 entries present', () => {
+/* Two shapes of entry now live in normDB. A RETEST entry carries the full
+   m1/sd1/m2/sd2/r set and feeds Change Analysis. A SINGLE-ADMINISTRATION entry
+   carries only m1/sd1 plus a published base-rate table, because no reliability
+   coefficient exists for it - WAIS-IV longest span is the first of these.
+
+   The retest invariants below stay exactly as strict as they were; they simply
+   no longer apply to entries that never claimed to have a second
+   administration. eachRetestEntry keeps that distinction in one place. */
+function eachRetestEntry(fn) {
+  eachNormEntry((e, g, n) => { if (!e.singleAdministration) fn(e, g, n); });
+}
+
+check('113 groups and 641 entries present', () => {
   const groups = Object.keys(D.normDB).length;
   let n = 0; eachNormEntry(() => n++);
-  return (groups === 99 && n === 590) || 'got ' + groups + ' groups / ' + n + ' entries';
+  return (groups === 113 && n === 641) || 'got ' + groups + ' groups / ' + n + ' entries';
 });
-check('every entry has m1, sd1, m2, sd2 and r', () => {
+check('every retest entry has m1, sd1, m2, sd2 and r', () => {
   const bad = [];
-  eachNormEntry((e, g, n) => {
+  eachRetestEntry((e, g, n) => {
     for (const f of ['m1', 'sd1', 'm2', 'sd2', 'r']) {
       if (!Number.isFinite(e[f])) bad.push(g + ' / ' + n + ' missing ' + f);
     }
   });
   return bad.length === 0 || bad.length + ' problems, first: ' + bad[0];
 });
-check('all correlations lie in [0, 1)', () => {
+check('every single-administration entry has m1, sd1 and base rates, and NO r', () => {
   const bad = [];
   eachNormEntry((e, g, n) => {
+    if (!e.singleAdministration) return;
+    if (!Number.isFinite(e.m1) || !Number.isFinite(e.sd1)) bad.push(g + ' / ' + n + ' missing m1/sd1');
+    if (!e.baseRates || !Object.keys(e.baseRates).length) bad.push(g + ' / ' + n + ' has no base rates');
+    /* Carrying an r here would be a claim the manual does not make, and would
+       put the family back into the Change Analysis dropdowns. */
+    for (const f of ['m2', 'sd2', 'r', 'rCorrected']) {
+      if (e[f] != null) bad.push(g + ' / ' + n + ' unexpectedly carries ' + f);
+    }
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+check('all correlations lie in [0, 1)', () => {
+  const bad = [];
+  eachRetestEntry((e, g, n) => {
     if (!(e.r >= 0 && e.r < 1)) bad.push(g + ' / ' + n + ' r=' + e.r);
     if (Number.isFinite(e.rCorrected) && !(e.rCorrected >= 0 && e.rCorrected < 1)) bad.push(g + ' / ' + n + ' rCorrected=' + e.rCorrected);
   });
@@ -300,19 +326,22 @@ check('all correlations lie in [0, 1)', () => {
 });
 check('all standard deviations are strictly positive', () => {
   const bad = [];
-  eachNormEntry((e, g, n) => { if (!(e.sd1 > 0) || !(e.sd2 > 0)) bad.push(g + ' / ' + n); });
+  eachNormEntry((e, g, n) => {
+    if (!(e.sd1 > 0)) bad.push(g + ' / ' + n + ' sd1');
+    if (!e.singleAdministration && !(e.sd2 > 0)) bad.push(g + ' / ' + n + ' sd2');
+  });
   return bad.length === 0 || bad.join('; ');
 });
 check('difference variance sd1^2 + sd2^2 - 2r*sd1*sd2 is positive everywhere', () => {
   // Bounded below by (sd1-sd2)^2, so a failure means corrupt data, not maths.
   const bad = [];
-  eachNormEntry((e, g, n) => {
+  eachRetestEntry((e, g, n) => {
     const v = e.sd1 ** 2 + e.sd2 ** 2 - 2 * e.r * e.sd1 * e.sd2;
     if (!(v > 0)) bad.push(g + ' / ' + n + ' v=' + v);
   });
   return bad.length === 0 || bad.join('; ');
 });
-check('rCorrected present on exactly 233 of 590 entries', () => {
+check('rCorrected present on exactly 233 of the 590 retest entries', () => {
   let n = 0; eachNormEntry(e => { if (Number.isFinite(e.rCorrected)) n++; });
   return n === 233 || 'got ' + n;
 });
@@ -572,9 +601,12 @@ check('the gap the Crawford label hid is real across the shipped norms', () => {
   if (!(c.t(0.975, 296) - 1.96 < gap)) return 'the gap does not shrink with N';
   return true;
 });
-check('McSweeney SRB slope and SEE are computable for every entry', () => {
+/* Only retest entries reach the regression methods; the single-administration
+   families are filtered out of the Change Analysis dropdowns precisely because
+   they have no r to fit a slope from. */
+check('McSweeney SRB slope and SEE are computable for every retest entry', () => {
   const bad = [];
-  eachNormEntry((e, g, n) => {
+  eachRetestEntry((e, g, n) => {
     const slope = e.r * (e.sd2 / e.sd1);
     const see = e.sd2 * Math.sqrt(1 - e.r * e.r);
     if (!Number.isFinite(slope) || !Number.isFinite(see) || see <= 0) bad.push(g + ' / ' + n);
@@ -1441,8 +1473,13 @@ check('every untagged RBANS subtest has a mean consistent with a scaled score', 
   return bad.length === 0 || 'not scaled-like: ' + bad.join('; ');
 });
 
-check('exactly 47 entries are tagged raw, and none outside the known groups', () => {
-  const fams = new Set([...RAW_FAMILIES_WHOLE, ...RBANS_GROUPS]);
+/* The WAIS-IV longest-span families are raw too, but they are raw WITH a
+   published base-rate table, so they score properly rather than going blank.
+   Counted separately to keep the "raw and unscoreable" total honest. */
+const SPAN_GROUPS = Object.keys(D.normDB).filter(g => /^WAIS-IV Longest Span/.test(g));
+
+check('exactly 98 entries are tagged raw, and none outside the known groups', () => {
+  const fams = new Set([...RAW_FAMILIES_WHOLE, ...RBANS_GROUPS, ...SPAN_GROUPS]);
   let n = 0; const stray = [];
   eachNormEntry((e, g, name) => {
     if (e.metric !== 'raw') return;
@@ -1450,7 +1487,7 @@ check('exactly 47 entries are tagged raw, and none outside the known groups', ()
     if (!fams.has(g)) stray.push(g + ' / ' + name);
   });
   if (stray.length) return 'tagged raw outside the known families: ' + stray.join(', ');
-  return n === 47 || 'got ' + n + ' tagged raw, expected 47 (39 CVLT-C + 8 RBANS)';
+  return n === 98 || 'got ' + n + ' tagged raw, expected 98 (39 CVLT-C + 8 RBANS + 51 longest span)';
 });
 
 /* No standardised metric in this app has an SD below 1, so an entry whose sd1
@@ -2032,6 +2069,200 @@ check('the merge key includes the parent tool, not the battery alone', () => {
       || 'the common set is computed but the members are not re-rendered with it';
   });
 }
+
+/* ==========================================================================
+   22. WAIS-IV longest span — published base rates
+
+   Source: WAIS-IV Administration and Scoring Manual (GB), Tables C.4 and C.5,
+   cumulative percentages of the normative sample obtaining each raw longest
+   span, by age group.
+
+   These are the first entries scored by LOOKUP rather than by converting a
+   metric, and the first with no retest data at all. The direction of the
+   tabulated value is the thing most likely to be got wrong by a later editor,
+   so it is re-derived here from the data rather than asserted.
+   ========================================================================== */
+heading('22. WAIS-IV longest span base rates');
+
+const SPAN_MEASURES = ['Longest Digit Span Forward', 'Longest Digit Span Backward',
+                       'Longest Digit Span Sequence', 'Longest Letter-Number Sequence'];
+
+check('14 age bands, 51 measure-bands, Letter-Number stopping at 65-69', () => {
+  if (SPAN_GROUPS.length !== 14) return 'got ' + SPAN_GROUPS.length + ' bands, expected 14';
+  let n = 0; const lns = [];
+  SPAN_GROUPS.forEach(g => {
+    Object.keys(D.normDB[g]).forEach(m => {
+      n++;
+      if (!SPAN_MEASURES.includes(m)) lns.push(g + ' / ' + m + ' is not a longest-span measure');
+      if (m === 'Longest Letter-Number Sequence') lns.push(g);
+    });
+  });
+  if (n !== 51) return 'got ' + n + ' measure-bands, expected 51';
+  /* LLNS is published for 16-17 through 65-69 only — 9 bands. Any more would
+     mean invented data; any fewer, a transcription drop. */
+  const lnsBands = SPAN_GROUPS.filter(g => D.normDB[g]['Longest Letter-Number Sequence']);
+  return lnsBands.length === 9
+    || 'Letter-Number Sequence present in ' + lnsBands.length + ' bands, expected 9';
+});
+
+/* THE DIRECTION CHECK. baseRates[x] is the percentage scoring x OR HIGHER.
+   For a non-negative whole-number score, E[X] = the sum of P(X >= x) over
+   x >= 1, so reconstructing the mean that way must reproduce the printed m1.
+   If a later editor flips the table to "or lower", this fails loudly. */
+check('base rates run "or higher": reconstructed means match the published m1', () => {
+  const bad = [];
+  let worst = 0;
+  SPAN_GROUPS.forEach(g => {
+    Object.entries(D.normDB[g]).forEach(([name, e]) => {
+      const spans = Object.keys(e.baseRates).map(Number).sort((a, b) => a - b);
+      const top = Math.max(...spans);
+      let est = 0;
+      for (let x = 1; x <= top; x++) {
+        let p = e.baseRates[x];
+        if (p == null) {                       // the table has no row for 1
+          const above = spans.filter(s => s >= x);
+          p = above.length ? e.baseRates[Math.min(...above)] : 0;
+        }
+        est += p / 100;
+      }
+      const diff = Math.abs(est - e.m1);
+      if (diff > worst) worst = diff;
+      if (diff > 0.08) bad.push(g + ' / ' + name + ' m1=' + e.m1 + ' reconstructed=' + est.toFixed(3));
+    });
+  });
+  return bad.length === 0
+    || bad.length + ' mismatched (worst ' + worst.toFixed(3) + '), first: ' + bad[0];
+});
+
+check('base rates are monotone, bounded, and reach 100% at the bottom', () => {
+  const bad = [];
+  SPAN_GROUPS.forEach(g => {
+    Object.entries(D.normDB[g]).forEach(([name, e]) => {
+      const spans = Object.keys(e.baseRates).map(Number).sort((a, b) => a - b);
+      spans.forEach(s => {
+        const v = e.baseRates[s];
+        if (!(v >= 0 && v <= 100)) bad.push(g + ' / ' + name + ' ' + s + ' -> ' + v);
+      });
+      for (let i = 1; i < spans.length; i++) {
+        if (e.baseRates[spans[i]] > e.baseRates[spans[i - 1]] + 1e-9) {
+          bad.push(g + ' / ' + name + ' rises from ' + spans[i - 1] + ' to ' + spans[i]);
+        }
+      }
+      // everyone scores at least the lowest tabulated span
+      if (e.baseRates[spans[0]] !== 100) bad.push(g + ' / ' + name + ' bottom = ' + e.baseRates[spans[0]] + '%, expected 100');
+    });
+  });
+  return bad.length === 0 || bad.length + ' problems, first: ' + bad[0];
+});
+
+check('the published median sits where the cumulative percentage crosses 50%', () => {
+  const bad = [];
+  SPAN_GROUPS.forEach(g => {
+    Object.entries(D.normDB[g]).forEach(([name, e]) => {
+      if (!Number.isFinite(e.median)) return;
+      const spans = Object.keys(e.baseRates).map(Number);
+      const atOrAbove50 = spans.filter(s => e.baseRates[s] >= 50);
+      if (!atOrAbove50.length) return;
+      const crossing = Math.max(...atOrAbove50);
+      if (Math.abs(crossing - e.median) > 0.5) {
+        bad.push(g + ' / ' + name + ' median ' + e.median + ' vs crossing ' + crossing);
+      }
+    });
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+{
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(
+    ['baseRateAtOrAbove', 'baseRatePercentile'].map(n => extractFn(APP_SRC, n)).join('\n') +
+    ';globalThis.__B = { baseRateAtOrAbove, baseRatePercentile };', ctx);
+  const B = ctx.__B;
+  const LDSF = D.normDB['WAIS-IV Longest Span (Process) · All Ages']['Longest Digit Span Forward'];
+
+  /* Worked from the published figures: P(>=6) = 77.3 and P(>=7) = 53.9, so
+     P(<6) = 22.7 and P(=6) = 23.4, giving 22.7 + 11.7 = 34.4. */
+  checkClose('LDSF All Ages, span 6 -> 34.4th percentile',
+    B.baseRatePercentile(LDSF, 6), 34.4, 0.05, 'WAIS-IV Manual Table C.4');
+
+  check('the percentile converts "or higher" into "percentage below"', () => {
+    // must be the complement direction: a higher span => a higher percentile
+    const p5 = B.baseRatePercentile(LDSF, 5), p8 = B.baseRatePercentile(LDSF, 8);
+    return p8 > p5 || 'span 8 gives ' + p8 + ' but span 5 gives ' + p5 + ' — direction inverted';
+  });
+
+  check('spans the table skips inherit the next tabulated value', () => {
+    // there is no row for 1; P(X >= 1) must still be 100
+    return B.baseRateAtOrAbove(LDSF, 1) === 100 || 'got ' + B.baseRateAtOrAbove(LDSF, 1);
+  });
+
+  check('a span above the top of the table yields 0% at or above', () => {
+    return B.baseRateAtOrAbove(LDSF, 10) === 0 || 'got ' + B.baseRateAtOrAbove(LDSF, 10);
+  });
+
+  check('non-whole and non-numeric spans are refused rather than guessed', () => {
+    const bad = [6.5, 'abc', '', null].filter(v => B.baseRatePercentile(LDSF, v) !== null);
+    return bad.length === 0 || 'accepted ' + JSON.stringify(bad);
+  });
+}
+
+check('a base-rate row is scored by lookup, not by its metric', () => {
+  const src = extractFn(APP_SRC, 'batteryRowPercentile');
+  if (!/batteryBaseRateEntry\(/.test(src)) return 'batteryRowPercentile ignores base rates';
+  const brAt = src.indexOf('batteryBaseRateEntry');
+  const tzAt = src.indexOf('toZ(');
+  return (brAt !== -1 && brAt < tzAt)
+    || 'the metric conversion is tried first, so a raw span would return null before the lookup runs';
+});
+
+check('screen, in-place edit and APA export all use batteryRowPercentile', () => {
+  const uses = (APP_SRC.match(/batteryRowPercentile\(/g) || []).length;
+  // 1 definition + 3 call sites
+  return uses >= 4 || 'only ' + uses + ' references; a percentile site is still computing its own';
+});
+
+/* Score Tables collapses age-banded families to one entry, on the grounds that
+   the band does not change the resulting table. True when the score comes from
+   a metric conversion; false when it comes from an age-banded lookup. */
+check('age bands stay selectable for families scored from a base-rate table', () => {
+  if (!/function familyScoredByAgeBand/.test(APP_SRC)) return 'the exemption no longer exists';
+  const src = extractFn(APP_SRC, 'buildFamilyListHtml');
+  if (!/!members\.some\(familyScoredByAgeBand\)/.test(src)) {
+    return 'the flat branch no longer exempts base-rate families, so every patient '
+         + 'would be scored against All Ages';
+  }
+  return /flat && members\.some\(familyScoredByAgeBand\)/.test(src)
+    || 'base-rate families are exempted from flattening but never rendered';
+});
+
+/* The size of what that exemption prevents, pinned to the shipped data. */
+check('the age band moves a longest-span percentile by enough to matter', () => {
+  const bands = Object.keys(D.normDB).filter(g => /^WAIS-IV Longest Span/.test(g));
+  const pct = (e, v) => {
+    const spans = Object.keys(e.baseRates).map(Number);
+    const ge = x => { const a = spans.filter(s => s >= x); return a.length ? e.baseRates[Math.min(...a)] : 0; };
+    return (100 - ge(v)) + 0.5 * (ge(v) - ge(v + 1));
+  };
+  const vals = bands
+    .map(b => D.normDB[b]['Longest Digit Span Backward'])
+    .filter(Boolean).map(e => pct(e, 4));
+  const spread = Math.max(...vals) - Math.min(...vals);
+  return spread > 20
+    || 'spread is only ' + spread.toFixed(1) + ' points; if the data changed this much, '
+     + 'revisit whether age bands still need to be selectable';
+});
+
+check('single-administration families are kept out of Change Analysis and SDI', () => {
+  if (!/function isSingleAdministrationFamily/.test(APP_SRC)) return 'the filter no longer exists';
+  const rci = extractFn(APP_SRC, 'populateFamilyList');
+  const sdi = extractFn(APP_SRC, 'rebuildSdiFamilyList');
+  const bad = [];
+  if (!/isSingleAdministrationFamily/.test(rci)) bad.push('Change Analysis');
+  if (!/isSingleAdministrationFamily/.test(sdi)) bad.push('SD Index');
+  return bad.length === 0
+    || bad.join(' and ') + ' would offer a family that can never compute anything';
+});
 
 // ---------------------------------------------------------------------------
 // Summary
