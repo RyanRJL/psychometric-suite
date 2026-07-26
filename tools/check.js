@@ -2268,7 +2268,16 @@ check('a base-rate section carries its own column heading, on screen and in expo
   if (!/group-col-header/.test(rb)) bad.push('editable table heading row has no class');
   const apa = extractFn(APP_SRC, 'buildApaTableFromColumns');
   if (!/groupLabel/.test(apa)) bad.push('APA builder ignores per-section column labels');
-  if (!/apa-group-cols/.test(apa)) bad.push('APA section heading row has no class');
+  if (!/apa-group-col-label/.test(apa)) bad.push('APA section column label has no class');
+  /* The label shares the section-name row. Split across two rows it left a gap
+     above the first data row and sat nearer the data than the heading. */
+  if (!/apa-group apa-group-labelled/.test(apa)) {
+    bad.push('the section label is no longer on the section-name row');
+  }
+  // and a section with no labels must keep the plain full-width name row
+  if (!/colspan="\$\{visible\.length\}"/.test(apa)) {
+    bad.push('an unlabelled section no longer spans the table width');
+  }
   if (!/groupLabel: g => \(batteryGroupIsBaseRate\(g\)/.test(APP_SRC)) {
     bad.push('the percentile column defines no groupLabel, so the export loses the distinction');
   }
@@ -2343,6 +2352,54 @@ check('the age band moves a longest-span percentile by enough to matter', () => 
   return spread > 20
     || 'spread is only ' + spread.toFixed(1) + ' points; if the data changed this much, '
      + 'revisit whether age bands still need to be selectable';
+});
+
+/* The merge rebuilds the table from each section's source and drops every
+   .apa-group row on the way through, so a section that relabels a column has to
+   have that label carried across explicitly. Otherwise a merged report prints
+   base rates under the "Percentile" heading with nothing saying so. */
+/* The report splits a table into one item per family BEFORE any merging, and
+   the split drops the group row (its name becomes the item title). The column
+   labels have to be lifted off it first, or they never reach the report at all
+   and the merge has nothing left to carry. */
+check('splitting a table into report items preserves a section\'s column label', () => {
+  const src = extractFn(APP_SRC, 'extractGroupsFromHtml');
+  const bad = [];
+  if (!/colLabels/.test(src)) bad.push('the split does not lift the labels off the group row');
+  if (!/apa-group-labelled/.test(src)) bad.push('the split re-emits no labelled row for the merge to find');
+  if (!/section\.colLabels/.test(src)) bad.push('the captured labels are never written back');
+  /* The re-emitted row must NOT be an .apa-group row. It has no section name,
+     so anything hunting for a section divider has to skip it — when it did
+     carry .apa-group, detectTestFamily read "Base rate" as the test family and
+     the battery merge stopped matching. */
+  // the ROW, not the cell — .apa-group-col-label on the <td> is correct
+  if (/\blr\.className\s*=\s*'apa-group/.test(src)) {
+    bad.push('the re-emitted label row is classed as a section divider again');
+  }
+  if (!/apa-col-label-row/.test(src)) bad.push('the re-emitted row has no distinguishing class');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('detectTestFamily reads only a group row\'s FIRST cell', () => {
+  const src = extractFn(APP_SRC, 'detectTestFamily');
+  if (/querySelectorAll\('table tbody tr\.apa-group td'\)/.test(src)) {
+    return 'it scans every cell of a group row again, so a per-column label such '
+         + 'as "Base rate" will be read as the test family';
+  }
+  return /tr\.children\[0\]/.test(src)
+    || 'it no longer takes the first cell of each group row';
+});
+
+check('merging a battery preserves a section\'s own column label', () => {
+  const src = extractFn(APP_SRC, 'buildMergedTableHtml');
+  const bad = [];
+  if (!/apa-group-labelled/.test(src)) bad.push('the merge never looks for a relabelled section');
+  if (!/colLabels/.test(src)) bad.push('the merge does not carry the labels across');
+  if (!/p\.colLabels\.some\(Boolean\)/.test(src)) bad.push('the merged divider never switches to per-cell form');
+  /* Word does not receive the stylesheet, so the merged output has to inline
+     its styling — the rest of this function already does. */
+  if (!/font-style:italic/.test(src)) bad.push('the carried label has no inline styling for Word');
+  return bad.length === 0 || bad.join('; ');
 });
 
 check('single-administration families are kept out of Change Analysis and SDI', () => {

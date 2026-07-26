@@ -2169,17 +2169,25 @@ function buildApaTableFromColumns(outId, columns, rows, groupLabelFn, groupDispl
     const group = groupLabelFn ? groupLabelFn(r) : '';
     if (group && group !== lastGroup){
       const groupText = groupDisplayFn ? groupDisplayFn(group) : stripAgeRange(group);
-      body += `<tr class="apa-group"><td colspan="${visible.length}">${escapeHtml(groupText)}</td></tr>`;
       /* A section reporting a different quantity from the rest of the table
-         states its own column heading, so the exported table carries the same
-         labelling as the screen. Driven by the column definitions rather than
-         hard-coded here, so this stays generic. */
+         states its own column heading. Driven by the column definitions rather
+         than hard-coded here, so this stays generic. */
       const subLabels = visible.map(c => (c.groupLabel ? c.groupLabel(group) : ''));
       if (subLabels.some(Boolean)){
-        body += `<tr class="apa-group-cols">${visible.map((c, i) => {
+        /* Section name and its column labels share ONE row. Given as separate
+           rows they left a visible gap above the first data row, and the label
+           sat closer to the data than to the heading it belongs to. The name
+           takes the first cell; every other cell carries its own label, which
+           is blank for all but the relabelled column. */
+        body += `<tr class="apa-group apa-group-labelled">` + visible.map((c, i) => {
           const tdCls = `${c.num ? 'num ' : ''}col-${c.key}`.trim();
-          return `<td class="${tdCls}">${escapeHtml(subLabels[i] || '')}</td>`;
-        }).join('')}</tr>`;
+          // The name wins the first cell; a groupLabel on column 0 would be
+          // shadowed, which is correct — the section has to be named.
+          if (i === 0) return `<td class="${tdCls}">${escapeHtml(groupText)}</td>`;
+          return `<td class="${tdCls} apa-group-col-label">${escapeHtml(subLabels[i] || '')}</td>`;
+        }).join('') + `</tr>`;
+      } else {
+        body += `<tr class="apa-group"><td colspan="${visible.length}">${escapeHtml(groupText)}</td></tr>`;
       }
       lastGroup = group;
       inGroup = true;
@@ -6126,7 +6134,13 @@ const ReportBundle = (function(){
     // 1. Use the LAST group separator row - that's the most recently added
     //    family. (Iterating from the first would echo whichever family was
     //    added earliest forever.)
-    const groupCells = tmp.querySelectorAll('table tbody tr.apa-group td');
+    /* FIRST cell of each group row only. A group row may now carry per-column
+       labels in its later cells — longest span relabels the percentile column
+       to "Base rate" — and scanning every cell picked that up as the test
+       family, which broke both the title and the battery merge. Only the first
+       cell ever holds the section name. */
+    const groupCells = [...tmp.querySelectorAll('table tbody tr.apa-group')]
+      .map(tr => tr.children[0]).filter(Boolean);
     if (groupCells.length){
       for (let i = groupCells.length - 1; i >= 0; i--){
         const text = (groupCells[i].textContent || '').trim();
@@ -6172,8 +6186,17 @@ const ReportBundle = (function(){
     [...tbody.children].forEach(row => {
       if (row.classList.contains('apa-group')){
         if (current) sections.push(current);
+        /* A section that relabels a column for itself carries those labels on
+           its group row (longest span reports a base rate, not a percentile).
+           The group row is dropped from the split — its name becomes the
+           item's title — so the labels have to be lifted off it here or the
+           report loses them, and base rates end up under "Percentile". */
+        const cells = [...row.children];
         current = {
           name: ((row.querySelector('td')?.textContent) || '').trim(),
+          colLabels: cells.length > 1
+            ? cells.map((c, i) => (i === 0 ? '' : c.textContent.trim()))
+            : [],
           rows: []
         };
       } else if (current){
@@ -6190,6 +6213,29 @@ const ReportBundle = (function(){
       const cloneTbody = cloneTmp.querySelector('table tbody');
       if (!cloneTbody) return null;
       cloneTbody.innerHTML = '';
+      /* Re-emit the section's column labels ahead of its rows. The first cell
+         is left blank because the section name is the item's title now. Kept
+         as .apa-group so the merge continues to treat it as a divider rather
+         than data, and .apa-group-labelled so the merge can find it again. */
+      if (section.colLabels && section.colLabels.some(Boolean)){
+        const lr = document.createElement('tr');
+        /* Deliberately NOT .apa-group. This row has no section name — the name
+           became the item's title — so anything hunting for a section divider
+           must skip it. Giving it .apa-group made detectTestFamily read
+           "Base rate" as the test family and the battery merge stopped
+           matching. */
+        lr.className = 'apa-col-label-row';
+        section.colLabels.forEach((label, i) => {
+          const td = document.createElement('td');
+          if (i > 0){
+            td.className = 'apa-group-col-label';
+            td.setAttribute('style', "font-family:'Times New Roman',serif;font-size:10pt;font-style:italic;color:#333;text-align:right;");
+            td.textContent = label || '';
+          }
+          lr.appendChild(td);
+        });
+        cloneTbody.appendChild(lr);
+      }
       section.rows.forEach(r => cloneTbody.appendChild(r.cloneNode(true)));
       // Build an intelligent title combining the parent method name with this
       // group's family name - e.g. "Crawford Regression-Based Change: WAIS-IV".
@@ -6466,9 +6512,26 @@ const ReportBundle = (function(){
       const src = tmp.querySelector('.apa-table');
       const headRows = src ? [...src.querySelectorAll('thead tr')] : [];
       const colRow = headRows.length ? headRows[headRows.length - 1] : null;
-      const bodyRows = src ? [...src.querySelectorAll('tbody tr')].filter(r => !r.classList.contains('apa-group')) : [];
+      const bodyRows = src
+        ? [...src.querySelectorAll('tbody tr')].filter(r =>
+            !r.classList.contains('apa-group') && !r.classList.contains('apa-col-label-row'))
+        : [];
       const noteEl = tmp.querySelector('.apa-note');
-      return { sec, src, headRows, colRow, bodyRows, noteEl, colCount: colRow ? colRow.children.length : 0 };
+      /* A section that relabels a column for itself — longest span reports a
+         base rate, not a percentile — carries that on its group row. The line
+         above drops every .apa-group row, so without this the merged table
+         would print base rates under the "Percentile" heading with nothing
+         saying so, which is the misreading the label exists to prevent. */
+      /* Either shape: the unsplit table labels its group row, while a split
+         item carries a standalone label row with no section name. */
+      const labelRow = src
+        ? src.querySelector('tbody tr.apa-col-label-row, tbody tr.apa-group-labelled')
+        : null;
+      const colLabels = labelRow
+        ? [...labelRow.children].map((c, i) => (i === 0 ? '' : c.textContent.trim()))
+        : [];
+      return { sec, src, headRows, colRow, bodyRows, noteEl, colLabels,
+               colCount: colRow ? colRow.children.length : 0 };
     }).filter(p => p.src);
     /* Merge the sections' notes instead of keeping only the first. Sections of
        one battery usually share a note, so dedupe on text — but where they
@@ -6519,11 +6582,32 @@ const ReportBundle = (function(){
         if (p.sec.subLabel){
           const dr = document.createElement('tr');
           dr.className = 'apa-group';
-          const td = document.createElement('td');
-          td.setAttribute('colspan', String(colspan));
-          td.setAttribute('style', "font-family:'Times New Roman',serif;font-size:11pt;font-weight:bold;color:#000;text-align:left;padding:" + (si > 0 ? '10pt' : '4pt') + " 0 2pt;");
-          td.textContent = p.sec.subLabel;
-          dr.appendChild(td);
+          const pad = (si > 0 ? '10pt' : '4pt') + ' 0 2pt';
+          const nameStyle = "font-family:'Times New Roman',serif;font-size:11pt;font-weight:bold;color:#000;text-align:left;padding:" + pad + ";";
+          if (p.colLabels.some(Boolean)){
+            /* This section relabels a column, so the divider is built cell by
+               cell and carries that label in its own column — same shape the
+               unmerged table uses. Inline styles because this HTML is pasted
+               into Word, where the stylesheet does not follow it. */
+            dr.className = 'apa-group apa-group-labelled';
+            for (let ci = 0; ci < colspan; ci++){
+              const td = document.createElement('td');
+              if (ci === 0){
+                td.setAttribute('style', nameStyle);
+                td.textContent = p.sec.subLabel;
+              } else {
+                td.setAttribute('style', "font-family:'Times New Roman',serif;font-size:10pt;font-style:italic;color:#333;text-align:right;padding:" + pad + ";");
+                td.textContent = p.colLabels[ci] || '';
+              }
+              dr.appendChild(td);
+            }
+          } else {
+            const td = document.createElement('td');
+            td.setAttribute('colspan', String(colspan));
+            td.setAttribute('style', nameStyle);
+            td.textContent = p.sec.subLabel;
+            dr.appendChild(td);
+          }
           tbody.appendChild(dr);
         }
         p.bodyRows.forEach(r => tbody.appendChild(r.cloneNode(true)));
