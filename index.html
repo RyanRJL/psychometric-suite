@@ -1547,10 +1547,13 @@
         <label>Table title</label>
         <input type="text" class="rci-title" data-target="rci-srb" value="Reliable change analysis">
       </div>
-      <label class="rci-corr-toggle" title="Use the corrected (attenuation-adjusted) test-retest correlation when available. Falls back to the raw r when corrected r is not provided for a given test.">
-        <input type="checkbox" class="rci-use-corrected-r" data-target="rci-srb">
-        <span>Use corrected <em>r</em> (attenuation-adjusted) when available</span>
-      </label>
+      <!-- No "use corrected r" toggle here, unlike the Basic and Practice pages.
+           In the SRB model r is not an error term: it sets the regression slope
+           (r x sd2/sd1) and therefore the predicted score, as well as the
+           residual SD. The corrected r describes the normative population while
+           sd1/sd2 describe the retest sample, so combining them yields a
+           regression line that was never fitted to any data. See the note above
+           calcSrbRow in app.js. -->
     </div>
 
     <div class="panel autofill-panel">
@@ -1644,10 +1647,13 @@
         <label>Table title</label>
         <input type="text" class="rci-title" data-target="rci-crawford" value="Reliable change analysis">
       </div>
-      <label class="rci-corr-toggle" title="Use the corrected (attenuation-adjusted) test-retest correlation when available. Falls back to the raw r when corrected r is not provided for a given test.">
-        <input type="checkbox" class="rci-use-corrected-r" data-target="rci-crawford">
-        <span>Use corrected <em>r</em> (attenuation-adjusted) when available</span>
-      </label>
+      <!-- No "use corrected r" toggle here, unlike the Basic and Practice pages.
+           Crawford & Garthwaite is a regression model: r sets the slope
+           (r x sd2/sd1) and so the predicted score, and feeds the residual SD
+           and the standard error of prediction. Substituting a
+           population-corrected r alongside the retest sample's sd1/sd2 gives a
+           regression line that was never fitted to any data. See the note above
+           calcCrawfordRow in app.js. -->
     </div>
 
     <div class="panel autofill-panel">
@@ -5828,7 +5834,7 @@
     </div>
     <div class="ds-version-stamp" title="Build version and last update">
       <span class="ds-version-dot" aria-hidden="true"></span>
-      <span id="app-version">v0.1.8 &middot; updated July 2026</span>
+      <span id="app-version">v0.2.0 &middot; updated July 2026</span>
     </div>
   </div>
 </footer>

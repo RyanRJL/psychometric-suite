@@ -92,6 +92,25 @@ guessing:
   .map(r => r.cssText)
 ```
 
+### A large deletion will take its neighbours with it
+
+`app.js` ends feature code and top-level init code in the same flat file, with no
+marker between them. Removing the Report Writer as one contiguous 2306-line block
+also removed the app's entire init tail, because that tail happened to start on
+the line after `setupReportWriter();`. Exactly one line of the deletion belonged
+to the feature.
+
+The result: a dozen functions still defined, none of them called. No error, no
+console warning, and all 102 numeric checks still green — because none of them
+asked whether the app boots. Every calculator loaded with no example rows, the
+premorbid page never initialised, autofill was never wired, and "Clear all
+tables" was a button with no handler.
+
+**When deleting a block, read the last twenty lines of it as carefully as the
+first, and diff the list of top-level statements before and after.** `check.js`
+section 16 now guards this, but it only knows about the calls listed in
+`INIT_CALLS` — add to that list when you add init code.
+
 ### On-screen text is a contract
 
 Every calculator **prints its own formula** in a `<details class="formula-disclosure">`

@@ -1167,6 +1167,80 @@ check('the OPIE tooltips state that sex and an age range are required', () => {
   return (/sex/i.test(t) && /16-90|16–90/.test(t)) || 'opieDefault no longer states the input requirements';
 });
 
+/* ==========================================================================
+   16. Wiring — does the app actually start, and is the corrected-r toggle
+   confined to the two methods where it is defensible?
+
+   These are not maths checks. They exist because removing the Report Writer
+   took the whole init tail with it (it sat immediately after
+   setupReportWriter()), leaving a dozen functions defined but never called.
+   Every calculator loaded with no example rows, the premorbid page never
+   initialised, autofill was never wired, and the "Clear all tables" button
+   had no handler. All 102 numeric checks still passed, because none of them
+   ask whether the app boots. A user found it by opening the page.
+   ========================================================================== */
+heading('16. Wiring');
+
+const HTML_SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+
+/* Bare top-level calls, i.e. at column 0 and not inside any function. Anything
+   here that app.js defines but never calls is dead init. */
+const INIT_CALLS = [
+  'renderBattery', 'renderSdi', 'applyCalculatorPolish',
+  'enhanceCalculatorWorkflow', 'enhanceApaToolbars', 'buildDescCarousels',
+  'renderConverter', 'setupPreTabs', 'buildPredictTable',
+  'setupPremorbidListeners', 'calcPremorbid', 'calcPredict',
+  'calcOpiePredict', 'wireBatteryAutofill', 'wireSdiAutofill', 'refreshAll'
+];
+
+check('every init function app.js defines is also invoked at top level', () => {
+  const dead = INIT_CALLS.filter(fn => {
+    const defined = new RegExp('^function\\s+' + fn + '\\s*\\(', 'm').test(APP_SRC);
+    const called  = new RegExp('^' + fn + '\\(\\);', 'm').test(APP_SRC);
+    return defined && !called;
+  });
+  return dead.length === 0
+    || 'defined but never called at top level: ' + dead.join(', ');
+});
+
+check('the calculator tables are seeded with their example rows on load', () => {
+  const missing = [];
+  if (!/^batteryRows = \[/m.test(APP_SRC)) missing.push('batteryRows');
+  if (!/^sdiRows = \[/m.test(APP_SRC)) missing.push('sdiRows');
+  if (!/^RCI_SHARED_ROWS\.push\(/m.test(APP_SRC)) missing.push('RCI_SHARED_ROWS');
+  if (!/forEach\(m => renderRci\(m\)\)/.test(APP_SRC)) missing.push('initial renderRci');
+  return missing.length === 0 || 'no top-level seeding for: ' + missing.join(', ');
+});
+
+check('the "Clear all tables" button has a handler bound', () => {
+  const inMarkup = /id="topbar-clear-all"/.test(HTML_SRC);
+  const bound = /getElementById\('topbar-clear-all'\)/.test(APP_SRC);
+  if (inMarkup && !bound) return 'button is in index.html but nothing binds it';
+  return true;
+});
+
+/* r is an error term in Jacobson & Truax and Iverson, but a fitted regression
+   slope (r x sd2/sd1) in McSweeney/SRB and Crawford & Garthwaite. Offering the
+   population-corrected r on the latter two changes the predicted score and
+   produces a regression line that was never fitted — so the checkbox must not
+   reappear on those pages. */
+check('the corrected-r toggle appears only on the Basic and Practice methods', () => {
+  const targets = [...HTML_SRC.matchAll(/class="rci-use-corrected-r"\s+data-target="([^"]+)"/g)]
+    .map(m => m[1]).sort();
+  const expected = ['rci-basic', 'rci-practice'];
+  return JSON.stringify(targets) === JSON.stringify(expected)
+    || 'toggle targets are [' + targets.join(', ') + '], expected [' + expected.join(', ') + ']';
+});
+
+check('SRB and Crawford treat r as a regression slope, so cannot use corrected r', () => {
+  const bad = [];
+  for (const fn of ['calcSrbRow', 'calcCrawfordRow']) {
+    const src = extractFn(APP_SRC, fn);
+    if (!/const slope = rel \* \(sd2 \/ sd1\)/.test(src)) bad.push(fn + ': slope no longer r*sd2/sd1');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

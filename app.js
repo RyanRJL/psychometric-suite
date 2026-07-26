@@ -2739,6 +2739,22 @@ const rciState = {
   // test-retest correlation and the variance of the initial testing in the
   // study itself; Iverson, McSweeney and Crawford likewise work from the
   // retest sample's own statistics.
+  //
+  // The user-facing toggle exists on Basic and Practice ONLY. On those two, r
+  // is purely an error term, so ticking it widens or narrows the interval and
+  // nothing else — a defensible choice if the SD is also set to the normative
+  // value. On SRB and Crawford r is a fitted regression SLOPE (r x sd2/sd1),
+  // so substituting a population-corrected value moves the predicted score
+  // itself and yields a line that was never fitted to anything. Worked example
+  // from the database entry with the largest r -> rCorrected gap, RBANS Story
+  // Memory Ages 20-89 (m1 11.6, sd1 1.8, m2 12.5, sd2 2.4, r .45, rCorr .80),
+  // patient T1 9.8 / T2 10.1:
+  //   raw r .45        slope 0.600   predicted 11.42   SEE 2.143   RCI -0.616
+  //   corrected r .80  slope 1.067   predicted 10.58   SEE 1.440   RCI -0.333
+  // The predicted score moves 0.84 points, the SEE shrinks by 33%, and the
+  // slope exceeds 1.0 — i.e. the model now says scores diverge from the mean on
+  // retest, which the observed r of .45 flatly contradicts. These two keep the
+  // field permanently false; with no checkbox in the markup, nothing sets it.
   'rci-basic':    { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
   'rci-practice': { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
   'rci-srb':      { rows:RCI_SHARED_ROWS, cv:0.95, useCorrectedR:false, d1:'Date 1', d2:'Date 2', title:'Reliable change analysis' },
@@ -2786,7 +2802,7 @@ function calcPracticeRow(r, method){
   return { sem1, sem2, sdiff, rci, p, usedR: rel, usedCorrected: rEff.fromCorrected, rFallback: !!rEff.fallbackBecauseMissing };
 }
 /* Session-level "use corrected r" toggle, stored on
-   rciState[method].useCorrectedR. OFF for all four methods — see the note on
+   rciState[method].useCorrectedR. OFF by default, and permanently false on SRB/Crawford — see the note on
    rciState. Turning it ON rescales the reliability to the normative population
    without rescaling the SD it is paired with, so it is offered for comparison
    rather than as the default basis. */
@@ -3191,7 +3207,7 @@ function renderRciApa(method){
   // value, append a "fell back to raw r" qualifier.
   let rSentence = '';
   {
-    const wantCorrected = st.useCorrectedR === true;   // OFF on all four methods
+    const wantCorrected = st.useCorrectedR === true;   // default OFF; always false on SRB/Crawford
     if (!wantCorrected){
       rSentence = 'Raw test-retest <i>r</i> was used.';
     } else {
@@ -3246,7 +3262,11 @@ document.querySelectorAll('.rci-d2').forEach(inp => {
 document.querySelectorAll('.rci-title').forEach(inp => {
   inp.addEventListener('input', e => { rciState[e.target.dataset.target].title = e.target.value; renderRciApa(e.target.dataset.target); });
 });
-// Use corrected r toggle (present on all four RCI methods; unticked by default)
+/* Use corrected r toggle. Present on the Basic and Practice pages only, and
+   unticked by default. SRB and Crawford deliberately have no checkbox because
+   r is a fitted regression slope there — see the note on rciState. This binds
+   by class, so those two simply never get a listener and their useCorrectedR
+   stays false. */
 document.querySelectorAll('.rci-use-corrected-r').forEach(cb => {
   cb.addEventListener('change', e => {
     const m = e.target.dataset.target;
