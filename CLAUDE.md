@@ -263,6 +263,47 @@ Two invariants in `check.js` §18 hold that shape: any entry with `sd1 < 1` must
 tagged (**no standardised metric in this app has an SD below 1**), and every *untagged*
 RBANS subtest must have `m1` within 3 of 10 and `sd1` between 1.5 and 4.5.
 
+### `reportedAs` — what the clinician types, which is not always what `m1`/`sd1` are
+
+`metric` describes the **stored statistics**. `reportedAs` describes the **entry
+metric**. For most of the database they are the same thing and only `metric` exists.
+CVLT-C is where they part company: its norms here are raw, which is what Change
+Analysis needs, but nobody transcribes a raw CVLT-C score onto a results table — they
+copy the standardised score off the record form.
+
+| Measure | `metric` | `reportedAs` | Source |
+|---|---|---|---|
+| `List A Trials 1-5 Total` | `raw` | `t` | Manual Table A.1 |
+| every other CVLT-C index | `raw` | `z` | Manual Table A.2 |
+
+**The manual's wording is a trap.** Table A.2 is headed "*Standard Score* Equivalents",
+but its scale runs −5.0 to +5.0 in 0.5 steps — that is a **z-score**, not this app's
+`standard` (M 100, SD 15). A CVLT-C "standard score" of −1.0 is the 16th percentile;
+read as M 100 / SD 15 it becomes z = −6.7. `check.js` §18 asserts that no CVLT-C entry
+is ever typed `standard`.
+
+`inferScoreTypeForSubtest` returns `reportedAs` first, then `metric`, then the mean
+heuristic. Score Tables and the SD Index ask the entry question, so they get
+`reportedAs`; Change Analysis reads `m1`/`sd1` directly and is unaffected. Because
+these standardised scores are already age-corrected, the age band chosen on autofill
+does not change a Score Tables percentile — it only matters for Change Analysis.
+
+### `higherIsWorse` — measures where a high score is a bad result
+
+On CVLT-C error measures the standardised score runs with the error count: Table A.2
+maps z −1.0 to 0–3 perseverations and z +5.0 to 45 or more. A child at z +2.0 has made
+more perseverations than 98% of their age group, and would otherwise have been labelled
+"Very Superior".
+
+Flagged on four measures: `Perseverations`, `Free-Recall Intrusions`,
+`Cued-Recall Intrusions`, `False Positives`. `Recognition Hits` and `Discriminability`
+run the normal way and must **not** be flagged.
+
+The **percentile is still shown** — it stays factually true, the score really is higher
+than 98% of the norm group. Only the **classification** is withheld, because that is
+what asserts merit. Same reasoning as the direction-neutral change outcomes above. The
+APA note explains the blank so it does not read as missing data.
+
 `toZ`/`fromZ` return `null` for `'raw'` in both directions, so percentile and
 classification go blank rather than being invented. **Do not give `'raw'` a fallback** —
 falling through to `scaled` is the bug this closes: RBANS `List Recognition` at a raw 19
@@ -357,7 +398,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 152 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 162 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Table 4.5, OPIE-4 coefficients pinned to Table eA5.8, worked OPIE predictions, reliable-
 change thresholds and direction-neutral outcome labels, base-rate reconstruction and

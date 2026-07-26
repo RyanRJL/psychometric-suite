@@ -1477,14 +1477,30 @@ check('every entry with sd1 < 1 is tagged raw', () => {
   );
   const A = ctx.__E;
 
-  check('inferScoreTypeForSubtest returns \'raw\' for every tagged entry', () => {
+  /* Two fields, two questions. metric says what m1/sd1 are; reportedAs says
+     what the clinician types in. Where a measure has both — CVLT-C, whose
+     norms here are raw but whose record form gives a T or z score —
+     reportedAs must win, because the entry pages are asking the second
+     question. Where there is no reportedAs, metric answers both. */
+  check('a raw-normed entry resolves to its REPORTED metric, else to raw', () => {
     const bad = [];
     eachNormEntry((e, g, name) => {
       if (e.metric !== 'raw') return;
       const t = A.inferScoreTypeForSubtest(g, name, e);
-      if (t !== 'raw') bad.push(g + ' / ' + name + ' -> ' + t);
+      const want = e.reportedAs || 'raw';
+      if (t !== want) bad.push(g + ' / ' + name + ' -> ' + t + ', expected ' + want);
     });
     return bad.length === 0 || bad.length + ' wrong, first: ' + bad[0];
+  });
+
+  check('reportedAs takes precedence over metric, not the other way round', () => {
+    const probe = { m1: 42, sd1: 9, m2: 48, sd2: 9, r: 0.7, metric: 'raw', reportedAs: 't' };
+    const got = A.inferScoreTypeForSubtest('Some Family', 'Some Measure', probe);
+    if (got !== 't') return 'got ' + got + '; metric is overriding reportedAs';
+    // and with no reportedAs it must fall back to raw
+    const bare = { m1: 42, sd1: 9, m2: 48, sd2: 9, r: 0.7, metric: 'raw' };
+    const got2 = A.inferScoreTypeForSubtest('Some Family', 'Some Measure', bare);
+    return got2 === 'raw' || 'without reportedAs it gave ' + got2 + ', expected raw';
   });
 
   check('toZ and fromZ refuse the raw metric in both directions', () => {
@@ -1522,6 +1538,102 @@ check('every entry with sd1 < 1 is tagged raw', () => {
     return true;
   });
 }
+
+/* ---- CVLT-C: what the clinician types is not what m1/sd1 are ----
+   Source: CVLT-C Manual, Table A.1 (T-score equivalents for List A Total
+   Trials 1-5, by age group) and Table A.2 (equivalents for every other index,
+   on a scale running -5.0 to +5.0).
+
+   Table A.2 is headed "Standard Score Equivalents", but a scale of -5.0 to
+   +5.0 in 0.5 steps is a z-score, NOT this app's 'standard' (M 100, SD 15).
+   A CVLT-C "standard score" of -1.0 is the 16th percentile; read as M 100 /
+   SD 15 it would be z = -6.7, off the bottom of the scale. reportedAs must
+   therefore hold 'z', never 'standard', for these. */
+check('CVLT-C List A Total is a T-score, every other index a z-score', () => {
+  const bad = [];
+  eachNormEntry((e, g, name) => {
+    if (!/^CVLT-C/.test(g)) return;
+    const want = name === 'List A Trials 1-5 Total' ? 't' : 'z';
+    if (e.reportedAs !== want) bad.push(g + ' / ' + name + ' reportedAs=' + e.reportedAs + ', expected ' + want);
+  });
+  return bad.length === 0 || bad.length + ' wrong, first: ' + bad[0];
+});
+
+check('no CVLT-C index is typed \'standard\' — the manual\'s wording is a trap', () => {
+  const bad = [];
+  eachNormEntry((e, g, name) => {
+    if (/^CVLT-C/.test(g) && e.reportedAs === 'standard') bad.push(g + ' / ' + name);
+  });
+  return bad.length === 0
+    || 'read the manual\'s "Standard Score" as M 100 / SD 15: ' + bad.join(', ');
+});
+
+check('reportedAs never conflicts with what m1/sd1 actually are', () => {
+  const bad = [];
+  eachNormEntry((e, g, name) => {
+    if (!e.reportedAs) return;
+    if (!e.metric) bad.push(g + ' / ' + name + ' declares reportedAs but not what m1/sd1 are');
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* CVLT-C Manual Table A.2: Perseverations z -1.0 maps to 0-3 and z +5.0 to
+   45 or more, so a HIGHER score means MORE errors. Recognition Hits and
+   Discriminability run the normal way and must NOT be flagged. */
+check('the four higher-is-worse CVLT-C measures are flagged, and only those', () => {
+  const WORSE = ['Perseverations', 'Free-Recall Intrusions', 'Cued-Recall Intrusions', 'False Positives'];
+  const bad = [];
+  eachNormEntry((e, g, name) => {
+    if (!/^CVLT-C/.test(g)) return;
+    const want = WORSE.includes(name);
+    if (want && !e.higherIsWorse) bad.push(g + ' / ' + name + ' not flagged');
+    if (!want && e.higherIsWorse) bad.push(g + ' / ' + name + ' wrongly flagged');
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a higher-is-worse row gets no merit classification', () => {
+  const src = extractFn(APP_SRC, 'batteryClassificationDetails');
+  if (!/r\.higherIsWorse/.test(src)) return 'the classification cell ignores higherIsWorse';
+  // it must bail BEFORE computing a descriptor, or the label leaks out
+  const guardAt = src.indexOf('r.higherIsWorse');
+  const descAt  = src.indexOf('wechslerDesc');
+  return (guardAt !== -1 && guardAt < descAt)
+    || 'higherIsWorse is checked after the descriptor is built, so the label still escapes';
+});
+
+check('autofill carries higherIsWorse onto the row', () => {
+  const src = extractFn(APP_SRC, 'loadFamilyIntoBattery');
+  return /higherIsWorse:/.test(src)
+    || 'loadFamilyIntoBattery drops the flag, so the classification cell can never see it';
+});
+
+/* The editable table and the APA export must agree about what the score
+   column holds. The header used to come from the #bat-type dropdown, which
+   describes the default for MANUAL rows, so an autofilled CVLT-C table was
+   headed "Scaled Score" over T-scores and z-scores while the export said
+   "Score". */
+check('the score column header describes the rows, not the default dropdown', () => {
+  const src = extractFn(APP_SRC, 'updateBatteryScoreHeader');
+  if (!/batteryRows/.test(src)) return 'the header still ignores the rows';
+  if (!/types\.size === 1/.test(src)) return 'the header no longer collapses a uniform table to one label';
+  if (!/'Score'/.test(src)) return 'a mixed table no longer falls back to the generic "Score"';
+  return true;
+});
+
+check('screen and APA export derive that header the same way', () => {
+  const apa = extractFn(APP_SRC, 'renderBatteryApa');
+  const head = extractFn(APP_SRC, 'updateBatteryScoreHeader');
+  const rule = /types\.size === 1[\s\S]{0,90}scoreTypeLabel/;
+  return (rule.test(apa) && rule.test(head))
+    || 'the two headers use different rules, so the table and its export can disagree';
+});
+
+check('SDI raw mode does not prefill a raw SD for a standardised entry metric', () => {
+  const src = extractFn(APP_SRC, 'loadFamilyIntoSdi');
+  return /entryMetricDiffers/.test(src)
+    || 'raw mode prefills sd1 regardless, so a T-score row divides by a raw-unit SD';
+});
 
 check('sdiComputeChange rejects a row whose metric has no SD unit', () => {
   const src = extractFn(APP_SRC, 'sdiComputeChange');

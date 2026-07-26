@@ -1091,6 +1091,11 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .bat-premorbid-help{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px;max-width:820px}
 .bat-premorbid-panel input:disabled,.bat-premorbid-panel select:disabled{opacity:.55;cursor:not-allowed;background:var(--paper-2)}
 .bat-class-extreme{text-align:left!important;background:transparent!important}
+/* Withheld classification on a higher-is-worse measure. Standalone class so
+   nothing in design-system.css competes for it. Muted rather than hidden: the
+   reader should see that the cell is deliberately empty, not that data is
+   missing — the APA note explains why. */
+.bat-class-directionless{color:var(--faint);font-style:normal}
 .bat-expected-stars{font-weight:700;letter-spacing:0.04em;margin-left:1px;color:var(--ink)}
 .apa-table .bat-class-extreme{font-weight:inherit}
 .apa-table .bat-expected-stars{color:#000!important;font-weight:700}

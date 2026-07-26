@@ -1248,6 +1248,21 @@ function inferScoreType(familyName){
 //   2. keywords in the subtest's own name ("...Index", "IQ", "Quotient", etc.);
 //   3. the family-name heuristic (legacy fallback).
 function inferScoreTypeForSubtest(familyName, subtestName, stats){
+  /* -1. What the CLINICIAN types in, which is not always what m1/sd1 are.
+
+     CVLT-C is the case that forced these apart. Its normative statistics here
+     are raw (metric:'raw'), which is what Change Analysis needs — but nobody
+     transcribes a raw CVLT-C score onto a results table; they transcribe the
+     standardised score off the record form. Manual Table A.1 gives List A
+     Total Trials 1-5 as a T-score; Table A.2 gives every other index on a
+     scale running -5.0 to +5.0, i.e. a z-score.
+
+     BEWARE the manual's wording: Table A.2 is headed "Standard Score
+     Equivalents", but that is NOT this app's 'standard' (M 100, SD 15). A
+     CVLT-C "standard score" of -1.0 is the 16th percentile; read as M 100 /
+     SD 15 it would be z = -6.7. reportedAs holds the real metric, not the
+     manual's label for it. */
+  if (stats && SCORE_METRICS.has(stats.reportedAs)) return stats.reportedAs;
   /* 0. Declared, and therefore not a guess — it wins over everything below.
 
      metric:'raw' is the case that forced this to exist: a raw score is not on
@@ -1358,12 +1373,27 @@ function scoreTypeLabel(type){
 function scoreTypeAbbr(type){
   return {scaled:'Scaled', standard:'Standard', t:'T-Score', z:'Z-Score', raw:'Raw'}[type] || '';
 }
+/* The header must describe the rows that are actually there, not the
+   "default for ungrouped rows" dropdown.
+
+   It used to read straight from #bat-type, so autofilling CVLT-C — every row a
+   T-score or a z-score — printed a column headed "Scaled Score" over them. The
+   APA export already derived its header from the rows (renderBatteryApa's
+   headerLabel), so screen and export disagreed too. Same rule in both places
+   now: one label when the rows agree, "Score" when they do not, and the
+   dropdown only while the table is empty. */
 function updateBatteryScoreHeader(){
-  const type = document.getElementById('bat-type')?.value;
-  const label = scoreTypeLabel(type);
+  const fallback = document.getElementById('bat-type')?.value;
+  const scored = batteryRows.filter(r => !r.isExample);
+  const types = new Set(scored.map(r => rowScoreType(r)));
+  const label = scored.length === 0 ? scoreTypeLabel(fallback)
+              : types.size === 1    ? scoreTypeLabel([...types][0])
+              : 'Score';
   document.querySelectorAll('#bat-table .bat-score-head').forEach(th => {
     th.innerHTML = `<span class="bat-score-head-label">${escapeHtml(label)}</span>`;
-    th.title = `Manual rows use the selected default score type: ${label}. Auto-filled test families show their inferred score type in the group row.`;
+    th.title = types.size > 1
+      ? 'This table mixes score types. Each row shows its own metric next to the row number.'
+      : `Manual rows use the selected default score type: ${scoreTypeLabel(fallback)}. Auto-filled test families show their inferred score type in the group row.`;
   });
 }
 function rowScoreType(r){
@@ -1643,6 +1673,22 @@ function batteryClassificationDetails(r, cls){
   const z = toZ(r.score, rowScoreType(r));
   if (z == null) return { text:'', html:'', className:'' };
   const ss = fromZ(z, 'standard');
+  /* On a higher-is-worse measure the score runs the other way, so a merit label
+     would state the opposite of what the number means. CVLT-C Perseverations is
+     scored so that MORE perseverations give a HIGHER standardised score (Manual
+     Table A.2: z -1.0 maps to 0-3 perseverations, z +5.0 to 45 or more), so a
+     child at z +2.0 has made more perseverations than 98% of their age group -
+     and would otherwise have been labelled "Very Superior".
+
+     The PERCENTILE is kept, because it remains factually true: the score is
+     higher than 98% of the norm group. It is the classification that asserts
+     merit, so only that is withheld. Same reasoning as the change-outcome
+     labels, which report significance without claiming improvement or decline.
+     The APA note says which way to read these rows. */
+  if (r.higherIsWorse){
+    return { text:'', html:'<span class="bat-class-directionless" title="Higher scores indicate more errors on this measure, so a classification is not applied.">&mdash;</span>',
+             className:'', ss, prem:getBatteryPremorbidComparison(), stars:'' };
+  }
   const desc = cls === 'wechsler' ? wechslerDesc(ss) : aanDesc(ss);
   const prem = getBatteryPremorbidComparison();
   const extreme = ss < 70;
@@ -2020,6 +2066,11 @@ const APA_NOTES = {
     ctx.hasRaw
       ? 'Raw-score measures are reported as obtained; percentile and classification are not derived, as these measures are not on a standardised metric.'
       : '',
+    /* Without this the em-dash in the classification column reads as missing
+       data rather than as a deliberate refusal. */
+    ctx.hasHigherIsWorse
+      ? 'On error measures (perseverations, intrusions, false positives) a higher score indicates more errors, so the percentile is reported without a classification.'
+      : '',
     // States the BASIS, not just the level. These intervals use test-retest
     // reliability, so they run wider than manual-published intervals (which
     // use internal consistency); without this line a reader comparing against
@@ -2137,6 +2188,7 @@ function renderBatteryApa(){
       classification: cls,
       mixedTypes: types.size > 1,
       hasRaw: valid.some(r => rowScoreType(r) === 'raw'),
+      hasHigherIsWorse: valid.some(r => r.higherIsWorse && r.score !== '' && !isNaN(r.score)),
       ciLevel,
       premorbid: prem ? fmt(prem.estimate, 0) : null,
       premorbidMode: prem ? batteryPremorbidMode(prem) : null
@@ -2165,9 +2217,14 @@ function loadFamilyIntoBattery(family){
   }
   // Infer the score type PER subtest, not once for the whole family, so mixed
   // families (e.g. scaled subtests + standard-score indices) categorise correctly.
+  /* higherIsWorse rides along on the row so the classification cell can see it
+     without another database lookup. On these measures a high score means MORE
+     errors, so a merit label like "Very Superior" would assert the opposite of
+     what the number means — see batteryClassificationDetails. */
   const newRows = missing.map(name => ({
     name, raw:'', score:'', group:family,
-    scoreType: inferScoreTypeForSubtest(family, name, db[family][name])
+    scoreType: inferScoreTypeForSubtest(family, name, db[family][name]),
+    higherIsWorse: !!(db[family][name] && db[family][name].higherIsWorse)
   }));
   if (present.size){
     // Slot the new subtests in beneath the group's existing rows so they land
@@ -2693,8 +2750,16 @@ function loadFamilyIntoSdi(family){
   // Infer the score type PER subtest, not once for the whole family, so mixed
   // families (e.g. scaled subtests + standard-score indices) divide by their own SD.
   subtests.forEach(([name, p]) => {
+    /* sdiNormSd returns sd1, which is in whatever units m1/sd1 are — raw, for
+       the CVLT-C entries. Prefilling it would be wrong for a measure the
+       clinician enters in a DIFFERENT metric: they would be typing T-scores
+       into columns divided by a raw-unit SD. Where the entry metric differs
+       from the stored one, leave the SD for them to supply. Index mode is
+       unaffected: it divides by the entry metric's own unit. */
+    const entryMetricDiffers = SCORE_METRICS.has(p && p.reportedAs) && p.reportedAs !== p.metric;
     sdiRows.push({
-      name, t1:'', t2:'', sd: raw ? sdiNormSd(p) : '', group:family,
+      name, t1:'', t2:'', group:family,
+      sd: (raw && !entryMetricDiffers) ? sdiNormSd(p) : '',
       scoreType: inferScoreTypeForSubtest(family, name, p)
     });
   });

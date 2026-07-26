@@ -1123,6 +1123,11 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .bat-premorbid-help{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px;max-width:820px}
 .bat-premorbid-panel input:disabled,.bat-premorbid-panel select:disabled{opacity:.55;cursor:not-allowed;background:var(--paper-2)}
 .bat-class-extreme{text-align:left!important;background:transparent!important}
+/* Withheld classification on a higher-is-worse measure. Standalone class so
+   nothing in design-system.css competes for it. Muted rather than hidden: the
+   reader should see that the cell is deliberately empty, not that data is
+   missing — the APA note explains why. */
+.bat-class-directionless{color:var(--faint);font-style:normal}
 .bat-expected-stars{font-weight:700;letter-spacing:0.04em;margin-left:1px;color:var(--ink)}
 .apa-table .bat-class-extreme{font-weight:inherit}
 .apa-table .bat-expected-stars{color:#000!important;font-weight:700}
@@ -19510,49 +19515,49 @@ const OPIE_BASE_RATES = {
     "Total Repetitions": { m1:9.7, sd1:3.1, m2:10, sd2:3.4, r:0.72, rCorrected:0.7, n:122 }
   },
   "CVLT-C Subtests (Raw Scores) · Age 8": {
-    "List A Trials 1-5 Total": { m1:42.47, sd1:9.55, m2:48.32, sd2:9.09, r:0.73, n:35, metric:'raw' },
-    "List B Free-Recall Trial": { m1:5.26, sd1:1.71, m2:5.39, sd2:2.16, r:0.59, n:35, metric:'raw' },
-    "Short-Delay Free Recall": { m1:8.5, sd1:2.04, m2:9.91, sd2:2.37, r:0.4, n:35, metric:'raw' },
-    "Short-Delay Cued Recall": { m1:8.35, sd1:2.07, m2:9.51, sd2:2.79, r:0.75, n:35, metric:'raw' },
-    "Long-Delay Free Recall": { m1:8.94, sd1:2.3, m2:10.14, sd2:2.59, r:0.59, n:35, metric:'raw' },
-    "Long-Delay Cued Recall": { m1:8.42, sd1:2.21, m2:10.15, sd2:3.09, r:0.69, n:35, metric:'raw' },
-    "Semantic Cluster Ratio": { m1:1.44, sd1:0.44, m2:1.83, sd2:0.63, r:0.56, n:35, metric:'raw' },
-    "Perseverations": { m1:7.35, sd1:6.94, m2:7.54, sd2:6.39, r:0.9, n:35, metric:'raw' },
-    "Free-Recall Intrusions": { m1:5.11, sd1:5.55, m2:4.97, sd2:5.99, r:0.74, n:35, metric:'raw' },
-    "Cued-Recall Intrusions": { m1:2.83, sd1:4.33, m2:2.31, sd2:3.31, r:0.59, n:35, metric:'raw' },
-    "Recognition Hits": { m1:13.67, sd1:1.45, m2:13.84, sd2:1.33, r:0.38, n:35, metric:'raw' },
-    "Discriminability": { m1:92.76, sd1:5.69, m2:94.52, sd2:5.9, r:0.55, n:35, metric:'raw' },
-    "False Positives": { m1:1.82, sd1:2.38, m2:1.16, sd2:2, r:0.62, n:35, metric:'raw' }
+    "List A Trials 1-5 Total": { m1:42.47, sd1:9.55, m2:48.32, sd2:9.09, r:0.73, n:35, metric:'raw', reportedAs:'t' },
+    "List B Free-Recall Trial": { m1:5.26, sd1:1.71, m2:5.39, sd2:2.16, r:0.59, n:35, metric:'raw', reportedAs:'z' },
+    "Short-Delay Free Recall": { m1:8.5, sd1:2.04, m2:9.91, sd2:2.37, r:0.4, n:35, metric:'raw', reportedAs:'z' },
+    "Short-Delay Cued Recall": { m1:8.35, sd1:2.07, m2:9.51, sd2:2.79, r:0.75, n:35, metric:'raw', reportedAs:'z' },
+    "Long-Delay Free Recall": { m1:8.94, sd1:2.3, m2:10.14, sd2:2.59, r:0.59, n:35, metric:'raw', reportedAs:'z' },
+    "Long-Delay Cued Recall": { m1:8.42, sd1:2.21, m2:10.15, sd2:3.09, r:0.69, n:35, metric:'raw', reportedAs:'z' },
+    "Semantic Cluster Ratio": { m1:1.44, sd1:0.44, m2:1.83, sd2:0.63, r:0.56, n:35, metric:'raw', reportedAs:'z' },
+    "Perseverations": { m1:7.35, sd1:6.94, m2:7.54, sd2:6.39, r:0.9, n:35, metric:'raw', reportedAs:'z', higherIsWorse:true },
+    "Free-Recall Intrusions": { m1:5.11, sd1:5.55, m2:4.97, sd2:5.99, r:0.74, n:35, metric:'raw', reportedAs:'z', higherIsWorse:true },
+    "Cued-Recall Intrusions": { m1:2.83, sd1:4.33, m2:2.31, sd2:3.31, r:0.59, n:35, metric:'raw', reportedAs:'z', higherIsWorse:true },
+    "Recognition Hits": { m1:13.67, sd1:1.45, m2:13.84, sd2:1.33, r:0.38, n:35, metric:'raw', reportedAs:'z' },
+    "Discriminability": { m1:92.76, sd1:5.69, m2:94.52, sd2:5.9, r:0.55, n:35, metric:'raw', reportedAs:'z' },
+    "False Positives": { m1:1.82, sd1:2.38, m2:1.16, sd2:2, r:0.62, n:35, metric:'raw', reportedAs:'z', higherIsWorse:true }
   },
   "CVLT-C Subtests (Raw Scores) · Age 12": {
-    "List A Trials 1-5 Total": { m1:50.64, sd1:7.19, m2:56.47, sd2:8.92, r:0.73, n:40, metric:'raw' },
-    "List B Free-Recall Trial": { m1:6.24, sd1:1.58, m2:6.82, sd2:1.57, r:0.26, n:40, metric:'raw' },
-    "Short-Delay Free Recall": { m1:9.89, sd1:2.44, m2:12.24, sd2:2.62, r:0.77, n:40, metric:'raw' },
-    "Short-Delay Cued Recall": { m1:11.13, sd1:2.21, m2:12.15, sd2:3.14, r:0.49, n:40, metric:'raw' },
-    "Long-Delay Free Recall": { m1:10.77, sd1:2.32, m2:12.3, sd2:2.54, r:0.62, n:40, metric:'raw' },
-    "Long-Delay Cued Recall": { m1:11.26, sd1:2.18, m2:12.74, sd2:2.53, r:0.69, n:40, metric:'raw' },
-    "Semantic Cluster Ratio": { m1:1.49, sd1:0.43, m2:1.83, sd2:0.6, r:0.58, n:40, metric:'raw' },
-    "Perseverations": { m1:4.55, sd1:4.32, m2:5.6, sd2:5.7, r:0.32, n:40, metric:'raw' },
-    "Free-Recall Intrusions": { m1:0.97, sd1:1.44, m2:1.64, sd2:2.67, r:0.56, n:40, metric:'raw' },
-    "Cued-Recall Intrusions": { m1:0.69, sd1:1.14, m2:0.56, sd2:1.02, r:0.17, n:40, metric:'raw' },
-    "Recognition Hits": { m1:14.21, sd1:1.02, m2:14.67, sd2:0.82, r:0.24, n:40, metric:'raw' },
-    "Discriminability": { m1:96.71, sd1:3.53, m2:98.06, sd2:3.25, r:0.37, n:40, metric:'raw' },
-    "False Positives": { m1:0.55, sd1:0.86, m2:0.55, sd2:1.03, r:0.35, n:40, metric:'raw' }
+    "List A Trials 1-5 Total": { m1:50.64, sd1:7.19, m2:56.47, sd2:8.92, r:0.73, n:40, metric:'raw', reportedAs:'t' },
+    "List B Free-Recall Trial": { m1:6.24, sd1:1.58, m2:6.82, sd2:1.57, r:0.26, n:40, metric:'raw', reportedAs:'z' },
+    "Short-Delay Free Recall": { m1:9.89, sd1:2.44, m2:12.24, sd2:2.62, r:0.77, n:40, metric:'raw', reportedAs:'z' },
+    "Short-Delay Cued Recall": { m1:11.13, sd1:2.21, m2:12.15, sd2:3.14, r:0.49, n:40, metric:'raw', reportedAs:'z' },
+    "Long-Delay Free Recall": { m1:10.77, sd1:2.32, m2:12.3, sd2:2.54, r:0.62, n:40, metric:'raw', reportedAs:'z' },
+    "Long-Delay Cued Recall": { m1:11.26, sd1:2.18, m2:12.74, sd2:2.53, r:0.69, n:40, metric:'raw', reportedAs:'z' },
+    "Semantic Cluster Ratio": { m1:1.49, sd1:0.43, m2:1.83, sd2:0.6, r:0.58, n:40, metric:'raw', reportedAs:'z' },
+    "Perseverations": { m1:4.55, sd1:4.32, m2:5.6, sd2:5.7, r:0.32, n:40, metric:'raw', reportedAs:'z', higherIsWorse:true },
+    "Free-Recall Intrusions": { m1:0.97, sd1:1.44, m2:1.64, sd2:2.67, r:0.56, n:40, metric:'raw', reportedAs:'z', higherIsWorse:true },
+    "Cued-Recall Intrusions": { m1:0.69, sd1:1.14, m2:0.56, sd2:1.02, r:0.17, n:40, metric:'raw', reportedAs:'z', higherIsWorse:true },
+    "Recognition Hits": { m1:14.21, sd1:1.02, m2:14.67, sd2:0.82, r:0.24, n:40, metric:'raw', reportedAs:'z' },
+    "Discriminability": { m1:96.71, sd1:3.53, m2:98.06, sd2:3.25, r:0.37, n:40, metric:'raw', reportedAs:'z' },
+    "False Positives": { m1:0.55, sd1:0.86, m2:0.55, sd2:1.03, r:0.35, n:40, metric:'raw', reportedAs:'z', higherIsWorse:true }
   },
   "CVLT-C Subtests (Raw Scores) · Age 16": {
-    "List A Trials 1-5 Total": { m1:53.53, sd1:6.15, m2:62.94, sd2:10.94, r:0.61, n:31, metric:'raw' },
-    "List B Free-Recall Trial": { m1:6.67, sd1:1.7, m2:7.6, sd2:2.19, r:0.66, n:31, metric:'raw' },
-    "Short-Delay Free Recall": { m1:11.61, sd1:2.09, m2:13.52, sd2:1.91, r:0.48, n:31, metric:'raw' },
-    "Short-Delay Cued Recall": { m1:12, sd1:1.52, m2:13.71, sd2:1.59, r:0.59, n:31, metric:'raw' },
-    "Long-Delay Free Recall": { m1:11.9, sd1:1.9, m2:13.5, sd2:1.87, r:0.6, n:31, metric:'raw' },
-    "Long-Delay Cued Recall": { m1:12.57, sd1:1.72, m2:14, sd2:1.58, r:0.59, n:31, metric:'raw' },
-    "Semantic Cluster Ratio": { m1:1.55, sd1:0.53, m2:2.3, sd2:0.66, r:0.53, n:31, metric:'raw' },
-    "Perseverations": { m1:3.84, sd1:3.03, m2:5.42, sd2:5.76, r:0.31, n:31, metric:'raw' },
-    "Free-Recall Intrusions": { m1:2.28, sd1:4.22, m2:2.19, sd2:4.13, r:0.85, n:31, metric:'raw' },
-    "Cued-Recall Intrusions": { m1:0.66, sd1:1.68, m2:0.84, sd2:1.59, r:0.74, n:31, metric:'raw' },
-    "Recognition Hits": { m1:14.59, sd1:0.82, m2:14.79, sd2:0.62, r:0.8, n:31, metric:'raw' },
-    "Discriminability": { m1:97.2, sd1:4.17, m2:98.9, sd2:2.23, r:0.78, n:31, metric:'raw' },
-    "False Positives": { m1:0.68, sd1:1.51, m2:0.35, sd2:0.91, r:0.78, n:31, metric:'raw' }
+    "List A Trials 1-5 Total": { m1:53.53, sd1:6.15, m2:62.94, sd2:10.94, r:0.61, n:31, metric:'raw', reportedAs:'t' },
+    "List B Free-Recall Trial": { m1:6.67, sd1:1.7, m2:7.6, sd2:2.19, r:0.66, n:31, metric:'raw', reportedAs:'z' },
+    "Short-Delay Free Recall": { m1:11.61, sd1:2.09, m2:13.52, sd2:1.91, r:0.48, n:31, metric:'raw', reportedAs:'z' },
+    "Short-Delay Cued Recall": { m1:12, sd1:1.52, m2:13.71, sd2:1.59, r:0.59, n:31, metric:'raw', reportedAs:'z' },
+    "Long-Delay Free Recall": { m1:11.9, sd1:1.9, m2:13.5, sd2:1.87, r:0.6, n:31, metric:'raw', reportedAs:'z' },
+    "Long-Delay Cued Recall": { m1:12.57, sd1:1.72, m2:14, sd2:1.58, r:0.59, n:31, metric:'raw', reportedAs:'z' },
+    "Semantic Cluster Ratio": { m1:1.55, sd1:0.53, m2:2.3, sd2:0.66, r:0.53, n:31, metric:'raw', reportedAs:'z' },
+    "Perseverations": { m1:3.84, sd1:3.03, m2:5.42, sd2:5.76, r:0.31, n:31, metric:'raw', reportedAs:'z', higherIsWorse:true },
+    "Free-Recall Intrusions": { m1:2.28, sd1:4.22, m2:2.19, sd2:4.13, r:0.85, n:31, metric:'raw', reportedAs:'z', higherIsWorse:true },
+    "Cued-Recall Intrusions": { m1:0.66, sd1:1.68, m2:0.84, sd2:1.59, r:0.74, n:31, metric:'raw', reportedAs:'z', higherIsWorse:true },
+    "Recognition Hits": { m1:14.59, sd1:0.82, m2:14.79, sd2:0.62, r:0.8, n:31, metric:'raw', reportedAs:'z' },
+    "Discriminability": { m1:97.2, sd1:4.17, m2:98.9, sd2:2.23, r:0.78, n:31, metric:'raw', reportedAs:'z' },
+    "False Positives": { m1:0.68, sd1:1.51, m2:0.35, sd2:0.91, r:0.78, n:31, metric:'raw', reportedAs:'z', higherIsWorse:true }
   },
   "D-KEFS Colour-Word Interference · Ages 20-49": {
     "Colour Naming": { m1:9.63, sd1:3.15, m2:10.6, sd2:2.58, r:0.86, n:35 },
@@ -21508,6 +21513,21 @@ function inferScoreType(familyName){
 //   2. keywords in the subtest's own name ("...Index", "IQ", "Quotient", etc.);
 //   3. the family-name heuristic (legacy fallback).
 function inferScoreTypeForSubtest(familyName, subtestName, stats){
+  /* -1. What the CLINICIAN types in, which is not always what m1/sd1 are.
+
+     CVLT-C is the case that forced these apart. Its normative statistics here
+     are raw (metric:'raw'), which is what Change Analysis needs — but nobody
+     transcribes a raw CVLT-C score onto a results table; they transcribe the
+     standardised score off the record form. Manual Table A.1 gives List A
+     Total Trials 1-5 as a T-score; Table A.2 gives every other index on a
+     scale running -5.0 to +5.0, i.e. a z-score.
+
+     BEWARE the manual's wording: Table A.2 is headed "Standard Score
+     Equivalents", but that is NOT this app's 'standard' (M 100, SD 15). A
+     CVLT-C "standard score" of -1.0 is the 16th percentile; read as M 100 /
+     SD 15 it would be z = -6.7. reportedAs holds the real metric, not the
+     manual's label for it. */
+  if (stats && SCORE_METRICS.has(stats.reportedAs)) return stats.reportedAs;
   /* 0. Declared, and therefore not a guess — it wins over everything below.
 
      metric:'raw' is the case that forced this to exist: a raw score is not on
@@ -21618,12 +21638,27 @@ function scoreTypeLabel(type){
 function scoreTypeAbbr(type){
   return {scaled:'Scaled', standard:'Standard', t:'T-Score', z:'Z-Score', raw:'Raw'}[type] || '';
 }
+/* The header must describe the rows that are actually there, not the
+   "default for ungrouped rows" dropdown.
+
+   It used to read straight from #bat-type, so autofilling CVLT-C — every row a
+   T-score or a z-score — printed a column headed "Scaled Score" over them. The
+   APA export already derived its header from the rows (renderBatteryApa's
+   headerLabel), so screen and export disagreed too. Same rule in both places
+   now: one label when the rows agree, "Score" when they do not, and the
+   dropdown only while the table is empty. */
 function updateBatteryScoreHeader(){
-  const type = document.getElementById('bat-type')?.value;
-  const label = scoreTypeLabel(type);
+  const fallback = document.getElementById('bat-type')?.value;
+  const scored = batteryRows.filter(r => !r.isExample);
+  const types = new Set(scored.map(r => rowScoreType(r)));
+  const label = scored.length === 0 ? scoreTypeLabel(fallback)
+              : types.size === 1    ? scoreTypeLabel([...types][0])
+              : 'Score';
   document.querySelectorAll('#bat-table .bat-score-head').forEach(th => {
     th.innerHTML = `<span class="bat-score-head-label">${escapeHtml(label)}</span>`;
-    th.title = `Manual rows use the selected default score type: ${label}. Auto-filled test families show their inferred score type in the group row.`;
+    th.title = types.size > 1
+      ? 'This table mixes score types. Each row shows its own metric next to the row number.'
+      : `Manual rows use the selected default score type: ${scoreTypeLabel(fallback)}. Auto-filled test families show their inferred score type in the group row.`;
   });
 }
 function rowScoreType(r){
@@ -21903,6 +21938,22 @@ function batteryClassificationDetails(r, cls){
   const z = toZ(r.score, rowScoreType(r));
   if (z == null) return { text:'', html:'', className:'' };
   const ss = fromZ(z, 'standard');
+  /* On a higher-is-worse measure the score runs the other way, so a merit label
+     would state the opposite of what the number means. CVLT-C Perseverations is
+     scored so that MORE perseverations give a HIGHER standardised score (Manual
+     Table A.2: z -1.0 maps to 0-3 perseverations, z +5.0 to 45 or more), so a
+     child at z +2.0 has made more perseverations than 98% of their age group -
+     and would otherwise have been labelled "Very Superior".
+
+     The PERCENTILE is kept, because it remains factually true: the score is
+     higher than 98% of the norm group. It is the classification that asserts
+     merit, so only that is withheld. Same reasoning as the change-outcome
+     labels, which report significance without claiming improvement or decline.
+     The APA note says which way to read these rows. */
+  if (r.higherIsWorse){
+    return { text:'', html:'<span class="bat-class-directionless" title="Higher scores indicate more errors on this measure, so a classification is not applied.">&mdash;</span>',
+             className:'', ss, prem:getBatteryPremorbidComparison(), stars:'' };
+  }
   const desc = cls === 'wechsler' ? wechslerDesc(ss) : aanDesc(ss);
   const prem = getBatteryPremorbidComparison();
   const extreme = ss < 70;
@@ -22280,6 +22331,11 @@ const APA_NOTES = {
     ctx.hasRaw
       ? 'Raw-score measures are reported as obtained; percentile and classification are not derived, as these measures are not on a standardised metric.'
       : '',
+    /* Without this the em-dash in the classification column reads as missing
+       data rather than as a deliberate refusal. */
+    ctx.hasHigherIsWorse
+      ? 'On error measures (perseverations, intrusions, false positives) a higher score indicates more errors, so the percentile is reported without a classification.'
+      : '',
     // States the BASIS, not just the level. These intervals use test-retest
     // reliability, so they run wider than manual-published intervals (which
     // use internal consistency); without this line a reader comparing against
@@ -22397,6 +22453,7 @@ function renderBatteryApa(){
       classification: cls,
       mixedTypes: types.size > 1,
       hasRaw: valid.some(r => rowScoreType(r) === 'raw'),
+      hasHigherIsWorse: valid.some(r => r.higherIsWorse && r.score !== '' && !isNaN(r.score)),
       ciLevel,
       premorbid: prem ? fmt(prem.estimate, 0) : null,
       premorbidMode: prem ? batteryPremorbidMode(prem) : null
@@ -22425,9 +22482,14 @@ function loadFamilyIntoBattery(family){
   }
   // Infer the score type PER subtest, not once for the whole family, so mixed
   // families (e.g. scaled subtests + standard-score indices) categorise correctly.
+  /* higherIsWorse rides along on the row so the classification cell can see it
+     without another database lookup. On these measures a high score means MORE
+     errors, so a merit label like "Very Superior" would assert the opposite of
+     what the number means — see batteryClassificationDetails. */
   const newRows = missing.map(name => ({
     name, raw:'', score:'', group:family,
-    scoreType: inferScoreTypeForSubtest(family, name, db[family][name])
+    scoreType: inferScoreTypeForSubtest(family, name, db[family][name]),
+    higherIsWorse: !!(db[family][name] && db[family][name].higherIsWorse)
   }));
   if (present.size){
     // Slot the new subtests in beneath the group's existing rows so they land
@@ -22953,8 +23015,16 @@ function loadFamilyIntoSdi(family){
   // Infer the score type PER subtest, not once for the whole family, so mixed
   // families (e.g. scaled subtests + standard-score indices) divide by their own SD.
   subtests.forEach(([name, p]) => {
+    /* sdiNormSd returns sd1, which is in whatever units m1/sd1 are — raw, for
+       the CVLT-C entries. Prefilling it would be wrong for a measure the
+       clinician enters in a DIFFERENT metric: they would be typing T-scores
+       into columns divided by a raw-unit SD. Where the entry metric differs
+       from the stored one, leave the SD for them to supply. Index mode is
+       unaffected: it divides by the entry metric's own unit. */
+    const entryMetricDiffers = SCORE_METRICS.has(p && p.reportedAs) && p.reportedAs !== p.metric;
     sdiRows.push({
-      name, t1:'', t2:'', sd: raw ? sdiNormSd(p) : '', group:family,
+      name, t1:'', t2:'', group:family,
+      sd: (raw && !entryMetricDiffers) ? sdiNormSd(p) : '',
       scoreType: inferScoreTypeForSubtest(family, name, p)
     });
   });
