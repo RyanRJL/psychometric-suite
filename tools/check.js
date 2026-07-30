@@ -2694,21 +2694,31 @@ check('rInternal appears only where a publisher derives its own intervals from i
      publish an internal-consistency interval would silently change that row's
      basis, so the roster is pinned.
 
-     Two sources so far:
+     Three sources so far:
        CVLT-C List A Trials 1-5 Total   3 entries, no by-age table
-       D-KEFS Advanced CWIT/Tower/SST/RISK  26 entries, All Ages groups only */
+       D-KEFS Advanced CWIT/Tower/SST/RISK  26 entries, All Ages groups only
+       D-KEFS (original)                11 entries, All Ages groups only
+
+     Keyed on EITHER field. D-KEFS original carries rInternalByAge with no
+     rInternal — its manual publishes no all-ages average — so a roster that
+     tested rInternal alone would let 11 entries change the basis of a printed
+     interval without ever being counted. See section 27. */
   const carriers = [];
   Object.entries(D.normDB).forEach(([group, tab]) => {
     Object.entries(tab).forEach(([name, e]) => {
-      if (e && typeof e === 'object' && Number.isFinite(e.rInternal)) carriers.push(group + ' / ' + name);
+      if (e && typeof e === 'object' && (Number.isFinite(e.rInternal) || e.rInternalByAge)) {
+        carriers.push(group + ' / ' + name);
+      }
     });
   });
   const cvltc = carriers.filter((c) => /^CVLT-C .* \/ List A Trials 1-5 Total$/.test(c));
   const dkefs = carriers.filter((c) => /^D-KEFS Advanced (Colour-Word Interference|Tower|Social Sorting|Risk-Reward Decision) · All Ages \//.test(c));
-  const stray = carriers.filter((c) => !cvltc.includes(c) && !dkefs.includes(c));
+  const orig  = carriers.filter((c) => /^D-KEFS (?!Advanced)(Trail Making Test|Verbal Fluency|Sorting Test|Word Context Test|Tower Test|Word Proverb Test) · All Ages \//.test(c));
+  const stray = carriers.filter((c) => !cvltc.includes(c) && !dkefs.includes(c) && !orig.includes(c));
   const bad = [];
   if (cvltc.length !== 3) bad.push('CVLT-C carriers: ' + cvltc.length + ', expected 3');
   if (dkefs.length !== 26) bad.push('D-KEFS Advanced carriers: ' + dkefs.length + ', expected 26');
+  if (orig.length !== 11) bad.push('D-KEFS original carriers: ' + orig.length + ', expected 11');
   if (stray.length) bad.push('undocumented: ' + stray.slice(0, 3).join(', '));
   return bad.length === 0 || bad.join('; ');
 });
@@ -2928,6 +2938,214 @@ check('an out-of-range age is explained rather than left blank', () => {
   if (!/pre-age-range-note/.test(src)) bad.push('calcPremorbid never touches the explanation box');
   if (!/OPIE_AGE_MIN\s*\|\|\s*age\s*>\s*OPIE_AGE_MAX/.test(src)) bad.push('the box is not driven by the OPIE range');
   if (!/<div class="caution-box" id="pre-age-range-note"/.test(HTML_SRC)) bad.push('the box is missing from the markup');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ==========================================================================
+   27. D-KEFS (original) internal consistency
+
+   PINNED SOURCE: D-KEFS Technical Manual, Chapter 2 "Evidence of Reliability",
+   pp. 18-19 and the per-test tables that follow.
+
+     p. 18   "For some D-KEFS measures, the internal consistency coefficients
+              were used; for other measures the test-retest correlations were
+              employed."
+     p. 19   SEM = SD sqrt(1 - rxx), and "The standard deviation unit is
+              3 for all D-KEFS scaled scores."  CI = observed +/- z(SEM).
+     p. 19   internal-consistency SEMs are tabulated BY AGE; test-retest SEMs
+              "were derived from the total sample of cases", the by-band retest
+              samples being too small.
+
+   So the manual runs two regimes and picks per test. Tables 2.1/2.4/2.12/2.18/
+   2.21/2.24 give the coefficients; 2.3/2.6/2.14/2.20/2.23/2.26 give the SEM
+   they produce. Design Fluency has no coefficient table at all -- "Item
+   interdependence precluded the use of internal consistency procedures" -- and
+   its Table 2.8 is All Ages only, from the retest r.
+   ========================================================================== */
+heading('27. D-KEFS (original) internal consistency');
+
+/* The SEM column of each internal-consistency test's SEM table, keyed by the
+   age band's LOWER bound to match rInternalByAge. */
+const DKEFS_SEM = [
+  ['D-KEFS Trail Making Test · All Ages', 'Combined Number + Letter',
+   { 8:1.41, 9:1.59, 10:1.96, 11:1.92, 12:1.69, 13:1.66, 14:1.38, 15:1.59, 16:1.66, 20:1.41, 30:1.41, 40:1.52, 50:1.31, 60:1.33, 70:1.89, 80:1.43 }],  // Tables 2.1/2.3
+  ['D-KEFS Verbal Fluency · All Ages', 'Letter Fluency',
+   { 8:1.69, 9:1.62, 10:1.33, 11:1.48, 12:1.43, 13:1.31, 14:1.36, 15:1.41, 16:1.36, 20:1.16, 30:0.97, 40:1.45, 50:0.97, 60:1.16, 70:1.08, 80:1.13 }],  // Tables 2.4/2.6
+  ['D-KEFS Verbal Fluency · All Ages', 'Category Fluency',
+   { 8:1.89, 9:1.50, 10:1.62, 11:1.94, 12:1.59, 13:1.76, 14:1.71, 15:2.06, 16:1.89, 20:1.87, 30:1.48, 40:1.82, 50:1.85, 60:1.80, 70:1.78, 80:1.48 }],  // Tables 2.4/2.6
+  ['D-KEFS Verbal Fluency · All Ages', 'Category Switching',
+   { 8:2.37, 9:2.06, 10:1.99, 11:1.85, 12:1.85, 13:1.85, 14:2.03, 15:2.25, 16:2.15, 20:2.27, 30:1.71, 40:1.69, 50:2.23, 60:2.13, 70:2.03, 80:2.01 }],  // Tables 2.4/2.6
+  ['D-KEFS Verbal Fluency · All Ages', 'Switching Accuracy',
+   { 8:2.06, 9:1.57, 10:1.80, 11:1.48, 12:1.78, 13:2.03, 14:1.55, 15:1.82, 16:2.06, 20:1.92, 30:1.59, 40:1.85, 50:2.06, 60:2.11, 70:1.80, 80:1.62 }],  // Tables 2.4/2.6
+  ['D-KEFS Sorting Test · All Ages', 'Free Sorting Confirmed Sorts',
+   { 8:1.92, 9:1.94, 10:1.33, 11:1.64, 12:1.85, 13:1.57, 14:1.26, 15:2.01, 16:1.59, 20:1.41, 30:1.26, 40:1.31, 50:1.13, 60:1.31, 70:1.31, 80:1.43 }],  // Tables 2.12/2.14
+  ['D-KEFS Sorting Test · All Ages', 'Free Sorting Description Total Score',
+   { 8:1.85, 9:1.80, 10:1.43, 11:1.57, 12:1.80, 13:1.64, 14:1.33, 15:2.01, 16:1.55, 20:1.43, 30:1.24, 40:1.33, 50:1.19, 60:1.36, 70:1.28, 80:1.45 }],  // Tables 2.12/2.14
+  ['D-KEFS Sorting Test · All Ages', 'Sort Recognition Total Description Score',
+   { 8:1.52, 9:1.62, 10:1.85, 11:1.59, 12:1.73, 13:1.85, 14:1.59, 15:1.59, 16:1.52, 20:1.50, 30:1.45, 40:1.36, 50:1.52, 60:1.31, 70:1.38, 80:1.64 }],  // Tables 2.12/2.14
+  ['D-KEFS Word Context Test · All Ages', 'Total First Trial Consistently Correct',
+   { 8:2.01, 9:2.08, 10:2.08, 11:1.92, 12:2.08, 13:2.18, 14:1.71, 15:1.62, 16:2.11, 20:1.69, 30:1.73, 40:2.06, 50:1.59, 60:1.71, 70:1.52, 80:1.69 }],  // Tables 2.18/2.20
+  ['D-KEFS Tower Test · All Ages', 'Total Achievement Score',
+   { 8:1.99, 9:1.62, 10:1.21, 11:1.87, 12:1.87, 13:2.01, 14:2.27, 15:1.89, 16:1.89, 20:1.85, 30:1.59, 40:1.59, 50:1.99, 60:1.59, 70:1.41, 80:1.87 }],  // Tables 2.21/2.23
+  ['D-KEFS Word Proverb Test · All Ages', 'Total Achievement Score',
+   { 16:1.69, 20:1.62, 30:1.33, 40:1.48, 50:1.43, 60:1.31, 70:1.36, 80:1.41 }],  // Tables 2.24/2.26
+];
+
+check('the stored coefficient is the one the published SEM was built from', () => {
+  /* The finding the whole change rests on, and a transcription guard on all
+     168 coefficients at once.
+
+     Stated as "the rxx implied by the printed SEM agrees with the stored rxx",
+     because the manual computes from UNROUNDED coefficients and prints both
+     quantities to 2dp. Two roundings of the same number can differ by half a
+     unit in the last place at each end; the worst case here is 0.0064, so the
+     tolerance is 0.007. Asserting equality of the SEM instead would fail on
+     seven cells for pure typography. */
+  const bad = [];
+  let n = 0;
+  DKEFS_SEM.forEach(([group, name, tab]) => {
+    const e = D.normDB[group] && D.normDB[group][name];
+    if (!e) { bad.push(group + ' / ' + name + ' is missing from normDB'); return; }
+    if (!e.rInternalByAge) { bad.push(group + ' / ' + name + ' carries no rInternalByAge'); return; }
+    Object.entries(tab).forEach(([age, sem]) => {
+      n++;
+      const stored = e.rInternalByAge[age];
+      if (!Number.isFinite(stored)) { bad.push(name + ' has no band ' + age); return; }
+      const implied = 1 - Math.pow(sem / 3, 2);
+      if (Math.abs(implied - stored) > 0.007) {
+        bad.push(name + ' [' + group.replace('D-KEFS ', '').replace(' · All Ages', '') + '] age ' + age
+               + ': stored ' + stored + ', SEM ' + sem + ' implies ' + implied.toFixed(3));
+      }
+    });
+  });
+  if (n !== 168) return 'checked ' + n + ' cells, expected 168';
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('the retest r could NOT have produced those SEMs', () => {
+  /* Falsification, and the reason this is not merely a plausible reading of
+     the manual's prose. If the by-age SEM tables were built on stability
+     instead, the stored retest r would reproduce them. It reproduces 4 of 168
+     -- and only by coincidence, at bands where the two coefficients happen to
+     coincide. Anything above a handful means the wrong coefficient is stored. */
+  let hits = 0, n = 0;
+  DKEFS_SEM.forEach(([group, name, tab]) => {
+    const e = D.normDB[group][name];
+    Object.values(tab).forEach((sem) => {
+      n++;
+      if (Math.abs((1 - Math.pow(sem / 3, 2)) - e.r) <= 0.007) hits++;
+    });
+  });
+  return hits <= 8 || 'the retest r reproduces ' + hits + ' of ' + n
+    + ' published SEMs — the by-age tables may be stability after all, re-read Chapter 2';
+});
+
+check('D-KEFS original carries no bare rInternal, because none is published', () => {
+  /* Unlike D-KEFS Advanced, not one of the eight coefficient tables prints an
+     all-ages average. There is therefore nothing citable to put in rInternal,
+     and averaging the bands would be inventing a number. The consequence is
+     deliberate: a blank age falls through to the retest r, which IS the
+     manual's own second regime — see the next check. */
+  const bad = [];
+  Object.entries(D.normDB).forEach(([group, tab]) => {
+    if (!/^D-KEFS (?!Advanced)/.test(group)) return;
+    Object.entries(tab).forEach(([name, e]) => {
+      if (e && typeof e === 'object' && Number.isFinite(e.rInternal)) bad.push(group + ' / ' + name);
+    });
+  });
+  return bad.length === 0
+    || bad.slice(0, 3).join('; ') + ' — the D-KEFS manual publishes no all-ages coefficient to cite';
+});
+
+check('a blank age falls back to the retest r, and an age changes the interval', () => {
+  /* Both halves matter. The fallback must be the retest r (the manual's
+     total-sample regime), and a valid age must actually reach the renderer, or
+     the 168 coefficients are inert. Tower is the sharpest probe: retest r .44
+     against .84 at age 10. */
+  const group = 'D-KEFS Tower Test · All Ages';
+  const name = 'Total Achievement Score';
+  const e = D.normDB[group][name];
+  const row = { name, group, scoreType: 'scaled' };
+  const bad = [];
+  [null, undefined, NaN, 4, 90, 200].forEach((age) => {
+    const rel = batteryRel(row, 'scaled', age);
+    if (!rel) { bad.push('no interval at age ' + age); return; }
+    if (rel.r !== e.r) bad.push('age ' + age + ' used r ' + rel.r + ', expected the retest ' + e.r);
+  });
+  const inBand = batteryRel(row, 'scaled', 10);
+  if (inBand.r !== e.rInternalByAge[10]) bad.push('age 10 did not pick up the band coefficient');
+  const young = batteryCi(10, row, '95', 10);
+  const blank = batteryCi(10, row, '95', null);
+  if (young === blank) bad.push('age 10 and a blank age both printed ' + young);
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the measures the manual excludes carry nothing', () => {
+  /* Four exclusions, four different reasons. Each would be an easy and silent
+     mistake to make, so each is pinned.
+
+     Colour-Word Interference  its only coefficient table (2.9) is for the
+       Combined Colour Naming + Word Reading COMPOSITE, which is not a measure
+       in this database. Attaching it to Colour Naming or Word Reading would
+       give a condition the composite's reliability.
+     Design Fluency  "Item interdependence precluded the use of internal
+       consistency procedures, and reliability was investigated with test-retest
+       procedures."
+     Trail Making, the five conditions  Table 2.1 is the composite alone.
+     Twenty Questions  held deliberately. Table 2.17's SEM column does not
+       follow from Table 2.15's coefficients: 15 of 16 bands disagree, by up to
+       .094 and in both directions. At 40-49 rxx .75 implies SEM 1.50 where the
+       manual prints 1.76. No other coefficient column, row shift, constant SD
+       or uncorrected split-half fits either, so one of the two tables is
+       misprinted and the source cannot say which. The bar — the publisher
+       derives its OWN published intervals from the coefficient — is therefore
+       not demonstrably met, and both 20Q measures stay on the retest r. */
+  const bad = [];
+  const carries = (group, name) => {
+    const e = D.normDB[group] && D.normDB[group][name];
+    return !!(e && (Number.isFinite(e.rInternal) || e.rInternalByAge));
+  };
+  ['Colour Naming', 'Word Reading', 'Inhibition', 'Inhibition/Switching'].forEach((n) => {
+    if (carries('D-KEFS Colour-Word Interference · All Ages', n)) bad.push('CWIT ' + n);
+  });
+  ['Filled Dots', 'Empty Dots', 'Switching'].forEach((n) => {
+    if (carries('D-KEFS Design Fluency · All Ages', n)) bad.push('Design Fluency ' + n);
+  });
+  ['Visual Scanning', 'Number Sequencing', 'Letter Sequencing', 'Switching', 'Motor Speed'].forEach((n) => {
+    if (carries('D-KEFS Trail Making Test · All Ages', n)) bad.push('TMT ' + n);
+  });
+  ['Initial Abstraction Score', 'Total Weighted Achievement'].forEach((n) => {
+    if (carries('D-KEFS Twenty Questions Test · All Ages', n)) bad.push('Twenty Questions ' + n);
+  });
+  return bad.length === 0
+    || bad.slice(0, 4).join('; ') + ' — the manual publishes no usable internal-consistency coefficient for these';
+});
+
+check('the two D-KEFS manuals disagree, and both are honoured', () => {
+  /* The trap this section exists to stop. D-KEFS Advanced rejects internal
+     consistency for Trail Making and Verbal Fluency because they are SPEEDED;
+     the original manual publishes it for all four Verbal Fluency measures and
+     for the Trail Making composite, and rejects Design Fluency for ITEM
+     INTERDEPENDENCE instead. Same two test names, opposite answers. Anyone
+     "harmonising" the two families would break one of them, so assert the
+     inversion directly. */
+  const bad = [];
+  const has = (g, n) => {
+    const e = D.normDB[g] && D.normDB[g][n];
+    return !!(e && (Number.isFinite(e.rInternal) || e.rInternalByAge));
+  };
+  if (has('D-KEFS Advanced Verbal Fluency · All Ages', 'Letter Fluency Total Correct')) {
+    bad.push('Advanced Verbal Fluency gained a coefficient; that manual calls it speeded');
+  }
+  if (!has('D-KEFS Verbal Fluency · All Ages', 'Letter Fluency')) {
+    bad.push('original Verbal Fluency lost its coefficient; Table 2.4 publishes one');
+  }
+  if (!has('D-KEFS Trail Making Test · All Ages', 'Combined Number + Letter')) {
+    bad.push('the original TMT composite lost its coefficient; Table 2.1 publishes one');
+  }
+  if (has('D-KEFS Design Fluency · All Ages', 'Filled Dots')) {
+    bad.push('Design Fluency gained one; its manual says item interdependence precluded it');
+  }
   return bad.length === 0 || bad.join('; ');
 });
 

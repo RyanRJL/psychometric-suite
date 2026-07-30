@@ -293,15 +293,25 @@ does not change a Score Tables percentile — it only matters for Change Analysi
 
 `r` is a **stability** coefficient (same people, retested). `rInternal` is a
 **consistency** coefficient (one sitting, split in half). Different questions, not
-interchangeable. The field is carried by **three entries only** — CVLT-C
-`List A Trials 1-5 Total` at ages 8, 12 and 16 — and `check.js` §24 fails if a fourth
-appears without documentation.
+interchangeable.
 
 It exists because the app's default is test–retest for every measure, and that default
 is right almost everywhere (see the CI paragraphs in Methods & References). The bar for
 setting it aside is deliberately high: **the publisher must both report an
-internal-consistency coefficient AND derive its own published intervals from it.** Only
-CVLT-C List A Trials 1–5 clears it.
+internal-consistency coefficient AND derive its own published intervals from it.**
+
+Three manuals clear it, and `check.js` §24 pins the roster so a fourth cannot appear
+undocumented:
+
+| Source | Entries | Fields |
+|---|---|---|
+| CVLT-C `List A Trials 1-5 Total`, ages 8 / 12 / 16 | 3 | `rInternal` only |
+| D-KEFS Advanced — CWIT, Tower, Social Sorting, Risk-Reward | 26 | `rInternal` + `rInternalByAge` |
+| D-KEFS (original) — VFT, Sorting, Word Context, Tower, Proverb, TMT composite | 11 | `rInternalByAge` **only** |
+
+That roster check keys on **either** field. D-KEFS original carries no `rInternal` at
+all, so a check testing `rInternal` alone would let 11 entries change the basis of a
+printed interval without ever being counted.
 
 - CVLT-C Manual Table 6.5 gives odd/even split-half by age — .87 / .89 / .84 for the
   three bands here — alongside an SEM for each.
@@ -340,10 +350,13 @@ Keys are the band's **lower bound**; `rInternalForAge` takes the greatest key �
 17 reads the 16-18 band and 45 reads 40-49. Same shape as `baseRates` — a lookup living
 on an entry rather than a separate group.
 
-The age comes from **`#bat-age`** on Score Tables, and is **optional**. Blank, or outside
-`rInternalAgeMax`, falls back to `rInternal` — the manual's own all-ages figure, so both
-paths are citable. **Never make it required**: a blank age silently emptying the CI
-column would read as the app being broken.
+The age is read through `batteryPatientAge()`, which since 616a70a delegates to
+`patientAge()` — **one shared value** behind `#bat-age` on Score Tables and `#pre-age` on
+Premorbid, pinned by `check.js` §26. It is **optional**. Blank, or outside
+`rInternalAgeMax`, falls back to `rInternal` where one is published — the manual's own
+all-ages figure, so both paths are citable — and to the retest `r` where none is, which is
+the D-KEFS original case below. **Never make it required**: a blank age silently emptying
+the CI column would read as the app being broken.
 
 Three constraints, all in `check.js` §25:
 
@@ -362,16 +375,66 @@ Three constraints, all in `check.js` §25:
   on the exported table, and claiming an age on a table where nothing used it would be
   its own misstatement.
 
-**There is no shared patient age yet.** `#pre-age` on the premorbid page is bounded 16-90
-because ToPF and OPIE-4 are adult-only; `#bat-age` accepts from 5. Unifying them means
-deciding what a paediatric age does to the premorbid models, which is a change to that
-page and was deliberately not folded in here.
+#### D-KEFS (original) — `rInternalByAge` with no `rInternal`
 
-Reliability method is a **per-manual question, not a per-app policy.** Three sources, three
-different answers: D-KEFS Advanced rejects internal consistency for *speededness*; CVLT-3
-and CVLT-C reject it for *item interdependence* on a word-list task; CVLT-C nonetheless
-publishes split-half for its one non-interdependent score. Read the manual before
-assuming any of them generalises.
+The D-KEFS Technical Manual, Chapter 2, states the rule outright (p. 18): "For some
+D-KEFS measures, the internal consistency coefficients were used; for other measures the
+test–retest correlations were employed." It prints `SEM = SD √(1 − rxx)` with "The
+standard deviation unit is **3** for all D-KEFS scaled scores", and
+`CI = observed ± z(SEM)` at 90% and 95%.
+
+So it runs **two regimes**, chosen per test: internal consistency tabulated *by age*, or
+the retest `r` on the *total sample* where no coefficient table exists — the by-band
+retest samples being "too small".
+
+Which regime feeds the SEM is settled arithmetically, not by reading the prose:
+`3 × √(1 − rxx)` on the internal-consistency coefficient reproduces **190 of the 216**
+published SEM cells exactly, and all but one measure to within 0.006 (the manual computes
+from unrounded coefficients and prints both to 2 dp). The retest `r` reproduces **2 of
+200**. `check.js` §27 pins all 168 cells for the measures actually used, and asserts the
+falsification too.
+
+**No `rInternal` fallback exists, and none may be invented.** Unlike Advanced, not one of
+the eight tables prints an all-ages average. A blank or out-of-range age therefore falls
+through `rInternalForAge` to the retest `r` — which is precisely the manual's own second
+regime, confirmed by Design Fluency Table 2.8, whose three All Ages SEMs all reproduce as
+`3 × √(1 − r)`. Both paths are the publisher's own figures, so the column stays citable
+either way. Averaging the bands to manufacture an `rInternal` would be inventing a number.
+
+Four exclusions, four different reasons — each an easy silent mistake, each pinned:
+
+- **Colour-Word Interference, all four.** Its only coefficient table (2.9) is for the
+  *Combined Colour Naming + Word Reading composite*, which is not a measure in `normDB`.
+  Attaching it to Colour Naming or Word Reading would give a condition the composite's
+  reliability.
+- **Design Fluency, all three.** "Item interdependence precluded the use of internal
+  consistency procedures."
+- **Trail Making, five of six.** Table 2.1 is the composite alone, so only
+  `Combined Number + Letter` carries it.
+- **Twenty Questions, both — held deliberately.** Table 2.17's SEM column does not follow
+  from Table 2.15's coefficients: 15 of 16 bands disagree, by up to .094 and in both
+  directions. At 40–49, rxx .75 implies SEM 1.50 where the manual prints 1.76. No other
+  coefficient column, row shift, constant SD or uncorrected split-half fits either, so one
+  of the two tables is misprinted and the source cannot say which. The bar is therefore not
+  demonstrably met. `Total Weighted Achievement` reproduces 16/16 from its own coefficients
+  and is held only because it shares the suspect table — revisit both together if another
+  printing settles it.
+
+Word Proverb is banded 16–19 upward, the Proverb Test not being administered under 16, so
+a child's age finds no band and correctly falls back.
+
+**The two D-KEFS manuals reach opposite conclusions on the same two test names.** Advanced
+excludes Trail Making and Verbal Fluency for *speededness*; the original publishes internal
+consistency for all four Verbal Fluency measures and the TMT composite, and excludes Design
+Fluency for *item interdependence* instead. Do not "harmonise" them — §27 asserts the
+inversion in both directions.
+
+Reliability method is a **per-manual question, not a per-app policy.** Four sources, four
+different answers: D-KEFS Advanced rejects internal consistency for *speededness*; D-KEFS
+original accepts it for those same tests and rejects Design Fluency for *item
+interdependence*; CVLT-3 and CVLT-C reject it for *item interdependence* on a word-list
+task; CVLT-C nonetheless publishes split-half for its one non-interdependent score. Read
+the manual before assuming any of them generalises.
 
 ### `baseRates` — measures scored by lookup rather than by conversion
 

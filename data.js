@@ -389,8 +389,18 @@ const OPIE_BASE_RATES = {
 
    The field exists only where a publisher does two things: reports an
    internal-consistency coefficient, AND derives its own published confidence
-   intervals from it. Both are true of CVLT-C List A Trials 1-5 Total, which
-   is at present the only measure carrying it.
+   intervals from it. Three manuals clear that bar, and each for a different
+   reason — reliability method is a per-manual question, never a policy this
+   app applies across instruments:
+
+     CVLT-C          List A Trials 1-5 Total only, 3 entries. rInternal, no
+                     by-age table. Details below.
+     D-KEFS Advanced 26 entries on the All Ages groups, rInternal (published
+                     Average) + rInternalByAge. TMT and VFT excluded, because
+                     that manual rejects internal consistency for SPEEDED
+                     measures.
+     D-KEFS          11 entries on the All Ages groups, rInternalByAge ONLY —
+                     it publishes no all-ages average. See below.
 
      CVLT-C Manual, Table 6.5 — odd/even split-half with Spearman-Brown,
      by age. Age 8 .87, Age 12 .89, Age 16 .84. The same table prints the
@@ -402,6 +412,67 @@ const OPIE_BASE_RATES = {
      Its worked example settles it. An 8-year-old with T = 45 is given a 95%
      interval of 38-52 and a 90% interval of 39-51. From rxx .87 and SD 10:
      SEM 3.606, so 45 +/- 7 and 45 +/- 6. Both reproduce exactly.
+
+   ------------------------------------------------------------
+   D-KEFS (original) — rInternalByAge with NO rInternal
+
+   D-KEFS Technical Manual, Chapter 2 (Evidence of Reliability), pp. 18-19:
+   "For some D-KEFS measures, the internal consistency coefficients were used;
+   for other measures the test-retest correlations were employed." It prints
+   SEM = SD sqrt(1 - rxx) with "The standard deviation unit is 3 for all
+   D-KEFS scaled scores", and CI = observed +/- z(SEM) at 90% and 95%.
+
+   So the manual runs TWO regimes, and which applies is a per-test fact:
+     - internal consistency, tabulated BY AGE (Tables 2.1/2.4/2.9/2.12/2.15/
+       2.18/2.21/2.24, with the matching SEM tables);
+     - the retest r on the TOTAL sample, where no internal-consistency table
+       exists, because "the samples for the test-retest studies were too small
+       when analyzed by age band".
+
+   Proof of which coefficient feeds the SEM, over all 216 published cells:
+   3 x sqrt(1 - internal consistency) reproduces 190 exactly and all but one
+   measure to within 0.006 of the printed value (last-digit rounding — the
+   manual computes from unrounded coefficients). The retest r reproduces
+   2 of 200. Not ambiguous.
+
+   NO rInternal FALLBACK EXISTS, and none may be invented. Unlike D-KEFS
+   Advanced, not one of the eight tables prints an all-ages average. A blank
+   or out-of-range age therefore falls through rInternalForAge to the retest
+   `r`, which is exactly the manual's own second regime — confirmed by Design
+   Fluency Table 2.8, whose three All Ages SEMs all reproduce as
+   3 x sqrt(1 - r). Both paths are the publisher's own figures, so the column
+   stays citable whether or not an age is entered.
+
+   WHICH MEASURES, and why the others get nothing:
+     Verbal Fluency (4), Sorting (3), Word Context, Tower, Word Proverb  — carry it.
+     Trail Making — ONLY "Combined Number + Letter". Table 2.1 is the composite
+       score alone; the five conditions have no internal-consistency table.
+     Colour-Word Interference — NONE. Its only such table (2.9) is for the
+       Combined Colour Naming + Word Reading composite, which is not a measure
+       in this database. Attaching it to Colour Naming or Word Reading would
+       give a condition the composite's reliability.
+     Design Fluency — NONE. "Item interdependence precluded the use of internal
+       consistency procedures, and reliability was investigated with test-retest
+       procedures."
+     Twenty Questions — NONE, deliberately held. Table 2.17's SEM column does
+       not follow from Table 2.15's coefficients: 15 of 16 bands disagree, by
+       up to .094 and in both directions, which is far past rounding. At 40-49
+       rxx .75 implies SEM 1.50 where the manual prints 1.76. No other
+       coefficient column, row shift, constant SD, or uncorrected split-half
+       fits either. One of the two tables is misprinted and the source cannot
+       say which, so the bar ("the publisher derives its OWN published
+       intervals from it") is not demonstrably met. Both 20Q measures stay on
+       the retest r. Note Total Weighted Achievement reproduces 16/16 from its
+       own coefficients and is held only because it shares the suspect table.
+
+   Word Proverb is banded 16-19 upward — the Proverb Test is not administered
+   under 16 — so a child's age finds no band and correctly falls back.
+
+   Do NOT confuse this with D-KEFS Advanced, whose manual reaches the opposite
+   conclusion on the same two test names: it excludes Trail Making and Verbal
+   Fluency for speededness, while this manual publishes internal consistency
+   for all four Verbal Fluency measures and excludes Design Fluency instead.
+   ------------------------------------------------------------
 
    WHERE IT MUST NOT BE USED: Change Analysis and the RCI pages. There the
    reliability is not merely an error term — with the retest r, SD sqrt(2(1-r))
@@ -564,9 +635,9 @@ const OPIE_BASE_RATES = {
     "Sort Recognition Total Description Score": { m1:10.22, sd1:2.95, m2:11.81, sd2:2.77, r:0.56, n:28 }
   },
   "D-KEFS Sorting Test · All Ages": {
-    "Free Sorting Confirmed Sorts": { m1:10.24, sd1:2.77, m2:11.31, sd2:2.44, r:0.51, n:101 },
-    "Free Sorting Description Total Score": { m1:10.11, sd1:2.72, m2:11.27, sd2:2.51, r:0.5, n:101 },
-    "Sort Recognition Total Description Score": { m1:10.26, sd1:2.92, m2:11.16, sd2:3.13, r:0.6, n:101 }
+    "Free Sorting Confirmed Sorts": { m1:10.24, sd1:2.77, m2:11.31, sd2:2.44, r:0.51, n:101, rInternalByAge:{8:0.59, 9:0.58, 10:0.8, 11:0.7, 12:0.62, 13:0.73, 14:0.82, 15:0.55, 16:0.72, 20:0.78, 30:0.82, 40:0.81, 50:0.86, 60:0.81, 70:0.81, 80:0.77}, rInternalAgeMax:89 },
+    "Free Sorting Description Total Score": { m1:10.11, sd1:2.72, m2:11.27, sd2:2.51, r:0.5, n:101, rInternalByAge:{8:0.62, 9:0.64, 10:0.77, 11:0.73, 12:0.64, 13:0.7, 14:0.8, 15:0.55, 16:0.73, 20:0.77, 30:0.83, 40:0.8, 50:0.84, 60:0.8, 70:0.82, 80:0.77}, rInternalAgeMax:89 },
+    "Sort Recognition Total Description Score": { m1:10.26, sd1:2.92, m2:11.16, sd2:3.13, r:0.6, n:101, rInternalByAge:{8:0.74, 9:0.71, 10:0.62, 11:0.72, 12:0.67, 13:0.62, 14:0.72, 15:0.72, 16:0.74, 20:0.75, 30:0.77, 40:0.8, 50:0.74, 60:0.81, 70:0.79, 80:0.7}, rInternalAgeMax:89 }
   },
   "D-KEFS Tower Test · Ages 20-49": {
     "Total Achievement Score": { m1:10.33, sd1:3.03, m2:11.1, sd2:3.04, r:0.41, n:30 }
@@ -578,7 +649,7 @@ const OPIE_BASE_RATES = {
     "Total Achievement Score": { m1:11, sd1:3.14, m2:12.08, sd2:2.8, r:0.51, n:25 }
   },
   "D-KEFS Tower Test · All Ages": {
-    "Total Achievement Score": { m1:10.35, sd1:3.21, m2:11.66, sd2:2.94, r:0.44, n:83 }
+    "Total Achievement Score": { m1:10.35, sd1:3.21, m2:11.66, sd2:2.94, r:0.44, n:83, rInternalByAge:{8:0.56, 9:0.71, 10:0.84, 11:0.61, 12:0.61, 13:0.55, 14:0.43, 15:0.6, 16:0.6, 20:0.62, 30:0.72, 40:0.72, 50:0.56, 60:0.72, 70:0.78, 80:0.61}, rInternalAgeMax:89 }
   },
   "D-KEFS Trail Making Test · Ages 20-49": {
     "Visual Scanning": { m1:10.14, sd1:2.87, m2:10.86, sd2:2.68, r:0.55, n:35 },
@@ -610,7 +681,7 @@ const OPIE_BASE_RATES = {
     "Letter Sequencing": { m1:9.7, sd1:3.23, m2:10.82, sd2:2.68, r:0.59, n:100 },
     "Switching": { m1:9.81, sd1:2.91, m2:10.71, sd2:2.75, r:0.38, n:99 },
     "Motor Speed": { m1:10.17, sd1:2.96, m2:10.54, sd2:2.95, r:0.77, n:101 },
-    "Combined Number + Letter": { m1:9.63, sd1:3.33, m2:11.05, sd2:2.71, r:0.66, n:98 }
+    "Combined Number + Letter": { m1:9.63, sd1:3.33, m2:11.05, sd2:2.71, r:0.66, n:98, rInternalByAge:{8:0.78, 9:0.72, 10:0.57, 11:0.59, 12:0.68, 13:0.69, 14:0.79, 15:0.72, 16:0.69, 20:0.78, 30:0.78, 40:0.74, 50:0.81, 60:0.8, 70:0.6, 80:0.77}, rInternalAgeMax:89 }
   },
   "D-KEFS Twenty Questions Test · Ages 20-49": {
     "Total Weighted Achievement": { m1:10.61, sd1:2.73, m2:10.33, sd2:2.91, r:0.19, n:35 },
@@ -647,10 +718,10 @@ const OPIE_BASE_RATES = {
     "Switching Accuracy": { m1:10.29, sd1:2.77, m2:11, sd2:3.15, r:0.53, n:28 }
   },
   "D-KEFS Verbal Fluency · All Ages": {
-    "Letter Fluency": { m1:9.62, sd1:3.14, m2:10.1, sd2:3.51, r:0.8, n:101 },
-    "Category Fluency": { m1:9.83, sd1:3.25, m2:10.3, sd2:3.38, r:0.79, n:101 },
-    "Category Switching": { m1:9.86, sd1:3.39, m2:9.87, sd2:3.58, r:0.52, n:101 },
-    "Switching Accuracy": { m1:10.41, sd1:2.96, m2:10.54, sd2:3.63, r:0.36, n:101 }
+    "Letter Fluency": { m1:9.62, sd1:3.14, m2:10.1, sd2:3.51, r:0.8, n:101, rInternalByAge:{8:0.68, 9:0.71, 10:0.8, 11:0.76, 12:0.77, 13:0.81, 14:0.8, 15:0.78, 16:0.8, 20:0.85, 30:0.9, 40:0.77, 50:0.9, 60:0.85, 70:0.87, 80:0.86}, rInternalAgeMax:89 },
+    "Category Fluency": { m1:9.83, sd1:3.25, m2:10.3, sd2:3.38, r:0.79, n:101, rInternalByAge:{8:0.6, 9:0.75, 10:0.71, 11:0.58, 12:0.72, 13:0.66, 14:0.68, 15:0.53, 16:0.6, 20:0.61, 30:0.76, 40:0.63, 50:0.62, 60:0.64, 70:0.65, 80:0.76}, rInternalAgeMax:89 },
+    "Category Switching": { m1:9.86, sd1:3.39, m2:9.87, sd2:3.58, r:0.52, n:101, rInternalByAge:{8:0.37, 9:0.53, 10:0.56, 11:0.62, 12:0.62, 13:0.62, 14:0.54, 15:0.44, 16:0.48, 20:0.43, 30:0.68, 40:0.68, 50:0.45, 60:0.5, 70:0.54, 80:0.55}, rInternalAgeMax:89 },
+    "Switching Accuracy": { m1:10.41, sd1:2.96, m2:10.54, sd2:3.63, r:0.36, n:101, rInternalByAge:{8:0.53, 9:0.73, 10:0.64, 11:0.76, 12:0.65, 13:0.54, 14:0.73, 15:0.63, 16:0.53, 20:0.59, 30:0.72, 40:0.62, 50:0.53, 60:0.51, 70:0.64, 80:0.71}, rInternalAgeMax:89 }
   },
   "D-KEFS Word Context Test · Ages 20-49": {
     "Total First Trial Consistently Correct": { m1:10.26, sd1:3.08, m2:11.97, sd2:2.94, r:0.73, n:35 }
@@ -662,7 +733,7 @@ const OPIE_BASE_RATES = {
     "Total First Trial Consistently Correct": { m1:10.57, sd1:2.74, m2:12.25, sd2:3.1, r:0.58, n:28 }
   },
   "D-KEFS Word Context Test · All Ages": {
-    "Total First Trial Consistently Correct": { m1:10.03, sd1:2.85, m2:11.54, sd2:3.27, r:0.7, n:101 }
+    "Total First Trial Consistently Correct": { m1:10.03, sd1:2.85, m2:11.54, sd2:3.27, r:0.7, n:101, rInternalByAge:{8:0.55, 9:0.52, 10:0.52, 11:0.59, 12:0.52, 13:0.47, 14:0.68, 15:0.71, 16:0.51, 20:0.68, 30:0.67, 40:0.53, 50:0.72, 60:0.68, 70:0.74, 80:0.68}, rInternalAgeMax:89 }
   },
   "D-KEFS Word Proverb Test · Ages 20-49": {
     "Total Achievement Score: Free Inquiry": { m1:10.13, sd1:2.62, m2:10.56, sd2:2.26, r:0.66, n:35 }
@@ -674,7 +745,7 @@ const OPIE_BASE_RATES = {
     "Total Achievement Score: Free Inquiry": { m1:9.8, sd1:3.29, m2:11.3, sd2:2.5, r:0.9, n:28 }
   },
   "D-KEFS Word Proverb Test · All Ages": {
-    "Total Achievement Score": { m1:9.77, sd1:3.07, m2:10.57, sd2:3.04, r:0.76, n:101 }
+    "Total Achievement Score": { m1:9.77, sd1:3.07, m2:10.57, sd2:3.04, r:0.76, n:101, rInternalByAge:{16:0.68, 20:0.71, 30:0.8, 40:0.76, 50:0.77, 60:0.81, 70:0.8, 80:0.78}, rInternalAgeMax:89 }
   },
   "D-KEFS Advanced Trail Making · All Ages": {
     "Number Sequencing Mean Correct (With Errors) Connection Time": { m1:10.4, sd1:2.8, m2:10.4, sd2:2.8, r:0.53, n:224 },

@@ -2406,8 +2406,14 @@ const APA_NOTES = {
     /* Which age band the coefficients were drawn from. Without this the
        interval cannot be reproduced from the manual, because for these
        measures the published reliability changes with age. */
+    /* The fallback is deliberately NOT described as an all-ages internal-
+       consistency figure. D-KEFS Advanced publishes an Average column, but the
+       original D-KEFS publishes none at all, so there the blank-age fallback is
+       the total-sample retest coefficient — which is that manual's own second
+       regime, not a substitute for a missing number. Naming a coefficient the
+       manual does not print would send a reader looking for it. */
     ctx.ciAge != null
-      ? `For measures whose published reliability is tabulated by age, coefficients are those for age ${ctx.ciAge}; where no age is supplied the published all-ages coefficient is used instead.`
+      ? `For measures whose published reliability is tabulated by age, coefficients are those for age ${ctx.ciAge}; where no age is supplied, the publisher's all-ages figure is used instead — the published average where the manual prints one, otherwise the total-sample retest coefficient.`
       : '',
     // Must follow the EFFECTIVE flagging mode (batteryPremorbidMode). This
     // previously described the SD thresholds unconditionally, so with SEE
