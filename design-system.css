@@ -4286,3 +4286,6 @@ input[type="text"].ds-inline-bar-input{
    beside it; the row's figures carry the actual value. */
 .viz-dot-off{ opacity: 0.5; }
 .viz-offscale{ font-size: 11px; fill: var(--ds-text-muted); }
+/* Baseline for a raw-score dot: a hairline, not a band — a band would
+   imply a range the raw view deliberately does not assert. */
+.viz-raw-rule{ stroke: var(--ds-border); stroke-width: 1; }

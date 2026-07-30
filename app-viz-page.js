@@ -11,7 +11,7 @@
 
    Four blocks, one per source table: Score Tables (score against
    classification bands, with a view selector - native metric, percentile,
-   standard score, or raw against the measure's own norms), Premorbid
+   standard score, or the raw scores themselves), Premorbid
    (predicted vs achieved against the prediction interval), Change
    Analysis (both testings against the selected method's reliable-change
    interval) and the SD Index (change in SD units against its
@@ -263,14 +263,14 @@
     ['native',     'Native metric'],
     ['percentile', 'Percentile'],
     ['standard',   'Standard score'],
-    ['raw',        'Raw vs norms']
+    ['raw',        'Raw scores']
   ];
   let vizScoreView = 'native';
   const VIZ_SCORE_AXIS_NOTE = {
     native: '',
     percentile: 'Axis is the percentile rank, converted from each row’s own metric so the whole test shares one scale. A percentile scale is deliberately non-linear: it compresses the tails, so two clearly different low scores can sit close together, and confidence intervals become asymmetric. Scores are shown as entered.',
     standard: 'Axis is the standard-score metric (M 100, SD 15), converted from each row’s own metric so the whole test shares one scale. Scores are shown as entered.',
-    raw: 'Axis is the raw score’s distance from that measure’s own normative mean, in that measure’s own SD units, with ±1 SD shaded — descriptive only. No percentile or classification is derived, because the shape of a raw-score distribution is not known from its mean and SD alone. Only measures whose stored norms are in raw units can appear.'
+    raw: 'The raw scores as entered, so their spread is visible directly. Nothing is derived from them — no norms, no classification bands, no percentile. The axis spans the values entered for that test, not each measure’s possible range, because no raw maximum is held for any measure; where a test’s measures are counted on different scales their positions are not comparable with each other.'
   };
 
   const VIZ_CONV_AXIS = {
@@ -366,7 +366,13 @@
     return { svg: `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="${view === 'percentile' ? 'Percentile' : 'Standard score'} view">${svg}</svg>`, anyReversed, mixed };
   }
 
-  /* ---------- raw view: raw score against its own normative mean -------
+  /* ---------- raw view: the raw scores themselves ----------------------
+     Deliberately NOT a normative comparison. This view exists so the
+     clinician can see the raw numbers and how they sit relative to each
+     other - the spread of what was actually recorded - with nothing
+     derived from them: no norms, no bands, no percentile, no
+     classification.
+
      Which cell holds the raw score depends on the entry metric, and the
      two cases are not interchangeable. Where rowScoreType is 'raw' the
      Score column IS the raw score (RBANS List Recognition). Where a raw
@@ -377,41 +383,34 @@
     const v = rowScoreType(r) === 'raw' ? r.score : r.raw;
     return (v === undefined || v === null || v === '' || isNaN(parseFloat(v))) ? null : parseFloat(v);
   }
-  /* Normative mean/SD in RAW units - only where the stored statistics are
-     declared raw. For a standardised measure m1/sd1 are on that metric, so
-     a typed raw score cannot be placed against them at all. */
-  function vizRawNormOf(r){
-    if (!r.group || !r.name) return null;
-    const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
-    const e = db && db[r.group] && db[r.group][r.name];
-    if (!e || e.metric !== 'raw') return null;
-    if (!Number.isFinite(e.m1) || !Number.isFinite(e.sd1) || e.sd1 <= 0) return null;
-    const v = vizRawValueOf(r);
-    return v === null ? null : { m1: e.m1, sd1: e.sd1, value: v };
-  }
 
-  function vizRawNormPanelSvg(rows){
-    const axis = { min: -3.5, max: 3.5, ticks: [-3, -2, -1, 0, 1, 2, 3] };
+  function vizRawSpreadPanelSvg(rows){
+    const vals = rows.map(vizRawValueOf);
+    /* Axis spans the values actually entered. It cannot span each measure's
+       full possible range, because the app holds no raw maximum for any
+       measure - so the axis is the observed spread, not "out of N". */
+    const axis = vizNiceAxis(Math.min(...vals), Math.max(...vals));
     const H = HEADER_H + rows.length * ROW_H + AXIS_H;
     let svg = `<text class="viz-col-head" x="${COL.scoreMid}" y="13" text-anchor="middle">Raw</text>` +
-              `<text class="viz-col-head" x="${COL.rightX}" y="13">Normative M (SD) · Distance</text>`;
+              `<text class="viz-col-head" x="${COL.rightX}" y="13">Score as entered</text>`;
 
     rows.forEach((r, i) => {
-      const n = vizRawNormOf(r);
+      const v = vals[i];
       const rowY = HEADER_H + i * ROW_H;
       const midY = rowY + ROW_H / 2;
-      const sd = (n.value - n.m1) / n.sd1;
+      const type = rowScoreType(r);
+      /* The score column of a raw-metric row already holds this number, so
+         repeating it on the right would say the same thing twice. */
+      const alsoScored = type !== 'raw' && r.score !== '' && !isNaN(parseFloat(r.score));
 
-      let row = `<title>${escapeHtml(r.name)}: raw ${n.value} against normative M ${fmt(n.m1, 2)} SD ${fmt(n.sd1, 2)} — ${fmt(sd, 2)} SD from the mean (descriptive; no percentile derived)</title>`;
+      let row = `<title>${escapeHtml(r.name)}: raw ${v}${alsoScored ? `, ${scoreTypeLabel(type).toLowerCase()} ${r.score}` : ''}</title>`;
       row += `<text class="viz-row-name" x="${COL.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name))}</text>`;
-      row += `<text class="viz-row-score" x="${COL.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${n.value}</text>`;
-      // A band of +-1 SD around the mean, as an orientation aid only.
-      const b0 = vizX(-1, axis), b1 = vizX(1, axis);
-      row += `<rect class="viz-rci-band" x="${b0.toFixed(1)}" y="${rowY + 3}" width="${(b1 - b0).toFixed(1)}" height="${ROW_H - 6}"/>`;
-      const zx = vizX(0, axis).toFixed(1);
-      row += `<line class="viz-rci-expected" x1="${zx}" y1="${rowY + 3}" x2="${zx}" y2="${rowY + ROW_H - 3}"/>`;
-      row += vizDotSvg(sd, axis, vizX, midY);
-      row += `<text class="viz-row-fact" x="${COL.rightX}" y="${midY + 4.5}">${fmt(n.m1, 1)} (${fmt(n.sd1, 1)}) · ${fmt(sd, 2)} SD</text>`;
+      row += `<text class="viz-row-score" x="${COL.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${v}</text>`;
+      // A hairline across the plot gives each dot a baseline to sit on, so
+      // the eye reads the row's position without a band implying a range.
+      row += `<line class="viz-raw-rule" x1="${COL.plotX}" y1="${midY}" x2="${COL.plotX + COL.plotW}" y2="${midY}"/>`;
+      row += vizDotSvg(v, axis, vizX, midY);
+      row += `<text class="viz-row-fact" x="${COL.rightX}" y="${midY + 4.5}">${alsoScored ? escapeHtml(`${r.score} (${scoreTypeAbbr(type)})`) : '–'}</text>`;
       svg += `<g class="viz-row">${row}</g>`;
     });
 
@@ -420,9 +419,9 @@
     for (const tval of axis.ticks){
       const x = vizX(tval, axis).toFixed(1);
       svg += `<line class="viz-tick" x1="${x}" y1="${axisY + 2}" x2="${x}" y2="${axisY + 6}"/>` +
-             `<text class="viz-tick-label" x="${x}" y="${axisY + 18}" text-anchor="middle">${tval > 0 ? '+' + tval : tval}</text>`;
+             `<text class="viz-tick-label" x="${x}" y="${axisY + 18}" text-anchor="middle">${tval}</text>`;
     }
-    return `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="Raw score against normative mean in SD units">${svg}</svg>`;
+    return `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="Raw scores as entered">${svg}</svg>`;
   }
 
   /* ---------- family card: all of a test's trials in one place --------- */
@@ -445,28 +444,17 @@
     const notes = [];
 
     if (vizScoreView === 'raw'){
-      /* Raw view is its own thing: a raw score has no standardised axis, so
-         the only honest common axis is distance from that measure's OWN
-         normative mean, in its own SD units. Bands and percentiles are
-         deliberately absent - see vizRawNormPanelSvg. */
-      const plot = [], listed = [];
-      for (const r of rows){
-        (vizRawNormOf(r) ? plot : listed).push(r);
-      }
-      if (plot.length) body += vizRawNormPanelSvg(plot);
-      /* One shared explanation per reason, rather than repeating a long
-         sentence on every row - eight identical paragraphs read as an
-         error list rather than as a note. */
-      const noRaw = listed.filter(r => vizRawValueOf(r) === null);
-      const noNorm = listed.filter(r => vizRawValueOf(r) !== null);
-      if (noNorm.length){
-        body += `<div class="viz-raw-row">Not plotted — held on a standardised metric, so a raw score cannot be placed against ` +
-          `this measure’s normative mean and SD: ` +
-          noNorm.map(r => `<b>${escapeHtml(r.name)}</b> (raw ${escapeHtml(String(vizRawValueOf(r)))})`).join(', ') + `.</div>`;
-      }
-      if (noRaw.length){
+      /* Every row that HAS a raw score is plotted, whatever metric it is
+         reported on - the point of this view is to see the recorded
+         numbers, so nothing is filtered on normative grounds. */
+      const plot = rows.filter(r => vizRawValueOf(r) !== null);
+      const listed = rows.filter(r => vizRawValueOf(r) === null);
+      if (plot.length) body += vizRawSpreadPanelSvg(plot);
+      /* One shared line rather than a paragraph per row - repeating the
+         same sentence eight times reads as an error list, not a note. */
+      if (listed.length){
         body += `<div class="viz-raw-row">No raw score entered on Score Tables: ` +
-          noRaw.map(r => `<b>${escapeHtml(r.name)}</b>`).join(', ') + `.</div>`;
+          listed.map(r => `<b>${escapeHtml(r.name)}</b>`).join(', ') + `.</div>`;
       }
     } else if (vizScoreView !== 'native'){
       /* Converted views put every plottable row of the test on ONE axis,
