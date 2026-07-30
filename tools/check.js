@@ -1074,9 +1074,17 @@ check('the battery APA note describes the flagging mode actually in force', () =
    ========================================================================== */
 heading('13. Score Tables confidence intervals');
 
-const batteryCi = (() => {
+/* Exposes BOTH the renderer and the reliability lookup. The renderer rounds
+   its bounds for display, so a SEM recovered from the printed string carries
+   that rounding — fine for the bounds checks here, useless for pinning a SEM
+   against a published figure. Section 23 uses the lookup directly. */
+const batteryCtx = (() => {
   const boundsSrc = APP_SRC.match(/const BATTERY_SCORE_BOUNDS = \{[^;]*;/);
   if (!boundsSrc) throw new Error('BATTERY_SCORE_BOUNDS not found in app.js');
+  /* The normative SD per metric — the multiplier in the SEM. Extracted rather
+     than restated here so the checks cannot drift from the shipped table. */
+  const metricSdSrc = APP_SRC.match(/const BATTERY_METRIC_SD = \{[^;]*;/);
+  if (!metricSdSrc) throw new Error('BATTERY_METRIC_SD not found in app.js');
   const ctx = {
     normDB: D.normDB,
     getMergedDB: () => D.normDB,
@@ -1084,13 +1092,16 @@ const batteryCi = (() => {
   };
   vm.createContext(ctx);
   vm.runInContext(
-    boundsSrc[0] + '\n' +
+    boundsSrc[0] + '\n' + metricSdSrc[0] + '\n' +
       ['getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml'].map((n) => extractFn(APP_SRC, n)).join('\n') +
-      '\n;globalThis.__B = getBatteryCiHtml;',
+      '\n;globalThis.__B = getBatteryCiHtml;'
+      + '\n;globalThis.__REL = getBatteryRowReliability;',
     ctx
   );
-  return ctx.__B;
+  return ctx;
 })();
+const batteryCi  = batteryCtx.__B;
+const batteryRel = batteryCtx.__REL;
 
 const SCALED_ROW   = { name: 'Block Design', group: 'WAIS-IV Core Subtests · All Ages', scoreType: 'scaled' };
 const STANDARD_ROW = { name: 'Full Scale IQ', group: 'WAIS-IV Indices · All Ages',      scoreType: 'standard' };
@@ -2445,6 +2456,234 @@ check('single-administration families are kept out of Change Analysis and SDI', 
   if (!/isSingleAdministrationFamily/.test(sdi)) bad.push('SD Index');
   return bad.length === 0
     || bad.join(' and ') + ' would offer a family that can never compute anything';
+});
+
+/* ==========================================================================
+   23. Score Tables SEM — the SD paired with the reliability
+
+   SEM = SD x sqrt(1 - r) is only an error variance when both terms describe
+   the SAME population. rCorrected is rescaled to the normative sample's
+   variability, so it belongs with the normative SD (15 / 10 / 3 / 1); the raw
+   r belongs with sd1. getBatteryRowReliability used to take rCorrected AND
+   sd1, which is neither.
+
+   PINNED SOURCE: CVLT-3 Manual (US, 2017), Table 3.4, "Alternate Form
+   Reliability, Standard and Alternate Forms", pp. 38-39. That table publishes
+   an SEM column alongside r and corrected r, which lets the pairing be tested
+   against the publisher's own arithmetic rather than asserted.
+   ========================================================================== */
+heading('23. Score Tables SEM — the SD paired with the reliability');
+
+/* CVLT-3 Manual Table 3.4, SEM column. Ages 16-44 then Ages 45-90. */
+const CVLT3_SEM = {
+  'CVLT-3 Trials · Ages 16-44': {
+    'Trial 1': 2.10, 'Trial 2': 2.06, 'Trial 3': 1.64, 'Trial 4': 1.94, 'Trial 5': 2.12,
+    'List B Correct': 1.97, 'Short Delay Free Recall': 1.62, 'Short Delay Cued Recall': 1.99,
+    'Long Delay Free Recall': 1.87, 'Long Delay Cued Recall': 1.90, 'Recognition': 2.14,
+    'Recognition False Positive': 1.97, 'Recognition Discrimination': 1.72,
+    'Discrimination Nonparametric': 1.77, 'Total Intrusions': 2.60, 'Total Repetitions': 1.92
+  },
+  'CVLT-3 Trials · Ages 45-90': {
+    'Trial 1': 1.99, 'Trial 2': 1.92, 'Trial 3': 1.82, 'Trial 4': 1.72, 'Trial 5': 1.62,
+    'List B Correct': 2.06, 'Short Delay Free Recall': 1.62, 'Short Delay Cued Recall': 1.67,
+    'Long Delay Free Recall': 1.62, 'Long Delay Cued Recall': 1.77, 'Recognition': 1.85,
+    'Recognition False Positive': 2.01, 'Recognition Discrimination': 2.03,
+    'Discrimination Nonparametric': 1.94, 'Total Intrusions': 1.97, 'Total Repetitions': 1.64
+  },
+  'CVLT-3 Indices · Ages 16-44': {
+    'T1-5 Correct': 7.50, 'Delayed Recall Correct': 7.19, 'Total Recall Correct': 6.87
+  },
+  'CVLT-3 Indices · Ages 45-90': {
+    'T1-5 Correct': 6.71, 'Delayed Recall Correct': 6.71, 'Total Recall Correct': 6.18
+  }
+};
+
+check('the published SEM equals normative SD x sqrt(1 - corrected r)', () => {
+  /* Derives the pairing rule from the source rather than assuming it. All 38
+     published SEMs must fall out of the normative SD (15 for the indices,
+     3 for the scaled trials) and the entry's own corrected r. */
+  const bad = [];
+  let n = 0;
+  Object.entries(CVLT3_SEM).forEach(([group, tab]) => {
+    const normSd = /Indices/.test(group) ? 15 : 3;
+    Object.entries(tab).forEach(([name, published]) => {
+      const e = D.normDB[group] && D.normDB[group][name];
+      if (!e) { bad.push(group + ' / ' + name + ' is missing from normDB'); return; }
+      n++;
+      const derived = normSd * Math.sqrt(1 - e.rCorrected);
+      // Published to 2dp, so half a unit in the last place is the tolerance.
+      if (Math.abs(derived - published) > 0.005) {
+        bad.push(name + ' [' + group + '] derived ' + derived.toFixed(3) + ', published ' + published);
+      }
+    });
+  });
+  if (n !== 38) return 'checked ' + n + ' measures, expected 38';
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('the SHIPPED function reproduces the published CVLT-3 SEM', () => {
+  /* The rule above is arithmetic; this asserts app.js actually implements it.
+     Reads getBatteryRowReliability directly — the rendered interval is rounded
+     for display, which would swamp a 2dp comparison. */
+  const bad = [];
+  Object.entries(CVLT3_SEM).forEach(([group, tab]) => {
+    const type = /Indices/.test(group) ? 'standard' : 'scaled';
+    Object.entries(tab).forEach(([name, published]) => {
+      const rel = batteryRel({ name, group, scoreType: type }, type);
+      if (!rel) { bad.push(name + ' [' + group + '] yielded no reliability'); return; }
+      const sem = rel.sd * Math.sqrt(1 - rel.r);
+      if (Math.abs(sem - published) > 0.005) {
+        bad.push(name + ' [' + group + '] gave SEM ' + sem.toFixed(3) + ', published ' + published);
+      }
+    });
+  });
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('rCorrected is never paired with sd1', () => {
+  /* The defect this section exists for. RBANS Form C Delayed Memory is the
+     widest gap in the database: its retest sample is impaired, so sd1 is 18.7
+     against a normative 15, and rCorrected is .24. Pairing them gave a SEM of
+     16.30 where 13.08 is correct — 6.3 standard-score points at each end of a
+     95% interval. */
+  const row = { name: 'Delayed Memory', group: 'RBANS Indices (Form C) · All Ages', scoreType: 'standard' };
+  const e = D.normDB[row.group][row.name];
+  const rel = batteryRel(row, 'standard');
+  if (!rel) return 'no reliability returned for a row that has one';
+  if (rel.sd === e.sd1) return 'the SD is still sd1 (' + e.sd1 + ')';
+  return rel.sd === 15 || 'the SD is ' + rel.sd + ', expected the normative 15';
+});
+
+check('a raw-metric row still takes its SD from sd1', () => {
+  /* Raw entries have no normative SD, so sd1 is the only one in their units.
+     RBANS List Recognition is raw (see data.js metric:'raw'). */
+  const row = { name: 'List Recognition', group: 'RBANS Subtests · Ages 20-89', scoreType: 'raw' };
+  const e = D.normDB[row.group][row.name];
+  if (e.metric !== 'raw') return 'List Recognition is no longer tagged raw — pick another raw row';
+  const rel = batteryRel(row, 'raw');
+  if (!rel) return 'a raw row yielded no reliability at all';
+  return rel.sd === e.sd1 || 'raw row used SD ' + rel.sd + ', expected sd1 ' + e.sd1;
+});
+
+check('an entry entered on a standardised metric never uses its raw sd1', () => {
+  /* Was a pinned known defect; now the thing it warned about. All 39 CVLT-C
+     entries store raw statistics but are entered as z or T (reportedAs), so
+     their SD must come from the entry metric, never from the raw sd1. At age 8
+     the old behaviour gave Discriminability an interval of +/-7.5 on the z
+     scale and Perseverations +/-4.3. */
+  const bad = [];
+  Object.entries(D.normDB).forEach(([group, tab]) => {
+    Object.entries(tab).forEach(([name, e]) => {
+      if (!e || typeof e !== 'object') return;
+      if (!(e.metric === 'raw' && e.reportedAs && e.reportedAs !== 'raw')) return;
+      const rel = batteryRel({ name, group, scoreType: e.reportedAs }, e.reportedAs);
+      if (!rel) { bad.push(name + ' [' + group + '] yielded no reliability'); return; }
+      const want = { z: 1, t: 10, scaled: 3, standard: 15 }[e.reportedAs];
+      if (rel.sd !== want) {
+        bad.push(name + ' [' + group + '] entered as ' + e.reportedAs
+               + ' but used SD ' + rel.sd + (rel.sd === e.sd1 ? ' (its raw sd1)' : '') + ', expected ' + want);
+      }
+    });
+  });
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+/* ==========================================================================
+   24. rInternal — internal-consistency reliability, CI only
+
+   PINNED SOURCE: CVLT-C Manual (US), Chapter 6, pp. 85-88.
+     Table 6.5  odd/even split-half (Spearman-Brown) and coefficient alpha for
+                List A Trials 1-5 Total, ages 5-16, WITH the SEM for each.
+     p. 87      states SEM = SD sqrt(1 - rxx) and directs the reader to add and
+                subtract from the child's standard T score.
+     pp. 87-88  worked example: an 8-year-old with T = 45 has a 95% interval of
+                38-52 and a 90% interval of 39-51.
+   ========================================================================== */
+heading('24. rInternal — internal-consistency reliability, CI only');
+
+/* CVLT-C Manual Table 6.5, odd/even row: rxx and the SEM printed beside it. */
+const CVLTC_T65 = {
+  5:  [0.88, 3.46], 6:  [0.85, 3.87], 7:  [0.87, 3.60], 8:  [0.87, 3.60],
+  9:  [0.91, 3.00], 10: [0.88, 3.46], 11: [0.87, 3.60], 12: [0.89, 3.31],
+  13: [0.88, 3.46], 14: [0.89, 3.31], 15: [0.86, 3.74], 16: [0.84, 4.00]
+};
+
+check('Table 6.5 SEMs are computed on the T metric, not the raw SD', () => {
+  /* The finding the whole change rests on. If these SEMs used the raw SD they
+     would not reproduce from a constant; they reproduce from SD = 10 in every
+     one of the 12 age bands.
+
+     The manual TRUNCATES rather than rounds — 3.6055 prints as 3.60, 3.3166 as
+     3.31 — so the assertion is that the printed value sits in [derived - 0.01,
+     derived]. Stated as an interval rather than by truncating in JS, because
+     sqrt(0.09) lands a hair under 0.3 in binary floating point and Math.floor
+     would turn an exact 3.00 into 2.99. */
+  const bad = [];
+  const EPS = 1e-9;
+  Object.entries(CVLTC_T65).forEach(([age, [rxx, printed]]) => {
+    const derived = 10 * Math.sqrt(1 - rxx);
+    if (!(printed <= derived + EPS && printed > derived - 0.01 - EPS)) {
+      bad.push('age ' + age + ': 10*sqrt(1-' + rxx + ') = ' + derived.toFixed(4)
+             + ', manual prints ' + printed);
+    }
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check("the manual's worked example reproduces exactly (age 8, T 45)", () => {
+  /* CVLT-C Manual pp. 87-88. Uses the shipped renderer, so this is an
+     end-to-end assertion: data, reliability choice, SD choice and rounding. */
+  const row = { name: 'List A Trials 1-5 Total',
+                group: 'CVLT-C Subtests (Raw Scores) · Age 8', scoreType: 't' };
+  const got95 = batteryCi(45, row, '95');
+  const got90 = batteryCi(45, row, '90');
+  const bad = [];
+  if (got95 !== '38–52') bad.push('95% gave ' + got95 + ', manual prints 38-52');
+  if (got90 !== '39–51') bad.push('90% gave ' + got90 + ', manual prints 39-51');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the three List A Trials 1-5 entries carry the published split-half r', () => {
+  const want = { 8: 0.87, 12: 0.89, 16: 0.84 };   // Table 6.5, odd/even
+  const bad = [];
+  Object.entries(want).forEach(([age, rxx]) => {
+    const e = D.normDB['CVLT-C Subtests (Raw Scores) · Age ' + age]['List A Trials 1-5 Total'];
+    if (e.rInternal !== rxx) bad.push('age ' + age + ' has rInternal ' + e.rInternal + ', Table 6.5 gives ' + rxx);
+    /* The retest coefficient must survive alongside it — Change Analysis
+       still needs it, and it is a different quantity. */
+    if (!Number.isFinite(e.r)) bad.push('age ' + age + ' lost its retest r');
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('rInternal is used ONLY for the confidence interval, never by RCI', () => {
+  /* The load-bearing separation. With the retest r, SD sqrt(2(1-r)) is the
+     spread of the difference distribution — the quantity reliable change is
+     measured against. An internal-consistency coefficient strips out real
+     between-session fluctuation, narrows the interval and overcalls change;
+     on SRB and Crawford it also moves a fitted regression slope. */
+  const RCI_FNS = ['calcBasicRow', 'calcPracticeRow', 'calcSrbRow', 'calcCrawfordRow', 'rciEffectiveR'];
+  const bad = RCI_FNS.filter((n) => /rInternal/.test(extractFn(APP_SRC, n)));
+  if (bad.length) return bad.join(', ') + ' read rInternal; reliable change must use the retest coefficient';
+  // And it must actually be reachable from the CI path, or the field is inert.
+  return /rInternal/.test(extractFn(APP_SRC, 'getBatteryRowReliability'))
+    || 'getBatteryRowReliability never reads rInternal, so the field does nothing';
+});
+
+check('rInternal appears only where a publisher derives its own intervals from it', () => {
+  /* Not a general-purpose field. Adding it to a measure whose manual does not
+     publish an internal-consistency interval would silently change that row's
+     basis, so the roster is pinned. */
+  const carriers = [];
+  Object.entries(D.normDB).forEach(([group, tab]) => {
+    Object.entries(tab).forEach(([name, e]) => {
+      if (e && typeof e === 'object' && Number.isFinite(e.rInternal)) carriers.push(group + ' / ' + name);
+    });
+  });
+  if (carriers.length !== 3) return 'got ' + carriers.length + ' entries with rInternal, expected 3';
+  const stray = carriers.filter((c) => !/^CVLT-C .* \/ List A Trials 1-5 Total$/.test(c));
+  return stray.length === 0
+    || 'rInternal has spread to: ' + stray.join(', ') + ' — document the source before pinning it here';
 });
 
 // ---------------------------------------------------------------------------

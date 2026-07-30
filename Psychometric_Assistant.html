@@ -19070,10 +19070,10 @@ input[type="text"].ds-inline-bar-input{
       The auto-fill normative database includes published retest parameters for major batteries (including D-KEFS, WAIS-IV, WMS-IV, CVLT-3, CVLT-C, RBANS, and WISC-V), with normative <i>N</i> where reported. <i>N</i> is required for Crawford/Garthwaite calculations and may need manual entry when unavailable. Clinicians should verify all imported parameters against the latest manual and local service standards before interpretation.
     </p>
     <p class="section-body-text">
-      <strong>Confidence intervals and standard errors of measurement.</strong> Intervals on the Clinical Outcomes Table are calculated as the obtained score ± <i>z</i> × SEM, where SEM = SD × √(1 − <i>r</i>), centred on the obtained score rather than on an estimated true score. The reliability <i>r</i> is the <strong>test–retest coefficient</strong> held in the normative database, corrected for the normative sample's variability where the publisher reports a corrected value. Test–retest reliability is used for every instrument, for two reasons: it keeps a single, stated basis across a table that may mix batteries, and it is the appropriate coefficient for the many timed measures in the database, since split-half and alpha are not valid reliability estimates for speeded tests. The WAIS-IV manual itself uses test–retest coefficients for Coding, Symbol Search and Cancellation for exactly this reason, and the values used here for those three subtests are identical to the ones it publishes.
+      <strong>Confidence intervals and standard errors of measurement.</strong> Intervals on the Clinical Outcomes Table are calculated as the obtained score ± <i>z</i> × SEM, where SEM = SD × √(1 − <i>r</i>), centred on the obtained score rather than on an estimated true score. The reliability <i>r</i> is the <strong>test–retest coefficient</strong> held in the normative database, corrected for the normative sample's variability where the publisher reports a corrected value. The SD is the <strong>normative standard deviation of the metric the score is reported in</strong> (15, 10, 3 or 1), because a coefficient corrected to the normative sample must be paired with that sample's variability; where a measure's stored statistics are raw, its own standard deviation is used instead, that being the only one in the right units. This reproduces the standard error of measurement published by the test author where one is given — for all 38 CVLT-3 measures in Tables 3.4 and 3.5 of that manual, exactly. Test–retest reliability is the <strong>default</strong> basis, for two reasons: it keeps a single, stated basis across a table that may mix batteries, and it is the appropriate coefficient for the many timed measures in the database, since split-half and alpha are not valid reliability estimates for speeded tests. The WAIS-IV manual itself uses test–retest coefficients for Coding, Symbol Search and Cancellation for exactly this reason, and the values used here for those three subtests are identical to the ones it publishes. The default is set aside for a measure only where its publisher both reports an internal-consistency coefficient <em>and</em> derives its own published confidence intervals from it — at present the CVLT-C List A Trials 1–5 Total score alone, which uses the odd–even split-half coefficient of Table 6.5 of that manual and thereby reproduces the interval printed in its worked example exactly. Reliable-change analysis is unaffected and always uses the retest coefficient, which measures a different thing.
     </p>
     <p class="section-body-text">
-      One consequence should be borne in mind when comparing output against a test manual: because manuals derive their published intervals from internal-consistency reliability wherever it is available, and internal consistency is almost always the higher coefficient, the intervals shown here are <strong>somewhat wider</strong> than the manual's. For WAIS-IV index scores the difference is up to roughly 2.5 points at each end — largest for Perceptual Reasoning and Working Memory, around 1 point for Full Scale IQ, and negligible for Verbal Comprehension and Processing Speed. The intervals here are therefore the more conservative of the two, and answer the question <em>how much would this score be expected to move on retesting</em> rather than <em>how precisely was it measured on the day</em>.
+      One consequence should be borne in mind when comparing output against a test manual: where a manual derives its published intervals from internal-consistency reliability, and internal consistency is almost always the higher of the two coefficients, the intervals shown here run <strong>wider</strong> than the manual's. They are therefore the more conservative, and answer the question <em>how much would this score be expected to move on retesting</em> rather than <em>how precisely was it measured on the day</em>. Not every publisher offers that comparison. The CVLT-3 manual declines to report internal-consistency reliability for its measures at all, on the grounds that item scores on a word-list task are not independent — recalling one word alters the probability of recalling the others, both within a trial and on later ones — and reports alternate-form coefficients in its place.
     </p>
     <p class="section-body-text">
       Reliable-change calculations use the same test–retest coefficients, paired with the standard deviation from the same retest sample so that both terms describe one population. Where a publisher reports a coefficient corrected to the normative sample's variability, that corrected value is offered as an option but is not the default, because it describes a differently-distributed population from the standard deviation it would be multiplied by. Reliability type varies by instrument and is stated in the notes beneath each generated table (for example, CVLT-3 coefficients are alternate-form, and RBANS Form A coefficients are same-form retest).
@@ -19497,6 +19497,38 @@ const OPIE_BASE_RATES = {
    The reliability parameters themselves are unaffected and remain correct —
    the Change Analysis pages use m1/sd1/m2/sd2/r directly and never needed a
    metric, which is why they were never wrong.
+
+   ------------------------------------------------------------
+   rInternal — an INTERNAL-CONSISTENCY coefficient, for the CI only
+
+   `r` is a stability coefficient: the same people retested. `rInternal` is a
+   consistency coefficient: one administration, split in half. They answer
+   different questions and are NOT interchangeable.
+
+   The field exists only where a publisher does two things: reports an
+   internal-consistency coefficient, AND derives its own published confidence
+   intervals from it. Both are true of CVLT-C List A Trials 1-5 Total, which
+   is at present the only measure carrying it.
+
+     CVLT-C Manual, Table 6.5 — odd/even split-half with Spearman-Brown,
+     by age. Age 8 .87, Age 12 .89, Age 16 .84. The same table prints the
+     SEM, and every one of its 12 age bands equals 10 x sqrt(1 - rxx), i.e.
+     it is computed on the T metric, not on the raw SD. The manual states
+     the formula (SEM = SD sqrt(1 - rxx), p. 87) and instructs the reader to
+     add and subtract from "the child's standard T score".
+
+     Its worked example settles it. An 8-year-old with T = 45 is given a 95%
+     interval of 38-52 and a 90% interval of 39-51. From rxx .87 and SD 10:
+     SEM 3.606, so 45 +/- 7 and 45 +/- 6. Both reproduce exactly.
+
+   WHERE IT MUST NOT BE USED: Change Analysis and the RCI pages. There the
+   reliability is not merely an error term — with the retest r, SD sqrt(2(1-r))
+   IS the spread of the difference distribution, which is the quantity reliable
+   change is measured against. An internal-consistency coefficient strips out
+   real between-session fluctuation, narrows the interval and overcalls change.
+   On SRB and Crawford it is worse still, r being a fitted regression slope.
+   check.js section 24 asserts that no RCI path reads this field.
+   ------------------------------------------------------------
    ============================================================ */
 ﻿normDB = {
   "CVLT-3 Indices · Ages 16-44": {
@@ -19546,7 +19578,7 @@ const OPIE_BASE_RATES = {
     "Total Repetitions": { m1:9.7, sd1:3.1, m2:10, sd2:3.4, r:0.72, rCorrected:0.7, n:122 }
   },
   "CVLT-C Subtests (Raw Scores) · Age 8": {
-    "List A Trials 1-5 Total": { m1:42.47, sd1:9.55, m2:48.32, sd2:9.09, r:0.73, n:35, metric:'raw', reportedAs:'t' },
+    "List A Trials 1-5 Total": { m1:42.47, sd1:9.55, m2:48.32, sd2:9.09, r:0.73, n:35, metric:'raw', reportedAs:'t', rInternal:0.87 },
     "List B Free-Recall Trial": { m1:5.26, sd1:1.71, m2:5.39, sd2:2.16, r:0.59, n:35, metric:'raw', reportedAs:'z' },
     "Short-Delay Free Recall": { m1:8.5, sd1:2.04, m2:9.91, sd2:2.37, r:0.4, n:35, metric:'raw', reportedAs:'z' },
     "Short-Delay Cued Recall": { m1:8.35, sd1:2.07, m2:9.51, sd2:2.79, r:0.75, n:35, metric:'raw', reportedAs:'z' },
@@ -19561,7 +19593,7 @@ const OPIE_BASE_RATES = {
     "False Positives": { m1:1.82, sd1:2.38, m2:1.16, sd2:2, r:0.62, n:35, metric:'raw', reportedAs:'z', higherIsWorse:true }
   },
   "CVLT-C Subtests (Raw Scores) · Age 12": {
-    "List A Trials 1-5 Total": { m1:50.64, sd1:7.19, m2:56.47, sd2:8.92, r:0.73, n:40, metric:'raw', reportedAs:'t' },
+    "List A Trials 1-5 Total": { m1:50.64, sd1:7.19, m2:56.47, sd2:8.92, r:0.73, n:40, metric:'raw', reportedAs:'t', rInternal:0.89 },
     "List B Free-Recall Trial": { m1:6.24, sd1:1.58, m2:6.82, sd2:1.57, r:0.26, n:40, metric:'raw', reportedAs:'z' },
     "Short-Delay Free Recall": { m1:9.89, sd1:2.44, m2:12.24, sd2:2.62, r:0.77, n:40, metric:'raw', reportedAs:'z' },
     "Short-Delay Cued Recall": { m1:11.13, sd1:2.21, m2:12.15, sd2:3.14, r:0.49, n:40, metric:'raw', reportedAs:'z' },
@@ -19576,7 +19608,7 @@ const OPIE_BASE_RATES = {
     "False Positives": { m1:0.55, sd1:0.86, m2:0.55, sd2:1.03, r:0.35, n:40, metric:'raw', reportedAs:'z', higherIsWorse:true }
   },
   "CVLT-C Subtests (Raw Scores) · Age 16": {
-    "List A Trials 1-5 Total": { m1:53.53, sd1:6.15, m2:62.94, sd2:10.94, r:0.61, n:31, metric:'raw', reportedAs:'t' },
+    "List A Trials 1-5 Total": { m1:53.53, sd1:6.15, m2:62.94, sd2:10.94, r:0.61, n:31, metric:'raw', reportedAs:'t', rInternal:0.84 },
     "List B Free-Recall Trial": { m1:6.67, sd1:1.7, m2:7.6, sd2:2.19, r:0.66, n:31, metric:'raw', reportedAs:'z' },
     "Short-Delay Free Recall": { m1:11.61, sd1:2.09, m2:13.52, sd2:1.91, r:0.48, n:31, metric:'raw', reportedAs:'z' },
     "Short-Delay Cued Recall": { m1:12, sd1:1.52, m2:13.71, sd2:1.59, r:0.59, n:31, metric:'raw', reportedAs:'z' },
@@ -22397,7 +22429,53 @@ function setupTableKeyNav(scope, config){
     }
   });
 }
-function getBatteryRowReliability(row){
+/* Normative SD of each standardised metric — the multiplier in SD x sqrt(1-r).
+   Mirrors fromZ's coefficients. 'raw' is deliberately absent: a raw score is
+   not on a metric at all, so those rows fall back to the entry's own sd1. */
+const BATTERY_METRIC_SD = { z: 1, t: 10, scaled: 3, standard: 15 };
+
+/* The reliability and the SD must describe the SAME population, or SD^2(1-r)
+   is not an error variance. Two pairings are coherent:
+     A  rCorrected x normative SD  — both describe the normative population
+     B  r          x sd1           — both describe the retest sample
+   This used to take rCorrected AND sd1, which is neither. rCorrected is the
+   coefficient rescaled to the normative sample's variability, so pairing it
+   with the retest sample's SD mixes two populations — the same mistake
+   rciState rejects by defaulting useCorrectedR to false, and for the same
+   reason. On the RBANS Form C/D groups, whose retest samples are impaired
+   (m1 88-92, sd1 17-19), it inflated the SEM by up to 3.2 points.
+
+   Pairing A is preferred because it reproduces the SEM the PUBLISHER prints.
+   The CVLT-3 Manual gives an SEM column in Tables 3.4 and 3.5, and
+   normative SD x sqrt(1 - corrected r) reproduces all 38 of them exactly —
+   pinned in check.js section 23.
+
+   Where no corrected r is published (310 entries) the raw r is used with the
+   normative SD anyway. That mixes populations, worth roughly 20% of the error
+   variance, and is the lesser error: sd1 is the SD of the STORED statistics,
+   which are not always in the units of the score on screen.
+
+   THE SD FOLLOWS THE METRIC ON SCREEN, not the metric of the stored figures.
+   sd1 is the SD of the STORED statistics, and those are not always in the
+   units the clinician typed. CVLT-C is the case that forced this: its norms
+   here are raw word counts (Change Analysis needs them that way) but nobody
+   transcribes a raw CVLT-C score — they copy the z or T off the record form,
+   which is what reportedAs records. Building the SEM from a raw word-count SD
+   and printing it against a z-score gave Discriminability an interval of
+   +/-7.5 z at age 8, and Perseverations +/-4.3. sd1 is therefore reached for
+   only when the row is SHOWN raw, where it is the one SD in the right units.
+
+   RELIABILITY, in preference order:
+     rInternal   — internal consistency, where the publisher reports one AND
+                   builds its own published intervals from it. See data.js.
+     rCorrected  — retest r rescaled to the normative sample.
+     r           — the raw retest coefficient.
+   Internal consistency comes first because a confidence interval asks how
+   precisely THIS administration measured the person, which is the question an
+   internal-consistency coefficient answers. That preference is confined to
+   this function: reliable change asks a different question and must keep the
+   retest coefficient — see the rInternal note in data.js. */
+function getBatteryRowReliability(row, type){
   if (!row.group) return null;
   const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
   if (!db) return null;
@@ -22405,10 +22483,15 @@ function getBatteryRowReliability(row){
   if (!family) return null;
   const entry = family[row.name];
   if (!entry || typeof entry !== 'object') return null;
-  const r  = Number.isFinite(entry.rCorrected) ? entry.rCorrected :
-             Number.isFinite(entry.r)           ? entry.r           : null;
-  const sd = Number.isFinite(entry.sd1)         ? entry.sd1         : null;
-  return (r !== null && sd !== null) ? { r, sd } : null;
+  const r = Number.isFinite(entry.rInternal)  ? entry.rInternal  :
+            Number.isFinite(entry.rCorrected) ? entry.rCorrected :
+            Number.isFinite(entry.r)          ? entry.r          : null;
+  if (r === null) return null;
+  /* BATTERY_METRIC_SD has no 'raw' key, so a row shown raw falls through to
+     the entry's own SD — the only one in its units. */
+  const sd = BATTERY_METRIC_SD[type] ||
+             (Number.isFinite(entry.sd1) ? entry.sd1 : null);
+  return sd !== null ? { r, sd } : null;
 }
 /* Hard limits imposed by the score scale itself, used to keep an interval from
    printing a value the scale cannot produce. Only scaled scores have a
@@ -22419,13 +22502,14 @@ const BATTERY_SCORE_BOUNDS = { scaled: { min: 1, max: 19 } };
 
 function getBatteryCiHtml(ss, row, level){
   if (!Number.isFinite(ss)) return '';
-  const rel = getBatteryRowReliability(row);
+  // Resolved first: the displayed metric now decides which SD the SEM uses.
+  const type   = rowScoreType(row);
+  const rel    = getBatteryRowReliability(row, type);
   if (!rel) return '';
   const zMult  = level === '90' ? 1.645 : 1.960;
   const sem    = rel.sd * Math.sqrt(1 - rel.r);
   const loRaw  = ss - zMult * sem;
   const hiRaw  = ss + zMult * sem;
-  const type   = rowScoreType(row);
   /* z and raw share one treatment: 1dp, no floor and no ceiling.
      The interval itself is valid for a raw score — sd1 is in raw units, so
      SD x sqrt(1-r) is a raw-unit SEM — but the integer floor of 1 applied
@@ -22701,13 +22785,18 @@ const APA_NOTES = {
     ctx.hasHigherIsWorse
       ? 'On error measures (perseverations, intrusions, false positives) a higher score indicates more errors. Percentiles are reported as obtained; classifications describe performance, so a high percentile corresponds to a low classification.'
       : '',
-    // States the BASIS, not just the level. These intervals use test-retest
-    // reliability, so they run wider than manual-published intervals (which
-    // use internal consistency); without this line a reader comparing against
-    // the manual has no way to know why the numbers differ. Full rationale is
-    // in Methods & References.
+    // States the BASIS, not just the level; without it a reader comparing
+    // against the manual has no way to know why the numbers differ. Names the
+    // SD as well as the reliability, because both terms are choices and the
+    // pairing of them is the methodological claim — see
+    // getBatteryRowReliability. Says "retest or alternate-form" rather than
+    // "test-retest": CVLT-3 publishes alternate-form coefficients, so the
+    // unconditional wording misdescribed every CVLT-3 table. The comparison
+    // with the manual is conditional for the same reason — not every
+    // publisher reports internal consistency at all. Full rationale is in
+    // Methods & References.
     ctx.ciLevel && ctx.ciLevel !== 'off'
-      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM using test–retest reliability; these are wider than manual-published intervals based on internal consistency.`
+      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM, where SEM = SD × √(1 − r) on the normative standard deviation of the reported metric. The reliability r is the retest or alternate-form coefficient published for each measure, except where the test author derives its own published intervals from an internal-consistency coefficient, in which case that coefficient is used. Intervals resting on a retest coefficient run wider than a manual's internal-consistency interval.`
       : '',
     // Must follow the EFFECTIVE flagging mode (batteryPremorbidMode). This
     // previously described the SD thresholds unconditionally, so with SEE

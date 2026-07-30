@@ -1951,7 +1951,53 @@ function setupTableKeyNav(scope, config){
     }
   });
 }
-function getBatteryRowReliability(row){
+/* Normative SD of each standardised metric — the multiplier in SD x sqrt(1-r).
+   Mirrors fromZ's coefficients. 'raw' is deliberately absent: a raw score is
+   not on a metric at all, so those rows fall back to the entry's own sd1. */
+const BATTERY_METRIC_SD = { z: 1, t: 10, scaled: 3, standard: 15 };
+
+/* The reliability and the SD must describe the SAME population, or SD^2(1-r)
+   is not an error variance. Two pairings are coherent:
+     A  rCorrected x normative SD  — both describe the normative population
+     B  r          x sd1           — both describe the retest sample
+   This used to take rCorrected AND sd1, which is neither. rCorrected is the
+   coefficient rescaled to the normative sample's variability, so pairing it
+   with the retest sample's SD mixes two populations — the same mistake
+   rciState rejects by defaulting useCorrectedR to false, and for the same
+   reason. On the RBANS Form C/D groups, whose retest samples are impaired
+   (m1 88-92, sd1 17-19), it inflated the SEM by up to 3.2 points.
+
+   Pairing A is preferred because it reproduces the SEM the PUBLISHER prints.
+   The CVLT-3 Manual gives an SEM column in Tables 3.4 and 3.5, and
+   normative SD x sqrt(1 - corrected r) reproduces all 38 of them exactly —
+   pinned in check.js section 23.
+
+   Where no corrected r is published (310 entries) the raw r is used with the
+   normative SD anyway. That mixes populations, worth roughly 20% of the error
+   variance, and is the lesser error: sd1 is the SD of the STORED statistics,
+   which are not always in the units of the score on screen.
+
+   THE SD FOLLOWS THE METRIC ON SCREEN, not the metric of the stored figures.
+   sd1 is the SD of the STORED statistics, and those are not always in the
+   units the clinician typed. CVLT-C is the case that forced this: its norms
+   here are raw word counts (Change Analysis needs them that way) but nobody
+   transcribes a raw CVLT-C score — they copy the z or T off the record form,
+   which is what reportedAs records. Building the SEM from a raw word-count SD
+   and printing it against a z-score gave Discriminability an interval of
+   +/-7.5 z at age 8, and Perseverations +/-4.3. sd1 is therefore reached for
+   only when the row is SHOWN raw, where it is the one SD in the right units.
+
+   RELIABILITY, in preference order:
+     rInternal   — internal consistency, where the publisher reports one AND
+                   builds its own published intervals from it. See data.js.
+     rCorrected  — retest r rescaled to the normative sample.
+     r           — the raw retest coefficient.
+   Internal consistency comes first because a confidence interval asks how
+   precisely THIS administration measured the person, which is the question an
+   internal-consistency coefficient answers. That preference is confined to
+   this function: reliable change asks a different question and must keep the
+   retest coefficient — see the rInternal note in data.js. */
+function getBatteryRowReliability(row, type){
   if (!row.group) return null;
   const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
   if (!db) return null;
@@ -1959,10 +2005,15 @@ function getBatteryRowReliability(row){
   if (!family) return null;
   const entry = family[row.name];
   if (!entry || typeof entry !== 'object') return null;
-  const r  = Number.isFinite(entry.rCorrected) ? entry.rCorrected :
-             Number.isFinite(entry.r)           ? entry.r           : null;
-  const sd = Number.isFinite(entry.sd1)         ? entry.sd1         : null;
-  return (r !== null && sd !== null) ? { r, sd } : null;
+  const r = Number.isFinite(entry.rInternal)  ? entry.rInternal  :
+            Number.isFinite(entry.rCorrected) ? entry.rCorrected :
+            Number.isFinite(entry.r)          ? entry.r          : null;
+  if (r === null) return null;
+  /* BATTERY_METRIC_SD has no 'raw' key, so a row shown raw falls through to
+     the entry's own SD — the only one in its units. */
+  const sd = BATTERY_METRIC_SD[type] ||
+             (Number.isFinite(entry.sd1) ? entry.sd1 : null);
+  return sd !== null ? { r, sd } : null;
 }
 /* Hard limits imposed by the score scale itself, used to keep an interval from
    printing a value the scale cannot produce. Only scaled scores have a
@@ -1973,13 +2024,14 @@ const BATTERY_SCORE_BOUNDS = { scaled: { min: 1, max: 19 } };
 
 function getBatteryCiHtml(ss, row, level){
   if (!Number.isFinite(ss)) return '';
-  const rel = getBatteryRowReliability(row);
+  // Resolved first: the displayed metric now decides which SD the SEM uses.
+  const type   = rowScoreType(row);
+  const rel    = getBatteryRowReliability(row, type);
   if (!rel) return '';
   const zMult  = level === '90' ? 1.645 : 1.960;
   const sem    = rel.sd * Math.sqrt(1 - rel.r);
   const loRaw  = ss - zMult * sem;
   const hiRaw  = ss + zMult * sem;
-  const type   = rowScoreType(row);
   /* z and raw share one treatment: 1dp, no floor and no ceiling.
      The interval itself is valid for a raw score — sd1 is in raw units, so
      SD x sqrt(1-r) is a raw-unit SEM — but the integer floor of 1 applied
@@ -2255,13 +2307,18 @@ const APA_NOTES = {
     ctx.hasHigherIsWorse
       ? 'On error measures (perseverations, intrusions, false positives) a higher score indicates more errors. Percentiles are reported as obtained; classifications describe performance, so a high percentile corresponds to a low classification.'
       : '',
-    // States the BASIS, not just the level. These intervals use test-retest
-    // reliability, so they run wider than manual-published intervals (which
-    // use internal consistency); without this line a reader comparing against
-    // the manual has no way to know why the numbers differ. Full rationale is
-    // in Methods & References.
+    // States the BASIS, not just the level; without it a reader comparing
+    // against the manual has no way to know why the numbers differ. Names the
+    // SD as well as the reliability, because both terms are choices and the
+    // pairing of them is the methodological claim — see
+    // getBatteryRowReliability. Says "retest or alternate-form" rather than
+    // "test-retest": CVLT-3 publishes alternate-form coefficients, so the
+    // unconditional wording misdescribed every CVLT-3 table. The comparison
+    // with the manual is conditional for the same reason — not every
+    // publisher reports internal consistency at all. Full rationale is in
+    // Methods & References.
     ctx.ciLevel && ctx.ciLevel !== 'off'
-      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM using test–retest reliability; these are wider than manual-published intervals based on internal consistency.`
+      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM, where SEM = SD × √(1 − r) on the normative standard deviation of the reported metric. The reliability r is the retest or alternate-form coefficient published for each measure, except where the test author derives its own published intervals from an internal-consistency coefficient, in which case that coefficient is used. Intervals resting on a retest coefficient run wider than a manual's internal-consistency interval.`
       : '',
     // Must follow the EFFECTIVE flagging mode (batteryPremorbidMode). This
     // previously described the SD thresholds unconditionally, so with SEE

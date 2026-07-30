@@ -365,6 +365,38 @@ const OPIE_BASE_RATES = {
    The reliability parameters themselves are unaffected and remain correct —
    the Change Analysis pages use m1/sd1/m2/sd2/r directly and never needed a
    metric, which is why they were never wrong.
+
+   ------------------------------------------------------------
+   rInternal — an INTERNAL-CONSISTENCY coefficient, for the CI only
+
+   `r` is a stability coefficient: the same people retested. `rInternal` is a
+   consistency coefficient: one administration, split in half. They answer
+   different questions and are NOT interchangeable.
+
+   The field exists only where a publisher does two things: reports an
+   internal-consistency coefficient, AND derives its own published confidence
+   intervals from it. Both are true of CVLT-C List A Trials 1-5 Total, which
+   is at present the only measure carrying it.
+
+     CVLT-C Manual, Table 6.5 — odd/even split-half with Spearman-Brown,
+     by age. Age 8 .87, Age 12 .89, Age 16 .84. The same table prints the
+     SEM, and every one of its 12 age bands equals 10 x sqrt(1 - rxx), i.e.
+     it is computed on the T metric, not on the raw SD. The manual states
+     the formula (SEM = SD sqrt(1 - rxx), p. 87) and instructs the reader to
+     add and subtract from "the child's standard T score".
+
+     Its worked example settles it. An 8-year-old with T = 45 is given a 95%
+     interval of 38-52 and a 90% interval of 39-51. From rxx .87 and SD 10:
+     SEM 3.606, so 45 +/- 7 and 45 +/- 6. Both reproduce exactly.
+
+   WHERE IT MUST NOT BE USED: Change Analysis and the RCI pages. There the
+   reliability is not merely an error term — with the retest r, SD sqrt(2(1-r))
+   IS the spread of the difference distribution, which is the quantity reliable
+   change is measured against. An internal-consistency coefficient strips out
+   real between-session fluctuation, narrows the interval and overcalls change.
+   On SRB and Crawford it is worse still, r being a fitted regression slope.
+   check.js section 24 asserts that no RCI path reads this field.
+   ------------------------------------------------------------
    ============================================================ */
 ﻿normDB = {
   "CVLT-3 Indices · Ages 16-44": {
@@ -414,7 +446,7 @@ const OPIE_BASE_RATES = {
     "Total Repetitions": { m1:9.7, sd1:3.1, m2:10, sd2:3.4, r:0.72, rCorrected:0.7, n:122 }
   },
   "CVLT-C Subtests (Raw Scores) · Age 8": {
-    "List A Trials 1-5 Total": { m1:42.47, sd1:9.55, m2:48.32, sd2:9.09, r:0.73, n:35, metric:'raw', reportedAs:'t' },
+    "List A Trials 1-5 Total": { m1:42.47, sd1:9.55, m2:48.32, sd2:9.09, r:0.73, n:35, metric:'raw', reportedAs:'t', rInternal:0.87 },
     "List B Free-Recall Trial": { m1:5.26, sd1:1.71, m2:5.39, sd2:2.16, r:0.59, n:35, metric:'raw', reportedAs:'z' },
     "Short-Delay Free Recall": { m1:8.5, sd1:2.04, m2:9.91, sd2:2.37, r:0.4, n:35, metric:'raw', reportedAs:'z' },
     "Short-Delay Cued Recall": { m1:8.35, sd1:2.07, m2:9.51, sd2:2.79, r:0.75, n:35, metric:'raw', reportedAs:'z' },
@@ -429,7 +461,7 @@ const OPIE_BASE_RATES = {
     "False Positives": { m1:1.82, sd1:2.38, m2:1.16, sd2:2, r:0.62, n:35, metric:'raw', reportedAs:'z', higherIsWorse:true }
   },
   "CVLT-C Subtests (Raw Scores) · Age 12": {
-    "List A Trials 1-5 Total": { m1:50.64, sd1:7.19, m2:56.47, sd2:8.92, r:0.73, n:40, metric:'raw', reportedAs:'t' },
+    "List A Trials 1-5 Total": { m1:50.64, sd1:7.19, m2:56.47, sd2:8.92, r:0.73, n:40, metric:'raw', reportedAs:'t', rInternal:0.89 },
     "List B Free-Recall Trial": { m1:6.24, sd1:1.58, m2:6.82, sd2:1.57, r:0.26, n:40, metric:'raw', reportedAs:'z' },
     "Short-Delay Free Recall": { m1:9.89, sd1:2.44, m2:12.24, sd2:2.62, r:0.77, n:40, metric:'raw', reportedAs:'z' },
     "Short-Delay Cued Recall": { m1:11.13, sd1:2.21, m2:12.15, sd2:3.14, r:0.49, n:40, metric:'raw', reportedAs:'z' },
@@ -444,7 +476,7 @@ const OPIE_BASE_RATES = {
     "False Positives": { m1:0.55, sd1:0.86, m2:0.55, sd2:1.03, r:0.35, n:40, metric:'raw', reportedAs:'z', higherIsWorse:true }
   },
   "CVLT-C Subtests (Raw Scores) · Age 16": {
-    "List A Trials 1-5 Total": { m1:53.53, sd1:6.15, m2:62.94, sd2:10.94, r:0.61, n:31, metric:'raw', reportedAs:'t' },
+    "List A Trials 1-5 Total": { m1:53.53, sd1:6.15, m2:62.94, sd2:10.94, r:0.61, n:31, metric:'raw', reportedAs:'t', rInternal:0.84 },
     "List B Free-Recall Trial": { m1:6.67, sd1:1.7, m2:7.6, sd2:2.19, r:0.66, n:31, metric:'raw', reportedAs:'z' },
     "Short-Delay Free Recall": { m1:11.61, sd1:2.09, m2:13.52, sd2:1.91, r:0.48, n:31, metric:'raw', reportedAs:'z' },
     "Short-Delay Cued Recall": { m1:12, sd1:1.52, m2:13.71, sd2:1.59, r:0.59, n:31, metric:'raw', reportedAs:'z' },

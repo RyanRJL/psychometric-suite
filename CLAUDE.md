@@ -288,6 +288,42 @@ heuristic. Score Tables and the SD Index ask the entry question, so they get
 these standardised scores are already age-corrected, the age band chosen on autofill
 does not change a Score Tables percentile — it only matters for Change Analysis.
 
+### `rInternal` — the one place internal consistency beats test–retest
+
+`r` is a **stability** coefficient (same people, retested). `rInternal` is a
+**consistency** coefficient (one sitting, split in half). Different questions, not
+interchangeable. The field is carried by **three entries only** — CVLT-C
+`List A Trials 1-5 Total` at ages 8, 12 and 16 — and `check.js` §24 fails if a fourth
+appears without documentation.
+
+It exists because the app's default is test–retest for every measure, and that default
+is right almost everywhere (see the CI paragraphs in Methods & References). The bar for
+setting it aside is deliberately high: **the publisher must both report an
+internal-consistency coefficient AND derive its own published intervals from it.** Only
+CVLT-C List A Trials 1–5 clears it.
+
+- CVLT-C Manual Table 6.5 gives odd/even split-half by age — .87 / .89 / .84 for the
+  three bands here — alongside an SEM for each.
+- Those SEMs are on the **T metric**: every one of the 12 age bands equals
+  `10 × √(1 − rxx)`. The manual truncates rather than rounds (3.6055 → 3.60), so assert
+  the printed value lies in `[derived − 0.01, derived]`, not equality after
+  `Math.floor` — `√0.09` lands a hair under 0.3 and would truncate an exact 3.00 to 2.99.
+- p. 87 states `SEM = SD √(1 − rxx)` and says to add and subtract from *the child's
+  standard T score*. Its worked example — an 8-year-old at T 45, 95% → 38–52, 90% →
+  39–51 — reproduces exactly, and §24 drives the real renderer to prove it.
+
+**`rInternal` must never reach Change Analysis or the RCI pages.** With the retest `r`,
+`SD√(2(1−r))` *is* the spread of the difference distribution, which is the quantity
+reliable change is measured against; an internal-consistency coefficient strips out real
+between-session fluctuation, narrows the interval and overcalls change. On SRB and
+Crawford it would also move a fitted regression slope. §24 asserts that none of
+`calcBasicRow`, `calcPracticeRow`, `calcSrbRow`, `calcCrawfordRow` or `rciEffectiveR`
+mentions the field, and that `getBatteryRowReliability` does — so it cannot become inert
+either.
+
+Note this is why CVLT-C keeps **both** coefficients on the same entry. Deleting `r`
+because "`rInternal` is better" would break Change Analysis for that measure.
+
 ### `baseRates` — measures scored by lookup rather than by conversion
 
 **WAIS-IV Longest Span (Process)** is the first family scored from a published
@@ -401,6 +437,15 @@ terms describe the same group. `rCorrected` belongs with a normative SD (15 / 3 
 variance by ~20% and is what the RCI pages used to do. All four RCI methods now default
 to raw `r`, and the reliability cell renders whichever field is actually in force, so
 what is displayed is what is used. `tools/check.js` guards both.
+
+The **Score Tables CI** made the same mistake for longer, and independently: it took
+`rCorrected` but multiplied by `sd1`. It now takes the SD from **the metric the score is
+displayed in**, reaching for `sd1` only when the row is shown raw. The rule is not a
+convention picked here — the CVLT-3 manual publishes an SEM column in Tables 3.4/3.5,
+and `normativeSD × √(1 − rCorrected)` reproduces **all 38** of them exactly, which is
+what `check.js` §23 pins. The old pairing was wrong in both directions and by up to 6.3
+standard-score points at each end (RBANS Form C Delayed Memory, whose retest sample is
+impaired: `sd1` 18.7 against a normative 15).
 
 Note `r` does not play the same role in all four methods. In Jacobson & Truax and
 Iverson it is purely an error term. In McSweeney and Crawford it is a **fitted
