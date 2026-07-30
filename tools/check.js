@@ -2932,6 +2932,39 @@ check('#pre-age accepts the full shared range, not just adults', () => {
     || 'min="' + min[1] + '" still excludes the ages Score Tables is normed for';
 });
 
+check('the age input is reachable, not stranded in the hidden legacy panel', () => {
+  /* IT SHIPPED UNREACHABLE ONCE. #bat-age is declared inside
+     .bat-premorbid-block, which buildBatteryInlineBar hides wholesale with
+     ds-legacy-hidden — so the field rendered at 0x0 and no user could ever
+     type in it. Every check passed, because they all called the reliability
+     code directly and never asked whether the input could be reached.
+
+     It stays in the markup (app.js wires its listener at init and
+     design-system.js is deferred, so the element must pre-exist) and is MOVED
+     into the control bar. These assertions pin that arrangement. */
+  const DS_SRC = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
+  const bad = [];
+  const fn = DS_SRC.slice(DS_SRC.indexOf('function buildBatteryInlineBar'));
+  if (!/ds-inline-bar-age/.test(fn)) bad.push('the control bar has no slot for the age field');
+  if (!/appendChild\(ageInput\)/.test(fn)) bad.push('the age input is never moved into the bar');
+  /* Rebuilding rather than moving would drop the listener app.js already
+     attached, leaving a box that looks right and changes nothing. */
+  if (/createElement\(['"]input['"]\)[^;]*bat-age/.test(fn)) bad.push('the age input is rebuilt rather than moved');
+  if (!/ageSlot\.hidden\s*=/.test(fn)) bad.push('the age slot is never revealed with the CI toggle');
+  /* And setting .hidden must actually hide it. The slot is also a
+     .ds-inline-bar-section, whose display:flex outranks the browser default
+     for [hidden] — so without an explicit rule the box stayed on screen with
+     the CI toggle off. It did exactly that before this rule was added. */
+  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  if (!/\.ds-inline-bar-age\[hidden\]\s*\{[^}]*display:\s*none\s*!important/.test(DS_CSS)) {
+    bad.push('nothing overrides .ds-inline-bar-section display:flex, so [hidden] will not hide the age box');
+  }
+  /* And it must still be declared in the markup, or the move has nothing to
+     move and app.js has nothing to bind. */
+  if (!/id="bat-age"/.test(HTML_SRC)) bad.push('#bat-age is no longer declared in index.html');
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('an out-of-range age is explained rather than left blank', () => {
   const src = extractFn(APP_SRC, 'calcPremorbid');
   const bad = [];

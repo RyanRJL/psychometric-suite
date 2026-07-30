@@ -383,6 +383,14 @@
           <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci="95" role="radio" aria-checked="false">95%</button>
         </div>
       </div>
+      <!-- Slot for #bat-age, moved in below. Empty in the markup on purpose:
+           the input is declared in index.html so it exists before app.js wires
+           its listener, and is adopted here rather than rebuilt. Revealed with
+           the CI toggle, because the interval is the only thing it drives on
+           this page - relax that if a second consumer appears. -->
+      <div class="ds-inline-bar-section ds-inline-bar-age" hidden>
+        <span class="ds-inline-bar-label">Patient age</span>
+      </div>
       ${classSelect ? `
         <div class="ds-inline-bar-section ds-inline-bar-right">
           <span class="ds-inline-bar-label">Classification</span>
@@ -505,6 +513,23 @@
       refresh();
     }
 
+    /* Adopt the patient-age input into the bar.
+
+       It is declared in index.html, inside .bat-premorbid-block, which this
+       function hides wholesale via ds-legacy-hidden — so left where it is, it
+       renders at 0x0 and the user can never reach it. That is exactly what
+       happened when the field was first added.
+
+       MOVED, not rebuilt. app.js attaches its 'input' listener at init, and
+       this file is deferred so it runs afterwards; an element created here
+       would never get that listener. Moving a node carries its listeners and
+       its value with it. */
+    const ageInput = document.getElementById('bat-age');
+    const ageSlot  = bar.querySelector('.ds-inline-bar-age');
+    if (ageInput && ageSlot && ageInput.parentElement !== ageSlot){
+      ageSlot.appendChild(ageInput);
+    }
+
     /* Wire Score CI toggle */
     const ciInput = document.getElementById('bat-ci-level');
     if (ciInput){
@@ -516,6 +541,8 @@
           b.classList.toggle('is-active', active);
           b.setAttribute('aria-checked', active ? 'true' : 'false');
         });
+        /* Ask for the age at the moment it starts mattering. */
+        if (ageSlot) ageSlot.hidden = (v === 'off');
       };
       ciBtns.forEach(b => {
         b.addEventListener('click', () => {

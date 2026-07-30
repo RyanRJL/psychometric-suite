@@ -967,10 +967,21 @@
                data.js). Left blank, those measures fall back to the published
                all-ages coefficient, so the column never empties. Deliberately
                NOT bounded to 16-90 like the premorbid page's age: the measures
-               that read it are normed from age 8. -->
+               that read it are normed from age 8.
+
+               IT DOES NOT DISPLAY HERE. buildBatteryInlineBar (design-system.js)
+               moves this input into the inline control bar beside the Score CI
+               toggle, because this whole panel is hidden by ds-legacy-hidden.
+               It has to be declared in the markup rather than built by that
+               function, because app.js wires its listener at init and
+               design-system.js is deferred, so the element must already exist.
+               Moving a node preserves its listeners; building it later would
+               not. -->
           <div class="field bat-field-compact bat-field-age">
             <label>Patient age <span class="hint">optional — sharpens intervals</span></label>
-            <input type="number" id="bat-age" min="5" max="90" step="1" placeholder="e.g. 34">
+            <input type="number" id="bat-age" class="ds-inline-bar-age-input" min="5" max="90" step="1"
+                   placeholder="e.g. 34"
+                   title="Optional. Used where a test publishes its reliability by age band, which sharpens the confidence interval. Left blank, those measures use the published all-ages coefficient instead. Shared with the age on the Premorbid page.">
           </div>
         </div>
       </div>
@@ -5904,7 +5915,7 @@
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260731a"></script>
 <script src="app.js?v=20260730n"></script>
-<script src="design-system.js?v=20260730e" defer></script>
+<script src="design-system.js?v=20260731a" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 <script src="app-viz-page.js?v=20260730m"></script>
 

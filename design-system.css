@@ -2047,6 +2047,37 @@ input[type="text"].ds-inline-bar-input{
     border-color var(--ds-duration-fast) var(--ds-ease),
     box-shadow var(--ds-duration-fast) var(--ds-ease) !important;
 }
+/* The hidden ATTRIBUTE does not hide this section on its own: it is also a
+   .ds-inline-bar-section, and that rule sets display:flex, which outranks the
+   browser default of display:none for [hidden]. Without this the age box stayed
+   on screen with the CI toggle off — the same class of cascade defeat recorded
+   in CLAUDE.md. Scoped to this standalone class so no other bar section moves. */
+.ds-inline-bar-age[hidden]{ display: none !important; }
+
+/* Patient-age box in the battery control bar. A STANDALONE class rather than a
+   modifier on .ds-inline-bar-input, which is the 40px-left-padded search field
+   with a magnifier icon behind it — reusing that would inherit the icon gap and
+   the 100% width. See the CSS cascade note in CLAUDE.md. */
+input.ds-inline-bar-age-input,
+input[type="number"].ds-inline-bar-age-input{
+  width: 82px !important;
+  height: 38px !important;
+  padding: 0 10px !important;
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  border-radius: var(--ds-radius-sm) !important;
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-base) !important;
+  color: var(--ds-text) !important;
+  box-shadow: 0 1px 2px rgba(15,18,24,0.04) inset !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+}
+.ds-inline-bar-age-input::placeholder{
+  color: var(--ds-text-faint);
+  font-style: normal;
+}
+
 .ds-inline-bar-input::placeholder{
   color: var(--ds-text-faint);
   font-style: normal;

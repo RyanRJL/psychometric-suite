@@ -11234,6 +11234,37 @@ input[type="text"].ds-inline-bar-input{
     border-color var(--ds-duration-fast) var(--ds-ease),
     box-shadow var(--ds-duration-fast) var(--ds-ease) !important;
 }
+/* The hidden ATTRIBUTE does not hide this section on its own: it is also a
+   .ds-inline-bar-section, and that rule sets display:flex, which outranks the
+   browser default of display:none for [hidden]. Without this the age box stayed
+   on screen with the CI toggle off — the same class of cascade defeat recorded
+   in CLAUDE.md. Scoped to this standalone class so no other bar section moves. */
+.ds-inline-bar-age[hidden]{ display: none !important; }
+
+/* Patient-age box in the battery control bar. A STANDALONE class rather than a
+   modifier on .ds-inline-bar-input, which is the 40px-left-padded search field
+   with a magnifier icon behind it — reusing that would inherit the icon gap and
+   the 100% width. See the CSS cascade note in CLAUDE.md. */
+input.ds-inline-bar-age-input,
+input[type="number"].ds-inline-bar-age-input{
+  width: 82px !important;
+  height: 38px !important;
+  padding: 0 10px !important;
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  border-radius: var(--ds-radius-sm) !important;
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-base) !important;
+  color: var(--ds-text) !important;
+  box-shadow: 0 1px 2px rgba(15,18,24,0.04) inset !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+}
+.ds-inline-bar-age-input::placeholder{
+  color: var(--ds-text-faint);
+  font-style: normal;
+}
+
 .ds-inline-bar-input::placeholder{
   color: var(--ds-text-faint);
   font-style: normal;
@@ -14580,10 +14611,21 @@ input[type="text"].ds-inline-bar-input{
                data.js). Left blank, those measures fall back to the published
                all-ages coefficient, so the column never empties. Deliberately
                NOT bounded to 16-90 like the premorbid page's age: the measures
-               that read it are normed from age 8. -->
+               that read it are normed from age 8.
+
+               IT DOES NOT DISPLAY HERE. buildBatteryInlineBar (design-system.js)
+               moves this input into the inline control bar beside the Score CI
+               toggle, because this whole panel is hidden by ds-legacy-hidden.
+               It has to be declared in the markup rather than built by that
+               function, because app.js wires its listener at init and
+               design-system.js is deferred, so the element must already exist.
+               Moving a node preserves its listeners; building it later would
+               not. -->
           <div class="field bat-field-compact bat-field-age">
             <label>Patient age <span class="hint">optional — sharpens intervals</span></label>
-            <input type="number" id="bat-age" min="5" max="90" step="1" placeholder="e.g. 34">
+            <input type="number" id="bat-age" class="ds-inline-bar-age-input" min="5" max="90" step="1"
+                   placeholder="e.g. 34"
+                   title="Optional. Used where a test publishes its reliability by age band, which sharpens the confidence interval. Left blank, those measures use the published all-ages coefficient instead. Shared with the age on the Premorbid page.">
           </div>
         </div>
       </div>
@@ -29546,6 +29588,14 @@ if (document.readyState === 'loading'){
           <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci="95" role="radio" aria-checked="false">95%</button>
         </div>
       </div>
+      <!-- Slot for #bat-age, moved in below. Empty in the markup on purpose:
+           the input is declared in index.html so it exists before app.js wires
+           its listener, and is adopted here rather than rebuilt. Revealed with
+           the CI toggle, because the interval is the only thing it drives on
+           this page - relax that if a second consumer appears. -->
+      <div class="ds-inline-bar-section ds-inline-bar-age" hidden>
+        <span class="ds-inline-bar-label">Patient age</span>
+      </div>
       ${classSelect ? `
         <div class="ds-inline-bar-section ds-inline-bar-right">
           <span class="ds-inline-bar-label">Classification</span>
@@ -29668,6 +29718,23 @@ if (document.readyState === 'loading'){
       refresh();
     }
 
+    /* Adopt the patient-age input into the bar.
+
+       It is declared in index.html, inside .bat-premorbid-block, which this
+       function hides wholesale via ds-legacy-hidden — so left where it is, it
+       renders at 0x0 and the user can never reach it. That is exactly what
+       happened when the field was first added.
+
+       MOVED, not rebuilt. app.js attaches its 'input' listener at init, and
+       this file is deferred so it runs afterwards; an element created here
+       would never get that listener. Moving a node carries its listeners and
+       its value with it. */
+    const ageInput = document.getElementById('bat-age');
+    const ageSlot  = bar.querySelector('.ds-inline-bar-age');
+    if (ageInput && ageSlot && ageInput.parentElement !== ageSlot){
+      ageSlot.appendChild(ageInput);
+    }
+
     /* Wire Score CI toggle */
     const ciInput = document.getElementById('bat-ci-level');
     if (ciInput){
@@ -29679,6 +29746,8 @@ if (document.readyState === 'loading'){
           b.classList.toggle('is-active', active);
           b.setAttribute('aria-checked', active ? 'true' : 'false');
         });
+        /* Ask for the age at the moment it starts mattering. */
+        if (ageSlot) ageSlot.hidden = (v === 'off');
       };
       ciBtns.forEach(b => {
         b.addEventListener('click', () => {
