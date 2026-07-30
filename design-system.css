@@ -4156,20 +4156,10 @@ input[type="text"].ds-inline-bar-input{
 .viz-empty p{ margin: 0 0 var(--ds-space-4); }
 .viz-grid{
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
   gap: var(--ds-space-4);
   align-items: start;
   margin-bottom: var(--ds-space-6);
-}
-.viz-group-head{
-  grid-column: 1 / -1;
-  font-size: var(--ds-text-sm);
-  font-weight: var(--ds-weight-semibold);
-  letter-spacing: var(--ds-tracking-wide);
-  text-transform: uppercase;
-  color: var(--ds-text-subtle);
-  border-bottom: 1px solid var(--ds-border);
-  padding: var(--ds-space-4) 0 var(--ds-space-1);
 }
 .viz-card{
   background: var(--ds-surface);
@@ -4185,6 +4175,33 @@ input[type="text"].ds-inline-bar-input{
   margin-bottom: var(--ds-space-2);
 }
 .viz-svg{ display: block; width: 100%; height: auto; }
+.viz-sub-caption{
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: var(--ds-tracking-wide);
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  margin: var(--ds-space-3) 0 var(--ds-space-1);
+}
+.viz-col-head{
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  fill: var(--ds-text-faint);
+}
+.viz-row-name{ font-size: 13px; fill: var(--ds-text); }
+.viz-row-score{ font-size: 13px; font-weight: 600; fill: var(--ds-text); }
+.viz-row-fact{ font-size: 12.5px; fill: var(--ds-text-muted); }
+.viz-raw-row{
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-subtle);
+  background: var(--ds-surface-subtle);
+  border: 1px dashed var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  margin: var(--ds-space-2) 0;
+}
+.viz-raw-row b{ color: var(--ds-text); font-weight: var(--ds-weight-semibold); }
 /* Bands are the app's 7 classification tints (DESC_COLOURS), washed out so the
    ink dot stays the loudest thing on the card. Position + tooltip + the text
    row carry the meaning; the tint is redundant with all three. */
@@ -4194,49 +4211,17 @@ input[type="text"].ds-inline-bar-input{
   font-size: 10px;
   fill: var(--ds-text-faint);
 }
-.viz-grid-line{ stroke: var(--ds-border-subtle); stroke-width: 1; }
 .viz-whisker{ stroke: var(--ds-text-muted); stroke-width: 2; stroke-linecap: round; }
 .viz-dot{
   fill: var(--ds-text);
   stroke: var(--ds-surface);
   stroke-width: 2;
 }
-.viz-dot-label{
-  font-size: 11px;
-  font-weight: 600;
-  fill: var(--ds-text);
-}
 .viz-step{
   fill: none;
   stroke: var(--ds-text-muted);
   stroke-width: 2;
   stroke-linejoin: round;
-}
-.viz-marker-line{
-  stroke: var(--ds-primary);
-  stroke-width: 1;
-  stroke-dasharray: 3 3;
-}
-.viz-noplot{
-  font-size: var(--ds-text-sm);
-  color: var(--ds-text-subtle);
-  background: var(--ds-surface-subtle);
-  border: 1px dashed var(--ds-border-strong);
-  border-radius: var(--ds-radius-sm);
-  padding: var(--ds-space-4);
-  margin: var(--ds-space-2) 0;
-}
-.viz-card-facts{
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ds-space-1) var(--ds-space-4);
-  margin-top: var(--ds-space-2);
-  font-size: var(--ds-text-sm);
-  color: var(--ds-text);
-}
-.viz-fact-label{
-  color: var(--ds-text-subtle);
-  font-weight: var(--ds-weight-medium);
 }
 .viz-card-note{
   margin-top: var(--ds-space-2);

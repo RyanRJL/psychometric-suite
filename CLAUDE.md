@@ -148,7 +148,7 @@ the page is branded Iverson (2001) in six places.
 | `app.js` | 7.1k | Every calculator. 206 top-level functions, 11 section banners. |
 | `design-system.js` | 1.1k | Page titles, microcopy, FOUC handling, the inline control bars. |
 | `app-effectsize-page.js` | 0.8k | The effect-size calculator, self-contained. |
-| `app-viz-page.js` | 0.3k | Score Charts page — one SVG card per Score Tables measure, self-contained. Draws only what the table's own functions return; has no settings of its own. |
+| `app-viz-page.js` | 0.3k | Score Charts page — one SVG chart per test family, one row per trial/subtest, self-contained. Draws only what the table's own functions return; has no settings of its own. |
 | `index.html` | 6.3k | All pages in one document; sections shown/hidden by nav. |
 | `styles.css` | 9.1k | Original stylesheet. |
 | `design-system.css` | 4.1k | Later restyling layer that overrides the above. |

@@ -1,24 +1,35 @@
 /* =====================================================================
    Score Charts - page module (#charts)
 
-   One chart per measure, drawn in the measure's NATIVE metric - no score
-   is converted for display. The page is a VIEW of the Score Tables state:
-   every number a card prints (percentile, base rate, classification, CI)
-   is produced by the same functions the table itself calls, so screen and
-   chart cannot disagree. Settings (classification scheme, CI level,
-   premorbid comparison) are read live from the Score Tables controls for
-   the same reason - this page deliberately has none of its own.
+   ONE CHART PER TEST: each battery group (test family) gets a single
+   card, and every trial/subtest in it is a ROW of that card's chart -
+   dot + CI whisker on a shared native-metric axis, with the row's
+   classification bands drawn as a strip behind it. Rows within one
+   instrument share a metric, which is what makes the shared axis safe;
+   a family that mixes metrics gets one sub-panel per metric inside the
+   same card, never two metrics on one axis.
 
-   Chart membership follows the table's own machinery:
-     - standardised rows (standard / t / scaled / z) -> banded axis card
-     - base-rate rows (batteryBaseRateEntry)          -> published step chart
-     - raw rows (rowScoreType 'raw')                  -> no chart; score + CI
-       only, because toZ('raw') is null by design and a raw score has no
-       position on any normative axis (see the metric:'raw' note in data.js)
-     - higherIsWorse rows keep the axis position of the score AS OBTAINED,
-       but the classification bands are reflected, matching the table's
-       convention: classification describes performance, percentile is
-       reported as obtained.
+   The page is a VIEW of the Score Tables state: every number a row
+   prints (percentile, base rate, classification, CI) is produced by the
+   same functions the table itself calls, so screen and chart cannot
+   disagree. Settings (classification scheme, CI level, premorbid
+   comparison) are read live from the Score Tables controls - this page
+   deliberately has none of its own.
+
+   Row types, following the table's own membership machinery:
+     - standard / t / scaled / z rows -> banded strip, dot, printed-CI
+       whisker (the whisker is parsed back from getBatteryCiHtml's own
+       output, so the table's rounding convention propagates here with
+       no second site to keep in step)
+     - base-rate rows (batteryBaseRateEntry) -> a step sparkline of the
+       published cumulative table with the patient's span marked
+     - higherIsWorse rows keep the axis position of the score AS
+       OBTAINED, but that row's band strip is reversed - the table's
+       convention: percentile as obtained, classification (and so the
+       bands) describes performance
+     - raw rows (rowScoreType 'raw') are listed, not plotted: toZ('raw')
+       is null by design and a raw score has no position on any
+       normative axis (see the metric:'raw' note in data.js)
    ===================================================================== */
 (function(){
   'use strict';
@@ -39,172 +50,218 @@
     z:        { min: -4, max: 4,   ticks: [-4, -2, 0, 2, 4] }
   };
   /* Classification band boundaries on the standard-score metric; converted
-     to each card's native metric via the same fromZ used everywhere else. */
+     to each panel's native metric via the same fromZ used everywhere else. */
   const VIZ_BAND_EDGES_SS = [70, 80, 90, 110, 120, 130];
 
-  const SVG_W = 560, PAD_L = 10, PAD_R = 10;
+  /* One shared column layout for every row chart, so panels align. */
+  const SVG_W = 940;
+  const COL = { nameEnd: 205, scoreMid: 228, plotX: 262, plotW: 478, rightX: 754 };
+  const HEADER_H = 20, ROW_H = 28, AXIS_H = 24;
 
   function vizX(v, axis){
     const t = (v - axis.min) / (axis.max - axis.min);
-    return PAD_L + Math.min(1, Math.max(0, t)) * (SVG_W - PAD_L - PAD_R);
-  }
-  function vizFmtNum(v){
-    return (Math.round(v * 10) / 10).toString();
+    return COL.plotX + Math.min(1, Math.max(0, t)) * COL.plotW;
   }
   function vizLevels(cls){
     return cls === 'wechsler' ? WECHSLER_LEVELS : AACN_LEVELS;
   }
-
-  /* The CI whisker draws exactly the interval the table PRINTS - parsed
-     back from getBatteryCiHtml's own output rather than recomputed, so a
-     change to the table's rounding or bounds convention propagates here
-     without a second site to keep in step. Bounds are joined with U+2013,
-     which cannot collide with a negative sign. */
+  function vizTruncate(name){
+    return name.length > 28 ? name.slice(0, 27) + '…' : name;
+  }
+  /* Bounds are joined with U+2013, which cannot collide with a negative
+     sign, so the printed interval parses back unambiguously. */
   function vizParseCi(ciText){
     if (!ciText) return null;
     const parts = ciText.split('–').map(parseFloat);
     if (parts.length !== 2 || parts.some(isNaN)) return null;
     return { lo: parts[0], hi: parts[1] };
   }
+  function vizRowFacts(r, type, ciLevel, ciText, pctCell, details){
+    const bits = [`${scoreTypeLabel(type)} ${r.score}`];
+    if (ciText) bits.push(`${ciLevel}% CI ${ciText}`);
+    if (pctCell) bits.push(`${pctCell.kind === 'baseRate' ? BAT_BASERATE_LABEL : BAT_PCT_LABEL} ${pctCell.text}`);
+    if (details && details.text) bits.push(details.text);
+    return bits.join(' · ');
+  }
 
-  /* ---------- standardised-metric card: banded axis + dot + whisker ---- */
-  function vizAxisSvg(r, type, cls, ciText){
+  /* Column headings inside the SVG so they scale with the columns. */
+  function vizHeaderSvg(pctLabel){
+    return `<text class="viz-col-head" x="${COL.scoreMid}" y="13" text-anchor="middle">Score</text>` +
+           `<text class="viz-col-head" x="${COL.rightX}" y="13">${pctLabel} · Classification</text>`;
+  }
+
+  /* ---------- metric panel: one row per subtest on a shared axis ------- */
+  function vizMetricPanelSvg(rows, type, cls, ciLevel){
     const axis = VIZ_AXIS[type];
-    const score = parseFloat(r.score);
     const levels = vizLevels(cls);
-    const bandTop = 22, bandH = 40, midY = bandTop + bandH / 2;
+    const H = HEADER_H + rows.length * ROW_H + AXIS_H;
+    const anyReversed = rows.some(r => r.higherIsWorse);
 
-    // Band edges in the native metric, clipped to the axis range.
+    // Band edges in the native metric, clipped to the axis range. The
+    // boundaries are symmetric about the metric midline, so a reversed
+    // (error-measure) row reverses the colour order only.
     const edges = [axis.min]
       .concat(VIZ_BAND_EDGES_SS.map(e => fromZ((e - 100) / 15, type))
         .filter(e => e > axis.min && e < axis.max))
       .concat([axis.max]);
 
-    let svg = '';
-    for (let i = 0; i < edges.length - 1; i++){
-      /* On an error measure the classification runs against the score, so
-         the band colouring reflects - the high end of the axis wears the
-         low-performance colour. Boundaries are symmetric about the metric
-         midline, so reversing the colour order IS the reflection. */
-      const ci = r.higherIsWorse ? (edges.length - 2 - i) : i;
-      const x0 = vizX(edges[i], axis), x1 = vizX(edges[i + 1], axis);
-      const level = levels[ci] || {};
-      svg += `<rect class="viz-band" x="${x0.toFixed(1)}" y="${bandTop}" width="${(x1 - x0).toFixed(1)}" height="${bandH}" fill="${DESC_COLOURS[ci]}">` +
-             `<title>${escapeHtml(level.label || '')} (standard-score ${escapeHtml(level.range || '')})</title></rect>`;
-    }
+    let svg = vizHeaderSvg(BAT_PCT_LABEL);
 
-    // Axis ticks and labels.
-    for (const tval of axis.ticks){
-      const x = vizX(tval, axis).toFixed(1);
-      svg += `<line class="viz-tick" x1="${x}" y1="${bandTop + bandH}" x2="${x}" y2="${bandTop + bandH + 4}"/>`;
-      svg += `<text class="viz-tick-label" x="${x}" y="${bandTop + bandH + 16}" text-anchor="middle">${tval}</text>`;
-    }
+    rows.forEach((r, i) => {
+      const rowY = HEADER_H + i * ROW_H;
+      const midY = rowY + ROW_H / 2;
+      const score = parseFloat(r.score);
+      const ciText = ciLevel !== 'off' ? getBatteryCiHtml(score, r, ciLevel) : '';
+      const pctCell = batteryRowPctCell(r);
+      const details = batteryClassificationDetails(r, cls);
 
-    // CI whisker - the printed interval, clamped into the drawable range.
-    const ci = vizParseCi(ciText);
-    if (ci){
-      const x0 = vizX(ci.lo, axis).toFixed(1), x1 = vizX(ci.hi, axis).toFixed(1);
-      svg += `<line class="viz-whisker" x1="${x0}" y1="${midY}" x2="${x1}" y2="${midY}"/>` +
-             `<line class="viz-whisker" x1="${x0}" y1="${midY - 5}" x2="${x0}" y2="${midY + 5}"/>` +
-             `<line class="viz-whisker" x1="${x1}" y1="${midY - 5}" x2="${x1}" y2="${midY + 5}"/>`;
-    }
+      let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(vizRowFacts(r, type, ciLevel, ciText, pctCell, details))}${r.higherIsWorse ? ' (error measure - bands reversed)' : ''}</title>`;
+      row += `<text class="viz-row-name" x="${COL.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name))}${r.higherIsWorse ? ' ↓' : ''}</text>`;
+      row += `<text class="viz-row-score" x="${COL.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${escapeHtml(String(r.score))}</text>`;
 
-    // Score dot, ringed in the surface colour; value labelled above.
-    const sx = vizX(score, axis);
-    const offScale = score < axis.min || score > axis.max;
-    svg += `<circle class="viz-dot" cx="${sx.toFixed(1)}" cy="${midY}" r="6"/>`;
-    const lx = Math.min(SVG_W - PAD_R - 6, Math.max(PAD_L + 6, sx));
-    svg += `<text class="viz-dot-label" x="${lx.toFixed(1)}" y="${bandTop - 7}" text-anchor="middle">${vizFmtNum(score)}${offScale ? ' (off scale)' : ''}</text>`;
+      for (let b = 0; b < edges.length - 1; b++){
+        const ci = r.higherIsWorse ? (edges.length - 2 - b) : b;
+        const x0 = vizX(edges[b], axis), x1 = vizX(edges[b + 1], axis);
+        const level = levels[ci] || {};
+        row += `<rect class="viz-band" x="${x0.toFixed(1)}" y="${rowY + 3}" width="${(x1 - x0).toFixed(1)}" height="${ROW_H - 6}" fill="${DESC_COLOURS[ci]}">` +
+               `<title>${escapeHtml(level.label || '')} (standard-score ${escapeHtml(level.range || '')})</title></rect>`;
+      }
 
-    return `<svg class="viz-svg" viewBox="0 0 ${SVG_W} 96" role="img" aria-label="${escapeAttr(r.name)}: score ${vizFmtNum(score)} on the ${escapeAttr(scoreTypeLabel(type).toLowerCase())} scale">${svg}</svg>`;
-  }
+      const ci = vizParseCi(ciText);
+      if (ci){
+        const x0 = vizX(ci.lo, axis).toFixed(1), x1 = vizX(ci.hi, axis).toFixed(1);
+        row += `<line class="viz-whisker" x1="${x0}" y1="${midY}" x2="${x1}" y2="${midY}"/>` +
+               `<line class="viz-whisker" x1="${x0}" y1="${midY - 5}" x2="${x0}" y2="${midY + 5}"/>` +
+               `<line class="viz-whisker" x1="${x1}" y1="${midY - 5}" x2="${x1}" y2="${midY + 5}"/>`;
+      }
 
-  /* ---------- base-rate card: the published cumulative table as steps ---- */
-  function vizBaseRateSvg(r, entry){
-    const spans = Object.keys(entry.baseRates).map(Number)
-      .filter(Number.isFinite).sort((a, b) => a - b);
-    if (!spans.length) return '';
-    const v = parseFloat(r.score);
-    const x0dom = spans[0], x1dom = spans[spans.length - 1] + 1;
-    const top = 16, bottom = 116, H = 150;
-    const xOf = s => PAD_L + 24 + (s - x0dom) / (x1dom - x0dom) * (SVG_W - PAD_L - PAD_R - 24);
-    const yOf = p => bottom - (p / 100) * (bottom - top);
+      row += `<circle class="viz-dot" cx="${vizX(score, axis).toFixed(1)}" cy="${midY}" r="5.5"/>`;
 
-    let svg = '';
-    for (const g of [0, 25, 50, 75, 100]){
-      svg += `<line class="viz-grid-line" x1="${xOf(x0dom).toFixed(1)}" y1="${yOf(g).toFixed(1)}" x2="${xOf(x1dom).toFixed(1)}" y2="${yOf(g).toFixed(1)}"/>`;
-      if (g % 50 === 0) svg += `<text class="viz-tick-label" x="${(xOf(x0dom) - 6).toFixed(1)}" y="${(yOf(g) + 3).toFixed(1)}" text-anchor="end">${g}</text>`;
-    }
-
-    // Descending step path: the base rate holds from each span to the next.
-    let d = '';
-    for (let i = 0; i < spans.length; i++){
-      const x = xOf(spans[i]), y = yOf(entry.baseRates[spans[i]]);
-      d += (i === 0 ? `M ${x.toFixed(1)} ${y.toFixed(1)}` : ` H ${x.toFixed(1)} V ${y.toFixed(1)}`);
-    }
-    d += ` H ${xOf(x1dom).toFixed(1)}`;
-    svg += `<path class="viz-step" d="${d}"/>`;
-
-    const labelEvery = spans.length > 12 ? 2 : 1;
-    spans.forEach((s, i) => {
-      if (i % labelEvery) return;
-      svg += `<text class="viz-tick-label" x="${xOf(s).toFixed(1)}" y="${bottom + 16}" text-anchor="middle">${s}</text>`;
+      const right = [pctCell ? pctCell.text : '–', details && details.text ? details.text : '–'].join(' · ');
+      row += `<text class="viz-row-fact" x="${COL.rightX}" y="${midY + 4.5}">${escapeHtml(right)}</text>`;
+      svg += `<g class="viz-row">${row}</g>`;
     });
 
-    // Patient marker on the published step for their span.
-    if (Number.isFinite(v) && Number.isInteger(v)){
-      const br = baseRateAtOrAbove(entry, v);
-      const px = xOf(Math.min(Math.max(v, x0dom), x1dom));
-      svg += `<line class="viz-marker-line" x1="${px.toFixed(1)}" y1="${top}" x2="${px.toFixed(1)}" y2="${bottom}"/>` +
-             `<circle class="viz-dot" cx="${px.toFixed(1)}" cy="${yOf(br).toFixed(1)}" r="6"/>` +
-             `<text class="viz-dot-label" x="${Math.min(SVG_W - PAD_R - 10, px + 9).toFixed(1)}" y="${(yOf(br) - 9).toFixed(1)}">${fmtBaseRate(br)}</text>`;
+    // Shared axis under the last row.
+    const axisY = HEADER_H + rows.length * ROW_H;
+    svg += `<line class="viz-tick" x1="${COL.plotX}" y1="${axisY + 2}" x2="${COL.plotX + COL.plotW}" y2="${axisY + 2}"/>`;
+    for (const tval of axis.ticks){
+      const x = vizX(tval, axis).toFixed(1);
+      svg += `<line class="viz-tick" x1="${x}" y1="${axisY + 2}" x2="${x}" y2="${axisY + 6}"/>` +
+             `<text class="viz-tick-label" x="${x}" y="${axisY + 18}" text-anchor="middle">${tval}</text>`;
     }
 
-    return `<svg class="viz-svg viz-svg-tall" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="${escapeAttr(r.name)}: percentage of the normative sample obtaining each span or higher">${svg}</svg>`;
+    return { svg: `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="${escapeAttr(scoreTypeLabel(type))} measures">${svg}</svg>`, anyReversed };
   }
 
-  /* ---------- card assembly ------------------------------------------- */
-  function vizFacts(parts){
-    return parts.filter(Boolean).map(p =>
-      `<span class="viz-fact"><span class="viz-fact-label">${p[0]}</span> ${p[1]}</span>`
-    ).join('');
-  }
+  /* ---------- base-rate panel: one published step sparkline per span --- */
+  function vizBaseRatePanelSvg(rows){
+    // Shared span domain across the family so the sparklines align.
+    let lo = Infinity, hi = -Infinity;
+    const entries = rows.map(r => batteryBaseRateEntry(r));
+    entries.forEach(e => {
+      Object.keys(e.baseRates).map(Number).filter(Number.isFinite).forEach(s => {
+        if (s < lo) lo = s;
+        if (s > hi) hi = s;
+      });
+    });
+    if (!isFinite(lo)) return { svg: '' };
+    const x0dom = lo, x1dom = hi + 1;
+    const xOf = s => COL.plotX + (s - x0dom) / (x1dom - x0dom) * COL.plotW;
+    const H = HEADER_H + rows.length * ROW_H + AXIS_H;
 
-  function vizCard(r, cls, ciLevel){
-    const type = rowScoreType(r);
-    const brEntry = batteryBaseRateEntry(r);
-    const score = parseFloat(r.score);
-    const ciText = ciLevel !== 'off' ? getBatteryCiHtml(score, r, ciLevel) : '';
-    const pctCell = batteryRowPctCell(r);
-    const details = batteryClassificationDetails(r, cls);
+    let svg = vizHeaderSvg(BAT_BASERATE_LABEL);
 
-    let body, note = '';
-    if (brEntry){
-      body = vizBaseRateSvg(r, brEntry);
-      note = 'Chart shows the published percentage of the normative sample obtaining each span or higher (WAIS-IV Manual, Tables C.4–C.5). A HIGH base rate means a common, and therefore lower, score.';
-    } else if (VIZ_AXIS[type]){
-      body = vizAxisSvg(r, type, cls, ciText);
-      if (r.higherIsWorse){
-        note = 'Error measure: a higher score means more errors. The percentile is reported as obtained; the classification bands describe performance, so they run reversed on this card.';
+    rows.forEach((r, i) => {
+      const entry = entries[i];
+      const rowY = HEADER_H + i * ROW_H;
+      const yOf = p => rowY + (ROW_H - 3) - (p / 100) * (ROW_H - 6);
+      const v = parseFloat(r.score);
+      const cls = document.getElementById('bat-class')?.value || 'wechsler';
+      const details = batteryClassificationDetails(r, cls);
+      const spans = Object.keys(entry.baseRates).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+
+      const hasScore = Number.isFinite(v) && Number.isInteger(v);
+      const br = hasScore ? baseRateAtOrAbove(entry, v) : null;
+      let row = `<title>${escapeHtml(r.name)}: span ${escapeHtml(String(r.score))}, ${BAT_BASERATE_LABEL.toLowerCase()} ${hasScore ? fmtBaseRate(br) : '–'}% obtained this span or higher</title>`;
+      row += `<text class="viz-row-name" x="${COL.nameEnd}" y="${rowY + ROW_H / 2 + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name))}</text>`;
+      row += `<text class="viz-row-score" x="${COL.scoreMid}" y="${rowY + ROW_H / 2 + 4.5}" text-anchor="middle">${escapeHtml(String(r.score))}</text>`;
+
+      let d = '';
+      spans.forEach((s, k) => {
+        const x = xOf(s), y = yOf(entry.baseRates[s]);
+        d += (k === 0 ? `M ${x.toFixed(1)} ${y.toFixed(1)}` : ` H ${x.toFixed(1)} V ${y.toFixed(1)}`);
+      });
+      d += ` H ${xOf(x1dom).toFixed(1)}`;
+      row += `<path class="viz-step" d="${d}"/>`;
+
+      if (hasScore){
+        const px = xOf(Math.min(Math.max(v, x0dom), x1dom));
+        row += `<circle class="viz-dot" cx="${px.toFixed(1)}" cy="${yOf(br).toFixed(1)}" r="5.5"/>`;
       }
-    } else {
-      /* raw (or unrecognised) - no normative axis exists, so nothing is
-         drawn. The score and its raw-unit CI are still real numbers. */
-      body = `<div class="viz-noplot">Not plotted — raw-score measure with no standardised metric. Percentile and classification are not derived.</div>`;
+
+      const right = [hasScore ? fmtBaseRate(br) : '–', details && details.text ? details.text : '–'].join(' · ');
+      row += `<text class="viz-row-fact" x="${COL.rightX}" y="${rowY + ROW_H / 2 + 4.5}">${escapeHtml(right)}</text>`;
+      svg += `<g class="viz-row">${row}</g>`;
+    });
+
+    const axisY = HEADER_H + rows.length * ROW_H;
+    svg += `<line class="viz-tick" x1="${COL.plotX}" y1="${axisY + 2}" x2="${COL.plotX + COL.plotW}" y2="${axisY + 2}"/>`;
+    const step = (x1dom - x0dom) > 14 ? 2 : 1;
+    for (let s = x0dom; s <= x1dom - 1; s += step){
+      const x = xOf(s).toFixed(1);
+      svg += `<line class="viz-tick" x1="${x}" y1="${axisY + 2}" x2="${x}" y2="${axisY + 6}"/>` +
+             `<text class="viz-tick-label" x="${x}" y="${axisY + 18}" text-anchor="middle">${s}</text>`;
     }
 
-    const facts = vizFacts([
-      [scoreTypeLabel(type), Number.isFinite(score) ? escapeHtml(String(r.score)) : '–'],
-      ciText ? [`${ciLevel}% CI`, ciText] : null,
-      pctCell ? [pctCell.kind === 'baseRate' ? BAT_BASERATE_LABEL : BAT_PCT_LABEL, pctCell.text] : null,
-      details.text ? ['Classification', details.html] : null
-    ]);
+    return { svg: `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="Published base rates by span">${svg}</svg>` };
+  }
+
+  /* ---------- family card: all of a test's trials in one place --------- */
+  function vizFamilyCard(title, rows, cls, ciLevel){
+    // Partition the family's rows: base-rate lookups, plottable metrics
+    // (kept apart per metric - never two metrics on one axis), raw rest.
+    const brRows = [], rawRows = [], byType = new Map();
+    for (const r of rows){
+      if (batteryBaseRateEntry(r)) { brRows.push(r); continue; }
+      const type = rowScoreType(r);
+      if (VIZ_AXIS[type]){
+        if (!byType.has(type)) byType.set(type, []);
+        byType.get(type).push(r);
+      } else {
+        rawRows.push(r);
+      }
+    }
+
+    let body = '', anyReversed = false;
+    const panelCount = byType.size + (brRows.length ? 1 : 0);
+    for (const [type, tRows] of byType){
+      if (panelCount > 1) body += `<div class="viz-sub-caption">${escapeHtml(scoreTypeLabel(type))}s</div>`;
+      const panel = vizMetricPanelSvg(tRows, type, cls, ciLevel);
+      body += panel.svg;
+      anyReversed = anyReversed || panel.anyReversed;
+    }
+    if (brRows.length){
+      if (panelCount > 1) body += `<div class="viz-sub-caption">Longest span (published base rates)</div>`;
+      body += vizBaseRatePanelSvg(brRows).svg;
+    }
+    if (rawRows.length){
+      body += rawRows.map(r => {
+        const score = parseFloat(r.score);
+        const ciText = ciLevel !== 'off' ? getBatteryCiHtml(score, r, ciLevel) : '';
+        return `<div class="viz-raw-row"><b>${escapeHtml(r.name)}</b> — raw ${escapeHtml(String(r.score))}` +
+               `${ciText ? `, ${ciLevel}% CI ${ciText}` : ''} · not plotted (no standardised metric; percentile and classification are not derived)</div>`;
+      }).join('');
+    }
+
+    const notes = [];
+    if (anyReversed) notes.push('↓ error measure: a higher score means more errors. Percentiles are as obtained; the classification bands describe performance, so that row’s bands run reversed.');
+    if (brRows.length) notes.push('Step lines show the published percentage of the normative sample obtaining each span or higher (WAIS-IV Manual, Tables C.4–C.5). A HIGH base rate means a common, and therefore lower, score.');
 
     return `<div class="viz-card">
-      <div class="viz-card-name">${escapeHtml(r.name)}</div>
+      <div class="viz-card-name">${escapeHtml(title)}</div>
       ${body}
-      <div class="viz-card-facts">${facts}</div>
-      ${note ? `<div class="viz-card-note">${note}</div>` : ''}
+      ${notes.length ? `<div class="viz-card-note">${notes.join('<br>')}</div>` : ''}
     </div>`;
   }
 
@@ -238,18 +295,17 @@
     }
     if (emptyEl) emptyEl.hidden = true;
 
-    let html = '', lastGroup = null;
+    // One card per test family, in table order; ungrouped rows form one card.
+    const families = new Map();
     for (const r of rows){
       const gKey = batteryGroupKeyOf(r);
-      if (gKey && gKey !== lastGroup){
-        const label = batteryGroupLabel(gKey);
-        if (label) html += `<div class="viz-group-head">${escapeHtml(label)}</div>`;
-        lastGroup = gKey;
-      } else if (!gKey && lastGroup !== null){
-        lastGroup = null;
-        html += `<div class="viz-group-head">Ungrouped measures</div>`;
-      }
-      html += vizCard(r, cls, ciLevel);
+      if (!families.has(gKey)) families.set(gKey, []);
+      families.get(gKey).push(r);
+    }
+    let html = '';
+    for (const [gKey, fRows] of families){
+      const title = gKey ? (batteryGroupLabel(gKey) || 'Untitled test') : 'Ungrouped measures';
+      html += vizFamilyCard(title, fRows, cls, ciLevel);
     }
     grid.innerHTML = html;
   }
