@@ -390,14 +390,12 @@
   const VIZ_ICON_SAVE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
 
   /* ---------- page furniture, borrowed from the rest of the app --------
-     h2.block-title is the app's in-page heading (serif, ruled) and .panel
-     its card; both are global, so they are used as-is rather than
-     re-invented. The tab and control classes are standalone because the
+     .panel is the app's card and is global, so it is used as-is rather
+     than re-invented. (The in-page h2.block-title heading is no longer
+     needed: with one source pane on screen at a time, the source tabs
+     name what is being shown.) The tab and control classes are standalone because the
      app's own tab components are page-scoped and would arrive unstyled
      outside their section - see the note at the top of the CSS block. */
-  function vizBlock(title, inner){
-    return `<div class="viz-block"><h2 class="block-title">${escapeHtml(title)}</h2>${inner}</div>`;
-  }
   function vizTab(attr, value, label, active){
     return `<button type="button" class="viz-tab" role="tab" aria-selected="${active ? 'true' : 'false'}" ${attr}="${escapeAttr(value)}">${escapeHtml(label)}</button>`;
   }
@@ -800,9 +798,10 @@
     const tabs = vizControls('Method', VIZ_RCI_METHODS.map(([m, label]) =>
       vizTab('data-viz-method', m, label, m === method)).join(''), '');
 
-    let cards = '';
+    const cards = [];
+    let empty = '';
     if (!chartable.length){
-      cards = `<p class="viz-empty-line">Rows are entered on Change Analysis, but none has the values the ${escapeHtml(VIZ_RCI_METHODS.find(x => x[0] === method)[1])} method needs yet — scores at both dates, plus the normative parameters.</p>`;
+      empty = `<p class="viz-empty-line">Rows are entered on Change Analysis, but none has the values the ${escapeHtml(VIZ_RCI_METHODS.find(x => x[0] === method)[1])} method needs yet — scores at both dates, plus the normative parameters.</p>`;
     } else {
       const families = new Map();
       for (const r of chartable){
@@ -812,12 +811,12 @@
       }
       for (const [g, fRows] of families){
         const title = g ? caGroupDisplay(g) : 'Ungrouped measures';
-        cards += vizPanel(title, vizRciPanelSvg(fRows, method), '');
+        cards.push(vizPanel(title, vizRciPanelSvg(fRows, method), ''));
       }
     }
     const cvLabel = st.cv === 0.95 ? '95%' : '90%';
     const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> ${escapeHtml(st.d1 || 'Date 1')} · <span class="viz-legend-filled">●</span> ${escapeHtml(st.d2 || 'Date 2')} · shaded band: no reliable change at the ${cvLabel} level set on that method's page. Outcomes state significance only, not direction.</p>`;
-    return vizBlock('Change Analysis', tabs + legend + `<div class="viz-cards">${cards}</div>`);
+    return { key:'change', label:'Change Analysis', controls: tabs, legend, cards, empty };
   }
 
   /* ================== PREMORBID: predicted vs achieved ==================
@@ -945,17 +944,17 @@
     const opie = vizOpiePredictRows();
     if (!topf.length && !opie.length) return '';
     const ciPct = preState.ciPct || premorbidCi().short;
-    let cards = '';
+    const cards = [];
     if (topf.length){
-      cards += vizPanel('ToPF-predicted WAIS-IV / WMS-IV', vizPrePanelSvg(topf),
-        'Base rates are the percentage of the normative sample with a discrepancy at least this large. BASE_RATES is a parametric normal model, round(Φ(d / SEE)), not observed frequencies.');
+      cards.push(vizPanel('ToPF-predicted WAIS-IV / WMS-IV', vizPrePanelSvg(topf),
+        'Base rates are the percentage of the normative sample with a discrepancy at least this large. BASE_RATES is a parametric normal model, round(Φ(d / SEE)), not observed frequencies.'));
     }
     if (opie.length){
-      cards += vizPanel('OPIE-4-predicted WAIS-IV', vizPrePanelSvg(opie),
-        'OPIE-4 is illustrative only for UK use: the coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US education, ethnicity and region terms that are not applied, so every patient is scored at the US reference category. Its base rates are empirical.');
+      cards.push(vizPanel('OPIE-4-predicted WAIS-IV', vizPrePanelSvg(opie),
+        'OPIE-4 is illustrative only for UK use: the coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US education, ethnicity and region terms that are not applied, so every patient is scored at the US reference category. Its base rates are empirical.'));
     }
     const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> predicted, with its ${escapeHtml(ciPct)} prediction interval shaded · <span class="viz-legend-filled">●</span> achieved · thin line marks the population mean of 100. Enter achieved scores on the premorbid page; rows without one show the prediction alone.</p>`;
-    return vizBlock('Premorbid — predicted vs achieved', legend + `<div class="viz-cards">${cards}</div>`);
+    return { key:'premorbid', label:'Premorbid', controls:'', legend, cards, empty:'' };
   }
 
   /* ================== SD INDEX ========================================= */
@@ -967,8 +966,8 @@
     const axis = { min: -4, max: 4, ticks: [-4, -3, -2, -1, 0, 1, 2, 3, 4] };
     const chartable = rows.filter(r => sdiComputeChange(r) !== null);
     if (!chartable.length){
-      return vizBlock('Standard Deviation Index',
-        '<p class="viz-empty-line">Rows are entered on the SD Index page, but none can compute yet — each needs both scores, and an SD in raw mode.</p>');
+      return { key:'sdi', label:'SD Index', controls:'', legend:'', cards:[],
+        empty:'<p class="viz-empty-line">Rows are entered on the SD Index page, but none can compute yet — each needs both scores, and an SD in raw mode.</p>' };
     }
 
     const families = new Map();
@@ -977,7 +976,7 @@
       if (!families.has(g)) families.set(g, []);
       families.get(g).push(r);
     }
-    let cards = '';
+    const cards = [];
     for (const [g, fRows] of families){
       const H = HEADER_H + fRows.length * ROW_H + AXIS_H;
       let svg = `<text class="viz-col-head" x="${COL_CHANGE.scoreMid}" y="13" text-anchor="middle">Scores</text>` +
@@ -1007,11 +1006,11 @@
                `<text class="viz-tick-label" x="${x}" y="${axisY + 18}" text-anchor="middle">${tval}</text>`;
       }
       const title = g ? stripAgeRange(g) : 'Ungrouped measures';
-      cards += vizPanel(title, `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="SD Index change">${svg}</svg>`, '');
+      cards.push(vizPanel(title, `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="SD Index change">${svg}</svg>`, ''));
     }
     const cvLabel = cv === 0.95 ? '95% (±1.96 SD)' : '90% (±1.645 SD)';
     const legend = `<p class="viz-legend">Dot: change between testings in SD units, on the SD Index page's own divisor per row. Shaded band: no significant change at ${cvLabel}, as set on the SD Index page.</p>`;
-    return vizBlock('Standard Deviation Index', legend + `<div class="viz-cards">${cards}</div>`);
+    return { key:'sdi', label:'SD Index', controls:'', legend, cards, empty:'' };
   }
 
   /* ---------- page render --------------------------------------------- */
@@ -1026,56 +1025,134 @@
     settingsEl.textContent = `Following Score Tables settings: ${bits.join(' · ')}. Change them on the Score Tables page.`;
   }
 
-  function renderVizPage(){
-    const cls = document.getElementById('bat-class')?.value || 'wechsler';
-    const ciLevel = document.getElementById('bat-ci-level')?.value || 'off';
-    renderVizSettingsLine(cls, ciLevel);
-
+  function vizScoreTablesBlock(cls, ciLevel){
     /* Same membership rule as the APA export: named rows with a numeric
        score, example rows excluded - a chart of a seeded example could be
        mistaken for patient data. */
     const rows = batteryRows.filter(r =>
       r.name && !r.isExample && r.score !== '' && !isNaN(parseFloat(r.score)));
+    if (!rows.length) return null;
 
-    let html = '';
-
-    if (rows.length){
-      // One card per test family, in table order; ungrouped rows form one card.
-      const families = new Map();
-      for (const r of rows){
-        const gKey = batteryGroupKeyOf(r);
-        if (!families.has(gKey)) families.set(gKey, []);
-        families.get(gKey).push(r);
-      }
-      /* The axis caption describes the whole block, so it is stated once
-         in the controls panel rather than repeated on every card. */
-      let inner = vizControls('Show scores as',
-        VIZ_SCORE_VIEWS.map(([v, label]) => vizTab('data-viz-view', v, label, v === vizScoreView)).join(''),
-        VIZ_SCORE_AXIS_NOTE[vizScoreView]);
-      let cards = '';
-      for (const [gKey, fRows] of families){
-        const title = gKey ? (batteryGroupLabel(gKey) || 'Untitled test') : 'Ungrouped measures';
-        cards += vizFamilyCard(title, fRows, cls, ciLevel);
-      }
-      html += vizBlock('Score Tables', inner + `<div class="viz-cards">${cards}</div>`);
+    // One card per test family, in table order; ungrouped rows form one card.
+    const families = new Map();
+    for (const r of rows){
+      const gKey = batteryGroupKeyOf(r);
+      if (!families.has(gKey)) families.set(gKey, []);
+      families.get(gKey).push(r);
     }
+    /* The axis caption describes the whole block, so it is stated once in
+       the controls panel rather than repeated on every card. */
+    const controls = vizControls('Show scores as',
+      VIZ_SCORE_VIEWS.map(([v, label]) => vizTab('data-viz-view', v, label, v === vizScoreView)).join(''),
+      VIZ_SCORE_AXIS_NOTE[vizScoreView]);
+    const cards = [];
+    for (const [gKey, fRows] of families){
+      const title = gKey ? (batteryGroupLabel(gKey) || 'Untitled test') : 'Ungrouped measures';
+      cards.push(vizFamilyCard(title, fRows, cls, ciLevel));
+    }
+    return { key:'battery', label:'Score Tables', controls, legend:'', cards, empty:'' };
+  }
 
-    html += vizPremorbidBlockHtml();
-    html += vizChangeBlockHtml();
-    html += vizSdiBlockHtml();
+  /* ---------- one source at a time -------------------------------------
+     The rest of the app does not present a long scrolling page: premorbid
+     shows one pane of four with a Back/Next bar and a "Step 2 of 4"
+     counter, and Change Analysis is split across five nav entries. This
+     page now follows that, with the four sources as panes.
 
-    if (!html){
+     Within a pane the cards can be shown all at once (the profile across a
+     battery is the comparison a clinician actually reads) or one at a time
+     for a close look. Both are kept because they answer different
+     questions; neither is a substitute for the other. */
+  let vizSource = null;
+  let vizSingle = false;
+  const vizCardIndex = {};
+
+  function vizSourceTabs(blocks, active){
+    return `<div class="viz-source-tabs" role="tablist" aria-label="Chart source">` +
+      blocks.map(b => `<button type="button" class="viz-source-tab" role="tab"` +
+        ` aria-selected="${b.key === active.key ? 'true' : 'false'}" data-viz-source="${b.key}">` +
+        `${escapeHtml(b.label)}<span class="viz-source-count">${b.cards.length || ''}</span></button>`).join('') +
+      `</div>`;
+  }
+
+  function vizStepper(blocks, active){
+    const i = blocks.indexOf(active);
+    const prev = blocks[i - 1], next = blocks[i + 1];
+    return `<div class="viz-step-nav">
+      ${prev ? `<button type="button" class="btn btn-secondary" data-viz-source="${prev.key}">← ${escapeHtml(prev.label)}</button>` : '<span></span>'}
+      <div class="viz-step-count">Step ${i + 1} of ${blocks.length}</div>
+      ${next ? `<button type="button" class="btn btn-primary" data-viz-source="${next.key}">${escapeHtml(next.label)} →</button>` : '<span></span>'}
+    </div>`;
+  }
+
+  function vizPaneHtml(block){
+    let out = block.controls || '';
+    if (block.empty) return out + block.empty;
+
+    const n = block.cards.length;
+    if (n > 1){
+      out += `<div class="viz-display-row">
+        <div class="viz-tabs" role="tablist" aria-label="How many charts to show">
+          ${vizTab('data-viz-display', 'grid', 'All charts', !vizSingle)}
+          ${vizTab('data-viz-display', 'single', 'One at a time', vizSingle)}
+        </div>
+      </div>`;
+    }
+    if (block.legend) out += block.legend;
+
+    if (vizSingle && n > 1){
+      const idx = Math.min(Math.max(vizCardIndex[block.key] || 0, 0), n - 1);
+      vizCardIndex[block.key] = idx;
+      out += `<div class="viz-cards viz-cards-single">${block.cards[idx]}</div>`;
+      out += `<div class="viz-gallery-nav">
+        <button type="button" class="btn" data-viz-card="prev"${idx === 0 ? ' disabled' : ''}>← Previous</button>
+        <div class="viz-step-count">Chart ${idx + 1} of ${n}</div>
+        <button type="button" class="btn" data-viz-card="next"${idx === n - 1 ? ' disabled' : ''}>Next →</button>
+      </div>`;
+    } else {
+      out += `<div class="viz-cards">${block.cards.join('')}</div>`;
+    }
+    return out;
+  }
+
+  function renderVizPage(){
+    const cls = document.getElementById('bat-class')?.value || 'wechsler';
+    const ciLevel = document.getElementById('bat-ci-level')?.value || 'off';
+    renderVizSettingsLine(cls, ciLevel);
+
+    const blocks = [
+      vizScoreTablesBlock(cls, ciLevel),
+      vizPremorbidBlockHtml(),
+      vizChangeBlockHtml(),
+      vizSdiBlockHtml()
+    ].filter(b => b && (b.cards.length || b.empty));
+
+    if (!blocks.length){
       grid.innerHTML = '';
       if (emptyEl) emptyEl.hidden = false;
       return;
     }
     if (emptyEl) emptyEl.hidden = true;
-    grid.innerHTML = html;
+
+    /* A source can disappear between renders - clearing the SDI table, say -
+       so a remembered selection has to be re-checked, not trusted. */
+    let active = blocks.find(b => b.key === vizSource) || blocks[0];
+    vizSource = active.key;
+
+    grid.innerHTML = vizSourceTabs(blocks, active) +
+      `<div class="viz-pane">${vizPaneHtml(active)}</div>` +
+      (blocks.length > 1 ? vizStepper(blocks, active) : '');
   }
 
   /* One delegated handler for the whole page, because the content is
      replaced wholesale on every render. */
   grid.addEventListener('click', e => {
+    const src = e.target.closest('[data-viz-source]');
+    if (src){ vizSource = src.dataset.vizSource; renderVizPage(); grid.scrollIntoView({block:'start', behavior:'auto'}); return; }
+    const disp = e.target.closest('[data-viz-display]');
+    if (disp){ vizSingle = disp.dataset.vizDisplay === 'single'; renderVizPage(); return; }
+    const card = e.target.closest('[data-viz-card]');
+    if (card){ vizStepCard(card.dataset.vizCard === 'next' ? 1 : -1); return; }
     const method = e.target.closest('[data-viz-method]');
     if (method){ vizRciMethod = method.dataset.vizMethod; renderVizPage(); return; }
     const view = e.target.closest('[data-viz-view]');
@@ -1093,6 +1170,26 @@
     }
     const title = (panel.querySelector('.viz-card-title') || {}).textContent || 'Chart';
     (copy ? vizCopyChart : vizSaveChart)(svg, title);
+  });
+
+  function vizStepCard(delta){
+    const n = document.querySelectorAll('#viz-grid .viz-cards .panel').length;
+    const cur = vizCardIndex[vizSource] || 0;
+    vizCardIndex[vizSource] = Math.max(0, cur + delta);
+    renderVizPage();
+  }
+
+  /* Arrow keys page through the charts in single mode. Guarded so it never
+     steals a keystroke from a field - every other page in this app is a
+     data-entry page, and the tables have their own arrow handling. */
+  document.addEventListener('keydown', e => {
+    if (!section.classList.contains('active') || !vizSingle) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = document.activeElement;
+    if (t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) return;
+    if (t && t.isContentEditable) return;
+    if (e.key === 'ArrowRight'){ e.preventDefault(); vizStepCard(1); }
+    else if (e.key === 'ArrowLeft'){ e.preventDefault(); vizStepCard(-1); }
   });
 
   /* Re-render whenever the page becomes visible, so it always reflects the
