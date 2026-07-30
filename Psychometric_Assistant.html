@@ -13479,44 +13479,12 @@ input[type="text"].ds-inline-bar-input{
 /* ---- one source at a time -------------------------------------------------
    Mirrors the premorbid pane/stepper idiom (#premorbid .pre-tab-nav), which
    is page-scoped and so cannot be reused by class name. */
-.viz-source-tabs{
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ds-space-1);
-  border-bottom: 1px solid var(--ds-border);
-  padding-bottom: var(--ds-space-2);
-  margin-bottom: var(--ds-space-4);
-}
-.viz-source-tab{
-  font-family: var(--sans);
-  font-size: var(--ds-text-base);
-  font-weight: var(--ds-weight-medium);
-  color: var(--ds-text-muted);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--ds-radius-sm);
-  padding: 8px 14px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-  transition: background var(--ds-duration-fast) var(--ds-ease),
-              color var(--ds-duration-fast) var(--ds-ease);
-}
-.viz-source-tab:hover{ background: var(--ds-surface-emphasis); color: var(--ds-text); }
-.viz-source-tab[aria-selected="true"]{
-  background: var(--ds-surface);
-  border-color: var(--ds-border);
-  color: var(--ds-text);
-  font-weight: var(--ds-weight-semibold);
-  box-shadow: var(--ds-shadow-1);
-}
-.viz-source-count{
-  font-size: var(--ds-text-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--ds-text-faint);
-}
-.viz-source-tab[aria-selected="true"] .viz-source-count{ color: var(--ds-text-subtle); }
+
+
+
+
+
+
 
 .viz-pane{ animation: fadeIn 200ms ease; }
 .viz-controls-main{ display: flex; flex-direction: column; gap: var(--ds-space-2); }
@@ -13527,23 +13495,19 @@ input[type="text"].ds-inline-bar-input{
    of growing with its own width. */
 .viz-cards-single .viz-svg{ max-height: var(--viz-fit-h, none); }
 
-.viz-gallery-nav,
-.viz-step-nav{
+.viz-gallery-nav{
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: var(--ds-space-4);
+  margin-top: var(--ds-space-2);
+  padding-top: var(--ds-space-2);
+  border-top: 1px solid var(--ds-border-subtle);
 }
-.viz-gallery-nav{ margin-top: var(--ds-space-3); }
 .viz-gallery-nav > :first-child{ justify-self: start; }
 .viz-gallery-nav > :last-child{ justify-self: end; }
-.viz-step-nav{
-  margin-top: var(--ds-space-8);
-  padding-top: var(--ds-space-4);
-  border-top: 1px solid var(--ds-border);
-}
-.viz-step-nav > :first-child{ justify-self: start; }
-.viz-step-nav > :last-child{ justify-self: end; }
+
+
 .viz-step-count{
   font-family: var(--sans);
   font-size: var(--ds-text-sm);
@@ -13579,6 +13543,85 @@ input[type="text"].ds-inline-bar-input{
 #charts .viz-cards .panel{ padding: 14px 16px; }
 #charts .viz-card-head{ margin-bottom: var(--ds-space-2); padding-bottom: var(--ds-space-1); }
 #charts .viz-raw-row{ margin: var(--ds-space-1) 0 0; padding: 6px 10px; }
+
+/* ---- app shell: control rail + chart stage --------------------------------
+   The layout is given an explicit height by vizFitToWindow and each column
+   scrolls inside it, so the document itself never scrolls - the header,
+   controls and chart navigation stay put while you move between charts. */
+.viz-layout{
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  align-items: stretch;
+  min-height: 0;
+}
+.viz-rail{
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-5);
+  overflow-y: auto;
+  padding: var(--ds-space-4);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow-1);
+}
+.viz-rail-group{ display: flex; flex-direction: column; gap: var(--ds-space-2); }
+.viz-rail-list{ display: flex; flex-direction: column; gap: 2px; }
+.viz-rail-row{ flex-direction: row; gap: var(--ds-space-1); }
+.viz-rail-item{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  width: 100%;
+  text-align: left;
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              color var(--ds-duration-fast) var(--ds-ease);
+}
+.viz-rail-item:hover{ background: var(--ds-surface-emphasis); color: var(--ds-text); }
+.viz-rail-item[aria-selected="true"]{
+  background: var(--ds-primary-tint);
+  border-color: var(--ds-primary-ring);
+  color: var(--ds-text);
+  font-weight: var(--ds-weight-semibold);
+}
+.viz-rail-label{ flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viz-rail-count,
+.viz-rail-num{
+  font-size: var(--ds-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-text-faint);
+  flex: 0 0 auto;
+}
+.viz-rail-num{ width: 1.4em; text-align: right; }
+.viz-rail .viz-axis-note{ margin: 0; font-size: var(--ds-text-xs); }
+.viz-rail .viz-tab{ flex: 1; text-align: center; padding: 6px 8px; }
+
+.viz-stage{
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  overflow-y: auto;
+  min-height: 0;
+}
+.viz-stage .viz-cards{ margin: 0; }
+.viz-stage .viz-legend{ margin: 0; }
+
+@media (max-width: 900px){
+  .viz-layout{ grid-template-columns: 1fr; }
+  .viz-rail{ order: -1; }
+}
+
+.viz-stage > .viz-cards{ margin-top: auto; margin-bottom: auto; }
+.viz-stage > .viz-gallery-nav{ margin-top: auto; }
 
 </style>
 
@@ -30691,7 +30734,15 @@ if (document.readyState === 'loading'){
      score column sits wider. Sharing COL made long names collide with the
      pair. */
   const COL_CHANGE = { nameEnd: 186, scoreMid: 232, plotX: 286, plotW: 454, rightX: 754 };
-  const HEADER_H = 20, ROW_H = 28, AXIS_H = 24;
+  const HEADER_H = 20, AXIS_H = 24;
+  /* Row PITCH is variable, and this is what makes a tall chart fit.
+     Scaling the whole SVG down (max-height + letterbox) shrinks the TEXT
+     with it, which is why the first attempt refused to shrink far enough to
+     be useful. The rendered scale is set by WIDTH - card width / SVG_W - so
+     reducing the row pitch in user units makes the drawing shorter while
+     every label stays exactly the same size on screen. */
+  const ROW_H_DEFAULT = 28, ROW_H_MIN = 17;
+  let ROW_H = ROW_H_DEFAULT;
 
   function vizX(v, axis){
     const t = (v - axis.min) / (axis.max - axis.min);
@@ -31047,7 +31098,7 @@ if (document.readyState === 'loading'){
   /* Card shell: the app's own .panel, a head shaped like .apa-toolbar
      (micro-label left, actions right), and the app's .btn for the actions. */
   function vizPanel(title, body, note){
-    return `<div class="panel">
+    return `<div class="panel" data-chart-title="${escapeAttr(title)}">
       <div class="viz-card-head">
         <span class="viz-card-title">${escapeHtml(title)}</span>
         <div class="viz-card-actions">
@@ -31450,7 +31501,7 @@ if (document.readyState === 'loading'){
       }
       for (const [g, fRows] of families){
         const title = g ? caGroupDisplay(g) : 'Ungrouped measures';
-        cards.push(vizPanel(title, vizRciPanelSvg(fRows, method), ''));
+        cards.push({ title, html: vizPanel(title, vizRciPanelSvg(fRows, method), '') });
       }
     }
     const cvLabel = st.cv === 0.95 ? '95%' : '90%';
@@ -31585,12 +31636,12 @@ if (document.readyState === 'loading'){
     const ciPct = preState.ciPct || premorbidCi().short;
     const cards = [];
     if (topf.length){
-      cards.push(vizPanel('ToPF-predicted WAIS-IV / WMS-IV', vizPrePanelSvg(topf),
-        'Base rates are the percentage of the normative sample with a discrepancy at least this large. BASE_RATES is a parametric normal model, round(Φ(d / SEE)), not observed frequencies.'));
+      cards.push({ title:'ToPF-predicted WAIS-IV / WMS-IV', html: vizPanel('ToPF-predicted WAIS-IV / WMS-IV', vizPrePanelSvg(topf),
+        'Base rates are the percentage of the normative sample with a discrepancy at least this large. BASE_RATES is a parametric normal model, round(Φ(d / SEE)), not observed frequencies.') });
     }
     if (opie.length){
-      cards.push(vizPanel('OPIE-4-predicted WAIS-IV', vizPrePanelSvg(opie),
-        'OPIE-4 is illustrative only for UK use: the coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US education, ethnicity and region terms that are not applied, so every patient is scored at the US reference category. Its base rates are empirical.'));
+      cards.push({ title:'OPIE-4-predicted WAIS-IV', html: vizPanel('OPIE-4-predicted WAIS-IV', vizPrePanelSvg(opie),
+        'OPIE-4 is illustrative only for UK use: the coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US education, ethnicity and region terms that are not applied, so every patient is scored at the US reference category. Its base rates are empirical.') });
     }
     const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> predicted, with its ${escapeHtml(ciPct)} prediction interval shaded · <span class="viz-legend-filled">●</span> achieved · thin line marks the population mean of 100. Enter achieved scores on the premorbid page; rows without one show the prediction alone.</p>`;
     return { key:'premorbid', label:'Premorbid', ctrl:null, legend, cards, empty:'' };
@@ -31645,7 +31696,7 @@ if (document.readyState === 'loading'){
                `<text class="viz-tick-label" x="${x}" y="${axisY + 18}" text-anchor="middle">${tval}</text>`;
       }
       const title = g ? stripAgeRange(g) : 'Ungrouped measures';
-      cards.push(vizPanel(title, `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="SD Index change">${svg}</svg>`, ''));
+      cards.push({ title, html: vizPanel(title, `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="SD Index change">${svg}</svg>`, '') });
     }
     const cvLabel = cv === 0.95 ? '95% (±1.96 SD)' : '90% (±1.645 SD)';
     const legend = `<p class="viz-legend">Dot: change between testings in SD units, on the SD Index page's own divisor per row. Shaded band: no significant change at ${cvLabel}, as set on the SD Index page.</p>`;
@@ -31687,7 +31738,7 @@ if (document.readyState === 'loading'){
     const cards = [];
     for (const [gKey, fRows] of families){
       const title = gKey ? (batteryGroupLabel(gKey) || 'Untitled test') : 'Ungrouped measures';
-      cards.push(vizFamilyCard(title, fRows, cls, ciLevel));
+      cards.push({ title, html: vizFamilyCard(title, fRows, cls, ciLevel) });
     }
     return { key:'battery', label:'Score Tables', ctrl, legend:'', cards, empty:'' };
   }
@@ -31709,100 +31760,147 @@ if (document.readyState === 'loading'){
   let vizSingle = true;
   const vizCardIndex = {};
 
-  function vizSourceTabs(blocks, active){
-    return `<div class="viz-source-tabs" role="tablist" aria-label="Chart source">` +
-      blocks.map(b => `<button type="button" class="viz-source-tab" role="tab"` +
-        ` aria-selected="${b.key === active.key ? 'true' : 'false'}" data-viz-source="${b.key}">` +
-        `${escapeHtml(b.label)}<span class="viz-source-count">${b.cards.length || ''}</span></button>`).join('') +
-      `</div>`;
+  /* ---------- shell: control rail + chart stage ------------------------
+     Two columns, as on Score Tables (.bat-panels-grid) and premorbid (its
+     always-visible Inputs aside): everything you SET lives in a rail on the
+     left, and the chart occupies the stage on the right.
+
+     The page itself does not scroll. The layout is given an explicit height
+     and each column scrolls INSIDE it, so the header, the controls and the
+     chart's own navigation stay put while you move between charts - which
+     is the behaviour that makes it read as an app rather than a document. */
+  function vizRailHtml(blocks, active){
+    let out = '<aside class="viz-rail">';
+
+    out += '<div class="viz-rail-group"><div class="panel-kicker">Source</div><div class="viz-rail-list" role="tablist" aria-label="Chart source">';
+    for (const b of blocks){
+      out += `<button type="button" class="viz-rail-item" role="tab" aria-selected="${b.key === active.key}" data-viz-source="${b.key}">` +
+             `<span class="viz-rail-label">${escapeHtml(b.label)}</span>` +
+             `<span class="viz-rail-count">${b.cards.length || ''}</span></button>`;
+    }
+    out += '</div></div>';
+
+    if (active.ctrl && active.ctrl.tabs){
+      out += `<div class="viz-rail-group"><div class="panel-kicker">${escapeHtml(active.ctrl.kicker)}</div>` +
+             `<div class="viz-rail-list" role="tablist" aria-label="${escapeAttr(active.ctrl.kicker)}">${active.ctrl.tabs}</div></div>`;
+    }
+
+    if (active.cards.length > 1){
+      out += '<div class="viz-rail-group"><div class="panel-kicker">Charts</div><div class="viz-rail-list" role="tablist" aria-label="Charts">';
+      const idx = vizCardIndex[active.key] || 0;
+      active.cards.forEach((c, i) => {
+        out += `<button type="button" class="viz-rail-item viz-rail-chart" role="tab" aria-selected="${!vizSingle ? 'false' : i === idx}" data-viz-goto="${i}">` +
+               `<span class="viz-rail-num">${i + 1}</span><span class="viz-rail-label">${escapeHtml(c.title)}</span></button>`;
+      });
+      out += '</div></div>';
+      out += `<div class="viz-rail-group"><div class="panel-kicker">Show</div>
+        <div class="viz-rail-list viz-rail-row" role="tablist" aria-label="How many charts to show">
+          ${vizTab('data-viz-display', 'single', 'One', vizSingle)}
+          ${vizTab('data-viz-display', 'grid', 'All', !vizSingle)}
+        </div></div>`;
+    }
+
+    if (active.ctrl && active.ctrl.note){
+      out += `<p class="viz-axis-note">${active.ctrl.note}</p>`;
+    }
+    return out + '</aside>';
   }
 
-  function vizStepper(blocks, active){
-    const i = blocks.indexOf(active);
-    const prev = blocks[i - 1], next = blocks[i + 1];
-    return `<div class="viz-step-nav">
-      ${prev ? `<button type="button" class="btn btn-secondary" data-viz-source="${prev.key}">← ${escapeHtml(prev.label)}</button>` : '<span></span>'}
-      <div class="viz-step-count">Step ${i + 1} of ${blocks.length}</div>
-      ${next ? `<button type="button" class="btn btn-primary" data-viz-source="${next.key}">${escapeHtml(next.label)} →</button>` : '<span></span>'}
-    </div>`;
-  }
-
-  function vizPaneHtml(block){
+  function vizStageHtml(block){
     const n = block.cards.length;
-    /* A source with one chart has nothing to toggle between, so the control
-       only appears where it means something. */
-    const toggle = n > 1 ? vizDisplayToggle() : '';
+    if (block.empty) return `<div class="viz-stage">${block.empty}</div>`;
 
-    let out = '';
-    if (block.ctrl) out += vizControls(block.ctrl.kicker, block.ctrl.tabs, block.ctrl.note, toggle);
-    else if (toggle) out += `<div class="panel"><div class="viz-controls-body">${toggle}</div></div>`;
-
-    if (block.empty) return out + block.empty;
+    let out = '<div class="viz-stage">';
     if (block.legend) out += block.legend;
 
-    if (vizSingle && n > 1){
+    if (vizSingle && n >= 1){
       const idx = Math.min(Math.max(vizCardIndex[block.key] || 0, 0), n - 1);
       vizCardIndex[block.key] = idx;
-      out += `<div class="viz-cards viz-cards-single">${block.cards[idx]}</div>`;
-      out += `<div class="viz-gallery-nav">
-        <button type="button" class="btn" data-viz-card="prev"${idx === 0 ? ' disabled' : ''}>← Previous</button>
-        <div class="viz-step-count">Chart ${idx + 1} of ${n}</div>
-        <button type="button" class="btn" data-viz-card="next"${idx === n - 1 ? ' disabled' : ''}>Next →</button>
-      </div>`;
+      out += `<div class="viz-cards viz-cards-single">${block.cards[idx].html}</div>`;
+      if (n > 1){
+        out += `<div class="viz-gallery-nav">
+          <button type="button" class="btn" data-viz-card="prev"${idx === 0 ? ' disabled' : ''}>← Previous</button>
+          <div class="viz-step-count">${idx + 1} of ${n}</div>
+          <button type="button" class="btn" data-viz-card="next"${idx === n - 1 ? ' disabled' : ''}>Next →</button>
+        </div>`;
+      }
     } else {
-      out += `<div class="viz-cards${vizSingle ? ' viz-cards-single' : ''}">${block.cards.join('')}</div>`;
+      out += `<div class="viz-cards">${block.cards.map(c => c.html).join('')}</div>`;
     }
-    return out;
+    return out + '</div>';
   }
 
-  /* ---------- fit the pane to one window -------------------------------
-     A chart card is an <svg> with a viewBox and width:100%, so its rendered
-     HEIGHT follows its width and overflows a short window however few rows
-     it has. Capping max-height makes it scale down inside its box instead.
+  /* ---------- size the layout to the window ---------------------------
+     The page is given an explicit height and its two columns scroll inside
+     it, so the document itself never scrolls. Then the chart's ROW PITCH is
+     tightened until the stage needs no scrollbar either.
 
-     The cap is found by MEASURING the overflow rather than by adding up the
-     chrome: a first attempt enumerated what sits above and below the chart
-     and was wrong anyway, because the disclosure block and the site footer
-     live outside this container. Overflow is exact and needs no inventory,
-     and the relationship is linear - shrinking the chart by N moves
-     everything below it up by N - so one corrective pass converges.
+     Pitch, not scale, is the lever that matters: the rendered scale is set
+     by WIDTH (stage width / SVG_W), so shortening the row pitch in user
+     units makes the drawing shorter while every label stays exactly the
+     same size on screen. Letterboxing via max-height would shrink the text
+     with it, which is why it is only the last resort.
 
-     Two traps, both of which produced silently wrong sizes first time:
-     `zoom:0.9` on <body> means getBoundingClientRect and innerHeight are
-     VISUAL pixels while a CSS max-height is a LAYOUT pixel; and BODY is the
-     scroll container here (see styles.css, `body{overflow:auto}`), so its
-     bounding rect is always exactly the viewport - the overflow has to come
-     from scrollHeight vs clientHeight.
-
-     The shrink stops at VIZ_FIT_MIN_ROW per row. Letterboxing scales the
-     TEXT down with the marks, so past a point the labels stop being
-     readable, and an unreadable chart that fits is worse than a readable
-     one that scrolls. */
-  const VIZ_FIT_MIN_ROW = 15;   // layout px per row, incl. header and axis
+     Trap worth keeping: `zoom:0.9` on <body> means getBoundingClientRect
+     returns VISUAL pixels while CSS lengths and scrollHeight are LAYOUT
+     pixels, and mixing them sizes everything ~11% wrong. */
+  let vizFitPass = 0;
 
   function vizFitToWindow(){
-    grid.style.removeProperty('--viz-fit-h');
-    if (!vizSingle) return;
-    const svg = grid.querySelector('.viz-cards-single .viz-svg');
-    if (!svg) return;
-
-    const sc = document.scrollingElement === document.documentElement && document.body.scrollHeight > document.body.clientHeight
-      ? document.body : (document.scrollingElement || document.body);
-    const overflowVisual = Math.max(document.body.scrollHeight - document.body.clientHeight,
-                                    sc.scrollHeight - sc.clientHeight);
-    if (overflowVisual <= 0) return;               // already fits
+    const layout = grid.querySelector('.viz-layout');
+    const stage = grid.querySelector('.viz-stage');
+    if (!layout || !stage) return;
 
     const zoom = parseFloat(getComputedStyle(document.body).zoom) || 1;
-    const currentVisual = svg.getBoundingClientRect().height;
-    const capLayout = (currentVisual - overflowVisual * zoom - 8) / zoom;
+    const topVisual = layout.getBoundingClientRect().top;
+    /* Room between the top of the layout and the bottom of the window, less
+       the footer strip that sits below it. */
+    const footer = document.querySelector('.site-footer, footer');
+    const footerH = footer ? footer.getBoundingClientRect().height : 0;
+    let availLayout = (window.innerHeight - topVisual - footerH - 16) / zoom;
+    if (availLayout < 200) return;
+    layout.style.height = Math.floor(availLayout) + 'px';
 
-    /* Never shrink past legibility. Row count comes from the viewBox, which
-       is authored as HEADER + rows*ROW_H + AXIS. */
+    /* Whatever still sits below the layout - the disclosure block, margins,
+       the footer's own spacing - is measured rather than itemised: set the
+       height, see what the document has left over, take that off. An
+       enumerated version of this was wrong twice, once by 128px flat. */
+    const spill = document.body.scrollHeight - document.body.clientHeight;
+    if (spill > 0){
+      availLayout = Math.max(200, availLayout - spill);
+      layout.style.height = Math.floor(availLayout) + 'px';
+    }
+
+    if (!vizSingle){ grid.style.removeProperty('--viz-fit-h'); return; }
+    const svg = stage.querySelector('.viz-cards-single .viz-svg');
+    if (!svg) return;
+
+    const rect = svg.getBoundingClientRect();
+    const overflow = stage.scrollHeight - stage.clientHeight;
+    const svgLayoutH = rect.height / zoom;
+    const chrome = stage.scrollHeight - svgLayoutH;          // everything in the stage that is not the chart
+    const availForSvg = stage.clientHeight - chrome - 4;
+
     const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number);
     const rows = Math.max(1, Math.round(((vb[3] || 0) - HEADER_H - AXIS_H) / ROW_H));
-    const floor = HEADER_H + AXIS_H + rows * VIZ_FIT_MIN_ROW;
+    const unitsPerLayoutPx = SVG_W / (rect.width / zoom);
+    const availUnits = availForSvg * unitsPerLayoutPx;
 
-    if (capLayout >= floor) grid.style.setProperty('--viz-fit-h', capLayout.toFixed(0) + 'px');
+    let want = Math.floor((availUnits - HEADER_H - AXIS_H) / rows);
+    want = Math.max(ROW_H_MIN, Math.min(ROW_H_DEFAULT, want));
+
+    if (want !== ROW_H && vizFitPass < 2){
+      ROW_H = want; vizFitPass++;
+      renderVizPage();
+      return;
+    }
+    /* Pitch is as tight as it goes; letterbox whatever is left rather than
+       leave the stage scrolling. */
+    if (overflow > 0 && availForSvg > 90){
+      grid.style.setProperty('--viz-fit-h', Math.floor(availForSvg) + 'px');
+    } else {
+      grid.style.removeProperty('--viz-fit-h');
+    }
   }
 
   function renderVizPage(){
@@ -31829,25 +31927,28 @@ if (document.readyState === 'loading'){
     let active = blocks.find(b => b.key === vizSource) || blocks[0];
     vizSource = active.key;
 
-    grid.innerHTML = vizSourceTabs(blocks, active) +
-      `<div class="viz-pane">${vizPaneHtml(active)}</div>` +
-      (blocks.length > 1 ? vizStepper(blocks, active) : '');
-
+    grid.innerHTML = `<div class="viz-layout">${vizRailHtml(blocks, active)}${vizStageHtml(active)}</div>`;
     requestAnimationFrame(vizFitToWindow);
   }
 
   /* The available height changes with the window, not just with a render. */
   window.addEventListener('resize', () => {
-    if (section.classList.contains('active')) vizFitToWindow();
+    if (section.classList.contains('active')){ ROW_H = ROW_H_DEFAULT; vizFitPass = 0; renderVizPage(); }
   });
 
   /* One delegated handler for the whole page, because the content is
      replaced wholesale on every render. */
   grid.addEventListener('click', e => {
+    /* Any deliberate change restarts the fit from the natural pitch. */
+    if (e.target.closest('[data-viz-source],[data-viz-display],[data-viz-card],[data-viz-method],[data-viz-view],[data-viz-goto]')){
+      ROW_H = ROW_H_DEFAULT; vizFitPass = 0;
+    }
     const src = e.target.closest('[data-viz-source]');
     if (src){ vizSource = src.dataset.vizSource; renderVizPage(); grid.scrollIntoView({block:'start', behavior:'auto'}); return; }
     const disp = e.target.closest('[data-viz-display]');
     if (disp){ vizSingle = disp.dataset.vizDisplay === 'single'; renderVizPage(); return; }
+    const goto = e.target.closest('[data-viz-goto]');
+    if (goto){ vizCardIndex[vizSource] = +goto.dataset.vizGoto; vizSingle = true; renderVizPage(); return; }
     const card = e.target.closest('[data-viz-card]');
     if (card){ vizStepCard(card.dataset.vizCard === 'next' ? 1 : -1); return; }
     const method = e.target.closest('[data-viz-method]');
@@ -31870,9 +31971,9 @@ if (document.readyState === 'loading'){
   });
 
   function vizStepCard(delta){
-    const n = document.querySelectorAll('#viz-grid .viz-cards .panel').length;
     const cur = vizCardIndex[vizSource] || 0;
     vizCardIndex[vizSource] = Math.max(0, cur + delta);
+    ROW_H = ROW_H_DEFAULT; vizFitPass = 0;   // the next chart re-fits from scratch
     renderVizPage();
   }
 

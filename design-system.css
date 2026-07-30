@@ -4292,44 +4292,12 @@ input[type="text"].ds-inline-bar-input{
 /* ---- one source at a time -------------------------------------------------
    Mirrors the premorbid pane/stepper idiom (#premorbid .pre-tab-nav), which
    is page-scoped and so cannot be reused by class name. */
-.viz-source-tabs{
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ds-space-1);
-  border-bottom: 1px solid var(--ds-border);
-  padding-bottom: var(--ds-space-2);
-  margin-bottom: var(--ds-space-4);
-}
-.viz-source-tab{
-  font-family: var(--sans);
-  font-size: var(--ds-text-base);
-  font-weight: var(--ds-weight-medium);
-  color: var(--ds-text-muted);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--ds-radius-sm);
-  padding: 8px 14px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-  transition: background var(--ds-duration-fast) var(--ds-ease),
-              color var(--ds-duration-fast) var(--ds-ease);
-}
-.viz-source-tab:hover{ background: var(--ds-surface-emphasis); color: var(--ds-text); }
-.viz-source-tab[aria-selected="true"]{
-  background: var(--ds-surface);
-  border-color: var(--ds-border);
-  color: var(--ds-text);
-  font-weight: var(--ds-weight-semibold);
-  box-shadow: var(--ds-shadow-1);
-}
-.viz-source-count{
-  font-size: var(--ds-text-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--ds-text-faint);
-}
-.viz-source-tab[aria-selected="true"] .viz-source-count{ color: var(--ds-text-subtle); }
+
+
+
+
+
+
 
 .viz-pane{ animation: fadeIn 200ms ease; }
 .viz-controls-main{ display: flex; flex-direction: column; gap: var(--ds-space-2); }
@@ -4340,23 +4308,19 @@ input[type="text"].ds-inline-bar-input{
    of growing with its own width. */
 .viz-cards-single .viz-svg{ max-height: var(--viz-fit-h, none); }
 
-.viz-gallery-nav,
-.viz-step-nav{
+.viz-gallery-nav{
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: var(--ds-space-4);
+  margin-top: var(--ds-space-2);
+  padding-top: var(--ds-space-2);
+  border-top: 1px solid var(--ds-border-subtle);
 }
-.viz-gallery-nav{ margin-top: var(--ds-space-3); }
 .viz-gallery-nav > :first-child{ justify-self: start; }
 .viz-gallery-nav > :last-child{ justify-self: end; }
-.viz-step-nav{
-  margin-top: var(--ds-space-8);
-  padding-top: var(--ds-space-4);
-  border-top: 1px solid var(--ds-border);
-}
-.viz-step-nav > :first-child{ justify-self: start; }
-.viz-step-nav > :last-child{ justify-self: end; }
+
+
 .viz-step-count{
   font-family: var(--sans);
   font-size: var(--ds-text-sm);
@@ -4392,3 +4356,82 @@ input[type="text"].ds-inline-bar-input{
 #charts .viz-cards .panel{ padding: 14px 16px; }
 #charts .viz-card-head{ margin-bottom: var(--ds-space-2); padding-bottom: var(--ds-space-1); }
 #charts .viz-raw-row{ margin: var(--ds-space-1) 0 0; padding: 6px 10px; }
+
+/* ---- app shell: control rail + chart stage --------------------------------
+   The layout is given an explicit height by vizFitToWindow and each column
+   scrolls inside it, so the document itself never scrolls - the header,
+   controls and chart navigation stay put while you move between charts. */
+.viz-layout{
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  align-items: stretch;
+  min-height: 0;
+}
+.viz-rail{
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-5);
+  overflow-y: auto;
+  padding: var(--ds-space-4);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow-1);
+}
+.viz-rail-group{ display: flex; flex-direction: column; gap: var(--ds-space-2); }
+.viz-rail-list{ display: flex; flex-direction: column; gap: 2px; }
+.viz-rail-row{ flex-direction: row; gap: var(--ds-space-1); }
+.viz-rail-item{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  width: 100%;
+  text-align: left;
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              color var(--ds-duration-fast) var(--ds-ease);
+}
+.viz-rail-item:hover{ background: var(--ds-surface-emphasis); color: var(--ds-text); }
+.viz-rail-item[aria-selected="true"]{
+  background: var(--ds-primary-tint);
+  border-color: var(--ds-primary-ring);
+  color: var(--ds-text);
+  font-weight: var(--ds-weight-semibold);
+}
+.viz-rail-label{ flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viz-rail-count,
+.viz-rail-num{
+  font-size: var(--ds-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-text-faint);
+  flex: 0 0 auto;
+}
+.viz-rail-num{ width: 1.4em; text-align: right; }
+.viz-rail .viz-axis-note{ margin: 0; font-size: var(--ds-text-xs); }
+.viz-rail .viz-tab{ flex: 1; text-align: center; padding: 6px 8px; }
+
+.viz-stage{
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  overflow-y: auto;
+  min-height: 0;
+}
+.viz-stage .viz-cards{ margin: 0; }
+.viz-stage .viz-legend{ margin: 0; }
+
+@media (max-width: 900px){
+  .viz-layout{ grid-template-columns: 1fr; }
+  .viz-rail{ order: -1; }
+}
+
+.viz-stage > .viz-cards{ margin-top: auto; margin-bottom: auto; }
+.viz-stage > .viz-gallery-nav{ margin-top: auto; }
