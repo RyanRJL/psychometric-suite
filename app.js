@@ -5692,6 +5692,7 @@ refreshAll();
     'rci-srb': 'change',
     'rci-crawford': 'change',
     'change-analysis': 'change',
+    charts: 'charts',
     premorbid: 'premorbid'
     // Norms (custom-tests) and Reference (about) live in the footer, not the top nav
   };
@@ -5709,6 +5710,7 @@ refreshAll();
     'rci-srb': 'McSweeney Regression-Based',
     'rci-crawford': 'Crawford Regression-Based',
     'change-analysis': 'Change Analysis',
+    charts: 'Score Charts',
     premorbid: 'Premorbid Estimation',
     'custom-tests': 'Norms Database',
     about: 'Methods & References'
