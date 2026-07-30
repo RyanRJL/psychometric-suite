@@ -324,6 +324,54 @@ either.
 Note this is why CVLT-C keeps **both** coefficients on the same entry. Deleting `r`
 because "`rInternal` is better" would break Change Analysis for that measure.
 
+#### `rInternalByAge` — when the published coefficient changes with age
+
+D-KEFS Advanced publishes reliability **by normative age band**, so one number per
+measure would be a compromise. 26 entries carry a lookup instead:
+
+```js
+rInternal: 0.86,                                    // published Average — the fallback
+rInternalByAge: { 8:0.69, 9:0.75, …, 80:0.95 },     // Table 3.4, keyed by band LOWER bound
+rInternalAgeMax: 90
+```
+
+Keys are the band's **lower bound**; `rInternalForAge` takes the greatest key ≤ age. So
+17 reads the 16-18 band and 45 reads 40-49. Same shape as `baseRates` — a lookup living
+on an entry rather than a separate group.
+
+The age comes from **`#bat-age`** on Score Tables, and is **optional**. Blank, or outside
+`rInternalAgeMax`, falls back to `rInternal` — the manual's own all-ages figure, so both
+paths are citable. **Never make it required**: a blank age silently emptying the CI
+column would read as the app being broken.
+
+Three constraints, all in `check.js` §25:
+
+- **`rInternalByAge` only on `· All Ages` groups.** The banded D-KEFS Advanced groups
+  (8-18 / 19-59 / 60-90) hold the *retest study's* bands, which are not the normative
+  bands the reliability table uses — the same mismatch as `baseRates` vs `WAIS-IV Process
+  Scores`. It works because Score Tables collapses these families to `All Ages`
+  (`buildFamilyListHtml`, no `baseRates` so no `familyScoredByAgeBand`), while Change
+  Analysis and the SD Index see only the banded ones, where the retest `r` is wanted.
+- **TMT and VFT get none of this.** Their manual states split-half and alpha are not
+  accurate for **speeded** measures and uses stability coefficients for those two tests.
+  Their Table 3.4 rows *are* the retest coefficients, and match `normDB`'s stored `r`
+  exactly at ages 8-18 (.47/.47/.62/.77/.76/.40/.65/.75/.74).
+- **The APA note names the age**, but only when a measure in the table actually read one
+  (`batteryRowUsesAgeBand`). One field silently driving every interval has to be visible
+  on the exported table, and claiming an age on a table where nothing used it would be
+  its own misstatement.
+
+**There is no shared patient age yet.** `#pre-age` on the premorbid page is bounded 16-90
+because ToPF and OPIE-4 are adult-only; `#bat-age` accepts from 5. Unifying them means
+deciding what a paediatric age does to the premorbid models, which is a change to that
+page and was deliberately not folded in here.
+
+Reliability method is a **per-manual question, not a per-app policy.** Three sources, three
+different answers: D-KEFS Advanced rejects internal consistency for *speededness*; CVLT-3
+and CVLT-C reject it for *item interdependence* on a word-list task; CVLT-C nonetheless
+publishes split-half for its one non-interdependent score. Read the manual before
+assuming any of them generalises.
+
 ### `baseRates` — measures scored by lookup rather than by conversion
 
 **WAIS-IV Longest Span (Process)** is the first family scored from a published

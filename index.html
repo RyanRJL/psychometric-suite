@@ -952,6 +952,16 @@
           <input type="hidden" id="bat-prem-threshold" value="sd">
           <!-- Score CI: "off" | "90" | "95" -->
           <input type="hidden" id="bat-ci-level" value="off">
+          <!-- Patient age. Optional, and only consulted where a publisher
+               reports its reliability by age band (see rInternalByAge in
+               data.js). Left blank, those measures fall back to the published
+               all-ages coefficient, so the column never empties. Deliberately
+               NOT bounded to 16-90 like the premorbid page's age: the measures
+               that read it are normed from age 8. -->
+          <div class="field bat-field-compact bat-field-age">
+            <label>Patient age <span class="hint">optional — sharpens intervals</span></label>
+            <input type="number" id="bat-age" min="5" max="90" step="1" placeholder="e.g. 34">
+          </div>
         </div>
       </div>
 
@@ -5840,8 +5850,8 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260730b"></script>
-<script src="app.js?v=20260730b"></script>
+<script src="data.js?v=20260730c"></script>
+<script src="app.js?v=20260730c"></script>
 <script src="design-system.js?v=20260726a" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 

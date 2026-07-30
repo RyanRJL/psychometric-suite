@@ -1093,15 +1093,18 @@ const batteryCtx = (() => {
   vm.createContext(ctx);
   vm.runInContext(
     boundsSrc[0] + '\n' + metricSdSrc[0] + '\n' +
-      ['getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml'].map((n) => extractFn(APP_SRC, n)).join('\n') +
+      ['rInternalForAge', 'batteryPatientAge', 'getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml']
+        .map((n) => extractFn(APP_SRC, n)).join('\n') +
       '\n;globalThis.__B = getBatteryCiHtml;'
-      + '\n;globalThis.__REL = getBatteryRowReliability;',
+      + '\n;globalThis.__REL = getBatteryRowReliability;'
+      + '\n;globalThis.__AGE = rInternalForAge;',
     ctx
   );
   return ctx;
 })();
 const batteryCi  = batteryCtx.__B;
 const batteryRel = batteryCtx.__REL;
+const rInternalForAge = batteryCtx.__AGE;
 
 const SCALED_ROW   = { name: 'Block Design', group: 'WAIS-IV Core Subtests · All Ages', scoreType: 'scaled' };
 const STANDARD_ROW = { name: 'Full Scale IQ', group: 'WAIS-IV Indices · All Ages',      scoreType: 'standard' };
@@ -2673,17 +2676,153 @@ check('rInternal is used ONLY for the confidence interval, never by RCI', () => 
 check('rInternal appears only where a publisher derives its own intervals from it', () => {
   /* Not a general-purpose field. Adding it to a measure whose manual does not
      publish an internal-consistency interval would silently change that row's
-     basis, so the roster is pinned. */
+     basis, so the roster is pinned.
+
+     Two sources so far:
+       CVLT-C List A Trials 1-5 Total   3 entries, no by-age table
+       D-KEFS Advanced CWIT/Tower/SST/RISK  26 entries, All Ages groups only */
   const carriers = [];
   Object.entries(D.normDB).forEach(([group, tab]) => {
     Object.entries(tab).forEach(([name, e]) => {
       if (e && typeof e === 'object' && Number.isFinite(e.rInternal)) carriers.push(group + ' / ' + name);
     });
   });
-  if (carriers.length !== 3) return 'got ' + carriers.length + ' entries with rInternal, expected 3';
-  const stray = carriers.filter((c) => !/^CVLT-C .* \/ List A Trials 1-5 Total$/.test(c));
-  return stray.length === 0
-    || 'rInternal has spread to: ' + stray.join(', ') + ' — document the source before pinning it here';
+  const cvltc = carriers.filter((c) => /^CVLT-C .* \/ List A Trials 1-5 Total$/.test(c));
+  const dkefs = carriers.filter((c) => /^D-KEFS Advanced (Colour-Word Interference|Tower|Social Sorting|Risk-Reward Decision) · All Ages \//.test(c));
+  const stray = carriers.filter((c) => !cvltc.includes(c) && !dkefs.includes(c));
+  const bad = [];
+  if (cvltc.length !== 3) bad.push('CVLT-C carriers: ' + cvltc.length + ', expected 3');
+  if (dkefs.length !== 26) bad.push('D-KEFS Advanced carriers: ' + dkefs.length + ', expected 26');
+  if (stray.length) bad.push('undocumented: ' + stray.slice(0, 3).join(', '));
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('D-KEFS Advanced TMT and VFT stay on stability coefficients', () => {
+  /* Their manual says split-half and alpha do not give accurate estimates for
+     SPEEDED measures and uses stability coefficients for these two tests
+     instead. Adding rInternal here would substitute a coefficient the
+     publisher deliberately did not use. */
+  const bad = [];
+  Object.entries(D.normDB).forEach(([group, tab]) => {
+    if (!/^D-KEFS Advanced (Trail Making|Verbal Fluency)/.test(group)) return;
+    Object.entries(tab).forEach(([name, e]) => {
+      if (e && typeof e === 'object' && (Number.isFinite(e.rInternal) || e.rInternalByAge)) {
+        bad.push(group + ' / ' + name);
+      }
+    });
+  });
+  return bad.length === 0
+    || bad.slice(0, 3).join('; ') + ' carry an internal-consistency coefficient; these tests are speeded';
+});
+
+check('rInternalByAge lives only on the All Ages groups', () => {
+  /* The banded groups hold the RETEST study's bands (8-18/19-59/60-90), which
+     are not the normative bands the reliability table uses. Score Tables
+     collapses these families to All Ages, and only Change Analysis and the SD
+     Index see the banded ones — where the retest r is what is wanted anyway. */
+  const bad = [];
+  Object.entries(D.normDB).forEach(([group, tab]) => {
+    if (/· All Ages$/.test(group)) return;
+    Object.entries(tab).forEach(([name, e]) => {
+      if (e && typeof e === 'object' && e.rInternalByAge) bad.push(group + ' / ' + name);
+    });
+  });
+  return bad.length === 0 || bad.slice(0, 3).join('; ') + ' — a banded group cannot carry a normative-band table';
+});
+
+/* ==========================================================================
+   25. Age-banded reliability (rInternalByAge)
+
+   PINNED SOURCE: D-KEFS Advanced Manual, Table 3.4 (reliability coefficients
+   by age group and overall sample). Its bands are the NORMATIVE ones — single
+   years 8-15, then 16-18, 19-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80-90 —
+   which is why the table cannot be folded into the retest study's bands.
+   ========================================================================== */
+heading('25. Age-banded reliability (rInternalByAge)');
+
+const CWIT_ALL = 'D-KEFS Advanced Colour-Word Interference · All Ages';
+const SST_ALL  = 'D-KEFS Advanced Social Sorting · All Ages';
+
+check('spot values match Table 3.4 as printed', () => {
+  /* Transcription guard. Taken from three different tests and both ends of
+     the age range, so a systematic off-by-one column shift would surface. */
+  const want = [
+    [CWIT_ALL, 'Inhibition Net Correct Responses',            8,  0.69],
+    [CWIT_ALL, 'Inhibition Net Correct Responses',            80, 0.95],
+    [CWIT_ALL, 'Inhibition/Switching Net Correct Responses',  10, 0.90],
+    [SST_ALL,  'Total Number of Conceptual Level Responses',  15, 0.79],
+    [SST_ALL,  'Percent Conceptual Level Responses',          80, 0.96],
+    ['D-KEFS Advanced Tower · All Ages', 'Adjusted Mean Unproductive Responses', 14, 0.22]
+  ];
+  const bad = [];
+  want.forEach(([g, n, age, rxx]) => {
+    const got = D.normDB[g][n].rInternalByAge[age];
+    if (got !== rxx) bad.push(n + ' age ' + age + ': stored ' + got + ', Table 3.4 prints ' + rxx);
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the lookup takes the band containing the age, not the nearest key', () => {
+  /* Keys are band LOWER bounds, so 12 -> the 12 band but 17 -> the 16-18 band
+     and 45 -> the 40-49 band. Getting this wrong would silently read a
+     neighbouring band for every patient not born on a band boundary. */
+  const e = D.normDB[CWIT_ALL]['Inhibition Net Correct Responses'];
+  const cases = [
+    [8, e.rInternalByAge[8]], [12, e.rInternalByAge[12]],
+    [16, e.rInternalByAge[16]], [17, e.rInternalByAge[16]], [18, e.rInternalByAge[16]],
+    [19, e.rInternalByAge[19]], [29, e.rInternalByAge[19]],
+    [45, e.rInternalByAge[40]], [59, e.rInternalByAge[50]], [90, e.rInternalByAge[80]]
+  ];
+  const bad = [];
+  cases.forEach(([age, expected]) => {
+    const got = rInternalForAge(e, age);
+    if (got !== expected) bad.push('age ' + age + ' gave ' + got + ', expected ' + expected);
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('an absent or out-of-range age falls back to the published average', () => {
+  /* The interval must never empty because the age box is blank, and must not
+     extrapolate past the normed range. Both fall back to rInternal, which is
+     the manual's own all-ages figure — a citable answer either way. */
+  const row = { name: 'Inhibition Net Correct Responses', group: CWIT_ALL, scoreType: 'scaled' };
+  const e = D.normDB[CWIT_ALL]['Inhibition Net Correct Responses'];
+  const bad = [];
+  [null, undefined, NaN, 4, 91, 200].forEach((age) => {
+    if (rInternalForAge(e, age) !== null) bad.push('rInternalForAge did not decline age ' + age);
+    const rel = batteryRel(row, 'scaled', age);
+    if (!rel) { bad.push('no interval at age ' + age); return; }
+    if (rel.r !== e.rInternal) bad.push('age ' + age + ' used r ' + rel.r + ', expected the average ' + e.rInternal);
+  });
+  // ...and a valid age must actually change it, or none of this does anything.
+  const inBand = batteryRel(row, 'scaled', 8);
+  if (inBand.r !== e.rInternalByAge[8]) bad.push('age 8 did not pick up the band coefficient');
+  if (inBand.r === e.rInternal) bad.push('age 8 and the average are indistinguishable — pick a sharper probe');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('age changes the printed interval on an age-banded measure', () => {
+  /* End to end through the shipped renderer. Social Sorting Conceptual Level
+     runs .79 at age 15 and .95 at 9, which must not print the same interval. */
+  const row = { name: 'Total Number of Conceptual Level Responses', group: SST_ALL, scoreType: 'scaled' };
+  const young = batteryCi(10, row, '95', 9);
+  const older = batteryCi(10, row, '95', 15);
+  if (!young || !older) return 'one of the intervals did not render';
+  return young !== older
+    || 'age 9 and age 15 both gave ' + young + ', so the age is not reaching the renderer';
+});
+
+check('the APA note states the age whenever one changed a coefficient', () => {
+  /* A single field silently driving every interval in the table is only
+     defensible if the table says which age it rests on. */
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(APP_SRC.match(/const APA_NOTES = \{[\s\S]*?\n\};/)[0] + ';globalThis.__N = APA_NOTES;', c);
+  const note = (ciAge) => c.__N.bat({ classification: 'wechsler', ciLevel: '95', ciAge }).filter(Boolean).join(' ');
+  const bad = [];
+  if (!/age 34/.test(note(34))) bad.push('the note does not name the age it used');
+  if (/age \d/.test(note(null))) bad.push('the note claims an age on a table where none was used');
+  return bad.length === 0 || bad.join('; ');
 });
 
 // ---------------------------------------------------------------------------

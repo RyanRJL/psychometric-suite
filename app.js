@@ -1997,7 +1997,47 @@ const BATTERY_METRIC_SD = { z: 1, t: 10, scaled: 3, standard: 15 };
    internal-consistency coefficient answers. That preference is confined to
    this function: reliable change asks a different question and must keep the
    retest coefficient — see the rInternal note in data.js. */
-function getBatteryRowReliability(row, type){
+/* Does this row's measure actually consult the patient age? Only measures
+   whose publisher tabulates reliability by age band do, so the APA note can
+   say the age was used without asserting it on tables where nothing read it. */
+function batteryRowUsesAgeBand(row){
+  if (!row || !row.group) return false;
+  const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
+  const entry = db && db[row.group] && db[row.group][row.name];
+  return !!(entry && typeof entry === 'object' && entry.rInternalByAge);
+}
+
+/* The patient's age, for the measures whose published reliability varies by
+   age band. Optional by design — see the note on rInternalForAge. */
+function batteryPatientAge(){
+  const el = document.getElementById('bat-age');
+  const v = el ? parseFloat(el.value) : NaN;
+  return Number.isFinite(v) ? v : null;
+}
+
+/* Pick the published coefficient for the patient's age band.
+   rInternalByAge is keyed by the LOWER BOUND of each normative band, so the
+   lookup takes the greatest key <= age. That keeps the table compact and
+   matches how the manual prints it (8, 9, ... 15, 16-18, 19-29, ... 80-90).
+
+   Returns null rather than guessing when the age is absent or outside the
+   normed range, and the caller then falls back to the published all-ages
+   average. Both figures are the publisher's own, so either path is citable —
+   and a blank age must never empty the column, which is why this degrades
+   instead of refusing. */
+function rInternalForAge(entry, age){
+  const byAge = entry.rInternalByAge;
+  if (!byAge || !Number.isFinite(age)) return null;
+  if (Number.isFinite(entry.rInternalAgeMax) && age > entry.rInternalAgeMax) return null;
+  let band = null;
+  Object.keys(byAge).forEach(k => {
+    const lo = Number(k);
+    if (age >= lo && (band === null || lo > band)) band = lo;
+  });
+  return band === null ? null : byAge[band];
+}
+
+function getBatteryRowReliability(row, type, age){
   if (!row.group) return null;
   const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
   if (!db) return null;
@@ -2005,7 +2045,9 @@ function getBatteryRowReliability(row, type){
   if (!family) return null;
   const entry = family[row.name];
   if (!entry || typeof entry !== 'object') return null;
-  const r = Number.isFinite(entry.rInternal)  ? entry.rInternal  :
+  const rBand = rInternalForAge(entry, age);
+  const r = Number.isFinite(rBand)           ? rBand            :
+            Number.isFinite(entry.rInternal)  ? entry.rInternal  :
             Number.isFinite(entry.rCorrected) ? entry.rCorrected :
             Number.isFinite(entry.r)          ? entry.r          : null;
   if (r === null) return null;
@@ -2022,11 +2064,14 @@ function getBatteryRowReliability(row, type){
    for them, and z is unbounded. */
 const BATTERY_SCORE_BOUNDS = { scaled: { min: 1, max: 19 } };
 
-function getBatteryCiHtml(ss, row, level){
+/* `age` is optional and defaults to whatever the age box holds; passing it
+   explicitly is what lets the interval be exercised without a DOM. */
+function getBatteryCiHtml(ss, row, level, age){
   if (!Number.isFinite(ss)) return '';
   // Resolved first: the displayed metric now decides which SD the SEM uses.
   const type   = rowScoreType(row);
-  const rel    = getBatteryRowReliability(row, type);
+  const effAge = age !== undefined ? age : batteryPatientAge();
+  const rel    = getBatteryRowReliability(row, type, effAge);
   if (!rel) return '';
   const zMult  = level === '90' ? 1.645 : 1.960;
   const sem    = rel.sd * Math.sqrt(1 - rel.r);
@@ -2320,6 +2365,12 @@ const APA_NOTES = {
     ctx.ciLevel && ctx.ciLevel !== 'off'
       ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM, where SEM = SD × √(1 − r) on the normative standard deviation of the reported metric. The reliability r is the retest or alternate-form coefficient published for each measure, except where the test author derives its own published intervals from an internal-consistency coefficient, in which case that coefficient is used. Intervals resting on a retest coefficient run wider than a manual's internal-consistency interval.`
       : '',
+    /* Which age band the coefficients were drawn from. Without this the
+       interval cannot be reproduced from the manual, because for these
+       measures the published reliability changes with age. */
+    ctx.ciAge != null
+      ? `For measures whose published reliability is tabulated by age, coefficients are those for age ${ctx.ciAge}; where no age is supplied the published all-ages coefficient is used instead.`
+      : '',
     // Must follow the EFFECTIVE flagging mode (batteryPremorbidMode). This
     // previously described the SD thresholds unconditionally, so with SEE
     // flagging active the exported note misstated what the asterisks in its
@@ -2436,6 +2487,13 @@ function renderBatteryApa(){
       hasBaseRates: valid.some(r => batteryBaseRateEntry(r) && r.score !== '' && !isNaN(r.score)),
       hasHigherIsWorse: valid.some(r => r.higherIsWorse && r.score !== '' && !isNaN(r.score)),
       ciLevel,
+      /* Reported ONLY when it actually changed a coefficient. A single field
+         silently narrowing or widening every interval in the table is exactly
+         the kind of thing a reader must be able to check, so the note names
+         the age it rests on — but claiming an age was used on a table where
+         no measure reads one would be its own misstatement. */
+      ciAge: (ciLevel !== 'off' && batteryPatientAge() !== null
+              && valid.some(r => batteryRowUsesAgeBand(r))) ? batteryPatientAge() : null,
       premorbid: prem ? fmt(prem.estimate, 0) : null,
       premorbidMode: prem ? batteryPremorbidMode(prem) : null
     })}
@@ -2708,6 +2766,9 @@ document.getElementById('bat-prem-score').addEventListener('input', e => {
 });
 document.getElementById('bat-prem-threshold').addEventListener('change', () => { updatePremorbidLinkStatus(); renderBattery(); });
 document.getElementById('bat-ci-level').addEventListener('change', renderBattery);
+/* 'input', not 'change': the intervals are the only thing this drives, and
+   waiting for blur leaves a stale age visibly paired with fresh numbers. */
+document.getElementById('bat-age')?.addEventListener('input', renderBattery);
 document.getElementById('bat-clear').addEventListener('click', clearBattery);
 
 /* ============================================================

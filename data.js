@@ -767,14 +767,14 @@ const OPIE_BASE_RATES = {
     "Combined Letter, Category, and Switching Fluency Total Correct Index": { m1:100, sd1:16.9, m2:102.7, sd2:17.5, r:0.94, n:66 }
   },
   "D-KEFS Advanced Colour-Word Interference · All Ages": {
-    "Colour Identification Net Correct Responses": { m1:10.2, sd1:3, m2:10.5, sd2:3.2, r:0.75, n:224 },
-    "Word Identification Net Correct Responses": { m1:10.2, sd1:2.8, m2:10.4, sd2:3, r:0.78, n:224 },
-    "Inhibition Net Correct Responses": { m1:10, sd1:3.2, m2:10.7, sd2:3.2, r:0.81, n:224 },
-    "Inhibition/Switching Net Correct Responses": { m1:9.8, sd1:3, m2:11, sd2:3, r:0.72, n:224 },
-    "Combined Inhibition and Inhibition/Switching Total Errors": { m1:9.7, sd1:3.2, m2:10.4, sd2:3, r:0.6, n:224 },
-    "Combined Colour and Word Identification Net Correct Responses Index": { m1:101.1, sd1:14.6, m2:102.4, sd2:15.7, r:0.81, n:224 },
-    "Multitasking Index": { m1:99.6, sd1:15.8, m2:105, sd2:16.2, r:0.82, n:224 },
-    "Combined Inhib. and Inhib./Switching Mean Pure Response Time Index": { m1:100.9, sd1:14.1, m2:104.8, sd2:15.6, r:0.84, n:224 }
+    "Colour Identification Net Correct Responses": { m1:10.2, sd1:3, m2:10.5, sd2:3.2, r:0.75, n:224, rInternal:0.88, rInternalByAge:{8:0.8, 9:0.85, 10:0.77, 11:0.85, 12:0.79, 13:0.89, 14:0.84, 15:0.84, 16:0.85, 19:0.9, 30:0.9, 40:0.91, 50:0.94, 60:0.93, 70:0.92, 80:0.92}, rInternalAgeMax:90 },
+    "Word Identification Net Correct Responses": { m1:10.2, sd1:2.8, m2:10.4, sd2:3, r:0.78, n:224, rInternal:0.87, rInternalByAge:{8:0.84, 9:0.89, 10:0.72, 11:0.88, 12:0.84, 13:0.84, 14:0.75, 15:0.84, 16:0.78, 19:0.88, 30:0.9, 40:0.87, 50:0.94, 60:0.9, 70:0.92, 80:0.96}, rInternalAgeMax:90 },
+    "Inhibition Net Correct Responses": { m1:10, sd1:3.2, m2:10.7, sd2:3.2, r:0.81, n:224, rInternal:0.86, rInternalByAge:{8:0.69, 9:0.75, 10:0.78, 11:0.77, 12:0.82, 13:0.85, 14:0.84, 15:0.87, 16:0.83, 19:0.87, 30:0.82, 40:0.9, 50:0.92, 60:0.94, 70:0.94, 80:0.95}, rInternalAgeMax:90 },
+    "Inhibition/Switching Net Correct Responses": { m1:9.8, sd1:3, m2:11, sd2:3, r:0.72, n:224, rInternal:0.92, rInternalByAge:{8:0.92, 9:0.92, 10:0.9, 11:0.91, 12:0.9, 13:0.93, 14:0.89, 15:0.91, 16:0.93, 19:0.94, 30:0.91, 40:0.93, 50:0.94, 60:0.93, 70:0.93, 80:0.91}, rInternalAgeMax:90 },
+    "Combined Inhibition and Inhibition/Switching Total Errors": { m1:9.7, sd1:3.2, m2:10.4, sd2:3, r:0.6, n:224, rInternal:0.81, rInternalByAge:{8:0.86, 9:0.93, 10:0.76, 11:0.81, 12:0.85, 13:0.76, 14:0.81, 15:0.73, 16:0.73, 19:0.52, 30:0.79, 40:0.65, 50:0.85, 60:0.83, 70:0.9, 80:0.86}, rInternalAgeMax:90 },
+    "Combined Colour and Word Identification Net Correct Responses Index": { m1:101.1, sd1:14.6, m2:102.4, sd2:15.7, r:0.81, n:224, rInternal:0.93, rInternalByAge:{8:0.9, 9:0.92, 10:0.85, 11:0.93, 12:0.9, 13:0.93, 14:0.88, 15:0.91, 16:0.9, 19:0.94, 30:0.95, 40:0.94, 50:0.97, 60:0.95, 70:0.96, 80:0.97}, rInternalAgeMax:90 },
+    "Multitasking Index": { m1:99.6, sd1:15.8, m2:105, sd2:16.2, r:0.82, n:224, rInternal:0.92, rInternalByAge:{8:0.83, 9:0.88, 10:0.89, 11:0.87, 12:0.9, 13:0.93, 14:0.91, 15:0.92, 16:0.92, 19:0.94, 30:0.9, 40:0.94, 50:0.95, 60:0.95, 70:0.95, 80:0.95}, rInternalAgeMax:90 },
+    "Combined Inhib. and Inhib./Switching Mean Pure Response Time Index": { m1:100.9, sd1:14.1, m2:104.8, sd2:15.6, r:0.84, n:224, rInternal:0.96, rInternalByAge:{8:0.95, 9:0.96, 10:0.89, 11:0.92, 12:0.94, 13:0.95, 14:0.94, 15:0.97, 16:0.97, 19:0.97, 30:0.97, 40:0.95, 50:0.98, 60:0.98, 70:0.99, 80:0.98}, rInternalAgeMax:90 }
   },
   "D-KEFS Advanced Colour-Word Interference · Ages 8-18": {
     "Colour Identification Net Correct Responses": { m1:10.3, sd1:3, m2:10.4, sd2:3.4, r:0.73, n:91 },
@@ -807,9 +807,9 @@ const OPIE_BASE_RATES = {
     "Combined Inhib. and Inhib./Switching Mean Pure Response Time Index": { m1:99.8, sd1:13.8, m2:101.7, sd2:15.5, r:0.9, n:66 }
   },
   "D-KEFS Advanced Tower · All Ages": {
-    "Global Performance Score": { m1:9.8, sd1:3.2, m2:11.2, sd2:3.3, r:0.56, n:224 },
-    "Adjusted Mean Pure Response Time": { m1:10.1, sd1:3.2, m2:11.8, sd2:3.2, r:0.75, n:224 },
-    "Adjusted Mean Unproductive Responses": { m1:9.9, sd1:3, m2:11.3, sd2:2.9, r:0.51, n:224 }
+    "Global Performance Score": { m1:9.8, sd1:3.2, m2:11.2, sd2:3.3, r:0.56, n:224, rInternal:0.8, rInternalByAge:{8:0.83, 9:0.8, 10:0.83, 11:0.81, 12:0.78, 13:0.8, 14:0.74, 15:0.77, 16:0.76, 19:0.85, 30:0.77, 40:0.81, 50:0.81, 60:0.8, 70:0.78, 80:0.83}, rInternalAgeMax:90 },
+    "Adjusted Mean Pure Response Time": { m1:10.1, sd1:3.2, m2:11.8, sd2:3.2, r:0.75, n:224, rInternal:0.9, rInternalByAge:{8:0.86, 9:0.88, 10:0.9, 11:0.89, 12:0.92, 13:0.87, 14:0.91, 15:0.9, 16:0.9, 19:0.88, 30:0.89, 40:0.9, 50:0.91, 60:0.88, 70:0.92, 80:0.92}, rInternalAgeMax:90 },
+    "Adjusted Mean Unproductive Responses": { m1:9.9, sd1:3, m2:11.3, sd2:2.9, r:0.51, n:224, rInternal:0.43, rInternalByAge:{8:0.32, 9:0.45, 10:0.57, 11:0.36, 12:0.3, 13:0.36, 14:0.22, 15:0.41, 16:0.41, 19:0.42, 30:0.48, 40:0.47, 50:0.47, 60:0.54, 70:0.42, 80:0.55}, rInternalAgeMax:90 }
   },
   "D-KEFS Advanced Tower · Ages 8-18": {
     "Global Performance Score": { m1:9.3, sd1:3.1, m2:11.1, sd2:3.2, r:0.42, n:91 },
@@ -827,17 +827,17 @@ const OPIE_BASE_RATES = {
     "Adjusted Mean Unproductive Responses": { m1:10, sd1:2.7, m2:10.8, sd2:3.2, r:0.61, n:66 }
   },
   "D-KEFS Advanced Social Sorting · All Ages": {
-    "Global Performance Index": { m1:98.2, sd1:16.1, m2:105.8, sd2:19.5, r:0.59, n:224 },
-    "Total Number of Perseverative Responses": { m1:10, sd1:3.2, m2:12.1, sd2:3.5, r:0.53, n:224 },
-    "Percent Perseverative Responses": { m1:9.9, sd1:3.3, m2:12, sd2:3.5, r:0.46, n:224 },
-    "Total Number of Perseverative Errors": { m1:9.8, sd1:3.2, m2:12.1, sd2:3.6, r:0.52, n:224 },
-    "Percent Perseverative Errors": { m1:9.9, sd1:3.3, m2:12.2, sd2:3.7, r:0.47, n:224 },
-    "Total Number of Errors": { m1:9.7, sd1:3.2, m2:11.6, sd2:3.8, r:0.6, n:224 },
-    "Percent Correct Responses": { m1:9.8, sd1:3.2, m2:11.8, sd2:3.7, r:0.59, n:224 },
-    "Total Number of Nonperseverative Errors": { m1:9.7, sd1:3.5, m2:10.7, sd2:3.6, r:0.54, n:224 },
-    "Percent Nonperseverative Errors": { m1:9.7, sd1:3.4, m2:10.6, sd2:3.5, r:0.52, n:224 },
-    "Total Number of Conceptual Level Responses": { m1:9.7, sd1:3.1, m2:10.4, sd2:3.3, r:0.34, n:224 },
-    "Percent Conceptual Level Responses": { m1:9.7, sd1:3.2, m2:11.6, sd2:3.8, r:0.6, n:224 }
+    "Global Performance Index": { m1:98.2, sd1:16.1, m2:105.8, sd2:19.5, r:0.59, n:224, rInternal:0.59, rInternalByAge:{8:0.56, 9:0.56, 10:0.56, 11:0.56, 12:0.56, 13:0.56, 14:0.56, 15:0.56, 16:0.56, 19:0.48, 30:0.48, 40:0.48, 50:0.48, 60:0.71, 70:0.71, 80:0.71}, rInternalAgeMax:90 },
+    "Total Number of Perseverative Responses": { m1:10, sd1:3.2, m2:12.1, sd2:3.5, r:0.53, n:224, rInternal:0.95, rInternalByAge:{8:0.91, 9:0.95, 10:0.92, 11:0.94, 12:0.93, 13:0.93, 14:0.93, 15:0.86, 16:0.92, 19:0.95, 30:0.97, 40:0.96, 50:0.95, 60:0.97, 70:0.97, 80:0.98}, rInternalAgeMax:90 },
+    "Percent Perseverative Responses": { m1:9.9, sd1:3.3, m2:12, sd2:3.5, r:0.46, n:224, rInternal:0.92, rInternalByAge:{8:0.88, 9:0.94, 10:0.89, 11:0.91, 12:0.9, 13:0.89, 14:0.88, 15:0.73, 16:0.85, 19:0.91, 30:0.95, 40:0.94, 50:0.93, 60:0.96, 70:0.96, 80:0.98}, rInternalAgeMax:90 },
+    "Total Number of Perseverative Errors": { m1:9.8, sd1:3.2, m2:12.1, sd2:3.6, r:0.52, n:224, rInternal:0.92, rInternalByAge:{8:0.88, 9:0.94, 10:0.9, 11:0.92, 12:0.91, 13:0.91, 14:0.91, 15:0.84, 16:0.89, 19:0.93, 30:0.95, 40:0.94, 50:0.93, 60:0.95, 70:0.94, 80:0.97}, rInternalAgeMax:90 },
+    "Percent Perseverative Errors": { m1:9.9, sd1:3.3, m2:12.2, sd2:3.7, r:0.47, n:224, rInternal:0.89, rInternalByAge:{8:0.84, 9:0.92, 10:0.85, 11:0.88, 12:0.87, 13:0.86, 14:0.85, 15:0.69, 16:0.81, 19:0.87, 30:0.93, 40:0.92, 50:0.91, 60:0.94, 70:0.94, 80:0.96}, rInternalAgeMax:90 },
+    "Total Number of Errors": { m1:9.7, sd1:3.2, m2:11.6, sd2:3.8, r:0.6, n:224, rInternal:0.95, rInternalByAge:{8:0.94, 9:0.94, 10:0.94, 11:0.94, 12:0.94, 13:0.95, 14:0.95, 15:0.92, 16:0.94, 19:0.94, 30:0.97, 40:0.96, 50:0.96, 60:0.96, 70:0.91, 80:0.94}, rInternalAgeMax:90 },
+    "Percent Correct Responses": { m1:9.8, sd1:3.2, m2:11.8, sd2:3.7, r:0.59, n:224, rInternal:0.91, rInternalByAge:{8:0.92, 9:0.92, 10:0.9, 11:0.9, 12:0.9, 13:0.91, 14:0.89, 15:0.82, 16:0.89, 19:0.88, 30:0.94, 40:0.94, 50:0.93, 60:0.94, 70:0.9, 80:0.93}, rInternalAgeMax:90 },
+    "Total Number of Nonperseverative Errors": { m1:9.7, sd1:3.5, m2:10.7, sd2:3.6, r:0.54, n:224, rInternal:0.88, rInternalByAge:{8:0.91, 9:0.86, 10:0.9, 11:0.86, 12:0.86, 13:0.91, 14:0.85, 15:0.84, 16:0.92, 19:0.84, 30:0.89, 40:0.9, 50:0.89, 60:0.88, 70:0.87, 80:0.88}, rInternalAgeMax:90 },
+    "Percent Nonperseverative Errors": { m1:9.7, sd1:3.4, m2:10.6, sd2:3.5, r:0.52, n:224, rInternal:0.83, rInternalByAge:{8:0.89, 9:0.82, 10:0.87, 11:0.79, 12:0.78, 13:0.87, 14:0.75, 15:0.71, 16:0.87, 19:0.72, 30:0.82, 40:0.86, 50:0.86, 60:0.85, 70:0.87, 80:0.87}, rInternalAgeMax:90 },
+    "Total Number of Conceptual Level Responses": { m1:9.7, sd1:3.1, m2:10.4, sd2:3.3, r:0.34, n:224, rInternal:0.9, rInternalByAge:{8:0.91, 9:0.92, 10:0.87, 11:0.88, 12:0.87, 13:0.87, 14:0.89, 15:0.79, 16:0.87, 19:0.87, 30:0.92, 40:0.92, 50:0.92, 60:0.94, 70:0.94, 80:0.95}, rInternalAgeMax:90 },
+    "Percent Conceptual Level Responses": { m1:9.7, sd1:3.2, m2:11.6, sd2:3.8, r:0.6, n:224, rInternal:0.95, rInternalByAge:{8:0.95, 9:0.95, 10:0.94, 11:0.93, 12:0.94, 13:0.94, 14:0.94, 15:0.9, 16:0.93, 19:0.92, 30:0.96, 40:0.96, 50:0.96, 60:0.97, 70:0.95, 80:0.96}, rInternalAgeMax:90 }
   },
   "D-KEFS Advanced Social Sorting · Ages 8-18": {
     "Global Performance Index": { m1:96.5, sd1:14.8, m2:106.1, sd2:19.1, r:0.56, n:91 },
@@ -879,10 +879,10 @@ const OPIE_BASE_RATES = {
     "Percent Conceptual Level Responses": { m1:9.9, sd1:3.3, m2:10.9, sd2:3.9, r:0.73, n:66 }
   },
   "D-KEFS Advanced Risk-Reward Decision · All Ages": {
-    "Total Net Earnings": { m1:9.9, sd1:3.3, m2:12.6, sd2:3.7, r:0.56, n:224 },
-    "Net Earnings Races 1-20": { m1:9.8, sd1:3.3, m2:12.9, sd2:3.4, r:0.39, n:224 },
-    "Net Earnings Races 21-40": { m1:9.9, sd1:3.3, m2:10.8, sd2:2.4, r:0.55, n:224 },
-    "Net Earnings Races 41-60": { m1:10, sd1:3.2, m2:11.2, sd2:2.9, r:0.53, n:224 }
+    "Total Net Earnings": { m1:9.9, sd1:3.3, m2:12.6, sd2:3.7, r:0.56, n:224, rInternal:0.82, rInternalByAge:{19:0.74, 30:0.87, 40:0.82, 50:0.79, 60:0.84, 70:0.83, 80:0.85}, rInternalAgeMax:90 },
+    "Net Earnings Races 1-20": { m1:9.8, sd1:3.3, m2:12.9, sd2:3.4, r:0.39, n:224, rInternal:0.45, rInternalByAge:{19:0.46, 30:0.67, 40:0.55, 50:0.42, 60:0.37, 70:0.33, 80:0.28}, rInternalAgeMax:90 },
+    "Net Earnings Races 21-40": { m1:9.9, sd1:3.3, m2:10.8, sd2:2.4, r:0.55, n:224, rInternal:0.72, rInternalByAge:{19:0.64, 30:0.78, 40:0.64, 50:0.7, 60:0.75, 70:0.74, 80:0.76}, rInternalAgeMax:90 },
+    "Net Earnings Races 41-60": { m1:10, sd1:3.2, m2:11.2, sd2:2.9, r:0.53, n:224, rInternal:0.62, rInternalByAge:{19:0.46, 30:0.65, 40:0.6, 50:0.57, 60:0.64, 70:0.63, 80:0.72}, rInternalAgeMax:90 }
   },
   "D-KEFS Advanced Risk-Reward Decision · Ages 19-59": {
     "Total Net Earnings": { m1:9.8, sd1:3.1, m2:13.3, sd2:3.4, r:0.49, n:67 },
