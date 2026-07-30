@@ -9,12 +9,19 @@
    a family that mixes metrics gets one sub-panel per metric inside the
    same card, never two metrics on one axis.
 
-   The page is a VIEW of the Score Tables state: every number a row
-   prints (percentile, base rate, classification, CI) is produced by the
-   same functions the table itself calls, so screen and chart cannot
-   disagree. Settings (classification scheme, CI level, premorbid
-   comparison) are read live from the Score Tables controls - this page
-   deliberately has none of its own.
+   Three blocks, one per source table: Score Tables (score against
+   classification bands), Change Analysis (both testings against the
+   selected method's reliable-change interval) and the SD Index (change in
+   SD units against its significance band).
+
+   The page is a VIEW of those tables' state: every number a row prints
+   (percentile, base rate, classification, CI, RCI, outcome) is produced
+   by the same functions the tables themselves call, so screen and chart
+   cannot disagree. Settings - classification scheme, CI level, premorbid
+   comparison, each method's confidence level, the SDI mode - are read
+   live from those pages' own controls. This page deliberately has no
+   settings of its own; its only control is which RCI method to draw,
+   which changes no state anywhere.
 
    Row types, following the table's own membership machinery:
      - standard / t / scaled / z rows -> banded strip, dot, printed-CI
@@ -56,6 +63,11 @@
   /* One shared column layout for every row chart, so panels align. */
   const SVG_W = 940;
   const COL = { nameEnd: 205, scoreMid: 228, plotX: 262, plotW: 478, rightX: 754 };
+  /* Change rows print a PAIR of scores ("92→85") where a score card prints
+     one, so they get their own geometry - the name ends earlier and the
+     score column sits wider. Sharing COL made long names collide with the
+     pair. */
+  const COL_CHANGE = { nameEnd: 186, scoreMid: 232, plotX: 286, plotW: 454, rightX: 754 };
   const HEADER_H = 20, ROW_H = 28, AXIS_H = 24;
 
   function vizX(v, axis){
@@ -65,8 +77,9 @@
   function vizLevels(cls){
     return cls === 'wechsler' ? WECHSLER_LEVELS : AACN_LEVELS;
   }
-  function vizTruncate(name){
-    return name.length > 28 ? name.slice(0, 27) + '…' : name;
+  function vizTruncate(name, max){
+    const n = max || 28;
+    return name.length > n ? name.slice(0, n - 1) + '…' : name;
   }
   /* Bounds are joined with U+2013, which cannot collide with a negative
      sign, so the printed interval parses back unambiguously. */
@@ -265,6 +278,205 @@
     </div>`;
   }
 
+  /* ================== CHANGE ANALYSIS (RCI methods) ====================
+     One card per test group from the shared Change Analysis rows, one row
+     per trial: Date 1 (open circle) and Date 2 (filled dot) in score
+     units, against the selected method's reliable-change interval - the
+     band |t2 - expected| < crit x SE, which is exactly the region where
+     the method's table prints "No reliable change". Interval and outcome
+     come from the same calc*Row functions and rciOutcome the tables call,
+     at the confidence level set on that method's page. The method tabs
+     only choose which method's results to DRAW - they change no state. */
+  const VIZ_RCI_METHODS = [
+    ['rci-basic',    'Basic (Jacobson & Truax)'],
+    ['rci-practice', 'Practice-Adjusted (Iverson)'],
+    ['rci-srb',      'SRB (McSweeney)'],
+    ['rci-crawford', 'Crawford & Garthwaite']
+  ];
+  let vizRciMethod = 'rci-basic';
+
+  function vizRciCalc(r, method){
+    const calc = method === 'rci-basic'    ? calcBasicRow(r, method)
+               : method === 'rci-practice' ? calcPracticeRow(r, method)
+               : method === 'rci-srb'      ? calcSrbRow(r, method)
+               :                             calcCrawfordRow(r, method);
+    if (!calc) return null;
+    const cv = rciState[method].cv;
+    /* Same critical value rciOutcome uses: t-quantile for Crawford, z else. */
+    const crit = (calc.df != null && isFinite(calc.df) && calc.df > 0)
+      ? tInv(cv === 0.95 ? 0.975 : 0.95, calc.df)
+      : (cv === 0.95 ? 1.96 : 1.645);
+    const se = method === 'rci-basic' ? calc.sed
+             : method === 'rci-practice' ? calc.sdiff
+             : method === 'rci-srb' ? calc.see
+             : calc.sePred;
+    const expected = method === 'rci-basic' ? parseFloat(r.t1)
+                   : method === 'rci-practice' ? parseFloat(r.t1) + (parseFloat(r.m2) - parseFloat(r.m1))
+                   : calc.predicted;
+    return { calc, expected, half: crit * se, outcome: rciOutcome(calc.rci, cv, calc.df) };
+  }
+
+  /* Data-driven axis (change rows carry no declared metric): pad the data
+     range and pick a clean tick step. */
+  function vizNiceAxis(lo, hi){
+    if (!(hi > lo)){ lo -= 1; hi += 1; }
+    const pad = (hi - lo) * 0.08;
+    lo -= pad; hi += pad;
+    const target = (hi - lo) / 5;
+    const mag = Math.pow(10, Math.floor(Math.log10(target)));
+    const step = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => s >= target) || 10 * mag;
+    const ticks = [];
+    for (let t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) ticks.push(Math.round(t * 100) / 100);
+    return { min: lo, max: hi, ticks };
+  }
+  function vizXd(v, axis){
+    const t = (v - axis.min) / (axis.max - axis.min);
+    return COL_CHANGE.plotX + Math.min(1, Math.max(0, t)) * COL_CHANGE.plotW;
+  }
+
+  function vizRciPanelSvg(rows, method){
+    const results = rows.map(r => vizRciCalc(r, method));
+    let lo = Infinity, hi = -Infinity;
+    rows.forEach((r, i) => {
+      const res = results[i];
+      if (!res) return;
+      for (const v of [parseFloat(r.t1), parseFloat(r.t2), res.expected - res.half, res.expected + res.half]){
+        if (v < lo) lo = v;
+        if (v > hi) hi = v;
+      }
+    });
+    if (!isFinite(lo)) return '';
+    const axis = vizNiceAxis(lo, hi);
+    const H = HEADER_H + rows.length * ROW_H + AXIS_H;
+
+    let svg = `<text class="viz-col-head" x="${COL_CHANGE.scoreMid}" y="13" text-anchor="middle">Scores</text>` +
+              `<text class="viz-col-head" x="${COL_CHANGE.rightX}" y="13">RCI · Outcome</text>`;
+
+    rows.forEach((r, i) => {
+      const res = results[i];
+      if (!res) return;
+      const rowY = HEADER_H + i * ROW_H;
+      const midY = rowY + ROW_H / 2;
+      const t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
+
+      let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, RCI ${fmt(res.calc.rci, 2)}, p ${fmtP(res.calc.p)} — ${res.outcome.label}</title>`;
+      row += `<text class="viz-row-name" x="${COL_CHANGE.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name, 24))}</text>`;
+      row += `<text class="viz-row-score" x="${COL_CHANGE.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}</text>`;
+
+      const bx0 = vizXd(res.expected - res.half, axis), bx1 = vizXd(res.expected + res.half, axis);
+      row += `<rect class="viz-rci-band" x="${bx0.toFixed(1)}" y="${rowY + 3}" width="${(bx1 - bx0).toFixed(1)}" height="${ROW_H - 6}"/>`;
+      const ex = vizXd(res.expected, axis).toFixed(1);
+      row += `<line class="viz-rci-expected" x1="${ex}" y1="${rowY + 3}" x2="${ex}" y2="${rowY + ROW_H - 3}"/>`;
+
+      const x1 = vizXd(t1, axis), x2 = vizXd(t2, axis);
+      row += `<line class="viz-link-line" x1="${x1.toFixed(1)}" y1="${midY}" x2="${x2.toFixed(1)}" y2="${midY}"/>`;
+      row += `<circle class="viz-dot-open" cx="${x1.toFixed(1)}" cy="${midY}" r="5"/>`;
+      row += `<circle class="viz-dot" cx="${x2.toFixed(1)}" cy="${midY}" r="5.5"/>`;
+
+      row += `<text class="viz-row-fact" x="${COL_CHANGE.rightX}" y="${midY + 4.5}">${fmt(res.calc.rci, 2)} · ${escapeHtml(res.outcome.label)}</text>`;
+      svg += `<g class="viz-row">${row}</g>`;
+    });
+
+    const axisY = HEADER_H + rows.length * ROW_H;
+    svg += `<line class="viz-tick" x1="${COL_CHANGE.plotX}" y1="${axisY + 2}" x2="${COL_CHANGE.plotX + COL_CHANGE.plotW}" y2="${axisY + 2}"/>`;
+    for (const tval of axis.ticks){
+      const x = vizXd(tval, axis).toFixed(1);
+      svg += `<line class="viz-tick" x1="${x}" y1="${axisY + 2}" x2="${x}" y2="${axisY + 6}"/>` +
+             `<text class="viz-tick-label" x="${x}" y="${axisY + 18}" text-anchor="middle">${tval}</text>`;
+    }
+    return `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="Reliable change">${svg}</svg>`;
+  }
+
+  function vizChangeBlockHtml(){
+    const all = RCI_SHARED_ROWS.filter(r => r.name && !r.isExample);
+    if (!all.length) return '';
+    const method = vizRciMethod;
+    const st = rciState[method];
+    const chartable = all.filter(r => vizRciCalc(r, method));
+
+    const tabs = `<div class="viz-method-tabs">` + VIZ_RCI_METHODS.map(([m, label]) =>
+      `<button type="button" class="viz-method-tab${m === method ? ' is-active' : ''}" data-viz-method="${m}">${label}</button>`
+    ).join('') + `</div>`;
+
+    let cards = '';
+    if (!chartable.length){
+      cards = `<div class="viz-empty"><p>Rows are entered on Change Analysis, but none has the values this method needs yet (scores at both dates plus the normative parameters). Complete them on the ${escapeHtml(VIZ_RCI_METHODS.find(x => x[0] === method)[1])} page.</p></div>`;
+    } else {
+      const families = new Map();
+      for (const r of chartable){
+        const g = r.group || '';
+        if (!families.has(g)) families.set(g, []);
+        families.get(g).push(r);
+      }
+      for (const [g, fRows] of families){
+        const title = g ? caGroupDisplay(g) : 'Ungrouped measures';
+        cards += `<div class="viz-card"><div class="viz-card-name">${escapeHtml(title)}</div>` +
+          vizRciPanelSvg(fRows, method) +
+          `</div>`;
+      }
+    }
+    const cvLabel = st.cv === 0.95 ? '95%' : '90%';
+    const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> ${escapeHtml(st.d1 || 'Date 1')} · <span class="viz-legend-filled">●</span> ${escapeHtml(st.d2 || 'Date 2')} · shaded band: no reliable change at the ${cvLabel} level set on that method's page. Outcomes state significance only, not direction.</p>`;
+    return `<div class="viz-section-head">Change Analysis</div>${tabs}${legend}${cards}`;
+  }
+
+  /* ================== SD INDEX ========================================= */
+  function vizSdiBlockHtml(){
+    const rows = sdiRows.filter(r => r.name && !r.isExample);
+    if (!rows.length) return '';
+    const cv = parseFloat(document.getElementById('sdi-cv')?.value) || 0.95;
+    const crit = cv === 0.90 ? 1.645 : cv === 0.95 ? 1.96 : cv;
+    const axis = { min: -4, max: 4, ticks: [-4, -3, -2, -1, 0, 1, 2, 3, 4] };
+    const chartable = rows.filter(r => sdiComputeChange(r) !== null);
+    if (!chartable.length){
+      return `<div class="viz-section-head">Standard Deviation Index</div>` +
+        `<div class="viz-empty"><p>Rows are entered on the SD Index page, but none can compute yet (both scores, and an SD in raw mode). Complete them there.</p></div>`;
+    }
+
+    const families = new Map();
+    for (const r of chartable){
+      const g = r.group || '';
+      if (!families.has(g)) families.set(g, []);
+      families.get(g).push(r);
+    }
+    let cards = '';
+    for (const [g, fRows] of families){
+      const H = HEADER_H + fRows.length * ROW_H + AXIS_H;
+      let svg = `<text class="viz-col-head" x="${COL_CHANGE.scoreMid}" y="13" text-anchor="middle">Scores</text>` +
+                `<text class="viz-col-head" x="${COL_CHANGE.rightX}" y="13">SD Δ · Significance</text>`;
+      fRows.forEach((r, i) => {
+        const change = sdiComputeChange(r);
+        const rowY = HEADER_H + i * ROW_H;
+        const midY = rowY + ROW_H / 2;
+        const sig = sdiCvHit(change, cv);
+        const label = sig ? 'Significant change' : 'No significant change';
+        let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, SD Δ ${fmt(change, 2)} — ${label}</title>`;
+        row += `<text class="viz-row-name" x="${COL_CHANGE.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name, 24))}</text>`;
+        row += `<text class="viz-row-score" x="${COL_CHANGE.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}</text>`;
+        const bx0 = vizXd(-crit, axis), bx1 = vizXd(crit, axis);
+        row += `<rect class="viz-rci-band" x="${bx0.toFixed(1)}" y="${rowY + 3}" width="${(bx1 - bx0).toFixed(1)}" height="${ROW_H - 6}"/>`;
+        const zx = vizXd(0, axis).toFixed(1);
+        row += `<line class="viz-rci-expected" x1="${zx}" y1="${rowY + 3}" x2="${zx}" y2="${rowY + ROW_H - 3}"/>`;
+        row += `<circle class="viz-dot" cx="${vizXd(change, axis).toFixed(1)}" cy="${midY}" r="5.5"/>`;
+        row += `<text class="viz-row-fact" x="${COL_CHANGE.rightX}" y="${midY + 4.5}">${fmt(change, 2)} · ${label}</text>`;
+        svg += `<g class="viz-row">${row}</g>`;
+      });
+      const axisY = HEADER_H + fRows.length * ROW_H;
+      svg += `<line class="viz-tick" x1="${COL_CHANGE.plotX}" y1="${axisY + 2}" x2="${COL_CHANGE.plotX + COL_CHANGE.plotW}" y2="${axisY + 2}"/>`;
+      for (const tval of axis.ticks){
+        const x = vizXd(tval, axis).toFixed(1);
+        svg += `<line class="viz-tick" x1="${x}" y1="${axisY + 2}" x2="${x}" y2="${axisY + 6}"/>` +
+               `<text class="viz-tick-label" x="${x}" y="${axisY + 18}" text-anchor="middle">${tval}</text>`;
+      }
+      const title = g ? stripAgeRange(g) : 'Ungrouped measures';
+      cards += `<div class="viz-card"><div class="viz-card-name">${escapeHtml(title)}</div>` +
+        `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="SD Index change">${svg}</svg></div>`;
+    }
+    const cvLabel = cv === 0.95 ? '95% (±1.96 SD)' : '90% (±1.645 SD)';
+    const legend = `<p class="viz-legend">Dot: change between testings in SD units, on the SD Index page's own divisor per row. Shaded band: no significant change at ${cvLabel}, as set on the SD Index page.</p>`;
+    return `<div class="viz-section-head">Standard Deviation Index</div>${legend}${cards}`;
+  }
+
   /* ---------- page render --------------------------------------------- */
   function renderVizSettingsLine(cls, ciLevel){
     if (!settingsEl) return;
@@ -288,27 +500,43 @@
     const rows = batteryRows.filter(r =>
       r.name && !r.isExample && r.score !== '' && !isNaN(parseFloat(r.score)));
 
-    if (!rows.length){
+    let html = '';
+
+    if (rows.length){
+      // One card per test family, in table order; ungrouped rows form one card.
+      const families = new Map();
+      for (const r of rows){
+        const gKey = batteryGroupKeyOf(r);
+        if (!families.has(gKey)) families.set(gKey, []);
+        families.get(gKey).push(r);
+      }
+      html += `<div class="viz-section-head">Score Tables</div>`;
+      for (const [gKey, fRows] of families){
+        const title = gKey ? (batteryGroupLabel(gKey) || 'Untitled test') : 'Ungrouped measures';
+        html += vizFamilyCard(title, fRows, cls, ciLevel);
+      }
+    }
+
+    html += vizChangeBlockHtml();
+    html += vizSdiBlockHtml();
+
+    if (!html){
       grid.innerHTML = '';
       if (emptyEl) emptyEl.hidden = false;
       return;
     }
     if (emptyEl) emptyEl.hidden = true;
-
-    // One card per test family, in table order; ungrouped rows form one card.
-    const families = new Map();
-    for (const r of rows){
-      const gKey = batteryGroupKeyOf(r);
-      if (!families.has(gKey)) families.set(gKey, []);
-      families.get(gKey).push(r);
-    }
-    let html = '';
-    for (const [gKey, fRows] of families){
-      const title = gKey ? (batteryGroupLabel(gKey) || 'Untitled test') : 'Ungrouped measures';
-      html += vizFamilyCard(title, fRows, cls, ciLevel);
-    }
     grid.innerHTML = html;
   }
+
+  /* The method tabs pick which method's results to draw. Delegated, because
+     the grid is replaced wholesale on every render. */
+  grid.addEventListener('click', e => {
+    const tab = e.target.closest('[data-viz-method]');
+    if (!tab) return;
+    vizRciMethod = tab.dataset.vizMethod;
+    renderVizPage();
+  });
 
   /* Re-render whenever the page becomes visible, so it always reflects the
      current Score Tables state. Same pattern as syncTopnav: observe the

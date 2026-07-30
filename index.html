@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
 <link rel="stylesheet" href="styles.css?v=20260727a">
-<link rel="stylesheet" href="design-system.css?v=20260730b">
+<link rel="stylesheet" href="design-system.css?v=20260730c">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1266,12 +1266,12 @@
   <section class="section" id="charts">
     <div class="eyebrow">Basic Report Tools · Visualisation</div>
     <h1 class="section-title">Score <em>Charts</em></h1>
-    <p class="section-desc">One chart per test: every trial and subtest entered on Score Tables becomes a row of its test's chart — score, confidence interval and classification bands on the test's own scale. The charts read the same data and settings as the table, so the two cannot disagree.</p>
+    <p class="section-desc">One chart per test, covering Score Tables, Change Analysis and the SD Index: every trial and subtest becomes a row of its test's chart — score against classification bands, or change against the reliable-change interval. The charts read the same data and settings as those tables, so they cannot disagree.</p>
 
     <p class="viz-settings-line" id="viz-settings-line"></p>
 
     <div class="viz-empty" id="viz-empty" hidden>
-      <p>No scores to chart yet. Enter subtest scores on the Score Tables page and they will appear here, one chart per measure.</p>
+      <p>No scores to chart yet. Enter scores on Score Tables, Change Analysis or the SD Index and they will appear here, one chart per test.</p>
       <button type="button" class="btn btn-primary nav-item" data-target="battery">Open Score Tables</button>
     </div>
 
@@ -1284,6 +1284,8 @@
         <p><b>Base-rate measures</b> (WAIS-IV Longest Span) are charted from the published cumulative table (WAIS-IV Administration and Scoring Manual, Tables C.4–C.5): each row's step line is the percentage of the normative sample obtaining each span or higher, and the dot marks the patient's span on that line. A high base rate means a common, and therefore lower, score.</p>
         <p><b>Error measures</b> (perseverations, intrusions, false positives; marked ↓) follow the Score Tables convention: the percentile is reported as obtained, while the classification — and therefore the band shading — describes performance, so those rows' bands run reversed.</p>
         <p><b>Raw-score measures</b> are listed, not plotted: a raw score has no position on a standardised axis, so no percentile or classification is derived. The obtained score and its raw-unit confidence interval are still shown.</p>
+        <p><b>Change Analysis</b> charts plot each trial's two testings in score units — open circle at the first, filled dot at the second — against the shaded <b>reliable-change interval</b> for the selected method: the region where |obtained − expected| falls below the method's critical value × standard error, i.e. exactly where that method's table prints "No reliable change". The expected value is the first score (Jacobson &amp; Truax), the first score plus the normative practice effect (Iverson), or the regression-predicted score (McSweeney, Crawford &amp; Garthwaite), and the interval uses the confidence level set on that method's page. The method buttons only choose which method to draw; they change nothing on the Change Analysis pages. As in the tables, outcomes state <b>significance only</b> and never a direction — the signed statistic is shown alongside so the direction of movement stays visible without the app interpreting it.</p>
+        <p><b>SD Index</b> charts plot each trial's change in standard-deviation units against the ±1.96 (or ±1.645) band for the significance level set on that page, using the same per-row divisor the SD Index table applies.</p>
         <p>Premorbid-comparison asterisks, when enabled on Score Tables, carry the same meaning here as in the table's classification column.</p>
       </div>
     </details>
@@ -5881,7 +5883,7 @@
 <script src="app.js?v=20260730a"></script>
 <script src="design-system.js?v=20260730a" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
-<script src="app-viz-page.js?v=20260730b"></script>
+<script src="app-viz-page.js?v=20260730c"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

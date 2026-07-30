@@ -4229,3 +4229,56 @@ input[type="text"].ds-inline-bar-input{
   color: var(--ds-text-subtle);
   line-height: var(--ds-leading-snug);
 }
+.viz-section-head{
+  grid-column: 1 / -1;
+  font-size: var(--ds-text-lg);
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-text);
+  border-bottom: 1px solid var(--ds-border-strong);
+  padding-bottom: var(--ds-space-2);
+  margin: var(--ds-space-4) 0 0;
+}
+.viz-section-head:first-child{ margin-top: 0; }
+.viz-method-tabs{
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-1);
+}
+.viz-method-tab{
+  font-family: inherit;
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-muted);
+  background: var(--ds-surface-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-full);
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background var(--ds-duration-fast) var(--ds-ease), color var(--ds-duration-fast) var(--ds-ease);
+}
+.viz-method-tab:hover{ background: var(--ds-surface-emphasis); }
+.viz-method-tab.is-active{
+  background: var(--ds-primary);
+  border-color: var(--ds-primary);
+  color: var(--ds-text-inverse);
+}
+.viz-legend{
+  grid-column: 1 / -1;
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-subtle);
+  margin: 0;
+}
+.viz-legend-open,
+.viz-legend-filled{ color: var(--ds-text); font-weight: 600; }
+/* The reliable-change interval: the region where the method prints "no
+   reliable change". Neutral by design - it marks a decision threshold, not
+   a good or bad outcome, and the app never asserts direction. */
+.viz-rci-band{ fill: var(--ds-text); opacity: 0.07; }
+.viz-rci-expected{ stroke: var(--ds-border-strong); stroke-width: 1; }
+.viz-link-line{ stroke: var(--ds-text-faint); stroke-width: 1.5; }
+.viz-dot-open{
+  fill: var(--ds-surface);
+  stroke: var(--ds-text-muted);
+  stroke-width: 2;
+}
+.viz-empty{ grid-column: 1 / -1; }
