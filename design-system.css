@@ -4282,3 +4282,7 @@ input[type="text"].ds-inline-bar-input{
   stroke-width: 2;
 }
 .viz-empty{ grid-column: 1 / -1; }
+/* A dot the axis cannot show is drawn at the edge, dimmed, with a caret
+   beside it; the row's figures carry the actual value. */
+.viz-dot-off{ opacity: 0.5; }
+.viz-offscale{ font-size: 11px; fill: var(--ds-text-muted); }
