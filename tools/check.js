@@ -1093,7 +1093,8 @@ const batteryCtx = (() => {
   vm.createContext(ctx);
   vm.runInContext(
     boundsSrc[0] + '\n' + metricSdSrc[0] + '\n' +
-      ['rInternalForAge', 'batteryPatientAge', 'getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml']
+      (APP_SRC.match(/const PATIENT_AGE_INPUTS = \[[^\]]*\];/) || [''])[0] + '\n' +
+      ['patientAge', 'rInternalForAge', 'batteryPatientAge', 'getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml']
         .map((n) => extractFn(APP_SRC, n)).join('\n') +
       '\n;globalThis.__B = getBatteryCiHtml;'
       + '\n;globalThis.__REL = getBatteryRowReliability;'
@@ -1238,6 +1239,7 @@ check('the OPIE tooltips state that sex and an age range are required', () => {
 heading('16. Wiring');
 
 const HTML_SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const DATA_SRC = fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8');
 
 /* Bare top-level calls, i.e. at column 0 and not inside any function. Anything
    here that app.js defines but never calls is dead init. */
@@ -2822,6 +2824,96 @@ check('the APA note states the age whenever one changed a coefficient', () => {
   const bad = [];
   if (!/age 34/.test(note(34))) bad.push('the note does not name the age it used');
   if (/age \d/.test(note(null))) bad.push('the note claims an age on a table where none was used');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ==========================================================================
+   26. Shared patient age
+
+   One patient, one age, two inputs (#bat-age, #pre-age).
+
+   TWO premorbid models read age: OPIE-4 (calcPremorbid) and the ToPF-predicted
+   WMS-IV indices (calcPredict). Both are adult-only. Before the age was shared,
+   #pre-age was hard-bounded 16-90 by the markup, so "age is present" was a
+   proxy for "age is valid" and the WMS-IV branch tested only `age != null`.
+   That proxy is gone: the box now accepts from 5. Every age consumer must
+   therefore bound the value itself, or a paediatric age typed on Score Tables
+   returns a plausible-looking adult index.
+
+   These checks exist because that is exactly what went wrong while writing
+   this section — the WMS-IV age term was missed on a first read.
+   ========================================================================== */
+heading('26. Shared patient age');
+
+check('the ToPF-predicted WMS-IV equations bound the age they use', () => {
+  /* WMS_COEF entries carry an explicit age term. Presence alone is not enough. */
+  const src = extractFn(APP_SRC, 'calcPredict');
+  const body = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  if (!/\bage\b/.test(body)) return true;          // fine if it stops using age
+  const bad = [];
+  if (!/TOPF_AGE_MIN/.test(body) || !/TOPF_AGE_MAX/.test(body)) {
+    bad.push('age is used but not bounded by TOPF_AGE_MIN/TOPF_AGE_MAX');
+  }
+  if (/if \(topf != null && age != null\)/.test(body)) {
+    bad.push('the WMS-IV branch still gates on presence alone');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the ToPF age bounds are their own constants, not borrowed from OPIE', () => {
+  /* Same numbers today, different publishers. Sharing the constant would let a
+     revision to one model silently move the other model's range. */
+  const bad = [];
+  if (!/const TOPF_AGE_MIN\s*=\s*\d+/.test(DATA_SRC)) bad.push('TOPF_AGE_MIN is not defined in data.js');
+  if (!/const TOPF_AGE_MAX\s*=\s*\d+/.test(DATA_SRC)) bad.push('TOPF_AGE_MAX is not defined in data.js');
+  const predict = extractFn(APP_SRC, 'calcPredict');
+  if (/OPIE_AGE_(MIN|MAX)/.test(predict)) bad.push('calcPredict bounds ToPF ages with the OPIE constants');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('every use of age in calcPremorbid is range-gated', () => {
+  /* Not merely "is age present" — an adult-only equation fed age 9 would
+     return a plausible-looking FSIQ for a child. */
+  const src = extractFn(APP_SRC, 'calcPremorbid');
+  if (!/OPIE_AGE_MIN/.test(src) || !/OPIE_AGE_MAX/.test(src)) {
+    return 'calcPremorbid no longer bounds age by OPIE_AGE_MIN/OPIE_AGE_MAX';
+  }
+  // The prediction itself must sit behind that gate.
+  return /opieAgeOk\s*&&/.test(src)
+    || 'the OPIE-4 prediction is no longer guarded by opieAgeOk';
+});
+
+check('the two age inputs are declared as one shared value', () => {
+  const bad = [];
+  if (!/const PATIENT_AGE_INPUTS = \[[^\]]*'bat-age'[^\]]*'pre-age'[^\]]*\]/.test(APP_SRC)) {
+    bad.push('PATIENT_AGE_INPUTS no longer names both inputs');
+  }
+  const sync = extractFn(APP_SRC, 'syncPatientAge');
+  /* Dispatching on the sibling would make the two inputs echo each other
+     without end, so the mirror must only assign .value. */
+  if (/dispatchEvent/.test(sync)) bad.push('syncPatientAge dispatches an event on the sibling input — infinite echo');
+  if (!/if \(id === sourceId\) return;/.test(sync)) bad.push('syncPatientAge does not skip the edited input');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('#pre-age accepts the full shared range, not just adults', () => {
+  /* It holds the shared age now. Leaving min="16" would make the browser
+     flag a legitimate paediatric age as invalid on a page that no longer
+     owns the value. */
+  const m = HTML_SRC.match(/<input[^>]*id="pre-age"[^>]*>/);
+  if (!m) return 'the #pre-age input is gone';
+  const min = m[0].match(/min="(\d+)"/);
+  if (!min) return 'no min attribute at all — was it removed by accident?';
+  return Number(min[1]) <= 5
+    || 'min="' + min[1] + '" still excludes the ages Score Tables is normed for';
+});
+
+check('an out-of-range age is explained rather than left blank', () => {
+  const src = extractFn(APP_SRC, 'calcPremorbid');
+  const bad = [];
+  if (!/pre-age-range-note/.test(src)) bad.push('calcPremorbid never touches the explanation box');
+  if (!/OPIE_AGE_MIN\s*\|\|\s*age\s*>\s*OPIE_AGE_MAX/.test(src)) bad.push('the box is not driven by the OPIE range');
+  if (!/<div class="caution-box" id="pre-age-range-note"/.test(HTML_SRC)) bad.push('the box is missing from the markup');
   return bad.length === 0 || bad.join('; ');
 });
 

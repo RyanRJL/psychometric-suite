@@ -1788,7 +1788,12 @@
           </div>
           <div class="field">
             <label>Age</label>
-            <input type="number" id="pre-age" min="16" max="90" step="1">
+            <!-- min is 5, not 16, because this box now holds the shared
+                 patient age (see PATIENT_AGE_INPUTS in app.js) and Score
+                 Tables is normed from 5. The 16-90 limit that matters is
+                 OPIE_AGE_MIN/MAX, enforced in code before OPIE-4 computes
+                 anything; no other premorbid model reads age at all. -->
+            <input type="number" id="pre-age" min="5" max="90" step="1">
           </div>
         </div>
       </div>
@@ -1828,6 +1833,13 @@
         </header>
         <svg id="pre-forest-plot" class="pre-forest-plot" viewBox="0 0 880 320" aria-label="Forest plot of premorbid FSIQ estimates"></svg>
       </figure>
+
+      <!-- Shown only when an age is entered that OPIE-4 is not normed for.
+           Without it that row just prints a dash, which reads as "you have
+           not finished entering data" rather than "this model does not apply
+           to this patient". .caution-box is a standalone class chosen on
+           purpose — see the CSS cascade note in CLAUDE.md. -->
+      <div class="caution-box" id="pre-age-range-note" hidden style="margin-top:0;margin-bottom:14px"></div>
 
       <!-- Numeric table is fully redundant with the forest plot — visually
            hidden, but kept in the DOM so the APA-copy JS (which reads cell
@@ -5850,8 +5862,8 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260730c"></script>
-<script src="app.js?v=20260730c"></script>
+<script src="data.js?v=20260730d"></script>
+<script src="app.js?v=20260730d"></script>
 <script src="design-system.js?v=20260726a" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 

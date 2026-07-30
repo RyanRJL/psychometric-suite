@@ -15077,7 +15077,12 @@ input[type="text"].ds-inline-bar-input{
           </div>
           <div class="field">
             <label>Age</label>
-            <input type="number" id="pre-age" min="16" max="90" step="1">
+            <!-- min is 5, not 16, because this box now holds the shared
+                 patient age (see PATIENT_AGE_INPUTS in app.js) and Score
+                 Tables is normed from 5. The 16-90 limit that matters is
+                 OPIE_AGE_MIN/MAX, enforced in code before OPIE-4 computes
+                 anything; no other premorbid model reads age at all. -->
+            <input type="number" id="pre-age" min="5" max="90" step="1">
           </div>
         </div>
       </div>
@@ -15117,6 +15122,13 @@ input[type="text"].ds-inline-bar-input{
         </header>
         <svg id="pre-forest-plot" class="pre-forest-plot" viewBox="0 0 880 320" aria-label="Forest plot of premorbid FSIQ estimates"></svg>
       </figure>
+
+      <!-- Shown only when an age is entered that OPIE-4 is not normed for.
+           Without it that row just prints a dash, which reads as "you have
+           not finished entering data" rather than "this model does not apply
+           to this patient". .caution-box is a standalone class chosen on
+           purpose — see the CSS cascade note in CLAUDE.md. -->
+      <div class="caution-box" id="pre-age-range-note" hidden style="margin-top:0;margin-bottom:14px"></div>
 
       <!-- Numeric table is fully redundant with the forest plot — visually
            hidden, but kept in the DOM so the APA-copy JS (which reads cell
@@ -19277,6 +19289,20 @@ const WMS_COEF = [
 const OPIE_AGE_MIN = 16;
 const OPIE_AGE_MAX = 90;
 
+/* Age range for the ToPF-predicted WMS-IV equations, which carry an explicit
+   age term (WMS_COEF[].age). Numerically the same as the OPIE range, but a
+   SEPARATE constant on purpose: same number, different provenance, and one
+   publisher revising its norms must not silently move the other model's bound.
+
+   The values are the range the app has always asserted for these models — the
+   #pre-age input was hard-bounded 16-90 from the outset, which was the only
+   thing keeping an out-of-range age out of these equations before the age
+   field became shared with Score Tables. They are the adult ToPF/WMS-IV
+   standardisation range and should be confirmed against the ToPF manual if a
+   paediatric or very elderly case ever needs to be defended in a report. */
+const TOPF_AGE_MIN = 16;
+const TOPF_AGE_MAX = 90;
+
 // OPIE-4 prorated FSIQ regression coefficients (Table eA5.8). Verified against
 // source. See the block above before using these numbers in a UK context.
 const OPIE_PRORATED_FSIQ = {
@@ -22495,13 +22521,51 @@ function batteryRowUsesAgeBand(row){
   return !!(entry && typeof entry === 'object' && entry.rInternalByAge);
 }
 
-/* The patient's age, for the measures whose published reliability varies by
-   age band. Optional by design — see the note on rInternalForAge. */
-function batteryPatientAge(){
-  const el = document.getElementById('bat-age');
-  const v = el ? parseFloat(el.value) : NaN;
-  return Number.isFinite(v) ? v : null;
+/* THE PATIENT'S AGE — one value, two inputs.
+
+   There is one patient and therefore one age, but it is entered on two pages:
+   #bat-age on Score Tables (which reads it for the measures whose published
+   reliability varies by age band) and #pre-age on Premorbid. Two boxes that
+   can hold different ages for the same patient is a defect waiting to happen,
+   so they are kept in step.
+
+   WHY THAT IS SAFE DESPITE THE DIFFERENT RANGES. #pre-age used to declare
+   min="16" because ToPF and OPIE-4 are adult instruments, while Score Tables
+   needs from age 5 (CVLT-C) and 8 (D-KEFS Advanced). It turns out only ONE
+   model on the premorbid page reads age at all — OPIE-4 — and it already
+   gates on OPIE_AGE_MIN/OPIE_AGE_MAX before computing anything. The ToPF and
+   WAIS-IV/WMS-IV demographic equations have no age term; they run on ToPF
+   score, education and sex. So a paediatric age makes OPIE-4 decline, which
+   is correct because it is not normed for children, and changes nothing else.
+   The min attribute was a claim the code did not rely on, and is relaxed to
+   match so the browser stops flagging a legitimate age as invalid.
+
+   The listeners write the sibling's .value and do NOT dispatch an event on it.
+   Dispatching would have each input echo the other indefinitely. */
+const PATIENT_AGE_INPUTS = ['bat-age', 'pre-age'];
+
+function patientAge(){
+  for (let i = 0; i < PATIENT_AGE_INPUTS.length; i++){
+    const el = document.getElementById(PATIENT_AGE_INPUTS[i]);
+    const v = el ? parseFloat(el.value) : NaN;
+    if (Number.isFinite(v)) return v;
+  }
+  return null;
 }
+
+/* Copy the edited box into the other one. Value only — see above. */
+function syncPatientAge(sourceId){
+  const src = document.getElementById(sourceId);
+  if (!src) return;
+  PATIENT_AGE_INPUTS.forEach(id => {
+    if (id === sourceId) return;
+    const el = document.getElementById(id);
+    if (el && el.value !== src.value) el.value = src.value;
+  });
+}
+
+/* Kept as the Score Tables reader so the CI code states what it wants. */
+function batteryPatientAge(){ return patientAge(); }
 
 /* Pick the published coefficient for the patient's age band.
    rInternalByAge is keyed by the LOWER BOUND of each normative band, so the
@@ -23255,8 +23319,14 @@ document.getElementById('bat-prem-score').addEventListener('input', e => {
 document.getElementById('bat-prem-threshold').addEventListener('change', () => { updatePremorbidLinkStatus(); renderBattery(); });
 document.getElementById('bat-ci-level').addEventListener('change', renderBattery);
 /* 'input', not 'change': the intervals are the only thing this drives, and
-   waiting for blur leaves a stale age visibly paired with fresh numbers. */
-document.getElementById('bat-age')?.addEventListener('input', renderBattery);
+   waiting for blur leaves a stale age visibly paired with fresh numbers.
+   Mirrors into #pre-age and recalculates the premorbid page, because the two
+   boxes hold one patient's age — see the note on PATIENT_AGE_INPUTS. */
+document.getElementById('bat-age')?.addEventListener('input', () => {
+  syncPatientAge('bat-age');
+  renderBattery();
+  if (typeof calcPremorbid === 'function'){ calcPremorbid(); calcPredict(); calcOpiePredict(); }
+});
 document.getElementById('bat-clear').addEventListener('click', clearBattery);
 
 /* ============================================================
@@ -25111,6 +25181,20 @@ function calcPremorbid(){
   }
   rows.push({ name:name4, val:v4, see:s4 ? s4.see : null, r:s4 ? s4.r : null, tipKey:tipKey4 });
 
+  /* Say WHY the OPIE-4 row is empty when the age is simply outside its norms.
+     Only when an age is actually present and out of range — a blank age means
+     "not entered yet", which is a different thing and needs no explanation. */
+  const rangeNote = document.getElementById('pre-age-range-note');
+  if (rangeNote){
+    const outOfRange = age != null && (age < OPIE_AGE_MIN || age > OPIE_AGE_MAX);
+    rangeNote.hidden = !outOfRange;
+    if (outOfRange){
+      rangeNote.innerHTML = `<strong>OPIE-4 does not apply at age ${escapeHtml(String(age))}.</strong> `
+        + `Its equations are fitted for ages ${OPIE_AGE_MIN}–${OPIE_AGE_MAX}, so no estimate is produced. `
+        + `The ToPF and demographic models carry no age term and are unaffected.`;
+    }
+  }
+
   // Render results table
   const tbody = document.querySelector('#pre-results-table tbody');
   tbody.innerHTML = rows.map(row => {
@@ -25317,6 +25401,9 @@ function calcPredict(){
   const topf = preNum('pre-topf');
   const sex  = preStr('pre-sex');
   const edu  = preNum('pre-edu');
+  /* Age is used by the WMS-IV branch below and NOT by the WAIS-IV one. The
+     WAIS-IV demographic equations run on ToPF score, education and sex; the
+     WMS-IV ToPF-predicted indices carry an explicit age term. */
   const age  = preNum('pre-age');
   // CI level comes from premorbidCi() — see its note; do not re-parse #pre-ci.
   // ToPF-predicted WAIS-IV indices use the WAIS-IV manual sex coding: F = 1, M = 2.
@@ -25335,10 +25422,17 @@ function calcPredict(){
     }
     updatePredictRow(c.idx, pred, mult, c.see);
   });
-  // WMS-IV predictions
+  /* WMS-IV predictions. Gated on the age being IN RANGE, not merely present.
+     This used to test `age != null` alone, which was harmless while #pre-age
+     was itself bounded 16-90 by the markup — the input could not hold anything
+     else. Now that the box carries the shared patient age and accepts from 5
+     (see PATIENT_AGE_INPUTS), presence is no longer a proxy for validity: a
+     paediatric age would otherwise be fed straight into an adult equation and
+     return a plausible-looking index for a child. */
+  const topfAgeOk = age != null && age >= TOPF_AGE_MIN && age <= TOPF_AGE_MAX;
   WMS_COEF.forEach(c => {
     let pred = null;
-    if (topf != null && age != null){
+    if (topf != null && topfAgeOk){
       pred = c.intercept + c.b1*topf + c.age*age;
     }
     updatePredictRow(c.idx, pred, mult, c.see);
@@ -25729,6 +25823,18 @@ function setupPremorbidListeners(){
     el.addEventListener('input', () => { calcPremorbid(); calcPredict(); calcOpiePredict(); });
     el.addEventListener('change', () => { calcPremorbid(); calcPredict(); calcOpiePredict(); });
   });
+  /* The other half of the shared patient age. Separate from the loop above so
+     the premorbid recalcs stay exactly as they were; this only adds the mirror
+     into #bat-age and the Score Tables re-render. */
+  const ageEl = preGet('pre-age');
+  if (ageEl){
+    const mirror = () => {
+      syncPatientAge('pre-age');
+      if (typeof renderBattery === 'function') renderBattery();
+    };
+    ageEl.addEventListener('input', mirror);
+    ageEl.addEventListener('change', mirror);
+  }
   const titleEl = preGet('pre-title');
   if (titleEl){
     titleEl.addEventListener('input', () => { renderPreEstimatesApa(); renderPrePredictApa(); renderOpiePredictApa(); });

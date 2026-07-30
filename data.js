@@ -135,6 +135,20 @@ const WMS_COEF = [
 const OPIE_AGE_MIN = 16;
 const OPIE_AGE_MAX = 90;
 
+/* Age range for the ToPF-predicted WMS-IV equations, which carry an explicit
+   age term (WMS_COEF[].age). Numerically the same as the OPIE range, but a
+   SEPARATE constant on purpose: same number, different provenance, and one
+   publisher revising its norms must not silently move the other model's bound.
+
+   The values are the range the app has always asserted for these models — the
+   #pre-age input was hard-bounded 16-90 from the outset, which was the only
+   thing keeping an out-of-range age out of these equations before the age
+   field became shared with Score Tables. They are the adult ToPF/WMS-IV
+   standardisation range and should be confirmed against the ToPF manual if a
+   paediatric or very elderly case ever needs to be defended in a report. */
+const TOPF_AGE_MIN = 16;
+const TOPF_AGE_MAX = 90;
+
 // OPIE-4 prorated FSIQ regression coefficients (Table eA5.8). Verified against
 // source. See the block above before using these numbers in a UK context.
 const OPIE_PRORATED_FSIQ = {
