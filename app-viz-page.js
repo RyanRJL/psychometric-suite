@@ -399,11 +399,28 @@
   function vizTab(attr, value, label, active){
     return `<button type="button" class="viz-tab" role="tab" aria-selected="${active ? 'true' : 'false'}" ${attr}="${escapeAttr(value)}">${escapeHtml(label)}</button>`;
   }
-  function vizControls(kicker, tabs, note){
+  /* Controls and the display toggle share one panel. They were two stacked
+     blocks, which cost ~100px of height on a page whose whole point is
+     fitting in one window. */
+  function vizControls(kicker, tabs, note, extra){
     return `<div class="panel">
-      <div class="panel-kicker">${escapeHtml(kicker)}</div>
-      <div class="viz-controls-body"><div class="viz-tabs" role="tablist" aria-label="${escapeAttr(kicker)}">${tabs}</div></div>
+      <div class="viz-controls-body">
+        <div class="viz-controls-main">
+          <div class="panel-kicker">${escapeHtml(kicker)}</div>
+          <div class="viz-tabs" role="tablist" aria-label="${escapeAttr(kicker)}">${tabs}</div>
+        </div>
+        ${extra || ''}
+      </div>
       ${note ? `<p class="viz-axis-note">${note}</p>` : ''}
+    </div>`;
+  }
+  function vizDisplayToggle(){
+    return `<div class="viz-controls-main viz-controls-right">
+      <div class="panel-kicker">Show</div>
+      <div class="viz-tabs" role="tablist" aria-label="How many charts to show">
+        ${vizTab('data-viz-display', 'single', 'One at a time', vizSingle)}
+        ${vizTab('data-viz-display', 'grid', 'All charts', !vizSingle)}
+      </div>
     </div>`;
   }
 
@@ -664,12 +681,14 @@
         body += vizBaseRatePanelSvg(brRows).svg;
       }
       if (rawRows.length){
-        body += rawRows.map(r => {
-          const score = parseFloat(r.score);
-          const ciText = ciLevel !== 'off' ? getBatteryCiHtml(score, r, ciLevel) : '';
-          return `<div class="viz-raw-row"><b>${escapeHtml(r.name)}</b> — raw ${escapeHtml(String(r.score))}` +
-                 `${ciText ? `, ${ciLevel}% CI ${ciText}` : ''} · not plotted (no standardised metric; percentile and classification are not derived)</div>`;
-        }).join('');
+        /* One line, not one box per measure: four dashed boxes repeating the
+           same sentence cost ~160px on RBANS and read as an error list. Each
+           measure keeps its score and interval; the reason is stated once. */
+        body += `<div class="viz-raw-row">Not plotted — no standardised metric, so no percentile or classification is derived: ` +
+          rawRows.map(r => {
+            const ciText = ciLevel !== 'off' ? getBatteryCiHtml(parseFloat(r.score), r, ciLevel) : '';
+            return `<b>${escapeHtml(r.name)}</b> ${escapeHtml(String(r.score))}${ciText ? ` (${ciText})` : ''}`;
+          }).join(', ') + `.</div>`;
       }
       if (brRows.length) notes.push('Step lines show the published percentage of the normative sample obtaining each span or higher (WAIS-IV Manual, Tables C.4–C.5). A HIGH base rate means a common, and therefore lower, score.');
     }
@@ -795,8 +814,8 @@
     const st = rciState[method];
     const chartable = all.filter(r => vizRciCalc(r, method));
 
-    const tabs = vizControls('Method', VIZ_RCI_METHODS.map(([m, label]) =>
-      vizTab('data-viz-method', m, label, m === method)).join(''), '');
+    const ctrl = { kicker:'Method', tabs: VIZ_RCI_METHODS.map(([m, label]) =>
+      vizTab('data-viz-method', m, label, m === method)).join(''), note:'' };
 
     const cards = [];
     let empty = '';
@@ -816,7 +835,7 @@
     }
     const cvLabel = st.cv === 0.95 ? '95%' : '90%';
     const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> ${escapeHtml(st.d1 || 'Date 1')} · <span class="viz-legend-filled">●</span> ${escapeHtml(st.d2 || 'Date 2')} · shaded band: no reliable change at the ${cvLabel} level set on that method's page. Outcomes state significance only, not direction.</p>`;
-    return { key:'change', label:'Change Analysis', controls: tabs, legend, cards, empty };
+    return { key:'change', label:'Change Analysis', ctrl, legend, cards, empty };
   }
 
   /* ================== PREMORBID: predicted vs achieved ==================
@@ -954,7 +973,7 @@
         'OPIE-4 is illustrative only for UK use: the coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US education, ethnicity and region terms that are not applied, so every patient is scored at the US reference category. Its base rates are empirical.'));
     }
     const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> predicted, with its ${escapeHtml(ciPct)} prediction interval shaded · <span class="viz-legend-filled">●</span> achieved · thin line marks the population mean of 100. Enter achieved scores on the premorbid page; rows without one show the prediction alone.</p>`;
-    return { key:'premorbid', label:'Premorbid', controls:'', legend, cards, empty:'' };
+    return { key:'premorbid', label:'Premorbid', ctrl:null, legend, cards, empty:'' };
   }
 
   /* ================== SD INDEX ========================================= */
@@ -966,7 +985,7 @@
     const axis = { min: -4, max: 4, ticks: [-4, -3, -2, -1, 0, 1, 2, 3, 4] };
     const chartable = rows.filter(r => sdiComputeChange(r) !== null);
     if (!chartable.length){
-      return { key:'sdi', label:'SD Index', controls:'', legend:'', cards:[],
+      return { key:'sdi', label:'SD Index', ctrl:null, legend:'', cards:[],
         empty:'<p class="viz-empty-line">Rows are entered on the SD Index page, but none can compute yet — each needs both scores, and an SD in raw mode.</p>' };
     }
 
@@ -1010,7 +1029,7 @@
     }
     const cvLabel = cv === 0.95 ? '95% (±1.96 SD)' : '90% (±1.645 SD)';
     const legend = `<p class="viz-legend">Dot: change between testings in SD units, on the SD Index page's own divisor per row. Shaded band: no significant change at ${cvLabel}, as set on the SD Index page.</p>`;
-    return { key:'sdi', label:'SD Index', controls:'', legend, cards, empty:'' };
+    return { key:'sdi', label:'SD Index', ctrl:null, legend, cards, empty:'' };
   }
 
   /* ---------- page render --------------------------------------------- */
@@ -1042,15 +1061,15 @@
     }
     /* The axis caption describes the whole block, so it is stated once in
        the controls panel rather than repeated on every card. */
-    const controls = vizControls('Show scores as',
-      VIZ_SCORE_VIEWS.map(([v, label]) => vizTab('data-viz-view', v, label, v === vizScoreView)).join(''),
-      VIZ_SCORE_AXIS_NOTE[vizScoreView]);
+    const ctrl = { kicker:'Show scores as',
+      tabs: VIZ_SCORE_VIEWS.map(([v, label]) => vizTab('data-viz-view', v, label, v === vizScoreView)).join(''),
+      note: VIZ_SCORE_AXIS_NOTE[vizScoreView] };
     const cards = [];
     for (const [gKey, fRows] of families){
       const title = gKey ? (batteryGroupLabel(gKey) || 'Untitled test') : 'Ungrouped measures';
       cards.push(vizFamilyCard(title, fRows, cls, ciLevel));
     }
-    return { key:'battery', label:'Score Tables', controls, legend:'', cards, empty:'' };
+    return { key:'battery', label:'Score Tables', ctrl, legend:'', cards, empty:'' };
   }
 
   /* ---------- one source at a time -------------------------------------
@@ -1064,7 +1083,10 @@
      for a close look. Both are kept because they answer different
      questions; neither is a substitute for the other. */
   let vizSource = null;
-  let vizSingle = false;
+  /* Single is the DEFAULT. The rest of this site does not present a long
+     scrolling page, and "all charts at once" is the deliberate overview
+     rather than the resting state. */
+  let vizSingle = true;
   const vizCardIndex = {};
 
   function vizSourceTabs(blocks, active){
@@ -1086,18 +1108,16 @@
   }
 
   function vizPaneHtml(block){
-    let out = block.controls || '';
-    if (block.empty) return out + block.empty;
-
     const n = block.cards.length;
-    if (n > 1){
-      out += `<div class="viz-display-row">
-        <div class="viz-tabs" role="tablist" aria-label="How many charts to show">
-          ${vizTab('data-viz-display', 'grid', 'All charts', !vizSingle)}
-          ${vizTab('data-viz-display', 'single', 'One at a time', vizSingle)}
-        </div>
-      </div>`;
-    }
+    /* A source with one chart has nothing to toggle between, so the control
+       only appears where it means something. */
+    const toggle = n > 1 ? vizDisplayToggle() : '';
+
+    let out = '';
+    if (block.ctrl) out += vizControls(block.ctrl.kicker, block.ctrl.tabs, block.ctrl.note, toggle);
+    else if (toggle) out += `<div class="panel"><div class="viz-controls-body">${toggle}</div></div>`;
+
+    if (block.empty) return out + block.empty;
     if (block.legend) out += block.legend;
 
     if (vizSingle && n > 1){
@@ -1110,9 +1130,59 @@
         <button type="button" class="btn" data-viz-card="next"${idx === n - 1 ? ' disabled' : ''}>Next →</button>
       </div>`;
     } else {
-      out += `<div class="viz-cards">${block.cards.join('')}</div>`;
+      out += `<div class="viz-cards${vizSingle ? ' viz-cards-single' : ''}">${block.cards.join('')}</div>`;
     }
     return out;
+  }
+
+  /* ---------- fit the pane to one window -------------------------------
+     A chart card is an <svg> with a viewBox and width:100%, so its rendered
+     HEIGHT follows its width and overflows a short window however few rows
+     it has. Capping max-height makes it scale down inside its box instead.
+
+     The cap is found by MEASURING the overflow rather than by adding up the
+     chrome: a first attempt enumerated what sits above and below the chart
+     and was wrong anyway, because the disclosure block and the site footer
+     live outside this container. Overflow is exact and needs no inventory,
+     and the relationship is linear - shrinking the chart by N moves
+     everything below it up by N - so one corrective pass converges.
+
+     Two traps, both of which produced silently wrong sizes first time:
+     `zoom:0.9` on <body> means getBoundingClientRect and innerHeight are
+     VISUAL pixels while a CSS max-height is a LAYOUT pixel; and BODY is the
+     scroll container here (see styles.css, `body{overflow:auto}`), so its
+     bounding rect is always exactly the viewport - the overflow has to come
+     from scrollHeight vs clientHeight.
+
+     The shrink stops at VIZ_FIT_MIN_ROW per row. Letterboxing scales the
+     TEXT down with the marks, so past a point the labels stop being
+     readable, and an unreadable chart that fits is worse than a readable
+     one that scrolls. */
+  const VIZ_FIT_MIN_ROW = 15;   // layout px per row, incl. header and axis
+
+  function vizFitToWindow(){
+    grid.style.removeProperty('--viz-fit-h');
+    if (!vizSingle) return;
+    const svg = grid.querySelector('.viz-cards-single .viz-svg');
+    if (!svg) return;
+
+    const sc = document.scrollingElement === document.documentElement && document.body.scrollHeight > document.body.clientHeight
+      ? document.body : (document.scrollingElement || document.body);
+    const overflowVisual = Math.max(document.body.scrollHeight - document.body.clientHeight,
+                                    sc.scrollHeight - sc.clientHeight);
+    if (overflowVisual <= 0) return;               // already fits
+
+    const zoom = parseFloat(getComputedStyle(document.body).zoom) || 1;
+    const currentVisual = svg.getBoundingClientRect().height;
+    const capLayout = (currentVisual - overflowVisual * zoom - 8) / zoom;
+
+    /* Never shrink past legibility. Row count comes from the viewBox, which
+       is authored as HEADER + rows*ROW_H + AXIS. */
+    const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+    const rows = Math.max(1, Math.round(((vb[3] || 0) - HEADER_H - AXIS_H) / ROW_H));
+    const floor = HEADER_H + AXIS_H + rows * VIZ_FIT_MIN_ROW;
+
+    if (capLayout >= floor) grid.style.setProperty('--viz-fit-h', capLayout.toFixed(0) + 'px');
   }
 
   function renderVizPage(){
@@ -1142,7 +1212,14 @@
     grid.innerHTML = vizSourceTabs(blocks, active) +
       `<div class="viz-pane">${vizPaneHtml(active)}</div>` +
       (blocks.length > 1 ? vizStepper(blocks, active) : '');
+
+    requestAnimationFrame(vizFitToWindow);
   }
+
+  /* The available height changes with the window, not just with a render. */
+  window.addEventListener('resize', () => {
+    if (section.classList.contains('active')) vizFitToWindow();
+  });
 
   /* One delegated handler for the whole page, because the content is
      replaced wholesale on every render. */

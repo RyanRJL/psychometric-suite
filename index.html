@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
 <link rel="stylesheet" href="styles.css?v=20260727a">
-<link rel="stylesheet" href="design-system.css?v=20260730g">
+<link rel="stylesheet" href="design-system.css?v=20260730i">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1266,7 +1266,7 @@
   <section class="section" id="charts">
     <div class="eyebrow">Basic Report Tools · Visualisation</div>
     <h1 class="section-title">Score <em>Charts</em></h1>
-    <p class="section-desc">One chart per test, covering Score Tables, the premorbid predictions, Change Analysis and the SD Index. Each source is a pane of its own — every trial and subtest becomes a row of its test's chart, showing the score against classification bands, or the change against the reliable-change interval. The charts read the same data and settings as those tables, so they cannot disagree.</p>
+    <p class="section-desc">One chart per test, drawn from the same data and settings as the tables. See <i>How these charts are drawn</i> below for the detail.</p>
 
     <p class="viz-settings-line" id="viz-settings-line"></p>
 
@@ -1277,6 +1277,7 @@
     <details class="formula-disclosure">
       <summary>How these charts are drawn</summary>
       <div class="info-box">
+        <p>The page covers four sources — Score Tables, the premorbid predictions, Change Analysis and the SD Index — each as a pane of its own, so the page does not grow into a long scroll. Every trial and subtest becomes a row of its test's chart, showing the score against classification bands, or the change against the reliable-change interval. The charts read the same data and settings as those tables, so the two cannot disagree.</p>
         <p>Each test from Score Tables gets one chart, and each of its trials or subtests is a row of that chart, drawn in the test's <b>native metric</b> (standard, T, scaled or z) — no score is converted for display, and a test that mixes metrics gets one panel per metric, never two metrics on one axis. The shaded bands behind each row are the classification ranges of the scheme selected on Score Tables (Wechsler or Guilmette et&nbsp;al., 2020), with band boundaries at standard scores 70, 80, 90, 110, 120 and 130 converted onto the panel's scale. The dot marks the obtained score; the whisker is the same confidence interval printed in the table's CI column (SEM = SD·√(1−r), at the CI level selected on Score Tables, with the table's rounding).</p>
         <p><b>Base-rate measures</b> (WAIS-IV Longest Span) are charted from the published cumulative table (WAIS-IV Administration and Scoring Manual, Tables C.4–C.5): each row's step line is the percentage of the normative sample obtaining each span or higher, and the dot marks the patient's span on that line. A high base rate means a common, and therefore lower, score.</p>
         <p><b>Error measures</b> (perseverations, intrusions, false positives; marked ↓) follow the Score Tables convention: the percentile is reported as obtained, while the classification — and therefore the band shading — describes performance, so those rows' bands run reversed.</p>
@@ -5883,7 +5884,7 @@
 <script src="app.js?v=20260730a"></script>
 <script src="design-system.js?v=20260730a" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
-<script src="app-viz-page.js?v=20260730g"></script>
+<script src="app-viz-page.js?v=20260730i"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

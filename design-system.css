@@ -4165,8 +4165,8 @@ input[type="text"].ds-inline-bar-input{
 .viz-controls-body{
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ds-space-2);
+  align-items: flex-start;
+  gap: var(--ds-space-4);
 }
 .viz-tabs{ display: flex; flex-wrap: wrap; gap: var(--ds-space-1); }
 .viz-tab{
@@ -4332,12 +4332,13 @@ input[type="text"].ds-inline-bar-input{
 .viz-source-tab[aria-selected="true"] .viz-source-count{ color: var(--ds-text-subtle); }
 
 .viz-pane{ animation: fadeIn 200ms ease; }
-.viz-display-row{
-  display: flex;
-  justify-content: flex-end;
-  margin: var(--ds-space-3) 0 var(--ds-space-2);
-}
+.viz-controls-main{ display: flex; flex-direction: column; gap: var(--ds-space-2); }
+.viz-controls-right{ margin-left: auto; align-items: flex-end; }
 .viz-cards-single{ grid-template-columns: 1fr; }
+/* Set at render time by vizFitToWindow. The SVG letterboxes inside this
+   height (preserveAspectRatio default), so a pane fits one window instead
+   of growing with its own width. */
+.viz-cards-single .viz-svg{ max-height: var(--viz-fit-h, none); }
 
 .viz-gallery-nav,
 .viz-step-nav{
@@ -4367,3 +4368,27 @@ input[type="text"].ds-inline-bar-input{
   text-align: center;
 }
 .viz-gallery-nav .btn[disabled]{ opacity: 0.4; cursor: default; }
+
+/* ---- compact vertical rhythm on the charts page ---------------------------
+   Measured, not guessed: at 1440x900 the page came to 1433px of which ~400px
+   was margin and 133px the header block, against a 1000px layout viewport.
+   The chart itself was only 457px, so no amount of shrinking IT could make a
+   pane fit one window - the furniture had to come down first. These are
+   page-scoped (#charts) so no other page's rhythm changes, following the
+   existing #change-analysis / #premorbid precedent. */
+#charts .section-desc{ margin-bottom: var(--ds-space-2); max-width: 70ch; }
+#charts .viz-settings-line{ margin-bottom: var(--ds-space-2); }
+#charts .viz-blocks{ margin-bottom: var(--ds-space-2); }
+#charts .viz-block{ margin-bottom: var(--ds-space-4); }
+#charts .viz-source-tabs{ margin-bottom: var(--ds-space-2); padding-bottom: var(--ds-space-1); }
+#charts .viz-pane > .panel{ margin-bottom: var(--ds-space-2); }
+#charts .viz-cards{ gap: var(--ds-space-2); }
+#charts .viz-step-nav{ margin-top: var(--ds-space-4); padding-top: var(--ds-space-2); }
+#charts .viz-gallery-nav{ margin-top: var(--ds-space-2); }
+#charts .formula-disclosure{ margin: var(--ds-space-3) 0 0; }
+/* Cards carry less padding here than the app default: this page stacks a card
+   inside a pane inside a section, and the compounded padding was pushing the
+   chart out of the window. */
+#charts .viz-cards .panel{ padding: 14px 16px; }
+#charts .viz-card-head{ margin-bottom: var(--ds-space-2); padding-bottom: var(--ds-space-1); }
+#charts .viz-raw-row{ margin: var(--ds-space-1) 0 0; padding: 6px 10px; }
