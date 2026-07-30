@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
 <link rel="stylesheet" href="styles.css?v=20260727a">
-<link rel="stylesheet" href="design-system.css?v=20260730e">
+<link rel="stylesheet" href="design-system.css?v=20260730f">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1270,12 +1270,9 @@
 
     <p class="viz-settings-line" id="viz-settings-line"></p>
 
-    <div class="viz-empty" id="viz-empty" hidden>
-      <p>No scores to chart yet. Enter scores on Score Tables, Change Analysis or the SD Index and they will appear here, one chart per test.</p>
-      <button type="button" class="btn btn-primary nav-item" data-target="battery">Open Score Tables</button>
-    </div>
+    <p class="viz-empty-line" id="viz-empty" hidden>Enter scores on Score Tables, Change Analysis, the SD Index or the premorbid page to chart them here.</p>
 
-    <div class="viz-grid" id="viz-grid"></div>
+    <div class="viz-blocks" id="viz-grid"></div>
 
     <details class="formula-disclosure">
       <summary>How these charts are drawn</summary>
@@ -5885,7 +5882,7 @@
 <script src="app.js?v=20260730a"></script>
 <script src="design-system.js?v=20260730a" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
-<script src="app-viz-page.js?v=20260730e"></script>
+<script src="app-viz-page.js?v=20260730f"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

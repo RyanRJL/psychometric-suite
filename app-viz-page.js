@@ -245,6 +245,186 @@
     return { svg: `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="Published base rates by span">${svg}</svg>` };
   }
 
+  /* ================== EXPORT: copy to clipboard / save as PNG ===========
+     An SVG rendered through <img> gets NO stylesheet - the document's CSS
+     does not cross that boundary - so every mark would rasterise as black
+     fill on transparent. The clone therefore carries its computed styles
+     inline, and two CSS features that SVG-in-<img> cannot honour are
+     resolved here instead:
+
+       - text-transform, which is a CSS property with no SVG equivalent, so
+         the text content itself is upper-cased in the clone;
+       - webfonts, which an <img>-embedded SVG may not load at all, so an
+         explicit family stack is set and the raster falls back to a local
+         face. Numbers and labels stay legible; the glyphs may differ from
+         the screen.
+
+     A background rectangle is painted first: a transparent PNG dropped into
+     a report reads as a hole wherever the document is not white. */
+  const VIZ_EXPORT_SCALE = 2;   // 2x for a crisp figure in a printed report
+  const VIZ_INLINE_PROPS = [
+    'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-linecap',
+    'stroke-linejoin', 'stroke-dasharray', 'opacity', 'font-size',
+    'font-family', 'font-weight', 'letter-spacing', 'text-anchor'
+  ];
+
+  function vizSurfaceColour(){
+    const probe = getComputedStyle(document.body).getPropertyValue('--ds-surface');
+    return (probe || '').trim() || '#FDFAF6';
+  }
+
+  function vizSvgToString(svg, title){
+    const clone = svg.cloneNode(true);
+    const src = svg.querySelectorAll('*');
+    const dst = clone.querySelectorAll('*');
+    for (let i = 0; i < src.length; i++){
+      const cs = getComputedStyle(src[i]);
+      let decl = '';
+      for (const prop of VIZ_INLINE_PROPS){
+        const v = cs.getPropertyValue(prop);
+        if (v) decl += `${prop}:${v};`;
+      }
+      dst[i].setAttribute('style', decl);
+      if (cs.getPropertyValue('text-transform') === 'uppercase' && dst[i].tagName === 'text'){
+        dst[i].textContent = (dst[i].textContent || '').toUpperCase();
+      }
+    }
+
+    const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+    const w = vb[2] || svg.clientWidth || 940;
+    const h = vb[3] || 200;
+    /* The exported figure names itself. A chart pasted into a report with no
+       test name on it cannot be identified once it leaves the app. */
+    const titleH = title ? 26 : 0;
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', w);
+    clone.setAttribute('height', h + titleH);
+    clone.setAttribute('viewBox', `0 ${-titleH} ${w} ${h + titleH}`);
+    if (title){
+      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', '0');
+      t.setAttribute('y', String(-titleH + 14));
+      t.setAttribute('style', `font-family:${VIZ_FONT_STACK};font-size:14px;font-weight:600;fill:#1A1410;`);
+      t.textContent = title;
+      clone.insertBefore(t, clone.firstChild);
+    }
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('x', '0');
+    bg.setAttribute('y', String(-titleH));
+    bg.setAttribute('width', String(w));
+    bg.setAttribute('height', String(h + titleH));
+    bg.setAttribute('fill', vizSurfaceColour());
+    clone.insertBefore(bg, clone.firstChild);
+
+    return { xml: new XMLSerializer().serializeToString(clone), w, h: h + titleH };
+  }
+  const VIZ_FONT_STACK = "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif";
+
+  function vizSvgToPngBlob(svg, title){
+    return new Promise((resolve, reject) => {
+      const { xml, w, h } = vizSvgToString(svg, title);
+      const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }));
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(w * VIZ_EXPORT_SCALE);
+          canvas.height = Math.round(h * VIZ_EXPORT_SCALE);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = vizSurfaceColour();
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('PNG encoding failed')), 'image/png');
+        } catch (e){ URL.revokeObjectURL(url); reject(e); }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('SVG could not be rasterised')); };
+      img.src = url;
+    });
+  }
+
+  function vizFileName(title){
+    return (title || 'chart').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() + '.png';
+  }
+
+  async function vizCopyChart(svg, title){
+    try {
+      const blob = await vizSvgToPngBlob(svg, title);
+      /* Clipboard image write needs a secure context and the ClipboardItem
+         API. Opening the bundle straight off disk qualifies in current
+         Chrome and Firefox, but an older browser will not have it - so the
+         failure is reported with the alternative rather than silently
+         doing nothing. */
+      if (!navigator.clipboard || typeof ClipboardItem === 'undefined'){
+        throw new Error('no-clipboard-api');
+      }
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      if (typeof showToast === 'function') showToast('✓ Chart copied to clipboard');
+    } catch (e){
+      if (typeof showToast === 'function'){
+        showToast(e && e.message === 'no-clipboard-api'
+          ? 'This browser cannot copy images — use Save PNG instead'
+          : 'Could not copy the chart — use Save PNG instead', true);
+      }
+    }
+  }
+
+  async function vizSaveChart(svg, title){
+    try {
+      const blob = await vizSvgToPngBlob(svg, title);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = vizFileName(title);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (typeof showToast === 'function') showToast('✓ Chart saved as PNG');
+    } catch (e){
+      if (typeof showToast === 'function') showToast('Could not save the chart as PNG', true);
+    }
+  }
+
+  const VIZ_ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>';
+  const VIZ_ICON_SAVE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
+
+  /* ---------- page furniture, borrowed from the rest of the app --------
+     h2.block-title is the app's in-page heading (serif, ruled) and .panel
+     its card; both are global, so they are used as-is rather than
+     re-invented. The tab and control classes are standalone because the
+     app's own tab components are page-scoped and would arrive unstyled
+     outside their section - see the note at the top of the CSS block. */
+  function vizBlock(title, inner){
+    return `<div class="viz-block"><h2 class="block-title">${escapeHtml(title)}</h2>${inner}</div>`;
+  }
+  function vizTab(attr, value, label, active){
+    return `<button type="button" class="viz-tab" role="tab" aria-selected="${active ? 'true' : 'false'}" ${attr}="${escapeAttr(value)}">${escapeHtml(label)}</button>`;
+  }
+  function vizControls(kicker, tabs, note){
+    return `<div class="panel">
+      <div class="panel-kicker">${escapeHtml(kicker)}</div>
+      <div class="viz-controls-body"><div class="viz-tabs" role="tablist" aria-label="${escapeAttr(kicker)}">${tabs}</div></div>
+      ${note ? `<p class="viz-axis-note">${note}</p>` : ''}
+    </div>`;
+  }
+
+  /* Card shell: the app's own .panel, a head shaped like .apa-toolbar
+     (micro-label left, actions right), and the app's .btn for the actions. */
+  function vizPanel(title, body, note){
+    return `<div class="panel">
+      <div class="viz-card-head">
+        <span class="viz-card-title">${escapeHtml(title)}</span>
+        <div class="viz-card-actions">
+          <button type="button" class="btn btn-icon" data-viz-copy title="Copy this chart to the clipboard as a PNG">${VIZ_ICON_COPY}Copy</button>
+          <button type="button" class="btn btn-icon" data-viz-save title="Save this chart as a PNG file">${VIZ_ICON_SAVE}PNG</button>
+        </div>
+      </div>
+      ${body}
+      ${note ? `<div class="viz-card-note">${note}</div>` : ''}
+    </div>`;
+  }
+
   /* ================== VIEW MODES for the Score Tables block =============
      'native' keeps every row on its entry metric (the default, and the only
      view in which nothing is converted). The other three answer "show me
@@ -498,11 +678,7 @@
 
     if (anyReversed) notes.unshift('↓ error measure: a higher score means more errors. Percentiles are as obtained; the classification bands describe performance, so that row’s bands run reversed.');
 
-    return `<div class="viz-card">
-      <div class="viz-card-name">${escapeHtml(title)}</div>
-      ${body}
-      ${notes.length ? `<div class="viz-card-note">${notes.join('<br>')}</div>` : ''}
-    </div>`;
+    return vizPanel(title, body, notes.length ? notes.join('<br>') : '');
   }
 
   /* ================== CHANGE ANALYSIS (RCI methods) ====================
@@ -621,13 +797,12 @@
     const st = rciState[method];
     const chartable = all.filter(r => vizRciCalc(r, method));
 
-    const tabs = `<div class="viz-method-tabs">` + VIZ_RCI_METHODS.map(([m, label]) =>
-      `<button type="button" class="viz-method-tab${m === method ? ' is-active' : ''}" data-viz-method="${m}">${label}</button>`
-    ).join('') + `</div>`;
+    const tabs = vizControls('Method', VIZ_RCI_METHODS.map(([m, label]) =>
+      vizTab('data-viz-method', m, label, m === method)).join(''), '');
 
     let cards = '';
     if (!chartable.length){
-      cards = `<div class="viz-empty"><p>Rows are entered on Change Analysis, but none has the values this method needs yet (scores at both dates plus the normative parameters). Complete them on the ${escapeHtml(VIZ_RCI_METHODS.find(x => x[0] === method)[1])} page.</p></div>`;
+      cards = `<p class="viz-empty-line">Rows are entered on Change Analysis, but none has the values the ${escapeHtml(VIZ_RCI_METHODS.find(x => x[0] === method)[1])} method needs yet — scores at both dates, plus the normative parameters.</p>`;
     } else {
       const families = new Map();
       for (const r of chartable){
@@ -637,14 +812,12 @@
       }
       for (const [g, fRows] of families){
         const title = g ? caGroupDisplay(g) : 'Ungrouped measures';
-        cards += `<div class="viz-card"><div class="viz-card-name">${escapeHtml(title)}</div>` +
-          vizRciPanelSvg(fRows, method) +
-          `</div>`;
+        cards += vizPanel(title, vizRciPanelSvg(fRows, method), '');
       }
     }
     const cvLabel = st.cv === 0.95 ? '95%' : '90%';
     const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> ${escapeHtml(st.d1 || 'Date 1')} · <span class="viz-legend-filled">●</span> ${escapeHtml(st.d2 || 'Date 2')} · shaded band: no reliable change at the ${cvLabel} level set on that method's page. Outcomes state significance only, not direction.</p>`;
-    return `<div class="viz-section-head">Change Analysis</div>${tabs}${legend}${cards}`;
+    return vizBlock('Change Analysis', tabs + legend + `<div class="viz-cards">${cards}</div>`);
   }
 
   /* ================== PREMORBID: predicted vs achieved ==================
@@ -774,17 +947,15 @@
     const ciPct = preState.ciPct || premorbidCi().short;
     let cards = '';
     if (topf.length){
-      cards += `<div class="viz-card"><div class="viz-card-name">ToPF-predicted WAIS-IV / WMS-IV</div>` +
-        vizPrePanelSvg(topf) +
-        `<div class="viz-card-note">Base rates are the percentage of the normative sample with a discrepancy at least this large. BASE_RATES is a parametric normal model, round(Φ(d / SEE)), not observed frequencies.</div></div>`;
+      cards += vizPanel('ToPF-predicted WAIS-IV / WMS-IV', vizPrePanelSvg(topf),
+        'Base rates are the percentage of the normative sample with a discrepancy at least this large. BASE_RATES is a parametric normal model, round(Φ(d / SEE)), not observed frequencies.');
     }
     if (opie.length){
-      cards += `<div class="viz-card"><div class="viz-card-name">OPIE-4-predicted WAIS-IV</div>` +
-        vizPrePanelSvg(opie) +
-        `<div class="viz-card-note">OPIE-4 is illustrative only for UK use: the coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US education, ethnicity and region terms that are not applied, so every patient is scored at the US reference category. Its base rates are empirical.</div></div>`;
+      cards += vizPanel('OPIE-4-predicted WAIS-IV', vizPrePanelSvg(opie),
+        'OPIE-4 is illustrative only for UK use: the coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US education, ethnicity and region terms that are not applied, so every patient is scored at the US reference category. Its base rates are empirical.');
     }
     const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> predicted, with its ${escapeHtml(ciPct)} prediction interval shaded · <span class="viz-legend-filled">●</span> achieved · thin line marks the population mean of 100. Enter achieved scores on the premorbid page; rows without one show the prediction alone.</p>`;
-    return `<div class="viz-section-head">Premorbid — predicted vs achieved</div>${legend}${cards}`;
+    return vizBlock('Premorbid — predicted vs achieved', legend + `<div class="viz-cards">${cards}</div>`);
   }
 
   /* ================== SD INDEX ========================================= */
@@ -796,8 +967,8 @@
     const axis = { min: -4, max: 4, ticks: [-4, -3, -2, -1, 0, 1, 2, 3, 4] };
     const chartable = rows.filter(r => sdiComputeChange(r) !== null);
     if (!chartable.length){
-      return `<div class="viz-section-head">Standard Deviation Index</div>` +
-        `<div class="viz-empty"><p>Rows are entered on the SD Index page, but none can compute yet (both scores, and an SD in raw mode). Complete them there.</p></div>`;
+      return vizBlock('Standard Deviation Index',
+        '<p class="viz-empty-line">Rows are entered on the SD Index page, but none can compute yet — each needs both scores, and an SD in raw mode.</p>');
     }
 
     const families = new Map();
@@ -836,12 +1007,11 @@
                `<text class="viz-tick-label" x="${x}" y="${axisY + 18}" text-anchor="middle">${tval}</text>`;
       }
       const title = g ? stripAgeRange(g) : 'Ungrouped measures';
-      cards += `<div class="viz-card"><div class="viz-card-name">${escapeHtml(title)}</div>` +
-        `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="SD Index change">${svg}</svg></div>`;
+      cards += vizPanel(title, `<svg class="viz-svg" viewBox="0 0 ${SVG_W} ${H}" role="img" aria-label="SD Index change">${svg}</svg>`, '');
     }
     const cvLabel = cv === 0.95 ? '95% (±1.96 SD)' : '90% (±1.645 SD)';
     const legend = `<p class="viz-legend">Dot: change between testings in SD units, on the SD Index page's own divisor per row. Shaded band: no significant change at ${cvLabel}, as set on the SD Index page.</p>`;
-    return `<div class="viz-section-head">Standard Deviation Index</div>${legend}${cards}`;
+    return vizBlock('Standard Deviation Index', legend + `<div class="viz-cards">${cards}</div>`);
   }
 
   /* ---------- page render --------------------------------------------- */
@@ -877,20 +1047,17 @@
         if (!families.has(gKey)) families.set(gKey, []);
         families.get(gKey).push(r);
       }
-      html += `<div class="viz-section-head">Score Tables</div>`;
-      html += `<div class="viz-method-tabs" role="group" aria-label="How to show the scores">` +
-        VIZ_SCORE_VIEWS.map(([v, label]) =>
-          `<button type="button" class="viz-method-tab${v === vizScoreView ? ' is-active' : ''}" data-viz-view="${v}">${label}</button>`
-        ).join('') + `</div>`;
       /* The axis caption describes the whole block, so it is stated once
-         here rather than repeated on every card. */
-      if (VIZ_SCORE_AXIS_NOTE[vizScoreView]){
-        html += `<p class="viz-legend">${VIZ_SCORE_AXIS_NOTE[vizScoreView]}</p>`;
-      }
+         in the controls panel rather than repeated on every card. */
+      let inner = vizControls('Show scores as',
+        VIZ_SCORE_VIEWS.map(([v, label]) => vizTab('data-viz-view', v, label, v === vizScoreView)).join(''),
+        VIZ_SCORE_AXIS_NOTE[vizScoreView]);
+      let cards = '';
       for (const [gKey, fRows] of families){
         const title = gKey ? (batteryGroupLabel(gKey) || 'Untitled test') : 'Ungrouped measures';
-        html += vizFamilyCard(title, fRows, cls, ciLevel);
+        cards += vizFamilyCard(title, fRows, cls, ciLevel);
       }
+      html += vizBlock('Score Tables', inner + `<div class="viz-cards">${cards}</div>`);
     }
 
     html += vizPremorbidBlockHtml();
@@ -906,13 +1073,26 @@
     grid.innerHTML = html;
   }
 
-  /* The method tabs pick which method's results to draw. Delegated, because
-     the grid is replaced wholesale on every render. */
+  /* One delegated handler for the whole page, because the content is
+     replaced wholesale on every render. */
   grid.addEventListener('click', e => {
     const method = e.target.closest('[data-viz-method]');
     if (method){ vizRciMethod = method.dataset.vizMethod; renderVizPage(); return; }
     const view = e.target.closest('[data-viz-view]');
-    if (view){ vizScoreView = view.dataset.vizView; renderVizPage(); }
+    if (view){ vizScoreView = view.dataset.vizView; renderVizPage(); return; }
+
+    const copy = e.target.closest('[data-viz-copy]');
+    const save = e.target.closest('[data-viz-save]');
+    const btn = copy || save;
+    if (!btn) return;
+    const panel = btn.closest('.panel');
+    const svg = panel && panel.querySelector('svg.viz-svg');
+    if (!svg){
+      if (typeof showToast === 'function') showToast('Nothing to export on this card', true);
+      return;
+    }
+    const title = (panel.querySelector('.viz-card-title') || {}).textContent || 'Chart';
+    (copy ? vizCopyChart : vizSaveChart)(svg, title);
   });
 
   /* Re-render whenever the page becomes visible, so it always reflects the
