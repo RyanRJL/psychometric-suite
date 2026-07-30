@@ -22,6 +22,7 @@
     'report-writer':  'Report Writer',
     'effectsize':     'Effect Sizes',
     'change-analysis':'Change Analysis',
+    'charts':         'Score Charts',
     'rci-basic':      'Standard Deviation Index',
     'rci-practice':   'Simple Reliable Change',
     'rci-srb':        'Practice-Adjusted',

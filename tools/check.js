@@ -1277,6 +1277,20 @@ check('the "Clear all tables" button has a handler bound', () => {
   return true;
 });
 
+/* The Score Charts page lives in its own script (app-viz-page.js), so section
+   16's INIT_CALLS cannot see it. Its wiring is four separate registrations
+   that must all exist or the page is silently unreachable or stale. */
+check('the Score Charts page is fully wired: section, nav, script tag, precache', () => {
+  const missing = [];
+  if (!/<section class="section" id="charts">/.test(HTML_SRC)) missing.push('section#charts');
+  if (!/class="nav-item" data-target="charts"/.test(HTML_SRC)) missing.push('sidebar nav entry');
+  if (!/data-target="charts" data-bucket="charts"/.test(HTML_SRC)) missing.push('topnav entry');
+  if (!/<script src="app-viz-page\.js\?v=/.test(HTML_SRC)) missing.push('script tag');
+  const SW_SRC = fs.readFileSync(path.join(ROOT, 'service-worker.js'), 'utf8');
+  if (!SW_SRC.includes("'./app-viz-page.js'")) missing.push('service-worker precache');
+  return missing.length === 0 || 'missing: ' + missing.join(', ');
+});
+
 /* r is an error term in Jacobson & Truax and Iverson, but a fitted regression
    slope (r x sd2/sd1) in McSweeney/SRB and Crawford & Garthwaite. Offering the
    population-corrected r on the latter two changes the predicted score and
@@ -1326,7 +1340,7 @@ check('SRB and Crawford treat r as a regression slope, so cannot use corrected r
    ========================================================================== */
 heading('17. Called functions exist');
 
-const PROJECT_SCRIPTS = ['app.js', 'design-system.js', 'app-effectsize-page.js', 'data.js'];
+const PROJECT_SCRIPTS = ['app.js', 'design-system.js', 'app-effectsize-page.js', 'app-viz-page.js', 'data.js'];
 
 /* Comments are not call sites. Without this, a comment recording WHY a
    function was removed - which is exactly the documentation this outage

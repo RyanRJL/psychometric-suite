@@ -148,6 +148,7 @@ the page is branded Iverson (2001) in six places.
 | `app.js` | 7.1k | Every calculator. 206 top-level functions, 11 section banners. |
 | `design-system.js` | 1.1k | Page titles, microcopy, FOUC handling, the inline control bars. |
 | `app-effectsize-page.js` | 0.8k | The effect-size calculator, self-contained. |
+| `app-viz-page.js` | 0.3k | Score Charts page — one SVG chart per test family, one row per trial/subtest, self-contained. Draws only what the table's own functions return; has no settings of its own. |
 | `index.html` | 6.3k | All pages in one document; sections shown/hidden by nav. |
 | `styles.css` | 9.1k | Original stylesheet. |
 | `design-system.css` | 4.1k | Later restyling layer that overrides the above. |
@@ -565,7 +566,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 192 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 193 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Table 4.5, OPIE-4 coefficients pinned to Table eA5.8, worked OPIE predictions, reliable-
 change thresholds and direction-neutral outcome labels, base-rate reconstruction and

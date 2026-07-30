@@ -4131,3 +4131,327 @@ input[type="text"].ds-inline-bar-input{
   }
   #change-analysis .change-overview-guide-arrow{ display: none; }
 }
+
+/* ----------------------------------------------------------------------------
+   SCORE CHARTS PAGE (#charts)
+
+   The page borrows the app's own components where they are GLOBAL — .panel
+   for every card, h2.block-title for the section headings, .btn for the
+   toolbar buttons — and uses standalone .viz-* classes for everything else.
+   That split is deliberate: .es-tab and .conv-view-tab, the app's two tab
+   components, are page-scoped (#effectsize / #converter), so reusing those
+   names here would inherit no styling at all. .viz-tab therefore copies
+   their APPEARANCE rather than their class, which also keeps every rule
+   below at specificity 0-1-0 with no !important — see CLAUDE.md, "The CSS
+   cascade will silently eat your rule".
+   ---------------------------------------------------------------------------- */
+.viz-settings-line{
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-subtle);
+  margin: 0 0 var(--ds-space-4);
+}
+.viz-empty-line{
+  font-family: var(--sans);
+  font-size: var(--ds-text-base);
+  font-style: italic;
+  color: var(--ds-text-faint);
+  margin: 0;
+}
+.viz-blocks{ margin-bottom: var(--ds-space-6); }
+.viz-block{ margin-bottom: var(--ds-space-10); }
+.viz-block:last-child{ margin-bottom: 0; }
+
+/* Controls sit in a panel with a kicker, as on every other calculator. */
+.viz-controls-body{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ds-space-4);
+}
+.viz-tabs{ display: flex; flex-wrap: wrap; gap: var(--ds-space-1); }
+.viz-tab{
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-medium);
+  color: var(--ds-text-muted);
+  background: var(--ds-surface-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  padding: 7px 13px;
+  cursor: pointer;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              color var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease);
+}
+.viz-tab:hover{ background: var(--ds-surface-emphasis); color: var(--ds-text); }
+.viz-tab[aria-selected="true"]{
+  background: var(--ds-primary);
+  border-color: var(--ds-primary);
+  color: var(--ds-text-inverse);
+}
+.viz-axis-note{
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-subtle);
+  line-height: var(--ds-leading-snug);
+  margin: var(--ds-space-3) 0 0;
+}
+
+.viz-cards{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+  gap: var(--ds-space-4);
+  align-items: start;
+}
+/* Card head mirrors .apa-toolbar: micro-label left, actions right. */
+.viz-card-head{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin-bottom: var(--ds-space-3);
+  padding-bottom: var(--ds-space-2);
+  border-bottom: 1px solid var(--ds-border-subtle);
+}
+.viz-card-title{
+  flex: 1;
+  font-size: var(--ds-text-xs);
+  letter-spacing: var(--ds-tracking-wide);
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  font-weight: var(--ds-weight-semibold);
+}
+.viz-card-actions{ display: flex; gap: var(--ds-space-1); flex: 0 0 auto; }
+.viz-sub-caption{
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: var(--ds-tracking-wide);
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  margin: var(--ds-space-3) 0 var(--ds-space-1);
+}
+
+/* ---- chart marks ---- */
+.viz-svg{ display: block; width: 100%; height: auto; }
+.viz-col-head{
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  fill: var(--ds-text-faint);
+}
+.viz-row-name{ font-size: 13px; fill: var(--ds-text); }
+.viz-row-score{ font-size: 13px; font-weight: 600; fill: var(--ds-text); }
+.viz-row-fact{ font-size: 12.5px; fill: var(--ds-text-muted); }
+.viz-tick{ stroke: var(--ds-border-strong); stroke-width: 1; }
+.viz-tick-label{ font-size: 10px; fill: var(--ds-text-faint); }
+/* Bands are the app's 7 classification tints (DESC_COLOURS), washed out so
+   the ink dot stays the loudest thing on the card. */
+.viz-band{ opacity: 0.16; }
+.viz-whisker{ stroke: var(--ds-text-muted); stroke-width: 2; stroke-linecap: round; }
+.viz-dot{ fill: var(--ds-text); stroke: var(--ds-surface); stroke-width: 2; }
+.viz-dot-open{ fill: var(--ds-surface); stroke: var(--ds-text-muted); stroke-width: 2; }
+/* A dot the axis cannot show is drawn at the edge, dimmed, with a caret
+   beside it; the row's figures carry the actual value. */
+.viz-dot-off{ opacity: 0.5; }
+.viz-offscale{ font-size: 11px; fill: var(--ds-text-muted); }
+.viz-step{ fill: none; stroke: var(--ds-text-muted); stroke-width: 2; stroke-linejoin: round; }
+/* The reliable-change interval marks a decision threshold, not a good or bad
+   outcome, so it is neutral - the app never asserts direction. */
+.viz-rci-band{ fill: var(--ds-text); opacity: 0.07; }
+.viz-rci-expected{ stroke: var(--ds-border-strong); stroke-width: 1; }
+.viz-link-line{ stroke: var(--ds-text-faint); stroke-width: 1.5; }
+/* Baseline for a raw-score dot: a hairline, not a band - a band would imply
+   a range the raw view deliberately does not assert. */
+.viz-raw-rule{ stroke: var(--ds-border); stroke-width: 1; }
+
+.viz-raw-row{
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-subtle);
+  background: var(--ds-surface-subtle);
+  border: 1px dashed var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  margin: var(--ds-space-2) 0;
+}
+.viz-raw-row b{ color: var(--ds-text); font-weight: var(--ds-weight-semibold); }
+.viz-card-note{
+  margin-top: var(--ds-space-2);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-text-subtle);
+  line-height: var(--ds-leading-snug);
+}
+.viz-legend{
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-subtle);
+  margin: 0 0 var(--ds-space-3);
+}
+.viz-legend-open,
+.viz-legend-filled{ color: var(--ds-text); font-weight: 600; }
+
+@media (max-width: 720px){
+  .viz-cards{ grid-template-columns: 1fr; }
+}
+
+/* ---- one source at a time -------------------------------------------------
+   Mirrors the premorbid pane/stepper idiom (#premorbid .pre-tab-nav), which
+   is page-scoped and so cannot be reused by class name. */
+
+
+
+
+
+
+
+.viz-pane{ animation: fadeIn 200ms ease; }
+.viz-controls-main{ display: flex; flex-direction: column; gap: var(--ds-space-2); }
+.viz-controls-right{ margin-left: auto; align-items: flex-end; }
+.viz-cards-single{ grid-template-columns: 1fr; }
+/* Set at render time by vizFitToWindow. The SVG letterboxes inside this
+   height (preserveAspectRatio default), so a pane fits one window instead
+   of growing with its own width. */
+.viz-cards-single .viz-svg{ max-height: var(--viz-fit-h, none); }
+
+.viz-gallery-nav{
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--ds-space-4);
+  margin-top: var(--ds-space-2);
+  padding-top: var(--ds-space-2);
+  border-top: 1px solid var(--ds-border-subtle);
+}
+.viz-gallery-nav > :first-child{ justify-self: start; }
+.viz-gallery-nav > :last-child{ justify-self: end; }
+
+
+.viz-step-count{
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  white-space: nowrap;
+  text-align: center;
+}
+.viz-gallery-nav .btn[disabled]{ opacity: 0.4; cursor: default; }
+
+/* ---- compact vertical rhythm on the charts page ---------------------------
+   Measured, not guessed: at 1440x900 the page came to 1433px of which ~400px
+   was margin and 133px the header block, against a 1000px layout viewport.
+   The chart itself was only 457px, so no amount of shrinking IT could make a
+   pane fit one window - the furniture had to come down first. These are
+   page-scoped (#charts) so no other page's rhythm changes, following the
+   existing #change-analysis / #premorbid precedent. */
+#charts .section-desc{ margin-bottom: var(--ds-space-2); max-width: 70ch; }
+#charts .viz-settings-line{ margin-bottom: var(--ds-space-2); }
+#charts .viz-blocks{ margin-bottom: var(--ds-space-2); }
+#charts .viz-block{ margin-bottom: var(--ds-space-4); }
+#charts .viz-source-tabs{ margin-bottom: var(--ds-space-2); padding-bottom: var(--ds-space-1); }
+#charts .viz-pane > .panel{ margin-bottom: var(--ds-space-2); }
+#charts .viz-cards{ gap: var(--ds-space-2); }
+#charts .viz-step-nav{ margin-top: var(--ds-space-4); padding-top: var(--ds-space-2); }
+#charts .viz-gallery-nav{ margin-top: var(--ds-space-2); }
+#charts .formula-disclosure{ margin: var(--ds-space-3) 0 0; }
+/* Cards carry less padding here than the app default: this page stacks a card
+   inside a pane inside a section, and the compounded padding was pushing the
+   chart out of the window. */
+#charts .viz-cards .panel{ padding: 14px 16px; }
+#charts .viz-card-head{ margin-bottom: var(--ds-space-2); padding-bottom: var(--ds-space-1); }
+#charts .viz-raw-row{ margin: var(--ds-space-1) 0 0; padding: 6px 10px; }
+
+/* ---- app shell: control rail + chart stage --------------------------------
+   The layout is given an explicit height by vizFitToWindow and each column
+   scrolls inside it, so the document itself never scrolls - the header,
+   controls and chart navigation stay put while you move between charts. */
+.viz-layout{
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: var(--ds-space-4);
+  align-items: stretch;
+  min-height: 0;
+}
+.viz-rail{
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-5);
+  overflow-y: auto;
+  padding: var(--ds-space-4);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow-1);
+}
+.viz-rail-group{ display: flex; flex-direction: column; gap: var(--ds-space-2); }
+.viz-rail-list{ display: flex; flex-direction: column; gap: 2px; }
+.viz-rail-row{ flex-direction: row; gap: var(--ds-space-1); }
+.viz-rail-item{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  width: 100%;
+  text-align: left;
+  font-family: var(--sans);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              color var(--ds-duration-fast) var(--ds-ease);
+}
+.viz-rail-item:hover{ background: var(--ds-surface-emphasis); color: var(--ds-text); }
+.viz-rail-item[aria-selected="true"]{
+  background: var(--ds-primary-tint);
+  border-color: var(--ds-primary-ring);
+  color: var(--ds-text);
+  font-weight: var(--ds-weight-semibold);
+}
+.viz-rail-label{ flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viz-rail-count,
+.viz-rail-num{
+  font-size: var(--ds-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-text-faint);
+  flex: 0 0 auto;
+}
+.viz-rail-num{ width: 1.4em; text-align: right; }
+.viz-rail .viz-axis-note{ margin: 0; font-size: var(--ds-text-xs); }
+.viz-rail .viz-tab{ flex: 1; text-align: center; padding: 6px 8px; }
+
+.viz-stage{
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  overflow-y: auto;
+  min-height: 0;
+}
+.viz-stage .viz-cards{ margin: 0; }
+.viz-stage .viz-legend{ margin: 0; }
+
+@media (max-width: 900px){
+  .viz-layout{ grid-template-columns: 1fr; }
+  .viz-rail{ order: -1; }
+}
+
+.viz-stage > .viz-cards{ margin-top: auto; margin-bottom: auto; }
+.viz-stage > .viz-gallery-nav{ margin-top: auto; }
+
+/* ---- charts page: use the window ------------------------------------------
+   Measured before this change at 1440x900: the layout was 918px wide inside a
+   980px-capped section, the chart filled 24% of the stage's height and the
+   rail was 59% empty. The cap is a sensible default for pages of prose and
+   tables; a page whose job is to show a chart wants the window. */
+#charts{
+  max-width: 1560px;
+  padding: 20px 32px 56px !important;   /* beats .section's !important bottom
+                                           padding; 56px keeps the floating
+                                           Working Report chip clear */
+}
+#charts .viz-blocks{ margin: 0; }
+/* One card at a time in the stage, at the full stage width - the auto-fill
+   grid would otherwise cap it at the 560px track. */
+#charts .viz-stage .viz-cards{ grid-template-columns: 1fr; }
+.viz-rail-foot .viz-legend,
+.viz-rail-foot .viz-axis-note{ margin: 0; font-size: var(--ds-text-xs); line-height: var(--ds-leading-snug); }
+.viz-rail-foot{ margin-top: auto; }
+.viz-rail-foot + .viz-rail-foot{ margin-top: var(--ds-space-3); }
