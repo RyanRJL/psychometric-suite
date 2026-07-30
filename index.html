@@ -979,8 +979,11 @@
                not. -->
           <div class="field bat-field-compact bat-field-age">
             <label>Patient age <span class="hint">optional — sharpens intervals</span></label>
+            <!-- aria-label, because the visible label in the control bar is
+                 shortened to "Age" to keep the bar from squeezing the search
+                 box, and the span beside it is not a <label for>. -->
             <input type="number" id="bat-age" class="ds-inline-bar-age-input" min="5" max="90" step="1"
-                   placeholder="e.g. 34"
+                   placeholder="34" aria-label="Patient age"
                    title="Optional. Used where a test publishes its reliability by age band, which sharpens the confidence interval. Left blank, those measures use the published all-ages coefficient instead. Shared with the age on the Premorbid page.">
           </div>
         </div>
@@ -5915,7 +5918,7 @@
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260731a"></script>
 <script src="app.js?v=20260730n"></script>
-<script src="design-system.js?v=20260731a" defer></script>
+<script src="design-system.js?v=20260731b" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 <script src="app-viz-page.js?v=20260730m"></script>
 

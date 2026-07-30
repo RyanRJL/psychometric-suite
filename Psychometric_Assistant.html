@@ -11282,6 +11282,14 @@ input[type="number"].ds-inline-bar-age-input{
   top: calc(100% + 4px);
   left: 0;
   right: 0;
+  /* The panel is pinned to the search box's own width, so anything added to
+     the bar shrinks the flexible left section and shrinks this with it — the
+     header row ("N selected · Clear · Add selected tests") then clips and the
+     family names wrap to three lines. That is exactly what the Patient age
+     section did when it was added. A floor keeps the panel usable however
+     crowded the bar gets; left/right still align it to the search box, and it
+     simply overhangs to the right when the search is narrower than this. */
+  min-width: 340px;
   z-index: 50;
   max-height: 320px;
   overflow-y: auto;
@@ -14623,8 +14631,11 @@ input[type="number"].ds-inline-bar-age-input{
                not. -->
           <div class="field bat-field-compact bat-field-age">
             <label>Patient age <span class="hint">optional — sharpens intervals</span></label>
+            <!-- aria-label, because the visible label in the control bar is
+                 shortened to "Age" to keep the bar from squeezing the search
+                 box, and the span beside it is not a <label for>. -->
             <input type="number" id="bat-age" class="ds-inline-bar-age-input" min="5" max="90" step="1"
-                   placeholder="e.g. 34"
+                   placeholder="34" aria-label="Patient age"
                    title="Optional. Used where a test publishes its reliability by age band, which sharpens the confidence interval. Left blank, those measures use the published all-ages coefficient instead. Shared with the age on the Premorbid page.">
           </div>
         </div>
@@ -29594,7 +29605,7 @@ if (document.readyState === 'loading'){
            the CI toggle, because the interval is the only thing it drives on
            this page - relax that if a second consumer appears. -->
       <div class="ds-inline-bar-section ds-inline-bar-age" hidden>
-        <span class="ds-inline-bar-label">Patient age</span>
+        <span class="ds-inline-bar-label">Age</span>
       </div>
       ${classSelect ? `
         <div class="ds-inline-bar-section ds-inline-bar-right">

@@ -389,7 +389,7 @@
            the CI toggle, because the interval is the only thing it drives on
            this page - relax that if a second consumer appears. -->
       <div class="ds-inline-bar-section ds-inline-bar-age" hidden>
-        <span class="ds-inline-bar-label">Patient age</span>
+        <span class="ds-inline-bar-label">Age</span>
       </div>
       ${classSelect ? `
         <div class="ds-inline-bar-section ds-inline-bar-right">

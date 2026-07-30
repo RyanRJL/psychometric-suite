@@ -2959,6 +2959,13 @@ check('the age input is reachable, not stranded in the hidden legacy panel', () 
   if (!/\.ds-inline-bar-age\[hidden\]\s*\{[^}]*display:\s*none\s*!important/.test(DS_CSS)) {
     bad.push('nothing overrides .ds-inline-bar-section display:flex, so [hidden] will not hide the age box');
   }
+  /* The family dropdown is pinned to the search box's width (left:0/right:0),
+     and the search sits in the flexible section, so ANY section added to this
+     bar narrows the dropdown. Adding the age box clipped its header row and
+     wrapped the family names. The floor is what stops that recurring. */
+  if (!/\.ds-inline-bar-search \.combo-list\{[^}]*min-width:/.test(DS_CSS.replace(/\/\*[\s\S]*?\*\//g, ''))) {
+    bad.push('the family dropdown has no min-width, so a crowded bar will clip it again');
+  }
   /* And it must still be declared in the markup, or the move has nothing to
      move and app.js has nothing to bind. */
   if (!/id="bat-age"/.test(HTML_SRC)) bad.push('#bat-age is no longer declared in index.html');
