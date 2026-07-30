@@ -307,10 +307,10 @@ undocumented:
 |---|---|---|
 | CVLT-C `List A Trials 1-5 Total`, ages 8 / 12 / 16 | 3 | `rInternal` only |
 | D-KEFS Advanced — CWIT, Tower, Social Sorting, Risk-Reward | 26 | `rInternal` + `rInternalByAge` |
-| D-KEFS (original) — VFT, Sorting, Word Context, Tower, Proverb, TMT composite | 11 | `rInternalByAge` **only** |
+| D-KEFS (original) — VFT, Sorting, 20Q, Word Context, Tower, Proverb, TMT composite | 13 | `rInternalByAge` **only** |
 
 That roster check keys on **either** field. D-KEFS original carries no `rInternal` at
-all, so a check testing `rInternal` alone would let 11 entries change the basis of a
+all, so a check testing `rInternal` alone would let 13 entries change the basis of a
 printed interval without ever being counted.
 
 - CVLT-C Manual Table 6.5 gives odd/even split-half by age — .87 / .89 / .84 for the
@@ -411,17 +411,47 @@ Four exclusions, four different reasons — each an easy silent mistake, each pi
   consistency procedures."
 - **Trail Making, five of six.** Table 2.1 is the composite alone, so only
   `Combined Number + Letter` carries it.
-- **Twenty Questions, both — held deliberately.** Table 2.17's SEM column does not follow
-  from Table 2.15's coefficients: 15 of 16 bands disagree, by up to .094 and in both
-  directions. At 40–49, rxx .75 implies SEM 1.50 where the manual prints 1.76. No other
-  coefficient column, row shift, constant SD or uncorrected split-half fits either, so one
-  of the two tables is misprinted and the source cannot say which. The bar is therefore not
-  demonstrably met. `Total Weighted Achievement` reproduces 16/16 from its own coefficients
-  and is held only because it shares the suspect table — revisit both together if another
-  printing settles it.
+Twenty Questions is **not** an exclusion — both its measures carry Table 2.15 — but its
+`Initial Abstraction Score` is the one place in the manual where two published tables
+cannot both be right. See below before touching it.
 
 Word Proverb is banded 16–19 upward, the Proverb Test not being administered under 16, so
 a child's age finds no band and correctly falls back.
+
+##### Twenty Questions Initial Abstraction — where the manual contradicts itself
+
+**The stored values are Table 2.15, verbatim. Do not "fix" them.**
+
+Everywhere else this manual's coefficient tables and SEM tables satisfy its own formula.
+Here they cannot both be right:
+
+```
+ages 40–49   Table 2.15 prints rxx .75
+             3 × √(1 − .75) = 1.50
+             Table 2.17 prints SEM 1.76, which needs rxx .656
+```
+
+12 of 16 bands disagree, by up to .094, **in both directions** — so it is not a transform
+anyone has missed. Ruled out by test: every other published coefficient column, every row
+shift, any constant SD other than 3, and the Spearman-Brown-uncorrected split-half. The
+column beside it in the same table reproduces 16/16. Nothing inside the document says
+which table is the misprint — there is no worked example or third statistic for this test
+to triangulate on, which is what settled the equivalent question for CVLT-C.
+
+**Why 2.15 and not 2.17.** The app stores coefficients and derives the SEM, so there is no
+field for a published SEM. Honouring 2.17 would mean storing `.656`, a number the manual
+never prints — the one thing this project forbids. 2.15 is the publisher's own coefficient
+through the publisher's own formula, so every stored digit is citable.
+
+**What it costs.** Three bands print one scaled-score point away from Table 2.17: ages 11
+and 12 (±2 here, ±3 there) and 80–89 (±3 here, ±2 there). Note the bands with the *largest*
+coefficient gaps — 40–49 at .094, 30–39 at .069 — are **not** among them; both readings
+round to ±3 there. Severity in the table and visibility on screen are nearly unrelated, so
+judge this kind of discrepancy on the printed margin, not the coefficient.
+
+`check.js` §27 pins the discrepancy itself. If someone edits a coefficient to make 2.17
+reconcile, it fails; if a corrected printing ever makes the tables agree, it *also* fails,
+which is the signal to re-read this section.
 
 **The two D-KEFS manuals reach opposite conclusions on the same two test names.** Advanced
 excludes Trail Making and Verbal Fluency for *speededness*; the original publishes internal

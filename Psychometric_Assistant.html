@@ -19917,7 +19917,7 @@ const OPIE_BASE_RATES = {
                      Average) + rInternalByAge. TMT and VFT excluded, because
                      that manual rejects internal consistency for SPEEDED
                      measures.
-     D-KEFS          11 entries on the All Ages groups, rInternalByAge ONLY —
+     D-KEFS          13 entries on the All Ages groups, rInternalByAge ONLY —
                      it publishes no all-ages average. See below.
 
      CVLT-C Manual, Table 6.5 — odd/even split-half with Spearman-Brown,
@@ -19972,19 +19972,51 @@ const OPIE_BASE_RATES = {
      Design Fluency — NONE. "Item interdependence precluded the use of internal
        consistency procedures, and reliability was investigated with test-retest
        procedures."
-     Twenty Questions — NONE, deliberately held. Table 2.17's SEM column does
-       not follow from Table 2.15's coefficients: 15 of 16 bands disagree, by
-       up to .094 and in both directions, which is far past rounding. At 40-49
-       rxx .75 implies SEM 1.50 where the manual prints 1.76. No other
-       coefficient column, row shift, constant SD, or uncorrected split-half
-       fits either. One of the two tables is misprinted and the source cannot
-       say which, so the bar ("the publisher derives its OWN published
-       intervals from it") is not demonstrably met. Both 20Q measures stay on
-       the retest r. Note Total Weighted Achievement reproduces 16/16 from its
-       own coefficients and is held only because it shares the suspect table.
+     Twenty Questions — BOTH measures carry it, from Table 2.15, but Initial
+       Abstraction comes with a caveat the other 12 measures do not. Read on
+       before touching its numbers.
 
    Word Proverb is banded 16-19 upward — the Proverb Test is not administered
    under 16 — so a child's age finds no band and correctly falls back.
+
+   ------------------------------------------------------------
+   Twenty Questions Initial Abstraction — the manual contradicts itself
+
+   THE STORED VALUES ARE TABLE 2.15, VERBATIM. Do not "fix" them.
+
+   Everywhere else in this manual, Table 2.15-style coefficients and their SEM
+   table satisfy the manual's own formula, SEM = 3 sqrt(1 - rxx). For this one
+   measure they do not:
+
+     ages 40-49   Table 2.15 prints rxx .75
+                  3 sqrt(1 - .75) = 1.50
+                  Table 2.17 prints SEM 1.76, which needs rxx .656
+
+   12 of the 16 bands disagree, by up to .094, in BOTH directions — so it is
+   not a transform anyone has failed to spot. Ruled out by test: every other
+   published coefficient column, every row shift, any constant SD other than 3,
+   and the Spearman-Brown-uncorrected split-half. The column beside it in the
+   same table, Total Weighted Achievement, reproduces 16 of 16. One of the two
+   tables is misprinted and nothing inside the document says which — there is
+   no worked example or third statistic for this test to triangulate on.
+
+   WHY 2.15 AND NOT 2.17. This app stores coefficients and derives the SEM, so
+   there is no field to put a published SEM in. Honouring 2.17 would mean
+   storing .656 — a number the manual never prints — which is the one thing
+   the project forbids. 2.15 is the publisher's own printed coefficient put
+   through the publisher's own printed formula, so every stored digit is
+   citable.
+
+   WHAT IT COSTS. Three bands print a margin one scaled-score point away from
+   Table 2.17's: ages 11 and 12 (+/-2 here, +/-3 there) and 80-89 (+/-3 here,
+   +/-2 there). Note the bands with the LARGEST coefficient gaps — 40-49 at
+   .094 and 30-39 at .069 — are not among them: both readings round to +/-3.
+   Severity in the table and visibility on screen are nearly unrelated.
+
+   check.js section 27 pins the discrepancy itself, asserting that Table 2.17
+   still fails to reproduce. If a corrected printing ever makes it reconcile,
+   that check fires and tells you to re-read this note.
+   ------------------------------------------------------------
 
    Do NOT confuse this with D-KEFS Advanced, whose manual reaches the opposite
    conclusion on the same two test names: it excludes Trail Making and Verbal
@@ -20214,8 +20246,11 @@ const OPIE_BASE_RATES = {
     "Initial Abstraction Score": { m1:9.64, sd1:2.34, m2:9.61, sd2:2.63, r:0.62, n:28 }
   },
   "D-KEFS Twenty Questions Test · All Ages": {
-    "Total Weighted Achievement": { m1:9.92, sd1:3.05, m2:10.23, sd2:2.92, r:0.24, n:101 },
-    "Initial Abstraction Score": { m1:9.73, sd1:2.35, m2:9.66, sd2:2.38, r:0.43, n:101 }
+    "Total Weighted Achievement": { m1:9.92, sd1:3.05, m2:10.23, sd2:2.92, r:0.24, n:101, rInternalByAge:{8:0.44, 9:0.48, 10:0.46, 11:0.41, 12:0.51, 13:0.39, 14:0.53, 15:0.37, 16:0.1, 20:0.5, 30:0.37, 40:0.33, 50:0.26, 60:0.47, 70:0.55, 80:0.48}, rInternalAgeMax:89 },
+    /* Initial Abstraction: Table 2.15 verbatim. Its Table 2.17 SEM column does
+       NOT follow from these — see the Twenty Questions note above normDB and
+       check.js section 27. Do not "correct" .75 to .66 to make 2.17 reconcile. */
+    "Initial Abstraction Score": { m1:9.73, sd1:2.35, m2:9.66, sd2:2.38, r:0.43, n:101, rInternalByAge:{8:0.85, 9:0.72, 10:0.76, 11:0.83, 12:0.82, 13:0.81, 14:0.8, 15:0.87, 16:0.74, 20:0.85, 30:0.77, 40:0.75, 50:0.86, 60:0.85, 70:0.87, 80:0.77}, rInternalAgeMax:89 }
   },
   "D-KEFS Verbal Fluency · Ages 20-49": {
     "Letter Fluency": { m1:9.39, sd1:3.11, m2:9.91, sd2:3.64, r:0.76, n:35 },

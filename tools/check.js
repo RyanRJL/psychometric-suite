@@ -2697,7 +2697,7 @@ check('rInternal appears only where a publisher derives its own intervals from i
      Three sources so far:
        CVLT-C List A Trials 1-5 Total   3 entries, no by-age table
        D-KEFS Advanced CWIT/Tower/SST/RISK  26 entries, All Ages groups only
-       D-KEFS (original)                11 entries, All Ages groups only
+       D-KEFS (original)                13 entries, All Ages groups only
 
      Keyed on EITHER field. D-KEFS original carries rInternalByAge with no
      rInternal — its manual publishes no all-ages average — so a roster that
@@ -2713,12 +2713,12 @@ check('rInternal appears only where a publisher derives its own intervals from i
   });
   const cvltc = carriers.filter((c) => /^CVLT-C .* \/ List A Trials 1-5 Total$/.test(c));
   const dkefs = carriers.filter((c) => /^D-KEFS Advanced (Colour-Word Interference|Tower|Social Sorting|Risk-Reward Decision) · All Ages \//.test(c));
-  const orig  = carriers.filter((c) => /^D-KEFS (?!Advanced)(Trail Making Test|Verbal Fluency|Sorting Test|Word Context Test|Tower Test|Word Proverb Test) · All Ages \//.test(c));
+  const orig  = carriers.filter((c) => /^D-KEFS (?!Advanced)(Trail Making Test|Verbal Fluency|Sorting Test|Word Context Test|Tower Test|Word Proverb Test|Twenty Questions Test) · All Ages \//.test(c));
   const stray = carriers.filter((c) => !cvltc.includes(c) && !dkefs.includes(c) && !orig.includes(c));
   const bad = [];
   if (cvltc.length !== 3) bad.push('CVLT-C carriers: ' + cvltc.length + ', expected 3');
   if (dkefs.length !== 26) bad.push('D-KEFS Advanced carriers: ' + dkefs.length + ', expected 26');
-  if (orig.length !== 11) bad.push('D-KEFS original carriers: ' + orig.length + ', expected 11');
+  if (orig.length !== 13) bad.push('D-KEFS original carriers: ' + orig.length + ', expected 13');
   if (stray.length) bad.push('undocumented: ' + stray.slice(0, 3).join(', '));
   return bad.length === 0 || bad.join('; ');
 });
@@ -2961,6 +2961,11 @@ check('an out-of-range age is explained rather than left blank', () => {
    they produce. Design Fluency has no coefficient table at all -- "Item
    interdependence precluded the use of internal consistency procedures" -- and
    its Table 2.8 is All Ages only, from the retest r.
+
+   ONE MEASURE IS AN EXCEPTION. Twenty Questions Initial Abstraction is the only
+   place in the manual where the coefficient table and its SEM table cannot both
+   be right. The stored values are Table 2.15 verbatim, and the discrepancy is
+   pinned as a fact rather than smoothed away. Full reasoning in data.js.
    ========================================================================== */
 heading('27. D-KEFS (original) internal consistency');
 
@@ -2989,7 +2994,18 @@ const DKEFS_SEM = [
    { 8:1.99, 9:1.62, 10:1.21, 11:1.87, 12:1.87, 13:2.01, 14:2.27, 15:1.89, 16:1.89, 20:1.85, 30:1.59, 40:1.59, 50:1.99, 60:1.59, 70:1.41, 80:1.87 }],  // Tables 2.21/2.23
   ['D-KEFS Word Proverb Test · All Ages', 'Total Achievement Score',
    { 16:1.69, 20:1.62, 30:1.33, 40:1.48, 50:1.43, 60:1.31, 70:1.36, 80:1.41 }],  // Tables 2.24/2.26
+  /* Twenty Questions' OTHER column. It reproduces cleanly, which is what makes
+     its neighbour's failure a property of that one column rather than of the
+     table or the test — see TWENTY_Q_IA_SEM below. */
+  ['D-KEFS Twenty Questions Test · All Ages', 'Total Weighted Achievement',
+   { 8:2.25, 9:2.15, 10:2.20, 11:2.30, 12:2.11, 13:2.35, 14:2.06, 15:2.37, 16:2.85, 20:2.13, 30:2.37, 40:2.45, 50:2.58, 60:2.18, 70:2.01, 80:2.15 }],  // Tables 2.15/2.17
 ];
+
+/* Table 2.17, Initial Abstraction Score. Deliberately NOT in DKEFS_SEM: this
+   column does not follow from Table 2.15, and the check below pins that fact
+   rather than papering over it. */
+const TWENTY_Q_IA_SEM = { 8:1.11, 9:1.59, 10:1.45, 11:1.33, 12:1.31, 13:1.33, 14:1.36, 15:1.24,
+                          16:1.50, 20:1.24, 30:1.64, 40:1.76, 50:1.21, 60:1.19, 70:1.21, 80:1.26 };
 
 check('the stored coefficient is the one the published SEM was built from', () => {
   /* The finding the whole change rests on, and a transcription guard on all
@@ -3018,8 +3034,52 @@ check('the stored coefficient is the one the published SEM was built from', () =
       }
     });
   });
-  if (n !== 168) return 'checked ' + n + ' cells, expected 168';
+  if (n !== 184) return 'checked ' + n + ' cells, expected 184';
   return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('Twenty Questions Initial Abstraction is Table 2.15, verbatim', () => {
+  /* The one measure where the manual contradicts itself, so the stored values
+     are pinned digit for digit against the coefficient table rather than being
+     allowed to drift toward whatever makes Table 2.17 reconcile. */
+  const T215 = { 8:0.85, 9:0.72, 10:0.76, 11:0.83, 12:0.82, 13:0.81, 14:0.80, 15:0.87,
+                 16:0.74, 20:0.85, 30:0.77, 40:0.75, 50:0.86, 60:0.85, 70:0.87, 80:0.77 };
+  const e = D.normDB['D-KEFS Twenty Questions Test · All Ages']['Initial Abstraction Score'];
+  const bad = [];
+  Object.entries(T215).forEach(([age, rxx]) => {
+    if (e.rInternalByAge[age] !== rxx) {
+      bad.push('age ' + age + ': stored ' + e.rInternalByAge[age] + ', Table 2.15 prints ' + rxx);
+    }
+  });
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('...and Table 2.17 still fails to reproduce from it', () => {
+  /* Pins the DEFECT, not the fix. Two ways this check earns its place:
+
+     If someone "corrects" a stored coefficient to make the SEM table work —
+     .75 to .66 at 40-49 is the tempting one — the count drops and this fails.
+
+     If a corrected printing ever makes the two tables agree, this also fails,
+     which is the signal to re-read the note in data.js and reconsider. A check
+     that quietly passed either way would record nothing.
+
+     Contrast is the point: the sibling column in the same table reproduces 16
+     of 16 through the check above, so this is a property of one column. */
+  const e = D.normDB['D-KEFS Twenty Questions Test · All Ages']['Initial Abstraction Score'];
+  let off = 0;
+  Object.entries(TWENTY_Q_IA_SEM).forEach(([age, sem]) => {
+    if (Math.abs((1 - Math.pow(sem / 3, 2)) - e.rInternalByAge[age]) > 0.007) off++;
+  });
+  if (off !== 12) {
+    return 'Table 2.17 now disagrees in ' + off + ' of 16 bands, not the documented 12 — '
+         + 'either a coefficient was edited to suit it, or the source changed; see data.js';
+  }
+  /* The worked example the documentation quotes, so the note cannot go stale. */
+  const at40 = 3 * Math.sqrt(1 - e.rInternalByAge[40]);
+  if (Math.abs(at40 - 1.50) > 0.005) return 'the 40-49 example no longer gives 1.50, it gives ' + at40.toFixed(3);
+  return Math.abs(TWENTY_Q_IA_SEM[40] - 1.76) < 1e-9
+    || 'the 40-49 printed SEM is no longer 1.76';
 });
 
 check('the retest r could NOT have produced those SEMs', () => {
@@ -3092,14 +3152,10 @@ check('the measures the manual excludes carry nothing', () => {
        consistency procedures, and reliability was investigated with test-retest
        procedures."
      Trail Making, the five conditions  Table 2.1 is the composite alone.
-     Twenty Questions  held deliberately. Table 2.17's SEM column does not
-       follow from Table 2.15's coefficients: 15 of 16 bands disagree, by up to
-       .094 and in both directions. At 40-49 rxx .75 implies SEM 1.50 where the
-       manual prints 1.76. No other coefficient column, row shift, constant SD
-       or uncorrected split-half fits either, so one of the two tables is
-       misprinted and the source cannot say which. The bar — the publisher
-       derives its OWN published intervals from the coefficient — is therefore
-       not demonstrably met, and both 20Q measures stay on the retest r. */
+
+     Twenty Questions is NOT on this list — both its measures carry Table 2.15.
+     Its Initial Abstraction column has its own problem, pinned separately
+     above. */
   const bad = [];
   const carries = (group, name) => {
     const e = D.normDB[group] && D.normDB[group][name];
@@ -3113,9 +3169,6 @@ check('the measures the manual excludes carry nothing', () => {
   });
   ['Visual Scanning', 'Number Sequencing', 'Letter Sequencing', 'Switching', 'Motor Speed'].forEach((n) => {
     if (carries('D-KEFS Trail Making Test · All Ages', n)) bad.push('TMT ' + n);
-  });
-  ['Initial Abstraction Score', 'Total Weighted Achievement'].forEach((n) => {
-    if (carries('D-KEFS Twenty Questions Test · All Ages', n)) bad.push('Twenty Questions ' + n);
   });
   return bad.length === 0
     || bad.slice(0, 4).join('; ') + ' — the manual publishes no usable internal-consistency coefficient for these';
