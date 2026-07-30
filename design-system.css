@@ -4435,3 +4435,23 @@ input[type="text"].ds-inline-bar-input{
 
 .viz-stage > .viz-cards{ margin-top: auto; margin-bottom: auto; }
 .viz-stage > .viz-gallery-nav{ margin-top: auto; }
+
+/* ---- charts page: use the window ------------------------------------------
+   Measured before this change at 1440x900: the layout was 918px wide inside a
+   980px-capped section, the chart filled 24% of the stage's height and the
+   rail was 59% empty. The cap is a sensible default for pages of prose and
+   tables; a page whose job is to show a chart wants the window. */
+#charts{
+  max-width: 1560px;
+  padding: 20px 32px 56px !important;   /* beats .section's !important bottom
+                                           padding; 56px keeps the floating
+                                           Working Report chip clear */
+}
+#charts .viz-blocks{ margin: 0; }
+/* One card at a time in the stage, at the full stage width - the auto-fill
+   grid would otherwise cap it at the 560px track. */
+#charts .viz-stage .viz-cards{ grid-template-columns: 1fr; }
+.viz-rail-foot .viz-legend,
+.viz-rail-foot .viz-axis-note{ margin: 0; font-size: var(--ds-text-xs); line-height: var(--ds-leading-snug); }
+.viz-rail-foot{ margin-top: auto; }
+.viz-rail-foot + .viz-rail-foot{ margin-top: var(--ds-space-3); }

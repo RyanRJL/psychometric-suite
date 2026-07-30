@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
 <link rel="stylesheet" href="styles.css?v=20260727a">
-<link rel="stylesheet" href="design-system.css?v=20260730k">
+<link rel="stylesheet" href="design-system.css?v=20260730m">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1264,11 +1264,11 @@
 
   <!-- ========== 04 SCORE CHARTS ========== -->
   <section class="section" id="charts">
-    <div class="eyebrow">Basic Report Tools · Visualisation</div>
-    <h1 class="section-title">Score <em>Charts</em></h1>
-    <p class="section-desc">One chart per test, drawn from the same data and settings as the tables. See <i>How these charts are drawn</i> below for the detail.</p>
-
-    <p class="viz-settings-line" id="viz-settings-line"></p>
+    <!-- No eyebrow / title / description block here, deliberately. The top bar
+         already names the page, and on a page whose job is to show a chart in
+         one window every line of chrome costs chart. What the heading used to
+         say now lives where it is actually useful: the settings summary in the
+         control rail, the description in the disclosure below. -->
 
     <p class="viz-empty-line" id="viz-empty" hidden>Enter scores on Score Tables, Change Analysis, the SD Index or the premorbid page to chart them here.</p>
 
@@ -5884,7 +5884,7 @@
 <script src="app.js?v=20260730a"></script>
 <script src="design-system.js?v=20260730a" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
-<script src="app-viz-page.js?v=20260730k"></script>
+<script src="app-viz-page.js?v=20260730m"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

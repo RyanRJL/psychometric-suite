@@ -48,7 +48,6 @@
   if (!section) return;
   const grid = document.getElementById('viz-grid');
   const emptyEl = document.getElementById('viz-empty');
-  const settingsEl = document.getElementById('viz-settings-line');
   if (!grid) return;
 
   /* Native axis per metric. Ranges cover the usable span of each scale
@@ -63,14 +62,41 @@
      to each panel's native metric via the same fromZ used everywhere else. */
   const VIZ_BAND_EDGES_SS = [70, 80, 90, 110, 120, 130];
 
-  /* One shared column layout for every row chart, so panels align. */
-  const SVG_W = 940;
-  const COL = { nameEnd: 205, scoreMid: 228, plotX: 262, plotW: 478, rightX: 754 };
+  /* ---------- geometry: author the chart at its REAL pixel width --------
+     The SVG used to be authored at a fixed 940 units and scaled by the
+     browser to whatever the stage was - 635px here, a factor of 0.68. Two
+     things followed, both bad: every label rendered at 68% of its intended
+     size, and the chart's HEIGHT became a by-product of its width rather
+     than something that could fill the space.
+
+     Authoring at the measured width makes the scale 1:1, so a 13px label is
+     13px and a 28px row really is 28px. Columns are fractions of that width
+     rather than fixed offsets, and the plot band gets the larger share it
+     was always short of (51% before, 56% now). */
+  const COL_FRAC        = { nameEnd: 0.20,  scoreMid: 0.235, plotX: 0.27, plotW: 0.56, rightX: 0.845 };
+  const COL_FRAC_CHANGE = { nameEnd: 0.175, scoreMid: 0.225, plotX: 0.28, plotW: 0.55, rightX: 0.845 };
+  const SVG_W_MIN = 480;
+
+  let SVG_W = 940;
+  let COL        = { nameEnd: 205, scoreMid: 228, plotX: 262, plotW: 478, rightX: 754 };
   /* Change rows print a PAIR of scores ("92→85") where a score card prints
      one, so they get their own geometry - the name ends earlier and the
      score column sits wider. Sharing COL made long names collide with the
      pair. */
-  const COL_CHANGE = { nameEnd: 186, scoreMid: 232, plotX: 286, plotW: 454, rightX: 754 };
+  let COL_CHANGE = { nameEnd: 186, scoreMid: 232, plotX: 286, plotW: 454, rightX: 754 };
+
+  /* Stage width is derived from the container, not read off the stage, so
+     the geometry is known BEFORE the first render rather than after it. */
+  function vizSetGeometry(){
+    const railW = 248, gap = 16, cardPad = 34;   // must track the CSS
+    const avail = (grid.clientWidth || 900) - railW - gap - cardPad;
+    SVG_W = Math.max(SVG_W_MIN, Math.round(avail));
+    const px = f => Math.round(f * SVG_W);
+    COL        = { nameEnd: px(COL_FRAC.nameEnd), scoreMid: px(COL_FRAC.scoreMid),
+                   plotX: px(COL_FRAC.plotX), plotW: px(COL_FRAC.plotW), rightX: px(COL_FRAC.rightX) };
+    COL_CHANGE = { nameEnd: px(COL_FRAC_CHANGE.nameEnd), scoreMid: px(COL_FRAC_CHANGE.scoreMid),
+                   plotX: px(COL_FRAC_CHANGE.plotX), plotW: px(COL_FRAC_CHANGE.plotW), rightX: px(COL_FRAC_CHANGE.rightX) };
+  }
   const HEADER_H = 20, AXIS_H = 24;
   /* Row PITCH is variable, and this is what makes a tall chart fit.
      Scaling the whole SVG down (max-height + letterbox) shrinks the TEXT
@@ -78,7 +104,7 @@
      be useful. The rendered scale is set by WIDTH - card width / SVG_W - so
      reducing the row pitch in user units makes the drawing shorter while
      every label stays exactly the same size on screen. */
-  const ROW_H_DEFAULT = 28, ROW_H_MIN = 17;
+  const ROW_H_DEFAULT = 28, ROW_H_MIN = 17, ROW_H_MAX = 46;
   let ROW_H = ROW_H_DEFAULT;
 
   function vizX(v, axis){
@@ -100,8 +126,10 @@
   function vizLevels(cls){
     return cls === 'wechsler' ? WECHSLER_LEVELS : AACN_LEVELS;
   }
+  /* The name column is now a real pixel width, so the budget scales with it
+     (~0.52 of the 13px font's em width per character). */
   function vizTruncate(name, max){
-    const n = max || 28;
+    const n = max || Math.max(12, Math.floor(COL.nameEnd / 6.8));
     return name.length > n ? name.slice(0, n - 1) + '…' : name;
   }
   /* Bounds are joined with U+2013, which cannot collide with a negative
@@ -1041,15 +1069,16 @@
   }
 
   /* ---------- page render --------------------------------------------- */
-  function renderVizSettingsLine(cls, ciLevel){
-    if (!settingsEl) return;
+  /* What the table settings are, stated where they are useful rather than in
+     a heading: these are Score Tables' settings, not this page's, and the
+     page has no way to change them. */
+  function vizSettingsText(cls, ciLevel){
     const prem = getBatteryPremorbidComparison();
-    const bits = [
-      cls === 'wechsler' ? 'Wechsler classification' : 'Guilmette et al. (2020) classification',
-      ciLevel === 'off' ? 'confidence intervals off' : `${ciLevel}% confidence intervals`,
-      prem ? 'premorbid comparison on (asterisks as on Score Tables)' : 'premorbid comparison off'
-    ];
-    settingsEl.textContent = `Following Score Tables settings: ${bits.join(' · ')}. Change them on the Score Tables page.`;
+    return [
+      cls === 'wechsler' ? 'Wechsler classification' : 'Guilmette et al. (2020)',
+      ciLevel === 'off' ? 'no confidence intervals' : `${ciLevel}% confidence intervals`,
+      prem ? 'premorbid comparison on' : 'premorbid comparison off'
+    ].join(' · ');
   }
 
   function vizScoreTablesBlock(cls, ciLevel){
@@ -1106,7 +1135,7 @@
      and each column scrolls INSIDE it, so the header, the controls and the
      chart's own navigation stay put while you move between charts - which
      is the behaviour that makes it read as an app rather than a document. */
-  function vizRailHtml(blocks, active){
+  function vizRailHtml(blocks, active, settingsText){
     let out = '<aside class="viz-rail">';
 
     out += '<div class="viz-rail-group"><div class="panel-kicker">Source</div><div class="viz-rail-list" role="tablist" aria-label="Chart source">';
@@ -1140,6 +1169,17 @@
     if (active.ctrl && active.ctrl.note){
       out += `<p class="viz-axis-note">${active.ctrl.note}</p>`;
     }
+    /* The legend used to float above the stage, orphaned from the chart it
+       described; the rail had 59% of its height empty. */
+    if (active.legend){
+      out += `<div class="viz-rail-group viz-rail-foot">${active.legend}</div>`;
+    }
+    if (settingsText){
+      out += `<div class="viz-rail-group viz-rail-foot">
+        <div class="panel-kicker">Table settings</div>
+        <p class="viz-axis-note">${escapeHtml(settingsText)}. Change these on the Score Tables page.</p>
+      </div>`;
+    }
     return out + '</aside>';
   }
 
@@ -1148,7 +1188,6 @@
     if (block.empty) return `<div class="viz-stage">${block.empty}</div>`;
 
     let out = '<div class="viz-stage">';
-    if (block.legend) out += block.legend;
 
     if (vizSingle && n >= 1){
       const idx = Math.min(Math.max(vizCardIndex[block.key] || 0, 0), n - 1);
@@ -1215,8 +1254,19 @@
     const rect = svg.getBoundingClientRect();
     const overflow = stage.scrollHeight - stage.clientHeight;
     const svgLayoutH = rect.height / zoom;
-    const chrome = stage.scrollHeight - svgLayoutH;          // everything in the stage that is not the chart
-    const availForSvg = stage.clientHeight - chrome - 4;
+
+    /* SPARE ROOM, measured from the stage's actual content rather than from
+       scrollHeight. When the stage does not overflow, scrollHeight equals
+       clientHeight, so a scrollHeight-based figure can only ever say "it
+       fits" - which is why the pitch shrank when it had to but never grew,
+       leaving a five-row chart in a fifth of the stage. Summing the
+       children's heights measures the free space in both directions. */
+    const gap = parseFloat(getComputedStyle(stage).rowGap) || 0;
+    const kids = [...stage.children];
+    const contentLayoutH = kids.reduce((a, el) => a + el.getBoundingClientRect().height / zoom, 0)
+                         + gap * Math.max(0, kids.length - 1);
+    const free = stage.clientHeight - contentLayoutH;
+    const availForSvg = svgLayoutH + free - 6;
 
     const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number);
     const rows = Math.max(1, Math.round(((vb[3] || 0) - HEADER_H - AXIS_H) / ROW_H));
@@ -1224,7 +1274,9 @@
     const availUnits = availForSvg * unitsPerLayoutPx;
 
     let want = Math.floor((availUnits - HEADER_H - AXIS_H) / rows);
-    want = Math.max(ROW_H_MIN, Math.min(ROW_H_DEFAULT, want));
+    /* Grows as well as shrinks: a five-row chart used to sit in a quarter
+       of the stage because the pitch could only ever come down. */
+    want = Math.max(ROW_H_MIN, Math.min(ROW_H_MAX, want));
 
     if (want !== ROW_H && vizFitPass < 2){
       ROW_H = want; vizFitPass++;
@@ -1241,9 +1293,10 @@
   }
 
   function renderVizPage(){
+    vizSetGeometry();
     const cls = document.getElementById('bat-class')?.value || 'wechsler';
     const ciLevel = document.getElementById('bat-ci-level')?.value || 'off';
-    renderVizSettingsLine(cls, ciLevel);
+    const settingsText = vizSettingsText(cls, ciLevel);
 
     const blocks = [
       vizScoreTablesBlock(cls, ciLevel),
@@ -1264,7 +1317,7 @@
     let active = blocks.find(b => b.key === vizSource) || blocks[0];
     vizSource = active.key;
 
-    grid.innerHTML = `<div class="viz-layout">${vizRailHtml(blocks, active)}${vizStageHtml(active)}</div>`;
+    grid.innerHTML = `<div class="viz-layout">${vizRailHtml(blocks, active, settingsText)}${vizStageHtml(active)}</div>`;
     requestAnimationFrame(vizFitToWindow);
   }
 
