@@ -4740,11 +4740,11 @@ check('the basis names the right source, and says when age will move it', () => 
   return bad.length === 0 || bad.join('; ');
 });
 
-check('every group lands in exactly one instrument tab', () => {
-  /* The tab bar is built from the data at render time so a new family cannot
-     be left out of it. D-KEFS Advanced must be tested before plain D-KEFS,
-     the latter being a prefix of the former — the same ordering trap
-     caIntervalLabel documents. */
+check('every group resolves to exactly one instrument', () => {
+  /* The Instrument column and its filter are built from the data at render
+     time, so a new family cannot be left out of either. D-KEFS Advanced must
+     be tested before plain D-KEFS, the latter being a prefix of the former —
+     the same ordering trap caIntervalLabel documents. */
   const bad = [];
   const tabs = {};
   Object.keys(D.normDB).forEach((g) => {
@@ -4756,57 +4756,47 @@ check('every group lands in exactly one instrument tab', () => {
     if (tabs[k] !== v) bad.push(k + ': ' + (tabs[k] || 0) + ' groups, expected ' + v);
   });
   const stray = Object.keys(tabs).filter((k) => !(k in want));
-  if (stray.length) bad.push('unexpected tab(s): ' + stray.join(', '));
-  if (dbInstrument('anything at all', true) !== 'Custom') bad.push('a custom family does not land in the Custom tab');
+  if (stray.length) bad.push('unexpected instrument(s): ' + stray.join(', '));
+  if (dbInstrument('anything at all', true) !== 'Custom') bad.push('a custom family is not labelled Custom');
   if (dbInstrument('D-KEFS Advanced Tower · All Ages', false) === 'D-KEFS') bad.push('D-KEFS Advanced is being swallowed by the D-KEFS prefix');
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the row grid declares as many columns as the header renders', () => {
-  /* styles.css declares .db-subtest-row twice — once for the desktop grid and
-     once in the responsive block. A previous author avoided adding a real
-     column for exactly that reason and put the metric badge inside the name
-     cell instead. Two columns were added anyway, so the fragility is pinned
-     rather than dodged: if the template and the header ever disagree, every
-     cell after the mismatch shifts one place left and the table silently
-     mislabels its own numbers. */
-  const grid = (CSS_SRC.match(/\.db-subtest-row\{[\s\S]*?grid-template-columns:([^;]+);/) || [])[1];
-  if (!grid) return 'the .db-subtest-row grid declaration is gone';
-  let cols = 0;
-  grid.trim().split(/\s+(?![^(]*\))/).forEach((tok) => {
-    const rep = tok.match(/^repeat\((\d+),/);
-    cols += rep ? Number(rep[1]) : 1;
-  });
-  const header = (APP_SRC.match(/<span>Subtest<\/span>[\s\S]*?<span><\/span>\s*<\/div>/) || [''])[0];
-  const cells = (header.match(/<span[\s>]/g) || []).length;
+check('every column shows and sorts on the same value', () => {
+  /* THE GRID IS GONE, AND WITH IT THE HAZARD THE OLD CHECK GUARDED. The
+     grouped list laid each row out as a CSS grid whose column count was
+     declared in two places; a mismatch slid every cell one place left, under
+     the wrong heading. This page is a real <table>, which cannot do that.
+
+     What CAN go wrong now is a column sorting on something other than what it
+     displays — a "CI r" heading ordered by the retest r would be invisible and
+     completely wrong. DB_COLUMNS gives each column ONE `get`, used for both,
+     so the two cannot diverge; this pins that shape rather than the values. */
+  const src = (APP_SRC.match(/const DB_COLUMNS = \[[\s\S]*?\n\];/) || [''])[0];
+  if (!src) return 'DB_COLUMNS is gone';
   const bad = [];
-  if (cols !== 11) bad.push('the grid declares ' + cols + ' columns, expected 11');
-  if (cells !== cols) bad.push('the header renders ' + cells + ' cells against ' + cols + ' grid columns');
-
-  /* AND THE BODY ROW, which is the case that actually mislabels numbers.
-     Header and body are separate grid containers, so a template/header
-     mismatch only wraps them both the same way — ugly, not wrong. It goes
-     wrong when the BODY renders fewer cells than the header: everything after
-     the missing one slides left and sits under the wrong label.
-
-     Counted by cell class rather than by counting "<span", because the name
-     cell legitimately nests badge spans inside itself. */
-  const body = (APP_SRC.match(/<div class="db-subtest-row">\s*\n\s*<span class="name"[\s\S]*?<\/div>`;/) || [''])[0];
-  const bodyCells = {
-    name:       (body.match(/<span class="name"/g) || []).length,
-    num:        (body.match(/<span class="num">/g) || []).length,
-    reliability:(body.match(/<span class="db-rel">/g) || []).length,
-    basis:      (body.match(/<span class="db-basis/g) || []).length,
-    trailing:   (body.match(/'<span><\/span>'/g) || []).length
-  };
-  const want = { name:1, num:7, reliability:1, basis:1, trailing:1 };
-  Object.entries(want).forEach(([k, v]) => {
-    if (bodyCells[k] !== v) bad.push('the body row renders ' + bodyCells[k] + ' ' + k + ' cell(s), expected ' + v);
+  const keys = [...src.matchAll(/\{ key:'([a-zA-Z0-9]+)'/g)].map((m) => m[1]);
+  const gets = (src.match(/get:r =>/g) || []).length;
+  if (keys.length !== 13) bad.push('expected 13 columns, found ' + keys.length);
+  if (gets !== keys.length) bad.push(keys.length + ' columns but ' + gets + ' getters — a column has no single source');
+  ['instrument', 'category', 'band', 'measure', 'ci', 'basis'].forEach((k) => {
+    if (!keys.includes(k)) bad.push('the ' + k + ' column is gone');
   });
-  const bodyTotal = Object.values(bodyCells).reduce((a, n) => a + n, 0);
-  if (bodyTotal !== cells) bad.push('the body row renders ' + bodyTotal + ' cells against the header\'s ' + cells + ' — the numbers would sit under the wrong labels');
-  if (!/\.db-subtest-row\{grid-template-columns:1fr/.test(CSS_SRC.replace(/\s+/g, ''))) {
-    bad.push('the responsive single-column override is gone, so the table will overflow on a narrow screen');
+  if (new Set(keys).size !== keys.length) bad.push('two columns share a key, so sorting one would point at the other');
+  if (!/col\.get\(a\)[\s\S]{0,40}col\.get\(b\)/.test(APP_SRC)) {
+    bad.push('the sort no longer reads the column getter, so it can order by something other than what is shown');
+  }
+  /* AND THE TWO RELIABILITY COLUMNS MUST READ dbReliabilityBasis, not a raw
+     field. Found by mutation: pointing the CI r getter at r.e.r passed
+     everything, because the column then showed and sorted on the same thing —
+     the retest coefficient — under a heading promising the one the interval is
+     built from. The neighbouring check proves dbReliabilityBasis is right; this
+     proves the column actually asks it. */
+  if (!/key:'ci'[^}]*get:r => r\.rel\.r/.test(src)) {
+    bad.push('the CI r column no longer reads dbReliabilityBasis, so it can print a coefficient the interval does not use');
+  }
+  if (!/key:'basis'[^}]*get:r => r\.rel\.basis/.test(src)) {
+    bad.push('the Basis column no longer reads dbReliabilityBasis');
   }
   return bad.length === 0 || bad.join('; ');
 });
@@ -4833,7 +4823,8 @@ check('the typed entry form is gone, and took none of its neighbours with it', (
   if (!/ctValidateEntry\(/.test(APP_SRC)) bad.push('import no longer validates what it saves');
   ['ct-add-family', 'ct-add-subtest', 'ct-entry-body', 'ct-family-select']
     .forEach((id) => { if (HTML_SRC.includes('id="' + id + '"')) bad.push('markup for ' + id + ' is still in index.html'); });
-  ['ct-search', 'ct-export', 'ct-import', 'db-list', 'db-tabbar']
+  ['ct-search', 'ct-export', 'ct-import', 'db-list', 'db-thead', 'db-tbody',
+   'db-filters', 'db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis', 'db-count']
     .forEach((id) => { if (!HTML_SRC.includes('id="' + id + '"')) bad.push('markup for ' + id + ' is missing'); });
   return bad.length === 0 || bad.join('; ');
 });

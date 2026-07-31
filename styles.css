@@ -1003,32 +1003,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 
 /* CUSTOM TESTS PAGE */
 .db-list{margin-top:18px}
-.db-test-family{margin-bottom:18px;border:1px solid var(--border-soft);border-radius:4px;background:var(--paper)}
-.db-test-family-header{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:12px 16px;background:var(--paper-2);
-  border-bottom:1px solid var(--border-soft);
-  font-family:var(--serif);font-size:14px;font-weight:600;color:var(--ink);
-}
-.db-test-family-header .custom-tag{
-  font-family:var(--sans);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
-  background:var(--accent);color:#fff;padding:2px 8px;border-radius:2px;font-weight:500;
-}
-.db-subtests{padding:8px 16px}
-/* 11 columns: measure, the 7 descriptive stats, the reliability the interval
-   is actually built from, its basis, and the custom-entry delete button.
-   Declared HERE and again in the responsive block below; check.js keeps the
-   two in step, which is what makes a real column safe to add. Nothing in
-   design-system.css matches .db-*, so no !important is needed. */
-.db-subtest-row{
-  display:grid;grid-template-columns:1.9fr repeat(7,0.72fr) 0.8fr 1.45fr auto;gap:8px;
-  padding:6px 0;font-size:12.5px;align-items:center;
-  border-bottom:1px dashed var(--border-soft);
-}
-.db-subtest-row:last-child{border-bottom:none}
-.db-subtest-row .name{color:var(--ink)}
-.db-subtest-row .num{font-family:var(--mono);color:var(--ink-2);text-align:right}
-.db-subtest-row .num-label{font-size:10px;color:var(--faint);text-align:right}
 /* Score-type picker in the custom-test entry table.
 
    The global `input[type=text], input[type=number], ..., select, textarea`
@@ -1043,46 +1017,63 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
    design-system.css is competing for it. */
 .ct-metric-select{ min-width:158px; }
 
-/* Score type badge on a database row that DECLARES its metric rather than
-   letting it be worked out from the normative mean. Standalone class on
-   purpose: .db-subtest-row is a 9-column grid declared here and again in the
-   responsive block, so adding a real column would mean editing the template in
-   two places and risking design-system.css overriding one of them. Sitting
-   inside the existing name cell sidesteps the grid entirely. */
-/* Norms Database — instrument tabs and the reliability cell.
+/* Norms Database — one flat table over every entry, filtered and sorted.
+
+   A real <table>, deliberately, not the CSS grid the grouped list used: that
+   grid had to declare its column count in two places and a mismatch slid every
+   cell one place left under the wrong heading. A table cannot do that.
 
    All standalone names. design-system.css defines no .db-* rule at all
-   (verified), so these win on their own and need no !important, per the CSS
-   cascade note in CLAUDE.md. */
-.db-tabbar{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 6px}
-.db-tab{
-  appearance:none;cursor:pointer;
-  padding:5px 11px;font-size:12px;line-height:1.6;
-  color:var(--ink-2);background:var(--paper);
-  border:1px solid var(--border-soft);border-radius:999px;
+   (verified), so these win without !important, per the cascade note in
+   CLAUDE.md. */
+.db-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 8px}
+.db-filters select{max-width:200px}
+.db-readout{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  flex-wrap:wrap;margin-bottom:6px;font-size:11.5px;color:var(--faint);
 }
-.db-tab:hover{color:var(--ink);border-color:var(--border)}
-.db-tab-on{
-  color:var(--paper);background:var(--ink);border-color:var(--ink);
+.db-readout b{color:var(--ink);font-family:var(--mono);font-weight:600}
+.db-list{
+  margin-top:0;max-height:60vh;overflow:auto;
+  border:1px solid var(--border);border-radius:4px;background:var(--paper-card);
 }
-.db-tab-count{
-  margin-left:6px;font-family:var(--mono);font-size:10px;opacity:0.7;
+.db-table{border-collapse:collapse;width:100%;font-size:12.5px}
+.db-table th,.db-table td{
+  padding:5px 8px;text-align:right;white-space:nowrap;
+  border-bottom:1px solid var(--border-soft);
 }
-/* The reliability actually in force, and what it rests on. */
-.db-rel{font-family:var(--mono);color:var(--ink);text-align:right}
-.db-basis{
-  font-size:9.5px;line-height:1.4;color:var(--faint);
-  text-transform:uppercase;letter-spacing:0.05em;
+.db-th{
+  position:sticky;top:0;z-index:2;background:var(--paper-card);cursor:pointer;
+  user-select:none;font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--faint);font-weight:600;border-bottom:1px solid var(--border);
 }
-.db-basis-none{font-style:italic;text-transform:none;letter-spacing:0}
-.db-hint{
-  margin:10px 0;padding:9px 12px;font-size:12px;color:var(--ink-2);
-  background:var(--paper);border:1px dashed var(--border-soft);border-radius:4px;
-}
-.db-hint button{
-  appearance:none;cursor:pointer;margin-left:8px;padding:2px 9px;font-size:11px;
-  color:var(--ink);background:transparent;
-  border:1px solid var(--border);border-radius:999px;
+.db-th:hover{color:var(--ink)}
+.db-th[aria-sort]{color:var(--ink)}
+.db-th:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+.db-arrow{margin-left:3px;font-size:9px}
+.db-th-text,.db-td-text{text-align:left}
+.db-td-measure{white-space:normal;min-width:160px;color:var(--ink)}
+.db-td-ctx{color:var(--muted);font-size:11.5px}
+.db-td-num{font-family:var(--mono);color:var(--ink-2)}
+.db-td-rel{color:var(--ink);font-weight:600}
+.db-table tbody tr:hover{background:var(--accent-tint)}
+.db-dash{color:var(--faint)}
+/* Semantic, and deliberately separate from the near-black accent: these say
+   what KIND of coefficient the interval rests on, which is a different claim
+   from the number beside it. */
+.db-chip{display:inline-block;padding:1px 7px;border-radius:3px;font-size:10px;letter-spacing:0.04em;white-space:nowrap}
+.db-chip-internal{color:#2F5D62;background:rgba(47,93,98,0.09)}
+.db-chip-stability{color:#8A5A2B;background:rgba(138,90,43,0.10)}
+.db-chip-retest{color:#4A4A52;background:rgba(74,74,82,0.07)}
+.db-chip-none{color:var(--faint);background:rgba(158,154,147,0.10);font-style:italic}
+.db-byage{margin-left:4px;font-size:10px;color:var(--faint)}
+/* Was only ever styled as a descendant of the group header the flat table
+   replaced, so it lost its rule with that header and rendered unstyled.
+   Standalone now, matching .combo-custom-tag which marks the same thing in
+   the family dropdowns. */
+.custom-tag{
+  margin-left:6px;font-size:9px;font-weight:500;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--accent);
 }
 .db-metric-tag{
   display:inline-block;margin-left:6px;padding:1px 5px;
@@ -1146,7 +1137,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   .section{padding:32px 24px}
   .conv-grid{grid-template-columns:repeat(2,1fr)}
   .field-row, .field-row-3, .field-row-4{grid-template-columns:1fr;gap:12px}
-  .db-subtest-row{grid-template-columns:1fr;gap:4px}
 }
 
 

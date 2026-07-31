@@ -804,35 +804,51 @@ Users can add custom tests; `getMergedDB()` merges those over `normDB`.
 ### The Norms Database page
 
 The only view of `normDB` a clinician has. It was a flat alphabetical list of all
-115 groups — D-KEFS alone ran to **36 consecutive groups** — with columns stopping at
-the retest `r`. Now: one tab per instrument, built from the data at render time so a new
-family cannot be left out of the bar, plus two columns that say **which reliability the
-interval is actually built from and what it rests on**.
+115 groups, fully expanded — D-KEFS alone ran to **36 consecutive groups** — with columns
+stopping at the retest `r`.
 
-That second part matters because 131 entries are scored on a coefficient the old columns
-never showed. `dbReliabilityBasis()` mirrors `getBatteryRowReliability()`'s preference
-order at a blank age — **if the two ever drift, the page tells a clinician their interval
-rests on a coefficient it does not**, so `check.js` §32 drives both over all 659 entries
-and compares. The basis string also carries `· by age` wherever a banded lookup exists,
-since the printed figure moves the moment an age is entered on Score Tables.
+It is now **one table over every entry**. Instrument, category and age band come out of the
+group key (`"<Instrument> <Category> · <Age band>"`) and become real columns, so they can
+be filtered and sorted rather than scrolled past. That is the point of the shape: it is the
+only arrangement that answers a question cutting *across* instruments — which measures are
+weakest, which are still on a raw retest coefficient, which move with the patient's age.
+
+Two columns say **which reliability the interval is actually built from and what it rests
+on**. 131 entries are scored on a coefficient the old columns never showed.
+`dbReliabilityBasis()` mirrors `getBatteryRowReliability()`'s preference order at a blank
+age — **if the two drift, the page tells a clinician their interval rests on a coefficient
+it does not** — so `check.js` §32 drives both over all 659 entries and compares.
+
+Internal consistency and published stability **never co-occur on an entry** — 0 of 659, a
+measure being one or the other within its manual's reliability table. What does co-occur is
+the published coefficient and the retest study's: 112 entries carry internal consistency
+alongside a retest `r`, 5 carry stability alongside one. Both are visible, `r`/`corr. r`
+being the retest study and `CI r` the published figure, with the basis chip saying which
+kind it is. A pair of Internal/Stability columns was mocked up and declined: one of the two
+is blank on every row.
 
 Two rows print no interval, for different reasons, and the basis distinguishes them:
 `base rate — no interval` (scored by published lookup, never had a coefficient) and
 `none published` (the four raw RBANS subtests, absent from Table 3.6).
 
+**`DB_COLUMNS` gives each column one `get`, used for both display and sorting**, so a
+column cannot order by something other than what it shows. §32 pins that, and pins the two
+reliability columns to `dbReliabilityBasis` specifically — found by mutation that pointing
+`CI r` at the raw retest `r` otherwise passed everything, because the column then showed
+and sorted on the same wrong number.
+
+It is a real `<table>`, deliberately. The grouped list laid each row out as a CSS grid whose
+column count was declared in two places, and a mismatch slid every cell one place left under
+the wrong heading. A table cannot do that, so that whole class of fault is gone rather than
+guarded.
+
 **The typed entry form was removed.** Adding a family and typing its norms row by row is
 gone; import remains, so `ctValidateEntry` is now the *sole* gatekeeper into the clinical
-database rather than one of two — §19 keeps pinning it. The deletion was the exact hazard
-recorded above: `refreshAll()` is a top-level init statement that called
-`refreshFamilySelect()`, so removing the callee without the call would have thrown at boot
-and killed every statement after it. §17 catches that, and §32 asserts the whole removal
-in both directions.
-
-`.db-subtest-row` is a **grid declared twice** — desktop and the responsive block. A
-previous author avoided adding a real column for that reason and put the metric badge
-inside the name cell instead. Two columns were added anyway, so §32 pins the grid's column
-count against the header's cell count; if they disagree every cell shifts one place left
-and the table silently mislabels its own numbers.
+database rather than one of two — §19 keeps pinning it. Custom measures are deleted per row;
+a family disappears with its last one, which is why there is no separate "delete family"
+control. The deletion was the exact hazard recorded above: `refreshAll()` is a top-level
+init statement that called `refreshFamilySelect()`, so removing the callee without the call
+would have thrown at boot and killed every statement after it. §17 catches that.
 
 ---
 
