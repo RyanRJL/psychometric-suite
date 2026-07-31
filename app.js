@@ -2199,7 +2199,7 @@ function resolveCiReliability(entry, normSD, age, correctRetest){
      D-KEFS scaled scores" — i.e. 3 x sqrt(1 - r) on the UNCORRECTED
      total-sample r. Table 2.8 proves it: Design Fluency's three All Ages SEMs
      are 1.94 / 1.97 / 2.47, and 3 x sqrt(1 - r) gives exactly those, where the
-     corrected coefficient gives 1.78 / 1.95 / 2.43. The remaining 22 are
+     corrected coefficient gives 1.78 / 1.95 / 2.43. The remaining 21 are
      D-KEFS Advanced Trail Making and Verbal Fluency, whose Table 3.4 rows ARE
      the retest coefficients — that manual's stated choice for its speeded
      tests.
