@@ -14095,6 +14095,59 @@ input[type="number"].ds-patient-field-input{
   .ds-patient-field-live span:last-child{ display: none; }
 }
 
+/* ============================================================================
+   41. AGE-BAND FILTER NOTE — the family dropdowns
+
+   Sits above the options whenever a patient age has shortened the list, and
+   whenever the list is showing everything because the user asked it to. It
+   exists because a silently shorter dropdown is indistinguishable from missing
+   data: the note is what makes the filter legible rather than mysterious.
+
+   Standalone class, and note it must NOT be .combo-item — filterFamilyListEl
+   hides those by search text, which would make the note vanish the moment
+   anyone typed in the search box.
+   ============================================================================ */
+.combo-agefilter-note{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  flex-wrap: wrap;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  margin: 0;
+  background: var(--ds-primary-tint);
+  border-bottom: 1px solid var(--ds-border);
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  line-height: var(--ds-leading-snug);
+  color: var(--ds-text-muted);
+}
+.combo-agefilter-note strong{
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-text);
+}
+.combo-agefilter-toggle{
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 3px 9px;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-xs);
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.combo-agefilter-toggle:hover{
+  background: var(--ds-surface-emphasis);
+  border-color: var(--ds-primary);
+}
+.combo-agefilter-toggle:focus-visible{
+  outline: var(--ds-ring-width) solid var(--ds-primary-ring);
+  outline-offset: 1px;
+}
+
 </style>
 
 <style>
@@ -21404,6 +21457,7 @@ document.getElementById('patient-age')?.addEventListener('input', () => {
   renderBattery();
   if (typeof calcPremorbid === 'function'){ calcPremorbid(); calcPredict(); calcOpiePredict(); }
   refreshPatientAgeIndicator();
+  rebuildFamilyListsForAge();
 });
 document.getElementById('bat-clear').addEventListener('click', clearBattery);
 
@@ -22414,6 +22468,79 @@ function familyScoredByAgeBand(name){
   if (!fam) return false;
   return Object.values(fam).some(e => e && typeof e === 'object' && (e.baseRates || e.separateBattery));
 }
+
+/* ── AGE-BAND FILTERING OF THE FAMILY DROPDOWNS ──────────────────────────────
+
+   With one patient age now on screen everywhere, the dropdowns can stop
+   offering every band of every family at once. The rule is deliberately
+   conservative, because the band means different things on different pages:
+   on Score Tables it is usually a metric conversion that does not change the
+   table, but for a base-rate family it IS the lookup; on Change Analysis and
+   the SD Index it selects the retest sample the r was measured in.
+
+   THREE CLAUSES, per family:
+
+     1. every band whose span contains the age — PLURAL, because WMS-IV
+        publishes overlapping 16-69 and 65-90 bands, so a 67-year-old is
+        legitimately in both and picking one would hide a real choice;
+     2. plus "· All Ages" wherever the family publishes one, so the clinician
+        keeps the larger-N / stronger-r option that comboAgeBandNoteHtml
+        describes. That choice is a clinical judgement, not something an age
+        should make silently — which is why this is a filter, not a jump;
+     3. and if 1 and 2 both come back empty, EVERY member, unchanged.
+
+   CLAUSE 3 IS THE SAFETY RAIL, and it is not hypothetical. Eight of the 28
+   numerically banded families publish no All Ages entry at all, and for those
+   an age can match nothing: CVLT-C Subtests is banded by the three normative
+   sample ages (Age 8 / Age 12 / Age 16), so 88 of the 91 ages from 5 to 95
+   match none of them. Without clause 3, a clinician testing a 10-year-old
+   would open Quick Add and find CVLT-C simply gone — which reads as the app
+   being broken rather than as a filter doing its job, the same failure mode as
+   a blank age emptying the CI column. RBANS, RBANS Form B, CVLT-3 and WMS-IV
+   are the others.
+
+   THE INVARIANT: an age may quieten a family's list. It may never remove the
+   family. check.js §29 asserts that over every family at every age 5-95.
+
+   The escape hatch is real rather than decorative: whenever the list has been
+   narrowed it says so and offers "Show all bands", because a silently shorter
+   list is indistinguishable from missing data. */
+let familyListShowAllBands = false;
+
+/* "· Ages 20-49" -> {lo:20, hi:49};  "· Age 8" -> {lo:8, hi:8}.
+   null for "· All Ages" and for names carrying no band, both of which are
+   handled by name above rather than by range. */
+function ageBandRange(f){
+  const m = String(f).match(/·\s*Ages?\s+(\d+)\s*(?:[–-]\s*(\d+))?\s*$/i);
+  if (!m) return null;
+  const lo = +m[1];
+  return { lo, hi: m[2] != null ? +m[2] : lo };
+}
+function isAllAgesFamily(f){ return /·\s*All\s+Ages\s*$/i.test(f); }
+
+function familyMembersForAge(members, age){
+  if (age == null || familyListShowAllBands) return members;
+  const keep = members.filter(f => {
+    if (isAllAgesFamily(f)) return true;      // clause 2
+    const r = ageBandRange(f);
+    if (!r) return true;                      // unbanded — not ours to filter
+    return age >= r.lo && age <= r.hi;        // clause 1
+  });
+  return keep.length ? keep : members;        // clause 3
+}
+
+/* Shown only when something was actually hidden, so a list that was already
+   as short as it can be does not claim to have been filtered. */
+function comboAgeFilterNoteHtml(age, narrowed){
+  if (age == null) return '';
+  if (familyListShowAllBands){
+    return '<div class="combo-agefilter-note"><span>Showing <strong>all</strong> age bands.</span>'
+         + `<button type="button" class="combo-agefilter-toggle" data-combo-agefilter="filter">Filter to age ${escapeHtml(String(age))}</button></div>`;
+  }
+  if (!narrowed) return '';
+  return `<div class="combo-agefilter-note"><span>Showing bands for <strong>age ${escapeHtml(String(age))}</strong>, plus All Ages where published.</span>`
+       + '<button type="button" class="combo-agefilter-toggle" data-combo-agefilter="all">Show all bands</button></div>';
+}
 function buildFamilyListHtml(families, opts){
   const flat = !!(opts && opts.flat);
   const isCustom = f => !normDB[f];
@@ -22425,9 +22552,16 @@ function buildFamilyListHtml(families, opts){
     groups[base].push(f);
   });
 
+  /* Read once for the whole list rather than per group, so a list cannot be
+     built half against one age and half against another. */
+  const age = (typeof patientAge === 'function') ? patientAge() : null;
+  let narrowed = false;
+
   let html = '';
   order.forEach(base => {
-    const members = groups[base];
+    const allMembers = groups[base];
+    const members = familyMembersForAge(allMembers, age);
+    if (members.length < allMembers.length) narrowed = true;
     const groupKey = `grp:${base}`;
     if (members.length === 1 && !hasAgeBandSuffix(members[0])){
       html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false, groupKey);
@@ -22463,11 +22597,41 @@ function buildFamilyListHtml(families, opts){
       html += `</div>`;
     }
   });
-  return comboOptionsHtml(html);
+  return comboAgeFilterNoteHtml(age, narrowed) + comboOptionsHtml(html);
 }
 function rebuildAllFamilyLists(){
   document.querySelectorAll('.rci-family-list').forEach(list => populateFamilyList(list));
 }
+
+/* Every dropdown is built from the age at build time, so a changed age has to
+   rebuild them. Guarded on the parsed value rather than the keystroke: typing
+   "7" then "2" for 72 would otherwise rebuild three lists twice, once against
+   the nonsense age 7. */
+let lastFamilyListAge;
+function rebuildFamilyListsForAge(force){
+  const age = (typeof patientAge === 'function') ? patientAge() : null;
+  if (!force && age === lastFamilyListAge) return;
+  lastFamilyListAge = age;
+  try { if (typeof rebuildBatteryFamilyList === 'function') rebuildBatteryFamilyList(); } catch(e){}
+  try { if (typeof rebuildSdiFamilyList === 'function') rebuildSdiFamilyList(); } catch(e){}
+  try { rebuildAllFamilyLists(); } catch(e){}
+}
+
+/* mousedown, not click, and preventDefault: the toggle sits inside an open
+   combo list, and letting the press blur the search input would close the list
+   out from under the very button being pressed. Same reason the footer buttons
+   are given this treatment in wireMultiSelectFamilyList. */
+document.addEventListener('mousedown', e => {
+  if (e.target.closest('[data-combo-agefilter]')) e.preventDefault();
+});
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-combo-agefilter]');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  familyListShowAllBands = (btn.dataset.comboAgefilter === 'all');
+  rebuildFamilyListsForAge(true);
+});
 // Returns true iff every subtest in the family carries a valid numeric N (≥3)
 function familyHasN(familyEntries){
   if (!familyEntries || Object.keys(familyEntries).length === 0) return false;
@@ -23879,6 +24043,7 @@ function setupPremorbidListeners(){
       syncPatientAge('pre-age');
       if (typeof renderBattery === 'function') renderBattery();
       if (typeof refreshPatientAgeIndicator === 'function') refreshPatientAgeIndicator();
+      if (typeof rebuildFamilyListsForAge === 'function') rebuildFamilyListsForAge();
     };
     ageEl.addEventListener('input', mirror);
     ageEl.addEventListener('change', mirror);

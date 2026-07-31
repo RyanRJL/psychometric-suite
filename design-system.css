@@ -4629,3 +4629,56 @@ input[type="number"].ds-patient-field-input{
   .ds-patient-field-live{ padding: 0 6px 0 2px; }
   .ds-patient-field-live span:last-child{ display: none; }
 }
+
+/* ============================================================================
+   41. AGE-BAND FILTER NOTE — the family dropdowns
+
+   Sits above the options whenever a patient age has shortened the list, and
+   whenever the list is showing everything because the user asked it to. It
+   exists because a silently shorter dropdown is indistinguishable from missing
+   data: the note is what makes the filter legible rather than mysterious.
+
+   Standalone class, and note it must NOT be .combo-item — filterFamilyListEl
+   hides those by search text, which would make the note vanish the moment
+   anyone typed in the search box.
+   ============================================================================ */
+.combo-agefilter-note{
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  flex-wrap: wrap;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  margin: 0;
+  background: var(--ds-primary-tint);
+  border-bottom: 1px solid var(--ds-border);
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  line-height: var(--ds-leading-snug);
+  color: var(--ds-text-muted);
+}
+.combo-agefilter-note strong{
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-text);
+}
+.combo-agefilter-toggle{
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 3px 9px;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-xs);
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.combo-agefilter-toggle:hover{
+  background: var(--ds-surface-emphasis);
+  border-color: var(--ds-primary);
+}
+.combo-agefilter-toggle:focus-visible{
+  outline: var(--ds-ring-width) solid var(--ds-primary-ring);
+  outline-offset: 1px;
+}

@@ -386,6 +386,41 @@ The topbar button is **"New patient"**, not "Clear all tables": it clears every 
 *and* the age, because once age is a header-level property of the patient, two controls
 that each clear half of one is how a previous age survives onto the next person's report.
 
+#### The age also filters the family dropdowns
+
+`familyMembersForAge` (`app.js`, beside the age-band helpers) narrows each family in
+Quick Add, Change Analysis and the SD Index to **the band(s) containing the age, plus
+`· All Ages` where one is published**. `buildFamilyListHtml` applies it per family and
+`rebuildFamilyListsForAge` rebuilds all three lists when the parsed age changes.
+
+Three clauses, and the third is the one that matters:
+
+1. **Plural, not singular.** WMS-IV publishes overlapping `Ages 16-69` and `Ages 65-90`,
+   so a 67-year-old is in both and picking one would hide a real choice.
+2. **`· All Ages` always survives.** `comboAgeBandNoteHtml` tells the clinician All Ages
+   has the larger *N* and stronger *r*; filtering it away would delete the option the app
+   itself recommends weighing. The band choice is a clinical judgement, not an age lookup
+   — which is why this filters rather than auto-selects.
+3. **If 1 and 2 are both empty, show every member unchanged.** Eight of the 28
+   numerically banded families publish no All Ages entry, and `CVLT-C Subtests (Raw
+   Scores)` is banded by the three normative *sample ages* (`Age 8` / `Age 12` /
+   `Age 16`) — so **88 of the 91 ages from 5 to 95 match no band**. Without this clause a
+   clinician testing a 10-year-old would open Quick Add and find CVLT-C gone, which reads
+   as the app being broken rather than as a filter working. RBANS, RBANS Form B, CVLT-3
+   and WMS-IV are the others.
+
+**The invariant: an age may quieten a family's list; it may never remove the family.**
+`check.js` §33 asserts it over every family at every age 5–95, and it drives the shipped
+functions rather than re-implementing them, because the thing under test is the
+interaction between the rule and the actual shape of `normDB` — a second copy of the rule
+would agree with itself while both drifted from the database.
+
+Whenever the list has been narrowed it says so and offers **"Show all bands"**
+(`familyListShowAllBands`), because a silently shorter dropdown is indistinguishable from
+missing data. That note must **not** carry `.combo-item`: `filterFamilyListEl` hides those
+by search text, so it would vanish the moment anyone typed — exactly when a shortened list
+is most confusing. §33 pins that too.
+
 Three constraints, all in `check.js` §25:
 
 - **`rInternalByAge` only on `· All Ages` groups.** The banded D-KEFS Advanced groups
@@ -1051,7 +1086,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 270 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 281 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -1059,7 +1094,8 @@ pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
 reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
 Score Tables confidence intervals, documentation contracts, wiring (§16–17), the
-raw-score metric (§18) and the Norms Database view (§32).
+raw-score metric (§18), the Norms Database view (§32) and age-band filtering of the
+family dropdowns (§33).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

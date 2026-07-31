@@ -5562,6 +5562,147 @@ check('every column shows and sorts on the same value', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
+/* ==========================================================================
+   33. Age-band filtering of the family dropdowns
+
+   The patient age narrows each family's list of age bands to the band(s)
+   containing that age, plus "· All Ages" where one is published. The whole
+   feature rests on one invariant:
+
+     AN AGE MAY QUIETEN A FAMILY'S LIST. IT MAY NEVER REMOVE THE FAMILY.
+
+   That is not decorative. Eight of the numerically banded families publish no
+   All Ages entry, and CVLT-C Subtests is banded by the three normative sample
+   ages (Age 8 / Age 12 / Age 16) — so 88 of the 91 ages from 5 to 95 match no
+   band at all. Without the fall-back clause a clinician testing a 10-year-old
+   opens Quick Add and finds CVLT-C gone, which reads as the app being broken.
+
+   The real shipped functions are extracted and run against the real normDB,
+   rather than re-implemented: the thing under test is the interaction between
+   a filtering rule and the actual shape of the data, and a second copy of the
+   rule would agree with itself while both drifted from the database.
+   ========================================================================== */
+heading('33. Age-band filtering of the family dropdowns');
+
+/* Build a sandbox holding the three shipped helpers. familyMembersForAge reads
+   the module-level `familyListShowAllBands`, so it is declared here too. */
+function ageFilterSandbox(showAll){
+  const box = { familyListShowAllBands: !!showAll };
+  vm.createContext(box);
+  vm.runInContext(
+    extractFn(APP_SRC, 'ageBandRange') + '\n' +
+    extractFn(APP_SRC, 'isAllAgesFamily') + '\n' +
+    extractFn(APP_SRC, 'familyMembersForAge') + '\n' +
+    extractFn(APP_SRC, 'familyBaseName') + '\n' +
+    extractFn(APP_SRC, 'hasAgeBandSuffix') + '\n',
+    box
+  );
+  return box;
+}
+/* Group the real database the way buildFamilyListHtml does. */
+function realFamilyGroups(box){
+  const groups = {};
+  Object.keys(D.normDB).sort().forEach(f => {
+    const base = box.hasAgeBandSuffix(f) ? box.familyBaseName(f) : f;
+    (groups[base] = groups[base] || []).push(f);
+  });
+  return groups;
+}
+
+check('no age can empty any family — the invariant, over every family, ages 5-95', () => {
+  const box = ageFilterSandbox(false);
+  const groups = realFamilyGroups(box);
+  const bad = [];
+  for (const [base, members] of Object.entries(groups)){
+    for (let age = 5; age <= 95; age++){
+      const kept = box.familyMembersForAge(members, age);
+      if (!kept || kept.length === 0){ bad.push(base + ' disappears at age ' + age); break; }
+      if (kept.some(m => !members.includes(m))){ bad.push(base + ' invented a member at age ' + age); break; }
+    }
+  }
+  return bad.length === 0 || bad.slice(0, 5).join('; ');
+});
+
+check('CVLT-C keeps all three sample ages for a child who matches none of them', () => {
+  /* The clause-3 case that motivated the rule. Bands are Age 8 / 12 / 16, so a
+     10-year-old matches nothing and the family publishes no All Ages. */
+  const box = ageFilterSandbox(false);
+  const groups = realFamilyGroups(box);
+  const base = Object.keys(groups).find(b => /^CVLT-C Subtests/.test(b));
+  if (!base) return 'the CVLT-C Subtests family is gone from normDB';
+  const members = groups[base];
+  if (members.some(m => box.isAllAgesFamily(m))) return 'CVLT-C now has an All Ages entry — re-derive this check';
+  const bad = [];
+  [5, 9, 10, 11, 15, 17, 40].forEach(age => {
+    const kept = box.familyMembersForAge(members, age);
+    if (kept.length !== members.length) bad.push('age ' + age + ' kept only ' + kept.length + ' of ' + members.length);
+  });
+  // And an age that DOES match must narrow to exactly that one.
+  const at12 = box.familyMembersForAge(members, 12);
+  if (at12.length !== 1 || !/Age 12$/.test(at12[0])) {
+    bad.push('age 12 did not narrow to the Age 12 band (got ' + at12.join(', ') + ')');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('overlapping bands both survive — WMS-IV at 67 is in 16-69 AND 65-90', () => {
+  /* Picking one would hide a legitimate choice. This is the reason clause 1 is
+     plural rather than a findIndex. */
+  const box = ageFilterSandbox(false);
+  const groups = realFamilyGroups(box);
+  const bad = [];
+  ['WMS-IV Indices', 'WMS-IV Subtests'].forEach(base => {
+    const members = groups[base];
+    if (!members) { bad.push(base + ' is gone from normDB'); return; }
+    const kept = box.familyMembersForAge(members, 67);
+    if (kept.length !== 2) bad.push(base + ' at 67 kept ' + kept.length + ' bands, expected both');
+    if (!kept.some(m => /16-69$/.test(m)) || !kept.some(m => /65-90$/.test(m))) {
+      bad.push(base + ' at 67 did not keep both overlapping bands (got ' + kept.join(', ') + ')');
+    }
+    // Outside the overlap it must narrow to one.
+    const at20 = box.familyMembersForAge(members, 20);
+    if (at20.length !== 1) bad.push(base + ' at 20 kept ' + at20.length + ', expected 1');
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('All Ages always survives the filter, so the stronger-r option is never removed', () => {
+  /* comboAgeBandNoteHtml tells the clinician All Ages has larger N and a
+     stronger r. Filtering it away would delete the option the app recommends
+     considering — the band choice is a clinical judgement, not an age lookup. */
+  const box = ageFilterSandbox(false);
+  const groups = realFamilyGroups(box);
+  const bad = [];
+  let checked = 0;
+  for (const [base, members] of Object.entries(groups)){
+    const allAges = members.filter(m => box.isAllAgesFamily(m));
+    if (!allAges.length) continue;
+    checked++;
+    for (let age = 5; age <= 95; age += 1){
+      const kept = box.familyMembersForAge(members, age);
+      if (!allAges.every(a => kept.includes(a))){ bad.push(base + ' dropped All Ages at age ' + age); break; }
+    }
+  }
+  if (!checked) return 'no family in normDB publishes an All Ages entry — re-derive this check';
+  return bad.length === 0 || bad.slice(0, 5).join('; ');
+});
+
+check('a blank age filters nothing, and "show all bands" overrides everything', () => {
+  const off = ageFilterSandbox(false);
+  const shown = ageFilterSandbox(true);
+  const groups = realFamilyGroups(off);
+  const bad = [];
+  for (const [base, members] of Object.entries(groups)){
+    if (off.familyMembersForAge(members, null).length !== members.length){
+      bad.push(base + ' was filtered with no age set'); break;
+    }
+    if (shown.familyMembersForAge(members, 40).length !== members.length){
+      bad.push(base + ' stayed filtered with showAllBands on'); break;
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('the typed entry form is gone, and took none of its neighbours with it', () => {
   /* THE DELETION GUARD. refreshAll() is a top-level init statement that used to
      call refreshFamilySelect(); leaving that call behind while removing the
@@ -5587,6 +5728,39 @@ check('the typed entry form is gone, and took none of its neighbours with it', (
   ['ct-search', 'ct-export', 'ct-import', 'db-list', 'db-thead', 'db-tbody',
    'db-filters', 'db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis', 'db-count']
     .forEach((id) => { if (!HTML_SRC.includes('id="' + id + '"')) bad.push('markup for ' + id + ' is missing'); });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the filter note is not a .combo-item, and says so when it narrows', () => {
+  /* filterFamilyListEl hides .combo-item by search text. If the note carried
+     that class it would vanish the moment anyone typed, which is exactly when
+     a shortened list is most confusing. */
+  const note = extractFn(APP_SRC, 'comboAgeFilterNoteHtml');
+  const bad = [];
+  if (/combo-item/.test(note)) bad.push('the note is rendered as a .combo-item and will be hidden by the search filter');
+  if (!/Show all bands/.test(note)) bad.push('there is no escape hatch back to the full list');
+  if (!/if \(!narrowed\) return ''/.test(note)) bad.push('the note shows even when nothing was hidden');
+  /* A silently shorter list is indistinguishable from missing data. */
+  const build = extractFn(APP_SRC, 'buildFamilyListHtml');
+  if (!/comboAgeFilterNoteHtml\(age, narrowed\)/.test(build)) bad.push('buildFamilyListHtml never emits the note');
+  if (!/familyMembersForAge\(allMembers, age\)/.test(build)) bad.push('buildFamilyListHtml never applies the filter');
+  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  if (!/\.combo-agefilter-note\s*\{/.test(DS_CSS)) bad.push('the note has no styling');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('changing the age rebuilds all three dropdowns', () => {
+  /* Each list is built from the age at build time, so a stale list would keep
+     offering bands for the previous patient. */
+  const fn = extractFn(APP_SRC, 'rebuildFamilyListsForAge');
+  const bad = [];
+  ['rebuildBatteryFamilyList', 'rebuildSdiFamilyList', 'rebuildAllFamilyLists'].forEach(n => {
+    if (!fn.includes(n)) bad.push(n + ' is never rebuilt when the age changes');
+  });
+  /* Guarded on the parsed value: typing "72" passes through the nonsense age 7,
+     and rebuilding three lists against it is wasted work. */
+  if (!/lastFamilyListAge/.test(fn)) bad.push('the rebuild is not guarded on the parsed age changing');
+  if (!/rebuildFamilyListsForAge\(\)/.test(APP_SRC)) bad.push('nothing calls it — the age listener is not wired to the lists');
   return bad.length === 0 || bad.join('; ');
 });
 
