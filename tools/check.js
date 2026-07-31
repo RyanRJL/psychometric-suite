@@ -2694,10 +2694,11 @@ check('rInternal appears only where a publisher derives its own intervals from i
      publish an internal-consistency interval would silently change that row's
      basis, so the roster is pinned.
 
-     Three sources so far:
+     Four sources so far:
        CVLT-C List A Trials 1-5 Total   3 entries, no by-age table
        D-KEFS Advanced CWIT/Tower/SST/RISK  26 entries, All Ages groups only
        D-KEFS (original)                13 entries, All Ages groups only
+       WAIS-IV Technical Manual Table 4.1   21 entries, All Ages groups only
 
      Keyed on EITHER field. D-KEFS original carries rInternalByAge with no
      rInternal — its manual publishes no all-ages average — so a roster that
@@ -2714,11 +2715,13 @@ check('rInternal appears only where a publisher derives its own intervals from i
   const cvltc = carriers.filter((c) => /^CVLT-C .* \/ List A Trials 1-5 Total$/.test(c));
   const dkefs = carriers.filter((c) => /^D-KEFS Advanced (Colour-Word Interference|Tower|Social Sorting|Risk-Reward Decision) · All Ages \//.test(c));
   const orig  = carriers.filter((c) => /^D-KEFS (?!Advanced)(Trail Making Test|Verbal Fluency|Sorting Test|Word Context Test|Tower Test|Word Proverb Test|Twenty Questions Test) · All Ages \//.test(c));
-  const stray = carriers.filter((c) => !cvltc.includes(c) && !dkefs.includes(c) && !orig.includes(c));
+  const wais  = carriers.filter((c) => /^WAIS-IV (Core Subtests|Indices|Process Scores|Supplementary Subtests) · All Ages \//.test(c));
+  const stray = carriers.filter((c) => !cvltc.includes(c) && !dkefs.includes(c) && !orig.includes(c) && !wais.includes(c));
   const bad = [];
   if (cvltc.length !== 3) bad.push('CVLT-C carriers: ' + cvltc.length + ', expected 3');
   if (dkefs.length !== 26) bad.push('D-KEFS Advanced carriers: ' + dkefs.length + ', expected 26');
   if (orig.length !== 13) bad.push('D-KEFS original carriers: ' + orig.length + ', expected 13');
+  if (wais.length !== 21) bad.push('WAIS-IV carriers: ' + wais.length + ', expected 21');
   if (stray.length) bad.push('undocumented: ' + stray.slice(0, 3).join(', '));
   return bad.length === 0 || bad.join('; ');
 });
@@ -3264,6 +3267,233 @@ check('the two D-KEFS manuals disagree, and both are honoured', () => {
   if (has('D-KEFS Design Fluency · All Ages', 'Filled Dots')) {
     bad.push('Design Fluency gained one; its manual says item interdependence precluded it');
   }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ==========================================================================
+   28. WAIS-IV internal consistency — Technical Manual Table 4.1
+
+   PINNED SOURCE: WAIS-IV Technical and Interpretive Manual (GB), chapter 4
+   "Reliability and Errors of Measurement", pp. 42-43.
+     p. 42     "Reliability coefficients were obtained utilizing the split-half
+               and the Cronbach's coefficient alpha methods... Because Symbol
+               Search, Coding, and Cancellation are Processing Speed subtests,
+               the split-half coefficient is not a proper reliability estimate.
+               Therefore, test-retest stability coefficients were used as the
+               reliability estimates for these subtests... corrected for the
+               normative sample's variability (Allen & Yen, 1979; Magnusson,
+               1967)."
+     Table 4.1 24 measures x 13 NORMATIVE age bands (16-17, 18-19, 20-24,
+               25-29, 30-34, 35-44, 45-54, 55-64, 65-69, 70-74, 75-79, 80-84,
+               85-90) plus an overall average via Fisher's z.
+
+   NOT PINNED, and deliberately so: that the manual's own printed SEMs and
+   intervals are computed from Table 4.1. That needs Table 4.3, which was not
+   available. The claim rests on the manual's stated method — the same footing
+   D-KEFS Advanced was admitted on in section 25. If Table 4.3 is obtained,
+   pin it the way section 27 pins the D-KEFS SEM cells.
+   ========================================================================== */
+heading('28. WAIS-IV internal consistency — Table 4.1');
+
+const WAIS_ALL = {
+  core: 'WAIS-IV Core Subtests · All Ages',
+  supp: 'WAIS-IV Supplementary Subtests · All Ages',
+  proc: 'WAIS-IV Process Scores · All Ages',
+  idx:  'WAIS-IV Indices · All Ages'
+};
+
+/* Table 4.1, the three SPEEDED rows only, as printed: one value per normative
+   band. These are stability coefficients, not internal consistency. */
+const WAIS_SPEEDED_T41 = [
+  [WAIS_ALL.core, 'Symbol Search', 0.81,
+    { 16:0.81, 18:0.81, 20:0.81, 25:0.81, 30:0.73, 35:0.73, 45:0.73, 55:0.81, 65:0.81, 70:0.86, 75:0.86, 80:0.86, 85:0.86 }],
+  [WAIS_ALL.core, 'Coding', 0.86,
+    { 16:0.85, 18:0.85, 20:0.85, 25:0.85, 30:0.84, 35:0.84, 45:0.84, 55:0.89, 65:0.89, 70:0.86, 75:0.86, 80:0.86, 85:0.86 }],
+  [WAIS_ALL.supp, 'Cancellation', 0.78,
+    { 16:0.81, 18:0.81, 20:0.81, 25:0.81, 30:0.71, 35:0.71, 45:0.71, 55:0.80, 65:0.80 }]
+];
+
+/* Normative band lower bound -> the retest study band this database uses. */
+const WAIS_RETEST_BAND = { 16:'16-29', 18:'16-29', 20:'16-29', 25:'16-29',
+                           30:'30-54', 35:'30-54', 45:'30-54',
+                           55:'55-69', 65:'55-69',
+                           70:'70-90', 75:'70-90', 80:'70-90', 85:'70-90' };
+
+check('the speeded three already hold Table 4.1, in rCorrected', () => {
+  /* THE LOAD-BEARING CHECK, and the reason those three need no new field.
+     The manual gives them a corrected stability coefficient, which is exactly
+     what rCorrected stores. Table 4.1 repeats one retest-study value across
+     every normative band it spans, so all 35 published cells must reproduce
+     from the banded groups — and the overall average from All Ages.
+
+     This is also the transcription guard for the whole section: the band
+     mapping below is what turns Table 4.1's 13 normative bands into this
+     database's four, and if it were wrong these cells would not line up. */
+  const bad = [];
+  let n = 0;
+  WAIS_SPEEDED_T41.forEach(([allGroup, name, overall, byBand]) => {
+    const base = allGroup.replace(' · All Ages', '');
+    Object.entries(byBand).forEach(([lo, rxx]) => {
+      const g = base + ' · Ages ' + WAIS_RETEST_BAND[lo];
+      const e = D.normDB[g] && D.normDB[g][name];
+      if (!e) { bad.push('no entry at ' + g + ' / ' + name); return; }
+      n++;
+      if (e.rCorrected !== rxx) {
+        bad.push(name + ' band ' + lo + ' [' + g + ']: rCorrected ' + e.rCorrected + ', Table 4.1 prints ' + rxx);
+      }
+    });
+    n++;
+    const eA = D.normDB[allGroup][name];
+    if (eA.rCorrected !== overall) bad.push(name + ' All Ages: rCorrected ' + eA.rCorrected + ', Table 4.1 prints ' + overall);
+  });
+  if (n !== 38) bad.push('expected 38 published cells (35 banded + 3 averages), tested ' + n);
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('the raw retest r could NOT have produced those cells', () => {
+  /* Falsification, and the reason the match above is not a coincidence of two
+     similar numbers. rCorrected hits 35 of 35; the uncorrected r hits none.
+     If this ever starts hitting, the wrong field is being compared. */
+  let hits = 0, n = 0;
+  WAIS_SPEEDED_T41.forEach(([allGroup, name, overall, byBand]) => {
+    const base = allGroup.replace(' · All Ages', '');
+    Object.entries(byBand).forEach(([lo, rxx]) => {
+      const e = D.normDB[base + ' · Ages ' + WAIS_RETEST_BAND[lo]][name];
+      n++; if (e.r === rxx) hits++;
+    });
+    n++; if (D.normDB[allGroup][name].r === overall) hits++;
+  });
+  return hits <= 2 || 'the uncorrected r reproduces ' + hits + ' of ' + n
+    + ' cells — check which field Table 4.1 actually holds';
+});
+
+check('the speeded three carry no internal-consistency field', () => {
+  /* Their Table 4.1 value is a stability coefficient. Storing it in rInternal
+     would change no number but would label it internal consistency, which the
+     Methods & References paragraph then asserts on screen. D-KEFS Advanced
+     excludes TMT and VFT for the same reason — see section 24. */
+  const bad = [];
+  WAIS_SPEEDED_T41.forEach(([group, name]) => {
+    const e = D.normDB[group][name];
+    if (Number.isFinite(e.rInternal) || e.rInternalByAge) bad.push(group + ' / ' + name);
+  });
+  return bad.length === 0
+    || bad.join('; ') + ' — the WAIS-IV manual calls the split-half coefficient improper for these';
+});
+
+check('spot values match Table 4.1 as printed', () => {
+  /* Transcription guard over the 21 stored measures. Drawn from all four
+     families and both ends of the age range, so a column shift would surface. */
+  const want = [
+    [WAIS_ALL.core, 'Block Design',               16, 0.88],
+    [WAIS_ALL.core, 'Vocabulary',                 85, 0.96],
+    [WAIS_ALL.core, 'Digit Span',                 25, 0.94],
+    [WAIS_ALL.supp, 'Letter-Number Sequencing',   65, 0.88],
+    [WAIS_ALL.proc, 'Digit Span Sequencing',      85, 0.92],
+    [WAIS_ALL.idx,  'Perceptual Reasoning Index', 80, 0.92],
+    [WAIS_ALL.idx,  'Full Scale IQ',              16, 0.97]
+  ];
+  const bad = [];
+  want.forEach(([g, n, age, rxx]) => {
+    const got = D.normDB[g][n].rInternalByAge[age];
+    if (got !== rxx) bad.push(n + ' band ' + age + ': stored ' + got + ', Table 4.1 prints ' + rxx);
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('every stored band key is a Table 4.1 band, and an average is present', () => {
+  /* Shape, over all 21 measures at once. The keys must be the 13 NORMATIVE
+     lower bounds — not this database's retest bands, which is the mistake the
+     "All Ages only" rule in section 24 exists to prevent — and rInternal must
+     be a published overall average, never a mean of the bands. */
+  const BANDS = [16, 18, 20, 25, 30, 35, 45, 55, 65, 70, 75, 80, 85];
+  const bad = [];
+  let seen = 0;
+  Object.values(WAIS_ALL).forEach((group) => {
+    Object.entries(D.normDB[group]).forEach(([name, e]) => {
+      if (!e.rInternalByAge) return;
+      seen++;
+      const keys = Object.keys(e.rInternalByAge).map(Number).sort((a, b) => a - b);
+      const stray = keys.filter((k) => !BANDS.includes(k));
+      if (stray.length) bad.push(name + ' has non-Table-4.1 band(s) ' + stray.join(','));
+      // Bands must be a PREFIX of the full list: the only gap the manual has is
+      // a truncation at the top (LN, FW stop at 65-69), never a hole.
+      if (keys.join() !== BANDS.slice(0, keys.length).join()) bad.push(name + ' bands are not a prefix of Table 4.1: ' + keys.join());
+      if (!Number.isFinite(e.rInternal)) bad.push(name + ' has no published overall average');
+      /* No "rInternal must differ from the mean of its bands" assertion here.
+         It was tried and it fires on good data: Table 4.1's averages are
+         computed with Fisher's z, but over 13 coefficients this close together
+         the two agree to 2dp often enough that Block Design, Vocabulary,
+         Picture Completion and the WMI all land on the arithmetic mean exactly.
+         The guard against an invented average is the spot check above and the
+         roster in section 24, not arithmetic. */
+    });
+  });
+  if (seen !== 21) bad.push('expected 21 measures carrying the field, found ' + seen);
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('LN and FW stop at 69, where the manual prints a dash', () => {
+  /* Both are normed to 69, so Table 4.1 has no band above 65-69 for them.
+     Without rInternalAgeMax 69 the lookup would take the greatest key <= age
+     and silently score a 90-year-old on the 65-69 coefficient. The fallback is
+     the published overall average, which is computed over ages 16-69 — the
+     only sample there is, and therefore still citable. */
+  const bad = [];
+  [['Letter-Number Sequencing', 0.88], ['Figure Weights', 0.9]].forEach(([name, avg]) => {
+    const e = D.normDB[WAIS_ALL.supp][name];
+    if (e.rInternalAgeMax !== 69) bad.push(name + ' has rInternalAgeMax ' + e.rInternalAgeMax + ', expected 69');
+    if (rInternalForAge(e, 70) !== null) bad.push(name + ' still returned a band at age 70');
+    if (rInternalForAge(e, 65) !== 0.88 && name === 'Letter-Number Sequencing') bad.push('LN lost its 65-69 band');
+    const rel = batteryRel({ name, group: WAIS_ALL.supp, scoreType: 'scaled' }, 'scaled', 80);
+    if (!rel) bad.push(name + ' produced no interval at age 80');
+    else if (rel.r !== avg) bad.push(name + ' at age 80 used r ' + rel.r + ', expected the average ' + avg);
+  });
+  // ...and a measure normed to 90 must NOT be truncated.
+  const vc = D.normDB[WAIS_ALL.core].Vocabulary;
+  if (vc.rInternalAgeMax !== 90) bad.push('Vocabulary was truncated to ' + vc.rInternalAgeMax);
+  if (rInternalForAge(vc, 88) !== 0.96) bad.push('Vocabulary at 88 did not read the 85-90 band');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a blank age falls back to the published average, and an age moves the interval', () => {
+  /* The optional-age contract, end to end through the shipped renderer. A
+     blank age must never empty the column, and the fallback must be the
+     manual's own overall average — not the retest r, which WAIS-IV publishes
+     an alternative to. PRI is the sharpest probe: .95 average against .92 at
+     80-84, on an SD-15 metric where a coefficient change is most visible. */
+  const row = { name: 'Perceptual Reasoning Index', group: WAIS_ALL.idx, scoreType: 'standard' };
+  const e = D.normDB[WAIS_ALL.idx]['Perceptual Reasoning Index'];
+  const bad = [];
+  [null, undefined, NaN, 4, 91, 200].forEach((age) => {
+    const rel = batteryRel(row, 'standard', age);
+    if (!rel) { bad.push('no interval at age ' + age); return; }
+    if (rel.r !== e.rInternal) bad.push('age ' + age + ' used r ' + rel.r + ', expected the average ' + e.rInternal);
+  });
+  const banded = batteryRel(row, 'standard', 82);
+  if (banded.r !== 0.92) bad.push('age 82 did not pick up the 80-84 band');
+  const blankCi = batteryCi(100, row, '95', null);
+  const oldCi   = batteryCi(100, row, '95', 82);
+  if (!blankCi || !oldCi) bad.push('one of the intervals did not render');
+  else if (blankCi === oldCi) bad.push('a blank age and age 82 both printed ' + blankCi);
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('Methods & References states the WAIS-IV position, both halves of it', () => {
+  /* The instrument-level naming check in section 24 cannot catch this one:
+     "WAIS-IV" was already in that paragraph before this change, in the
+     OPPOSITE sense — it named the manual only as a user of test-retest
+     coefficients. The roster grew and the naming check stayed green. So assert
+     the substance: the paragraph must say WAIS-IV uses internal consistency,
+     and must still name the three subtests for which it does not. */
+  const para = (HTML_SRC.match(/<strong>Confidence intervals and standard errors of measurement\.<\/strong>[\s\S]*?<\/p>/) || [''])[0];
+  if (!para) return 'the confidence-interval paragraph is gone from Methods & References';
+  const bad = [];
+  if (!/WAIS[-‑–]IV/.test(para)) bad.push('WAIS-IV is not named at all');
+  if (!/Table 4\.1/.test(para)) bad.push('the paragraph does not cite Table 4.1');
+  ['Symbol Search', 'Coding', 'Cancellation'].forEach((n) => {
+    if (!para.includes(n)) bad.push(n + ' is no longer named as an exclusion');
+  });
   return bad.length === 0 || bad.join('; ');
 });
 

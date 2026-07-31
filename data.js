@@ -389,7 +389,7 @@ const OPIE_BASE_RATES = {
 
    The field exists only where a publisher does two things: reports an
    internal-consistency coefficient, AND derives its own published confidence
-   intervals from it. Three manuals clear that bar, and each for a different
+   intervals from it. Four manuals clear that bar, and each for a different
    reason — reliability method is a per-manual question, never a policy this
    app applies across instruments:
 
@@ -401,6 +401,11 @@ const OPIE_BASE_RATES = {
                      measures.
      D-KEFS          13 entries on the All Ages groups, rInternalByAge ONLY —
                      it publishes no all-ages average. See below.
+     WAIS-IV         21 entries on the All Ages groups, rInternal +
+                     rInternalByAge, from Technical Manual Table 4.1. Symbol
+                     Search, Coding and Cancellation excluded — that manual
+                     rejects internal consistency for SPEEDED measures too, and
+                     those three already hold its chosen coefficient. See below.
 
      CVLT-C Manual, Table 6.5 — odd/even split-half with Spearman-Brown,
      by age. Age 8 .87, Age 12 .89, Age 16 .84. The same table prints the
@@ -504,6 +509,71 @@ const OPIE_BASE_RATES = {
    conclusion on the same two test names: it excludes Trail Making and Verbal
    Fluency for speededness, while this manual publishes internal consistency
    for all four Verbal Fluency measures and excludes Design Fluency instead.
+   ------------------------------------------------------------
+
+   ------------------------------------------------------------
+   WAIS-IV — Table 4.1, and the three subtests that are NOT in it
+
+   WAIS-IV Technical and Interpretive Manual (GB), chapter 4, "Reliability and
+   Errors of Measurement", p. 42:
+
+     "Reliability coefficients were obtained utilizing the split-half and the
+     Cronbach's coefficient alpha methods... Because Symbol Search, Coding, and
+     Cancellation are Processing Speed subtests, the split-half coefficient is
+     not a proper reliability estimate. Therefore, test-retest stability
+     coefficients were used as the reliability estimates for these subtests...
+     The stability coefficient is the correlation between the scores on the
+     first and second testings corrected for the normative sample's variability
+     (Allen & Yen, 1979; Magnusson, 1967)."
+
+   Table 4.1 is that chapter's reliability table: 24 rows (15 subtests, 4
+   process scores, 5 composites) x 13 NORMATIVE age bands plus an overall
+   average computed with Fisher's z. 21 of the 24 rows are internal
+   consistency and are stored here as rInternal + rInternalByAge.
+
+   THE THREE SPEEDED SUBTESTS NEED NO NEW FIELD — they already hold Table 4.1's
+   own coefficient. Table 4.1 carries the corrected stability coefficient for
+   Symbol Search, Coding and Cancellation, and that is exactly what rCorrected
+   holds: all 38 published cells — 35 banded plus the three overall averages —
+   match rCorrected to the digit, and not one matches the raw r. No other
+   measure exceeds 3 of 13. Giving them rInternal would therefore change
+   nothing numerically while falsely labelling a stability coefficient as
+   internal consistency — so they are excluded, as D-KEFS Advanced excludes
+   TMT and VFT for the same reason. check.js section 28 pins the 38 cells.
+
+   That match is also what proves the transcription: Table 4.1 propagates one
+   retest-study value across the normative bands it spans (Symbol Search .81 at
+   16-17/18-19/20-24/25-29, .73 at 30-34/35-44/45-54), and those spans
+   reconstruct this database's 16-29 / 30-54 / 55-69 / 70-90 groups exactly.
+
+   PSI AND FSIQ ARE HYBRIDS, and the manual says so (p. 43): the PSI average
+   "is based on test-retest subtest reliabilities, which tend to be lower than
+   split-half or alpha reliabilities". The manual nonetheless computes and
+   labels every composite coefficient as internal consistency (p. 42, "The
+   composite score internal consistency reliability coefficients were
+   calculated with the formula recommended by Guilford (1954)"), and Table 4.1
+   is the only reliability table it publishes for them. They are stored as the
+   other composites are; excluding PSI while keeping FSIQ — which also draws on
+   Processing Speed subtests — would be incoherent.
+
+   LETTER-NUMBER SEQUENCING AND FIGURE WEIGHTS STOP AT 69, because the manual
+   prints a dash above the 65-69 band for both (they are normed to 69 only, as
+   is Cancellation). Their rInternalAgeMax is 69, not 90, so an age of 70+
+   falls back to the published overall average rather than silently re-reading
+   the 65-69 band. That average is computed over ages 16-69, which is the only
+   sample there is, so it stays citable.
+
+   WHAT IS PROVEN AND WHAT IS NOT. Proven from the pages to hand: the manual
+   reports internal consistency, states which subtests are excluded and why,
+   and Table 4.1's speeded rows reproduce this database's rCorrected 35/35.
+   NOT verified arithmetically: that the manual's own printed SEMs and
+   confidence intervals are built from Table 4.1 — that needs Table 4.3, which
+   was not available. It rests instead on the manual's stated method, which is
+   the same footing D-KEFS Advanced was admitted on. If Table 4.3 is obtained,
+   pin it the way section 27 pins the D-KEFS SEM cells.
+
+   LEAVE WAIS-IV Longest Span (Process) ALONE. It is scored by published base
+   rate, has no retest data at all, and appears nowhere in Table 4.1.
    ------------------------------------------------------------
 
    WHERE IT MUST NOT BE USED: Change Analysis and the RCI pages. There the
@@ -1135,16 +1205,20 @@ const OPIE_BASE_RATES = {
     "Information": { m1:9.3, sd1:3.2, m2:9.9, sd2:3.2, r:0.93, rCorrected:0.92 },
     "Coding": { m1:9.7, sd1:2.6, m2:10.3, sd2:2.6, r:0.81, rCorrected:0.86 }
   },
+  /* rInternal / rInternalByAge below are WAIS-IV Technical Manual Table 4.1,
+     keyed by each normative band's LOWER bound. Symbol Search and Coding are
+     deliberately absent — Table 4.1 gives them a corrected stability
+     coefficient, which rCorrected already holds. See the rInternal note above. */
   "WAIS-IV Core Subtests · All Ages": {
-    "Block Design": { m1:10.2, sd1:2.9, m2:11, sd2:2.8, r:0.79, rCorrected:0.8, n:298 },
-    "Similarities": { m1:9.9, sd1:2.8, m2:10.4, sd2:2.8, r:0.83, rCorrected:0.87, n:298 },
-    "Digit Span": { m1:10, sd1:2.9, m2:10.6, sd2:3, r:0.82, rCorrected:0.83, n:298 },
-    "Matrix Reasoning": { m1:10.1, sd1:3.1, m2:10.5, sd2:3.1, r:0.76, rCorrected:0.74, n:298 },
-    "Vocabulary": { m1:9.9, sd1:3, m2:10, sd2:3, r:0.9, rCorrected:0.89, n:298 },
-    "Arithmetic": { m1:9.9, sd1:2.8, m2:10.4, sd2:2.9, r:0.8, rCorrected:0.83, n:298 },
+    "Block Design": { m1:10.2, sd1:2.9, m2:11, sd2:2.8, r:0.79, rCorrected:0.8, n:298, rInternal:0.87, rInternalAgeMax:90, rInternalByAge:{16:0.88, 18:0.87, 20:0.84, 25:0.9, 30:0.91, 35:0.89, 45:0.9, 55:0.88, 65:0.87, 70:0.89, 75:0.82, 80:0.8, 85:0.86} },
+    "Similarities": { m1:9.9, sd1:2.8, m2:10.4, sd2:2.8, r:0.83, rCorrected:0.87, n:298, rInternal:0.87, rInternalAgeMax:90, rInternalByAge:{16:0.81, 18:0.85, 20:0.85, 25:0.86, 30:0.87, 35:0.88, 45:0.88, 55:0.87, 65:0.88, 70:0.9, 75:0.86, 80:0.91, 85:0.91} },
+    "Digit Span": { m1:10, sd1:2.9, m2:10.6, sd2:3, r:0.82, rCorrected:0.83, n:298, rInternal:0.93, rInternalAgeMax:90, rInternalByAge:{16:0.89, 18:0.92, 20:0.91, 25:0.94, 30:0.94, 35:0.94, 45:0.94, 55:0.92, 65:0.93, 70:0.94, 75:0.93, 80:0.92, 85:0.92} },
+    "Matrix Reasoning": { m1:10.1, sd1:3.1, m2:10.5, sd2:3.1, r:0.76, rCorrected:0.74, n:298, rInternal:0.9, rInternalAgeMax:90, rInternalByAge:{16:0.88, 18:0.87, 20:0.88, 25:0.91, 30:0.91, 35:0.9, 45:0.9, 55:0.9, 65:0.91, 70:0.91, 75:0.94, 80:0.86, 85:0.92} },
+    "Vocabulary": { m1:9.9, sd1:3, m2:10, sd2:3, r:0.9, rCorrected:0.89, n:298, rInternal:0.94, rInternalAgeMax:90, rInternalByAge:{16:0.93, 18:0.93, 20:0.94, 25:0.93, 30:0.93, 35:0.94, 45:0.94, 55:0.94, 65:0.95, 70:0.95, 75:0.94, 80:0.94, 85:0.96} },
+    "Arithmetic": { m1:9.9, sd1:2.8, m2:10.4, sd2:2.9, r:0.8, rCorrected:0.83, n:298, rInternal:0.88, rInternalAgeMax:90, rInternalByAge:{16:0.89, 18:0.88, 20:0.84, 25:0.89, 30:0.9, 35:0.89, 45:0.91, 55:0.88, 65:0.89, 70:0.84, 75:0.9, 80:0.89, 85:0.86} },
     "Symbol Search": { m1:10.1, sd1:2.9, m2:11, sd2:3.3, r:0.8, rCorrected:0.81, n:298 },
-    "Visual Puzzles": { m1:10, sd1:2.8, m2:10.9, sd2:3, r:0.69, rCorrected:0.74, n:298 },
-    "Information": { m1:9.8, sd1:3, m2:10.5, sd2:3.2, r:0.91, rCorrected:0.9, n:298 },
+    "Visual Puzzles": { m1:10, sd1:2.8, m2:10.9, sd2:3, r:0.69, rCorrected:0.74, n:298, rInternal:0.89, rInternalAgeMax:90, rInternalByAge:{16:0.9, 18:0.89, 20:0.9, 25:0.91, 30:0.9, 35:0.88, 45:0.92, 55:0.89, 65:0.92, 70:0.89, 75:0.89, 80:0.82, 85:0.78} },
+    "Information": { m1:9.8, sd1:3, m2:10.5, sd2:3.2, r:0.91, rCorrected:0.9, n:298, rInternal:0.93, rInternalAgeMax:90, rInternalByAge:{16:0.89, 18:0.91, 20:0.91, 25:0.91, 30:0.91, 35:0.92, 45:0.94, 55:0.95, 65:0.94, 70:0.94, 75:0.94, 80:0.94, 85:0.96} },
     "Coding": { m1:10, sd1:2.7, m2:10.6, sd2:2.8, r:0.83, rCorrected:0.86, n:298 }
   },
   "WAIS-IV Indices · Ages 16-29": {
@@ -1175,12 +1249,15 @@ const OPIE_BASE_RATES = {
     "Processing Speed Index": { m1:98.5, sd1:12, m2:101.2, sd2:13.8, r:0.82, rCorrected:0.88 },
     "Full Scale IQ": { m1:98.1, sd1:12.7, m2:101.6, sd2:14, r:0.94, rCorrected:0.96 }
   },
+  /* Table 4.1 again. PSI and FSIQ draw on the three speeded subtests, so their
+     composite coefficient is a hybrid — the manual labels it internal
+     consistency and publishes no other reliability for them. See above. */
   "WAIS-IV Indices · All Ages": {
-    "Verbal Comprehension Index": { m1:99.3, sd1:14.4, m2:101.8, sd2:15, r:0.95, rCorrected:0.96, n:298 },
-    "Perceptual Reasoning Index": { m1:100.4, sd1:13.8, m2:104.3, sd2:14.3, r:0.85, rCorrected:0.87, n:298 },
-    "Working Memory Index": { m1:99.5, sd1:14, m2:102.6, sd2:14.7, r:0.87, rCorrected:0.88, n:298 },
-    "Processing Speed Index": { m1:100.2, sd1:13.5, m2:104.6, sd2:14.9, r:0.84, rCorrected:0.87, n:298 },
-    "Full Scale IQ": { m1:99.7, sd1:13.8, m2:104, sd2:15, r:0.95, rCorrected:0.96, n:298 }
+    "Verbal Comprehension Index": { m1:99.3, sd1:14.4, m2:101.8, sd2:15, r:0.95, rCorrected:0.96, n:298, rInternal:0.96, rInternalAgeMax:90, rInternalByAge:{16:0.94, 18:0.96, 20:0.96, 25:0.96, 30:0.96, 35:0.96, 45:0.97, 55:0.97, 65:0.97, 70:0.97, 75:0.96, 80:0.97, 85:0.98} },
+    "Perceptual Reasoning Index": { m1:100.4, sd1:13.8, m2:104.3, sd2:14.3, r:0.85, rCorrected:0.87, n:298, rInternal:0.95, rInternalAgeMax:90, rInternalByAge:{16:0.95, 18:0.94, 20:0.94, 25:0.96, 30:0.96, 35:0.95, 45:0.96, 55:0.95, 65:0.95, 70:0.95, 75:0.94, 80:0.92, 85:0.93} },
+    "Working Memory Index": { m1:99.5, sd1:14, m2:102.6, sd2:14.7, r:0.87, rCorrected:0.88, n:298, rInternal:0.94, rInternalAgeMax:90, rInternalByAge:{16:0.93, 18:0.94, 20:0.92, 25:0.95, 30:0.95, 35:0.95, 45:0.95, 55:0.94, 65:0.94, 70:0.93, 75:0.95, 80:0.94, 85:0.93} },
+    "Processing Speed Index": { m1:100.2, sd1:13.5, m2:104.6, sd2:14.9, r:0.84, rCorrected:0.87, n:298, rInternal:0.9, rInternalAgeMax:90, rInternalByAge:{16:0.88, 18:0.9, 20:0.9, 25:0.9, 30:0.87, 35:0.87, 45:0.87, 55:0.91, 65:0.91, 70:0.91, 75:0.92, 80:0.92, 85:0.92} },
+    "Full Scale IQ": { m1:99.7, sd1:13.8, m2:104, sd2:15, r:0.95, rCorrected:0.96, n:298, rInternal:0.98, rInternalAgeMax:90, rInternalByAge:{16:0.97, 18:0.98, 20:0.98, 25:0.98, 30:0.98, 35:0.98, 45:0.98, 55:0.98, 65:0.98, 70:0.98, 75:0.98, 80:0.98, 85:0.98} }
   },
   "WAIS-IV Process Scores · Ages 16-29": {
     "Block Design No Time Bonus": { m1:10.3, sd1:2.7, m2:11.3, sd2:2.4, r:0.77, rCorrected:0.81 },
@@ -1207,10 +1284,10 @@ const OPIE_BASE_RATES = {
     "Digit Span Sequencing": { m1:9.6, sd1:3.1, m2:10.7, sd2:2.8, r:0.72, rCorrected:0.7 }
   },
   "WAIS-IV Process Scores · All Ages": {
-    "Block Design No Time Bonus": { m1:10.3, sd1:2.9, m2:11, sd2:2.8, r:0.76, rCorrected:0.78, n:298 },
-    "Digit Span Forward": { m1:9.9, sd1:2.8, m2:10.2, sd2:3, r:0.74, rCorrected:0.77, n:298 },
-    "Digit Span Backward": { m1:10.2, sd1:2.9, m2:10.7, sd2:3.1, r:0.69, rCorrected:0.71, n:298 },
-    "Digit Span Sequencing": { m1:9.9, sd1:2.9, m2:10.6, sd2:2.8, r:0.7, rCorrected:0.72, n:298 }
+    "Block Design No Time Bonus": { m1:10.3, sd1:2.9, m2:11, sd2:2.8, r:0.76, rCorrected:0.78, n:298, rInternal:0.86, rInternalAgeMax:90, rInternalByAge:{16:0.87, 18:0.86, 20:0.81, 25:0.88, 30:0.89, 35:0.87, 45:0.87, 55:0.86, 65:0.85, 70:0.88, 75:0.82, 80:0.8, 85:0.86} },
+    "Digit Span Forward": { m1:9.9, sd1:2.8, m2:10.2, sd2:3, r:0.74, rCorrected:0.77, n:298, rInternal:0.81, rInternalAgeMax:90, rInternalByAge:{16:0.77, 18:0.76, 20:0.8, 25:0.85, 30:0.77, 35:0.84, 45:0.83, 55:0.77, 65:0.79, 70:0.88, 75:0.81, 80:0.81, 85:0.78} },
+    "Digit Span Backward": { m1:10.2, sd1:2.9, m2:10.7, sd2:3.1, r:0.69, rCorrected:0.71, n:298, rInternal:0.82, rInternalAgeMax:90, rInternalByAge:{16:0.79, 18:0.8, 20:0.8, 25:0.84, 30:0.84, 35:0.86, 45:0.86, 55:0.82, 65:0.78, 70:0.79, 75:0.8, 80:0.77, 85:0.82} },
+    "Digit Span Sequencing": { m1:9.9, sd1:2.9, m2:10.6, sd2:2.8, r:0.7, rCorrected:0.72, n:298, rInternal:0.83, rInternalAgeMax:90, rInternalByAge:{16:0.73, 18:0.79, 20:0.82, 25:0.81, 30:0.8, 35:0.83, 45:0.82, 55:0.79, 65:0.81, 70:0.86, 75:0.86, 80:0.84, 85:0.92} }
   },
   "WAIS-IV Supplementary Subtests · Ages 16-29": {
     "Letter-Number Sequencing": { m1:10.1, sd1:2.5, m2:10.8, sd2:3.4, r:0.76, rCorrected:0.83 },
@@ -1237,12 +1314,16 @@ const OPIE_BASE_RATES = {
     "Comprehension": { m1:10.2, sd1:2.9, m2:10.6, sd2:3.1, r:0.85, rCorrected:0.86 },
     "Picture Completion": { m1:9.4, sd1:3, m2:10.6, sd2:2.9, r:0.77, rCorrected:0.77 }
   },
+  /* Letter-Number Sequencing and Figure Weights carry rInternalAgeMax 69, not
+     90: Table 4.1 prints a dash above the 65-69 band for both, those subtests
+     being normed to 69. Cancellation, normed to 69 as well, is one of the three
+     speeded exclusions and takes no field at all. */
   "WAIS-IV Supplementary Subtests · All Ages": {
-    "Letter-Number Sequencing": { m1:10.1, sd1:2.7, m2:10.5, sd2:3.1, r:0.76, rCorrected:0.8, n:298 },
-    "Figure Weights": { m1:10, sd1:3, m2:10.8, sd2:3.2, r:0.76, rCorrected:0.77, n:298 },
-    "Comprehension": { m1:10, sd1:3, m2:10.2, sd2:2.9, r:0.86, rCorrected:0.86, n:298 },
+    "Letter-Number Sequencing": { m1:10.1, sd1:2.7, m2:10.5, sd2:3.1, r:0.76, rCorrected:0.8, n:298, rInternal:0.88, rInternalAgeMax:69, rInternalByAge:{16:0.9, 18:0.9, 20:0.85, 25:0.88, 30:0.91, 35:0.86, 45:0.88, 55:0.87, 65:0.88} },
+    "Figure Weights": { m1:10, sd1:3, m2:10.8, sd2:3.2, r:0.76, rCorrected:0.77, n:298, rInternal:0.9, rInternalAgeMax:69, rInternalByAge:{16:0.9, 18:0.92, 20:0.88, 25:0.91, 30:0.92, 35:0.89, 45:0.91, 55:0.89, 65:0.9} },
+    "Comprehension": { m1:10, sd1:3, m2:10.2, sd2:2.9, r:0.86, rCorrected:0.86, n:298, rInternal:0.87, rInternalAgeMax:90, rInternalByAge:{16:0.82, 18:0.87, 20:0.87, 25:0.88, 30:0.85, 35:0.89, 45:0.85, 55:0.87, 65:0.87, 70:0.82, 75:0.87, 80:0.87, 85:0.9} },
     "Cancellation": { m1:10.2, sd1:2.8, m2:10.8, sd2:3, r:0.74, rCorrected:0.78, n:298 },
-    "Picture Completion": { m1:9.9, sd1:2.9, m2:11.8, sd2:3.3, r:0.74, rCorrected:0.77, n:298 }
+    "Picture Completion": { m1:9.9, sd1:2.9, m2:11.8, sd2:3.3, r:0.74, rCorrected:0.77, n:298, rInternal:0.84, rInternalAgeMax:90, rInternalByAge:{16:0.8, 18:0.84, 20:0.82, 25:0.82, 30:0.86, 35:0.84, 45:0.83, 55:0.86, 65:0.85, 70:0.89, 75:0.86, 80:0.83, 85:0.82} }
   },
   "WISC-V Indices · All Ages": {
     "Verbal Comprehension Index": { m1:98.5, sd1:12.8, m2:101.6, sd2:13, r:0.91, n:215 },
