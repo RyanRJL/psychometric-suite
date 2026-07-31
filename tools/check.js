@@ -2723,6 +2723,31 @@ check('rInternal appears only where a publisher derives its own intervals from i
   return bad.length === 0 || bad.join('; ');
 });
 
+check('Methods & References names every instrument whose CI uses internal consistency', () => {
+  /* IT WENT STALE ONCE, SILENTLY. The paragraph said internal consistency
+     applied to "the CVLT-C List A Trials 1-5 Total score alone" while 42
+     entries across 12 families were already using it — the sentence was not
+     updated when D-KEFS Advanced was added, and nothing failed.
+
+     On-screen text is a contract (see CLAUDE.md), and this one describes the
+     basis of every printed interval, so it has to track the data. Checked at
+     INSTRUMENT level rather than per measure, because the prose reasonably
+     groups measures by test. */
+  const para = (HTML_SRC.match(/<strong>Confidence intervals and standard errors of measurement\.<\/strong>[\s\S]*?<\/p>/) || [''])[0];
+  if (!para) return 'the confidence-interval paragraph is gone from Methods & References';
+  const instruments = new Set();
+  Object.entries(D.normDB).forEach(([group, tab]) => {
+    Object.values(tab).forEach((e) => {
+      if (!e || typeof e !== 'object') return;
+      if (!Number.isFinite(e.rInternal) && !e.rInternalByAge) return;
+      instruments.add(group.startsWith('D-KEFS Advanced') ? 'D-KEFS Advanced' : group.split(' ')[0]);
+    });
+  });
+  const missing = [...instruments].filter((i) => !para.includes(i));
+  return missing.length === 0
+    || missing.join(', ') + ' use an internal-consistency coefficient but are not named in Methods & References';
+});
+
 check('D-KEFS Advanced TMT and VFT stay on stability coefficients', () => {
   /* Their manual says split-half and alpha do not give accurate estimates for
      SPEEDED measures and uses stability coefficients for these two tests
