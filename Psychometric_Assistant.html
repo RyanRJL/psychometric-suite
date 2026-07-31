@@ -24940,6 +24940,17 @@ ${buildReportHtmlBody()}
 
   function bindEvents(){
     if (!rootEl) return;
+    // The first-visit onboarding hint clears on a click ANYWHERE on the page,
+    // not only on its X. Its own listener, in the CAPTURE phase: several
+    // controls in the app stop propagation on click (the norms pills, the
+    // premorbid link button, the add-row popovers), so a bubble-phase
+    // document handler would leave the hint stuck for anyone whose first
+    // click happened to land on one of them.
+    document.addEventListener('click', () => {
+      // Same condition render() uses to show it - no work when it isn't up.
+      if (state.onboardingSeen || !state.minimized) return;
+      dismissOnboarding();
+    }, true);
     // Delegated click handler at the DOCUMENT level
     document.addEventListener('click', e => {
       // Per-item Options menu close-on-outside-click
