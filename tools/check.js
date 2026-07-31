@@ -74,6 +74,57 @@ function extractFn(source, name) {
 const APP_SRC = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
 const HTML_SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
+/* The confidence-interval block of Methods & References, delimited by a pair of
+   HTML comments in index.html.
+
+   IT USED TO BE ONE <p>. Sections 24 and 28 both asserted their contract over
+   `/<strong>Confidence intervals...<\/strong>[\s\S]*?<\/p>/`, which quietly made
+   the boundary of a paragraph load-bearing: naming seven instruments, their
+   coefficient tables and their exclusions inside one <p> produced 1,100 words
+   of unbroken prose, and splitting it for legibility would have silently
+   truncated what the checks could see rather than failing. The sentinels move
+   the boundary off the markup's shape, so the block can be paragraphs, a
+   heading and a table without weakening either assertion.
+
+   Throws rather than returning '' if a sentinel is missing: a check that
+   silently passes over an empty string is worse than no check. */
+function methodsCiBlock() {
+  const open = HTML_SRC.indexOf('<!-- methods-ci');
+  const close = HTML_SRC.indexOf('<!-- /methods-ci -->');
+  if (open === -1 || close === -1 || close < open) {
+    throw new Error('the methods-ci sentinels are missing from index.html — '
+      + 'sections 24 and 28 cannot locate the confidence-interval block');
+  }
+  /* Start AFTER the opening comment closes, not at it. The comment explains
+     what these checks assert, so any instrument name written into it would
+     satisfy the very check it describes — a note about a check passing the
+     check. Slicing past it means only rendered text can. */
+  const afterComment = HTML_SRC.indexOf('-->', open);
+  if (afterComment === -1 || afterComment > close) {
+    throw new Error('the opening methods-ci sentinel is unterminated');
+  }
+  return HTML_SRC.slice(afterComment + 3, close);
+}
+
+/* Just the exception roster, which is the table listing each instrument whose
+   interval is built on internal consistency, what coefficient it uses, and what
+   it is not applied to.
+
+   Section 24 asserts over THIS rather than over the whole block, because the
+   block also carries a sentence naming every instrument whose published SEM
+   table the app reproduces — which is most of them. Slicing the wider region
+   would let that sentence satisfy the check on its own, so an instrument could
+   lose its roster row, and with it its stated coefficient and exclusions, while
+   the check stayed green. Proven by mutation: deleting the WISC-V row passes
+   against the block and fails against the roster. */
+function methodsCiRoster() {
+  const open = HTML_SRC.indexOf('<table class="methods-table" id="methods-ci-roster"');
+  if (open === -1) throw new Error('the methods-ci-roster table is missing from index.html');
+  const close = HTML_SRC.indexOf('</table>', open);
+  if (close === -1) throw new Error('the methods-ci-roster table is unclosed');
+  return HTML_SRC.slice(open, close);
+}
+
 /* Pull a top-level `const NAME = ...;` declaration straight out of the shipped
    file, so a sandbox gets the REAL value rather than a copy that can drift.
    Same contract as extractFn: throws rather than silently passing. */
@@ -2982,10 +3033,9 @@ check('Methods & References names every instrument whose CI uses internal consis
 
      On-screen text is a contract (see CLAUDE.md), and this one describes the
      basis of every printed interval, so it has to track the data. Checked at
-     INSTRUMENT level rather than per measure, because the prose reasonably
+     INSTRUMENT level rather than per measure, because the roster reasonably
      groups measures by test. */
-  const para = (HTML_SRC.match(/<strong>Confidence intervals and standard errors of measurement\.<\/strong>[\s\S]*?<\/p>/) || [''])[0];
-  if (!para) return 'the confidence-interval paragraph is gone from Methods & References';
+  const para = methodsCiRoster();
   const instruments = new Set();
   Object.entries(D.normDB).forEach(([group, tab]) => {
     Object.values(tab).forEach((e) => {
@@ -3561,8 +3611,10 @@ check('the manual pairs its normative SD with the UNCORRECTED retest r', () => {
 
      reproduces the published rCorrected to a median error of .003 across the
      267 entries carrying both. Applying it in resolveCiReliability was built
-     and tested; it would have moved 260 entries, 47 of them reachable from
-     Score Tables — every one of them D-KEFS or D-KEFS Advanced.
+     and tested; it moves 246 entries, 46 of them reachable from Score Tables
+     — 25 D-KEFS and 21 D-KEFS Advanced, and nothing else. Both counts are
+     asserted now: 246 by section 32, and the 46 with its cost breakdown by the
+     check pinning the Methods & References wording.
 
      IT WAS REJECTED BECAUSE THE PUBLISHER GOT THERE FIRST. The manual states
      the pairing (p. 19: test-retest SEMs "were derived from the total sample
@@ -4118,8 +4170,7 @@ check('Methods & References states the WAIS-IV position, both halves of it', () 
      coefficients. The roster grew and the naming check stayed green. So assert
      the substance: the paragraph must say WAIS-IV uses internal consistency,
      and must still name the three subtests for which it does not. */
-  const para = (HTML_SRC.match(/<strong>Confidence intervals and standard errors of measurement\.<\/strong>[\s\S]*?<\/p>/) || [''])[0];
-  if (!para) return 'the confidence-interval paragraph is gone from Methods & References';
+  const para = methodsCiBlock();
   const bad = [];
   if (!/WAIS[-‑–]IV/.test(para)) bad.push('WAIS-IV is not named at all');
   if (!/Table 4\.1/.test(para)) bad.push('the paragraph does not cite Table 4.1');
@@ -5114,6 +5165,92 @@ const dbCtx = (() => {
 const dbBasis = dbCtx.__BASIS;
 const dbInstrument = dbCtx.__INST;
 const dbType = dbCtx.inferScoreTypeForSubtest;
+
+check('the reliability control costs what Methods & References says it costs', () => {
+  /* Methods & References quantifies the control so a clinician can decide
+     whether to touch it with the size of the change in view: "46 of the
+     measures reachable from Score Tables, every one of them D-KEFS or D-KEFS
+     Advanced: at the 95% level 9 intervals widen and 4 narrow, 33 are unchanged
+     after rounding, and the largest single change is 2 scaled-score points."
+
+     Those five figures were unpinned. Section 32 already asserts the control
+     moves 246 stored ENTRIES, but that is the whole database; the sentence on
+     screen is about the far smaller set a clinician can actually select, and
+     nothing tied the two. A new family entering the database on a bare retest r
+     would move the printed counts without failing anything.
+
+     Derived here rather than transcribed: the reachable set is reconstructed
+     the way buildFamilyListHtml picks it in flat mode (one canonical All Ages
+     group per family base, except where the age band is itself the lookup), and
+     the half-widths come from the SHIPPED resolver in both states. So this
+     re-runs the arithmetic behind the sentence rather than restating it. */
+  const Z95 = 1.96;
+  const SD = { standard: 15, t: 10, scaled: 3, z: 1 };
+  const hasBandSuffix = (f) => /·\s*[^·]*$/.test(f) && /·/.test(f);
+  const baseOf = (f) => (f.includes('·') ? f.slice(0, f.lastIndexOf('·')).trim() : f);
+
+  const groups = {};
+  const order = [];
+  Object.keys(D.normDB).forEach((f) => {
+    const base = hasBandSuffix(f) ? baseOf(f) : f;
+    if (!groups[base]) { groups[base] = []; order.push(base); }
+    groups[base].push(f);
+  });
+  const reachable = [];
+  order.forEach((base) => {
+    const members = groups[base];
+    /* familyScoredByAgeBand: the band IS the lookup, so every band stays
+       selectable instead of collapsing to one canonical entry. */
+    const banded = members.some((f) => Object.values(D.normDB[f])
+      .some((e) => e && typeof e === 'object' && (e.baseRates || e.separateBattery)));
+    if (members.length === 1 && !hasBandSuffix(members[0])) reachable.push(members[0]);
+    else if (banded) members.forEach((f) => reachable.push(f));
+    else reachable.push(members.find((m) => /·\s*All\s+Ages\s*$/i.test(m)) || members[0]);
+  });
+
+  let moved = 0, wider = 0, narrower = 0, same = 0, maxShift = 0;
+  const families = new Set();
+  reachable.forEach((group) => {
+    Object.entries(D.normDB[group]).forEach(([name, e]) => {
+      if (!e || typeof e !== 'object') return;
+      const normSD = SD[dbType(group, name, e)];
+      const pub = dbCtx.resolveCiReliability(e, normSD, undefined, false);
+      const cor = dbCtx.resolveCiReliability(e, normSD, undefined, true);
+      if (!pub || pub.none || !cor || cor.none || pub.r === cor.r) return;
+      moved++;
+      families.add(dbInstrument(group));
+      const sd = Number.isFinite(normSD) ? normSD : e.sd1;
+      const hp = Math.round(Z95 * sd * Math.sqrt(1 - pub.r));
+      const hc = Math.round(Z95 * sd * Math.sqrt(1 - cor.r));
+      if (hc > hp) wider++; else if (hc < hp) narrower++; else same++;
+      maxShift = Math.max(maxShift, Math.abs(hc - hp));
+    });
+  });
+
+  const bad = [];
+  const got = { moved, wider, narrower, same, maxShift };
+  const want = { moved: 46, wider: 9, narrower: 4, same: 33, maxShift: 2 };
+  Object.keys(want).forEach((k) => {
+    if (got[k] !== want[k]) bad.push(k + ' is ' + got[k] + ', Methods & References says ' + want[k]);
+  });
+  const stray = [...families].filter((f) => !/^D-KEFS/.test(f));
+  if (stray.length) bad.push('the control also moves ' + stray.join(', ')
+    + '; Methods & References says every moved measure is D-KEFS or D-KEFS Advanced');
+
+  /* And the sentence must still be on the page saying it. Asserted against the
+     rendered figures above, so editing one without the other fails. */
+  const block = methodsCiBlock().replace(/<[^>]+>/g, '');
+  [[String(want.moved) + ' of the measures reachable', 'the count of moved measures'],
+   [String(want.wider) + ' intervals widen', 'the count that widen'],
+   [String(want.narrower) + ' narrow', 'the count that narrow'],
+   [String(want.same) + ' are unchanged', 'the count left unchanged'],
+   [String(want.maxShift) + ' scaled-score points', 'the largest single change']]
+    .forEach(([needle, what]) => {
+      if (!block.includes(needle)) bad.push(what + ' is no longer stated on the Methods page');
+    });
+
+  return bad.length === 0 || bad.join('; ');
+});
 
 check('the reliability column shows what the app would actually use', () => {
   /* THE LOAD-BEARING CHECK. Score Tables renders the interval; this page tells
