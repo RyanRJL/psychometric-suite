@@ -20165,18 +20165,42 @@ const OPIE_BASE_RATES = {
    over the bands reproduces all 24 stored averages at 2dp, where the plain
    arithmetic mean manages 18.
 
-   WHAT TABLE 4.3'S OWN AVERAGE COLUMN IS NOT. Its footnote a defines the
-   average SEM as the RMS of the band SEMs — a summary across ages, not the SEM
-   of the average coefficient, and the two differ. The app keeps deriving its
-   blank-age interval from Table 4.1's average COEFFICIENT, which is what a
-   patient of unknown band actually needs and is published. Backing a
-   coefficient out of the average SEM instead would mean storing
-   1 - (2.16/15)^2 = .9793 for FSIQ, a number the manual never prints; that is
-   the Twenty Questions rule. The cost is two printed margins in 48
-   (24 measures x the two offered CI levels), both on a rounding knife-edge:
-   FSIQ at 90% prints +/-3 here against +/-4 from the average SEM (3.49 vs
-   3.55), and Digit Span Backward at 95% +/-2 against +/-3 (2.49 vs 2.55).
-   Entering an age avoids the question entirely, and that path is exact.
+   TABLE 4.1 AND TABLE 4.3 AVERAGE THE SAME 13 NUMBERS BY DIFFERENT METHODS,
+   so nothing reconciles their two average columns. Table 4.3's footnote a
+   defines the average SEM as the RMS of the band SEMs, and
+     RMS of SEMs = sqrt(mean(SD^2 (1 - r_i))) = SD * sqrt(1 - mean(r_i))
+   which is the ARITHMETIC mean of the band coefficients through the SEM
+   formula — it reproduces 20 of 24, against 5 for the Fisher-z average that
+   Table 4.1's own column uses. A property of the source, not of this app.
+
+   The blank-age interval therefore keeps coming from Table 4.1's average
+   COEFFICIENT: that is what a patient of unknown band needs, and it is
+   published. Backing a coefficient out of Table 4.3's average SEM instead
+   would mean storing 1 - (2.16/15)^2 = .9793 for FSIQ, a number the manual
+   never prints — the Twenty Questions rule.
+
+   The cost is two printed margins in 48 (24 measures x the two offered CI
+   levels), both on a rounding knife-edge: FSIQ at 90% prints +/-3 here against
+   +/-4 from the average SEM (3.49 vs 3.55), and Digit Span Backward at 95%
+   +/-2 against +/-3 (2.49 vs 2.55).
+
+   AND THE GAP IS MOSTLY ROUNDING, NOT METHOD — the obvious reading is wrong.
+   Decomposing FSIQ:
+     arithmetic mean of the bands  .97923  -> 2.1617   (= Table 4.3's 2.16)
+     Fisher-z average, unrounded   .97936  -> 2.1547
+     the stored published average  .98     -> 2.1213   (what the app prints)
+   The averaging method costs 0.007; rounding the published average to 2dp
+   costs 0.033, roughly five times more. On VCI it is 0.044 against 0.19.
+
+   THE THIRD OPTION, WEIGHED AND DECLINED. Using the Fisher-z average of the
+   bands UNROUNDED would match the manual's printed margin on 24 of 24 at both
+   CI levels, and would invent nothing — the bands are pinned exactly by Table
+   4.3, and Fisher's z is Table 4.1's own stated method. It was declined because
+   this app renders the coefficient it actually used, so the reliability cell
+   would print .979 where the manual prints .98, and a clinician checking
+   against Table 4.1 would find a number that is not there. Reviewed and kept
+   as-is, 2026-07-31. Entering an age avoids the question entirely, and that
+   path is exact.
 
    LEAVE WAIS-IV Longest Span (Process) ALONE. It is scored by published base
    rate, has no retest data at all, and appears nowhere in Table 4.1.

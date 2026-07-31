@@ -526,16 +526,36 @@ Three things follow, and the second and third matter more than the confirmation.
   the average is now derivable from pinned values — Fisher's z reproduces all 24 stored
   averages at 2 dp where the plain arithmetic mean manages 18. **That 18 is also why the
   neighbouring check refuses to assert the average *differs* from the mean of its bands.**
-- **Table 4.3's own average column is a different quantity — do not adopt it.** Its
-  footnote defines the average SEM as the **RMS of the band SEMs**, a summary across ages,
-  not the SEM of the average coefficient. The blank-age interval keeps coming from Table
-  4.1's average *coefficient*, which is what an unknown band needs and is published;
-  inverting the average SEM would mean storing `1 − (2.16/15)² = .9793` for FSIQ, a number
-  the manual never prints — the Twenty Questions rule. It costs **two printed margins in
-  48** (24 measures × the two CI levels), both on a rounding knife-edge: FSIQ at 90% gives
-  ±3 against ±4 (3.49 vs 3.55) and Digit Span Backward at 95% ±2 against ±3 (2.49 vs
-  2.55). Entering an age sidesteps it, and that path is exact. §28 pins the pair, so a
-  third joining them fails the check.
+- **The two tables average the same 13 numbers by different methods, so nothing
+  reconciles them.** Table 4.3's footnote defines the average SEM as the RMS of the band
+  SEMs, and `RMS = √(mean(SD²(1−rᵢ))) = SD√(1 − mean(rᵢ))` — the **arithmetic** mean of the
+  coefficients, which reproduces 20 of 24 against **5** for the **Fisher's z** that Table
+  4.1's own average column uses. That is a property of the source. The blank-age interval
+  therefore keeps coming from Table 4.1's average *coefficient*: it is what an unknown band
+  needs and it is published, where inverting the average SEM would mean storing
+  `1 − (2.16/15)² = .9793` for FSIQ — the Twenty Questions rule. §28 pins the inconsistency
+  itself, so it fails if a corrected printing ever makes the two agree.
+
+It costs **two printed margins in 48** (24 measures × the two CI levels), both on a
+rounding knife-edge: FSIQ at 90% gives ±3 against ±4 (3.49 vs 3.55) and Digit Span
+Backward at 95% ±2 against ±3 (2.49 vs 2.55). §28 pins the pair, so a third joining them
+fails the check.
+
+**The gap is mostly rounding, not method** — the obvious reading is wrong, and it is worth
+knowing before re-opening this. Decomposing FSIQ: the arithmetic mean of the bands
+(.97923) gives 2.1617, which *is* Table 4.3's printed 2.16; Fisher's z unrounded (.97936)
+gives 2.1547; the stored published average (.98) gives 2.1213. **Method costs 0.007;
+rounding the published average to 2 dp costs 0.033** — about five times more. On VCI it is
+0.044 against 0.19.
+
+**A third option was weighed and declined — do not "discover" it and switch.** Using the
+Fisher-z average of the bands **unrounded** matches the manual's printed margin on 24 of
+24 at both CI levels, and invents nothing: the bands are pinned exactly by Table 4.3 and
+Fisher's z is Table 4.1's own stated method. It was declined because the app renders the
+coefficient it actually used, so the reliability cell would print `.979` where the manual
+prints `.98`, and a clinician cross-checking Table 4.1 would find a number that is not
+there. Reviewed and kept as-is, 2026-07-31. Entering an age sidesteps the whole question,
+and that path is exact.
 
 ### `baseRates` — measures scored by lookup rather than by conversion
 

@@ -3517,42 +3517,56 @@ check('no other SD or coefficient could have produced Table 4.3', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the average SEM column is an RMS across bands, not the average coefficient', () => {
-  /* Table 4.3's own footnote a: "The average SEMs were calculated by averaging
-     the squared SEMs for each age group and obtaining the square root of the
-     result." So the average column is a summary ACROSS ages, not the SEM of
-     the average coefficient — and the two are not the same number.
+check('the manual averages its two tables by two different methods', () => {
+  /* THE REASON NO STORAGE CHOICE RECONCILES TABLES 4.1 AND 4.3, and the thing
+     to read before anyone tries to make them agree.
 
-     This is why the app does not and should not use it. The blank-age fallback
-     needs a reliability COEFFICIENT for a patient whose band is unknown, and
-     Table 4.1's Fisher-z average is exactly that and is published. Table 4.3's
-     average is a descriptive statistic about the table. Backing a coefficient
-     out of it would mean storing 1 - (2.16/15)^2 = .9793 for FSIQ, a number
-     the manual never prints — the Twenty Questions rule, section 27.
+     Table 4.3 footnote a: "The average SEMs were calculated by averaging the
+     squared SEMs for each age group and obtaining the square root of the
+     result." Expand that. RMS of the band SEMs
+       = sqrt( mean( SD^2 (1 - r_i) ) )
+       = SD * sqrt( 1 - mean(r_i) )
+     — algebraically identical to running the ARITHMETIC MEAN of the band
+     coefficients through the SEM formula.
 
-     Recorded rather than acted on, and the cost is stated in the next check. */
+     But Table 4.1's average column is a FISHER-Z average; the check below
+     reproduces all 24 stored averages that way and only 18 by the arithmetic
+     mean. So the two tables average the same 13 numbers by different methods,
+     and Table 4.3's average CANNOT be derived from Table 4.1's average. This
+     is a property of the source, not a defect in this app, and no choice of
+     what to store makes both columns come out right.
+
+     Pinned as a fact, the way section 27 pins the Twenty Questions
+     contradiction rather than smoothing it. The discrimination is decisive —
+     20 of 24 against 5 of 24 — so a check that merely passed would record
+     nothing. If a corrected printing ever makes the two agree, this fails,
+     which is the signal to re-read the decision in data.js. */
+  const atanh = (r) => 0.5 * Math.log((1 + r) / (1 - r));
+  const tanh = (z) => (Math.exp(2 * z) - 1) / (Math.exp(2 * z) + 1);
   const bad = [];
-  let rms = 0, fromAvg = 0, n = 0;
+  let arith = 0, fisher = 0, stored = 0, n = 0;
   WAIS_T43.forEach(([fam, sd, name, cells, avg]) => {
     n++;
-    const sems = [];
+    const bands = [];
     cells.forEach((printed, i) => {
       if (printed === null) return;
       const rxx = waisCoefficientAt(fam, name, WAIS_T43_BANDS[i]);
-      if (rxx != null) sems.push(sd * Math.sqrt(1 - rxx));
+      if (rxx != null) bands.push(rxx);
     });
-    const derivedRms = Math.sqrt(sems.reduce((a, s) => a + s * s, 0) / sems.length);
-    if (Math.abs(derivedRms - avg) <= 0.007) rms++;
+    const mean = bands.reduce((a, r) => a + r, 0) / bands.length;
+    const fz = tanh(bands.reduce((a, r) => a + atanh(r), 0) / bands.length);
     const all = D.normDB[WAIS_ALL[fam]][name];
     const overall = Number.isFinite(all.rInternal) ? all.rInternal : all.rCorrected;
-    if (round2(sd * Math.sqrt(1 - overall)) === avg) fromAvg++;
+    // Tolerance only on the arithmetic route, because that is the one claimed
+    // to be exact: the residue is the manual computing from unrounded
+    // coefficients, damped by sqrt(13) across bands. Max observed 0.0067.
+    if (Math.abs(sd * Math.sqrt(1 - mean) - avg) <= 0.007) arith++;
+    if (round2(sd * Math.sqrt(1 - fz)) === avg) fisher++;
+    if (round2(sd * Math.sqrt(1 - overall)) === avg) stored++;
   });
-  /* The RMS reading fits all 24 within 0.007 — the residue is the manual
-     computing from unrounded coefficients, damped by sqrt(13) across bands.
-     The average-coefficient reading fits 5, i.e. no better than coincidence
-     on numbers this close together. */
-  if (rms !== n) bad.push('the RMS reading fits only ' + rms + ' of ' + n + ' averages');
-  if (fromAvg > 8) bad.push('the average coefficient now reproduces ' + fromAvg + ' of ' + n + ' — the two readings have converged, re-read footnote a');
+  if (arith !== n) bad.push('the arithmetic-mean (RMS) reading fits only ' + arith + ' of ' + n + ' — re-read footnote a');
+  if (fisher > 10) bad.push('the Fisher-z reading now fits ' + fisher + ' of ' + n + ' — the two tables have converged, and the decision recorded in data.js needs re-reading');
+  if (stored > 10) bad.push('the stored average now reproduces ' + stored + ' of ' + n + ' — the divergence this section documents has gone');
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -3599,17 +3613,36 @@ check('the published overall average is the Fisher-z average of its own bands', 
 });
 
 check('the blank-age fallback departs from Table 4.3 in exactly two printed margins', () => {
-  /* What the choice above costs, measured the way section 27 insists this kind
-     of discrepancy is judged: on the margin actually printed, not on the gap
+  /* What the decision costs, measured the way section 27 insists this kind of
+     discrepancy is judged: on the margin actually printed, not on the gap
      between the two statistics.
 
-     Over 24 measures x both offered CI levels, the app's blank-age fallback
-     and the manual's average SEM round to the same half-width in 46 of 48
-     cases. The two that differ are knife-edge:
+     Over 24 measures x both offered CI levels, the app's blank-age fallback and
+     the manual's average SEM round to the same half-width in 46 of 48 cases.
+     The two that differ are knife-edge:
        FSIQ at 90%   1.645 * 2.1213 = 3.49 -> +/-3;  1.645 * 2.16 = 3.55 -> +/-4
        DSB  at 95%   1.960 * 1.2728 = 2.49 -> +/-2;  1.960 * 1.30 = 2.55 -> +/-3
-     Both straddle .5. Entering an age — the primary path, and the one Table 4.3
-     verifies exactly — sidesteps the question entirely.
+
+     WHAT ACTUALLY DRIVES THAT GAP, because the obvious answer is wrong. It is
+     not mainly the averaging method. Decomposing FSIQ:
+       arithmetic mean of the bands  .97923  -> 2.1617   (= Table 4.3's 2.16)
+       Fisher-z average, unrounded   .97936  -> 2.1547
+       the stored published average  .98     -> 2.1213   (what the app prints)
+     Method costs 0.007; ROUNDING THE PUBLISHED AVERAGE TO 2DP costs 0.033,
+     about five times more. On VCI it is 0.044 against 0.19.
+
+     THE THIRD OPTION, WEIGHED AND DECLINED — do not "discover" it and switch
+     without reading this. Using the Fisher-z average of the bands UNROUNDED
+     would match the manual's printed margin on 24 of 24, both CI levels, and
+     invents nothing: the bands are pinned above and Fisher's z is Table 4.1's
+     own stated method. It was declined because the app renders the coefficient
+     it actually used, so the reliability cell would print .979 where the manual
+     prints .98 — a clinician cross-checking Table 4.1 would find a number that
+     is not there, and that display contract is load-bearing (see the r vs
+     rCorrected note in CLAUDE.md). Reviewed and kept as-is, 2026-07-31.
+
+     Entering an age — the primary path, and the one Table 4.3 verifies exactly
+     — sidesteps the whole question.
 
      Pinned as a fact so it cannot drift unnoticed in either direction: if a
      third measure joins them the fallback needs re-arguing, and if these two
