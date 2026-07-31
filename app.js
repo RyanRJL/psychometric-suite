@@ -2591,7 +2591,7 @@ const APA_NOTES = {
     // publisher reports internal consistency at all. Full rationale is in
     // Methods & References.
     ctx.ciLevel && ctx.ciLevel !== 'off'
-      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM, where SEM = SD × √(1 − r) on the normative standard deviation of the reported metric. The reliability r is the coefficient each test's manual uses for its own published intervals — internal consistency where the publisher reports one, otherwise the test–retest coefficient.`
+      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM, where SEM = SD × √(1 − r) on the normative standard deviation of the reported metric. The reliability r is the coefficient each test's manual uses for its own published intervals: internal consistency where the publisher reports one, otherwise the test–retest coefficient.`
       : '',
     /* NO SENTENCE FOR THE UNCORRECTED PAIRING. It used to have one, and it has
        been moved wholesale to Methods & References.
