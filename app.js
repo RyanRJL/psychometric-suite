@@ -289,22 +289,21 @@ function openOnlyNavGroup(group){
 const activeNavGroup = document.querySelector('.nav-item.active')?.closest('.nav-group');
 if (activeNavGroup) openOnlyNavGroup(activeNavGroup);
 
-const CUSTOM_TESTS_PASSWORD = 'unlock';
-const CUSTOM_TESTS_UNLOCK_KEY = 'customTestsUnlocked';
-function isCustomTestsUnlocked(){
-  return sessionStorage.getItem(CUSTOM_TESTS_UNLOCK_KEY) === 'true';
-}
-function requestCustomTestsUnlock(){
-  const entered = window.prompt('Custom Tests is password-protected. Enter password:');
-  if (entered == null) return false;
-  if (entered === CUSTOM_TESTS_PASSWORD){
-    sessionStorage.setItem(CUSTOM_TESTS_UNLOCK_KEY, 'true');
-    showToast('✓ Custom Tests unlocked for this session');
-    return true;
-  }
-  showToast('Incorrect password', true);
-  return false;
-}
+/* The Norms Database page used to be Custom Tests, where a clinician could type
+   new normative entries straight into the scoring database. It was gated behind
+   a window.prompt for that reason.
+
+   The typed form is gone and the page is now a read-only view of published
+   norms, so there is nothing left to protect: the coefficients in it are
+   printed in the manuals they are cited from. The gate also never provided any
+   real protection, the password having been a literal in the shipped bundle.
+
+   It had a concrete cost too. window.prompt() is ignored in a sandboxed iframe,
+   so the call returned null, navigateTo returned false, and the nav item did
+   nothing at all with no error — which is how this was found.
+
+   Import is the only thing that still writes to the database, and it validates
+   every entry through ctValidateEntry. */
 
 document.querySelectorAll('.nav-label').forEach(label => {
   label.addEventListener('click', () => {
@@ -457,12 +456,6 @@ function runPageTransition(swap){
 function navigateTo(target, opts){
   const o = opts || {};
   if (!isNavigableSection(target)) return false;
-
-  // Gate before anything visible changes, so a declined unlock leaves the UI
-  // exactly as it was rather than half-navigated.
-  if (target === 'custom-tests' && !isCustomTestsUnlocked()){
-    if (!requestCustomTestsUnlock()) return false;
-  }
 
   /* Highlight exactly one nav item. Several can share a target — the five
      Change Analysis methods all point at #change-analysis — so lighting every
@@ -4119,116 +4112,169 @@ function dbReliabilityBasis(entry){
   return { r, basis, none:false };
 }
 
-let dbActiveTab = 'All';
+/* Sort state for the Norms Database table. Key is a column id, not an index,
+   so reordering the columns cannot silently re-point the sort at a different
+   one. null means "as the database is ordered", which groups an instrument's
+   entries together and is the sensible default for browsing. */
+let dbSort = { key: null, dir: 1 };
+
+/* The columns, in order. `get` pulls the value used for BOTH display and
+   sorting, so a column can never sort on something other than what it shows. */
+const DB_COLUMNS = [
+  { key:'instrument', label:'Instrument', text:true,  get:r => r.instrument },
+  { key:'category',   label:'Category',   text:true,  get:r => r.category },
+  { key:'band',       label:'Band',       text:true,  get:r => r.band },
+  { key:'measure',    label:'Measure',    text:true,  get:r => r.name },
+  { key:'m1',         label:'M₁',      dp:2, get:r => r.e.m1 },
+  { key:'sd1',        label:'SD₁',     dp:2, get:r => r.e.sd1 },
+  { key:'m2',         label:'M₂',      dp:2, get:r => r.e.m2 },
+  { key:'sd2',        label:'SD₂',     dp:2, get:r => r.e.sd2 },
+  { key:'r',          label:'r',       dp:2, get:r => r.e.r },
+  { key:'rCorrected', label:'corr. r', dp:2, get:r => r.e.rCorrected,
+    title:'Attenuation-corrected test–retest correlation' },
+  { key:'n',          label:'N',       dp:0, get:r => r.e.n },
+  { key:'ci',         label:'CI r',    dp:2, get:r => r.rel.r, emphasis:true,
+    title:'The reliability this measure\'s confidence interval is built from, with no patient age entered' },
+  { key:'basis',      label:'Basis',   text:true, get:r => r.rel.basis,
+    title:'Where that coefficient comes from' }
+];
+
+/* Every entry as a flat row. Instrument, category and age band are derived
+   from the group key, which is "<Instrument> <Category> · <Age band>". */
+function dbFlatRows(){
+  const merged = getMergedDB();
+  const custom = getCustom();
+  const rows = [];
+  Object.keys(merged).sort().forEach(family => {
+    const isCustom = !!custom[family];
+    const instrument = dbInstrumentOf(family, isCustom);
+    const parts = family.split(' · ');
+    const base = parts[0];
+    const band = parts[1] || '—';
+    const category = isCustom ? base : (base.slice(instrument.length).trim() || base);
+    Object.entries(merged[family]).forEach(([name, e]) => {
+      if (!e || typeof e !== 'object') return;
+      rows.push({ family, isCustom, instrument, category, band, name, e, rel: dbReliabilityBasis(e) });
+    });
+  });
+  return rows;
+}
+
+function dbBasisClass(basis){
+  if (basis.startsWith('internal')) return 'db-chip-internal';
+  if (basis.startsWith('stability')) return 'db-chip-stability';
+  if (basis.startsWith('retest')) return 'db-chip-retest';
+  return 'db-chip-none';
+}
+
+function dbFillSelect(el, placeholder, values){
+  const keep = el.value;
+  el.innerHTML = '<option value="">' + escapeHtml(placeholder) + '</option>' +
+    values.map(v => '<option' + (v === keep ? ' selected' : '') + '>' + escapeHtml(v) + '</option>').join('');
+  if (el.value !== keep) el.value = '';
+}
 
 function renderDbList(){
   const search = document.getElementById('ct-search').value.toLowerCase().trim();
-  const merged = getMergedDB();
-  const custom = getCustom();
-  const list = document.getElementById('db-list');
-  const tabbar = document.getElementById('db-tabbar');
-  const families = Object.keys(merged).sort();
+  const all = dbFlatRows();
+  const fInst  = document.getElementById('db-f-inst');
+  const fCat   = document.getElementById('db-f-cat');
+  const fBand  = document.getElementById('db-f-band');
+  const fBasis = document.getElementById('db-f-basis');
 
-  // Which groups survive the search, regardless of tab. Computed first so the
-  // tab counts can show where the matches are rather than only how many
-  // entries each instrument holds.
-  const matched = {};
-  families.forEach(family => {
-    const subtests = merged[family];
-    const familyMatch = !search || family.toLowerCase().includes(search);
-    const subs = familyMatch
-      ? Object.entries(subtests)
-      : Object.entries(subtests).filter(([n]) => n.toLowerCase().includes(search));
-    if (familyMatch || subs.length) matched[family] = subs;
-  });
+  const uniq = (fn, from) => [...new Set(from.map(fn))].sort();
+  dbFillSelect(fInst, 'All instruments', uniq(r => r.instrument, all));
+  /* Category depends on the instrument, so the dropdown only ever offers
+     combinations that exist — otherwise picking one silently empties the
+     table and reads as a fault. */
+  dbFillSelect(fCat, 'All categories', uniq(r => r.category, all.filter(r => !fInst.value || r.instrument === fInst.value)));
+  dbFillSelect(fBand, 'All age bands', uniq(r => r.band, all));
+  dbFillSelect(fBasis, 'Any basis', uniq(r => r.rel.basis.replace(' · by age', ''), all));
 
-  // --- tab bar, built from the data so a new instrument cannot be left out ---
-  const counts = {};
-  families.forEach(f => {
-    const inst = dbInstrumentOf(f, !!custom[f]);
-    counts[inst] = counts[inst] || { total:0, hits:0 };
-    counts[inst].total += Object.keys(merged[f]).length;
-    if (matched[f]) counts[inst].hits += matched[f].length;
-  });
-  const instruments = Object.keys(counts).sort((a, b) =>
-    a === 'Custom' ? 1 : b === 'Custom' ? -1 : a.localeCompare(b));
-  const totalAll = Object.values(counts).reduce((a, c) => a + c.total, 0);
-  const hitsAll  = Object.values(counts).reduce((a, c) => a + c.hits, 0);
-  if (dbActiveTab !== 'All' && !counts[dbActiveTab]) dbActiveTab = 'All';
-  if (tabbar){
-    const tab = (name, n) => `<button type="button" class="db-tab${name === dbActiveTab ? ' db-tab-on' : ''}" role="tab" aria-selected="${name === dbActiveTab}" data-db-tab="${escapeAttr(name)}">${escapeHtml(name)}<span class="db-tab-count">${n}</span></button>`;
-    tabbar.innerHTML = tab('All', search ? hitsAll : totalAll)
-      + instruments.map(i => tab(i, search ? counts[i].hits : counts[i].total)).join('');
-    tabbar.querySelectorAll('[data-db-tab]').forEach(b => b.addEventListener('click', () => {
-      dbActiveTab = b.dataset.dbTab;
-      renderDbList();
-    }));
-  }
-
-  // --- the list ---------------------------------------------------------------
-  list.innerHTML = '';
-  let shownRows = 0;
-  families.forEach(family => {
-    const subsToShow = matched[family];
-    if (!subsToShow) return;
-    const isCustom = !!custom[family];
-    if (dbActiveTab !== 'All' && dbInstrumentOf(family, isCustom) !== dbActiveTab) return;
-    shownRows += subsToShow.length;
-    const fam = document.createElement('div');
-    fam.className = 'db-test-family';
-    fam.innerHTML = `
-      <div class="db-test-family-header">
-        <span>${escapeHtml(family)} ${isCustom ? '<span class="custom-tag">Custom</span>' : ''}</span>
-        ${isCustom ? `<button class="btn btn-ghost" data-del-family="${escapeAttr(family)}">Delete family</button>` : ''}
-      </div>
-      <div class="db-subtests">
-        <div class="db-subtest-row" style="font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid var(--border-soft);padding-bottom:6px">
-          <span>Subtest</span><span class="num-label">M₁</span><span class="num-label">SD₁</span><span class="num-label">M₂</span><span class="num-label">SD₂</span><span class="num-label">r</span><span class="num-label" title="Attenuation-corrected test–retest correlation">corr. r</span><span class="num-label">N</span><span class="num-label" title="The reliability this measure's confidence interval is built from, with no patient age entered">CI r</span><span title="Where that coefficient comes from">Basis</span><span></span>
-        </div>
-        ${subsToShow.map(([name, p]) => {
-          const rel = dbReliabilityBasis(p);
-          return `
-          <div class="db-subtest-row">
-            <span class="name">${escapeHtml(name)}${p.metric ? `<span class="db-metric-tag">${escapeHtml(scoreTypeAbbr(p.metric) || p.metric)}</span>` : ''}${p.higherIsWorse ? '<span class="db-metric-tag" title="A high score is a poor result; the classification is computed from the reflected score">high = worse</span>' : ''}</span>
-            <span class="num">${fmt(p.m1, 2)}</span>
-            <span class="num">${fmt(p.sd1, 2)}</span>
-            <span class="num">${p.m2 == null ? '–' : fmt(p.m2, 2)}</span>
-            <span class="num">${p.sd2 == null ? '–' : fmt(p.sd2, 2)}</span>
-            <span class="num">${p.r == null ? '–' : fmt(p.r, 2)}</span>
-            <span class="num">${p.rCorrected == null ? '–' : fmt(p.rCorrected, 2)}</span>
-            <span class="num">${p.n == null ? '–' : escapeHtml(String(p.n))}</span>
-            <span class="db-rel">${rel.r == null ? '–' : fmt(rel.r, 2)}</span>
-            <span class="db-basis${rel.none ? ' db-basis-none' : ''}">${escapeHtml(rel.basis)}</span>
-            ${isCustom ? `<button class="btn btn-ghost btn-icon" data-del-sub="${escapeAttr(family)}::${escapeAttr(name)}" title="Remove subtest">×</button>` : '<span></span>'}
-          </div>`;
-        }).join('')}
-      </div>
-    `;
-    list.appendChild(fam);
-  });
-
-  /* A search that hits nothing in this tab but plenty elsewhere is the one
-     confusing state tabs introduce. Say so rather than showing an empty list. */
-  if (!shownRows){
-    const hint = document.createElement('div');
-    hint.className = 'db-hint';
-    if (search && hitsAll){
-      hint.innerHTML = `No match for "${escapeHtml(search)}" in ${escapeHtml(dbActiveTab)} — ${hitsAll} elsewhere. <button type="button" data-db-tab-all>Search all instruments</button>`;
-    } else if (search){
-      hint.textContent = `Nothing matches "${search}".`;
-    } else {
-      hint.textContent = 'No entries in this tab.';
+  let rows = all.filter(r => {
+    if (fInst.value && r.instrument !== fInst.value) return false;
+    if (fCat.value && r.category !== fCat.value) return false;
+    if (fBand.value && r.band !== fBand.value) return false;
+    if (fBasis.value && r.rel.basis.replace(' · by age', '') !== fBasis.value) return false;
+    if (search){
+      const hay = (r.name + ' ' + r.instrument + ' ' + r.category + ' ' + r.band).toLowerCase();
+      if (!hay.includes(search)) return false;
     }
-    list.appendChild(hint);
-    const b = hint.querySelector('[data-db-tab-all]');
-    if (b) b.addEventListener('click', () => { dbActiveTab = 'All'; renderDbList(); });
+    return true;
+  });
+
+  if (dbSort.key){
+    const col = DB_COLUMNS.find(c => c.key === dbSort.key);
+    if (col){
+      rows = rows.slice().sort((a, b) => {
+        const x = col.get(a), y = col.get(b);
+        // Blanks sort last whichever way the column is pointed, so "worst
+        // first" never opens with a column of dashes.
+        if (x == null && y == null) return 0;
+        if (x == null) return 1;
+        if (y == null) return -1;
+        return (col.text ? String(x).localeCompare(String(y)) : x - y) * dbSort.dir;
+      });
+    }
   }
-  list.querySelectorAll('[data-del-family]').forEach(b => b.addEventListener('click', () => {
-    if (!confirm(`Delete custom family "${b.dataset.delFamily}" and all its subtests?`)) return;
-    const c = getCustom(); delete c[b.dataset.delFamily]; saveCustom(c);
-    refreshAll();
-  }));
-  list.querySelectorAll('[data-del-sub]').forEach(b => b.addEventListener('click', () => {
+
+  const thead = document.getElementById('db-thead');
+  thead.innerHTML = '<tr>' + DB_COLUMNS.map(c => {
+    const on = dbSort.key === c.key;
+    return '<th class="db-th' + (c.text ? ' db-th-text' : '') + '"' +
+      (on ? ' aria-sort="' + (dbSort.dir === 1 ? 'ascending' : 'descending') + '"' : '') +
+      (c.title ? ' title="' + escapeAttr(c.title) + '"' : '') +
+      ' data-db-sort="' + escapeAttr(c.key) + '" tabindex="0" role="button">' + c.label +
+      (on ? '<span class="db-arrow">' + (dbSort.dir === 1 ? '▲' : '▼') + '</span>' : '') + '</th>';
+  }).join('') + '<th class="db-th"></th></tr>';
+
+  const sortBy = (key) => {
+    if (dbSort.key === key) dbSort.dir = -dbSort.dir;
+    else { dbSort.key = key; dbSort.dir = 1; }
+    renderDbList();
+  };
+  thead.querySelectorAll('[data-db-sort]').forEach(th => {
+    th.addEventListener('click', () => sortBy(th.dataset.dbSort));
+    th.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); sortBy(th.dataset.dbSort); }
+    });
+  });
+
+  const tbody = document.getElementById('db-tbody');
+  tbody.innerHTML = rows.map(r => '<tr>' + DB_COLUMNS.map(c => {
+    const v = c.get(r);
+    if (c.key === 'basis'){
+      const byAge = v.includes(' · by age');
+      return '<td class="db-td-text"><span class="db-chip ' + dbBasisClass(v) + '">' +
+        escapeHtml(v.replace(' · by age', '')) + '</span>' +
+        (byAge ? '<span class="db-byage">by age</span>' : '') + '</td>';
+    }
+    if (c.text){
+      const tag = c.key === 'measure' && r.e.metric
+        ? '<span class="db-metric-tag">' + escapeHtml(scoreTypeAbbr(r.e.metric) || r.e.metric) + '</span>' : '';
+      const cust = c.key === 'instrument' && r.isCustom ? '<span class="custom-tag">Custom</span>' : '';
+      return '<td class="db-td-text' + (c.key === 'measure' ? ' db-td-measure' : ' db-td-ctx') + '">' +
+        escapeHtml(String(v)) + tag + cust + '</td>';
+    }
+    return '<td class="db-td-num' + (c.emphasis ? ' db-td-rel' : '') + '">' +
+      (v == null ? '<span class="db-dash">–</span>' : escapeHtml(fmt(v, c.dp))) + '</td>';
+  }).join('') +
+    '<td class="db-td-text">' + (r.isCustom
+      ? '<button class="btn btn-ghost btn-icon" data-del-sub="' + escapeAttr(r.family) + '::' + escapeAttr(r.name) + '" title="Remove this custom measure">×</button>'
+      : '') + '</td></tr>').join('') ||
+    '<tr><td class="db-td-text" colspan="' + (DB_COLUMNS.length + 1) + '"><span class="db-dash">Nothing matches these filters.</span></td></tr>';
+
+  document.getElementById('db-count').innerHTML =
+    'Showing <b>' + rows.length + '</b> of <b>' + all.length + '</b> measures';
+  const sortCol = DB_COLUMNS.find(c => c.key === dbSort.key);
+  document.getElementById('db-sortnote').textContent = sortCol
+    ? 'Sorted by ' + sortCol.label + (dbSort.dir === 1 ? ' ascending' : ' descending')
+    : 'Click a column heading to sort';
+
+  /* Deleting a custom measure removes its family too once the last one goes,
+     which is why there is no separate "delete family" control any more — the
+     flat table has no group header to hang one on. */
+  tbody.querySelectorAll('[data-del-sub]').forEach(b => b.addEventListener('click', () => {
     const [family, sub] = b.dataset.delSub.split('::');
     const c = getCustom();
     if (c[family]){ delete c[family][sub]; if (Object.keys(c[family]).length === 0) delete c[family]; saveCustom(c); }
@@ -4268,6 +4314,21 @@ function refreshAll(selectedFamily){
    for tests the clinician enters. It also lets any other misclassification be
    corrected by hand rather than argued with. */
 document.getElementById('ct-search').addEventListener('input', renderDbList);
+['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', renderDbList);
+});
+{
+  const clear = document.getElementById('db-f-clear');
+  if (clear) clear.addEventListener('click', () => {
+    ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('ct-search').value = '';
+    dbSort = { key: null, dir: 1 };
+    renderDbList();
+  });
+}
 document.getElementById('ct-export').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(getCustom(), null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
