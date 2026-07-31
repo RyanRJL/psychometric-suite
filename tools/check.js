@@ -4829,6 +4829,96 @@ check('the typed entry form is gone, and took none of its neighbours with it', (
   return bad.length === 0 || bad.join('; ');
 });
 
+/* ==========================================================================
+   33. The single-file bundle
+
+   Psychometric_Assistant.html is committed, and it is the copy that gets
+   emailed around, so it is the copy a clinician is most likely to be
+   reading. Nothing had ever checked it.
+
+   bundle.ps1 is local-only (.gitignore excludes *.ps1), so it cannot be
+   tested here. What CAN be tested is its output, and the output had two
+   faults that had been committed and shipped:
+
+     1. It appends " - Bundled" to the document <title> so the standalone
+        file is distinguishable from the served page. It did that by
+        matching <title> as text, which also hit the ten <title> tags that
+        live INSIDE JavaScript strings - nine SVG tooltips in
+        app-viz-page.js and the Word export's document title in app.js. So
+        hovering a Score Charts row read "...95% CI 92-108 - Bundled", and
+        every exported Word document was titled "Assessment Report -
+        Bundled". On-screen text is a contract; this was not text anyone
+        wrote.
+
+     2. The em dash in that marker was written as CP1252 and re-read as
+        UTF-8, so the tab title rendered the three-character mojibake
+        instead of a dash.
+
+   The check that catches both, and anything else of the kind, is the
+   strongest one available: every inlined source must appear in the bundle
+   VERBATIM. Only the BOM is allowed to differ (app.js and styles.css carry
+   one; the bundler strips it). That also enforces step 2 of CLAUDE.md's
+   shipping list mechanically - a source edited without a rebuild now fails
+   here instead of shipping a stale bundle.
+
+   The pre-existing mojibake in styles.css COMMENTS is deliberately not
+   caught: it is present in the source too, so the bundler is being
+   faithful, and faithfulness is the only thing this section judges.
+   ========================================================================== */
+heading('33. The single-file bundle');
+
+const BUNDLE_PATH = path.join(ROOT, 'Psychometric_Assistant.html');
+const BUNDLE_SRC = fs.readFileSync(BUNDLE_PATH, 'utf8');
+const INLINED_SOURCES = ['data.js', 'app.js', 'design-system.js', 'app-effectsize-page.js',
+                         'app-viz-page.js', 'styles.css', 'design-system.css'];
+// U+00E2 U+20AC U+201D - an em dash encoded CP1252 and decoded UTF-8.
+const MANGLED_EM_DASH = 'â€”';
+
+check('every inlined source appears in the bundle verbatim', () => {
+  const bad = [];
+  INLINED_SOURCES.forEach((f) => {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/^﻿/, '');
+    if (!BUNDLE_SRC.includes(src)) bad.push(f + ' does not appear verbatim - the bundle is stale, ' +
+                                                'or bundle.ps1 rewrote it on the way in (re-run ./bundle.ps1)');
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the "Bundled" marker is on the document title and nowhere else', () => {
+  /* One marker, in the <head>. Ten is what the text-matching bug produced;
+     zero is fine too, should the marker ever be dropped - what must never
+     come back is a marker inside a JS string, where it reaches an SVG
+     tooltip or an exported Word document. */
+  const total = (BUNDLE_SRC.match(/Bundled/g) || []).length;
+  if (total === 0) return true;
+  const bad = [];
+  if (total > 1) bad.push(total + ' occurrences of "Bundled" - only the document title may carry it');
+  const head = BUNDLE_SRC.slice(0, BUNDLE_SRC.indexOf('</head>'));
+  const titled = /<title>[^<]*Bundled[^<]*<\/title>/.test(head);
+  if (!titled) bad.push('the marker is not on the document title');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the bundle introduces no mojibake of its own', () => {
+  /* Scoped to what the bundler ADDS. styles.css ships 138 mangled em dashes
+     inside its own comments; those are the source's, not the bundler's, and
+     the verbatim check above is what holds them still. */
+  const bad = [];
+  const marker = BUNDLE_SRC.match(/<title>[^<]*Bundled[^<]*<\/title>/);
+  if (marker && marker[0].includes(MANGLED_EM_DASH)) {
+    bad.push('the title marker\'s dash is CP1252 read as UTF-8 - bundle.ps1 must write UTF-8');
+  }
+  const count = (s) => s.split(MANGLED_EM_DASH).length - 1;
+  const fromSources = INLINED_SOURCES.concat(['index.html'])
+    .reduce((n, f) => n + count(fs.readFileSync(path.join(ROOT, f), 'utf8')), 0);
+  const inBundle = count(BUNDLE_SRC);
+  if (inBundle > fromSources) {
+    bad.push(inBundle + ' mangled dashes in the bundle against ' + fromSources +
+             ' in its sources - bundle.ps1 added ' + (inBundle - fromSources));
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

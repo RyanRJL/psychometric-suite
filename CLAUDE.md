@@ -899,7 +899,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 261 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 264 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -907,7 +907,18 @@ pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
 reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
 Score Tables confidence intervals, documentation contracts, wiring (§16–17), the
-raw-score metric (§18) and the Norms Database view (§32).
+raw-score metric (§18), the Norms Database view (§32) and the single-file bundle (§33).
+
+**§33 makes `Psychometric_Assistant.html` mechanically checkable**, which it never was.
+It asserts each inlined source appears in the bundle **verbatim** (BOM aside), so step 2
+of the shipping list above is now enforced rather than remembered — edit a source without
+rebuilding and the checks go red. It also pins the bundler's `- Bundled` title marker to
+the document `<title>`: `bundle.ps1` matched `<title>` as text, so it also stamped the ten
+`<title>` tags that live inside JS strings — nine SVG tooltips in `app-viz-page.js` and
+the Word export's own title — putting "— Bundled" into chart hovers and every exported
+document. Note the pre-existing mojibake in `styles.css` **comments** is not caught, and
+should not be: it is in the source too, so the bundler is being faithful, and faithfulness
+is all §33 judges.
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is
