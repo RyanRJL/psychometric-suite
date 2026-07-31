@@ -14548,17 +14548,24 @@ input[type="number"].ds-inline-bar-age-input{
         <div class="home-db-card-arrow">→</div>
       </button>
 
-      <button class="home-db-card home-db-card--muted" onclick="document.querySelector('.nav-item[data-target=&quot;about&quot;]').click()">
+      <!-- Score Charts. Not `home-db-card--muted`: that dimming marked the
+           reference tile that used to sit here as secondary to the tools
+           around it, and this is a tool. Methods & References keeps its
+           sidebar entry (08) and its footer link, so it is still two clicks
+           from anywhere; it just no longer takes a slot in the tool grid.
+           Bars scaled from the top-bar icon (20 -> 22 viewBox) so the two
+           read as the same page. -->
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;charts&quot;]').click()">
         <div class="home-db-card-icon">
           <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 2h10l4 4v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/>
-            <polyline points="14,2 14,6 18,6"/>
-            <line x1="7" y1="10" x2="15" y2="10"/>
-            <line x1="7" y1="14" x2="12" y2="14"/>
+            <line x1="3" y1="18.5" x2="19" y2="18.5"/>
+            <line x1="6" y1="15.5" x2="6" y2="10"/>
+            <line x1="11" y1="15.5" x2="11" y2="4.5"/>
+            <line x1="16" y1="15.5" x2="16" y2="7.5"/>
           </svg>
         </div>
-        <div class="home-db-card-name">Methods &amp; References</div>
-        <div class="home-db-card-desc">Formulas, citations and statistical conventions used throughout the suite</div>
+        <div class="home-db-card-name">Score Charts</div>
+        <div class="home-db-card-desc">Chart scores entered elsewhere in the suite against classification and reliable-change bands</div>
         <div class="home-db-card-arrow">→</div>
       </button>
 
