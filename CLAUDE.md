@@ -300,7 +300,7 @@ is right almost everywhere (see the CI paragraphs in Methods & References). The 
 setting it aside is deliberately high: **the publisher must both report an
 internal-consistency coefficient AND derive its own published intervals from it.**
 
-Six manuals clear it, and `check.js` §24 pins the roster so a seventh cannot appear
+Seven manuals clear it, and `check.js` §24 pins the roster so an eighth cannot appear
 undocumented:
 
 | Source | Entries | Fields |
@@ -311,6 +311,7 @@ undocumented:
 | WAIS-IV — Table 4.1, all but the three speeded subtests | 21 | `rInternal` + `rInternalByAge` |
 | RBANS Update — Table 3.6, the nine rows without footnote a | 9 | `rInternal` + `rInternalByAge` |
 | WMS-IV — Table 3.1, both batteries, all but VPA II Word Recall | 30 | `rInternal` + `rInternalByAge` |
+| WISC-V — Table 4.1, all but the three speeded subtests | 19 | `rInternal` + `rInternalByAge` |
 
 That roster check keys on **either** field. D-KEFS original carries no `rInternal` at
 all, so a check testing `rInternal` alone would let 13 entries change the basis of a
@@ -791,7 +792,12 @@ alongside, so direction stays visible without the app interpreting it.
 
 Field coverage: `m1`, `sd1`, `m2`, `sd2` and `r` are present on **all 590** entries;
 `rCorrected` on only **233** — D-KEFS, CVLT-C and WISC-V have none at all, so any feature
-depending on it must degrade gracefully.
+depending on it must degrade gracefully. That absence is why **WISC-V is verified differently
+from the rest**: with no `rCorrected` to match the manual's stability rows against, Tables
+4.1/4.4 carry the transcription proof on their own (242 cells), and §31 additionally drives
+the shipped renderer through the manual's worked example — a 6-year-old at FSIQ 108 gives
+102–114 at 95% and 103–113 at 90%, exactly as p. 62 prints. WISC-V also has the finest
+lookup in the database: **single year of age**, 6 to 16, not bands.
 
 Users can add custom tests; `getMergedDB()` merges those over `normDB`.
 
@@ -844,9 +850,9 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 254 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 260 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
-Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30),
+Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
 pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
