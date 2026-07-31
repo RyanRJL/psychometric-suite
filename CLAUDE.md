@@ -300,7 +300,7 @@ is right almost everywhere (see the CI paragraphs in Methods & References). The 
 setting it aside is deliberately high: **the publisher must both report an
 internal-consistency coefficient AND derive its own published intervals from it.**
 
-Three manuals clear it, and `check.js` §24 pins the roster so a fourth cannot appear
+Four manuals clear it, and `check.js` §24 pins the roster so a fifth cannot appear
 undocumented:
 
 | Source | Entries | Fields |
@@ -308,6 +308,7 @@ undocumented:
 | CVLT-C `List A Trials 1-5 Total`, ages 8 / 12 / 16 | 3 | `rInternal` only |
 | D-KEFS Advanced — CWIT, Tower, Social Sorting, Risk-Reward | 26 | `rInternal` + `rInternalByAge` |
 | D-KEFS (original) — VFT, Sorting, 20Q, Word Context, Tower, Proverb, TMT composite | 13 | `rInternalByAge` **only** |
+| WAIS-IV — Table 4.1, all but the three speeded subtests | 21 | `rInternal` + `rInternalByAge` |
 
 That roster check keys on **either** field. D-KEFS original carries no `rInternal` at
 all, so a check testing `rInternal` alone would let 13 entries change the basis of a
@@ -459,12 +460,52 @@ consistency for all four Verbal Fluency measures and the TMT composite, and excl
 Fluency for *item interdependence* instead. Do not "harmonise" them — §27 asserts the
 inversion in both directions.
 
-Reliability method is a **per-manual question, not a per-app policy.** Four sources, four
+Reliability method is a **per-manual question, not a per-app policy.** Five sources, five
 different answers: D-KEFS Advanced rejects internal consistency for *speededness*; D-KEFS
 original accepts it for those same tests and rejects Design Fluency for *item
 interdependence*; CVLT-3 and CVLT-C reject it for *item interdependence* on a word-list
-task; CVLT-C nonetheless publishes split-half for its one non-interdependent score. Read
-the manual before assuming any of them generalises.
+task; CVLT-C nonetheless publishes split-half for its one non-interdependent score; WAIS-IV
+accepts it everywhere except its three Processing Speed subtests, again for *speededness*.
+Read the manual before assuming any of them generalises.
+
+#### WAIS-IV — Table 4.1, and why the speeded three needed no change
+
+Technical Manual (GB) ch. 4, p. 42: "Because Symbol Search, Coding, and Cancellation are
+Processing Speed subtests, the split-half coefficient is not a proper reliability
+estimate. Therefore, test-retest stability coefficients were used… corrected for the
+normative sample's variability." So Table 4.1 is a **mixed-basis** table: 21 rows of
+split-half/alpha, three of corrected stability.
+
+Those three keep `rCorrected`, because that field **already holds Table 4.1's own value** —
+all 38 published cells match it to the digit and not one matches the raw `r`, no other
+measure exceeding 3 of 13 (`check.js` §28). Storing it in `rInternal` would change no
+number while labelling a stability coefficient as internal consistency, which the Methods
+& References paragraph then asserts on screen.
+
+That 38/38 match is also the **transcription proof** for the whole family. Table 4.1
+repeats one retest-study value across each span of normative bands it covers — Symbol
+Search .81 at 16-17/18-19/20-24/25-29, .73 at 30-34/35-44/45-54 — and those spans
+reconstruct `normDB`'s 16-29 / 30-54 / 55-69 / 70-90 groups exactly.
+
+- **`rInternalAgeMax` is 69 for Letter-Number Sequencing and Figure Weights.** The manual
+  prints a dash above 65-69 for both, they being normed to 69. Without it the "greatest
+  key ≤ age" lookup would score a 90-year-old on the 65-69 coefficient.
+- **PSI and FSIQ are hybrids and are included anyway.** The manual concedes the PSI
+  average "is based on test-retest subtest reliabilities", but it computes and labels
+  every composite coefficient as internal consistency and publishes no other reliability
+  for them. Excluding PSI while keeping FSIQ — which also draws on Processing Speed
+  subtests — would be incoherent.
+- **NOT verified: that the manual's printed SEMs come from Table 4.1.** That needs Table
+  4.3, which was not available; the claim rests on the manual's stated method, the same
+  footing D-KEFS Advanced was admitted on. If Table 4.3 is obtained, pin it as §27 pins
+  the D-KEFS SEM cells.
+- **`WAIS-IV Longest Span` gets none of this** — base-rate scored, no retest data, absent
+  from Table 4.1.
+
+The §24 naming check could not catch a stale paragraph here: **"WAIS-IV" was already in
+that paragraph in the opposite sense**, naming the manual only as a user of test–retest
+coefficients, so the roster grew and the check stayed green. §28 pins the substance of the
+wording instead.
 
 ### `baseRates` — measures scored by lookup rather than by conversion
 
@@ -659,13 +700,13 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 193 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 234 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
-Table 4.5, OPIE-4 coefficients pinned to Table eA5.8, worked OPIE predictions, reliable-
-change thresholds and direction-neutral outcome labels, base-rate reconstruction and
-monotonicity, percentile-tail clamping, the effect-size calculator, Score Tables
-confidence intervals, documentation contracts, wiring (§16–17) and the raw-score
-metric (§18).
+Tables 4.5 (§4) and 4.1 (§28), OPIE-4 coefficients pinned to Table eA5.8, worked OPIE
+predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
+reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
+Score Tables confidence intervals, documentation contracts, wiring (§16–17) and the
+raw-score metric (§18).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is
