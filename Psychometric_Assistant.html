@@ -17456,30 +17456,66 @@ const OPIE_BASE_RATES = {
      re-reading age 16.
      --------------------------------------------------------------- */
   "WISC-V Indices · All Ages": {
-    "Verbal Comprehension Index": { m1:98.5, sd1:12.8, m2:101.6, sd2:13, r:0.91, n:215, rInternal:0.92, rInternalAgeMax:16, rInternalByAge:{6:0.91, 7:0.92, 8:0.9, 9:0.93, 10:0.93, 11:0.9, 12:0.94, 13:0.93, 14:0.92, 15:0.92, 16:0.93} },
-    "Visuospatial Index": { m1:98.6, sd1:14.7, m2:105.3, sd2:15.1, r:0.84, n:217, rInternal:0.92, rInternalAgeMax:16, rInternalByAge:{6:0.91, 7:0.92, 8:0.92, 9:0.91, 10:0.91, 11:0.91, 12:0.93, 13:0.91, 14:0.9, 15:0.93, 16:0.92} },
-    "Fluid Reasoning Index": { m1:98.7, sd1:13.6, m2:103.6, sd2:12.9, r:0.68, n:217, rInternal:0.93, rInternalAgeMax:16, rInternalByAge:{6:0.93, 7:0.94, 8:0.94, 9:0.93, 10:0.93, 11:0.92, 12:0.95, 13:0.93, 14:0.93, 15:0.93, 16:0.93} },
-    "Working Memory Index": { m1:98.5, sd1:13.8, m2:100.9, sd2:13.8, r:0.79, n:217, rInternal:0.92, rInternalAgeMax:16, rInternalByAge:{6:0.92, 7:0.91, 8:0.92, 9:0.92, 10:0.91, 11:0.92, 12:0.93, 13:0.92, 14:0.92, 15:0.92, 16:0.92} },
-    "Processing Speed Index": { m1:100.3, sd1:14.3, m2:108.2, sd2:16, r:0.81, n:213, rInternal:0.88, rInternalAgeMax:16, rInternalByAge:{6:0.88, 7:0.88, 8:0.86, 9:0.87, 10:0.87, 11:0.88, 12:0.84, 13:0.84, 14:0.91, 15:0.91, 16:0.92} },
-    "Full Scale IQ": { m1:98.3, sd1:13.7, m2:104.3, sd2:13.8, r:0.91, n:212, rInternal:0.96, rInternalAgeMax:16, rInternalByAge:{6:0.96, 7:0.96, 8:0.96, 9:0.96, 10:0.96, 11:0.96, 12:0.97, 13:0.96, 14:0.96, 15:0.97, 16:0.97} }
+    "Verbal Comprehension Index": { m1:98.5, sd1:12.8, m2:101.6, sd2:13, r:0.91, rCorrected:0.94, n:215, rInternal:0.92, rInternalAgeMax:16, rInternalByAge:{6:0.91, 7:0.92, 8:0.9, 9:0.93, 10:0.93, 11:0.9, 12:0.94, 13:0.93, 14:0.92, 15:0.92, 16:0.93} },
+    "Visuospatial Index": { m1:98.6, sd1:14.7, m2:105.3, sd2:15.1, r:0.84, rCorrected:0.84, n:217, rInternal:0.92, rInternalAgeMax:16, rInternalByAge:{6:0.91, 7:0.92, 8:0.92, 9:0.91, 10:0.91, 11:0.91, 12:0.93, 13:0.91, 14:0.9, 15:0.93, 16:0.92} },
+    "Fluid Reasoning Index": { m1:98.7, sd1:13.6, m2:103.6, sd2:12.9, r:0.68, rCorrected:0.75, n:217, rInternal:0.93, rInternalAgeMax:16, rInternalByAge:{6:0.93, 7:0.94, 8:0.94, 9:0.93, 10:0.93, 11:0.92, 12:0.95, 13:0.93, 14:0.93, 15:0.93, 16:0.93} },
+    "Working Memory Index": { m1:98.5, sd1:13.8, m2:100.9, sd2:13.8, r:0.79, rCorrected:0.82, n:217, rInternal:0.92, rInternalAgeMax:16, rInternalByAge:{6:0.92, 7:0.91, 8:0.92, 9:0.92, 10:0.91, 11:0.92, 12:0.93, 13:0.92, 14:0.92, 15:0.92, 16:0.92} },
+    "Processing Speed Index": { m1:100.3, sd1:14.3, m2:108.2, sd2:16, r:0.81, rCorrected:0.83, n:213, rInternal:0.88, rInternalAgeMax:16, rInternalByAge:{6:0.88, 7:0.88, 8:0.86, 9:0.87, 10:0.87, 11:0.88, 12:0.84, 13:0.84, 14:0.91, 15:0.91, 16:0.92} },
+    "Full Scale IQ": { m1:98.3, sd1:13.7, m2:104.3, sd2:13.8, r:0.91, rCorrected:0.92, n:212, rInternal:0.96, rInternalAgeMax:16, rInternalByAge:{6:0.96, 7:0.96, 8:0.96, 9:0.96, 10:0.96, 11:0.96, 12:0.97, 13:0.96, 14:0.96, 15:0.97, 16:0.97} },
+    "Quantitative Reasoning Index": { m1:99.2, sd1:13.4, m2:102.4, sd2:13.7, r:0.76, rCorrected:0.81, n:216, rInternal:0.95, rInternalAgeMax:16, rInternalByAge:{6:0.92, 7:0.94, 8:0.94, 9:0.94, 10:0.96, 11:0.95, 12:0.96, 13:0.95, 14:0.96, 15:0.94, 16:0.95} },
+    "Auditory Working Memory Index": { m1:98.7, sd1:13.3, m2:100.9, sd2:14.6, r:0.85, rCorrected:0.88, n:217, rInternal:0.93, rInternalAgeMax:16, rInternalByAge:{6:0.96, 7:0.94, 8:0.92, 9:0.93, 10:0.91, 11:0.92, 12:0.94, 13:0.93, 14:0.95, 15:0.93, 16:0.92} },
+    "Nonverbal Index": { m1:98.5, sd1:14, m2:105.5, sd2:13.8, r:0.86, rCorrected:0.88, n:216, rInternal:0.95, rInternalAgeMax:16, rInternalByAge:{6:0.95, 7:0.95, 8:0.95, 9:0.95, 10:0.95, 11:0.95, 12:0.96, 13:0.95, 14:0.96, 15:0.96, 16:0.96} },
+    "General Ability Index": { m1:98, sd1:13.7, m2:103.6, sd2:13.3, r:0.89, rCorrected:0.91, n:213, rInternal:0.96, rInternalAgeMax:16, rInternalByAge:{6:0.95, 7:0.96, 8:0.96, 9:0.96, 10:0.96, 11:0.95, 12:0.97, 13:0.96, 14:0.95, 15:0.96, 16:0.96} },
+    "Cognitive Proficiency Index": { m1:99.3, sd1:14, m2:105.5, sd2:14.8, r:0.84, rCorrected:0.86, n:212, rInternal:0.93, rInternalAgeMax:16, rInternalByAge:{6:0.92, 7:0.92, 8:0.92, 9:0.92, 10:0.92, 11:0.92, 12:0.92, 13:0.91, 14:0.94, 15:0.94, 16:0.94} }
+  },
+  /* ---------------------------------------------------------------
+     WISC-V Process Scores. Mirrors WAIS-IV Process Scores, which holds
+     the adult equivalents of the same measures, so the two sit
+     consistently beside each other in every dropdown.
+
+     Retest descriptives and coefficients: Technical and Interpretive
+     Manual Table 4.7 (all ages). Reliability by single year of age:
+     Table 4.1, verified against the SEMs of Table 4.4 — all 132 cells
+     for these twelve measures equal SD sqrt(1 - rxx) at 2dp, on 3 and
+     15, so they are admitted on the same footing as the rest of the
+     family rather than on retest data alone.
+
+     CANCELLATION RANDOM AND STRUCTURED TAKE rStability. The manual
+     names Cancellation among the subtests for which "the split-half
+     coefficient is not a proper reliability estimate", and its two
+     process scores carry the signature: a stability coefficient is
+     broadcast from the retest study's coarse bands, so it repeats
+     across single years. CAr shows 3 distinct values across the 11
+     bands and CAs shows 2, against 7-9 for the five internal-
+     consistency rows here and 4-5 for the known-stability Coding,
+     Symbol Search and Cancellation.
+     --------------------------------------------------------------- */
+  "WISC-V Process Scores · All Ages": {
+    "Block Design No Time Bonus": { m1:9.6, sd1:2.8, m2:10.8, sd2:3.2, r:0.78, rCorrected:0.81, n:207, rInternal:0.83, rInternalAgeMax:16, rInternalByAge:{6:0.84, 7:0.86, 8:0.87, 9:0.82, 10:0.79, 11:0.82, 12:0.84, 13:0.8, 14:0.78, 15:0.85, 16:0.82} },
+    "Block Design Partial": { m1:9.8, sd1:3.1, m2:10.8, sd2:3.1, r:0.84, rCorrected:0.84, n:208, rInternal:0.88, rInternalAgeMax:16, rInternalByAge:{6:0.89, 7:0.91, 8:0.93, 9:0.89, 10:0.87, 11:0.87, 12:0.88, 13:0.85, 14:0.84, 15:0.87, 16:0.88} },
+    "Digit Span Forward": { m1:9.9, sd1:2.7, m2:10.2, sd2:3, r:0.78, rCorrected:0.82, n:213, rInternal:0.81, rInternalAgeMax:16, rInternalByAge:{6:0.8, 7:0.76, 8:0.85, 9:0.75, 10:0.76, 11:0.82, 12:0.82, 13:0.85, 14:0.79, 15:0.84, 16:0.83} },
+    "Digit Span Backward": { m1:9.9, sd1:2.8, m2:10.2, sd2:2.9, r:0.72, rCorrected:0.76, n:201, rInternal:0.8, rInternalAgeMax:16, rInternalByAge:{6:0.84, 7:0.81, 8:0.79, 9:0.78, 10:0.75, 11:0.83, 12:0.82, 13:0.78, 14:0.8, 15:0.8, 16:0.82} },
+    "Digit Span Sequencing": { m1:9.5, sd1:2.7, m2:10.1, sd2:2.9, r:0.74, rCorrected:0.79, n:200, rInternal:0.82, rInternalAgeMax:16, rInternalByAge:{6:0.9, 7:0.81, 8:0.78, 9:0.79, 10:0.83, 11:0.76, 12:0.84, 13:0.77, 14:0.78, 15:0.83, 16:0.85} },
+    "Cancellation Random": { m1:9.9, sd1:2.9, m2:11.1, sd2:2.9, r:0.78, rCorrected:0.81, n:200, rStability:0.81, rStabilityAgeMax:16, rStabilityByAge:{6:0.8, 7:0.8, 8:0.82, 9:0.82, 10:0.81, 11:0.81, 12:0.8, 13:0.8, 14:0.81, 15:0.81, 16:0.81} },
+    "Cancellation Structured": { m1:9.9, sd1:2.8, m2:10.9, sd2:3.1, r:0.78, rCorrected:0.82, n:209, rStability:0.82, rStabilityAgeMax:16, rStabilityByAge:{6:0.8, 7:0.8, 8:0.82, 9:0.82, 10:0.82, 11:0.82, 12:0.82, 13:0.82, 14:0.82, 15:0.82, 16:0.82} }
   },
   "WISC-V Subtests · All Ages": {
-    "Similarities": { m1:9.8, sd1:2.5, m2:10.6, sd2:2.5, r:0.82, n:213, rInternal:0.87, rInternalAgeMax:16, rInternalByAge:{6:0.89, 7:0.87, 8:0.85, 9:0.88, 10:0.88, 11:0.81, 12:0.87, 13:0.89, 14:0.85, 15:0.85, 16:0.87} },
-    "Vocabulary": { m1:9.6, sd1:2.8, m2:10, sd2:2.8, r:0.89, n:217, rInternal:0.87, rInternalAgeMax:16, rInternalByAge:{6:0.83, 7:0.86, 8:0.83, 9:0.87, 10:0.87, 11:0.87, 12:0.91, 13:0.86, 14:0.88, 15:0.89, 16:0.9} },
-    "Information": { m1:9.7, sd1:2.7, m2:10.3, sd2:2.7, r:0.85, n:218, rInternal:0.86, rInternalAgeMax:16, rInternalByAge:{6:0.82, 7:0.86, 8:0.81, 9:0.86, 10:0.82, 11:0.81, 12:0.89, 13:0.88, 14:0.85, 15:0.88, 16:0.9} },
-    "Comprehension": { m1:10, sd1:2.9, m2:10.2, sd2:2.8, r:0.81, n:214, rInternal:0.83, rInternalAgeMax:16, rInternalByAge:{6:0.76, 7:0.86, 8:0.8, 9:0.84, 10:0.82, 11:0.79, 12:0.87, 13:0.82, 14:0.88, 15:0.83, 16:0.8} },
-    "Block Design": { m1:9.6, sd1:2.9, m2:10.8, sd2:3.1, r:0.79, n:208, rInternal:0.84, rInternalAgeMax:16, rInternalByAge:{6:0.84, 7:0.86, 8:0.88, 9:0.83, 10:0.81, 11:0.83, 12:0.85, 13:0.82, 14:0.8, 15:0.86, 16:0.85} },
-    "Visual Puzzles": { m1:9.9, sd1:2.8, m2:11, sd2:2.9, r:0.78, n:210, rInternal:0.89, rInternalAgeMax:16, rInternalByAge:{6:0.89, 7:0.9, 8:0.87, 9:0.9, 10:0.89, 11:0.88, 12:0.9, 13:0.89, 14:0.89, 15:0.92, 16:0.9} },
-    "Matrix Reasoning": { m1:9.6, sd1:2.4, m2:10.6, sd2:2.6, r:0.65, n:202, rInternal:0.87, rInternalAgeMax:16, rInternalByAge:{6:0.89, 7:0.88, 8:0.89, 9:0.87, 10:0.85, 11:0.82, 12:0.9, 13:0.84, 14:0.84, 15:0.86, 16:0.86} },
-    "Figure Weights": { m1:10, sd1:2.6, m2:10.5, sd2:2.6, r:0.76, n:204, rInternal:0.94, rInternalAgeMax:16, rInternalByAge:{6:0.91, 7:0.94, 8:0.94, 9:0.94, 10:0.96, 11:0.94, 12:0.95, 13:0.95, 14:0.94, 15:0.94, 16:0.93} },
-    "Picture Concepts": { m1:9.8, sd1:2.7, m2:10.7, sd2:2.9, r:0.63, n:203, rInternal:0.83, rInternalAgeMax:16, rInternalByAge:{6:0.88, 7:0.82, 8:0.83, 9:0.82, 10:0.85, 11:0.85, 12:0.83, 13:0.8, 14:0.81, 15:0.8, 16:0.78} },
-    "Arithmetic": { m1:9.8, sd1:2.5, m2:10.2, sd2:2.6, r:0.75, n:205, rInternal:0.9, rInternalAgeMax:16, rInternalByAge:{6:0.88, 7:0.9, 8:0.88, 9:0.9, 10:0.92, 11:0.9, 12:0.91, 13:0.91, 14:0.92, 15:0.89, 16:0.92} },
-    "Digit Span": { m1:9.8, sd1:2.8, m2:10.1, sd2:3, r:0.79, n:214, rInternal:0.91, rInternalAgeMax:16, rInternalByAge:{6:0.92, 7:0.92, 8:0.9, 9:0.89, 10:0.9, 11:0.91, 12:0.93, 13:0.92, 14:0.92, 15:0.92, 16:0.92} },
-    "Picture Span": { m1:9.7, sd1:2.5, m2:10.1, sd2:2.6, r:0.72, n:208, rInternal:0.85, rInternalAgeMax:16, rInternalByAge:{6:0.86, 7:0.82, 8:0.87, 9:0.87, 10:0.83, 11:0.84, 12:0.86, 13:0.85, 14:0.83, 15:0.84, 16:0.84} },
-    "Letter-Number Sequencing": { m1:9.8, sd1:2.7, m2:10.2, sd2:2.8, r:0.77, n:212, rInternal:0.86, rInternalAgeMax:16, rInternalByAge:{6:0.93, 7:0.9, 8:0.83, 9:0.87, 10:0.8, 11:0.82, 12:0.85, 13:0.86, 14:0.89, 15:0.86, 16:0.82} },
-    "Coding": { m1:10, sd1:2.9, m2:11.3, sd2:3.1, r:0.79, n:216, rStability:0.82, rStabilityAgeMax:16, rStabilityByAge:{6:0.78, 7:0.78, 8:0.79, 9:0.79, 10:0.81, 11:0.81, 12:0.82, 13:0.82, 14:0.86, 15:0.86, 16:0.86} },
-    "Symbol Search": { m1:10, sd1:2.7, m2:11.5, sd2:3.2, r:0.76, n:209, rStability:0.81, rStabilityAgeMax:16, rStabilityByAge:{6:0.83, 7:0.83, 8:0.8, 9:0.8, 10:0.79, 11:0.79, 12:0.67, 13:0.67, 14:0.87, 15:0.87, 16:0.87} },
-    "Cancellation": { m1:9.8, sd1:2.9, m2:11.1, sd2:3.2, r:0.79, n:209, rStability:0.82, rStabilityAgeMax:16, rStabilityByAge:{6:0.8, 7:0.8, 8:0.83, 9:0.83, 10:0.84, 11:0.84, 12:0.81, 13:0.81, 14:0.81, 15:0.81, 16:0.81} }
+    "Similarities": { m1:9.8, sd1:2.5, m2:10.6, sd2:2.5, r:0.82, rCorrected:0.88, n:213, rInternal:0.87, rInternalAgeMax:16, rInternalByAge:{6:0.89, 7:0.87, 8:0.85, 9:0.88, 10:0.88, 11:0.81, 12:0.87, 13:0.89, 14:0.85, 15:0.85, 16:0.87} },
+    "Vocabulary": { m1:9.6, sd1:2.8, m2:10, sd2:2.8, r:0.89, rCorrected:0.9, n:217, rInternal:0.87, rInternalAgeMax:16, rInternalByAge:{6:0.83, 7:0.86, 8:0.83, 9:0.87, 10:0.87, 11:0.87, 12:0.91, 13:0.86, 14:0.88, 15:0.89, 16:0.9} },
+    "Information": { m1:9.7, sd1:2.7, m2:10.3, sd2:2.7, r:0.85, rCorrected:0.88, n:218, rInternal:0.86, rInternalAgeMax:16, rInternalByAge:{6:0.82, 7:0.86, 8:0.81, 9:0.86, 10:0.82, 11:0.81, 12:0.89, 13:0.88, 14:0.85, 15:0.88, 16:0.9} },
+    "Comprehension": { m1:10, sd1:2.9, m2:10.2, sd2:2.8, r:0.81, rCorrected:0.83, n:214, rInternal:0.83, rInternalAgeMax:16, rInternalByAge:{6:0.76, 7:0.86, 8:0.8, 9:0.84, 10:0.82, 11:0.79, 12:0.87, 13:0.82, 14:0.88, 15:0.83, 16:0.8} },
+    "Block Design": { m1:9.6, sd1:2.9, m2:10.8, sd2:3.1, r:0.79, rCorrected:0.81, n:208, rInternal:0.84, rInternalAgeMax:16, rInternalByAge:{6:0.84, 7:0.86, 8:0.88, 9:0.83, 10:0.81, 11:0.83, 12:0.85, 13:0.82, 14:0.8, 15:0.86, 16:0.85} },
+    "Visual Puzzles": { m1:9.9, sd1:2.8, m2:11, sd2:2.9, r:0.78, rCorrected:0.8, n:210, rInternal:0.89, rInternalAgeMax:16, rInternalByAge:{6:0.89, 7:0.9, 8:0.87, 9:0.9, 10:0.89, 11:0.88, 12:0.9, 13:0.89, 14:0.89, 15:0.92, 16:0.9} },
+    "Matrix Reasoning": { m1:9.6, sd1:2.4, m2:10.6, sd2:2.6, r:0.65, rCorrected:0.78, n:202, rInternal:0.87, rInternalAgeMax:16, rInternalByAge:{6:0.89, 7:0.88, 8:0.89, 9:0.87, 10:0.85, 11:0.82, 12:0.9, 13:0.84, 14:0.84, 15:0.86, 16:0.86} },
+    "Figure Weights": { m1:10, sd1:2.6, m2:10.5, sd2:2.6, r:0.76, rCorrected:0.82, n:204, rInternal:0.94, rInternalAgeMax:16, rInternalByAge:{6:0.91, 7:0.94, 8:0.94, 9:0.94, 10:0.96, 11:0.94, 12:0.95, 13:0.95, 14:0.94, 15:0.94, 16:0.93} },
+    "Picture Concepts": { m1:9.8, sd1:2.7, m2:10.7, sd2:2.9, r:0.63, rCorrected:0.71, n:203, rInternal:0.83, rInternalAgeMax:16, rInternalByAge:{6:0.88, 7:0.82, 8:0.83, 9:0.82, 10:0.85, 11:0.85, 12:0.83, 13:0.8, 14:0.81, 15:0.8, 16:0.78} },
+    "Arithmetic": { m1:9.8, sd1:2.5, m2:10.2, sd2:2.6, r:0.75, rCorrected:0.84, n:205, rInternal:0.9, rInternalAgeMax:16, rInternalByAge:{6:0.88, 7:0.9, 8:0.88, 9:0.9, 10:0.92, 11:0.9, 12:0.91, 13:0.91, 14:0.92, 15:0.89, 16:0.92} },
+    "Digit Span": { m1:9.8, sd1:2.8, m2:10.1, sd2:3, r:0.79, rCorrected:0.82, n:214, rInternal:0.91, rInternalAgeMax:16, rInternalByAge:{6:0.92, 7:0.92, 8:0.9, 9:0.89, 10:0.9, 11:0.91, 12:0.93, 13:0.92, 14:0.92, 15:0.92, 16:0.92} },
+    "Picture Span": { m1:9.7, sd1:2.5, m2:10.1, sd2:2.6, r:0.72, rCorrected:0.8, n:208, rInternal:0.85, rInternalAgeMax:16, rInternalByAge:{6:0.86, 7:0.82, 8:0.87, 9:0.87, 10:0.83, 11:0.84, 12:0.86, 13:0.85, 14:0.83, 15:0.84, 16:0.84} },
+    "Letter-Number Sequencing": { m1:9.8, sd1:2.7, m2:10.2, sd2:2.8, r:0.77, rCorrected:0.82, n:212, rInternal:0.86, rInternalAgeMax:16, rInternalByAge:{6:0.93, 7:0.9, 8:0.83, 9:0.87, 10:0.8, 11:0.82, 12:0.85, 13:0.86, 14:0.89, 15:0.86, 16:0.82} },
+    "Coding": { m1:10, sd1:2.9, m2:11.3, sd2:3.1, r:0.79, rCorrected:0.81, n:216, rStability:0.82, rStabilityAgeMax:16, rStabilityByAge:{6:0.78, 7:0.78, 8:0.79, 9:0.79, 10:0.81, 11:0.81, 12:0.82, 13:0.82, 14:0.86, 15:0.86, 16:0.86} },
+    "Symbol Search": { m1:10, sd1:2.7, m2:11.5, sd2:3.2, r:0.76, rCorrected:0.8, n:209, rStability:0.81, rStabilityAgeMax:16, rStabilityByAge:{6:0.83, 7:0.83, 8:0.8, 9:0.8, 10:0.79, 11:0.79, 12:0.67, 13:0.67, 14:0.87, 15:0.87, 16:0.87} },
+    "Cancellation": { m1:9.8, sd1:2.9, m2:11.1, sd2:3.2, r:0.79, rCorrected:0.82, n:209, rStability:0.82, rStabilityAgeMax:16, rStabilityByAge:{6:0.8, 7:0.8, 8:0.83, 9:0.83, 10:0.84, 11:0.84, 12:0.81, 13:0.81, 14:0.81, 15:0.81, 16:0.81} }
   },
 
   /* ---- WAIS-IV Longest Span, process level -------------------------------

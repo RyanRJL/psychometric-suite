@@ -288,10 +288,10 @@ function eachRetestEntry(fn) {
   eachNormEntry((e, g, n) => { if (!e.singleAdministration) fn(e, g, n); });
 }
 
-check('115 groups and 659 entries present', () => {
+check('116 groups and 671 entries present', () => {
   const groups = Object.keys(D.normDB).length;
   let n = 0; eachNormEntry(() => n++);
-  return (groups === 115 && n === 659) || 'got ' + groups + ' groups / ' + n + ' entries';
+  return (groups === 116 && n === 671) || 'got ' + groups + ' groups / ' + n + ' entries';
 });
 check('every retest entry has m1, sd1, m2, sd2 and r', () => {
   const bad = [];
@@ -363,16 +363,32 @@ check('difference variance sd1^2 + sd2^2 - 2r*sd1*sd2 is positive everywhere', (
   });
   return bad.length === 0 || bad.join('; ');
 });
-check('rCorrected present on exactly 233 of the 590 retest entries', () => {
+check('rCorrected present on exactly 267 of the retest entries', () => {
   let n = 0; eachNormEntry(e => { if (Number.isFinite(e.rCorrected)) n++; });
-  return n === 233 || 'got ' + n;
+  return n === 267 || 'got ' + n;
 });
-check('D-KEFS, CVLT-C and WISC-V carry no rCorrected at all', () => {
+check('D-KEFS and CVLT-C carry no rCorrected, but WISC-V now does', () => {
+  /* WISC-V USED TO BE ON THIS LIST, AND THAT WAS AN ERROR OF FACT, not a
+     property of the source. Its Technical Manual Table 4.7 prints a corrected
+     r for all 34 rows; the database simply never captured it. Nothing scored
+     differently — rInternal outranks rCorrected in the CI chain and reliable
+     change defaults to the raw r — but the corrected-r option on the Basic RCI
+     page was silently unusable for WISC-V alone.
+
+     D-KEFS and CVLT-C are genuinely without it, so the check keeps biting for
+     them, and now asserts the WISC-V position instead of assuming it. */
   const bad = [];
   eachNormEntry((e, g, n) => {
-    if (/^(D-KEFS|CVLT-C|WISC-V)\b/.test(g) && Number.isFinite(e.rCorrected)) bad.push(g + ' / ' + n);
+    if (/^(D-KEFS|CVLT-C)\b/.test(g) && Number.isFinite(e.rCorrected)) bad.push(g + ' / ' + n + ' unexpectedly has one');
   });
-  return bad.length === 0 || bad.join('; ');
+  let wisc = 0, wiscTotal = 0;
+  eachNormEntry((e, g) => {
+    if (!/^WISC-V\b/.test(g)) return;
+    wiscTotal++;
+    if (Number.isFinite(e.rCorrected)) wisc++;
+  });
+  if (wisc !== wiscTotal) bad.push(wiscTotal - wisc + ' WISC-V entries lack the corrected r Table 4.7 publishes');
+  return bad.length === 0 || bad.slice(0, 3).join('; ');
 });
 check('group keys use the U+00B7 middle dot as separator', () => {
   const bad = Object.keys(D.normDB).filter(k => k.includes(' - ') || !k.includes('·'));
@@ -2709,7 +2725,7 @@ check('rInternal appears only where a publisher derives its own intervals from i
        WAIS-IV Technical Manual Table 4.1   21 entries, All Ages groups only
        RBANS Update Table 3.6            9 entries, All Ages groups only
        WMS-IV Technical Manual Table 3.1 30 entries, on the two BATTERY groups
-       WISC-V Technical Manual Table 4.1 19 entries, All Ages groups only
+       WISC-V Technical Manual Table 4.1 29 entries, All Ages groups only
 
      RBANS is the first source whose reliability table is MIXED-BASIS within
      itself: five of its fourteen rows carry footnote a, "estimates based on
@@ -2734,7 +2750,7 @@ check('rInternal appears only where a publisher derives its own intervals from i
   const wais  = carriers.filter((c) => /^WAIS-IV (Core Subtests|Indices|Process Scores|Supplementary Subtests) · All Ages \//.test(c));
   const rbans = carriers.filter((c) => /^RBANS (Subtests|Indices) · All Ages \//.test(c));
   const wms   = carriers.filter((c) => /^WMS-IV (Subtests|Indices) · Ages (16-69|65-90) \//.test(c));
-  const wisc  = carriers.filter((c) => /^WISC-V (Subtests|Indices) · All Ages \//.test(c));
+  const wisc  = carriers.filter((c) => /^WISC-V (Subtests|Indices|Process Scores) · All Ages \//.test(c));
   const stray = carriers.filter((c) => !cvltc.includes(c) && !dkefs.includes(c) && !orig.includes(c) && !wais.includes(c) && !rbans.includes(c) && !wms.includes(c) && !wisc.includes(c));
   const bad = [];
   if (cvltc.length !== 3) bad.push('CVLT-C carriers: ' + cvltc.length + ', expected 3');
@@ -2748,7 +2764,10 @@ check('rInternal appears only where a publisher derives its own intervals from i
   if (wms.length !== 30) bad.push('WMS-IV carriers: ' + wms.length + ', expected 30');
   /* 19, not 22: Coding, Symbol Search and Cancellation are the three the
      manual names as improper for split-half, and are held in rStability. */
-  if (wisc.length !== 19) bad.push('WISC-V carriers: ' + wisc.length + ', expected 19');
+  /* 29 = 13 core subtests (16 less the three speeded) + 11 indices (6 primary
+     + 5 ancillary) + 5 process scores (7 less the two Cancellation ones).
+     The five excluded are held in rStability and counted by section 29. */
+  if (wisc.length !== 29) bad.push('WISC-V carriers: ' + wisc.length + ', expected 29');
   if (stray.length) bad.push('undocumented: ' + stray.slice(0, 3).join(', '));
   return bad.length === 0 || bad.join('; ');
 });
@@ -3945,11 +3964,13 @@ check('the five footnote-a measures are stability, and are never called internal
      31 pin the WMS-IV and WISC-V carriers. */
   const rbans = stab.filter((c) => /^RBANS Subtests · All Ages \//.test(c));
   const wms = stab.filter((c) => /^WMS-IV Subtests · Ages (16-69|65-90) \/ Verbal Paired Associates II - Word Recall$/.test(c));
-  const wisc = stab.filter((c) => /^WISC-V Subtests · All Ages \/ (Coding|Symbol Search|Cancellation)$/.test(c));
+  const wisc = stab.filter((c) => /^WISC-V (Subtests|Process Scores) · All Ages \/ (Coding|Symbol Search|Cancellation|Cancellation Random|Cancellation Structured)$/.test(c));
   if (rbans.length !== 5) bad.push('RBANS rStability carriers: ' + rbans.length + ', expected 5');
   if (wms.length !== 2) bad.push('WMS-IV rStability carriers: ' + wms.length + ', expected 2');
-  if (wisc.length !== 3) bad.push('WISC-V rStability carriers: ' + wisc.length + ', expected 3');
-  if (stab.length !== 10) bad.push('rStability appears on ' + stab.length + ' entries, expected 10 (RBANS 5 + WMS-IV 2 + WISC-V 3)');
+  /* 5 for WISC-V: the three speeded subtests the manual names, plus the two
+     Cancellation process scores derived from the same speeded task. */
+  if (wisc.length !== 5) bad.push('WISC-V rStability carriers: ' + wisc.length + ', expected 5');
+  if (stab.length !== 12) bad.push('rStability appears on ' + stab.length + ' entries, expected 12 (RBANS 5 + WMS-IV 2 + WISC-V 5)');
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -4635,6 +4656,117 @@ check('WISC-V splits its two average columns the way the other manuals do', () =
   return bad.length === 0 || bad.join('; ');
 });
 
+check('Table 4.7 — the retest study, pinned for every measure it covers', () => {
+  /* PINNED SOURCE: WISC-V Technical and Interpretive Manual, Table 4.7,
+     "Stability Coefficients of Subtest, Process, and Composite Scores", all
+     ages. 34 rows: first- and second-testing means and SDs, n, r12, and a
+     corrected r.
+
+     Transcribed from a photograph of the table rather than a spreadsheet, so
+     it was checked two ways before being stored. Cohen's (1996) Formula 10.4
+     reproduces the printed Standard Difference from the means and SDs on 34 of
+     34 rows, which no misread digit survives; and the 22 measures already in
+     normDB matched their m1/sd1/m2/sd2/n/r exactly, which also proves the r12
+     column was not confused with the corrected one — comparing stored r
+     against the corrected column matches 1 of 22, against r12 22 of 22. */
+  const NEWROWS = [
+  ['proc', 'Block Design No Time Bonus', 9.6, 2.8, 10.8, 3.2, 207, 0.78, 0.81],
+  ['proc', 'Block Design Partial', 9.8, 3.1, 10.8, 3.1, 208, 0.84, 0.84],
+  ['proc', 'Digit Span Forward', 9.9, 2.7, 10.2, 3.0, 213, 0.78, 0.82],
+  ['proc', 'Digit Span Backward', 9.9, 2.8, 10.2, 2.9, 201, 0.72, 0.76],
+  ['proc', 'Digit Span Sequencing', 9.5, 2.7, 10.1, 2.9, 200, 0.74, 0.79],
+  ['proc', 'Cancellation Random', 9.9, 2.9, 11.1, 2.9, 200, 0.78, 0.81],
+  ['proc', 'Cancellation Structured', 9.9, 2.8, 10.9, 3.1, 209, 0.78, 0.82],
+  ['idx', 'Quantitative Reasoning Index', 99.2, 13.4, 102.4, 13.7, 216, 0.76, 0.81],
+  ['idx', 'Auditory Working Memory Index', 98.7, 13.3, 100.9, 14.6, 217, 0.85, 0.88],
+  ['idx', 'Nonverbal Index', 98.5, 14.0, 105.5, 13.8, 216, 0.86, 0.88],
+  ['idx', 'General Ability Index', 98.0, 13.7, 103.6, 13.3, 213, 0.89, 0.91],
+  ['idx', 'Cognitive Proficiency Index', 99.3, 14.0, 105.5, 14.8, 212, 0.84, 0.86],
+  ];
+  const BACKFILL = [
+  ['sub', 'Similarities', 0.88],
+  ['sub', 'Vocabulary', 0.9],
+  ['sub', 'Information', 0.88],
+  ['sub', 'Comprehension', 0.83],
+  ['sub', 'Block Design', 0.81],
+  ['sub', 'Visual Puzzles', 0.8],
+  ['sub', 'Matrix Reasoning', 0.78],
+  ['sub', 'Figure Weights', 0.82],
+  ['sub', 'Picture Concepts', 0.71],
+  ['sub', 'Arithmetic', 0.84],
+  ['sub', 'Digit Span', 0.82],
+  ['sub', 'Picture Span', 0.8],
+  ['sub', 'Letter-Number Sequencing', 0.82],
+  ['sub', 'Coding', 0.81],
+  ['sub', 'Symbol Search', 0.8],
+  ['sub', 'Cancellation', 0.82],
+  ['idx', 'Verbal Comprehension Index', 0.94],
+  ['idx', 'Visuospatial Index', 0.84],
+  ['idx', 'Fluid Reasoning Index', 0.75],
+  ['idx', 'Working Memory Index', 0.82],
+  ['idx', 'Processing Speed Index', 0.83],
+  ['idx', 'Full Scale IQ', 0.92],
+  ];
+  const G = { sub:'WISC-V Subtests · All Ages', idx:'WISC-V Indices · All Ages',
+              proc:'WISC-V Process Scores · All Ages' };
+  const bad = [];
+  NEWROWS.forEach(([g, name, m1, sd1, m2, sd2, n, r, rc]) => {
+    const e = D.normDB[G[g]][name];
+    if (!e) { bad.push(name + ' is missing'); return; }
+    const want = { m1, sd1, m2, sd2, n, r, rCorrected: rc };
+    Object.entries(want).forEach(([f, v]) => {
+      if (e[f] !== v) bad.push(name + ' ' + f + ': stored ' + e[f] + ', Table 4.7 prints ' + v);
+    });
+  });
+  BACKFILL.forEach(([g, name, rc]) => {
+    const e = D.normDB[G[g]][name];
+    if (e.rCorrected !== rc) bad.push(name + ' rCorrected: stored ' + e.rCorrected + ', Table 4.7 prints ' + rc);
+  });
+  if (NEWROWS.length + BACKFILL.length !== 34) bad.push('expected all 34 rows of Table 4.7, have ' + (NEWROWS.length + BACKFILL.length));
+  /* The checksum that validated the photograph, kept live: if a mean or SD is
+     ever edited, its row's Standard Difference stops reconciling. */
+  const SD_DIFF = { 'Block Design No Time Bonus':0.40, 'Block Design Partial':0.32,
+    'Digit Span Forward':0.11, 'Digit Span Backward':0.11, 'Digit Span Sequencing':0.21,
+    'Cancellation Random':0.41, 'Cancellation Structured':0.34,
+    'Quantitative Reasoning Index':0.24, 'Auditory Working Memory Index':0.16,
+    'Nonverbal Index':0.50, 'General Ability Index':0.41, 'Cognitive Proficiency Index':0.43 };
+  Object.entries(SD_DIFF).forEach(([name, want]) => {
+    const g = name.includes('Index') ? 'idx' : 'proc';
+    const e = D.normDB[G[g]][name];
+    const d = (e.m2 - e.m1) / Math.sqrt((e.sd1 ** 2 + e.sd2 ** 2) / 2);
+    if (Math.round(d * 100) / 100 !== want) bad.push(name + ': standard difference ' + d.toFixed(3) + ', Table 4.7 prints ' + want);
+  });
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('the two Cancellation process scores are stability, the other five are not', () => {
+  /* The manual names Cancellation among the subtests for which "the split-half
+     coefficient is not a proper reliability estimate", and its two process
+     scores inherit that. Confirmed from the data as well as the prose: a
+     stability coefficient is broadcast from the retest study's coarse bands,
+     so it repeats across the 11 single-year bands, where an internal-
+     consistency row varies freely. */
+  const P = D.normDB['WISC-V Process Scores · All Ages'];
+  const distinct = (name) => {
+    const e = P[name];
+    const t = e.rInternalByAge || e.rStabilityByAge;
+    return new Set(Object.values(t)).size;
+  };
+  const bad = [];
+  ['Cancellation Random', 'Cancellation Structured'].forEach((n) => {
+    if (!P[n].rStabilityByAge) bad.push(n + ' is not held as a stability coefficient');
+    if (Number.isFinite(P[n].rInternal) || P[n].rInternalByAge) bad.push(n + ' is labelled internal consistency');
+    if (distinct(n) > 4) bad.push(n + ' varies across ' + distinct(n) + ' values — that is not a broadcast stability coefficient');
+  });
+  ['Block Design No Time Bonus', 'Block Design Partial', 'Digit Span Forward',
+   'Digit Span Backward', 'Digit Span Sequencing'].forEach((n) => {
+    if (!P[n].rInternalByAge) bad.push(n + ' lost its internal-consistency lookup');
+    if (Number.isFinite(P[n].rStability) || P[n].rStabilityByAge) bad.push(n + ' is labelled stability');
+    if (distinct(n) < 6) bad.push(n + ' varies across only ' + distinct(n) + ' values — check whether it is really internal consistency');
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('the stored averages are Table 4.1\'s own average column', () => {
   const bad = [];
   WISC_T.forEach(([fam, , name, stab, , cAvg]) => {
@@ -4701,7 +4833,7 @@ check('the reliability column shows what the app would actually use', () => {
       if (shown.r !== used.r) bad.push(group + ' / ' + name + ': table shows ' + shown.r + ', the renderer uses ' + used.r);
     });
   });
-  if (n !== 659) bad.push('expected 659 entries, walked ' + n);
+  if (n !== 671) bad.push('expected 671 entries, walked ' + n);
   if (withR < 550) bad.push('only ' + withR + ' entries produced an interval — the comparison has stopped covering the database');
   return bad.length === 0 || bad.slice(0, 4).join('; ');
 });
@@ -4751,7 +4883,7 @@ check('every group resolves to exactly one instrument', () => {
     const inst = dbInstrument(g, false);
     tabs[inst] = (tabs[inst] || 0) + 1;
   });
-  const want = { 'CVLT-3':4, 'CVLT-C':3, 'D-KEFS':36, 'D-KEFS Advanced':23, 'RBANS':9, 'WAIS-IV':34, 'WISC-V':2, 'WMS-IV':4 };
+  const want = { 'CVLT-3':4, 'CVLT-C':3, 'D-KEFS':36, 'D-KEFS Advanced':23, 'RBANS':9, 'WAIS-IV':34, 'WISC-V':3, 'WMS-IV':4 };
   Object.entries(want).forEach(([k, v]) => {
     if (tabs[k] !== v) bad.push(k + ': ' + (tabs[k] || 0) + ' groups, expected ' + v);
   });
