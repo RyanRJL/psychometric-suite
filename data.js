@@ -103,6 +103,23 @@ const WMS_COEF = [
    block spans up to 18.9 points (Matrix-only FSIQ, K–7th grade −11.57 through
    Bachelor's +7.13) and the African-American term reaches −8.31.
 
+   THAT 18.9 DOES NOT RECONCILE WITH THE ENDPOINTS BESIDE IT: 7.13 − (−11.57)
+   is 18.70. It cannot be settled from this project, because the education,
+   ethnicity and region coefficients are stored nowhere here — only the applied
+   terms are, and check.js §5 pins those alone. Table eA5.8 itself is needed.
+   Two candidates: the span is right and the parenthetical names the wrong top
+   category (a 17+/graduate dummy at ≈ +7.33 would give exactly 18.90, and US
+   education dummy sets in this literature usually do run past Bachelor's), or
+   the endpoints are right and 18.9 is a slip for 18.70. The first is likelier
+   on shape, which is not evidence.
+
+   So the caution box on the OPIE-4 tab no longer states a figure at all: it
+   gives the direction of the bias and says the tool cannot quantify it, which
+   is true whichever way the above resolves. DO NOT PUT A NUMBER BACK ON SCREEN
+   until Table eA5.8 has been re-read — an unciteable figure in a warning is
+   worse than no figure, this being a page whose whole job is to say that these
+   numbers should not be quoted.
+
    Why they are not mapped to UK equivalents: the dummies encode how unusual a
    given attainment level is *within the US population they were fitted on*, not
    years of schooling, and that does not transfer.

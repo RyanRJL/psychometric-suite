@@ -8996,6 +8996,97 @@ body.rb-docked-active{padding-right:0}
   text-align:left;
   padding-left:24px;
 }
+
+/* Column-heading explainers.
+   Standalone classes (`change-overview-colh*`) and a private attribute
+   (`data-coltip`, not `data-tooltip`) so nothing here can collide with the
+   global [data-tooltip] rules in design-system.css. The tooltip drops BELOW
+   the heading — the table sits at the top of the panel, so a popover above
+   the header row would open off the top of the viewport. */
+#change-analysis .change-overview-colh-label{
+  position:relative;
+  display:inline-block;
+  cursor:help;
+  text-decoration:underline dotted rgba(20,15,5,0.28);
+  text-underline-offset:3px;
+  outline:none;
+}
+#change-analysis .change-overview-colh-label:hover,
+#change-analysis .change-overview-colh-label:focus-visible{
+  color:#9C3D2A;
+  text-decoration-color:rgba(156,61,42,0.55);
+}
+#change-analysis .change-overview-colh-label::before{
+  content:attr(data-coltip);
+  position:absolute;
+  top:calc(100% + 10px);
+  left:50%;
+  transform:translateX(-50%) translateY(-4px);
+  width:320px;
+  padding:12px 14px;
+  /* Dark, to match every other tooltip in the app. The white treatment a few
+     rules below on .change-overview-info is dead letter: design-system.css
+     §30a forces [data-tooltip] popovers dark with !important, so the "?"
+     bubbles beside it render dark whatever styles.css asks for. These use a
+     private attribute and so are not caught by that rule — they have to state
+     the dark look themselves or the two tooltips on one table disagree. */
+  background:rgba(15,18,24,0.96);
+  color:#FFFFFF;
+  border:1px solid rgba(15,18,24,0.96);
+  border-radius:8px;
+  font-family:var(--sans);
+  font-size:12.5px;
+  line-height:1.55;
+  font-weight:400;
+  letter-spacing:0;
+  text-transform:none;
+  text-decoration:none;
+  text-align:left;
+  white-space:normal;
+  z-index:60;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 160ms var(--ease), transform 160ms var(--ease);
+  box-shadow:0 12px 28px rgba(15,18,24,0.22);
+}
+#change-analysis .change-overview-colh-label::after{
+  content:"";
+  position:absolute;
+  top:calc(100% + 4px);
+  left:50%;
+  transform:translateX(-50%);
+  border-width:0 6px 6px 6px;
+  border-style:solid;
+  border-color:transparent transparent rgba(15,18,24,0.96) transparent;
+  z-index:61;
+  opacity:0;
+  transition:opacity 160ms var(--ease);
+}
+/* Last dimension column: a centred popover would hang off the right edge of
+   the table on a narrow window, so anchor it to the heading's right instead. */
+#change-analysis .change-overview-colh-label.is-end::before{
+  left:auto;
+  right:0;
+  transform:translateY(-4px);
+}
+#change-analysis .change-overview-colh-label.is-end::after{
+  left:auto;
+  right:16px;
+  transform:none;
+}
+#change-analysis .change-overview-colh-label:hover::before,
+#change-analysis .change-overview-colh-label:focus-visible::before{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+#change-analysis .change-overview-colh-label.is-end:hover::before,
+#change-analysis .change-overview-colh-label.is-end:focus-visible::before{
+  transform:translateY(0);
+}
+#change-analysis .change-overview-colh-label:hover::after,
+#change-analysis .change-overview-colh-label:focus-visible::after{
+  opacity:1;
+}
 #change-analysis .change-overview-row{
   cursor:pointer;
   transition:background 140ms var(--ease);
@@ -9059,14 +9150,17 @@ body.rb-docked-active{padding-right:0}
   vertical-align:middle;
 }
 
-/* Method-title row: title on the left, info button pushed to the far right
-   of the cell so all "?" buttons sit in a single vertical column regardless
-   of title length. */
+/* Method-title row: the "?" sits immediately after the title it explains.
+   It used to be pushed to the far right of the cell (justify-content:
+   space-between) so the buttons formed a tidy vertical column — but the
+   method column is ~40% of the table, which left the button floating a long
+   way from the row it belongs to and reading as unrelated to it. Proximity
+   beats alignment here. */
 #change-analysis .change-overview-table-titlerow{
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:12px;
+  justify-content:flex-start;
+  gap:8px;
 }
 #change-analysis .change-overview-table-title{
   flex:0 1 auto;
@@ -14512,17 +14606,24 @@ input[type="number"].ds-inline-bar-age-input{
         <div class="home-db-card-arrow">→</div>
       </button>
 
-      <button class="home-db-card home-db-card--muted" onclick="document.querySelector('.nav-item[data-target=&quot;about&quot;]').click()">
+      <!-- Score Charts. Not `home-db-card--muted`: that dimming marked the
+           reference tile that used to sit here as secondary to the tools
+           around it, and this is a tool. Methods & References keeps its
+           sidebar entry (08) and its footer link, so it is still two clicks
+           from anywhere; it just no longer takes a slot in the tool grid.
+           Bars scaled from the top-bar icon (20 -> 22 viewBox) so the two
+           read as the same page. -->
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;charts&quot;]').click()">
         <div class="home-db-card-icon">
           <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 2h10l4 4v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/>
-            <polyline points="14,2 14,6 18,6"/>
-            <line x1="7" y1="10" x2="15" y2="10"/>
-            <line x1="7" y1="14" x2="12" y2="14"/>
+            <line x1="3" y1="18.5" x2="19" y2="18.5"/>
+            <line x1="6" y1="15.5" x2="6" y2="10"/>
+            <line x1="11" y1="15.5" x2="11" y2="4.5"/>
+            <line x1="16" y1="15.5" x2="16" y2="7.5"/>
           </svg>
         </div>
-        <div class="home-db-card-name">Methods &amp; References</div>
-        <div class="home-db-card-desc">Formulas, citations and statistical conventions used throughout the suite</div>
+        <div class="home-db-card-name">Score Charts</div>
+        <div class="home-db-card-desc">Chart scores entered elsewhere in the suite against classification and reliable-change bands</div>
         <div class="home-db-card-arrow">→</div>
       </button>
 
@@ -15780,17 +15881,19 @@ input[type="number"].ds-inline-bar-age-input{
     <!-- Tab C: OPIE-4 vs WAIS-IV -->
     <div class="pre-tab-content" id="pre-opiepredict">
       <div class="caution-box" style="margin-top:0;margin-bottom:14px">
-        <strong>Illustrative only — do not quote these numbers in a UK report.</strong>
-        The coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published
-        equations also carry US <em>education</em>, <em>ethnicity</em> and <em>region</em> terms that
-        are not applied here. Every patient is therefore scored at the US reference category:
-        <em>12th-grade high-school graduate, not African-American, not resident in the US West</em>.
-        Those categories have no valid UK equivalent — the US education dummies encode how unusual a
-        given attainment level is in the US population, not years of schooling, so they cannot be
-        mapped across. In the source table that omitted block spans up to 18.9 points.
-        Expect these estimates to run <strong>high</strong> for patients who left school early and
-        <strong>low</strong> for graduates, by an amount this tool cannot quantify.
-        For a UK demographic estimate use the Crawford &amp; Allan (2001) row on the Estimates tab.
+        <strong>Illustrative only: do not quote these numbers in a UK report.</strong>
+        The coefficients here reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the
+        published equations also include terms for US <em>education</em>, <em>ethnicity</em>
+        and <em>region</em>, and this tool does not apply them. Every patient is therefore
+        scored as though they were the US reference case:
+        <em>a 12th-grade high-school graduate, not African-American, and not living in the
+        US West</em>. Those categories have no UK equivalent. The US education terms do not
+        count years of schooling; they capture how unusual a given level of attainment is
+        within the US population, so there is nothing here to map them onto.
+        Expect these estimates to run <strong>high</strong> for patients who left school
+        early and <strong>low</strong> for graduates, by an amount this tool cannot quantify.
+        If you want a UK demographic estimate, use the Crawford &amp; Allan (2001) row on the
+        Estimates tab.
       </div>
       <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter age (16–90), sex, plus Vocabulary and/or Matrix Reasoning raw scores in the Inputs panel above. Rows appear automatically for each model whose required inputs are present. Enter the patient's actual FSIQ / GAI in the Achieved column - the prorated index is calculated per ACS manual procedures, excluding the subtest(s) used as predictors. The three FSIQ rows predict three different prorated criteria and are not expected to agree with each other.</p>
 
@@ -16191,6 +16294,23 @@ const WMS_COEF = [
    Omitting them is not a rounding detail. In the source table the education
    block spans up to 18.9 points (Matrix-only FSIQ, K–7th grade −11.57 through
    Bachelor's +7.13) and the African-American term reaches −8.31.
+
+   THAT 18.9 DOES NOT RECONCILE WITH THE ENDPOINTS BESIDE IT: 7.13 − (−11.57)
+   is 18.70. It cannot be settled from this project, because the education,
+   ethnicity and region coefficients are stored nowhere here — only the applied
+   terms are, and check.js §5 pins those alone. Table eA5.8 itself is needed.
+   Two candidates: the span is right and the parenthetical names the wrong top
+   category (a 17+/graduate dummy at ≈ +7.33 would give exactly 18.90, and US
+   education dummy sets in this literature usually do run past Bachelor's), or
+   the endpoints are right and 18.9 is a slip for 18.70. The first is likelier
+   on shape, which is not evidence.
+
+   So the caution box on the OPIE-4 tab no longer states a figure at all: it
+   gives the direction of the bias and says the tool cannot quantify it, which
+   is true whichever way the above resolves. DO NOT PUT A NUMBER BACK ON SCREEN
+   until Table eA5.8 has been re-read — an unciteable figure in a warning is
+   worse than no figure, this being a page whose whole job is to say that these
+   numbers should not be quoted.
 
    Why they are not mapped to UK equivalents: the dummies encode how unusual a
    given attainment level is *within the US population they were fitted on*, not
@@ -20583,9 +20703,16 @@ const APA_NOTES = {
     'Difference = Achieved − Predicted.',
     'Base rate = estimated % at or below this discrepancy, from a normal model with SD = SEE (negative discrepancies only). These are parametric estimates, not observed standardisation-sample frequencies, and run slightly low against published empirical figures.'
   ],
-  'pre-opiepredict': () => [
+  'pre-opiepredict': ctx => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
-    'Illustrative only in a UK context; these values should not be quoted as concrete premorbid estimates. The published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Those categories have no valid UK equivalent.',
+    /* The UK caveat MUST travel with the exported table — pasted into a report
+       it is the only thing standing between these numbers and a reader who
+       takes them as premorbid estimates. On screen it is redundant: the
+       .caution-box at the top of this tab already states it at greater length,
+       so the mirrored note (ctx.onScreen) drops it rather than warning twice on
+       one page. Do not delete it outright; check.js §15 pins both halves. */
+    ctx.onScreen ? '' :
+      'Illustrative only in a UK context; these values should not be quoted as concrete premorbid estimates. The published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Those categories have no valid UK equivalent.',
     'The three FSIQ rows predict three different prorated criteria, as do the three GAI rows; they are not interchangeable and are not expected to agree.',
     'Difference = Achieved − Predicted.',
     'Base rate = % of the US standardisation sample at or below this discrepancy (ACS Table eA5.12).'
@@ -20601,12 +20728,16 @@ function apaNoteHtml(id, ctx){
 }
 /* Fill the on-screen info boxes that mirror an APA note, so the guidance beside
    the interactive table and the note in the generated table stay identical.
-   Only context-free notes can be mirrored this way. */
+   Only context-free notes can be mirrored this way.
+
+   `onScreen` is the ONE licensed difference between the two renderings: a note
+   may drop a sentence that the surrounding page already states in full. It may
+   not add, soften or reword one — the exported note stays the superset. */
 function renderStaticApaNotes(){
   document.querySelectorAll('[data-apa-note]').forEach(el => {
     const build = APA_NOTES[el.dataset.apaNote];
     if (!build) return;
-    const body = build({}).filter(s => s && s.trim()).join(' ');
+    const body = build({ onScreen: true }).filter(s => s && s.trim()).join(' ');
     if (body) el.innerHTML = `<strong>Note.</strong> ${body}`;
   });
 }
@@ -29956,6 +30087,23 @@ if (document.readyState === 'loading'){
     'rci-srb':      'Regression-based reliable change (McSweeney et al., 1993). Predicts each patient\'s expected retest score from their baseline using the norm sample\'s regression parameters, then standardises the residual against the SEE. Handles regression to the mean.',
     'rci-crawford': 'Most rigorous. Crawford & Garthwaite (2007) extend the regression-based approach with a t-distributed test that incorporates the normative sample size and the patient\'s distance from the norm mean. Preferred when N is modest or the patient is far from the norm mean.'
   };
+  /* Column-heading explainers. Each column names a distinct threat to
+     reading a retest difference, and the tick pattern only means anything to
+     someone who knows which threat is which — "regression to mean" in
+     particular is routinely read as the opposite of what it is. Hover or
+     focus a heading to see the definition. Kept separate from
+     METHOD_EXPLAINERS above: those describe a method, these a concept. */
+  const DIMENSION_EXPLAINERS = {
+    'me':       'No test measures without error, so a score would vary somewhat on retest even if the patient had not changed at all. Methods that adjust for it use the test\'s reliability and standard deviation to work out how large a difference has to be before it exceeds that expected fluctuation.',
+    'practice': 'Taking the same test twice tends to raise the second score by itself, through familiarity with the format, remembered items or rehearsed strategy. Methods that adjust for it subtract the average gain the normative retest sample showed, so an ordinary practice gain is not read as recovery.',
+    'rtm':      'On retest, extreme scores drift back towards the mean: unusually low first scores tend to rise and unusually high ones tend to fall, purely as a statistical consequence of imperfect reliability. Methods that adjust for it predict the expected retest score from the baseline by regression rather than assuming it should stay the same.',
+    'n':        'The normative regression parameters are themselves estimates from a finite sample, and a prediction for a patient far from the norm mean is less certain than one near it. Methods that adjust for it widen the standard error accordingly and use a t-distribution, which matters most when the normative N is modest.'
+  };
+  function makeColHead(key, labelHtml, atEnd){
+    return `<th class="change-overview-colh">` +
+      `<span class="change-overview-colh-label${atEnd ? ' is-end' : ''}" tabindex="0" data-coltip="${DIMENSION_EXPLAINERS[key]}">${labelHtml}</span>` +
+    `</th>`;
+  }
   const TICK_SVG = `<svg class="change-overview-tick" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,8.5 7,12 13,4"/></svg>`;
   function makeRow(id, title, cite){
     const flags = ADJUST_BY_METHOD[id];
@@ -29985,10 +30133,10 @@ if (document.readyState === 'loading'){
       <thead>
         <tr>
           <th class="change-overview-table-method-h">Method</th>
-          <th>Measurement<br>error</th>
-          <th>Practice<br>effect</th>
-          <th>Regression<br>to mean</th>
-          <th>Sample-size<br>adjustment</th>
+          ${makeColHead('me',       'Measurement<br>error')}
+          ${makeColHead('practice', 'Practice<br>effect')}
+          ${makeColHead('rtm',      'Regression<br>to mean')}
+          ${makeColHead('n',        'Sample-size<br>adjustment', true)}
           <th aria-hidden="true"></th>
         </tr>
       </thead>

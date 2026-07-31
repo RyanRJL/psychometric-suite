@@ -2675,9 +2675,16 @@ const APA_NOTES = {
     'Difference = Achieved − Predicted.',
     'Base rate = estimated % at or below this discrepancy, from a normal model with SD = SEE (negative discrepancies only). These are parametric estimates, not observed standardisation-sample frequencies, and run slightly low against published empirical figures.'
   ],
-  'pre-opiepredict': () => [
+  'pre-opiepredict': ctx => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
-    'Illustrative only in a UK context; these values should not be quoted as concrete premorbid estimates. The published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Those categories have no valid UK equivalent.',
+    /* The UK caveat MUST travel with the exported table — pasted into a report
+       it is the only thing standing between these numbers and a reader who
+       takes them as premorbid estimates. On screen it is redundant: the
+       .caution-box at the top of this tab already states it at greater length,
+       so the mirrored note (ctx.onScreen) drops it rather than warning twice on
+       one page. Do not delete it outright; check.js §15 pins both halves. */
+    ctx.onScreen ? '' :
+      'Illustrative only in a UK context; these values should not be quoted as concrete premorbid estimates. The published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Those categories have no valid UK equivalent.',
     'The three FSIQ rows predict three different prorated criteria, as do the three GAI rows; they are not interchangeable and are not expected to agree.',
     'Difference = Achieved − Predicted.',
     'Base rate = % of the US standardisation sample at or below this discrepancy (ACS Table eA5.12).'
@@ -2693,12 +2700,16 @@ function apaNoteHtml(id, ctx){
 }
 /* Fill the on-screen info boxes that mirror an APA note, so the guidance beside
    the interactive table and the note in the generated table stay identical.
-   Only context-free notes can be mirrored this way. */
+   Only context-free notes can be mirrored this way.
+
+   `onScreen` is the ONE licensed difference between the two renderings: a note
+   may drop a sentence that the surrounding page already states in full. It may
+   not add, soften or reword one — the exported note stays the superset. */
 function renderStaticApaNotes(){
   document.querySelectorAll('[data-apa-note]').forEach(el => {
     const build = APA_NOTES[el.dataset.apaNote];
     if (!build) return;
-    const body = build({}).filter(s => s && s.trim()).join(' ');
+    const body = build({ onScreen: true }).filter(s => s && s.trim()).join(' ');
     if (body) el.innerHTML = `<strong>Note.</strong> ${body}`;
   });
 }

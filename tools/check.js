@@ -1395,6 +1395,72 @@ check('the OPIE tooltips state that sex and an age range are required', () => {
   return (/sex/i.test(t) && /16-90|16–90/.test(t)) || 'opieDefault no longer states the input requirements';
 });
 
+check('every adjustment column on the Change Analysis overview explains itself', () => {
+  /* The overview table asserts a tick pattern against four column headings.
+     A reader who does not know what "regression to mean" is cannot read the
+     pattern at all, so each heading carries a hover explainer. Two ways that
+     silently rots: a heading gains a key with no entry (the attribute renders
+     the literal "undefined"), or a column is added to ADJUST_BY_METHOD's flag
+     array without a heading, which slides every tick one column left. */
+  const heads = [...HTML_SRC.matchAll(/makeColHead\('([a-z]+)'/g)].map(m => m[1]);
+  const block = HTML_SRC.match(/const DIMENSION_EXPLAINERS = \{[\s\S]*?\n  \};/);
+  if (!block) return 'DIMENSION_EXPLAINERS is no longer declared in index.html';
+  const defined = [...block[0].matchAll(/'([a-z]+)':\s*'/g)].map(m => m[1]);
+  const bad = [];
+
+  const undefinedKeys = heads.filter(k => !defined.includes(k));
+  if (undefinedKeys.length) bad.push('headings with no explainer: ' + undefinedKeys.join(', '));
+  const unused = defined.filter(k => !heads.includes(k));
+  if (unused.length) bad.push('explainers no heading uses: ' + unused.join(', '));
+
+  /* One heading per tick, checked against the flags the rows actually emit. */
+  const flags = HTML_SRC.match(/'rci-crawford':\s*\[([01,\s]+)\]/);
+  if (!flags) return 'could not locate ADJUST_BY_METHOD in index.html';
+  const width = flags[1].split(',').length;
+  if (heads.length !== width) {
+    bad.push(heads.length + ' headings against ' + width + ' tick columns');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the OPIE UK caveat is exported once and shown on screen once', () => {
+  /* The OPIE tab used to carry the same warning twice: the .caution-box at the
+     top of the tab, and again in the info-box mirroring the APA note directly
+     below the table. Two statements of one caveat read as two caveats, and the
+     second one is skimmed.
+
+     Which copy goes is not arbitrary. The exported note is the only one that
+     leaves the app, so it keeps the caveat whatever else happens; the mirror
+     drops it because the page around it already says it, at greater length.
+     Three things therefore have to hold together, and each fails silently on
+     its own: the export keeps it, the mirror does not repeat it, and the
+     caution-box that justifies the mirror's silence is still in the markup. */
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(APP_SRC.match(/const APA_NOTES = \{[\s\S]*?\n\};/)[0] + ';globalThis.__N = APA_NOTES;', c);
+  const join = (ctx) => c.__N['pre-opiepredict'](ctx).filter(s => s && s.trim()).join(' ');
+  const exported = join({}), onScreen = join({ onScreen: true });
+  const CAVEAT = /US reference category/i;
+  const bad = [];
+
+  if (!CAVEAT.test(exported)) bad.push('the exported note has lost the UK caveat');
+  if (CAVEAT.test(onScreen)) bad.push('the on-screen mirror still repeats the caution box');
+  if (!/<div class="caution-box"[^>]*>\s*<strong>Illustrative only/.test(HTML_SRC)) {
+    bad.push('the caution-box is gone from the OPIE tab, so nothing on screen carries the caveat');
+  }
+  /* The flag has to reach the note, or the split above is inert and the
+     mirror silently reverts to printing the caveat twice. */
+  if (!/onScreen:\s*true/.test(extractFn(APP_SRC, 'renderStaticApaNotes'))) {
+    bad.push('renderStaticApaNotes no longer marks its render as on-screen');
+  }
+  /* The mirror may drop a sentence the page already states; it may not say
+     anything the export does not. */
+  const extra = onScreen.split(/(?<=\.)\s+/).filter(s => s && !exported.includes(s));
+  if (extra.length) bad.push('the mirror says something the export does not: ' + extra.join(' | '));
+
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('the CI method lives on the Methods page, and the note stays short', () => {
   /* THE DIVISION OF LABOUR BETWEEN THE TWO, which is a judgement that will not
      survive on its own. The APA note is pasted into a report and read by people
