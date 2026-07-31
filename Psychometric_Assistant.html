@@ -14059,44 +14059,6 @@ input[type="number"].ds-inline-bar-age-input{
     margin-top:0;
   }
   .change-active-method{display:none}
-  #change-analysis .formula-disclosure{
-    display:none;
-    align-items:flex-start;
-    gap:8px;
-    margin:7px 0 8px;
-    max-width:100%;
-  }
-  #change-analysis .formula-disclosure summary{
-    flex:0 0 auto;
-    min-height:26px;
-    padding:4px 10px;
-    border-color:rgba(156,61,42,0.22);
-    background:transparent;
-    color:var(--accent);
-    box-shadow:none;
-    font-size:11px;
-  }
-  #change-analysis .formula-disclosure summary:hover{
-    background:var(--accent-tint);
-    border-color:rgba(156,61,42,0.32);
-  }
-  #change-analysis .formula-disclosure[open] summary{
-    margin-bottom:0;
-  }
-  #change-analysis .formula-disclosure .info-box{
-    flex:1 1 auto;
-    max-width:none;
-    margin:0;
-    padding:5px 9px;
-    min-height:26px;
-    border-color:var(--border-soft);
-    background:rgba(250,247,241,0.42);
-    font-size:10.5px;
-    line-height:1.35;
-    white-space:nowrap;
-    overflow-x:auto;
-    overflow-y:hidden;
-  }
   .change-method-panel > .panel,
   .change-method-panel > .autofill-panel,
   .change-method-panel > .apa-wrap{
@@ -15105,10 +15067,6 @@ input[type="number"].ds-inline-bar-age-input{
     <h1 class="section-title">Basic <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">Jacobson &amp; Truax (1991). Computes whether observed change exceeds measurement error, using the test's reliability coefficient and standard deviation.</p>
 
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> SEM = SD · √(1 − r) · S<sub>diff</sub> = √(2 · SEM²) · RCI = (X₂ − X₁) / S<sub>diff</sub>
-    </div></details>
-
     <div class="panel">
       <div class="field-row-3">
         <div class="field">
@@ -15190,10 +15148,6 @@ input[type="number"].ds-inline-bar-age-input{
     <div class="eyebrow">Reliable Change Indices (RCI) · Practice Effects</div>
     <h1 class="section-title">Practice Effect-Adjusted <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">Iverson (2001). Adjusts the standard RCI to control for the average improvement (practice effect) observed between assessments in the normative sample.</p>
-
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> SEM<sub>i</sub> = SD<sub>i</sub> · √(1 − r) &nbsp;·&nbsp; S<sub>diff</sub> = √(SEM₁² + SEM₂²) &nbsp;·&nbsp; RCI = [(X₂ − X₁) − (M₂ − M₁)] / S<sub>diff</sub>
-    </div></details>
 
     <div class="panel">
       <div class="field-row-3">
@@ -15279,10 +15233,6 @@ input[type="number"].ds-inline-bar-age-input{
     <div class="eyebrow">Reliable Change Indices (RCI) · Regression-Based</div>
     <h1 class="section-title">McSweeney Regression-Based (SRB) <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">McSweeney et al. (1993). Predicts each patient's expected retest score from their baseline and the normative sample's regression parameters; the residual is standardised against the standard error of estimate.</p>
-
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> Slope b = r · (SD₂/SD₁) &nbsp;·&nbsp; Intercept a = M₂ − b · M₁ &nbsp;·&nbsp; ŷ₂ = a + b · X₁ &nbsp;·&nbsp; SEE = SD₂ · √(1 − r²) &nbsp;·&nbsp; RCI = (X₂ − ŷ₂) / SEE
-    </div></details>
 
     <div class="panel">
       <div class="field-row-3">
@@ -15372,10 +15322,6 @@ input[type="number"].ds-inline-bar-age-input{
     <div class="eyebrow">Reliable Change Indices (RCI) · Regression-Based (Crawford)</div>
     <h1 class="section-title">Crawford Regression-Based <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">Crawford &amp; Garthwaite (2007). Extends the standardised regression-based approach to use a <i>t</i>-distributed test statistic that incorporates the normative sample size (N), correctly accounting for uncertainty in the regression parameters when N is modest. Returns a sample-size-adjusted standard error of prediction.</p>
-
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> Slope b = r · (SD₂/SD₁) &nbsp;·&nbsp; Intercept a = M₂ − b · M₁ &nbsp;·&nbsp; ŷ₂ = a + b · X₁ &nbsp;·&nbsp; SEE = SD₂ · √(1 − r²) &nbsp;·&nbsp; SE<sub>pred</sub> = SEE · √(1 + 1/N + (X₁ − M₁)² / ((N − 1) · SD₁²)) &nbsp;·&nbsp; <i>t</i>(RB) = (X₂ − ŷ₂) / SE<sub>pred</sub> with df = N − 2
-    </div></details>
 
     <div class="panel">
       <div class="field-row-3">
