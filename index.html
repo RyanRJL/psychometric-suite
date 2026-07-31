@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
 <link rel="stylesheet" href="styles.css?v=20260801i">
-<link rel="stylesheet" href="design-system.css?v=20260801k">
+<link rel="stylesheet" href="design-system.css?v=20260801n">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -987,6 +987,17 @@
           </div>
         </div>
       </div>
+
+      <!-- Missing-age prompt. Empty and inert until refreshBatteryAgePrompt()
+           fills it, which happens only when this table holds measures that
+           publish reliability by age band, the CI column is on, and no age has
+           been entered. Shown by CLASS, never [hidden] — see the cascade note
+           in CLAUDE.md and what .ds-inline-bar-age[hidden] had to do to win.
+
+           It is an offer, not a validation error: a blank age is a legitimate
+           state and those measures fall back to the published all-ages
+           coefficient. -->
+      <div class="bat-age-prompt" id="bat-age-prompt" role="status"></div>
 
       <table class="input-table raw-hidden" id="bat-table">
       <thead>
@@ -2358,7 +2369,7 @@
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260801c"></script>
-<script src="app.js?v=20260801m"></script>
+<script src="app.js?v=20260801n"></script>
 <script src="design-system.js?v=20260801c" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 <script src="app-viz-page.js?v=20260730m"></script>

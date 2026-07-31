@@ -382,6 +382,28 @@ and from `navigateTo()` (the page changes with neither changing). The pip is tog
 **class**, never `[hidden]` — the element it replaced used the attribute and stayed on
 screen, because its own `display:flex` outranked the browser default.
 
+#### The missing-age prompt
+
+`#bat-age-prompt` sits above the Score Tables table and appears when that table holds
+measures publishing reliability by age band, the CI column is on, and **no age is set**.
+`refreshBatteryAgePrompt()` fills it; typing an age clears it. Nothing is dismissible and
+nothing is persisted, deliberately: **a blank age is not a first-run state, it is the
+opening state of every patient**, so a one-time hint would teach it once and never help
+again.
+
+The pip and the prompt are opposite halves of one question and both route through
+**`batteryAgeBandRowCount()`** — so a table showing the prompt while the pip is lit, or
+neither, is unrepresentable rather than merely unlikely. That count excludes `isExample`
+rows: seeded rows are not the clinician's data and must not be counted into a claim about
+"measures in this table".
+
+**It offers, it never scolds.** A blank age is legitimate and citable, so the wording says
+what is gained, uses the primary tint rather than `--ds-warning`, and never says
+*required*, *must*, *missing* or *please*. `check.js` §26 asserts all of that, including
+that every clause agrees with the count — the first version read "1 measure in this table
+**publish their** reliability", which is what assembling the sentence from shared fragments
+produces. Singular and plural are now written out separately and both are pinned.
+
 The topbar button is **"New patient"**, not "Clear all tables": it clears every table
 *and* the age, because once age is a header-level property of the patient, two controls
 that each clear half of one is how a previous age survives onto the next person's report.
@@ -1086,7 +1108,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 281 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 284 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients

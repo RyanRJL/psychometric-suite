@@ -495,6 +495,7 @@ function navigateTo(target, opts){
        re-evaluated per page. Defined later in the file; this runs on click,
        long after init. */
     if (typeof refreshPatientAgeIndicator === 'function') refreshPatientAgeIndicator();
+    if (typeof refreshBatteryAgePrompt === 'function') refreshBatteryAgePrompt();
   };
 
   // Re-selecting the page you're already on shouldn't flash it away and back.
@@ -2093,16 +2094,33 @@ function batteryPatientAge(){ return patientAge(); }
 
    This is a UI affordance, not a printed claim: the load-bearing statement is
    still the APA note, which is unchanged. */
+/* HOW MANY ROWS ON SCORE TABLES WOULD READ AN AGE.
+
+   Deliberately independent of whether an age is actually set, because two
+   opposite features ask this same question and must never disagree:
+
+     - the topbar pip, which lights when an age IS set and something reads it;
+     - the missing-age prompt above the table, which appears when one is NOT.
+
+   If these were computed separately, a table could show the prompt and the pip
+   at once, or neither. One predicate makes that unrepresentable.
+
+   The CI level is part of the question, not a caller's concern: with the
+   interval switched off, the age changes nothing PRINTED on this page, so
+   there is nothing to light and nothing to ask for. */
+function batteryAgeBandRowCount(){
+  const ci = document.getElementById('bat-ci-level');
+  if (!ci || ci.value === 'off') return 0;
+  if (!Array.isArray(batteryRows)) return 0;
+  return batteryRows.filter(r => r && r.name && !r.isExample && batteryRowUsesAgeBand(r)).length;
+}
+
 function patientAgeIsInUse(){
   if (patientAge() === null) return false;
   const active = document.querySelector('.section.active');
   const page = active ? active.id : '';
 
-  if (page === 'battery'){
-    const ci = document.getElementById('bat-ci-level');
-    if (!ci || ci.value === 'off') return false;
-    return Array.isArray(batteryRows) && batteryRows.some(r => batteryRowUsesAgeBand(r));
-  }
+  if (page === 'battery') return batteryAgeBandRowCount() > 0;
 
   if (page === 'premorbid'){
     const a = patientAge();
@@ -2125,6 +2143,67 @@ function refreshPatientAgeIndicator(){
   if (!field) return;
   field.classList.toggle('is-live', patientAgeIsInUse());
 }
+
+/* THE MISSING-AGE PROMPT.
+
+   Just-in-time, and the timing is the whole point: it appears at the moment a
+   blank age starts costing a sharper interval, and it clears itself the moment
+   one is typed. Nothing to dismiss, nothing persisted — the empty-age state is
+   not a first-run state, it is the opening state of EVERY patient, so a
+   one-time hint would teach it once and never help again.
+
+   IT IS AN OFFER, NOT A DEMAND. A blank age is a legitimate, citable state:
+   those measures fall back to the publisher's own all-ages coefficient. So the
+   wording says what is gained, never that something is missing or wrong, and
+   the styling is a quiet line rather than a warning box. If this ever starts
+   reading as an error, it is wrong — see the CI-column note in CLAUDE.md.
+
+   It cannot over-claim, because batteryAgeBandRowCount() is the same predicate
+   that lights the topbar pip: no rows publish reliability by age, or the
+   interval is switched off, and there is nothing to say. */
+function refreshBatteryAgePrompt(){
+  const el = document.getElementById('bat-age-prompt');
+  if (!el) return;
+  const n = batteryAgeBandRowCount();
+  const show = n > 0 && patientAge() === null;
+  el.classList.toggle('is-shown', show);
+  if (!show) return;
+  /* Name the number. "Some measures" would leave the clinician counting rows
+     to work out whether it is worth typing.
+
+     Every clause agrees with the count — subject, verb and pronoun. Written
+     out per branch rather than assembled from fragments, because "1 measure
+     publish their reliability" is exactly what fragment-assembly produced on
+     the first pass, and this text sits above a table that goes into reports. */
+  const one = n === 1;
+  const subject = one ? '1 measure' : n + ' measures';
+  const clause  = one
+    ? 'publishes its reliability by age band. Add the patient’s age to use it — left blank, it uses the published all-ages coefficient.'
+    : 'publish their reliability by age band. Add the patient’s age to use it — left blank, they use the published all-ages coefficient.';
+  el.innerHTML =
+      '<span class="bat-age-prompt-text">'
+    +   '<strong>' + subject + '</strong> in this table ' + clause
+    + '</span>'
+    + '<button type="button" class="bat-age-prompt-action" data-focus-patient-age>Add age</button>';
+}
+
+/* The field is in the topbar and the prompt is halfway down the page, so the
+   button both focuses it and flashes it — a caret appearing off-screen would
+   look like the button did nothing. */
+document.addEventListener('click', e => {
+  if (!e.target.closest('[data-focus-patient-age]')) return;
+  const input = document.getElementById('patient-age');
+  const field = document.getElementById('patient-age-field');
+  if (!input) return;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  input.focus();
+  if (field){
+    field.classList.remove('is-flash');
+    void field.offsetWidth;              // restart the animation on a repeat click
+    field.classList.add('is-flash');
+    setTimeout(() => field.classList.remove('is-flash'), 1200);
+  }
+});
 
 /* Pick the published coefficient for the patient's age band.
    rInternalByAge is keyed by the LOWER BOUND of each normative band, so the
@@ -2525,8 +2604,9 @@ function renderBattery(){
   /* Whether the age is being read depends on the rows and the CI level, both of
      which can change without the age itself being touched — adding a D-KEFS row
      or switching CI off. Hooked here so every one of those paths updates the
-     pip; renderBattery() is what they all end in. */
+     pip AND the prompt; renderBattery() is what they all end in. */
   refreshPatientAgeIndicator();
+  refreshBatteryAgePrompt();
 }
 
 

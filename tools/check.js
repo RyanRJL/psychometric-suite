@@ -3365,8 +3365,12 @@ check('the "in use" pip is driven by what actually reads the age', () => {
   const fn = extractFn(APP_SRC, 'patientAgeIsInUse');
   const bad = [];
   if (!fn) return 'patientAgeIsInUse is gone — the pip has no definition';
-  if (!/batteryRowUsesAgeBand/.test(fn)) bad.push('Score Tables does not test whether any row reads an age band');
-  if (!/bat-ci-level/.test(fn)) bad.push('Score Tables ignores the CI level, so the pip lights when no interval is shown');
+  /* The Score Tables half now lives in batteryAgeBandRowCount, which the
+     missing-age prompt shares. Read them together so this assertion follows
+     the indirection instead of quietly passing on an empty function. */
+  const scoreTables = fn + '\n' + extractFn(APP_SRC, 'batteryAgeBandRowCount');
+  if (!/batteryRowUsesAgeBand/.test(scoreTables)) bad.push('Score Tables does not test whether any row reads an age band');
+  if (!/bat-ci-level/.test(scoreTables)) bad.push('Score Tables ignores the CI level, so the pip lights when no interval is shown');
   if (!/OPIE_AGE_MIN/.test(fn) || !/TOPF_AGE_MAX/.test(fn)) {
     bad.push('Premorbid does not bound the age by its two consumers');
   }
@@ -3409,6 +3413,74 @@ check('the premorbid Age box says it is a mirror', () => {
   if (!/Shared with the patient age in the header/.test(HTML_SRC)) bad.push('the note does not say where the value comes from');
   const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
   if (!/\.pre-age-mirror-note\s*\{/.test(DS_CSS)) bad.push('the note has no styling, so it will inherit whatever .field gives it');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the missing-age prompt and the topbar pip share one predicate', () => {
+  /* They are opposite halves of the same question — "does anything here read an
+     age?" — asked once with an age set and once without. Computed separately,
+     a table could show the prompt and light the pip at the same time, or show
+     neither. Routing both through batteryAgeBandRowCount() makes that
+     unrepresentable rather than merely unlikely. */
+  const bad = [];
+  const count = extractFn(APP_SRC, 'batteryAgeBandRowCount');
+  const inUse = extractFn(APP_SRC, 'patientAgeIsInUse');
+  const prompt = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+  if (!/batteryRowUsesAgeBand/.test(count)) bad.push('the predicate does not test which rows read an age band');
+  if (!/bat-ci-level/.test(count)) bad.push('the predicate ignores the CI level, so it speaks when no interval is printed');
+  if (!/batteryAgeBandRowCount\(\)/.test(inUse)) bad.push('the pip no longer routes through the shared predicate');
+  if (!/batteryAgeBandRowCount\(\)/.test(prompt)) bad.push('the prompt no longer routes through the shared predicate');
+  /* Seeded example rows are not the clinician's data and must not be counted
+     into a claim about "measures in this table". */
+  if (!/isExample/.test(count)) bad.push('example rows are counted as real measures');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the missing-age prompt appears only when an age would change a number', () => {
+  const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+  const bad = [];
+  if (!/patientAge\(\) === null/.test(fn)) bad.push('the prompt does not require the age to be absent, so it can nag with one set');
+  if (!/n > 0/.test(fn)) bad.push('the prompt does not require at least one age-band measure');
+  /* Class, not [hidden]: the attribute lost this exact fight before, because
+     the element's own display outranked the browser default. */
+  if (!/classList\.toggle\('is-shown'/.test(fn)) bad.push('the prompt is not shown by a class toggle');
+  if (/\.hidden\s*=/.test(fn)) bad.push('the prompt is gated on [hidden] — the cascade trap CLAUDE.md records');
+  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const css = DS_CSS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s*\{/g, '{');
+  if (!/\.bat-age-prompt\{[^}]*display:\s*none/.test(css)) bad.push('.bat-age-prompt is not display:none by default');
+  if (!/\.bat-age-prompt\.is-shown\{[^}]*display:\s*flex/.test(css)) bad.push('.is-shown never reveals the prompt');
+  /* Rows and CI level change without the age being touched. */
+  const render = extractFn(APP_SRC, 'renderBattery');
+  if (!/refreshBatteryAgePrompt\(\)/.test(render)) bad.push('renderBattery never refreshes the prompt');
+  if (!/id="bat-age-prompt"/.test(HTML_SRC)) bad.push('the prompt element is missing from index.html');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the missing-age prompt offers, and never scolds', () => {
+  /* A blank age is legitimate and citable — those measures fall back to the
+     publisher's own all-ages coefficient — so this must not read as a
+     validation failure. CLAUDE.md: never make the age required, because a
+     blank age presenting as broken is the failure being avoided. */
+  const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+  const bad = [];
+  if (!/all-ages coefficient/.test(fn)) bad.push('the prompt does not say what happens if the age is left blank');
+  [/\brequired\b/i, /\bmust\b/i, /\berror\b/i, /\binvalid\b/i, /\bmissing\b/i, /\bplease\b/i].forEach(re => {
+    if (re.test(fn)) bad.push('the wording reads as a validation error (' + re.source + ')');
+  });
+  /* Warning and destructive tints would say the same thing in colour. */
+  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const block = (DS_CSS.match(/\.bat-age-prompt\{[\s\S]*?\}/) || [''])[0];
+  if (/--ds-warning|--ds-destructive/.test(block)) bad.push('the prompt is styled as a warning');
+  /* It names the count, so nobody has to audit the table to decide if it is
+     worth typing — and every clause must agree with that count. The first
+     version read "1 measure in this table publish their reliability", which is
+     the failure fragment-assembly produces: the subject was pluralised and the
+     verb and pronoun were not. Assert all three agree, in both branches. */
+  if (!/'1 measure'/.test(fn)) bad.push('the prompt does not name the number of measures');
+  if (!/publishes its reliability/.test(fn)) bad.push('no singular clause — one measure will take a plural verb');
+  if (!/publish their reliability/.test(fn)) bad.push('no plural clause');
+  if (!/it uses the published all-ages coefficient/.test(fn)) bad.push('the singular fallback sentence disagrees in number');
+  if (!/they use the published all-ages coefficient/.test(fn)) bad.push('the plural fallback sentence disagrees in number');
   return bad.length === 0 || bad.join('; ');
 });
 
