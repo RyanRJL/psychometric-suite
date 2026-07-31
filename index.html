@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260801f">
+<link rel="stylesheet" href="styles.css?v=20260801g">
 <link rel="stylesheet" href="design-system.css?v=20260730m">
 
 <style>
@@ -2187,7 +2187,7 @@
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260801b"></script>
-<script src="app.js?v=20260801i"></script>
+<script src="app.js?v=20260801j"></script>
 <script src="design-system.js?v=20260801b" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 <script src="app-viz-page.js?v=20260730m"></script>
@@ -2493,6 +2493,23 @@
     'rci-srb':      'Regression-based reliable change (McSweeney et al., 1993). Predicts each patient\'s expected retest score from their baseline using the norm sample\'s regression parameters, then standardises the residual against the SEE. Handles regression to the mean.',
     'rci-crawford': 'Most rigorous. Crawford & Garthwaite (2007) extend the regression-based approach with a t-distributed test that incorporates the normative sample size and the patient\'s distance from the norm mean. Preferred when N is modest or the patient is far from the norm mean.'
   };
+  /* Column-heading explainers. Each column names a distinct threat to
+     reading a retest difference, and the tick pattern only means anything to
+     someone who knows which threat is which — "regression to mean" in
+     particular is routinely read as the opposite of what it is. Hover or
+     focus a heading to see the definition. Kept separate from
+     METHOD_EXPLAINERS above: those describe a method, these a concept. */
+  const DIMENSION_EXPLAINERS = {
+    'me':       'No test measures without error, so a score would vary somewhat on retest even if the patient had not changed at all. Methods that adjust for it use the test\'s reliability and standard deviation to work out how large a difference has to be before it exceeds that expected fluctuation.',
+    'practice': 'Taking the same test twice tends to raise the second score by itself — through familiarity with the format, remembered items or rehearsed strategy. Methods that adjust for it subtract the average gain the normative retest sample showed, so an ordinary practice gain is not read as recovery.',
+    'rtm':      'On retest, extreme scores drift back towards the mean: unusually low first scores tend to rise and unusually high ones tend to fall, purely as a statistical consequence of imperfect reliability. Methods that adjust for it predict the expected retest score from the baseline by regression rather than assuming it should stay the same.',
+    'n':        'The normative regression parameters are themselves estimates from a finite sample, and a prediction for a patient far from the norm mean is less certain than one near it. Methods that adjust for it widen the standard error accordingly and use a t-distribution, which matters most when the normative N is modest.'
+  };
+  function makeColHead(key, labelHtml, atEnd){
+    return `<th class="change-overview-colh">` +
+      `<span class="change-overview-colh-label${atEnd ? ' is-end' : ''}" tabindex="0" data-coltip="${DIMENSION_EXPLAINERS[key]}">${labelHtml}</span>` +
+    `</th>`;
+  }
   const TICK_SVG = `<svg class="change-overview-tick" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,8.5 7,12 13,4"/></svg>`;
   function makeRow(id, title, cite){
     const flags = ADJUST_BY_METHOD[id];
@@ -2522,10 +2539,10 @@
       <thead>
         <tr>
           <th class="change-overview-table-method-h">Method</th>
-          <th>Measurement<br>error</th>
-          <th>Practice<br>effect</th>
-          <th>Regression<br>to mean</th>
-          <th>Sample-size<br>adjustment</th>
+          ${makeColHead('me',       'Measurement<br>error')}
+          ${makeColHead('practice', 'Practice<br>effect')}
+          ${makeColHead('rtm',      'Regression<br>to mean')}
+          ${makeColHead('n',        'Sample-size<br>adjustment', true)}
           <th aria-hidden="true"></th>
         </tr>
       </thead>

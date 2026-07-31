@@ -998,6 +998,17 @@ render via `apaNoteHtml`.
 That is the single source of truth for the note text under every exported table — change
 methodology there, not in the markup.
 
+Each note is rendered **twice**: into the exported table, and into the on-screen `info-box`
+that mirrors it (`renderStaticApaNotes`, via `data-apa-note`). `ctx.onScreen` — passed only
+by the mirror — is the **one licensed difference** between the two. A note may use it to
+**drop** a sentence the surrounding page already states in full; it may not add, soften or
+reword one, so the exported note stays the superset. One note uses it: `pre-opiepredict`
+suppresses the UK caveat on screen, because the `.caution-box` at the top of that tab says
+the same thing at greater length and two statements of one caveat read as two caveats. The
+exported copy is the one that leaves the app, so it keeps the caveat unconditionally.
+`check.js` §15 pins all four halves — export keeps it, mirror drops it, caution-box still
+exists, and the flag still reaches the note (without which the split is inert).
+
 **OPIE-4 is labelled illustrative-only for UK use.** The coefficients reproduce
 Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US
 education, ethnicity and region terms that are not applied, so every patient is scored at
@@ -1016,7 +1027,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 264 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 270 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients

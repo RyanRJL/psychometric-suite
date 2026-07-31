@@ -8906,6 +8906,97 @@ body.rb-docked-active{padding-right:0}
   text-align:left;
   padding-left:24px;
 }
+
+/* Column-heading explainers.
+   Standalone classes (`change-overview-colh*`) and a private attribute
+   (`data-coltip`, not `data-tooltip`) so nothing here can collide with the
+   global [data-tooltip] rules in design-system.css. The tooltip drops BELOW
+   the heading — the table sits at the top of the panel, so a popover above
+   the header row would open off the top of the viewport. */
+#change-analysis .change-overview-colh-label{
+  position:relative;
+  display:inline-block;
+  cursor:help;
+  text-decoration:underline dotted rgba(20,15,5,0.28);
+  text-underline-offset:3px;
+  outline:none;
+}
+#change-analysis .change-overview-colh-label:hover,
+#change-analysis .change-overview-colh-label:focus-visible{
+  color:#9C3D2A;
+  text-decoration-color:rgba(156,61,42,0.55);
+}
+#change-analysis .change-overview-colh-label::before{
+  content:attr(data-coltip);
+  position:absolute;
+  top:calc(100% + 10px);
+  left:50%;
+  transform:translateX(-50%) translateY(-4px);
+  width:320px;
+  padding:12px 14px;
+  /* Dark, to match every other tooltip in the app. The white treatment a few
+     rules below on .change-overview-info is dead letter: design-system.css
+     §30a forces [data-tooltip] popovers dark with !important, so the "?"
+     bubbles beside it render dark whatever styles.css asks for. These use a
+     private attribute and so are not caught by that rule — they have to state
+     the dark look themselves or the two tooltips on one table disagree. */
+  background:rgba(15,18,24,0.96);
+  color:#FFFFFF;
+  border:1px solid rgba(15,18,24,0.96);
+  border-radius:8px;
+  font-family:var(--sans);
+  font-size:12.5px;
+  line-height:1.55;
+  font-weight:400;
+  letter-spacing:0;
+  text-transform:none;
+  text-decoration:none;
+  text-align:left;
+  white-space:normal;
+  z-index:60;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 160ms var(--ease), transform 160ms var(--ease);
+  box-shadow:0 12px 28px rgba(15,18,24,0.22);
+}
+#change-analysis .change-overview-colh-label::after{
+  content:"";
+  position:absolute;
+  top:calc(100% + 4px);
+  left:50%;
+  transform:translateX(-50%);
+  border-width:0 6px 6px 6px;
+  border-style:solid;
+  border-color:transparent transparent rgba(15,18,24,0.96) transparent;
+  z-index:61;
+  opacity:0;
+  transition:opacity 160ms var(--ease);
+}
+/* Last dimension column: a centred popover would hang off the right edge of
+   the table on a narrow window, so anchor it to the heading's right instead. */
+#change-analysis .change-overview-colh-label.is-end::before{
+  left:auto;
+  right:0;
+  transform:translateY(-4px);
+}
+#change-analysis .change-overview-colh-label.is-end::after{
+  left:auto;
+  right:16px;
+  transform:none;
+}
+#change-analysis .change-overview-colh-label:hover::before,
+#change-analysis .change-overview-colh-label:focus-visible::before{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+#change-analysis .change-overview-colh-label.is-end:hover::before,
+#change-analysis .change-overview-colh-label.is-end:focus-visible::before{
+  transform:translateY(0);
+}
+#change-analysis .change-overview-colh-label:hover::after,
+#change-analysis .change-overview-colh-label:focus-visible::after{
+  opacity:1;
+}
 #change-analysis .change-overview-row{
   cursor:pointer;
   transition:background 140ms var(--ease);
@@ -8969,14 +9060,17 @@ body.rb-docked-active{padding-right:0}
   vertical-align:middle;
 }
 
-/* Method-title row: title on the left, info button pushed to the far right
-   of the cell so all "?" buttons sit in a single vertical column regardless
-   of title length. */
+/* Method-title row: the "?" sits immediately after the title it explains.
+   It used to be pushed to the far right of the cell (justify-content:
+   space-between) so the buttons formed a tidy vertical column — but the
+   method column is ~40% of the table, which left the button floating a long
+   way from the row it belongs to and reading as unrelated to it. Proximity
+   beats alignment here. */
 #change-analysis .change-overview-table-titlerow{
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:12px;
+  justify-content:flex-start;
+  gap:8px;
 }
 #change-analysis .change-overview-table-title{
   flex:0 1 auto;
