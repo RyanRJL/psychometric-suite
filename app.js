@@ -2243,6 +2243,24 @@ function closeBatteryAgePop(){
   if (pop) pop.classList.remove('is-open');
 }
 
+/* The age was typed into the popover, which sits over the table — so the field
+   that now holds it, up in the top bar, is somewhere the clinician was not
+   looking. The pulse says "it landed here", and answers the question the
+   popover leaves behind: where did that value actually go?
+
+   Restarted rather than re-added, so a second commit re-runs the animation
+   instead of doing nothing because the class is already present. */
+let patientAgePulseTimer;
+function pulsePatientAgeField(){
+  const field = document.getElementById('patient-age-field');
+  if (!field) return;
+  field.classList.remove('is-pulsing');
+  void field.offsetWidth;                       // force reflow to restart it
+  field.classList.add('is-pulsing');
+  clearTimeout(patientAgePulseTimer);
+  patientAgePulseTimer = setTimeout(() => field.classList.remove('is-pulsing'), 2200);
+}
+
 /* Writes through to the master and lets its own listener do the rest — the
    sync, the re-render and the pip all hang off that one 'input' event. */
 function commitBatteryAgePop(){
@@ -2254,6 +2272,9 @@ function commitBatteryAgePop(){
   master.value = String(v);
   master.dispatchEvent(new Event('input', { bubbles: true }));
   closeBatteryAgePop();
+  /* After the dispatch, so the pulse lands on a field already showing the new
+     value and its .is-live pip rather than on a stale one. */
+  pulsePatientAgeField();
 }
 
 function refreshBatteryAgePrompt(){

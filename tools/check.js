@@ -3517,6 +3517,67 @@ check('the missing-age popover offers, and never scolds or blocks', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
+check('committing from the popover pulses the field the value landed in', () => {
+  /* The popover sits over the table, so the field that ends up holding the age
+     is in the top bar, where the clinician was not looking. The pulse answers
+     "where did that go?". Only on commit FROM THE POPOVER — a field that
+     pulsed while you typed directly into it would read as an error. */
+  const commit = extractFn(APP_SRC, 'commitBatteryAgePop');
+  const pulse = extractFn(APP_SRC, 'pulsePatientAgeField');
+  const bad = [];
+  if (!/pulsePatientAgeField\(\)/.test(commit)) bad.push('committing an age does not pulse the field');
+  /* After the dispatch, or the pulse lands on a field still showing the old
+     value and without its .is-live pip. */
+  if (commit.indexOf('dispatchEvent') > commit.indexOf('pulsePatientAgeField()')) {
+    bad.push('the pulse runs before the value is written through');
+  }
+  /* Re-added without a reflow, a second commit would not restart it. */
+  if (!/classList\.remove\('is-pulsing'\)[\s\S]*offsetWidth[\s\S]*classList\.add\('is-pulsing'\)/.test(pulse)) {
+    bad.push('the animation is not restarted, so a second commit does nothing');
+  }
+  if (!/clearTimeout/.test(pulse)) bad.push('overlapping pulses leave a stale timer that strips the class early');
+  /* The topbar input's own listener must NOT pulse — that is the direct-typing
+     path, and pulsing on every keystroke would be constant motion. */
+  const direct = APP_SRC.slice(APP_SRC.indexOf("getElementById('patient-age')?.addEventListener"), APP_SRC.indexOf("getElementById('patient-age')?.addEventListener") + 600);
+  if (/pulsePatientAgeField/.test(direct)) bad.push('typing directly into the field pulses it on every keystroke');
+  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const css = DS_CSS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s*\{/g, '{');
+  if (!/@keyframes ds-patient-field-pulse\{/.test(css)) bad.push('the pulse keyframes are gone');
+  if (!/\.ds-patient-field\.is-pulsing\{[^}]*animation:[^}]*ds-patient-field-pulse/.test(css)) {
+    bad.push('.is-pulsing does not run the animation');
+  }
+  /* Motion IS the mechanism, so suppressing it must leave something legible. */
+  const rm = (DS_CSS.match(/@media \(prefers-reduced-motion: reduce\)\{[\s\S]*?is-pulsing[\s\S]*?\n\}/) || [''])[0];
+  if (!/is-pulsing/.test(rm)) bad.push('no reduced-motion fallback, so the signal vanishes entirely for those users');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a new patient can always be asked again', () => {
+  /* Once per PATIENT, not once per session. The popover must re-open for every
+     fresh reset — after one that was answered and after one that was skipped
+     alike, since both are answers about the previous person only.
+
+     Driven, not inspected: the arming flag and the edge state are stepped
+     through the same transitions the page performs. */
+  const src = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+  const bad = [];
+  /* The reset must clear the edge memory too. If batAgePopLastWanted stayed
+     true across a reset, the next patient's first age-band row would not
+     register as a transition and nothing would open. */
+  if (!/batAgePopLastWanted = wanted/.test(src)) {
+    bad.push('the edge state is not updated from the live condition, so a reset could strand it');
+  }
+  /* Clearing every row makes `wanted` false, which is what re-lowers the edge
+     — so the clear must actually re-render rather than only emptying state. */
+  const clearIdx = APP_SRC.indexOf("getElementById('topbar-clear-all')");
+  const handler = clearIdx < 0 ? '' : APP_SRC.slice(clearIdx, clearIdx + 4000);
+  if (!/batteryRows\.length = 0; renderBattery\(\)/.test(handler)) {
+    bad.push('"New patient" does not re-render the emptied table, so the edge state stays high');
+  }
+  if (!/batAgePopArmed = true/.test(handler)) bad.push('"New patient" does not re-arm the popover');
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('the popover positions itself in one coordinate space, not two', () => {
   /* styles.css sets body{zoom:0.9} — a deliberate global 10% downscale. That
      splits measurement in two, and mixing the halves is silent:

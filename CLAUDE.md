@@ -413,6 +413,15 @@ and outside-click dismiss, and the skip reads *"Skip — use all-ages"* rather t
 the first version read "1 measure in this table **publish their** reliability", which is
 what assembling the sentence from shared fragments produces.
 
+Committing an age from the popover pulses the topbar field for ~2s
+(`.ds-patient-field.is-pulsing`, three 0.7s cycles). The popover sits over the table, so
+the field the value lands in is somewhere the clinician was not looking — the pulse
+answers "where did that go?". **Only on commit from the popover**: typing directly into
+the field must not pulse it, because a field that animates as you type in it reads as an
+error. §26 pins both halves, the restart-on-reflow, and the reduced-motion fallback —
+motion *is* the mechanism here, so suppressing it has to leave a held ring rather than
+nothing.
+
 A transient popover can be missed, so **`.ds-patient-field.is-wanted`** is the residual:
 a dashed tint on the topbar field whenever an age would be read and none is set. Purely
 state-driven, so it cannot go stale, and mutually exclusive with `.is-live` by
@@ -1141,7 +1150,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 287 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 289 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients

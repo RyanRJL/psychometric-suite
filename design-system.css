@@ -4842,3 +4842,31 @@ input[type="number"].ds-age-pop-input{
 .ds-patient-field.is-wanted .ds-patient-field-input{
   border-color: rgba(156,61,42,0.28) !important;
 }
+
+/* THE LANDING PULSE. Runs for ~2s on the topbar field after an age is committed
+   from the popover, which sits over the table — so the field that now holds the
+   value is somewhere the clinician was not looking. Three cycles of an
+   expanding ring: long enough to catch a glance up, short enough not to become
+   part of the furniture.
+
+   Only on commit FROM THE POPOVER. Typing directly into the field needs no
+   pulse — you are already looking at it, and a field that pulses as you type
+   in it reads as an error. */
+@keyframes ds-patient-field-pulse{
+  0%   { box-shadow: 0 0 0 0   rgba(156,61,42,0.50); }
+  70%  { box-shadow: 0 0 0 9px rgba(156,61,42,0);    }
+  100% { box-shadow: 0 0 0 0   rgba(156,61,42,0);    }
+}
+.ds-patient-field.is-pulsing{
+  animation: ds-patient-field-pulse 0.7s var(--ds-ease) 3;
+  border-color: var(--ds-primary);
+}
+/* Motion is the whole mechanism here, so with it suppressed the state still has
+   to be legible — a held ring rather than nothing at all. */
+@media (prefers-reduced-motion: reduce){
+  .ds-patient-field.is-pulsing{
+    animation: none;
+    border-color: var(--ds-primary);
+    box-shadow: 0 0 0 3px var(--ds-primary-tint);
+  }
+}
