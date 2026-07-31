@@ -144,16 +144,16 @@ the page is branded Iverson (2001) in six places.
 
 | File | Lines | Role |
 |---|---|---|
-| `data.js` | 1.1k | All constants, coefficients, lookup tables and `normDB`. Plain script, defines globals. Loads first. |
-| `app.js` | 7.1k | Every calculator. 206 top-level functions, 11 section banners. |
+| `data.js` | 1.8k | All constants, coefficients, lookup tables and `normDB`. Plain script, defines globals. Loads first. |
+| `app.js` | 8.2k | Every calculator. 223 top-level functions, 11 section banners. |
 | `design-system.js` | 1.1k | Page titles, microcopy, FOUC handling, the inline control bars. |
 | `app-effectsize-page.js` | 0.8k | The effect-size calculator, self-contained. |
-| `app-viz-page.js` | 0.3k | Score Charts page — one SVG chart per test family, one row per trial/subtest, self-contained. Draws only what the table's own functions return; has no settings of its own. |
-| `index.html` | 6.3k | All pages in one document; sections shown/hidden by nav. |
-| `styles.css` | 9.1k | Original stylesheet. |
-| `design-system.css` | 4.1k | Later restyling layer that overrides the above. |
-| `service-worker.js` | 79 | Cache-first PWA worker. |
-| `tools/check.js` | — | Headless numeric regression checks. |
+| `app-viz-page.js` | 1.4k | Score Charts page — one SVG chart per test family, one row per trial/subtest, self-contained. Draws only what the table's own functions return; has no settings of its own. |
+| `index.html` | 6.4k | All pages in one document; sections shown/hidden by nav. |
+| `styles.css` | 9.2k | Original stylesheet. |
+| `design-system.css` | 4.5k | Later restyling layer that overrides the above. |
+| `service-worker.js` | 80 | Cache-first PWA worker. |
+| `tools/check.js` | 4.7k | Headless numeric regression checks. Larger than every source file but `app.js`, `index.html` and the two stylesheets — the pinned source tables account for most of it. |
 
 The **Report Writer** — a page that generated descriptive narrative prose from
 entered scores, ~2.3k lines in `app.js` plus ~2.0k in `design-system.js` — was
@@ -183,17 +183,17 @@ Section banners (`/* ====`) mark the boundaries:
 
 | Line | Section |
 |---|---|
-| ~1125 | Battery table (Score Tables page) |
-| ~1923 | APA table notes — single source of truth |
-| ~2317 | SDI |
-| ~2673 | RCI calculators (Basic / Practice / SRB / Crawford) |
-| ~3213 | Per-method autofill from the normative database |
-| ~3401 | Custom tests database management |
-| ~3683 | Premorbid estimation |
-| ~4811 | Auth overlay |
-| ~4957 | Top-bar navigation bucket sync |
-| ~5029 | Score Converter view-mode tabs |
-| ~5048 | Working report bundle |
+| ~1180 | Battery table (Score Tables page) |
+| ~2377 | APA table notes — single source of truth |
+| ~2847 | SDI |
+| ~3232 | RCI calculators (Basic / Practice / SRB / Crawford) |
+| ~3797 | Per-method autofill from the normative database |
+| ~4024 | Custom tests database management |
+| ~4453 | Premorbid estimation |
+| ~5771 | Auth overlay |
+| ~5917 | Top-bar navigation bucket sync |
+| ~5991 | Score Converter view-mode tabs |
+| ~6010 | Working report bundle |
 
 Line numbers drift with every edit — treat them as a starting point and grep to
 confirm. Function-name families make grep effective: `calc*` computes, `render*`
@@ -201,8 +201,8 @@ draws, `get*` derives, `fmt*` formats, and page prefixes are `pre*` (premorbid),
 `rci*`, `sdi*`, `bat*` (battery), `opie*`. To find any calculator, grep the prefix.
 
 Statistical primitives sit at the top: `erf` (~7), `normCDF` (~16), `tInv` (~73).
-General formatters follow at ~132–152 (`fmt`, `fmtPct`, `fmtP`). Note that
-`fmtIntOrDash` and `fmtPctBr` are **not** there — they are premorbid-local, at ~3709.
+General formatters follow at ~147–175 (`fmt`, `fmtPct`, `fmtP`). Note that
+`fmtIntOrDash` and `fmtPctBr` are **not** there — they are premorbid-local, at ~4479.
 
 Pages hold state in module-level objects: `preState`, `rciState`, `batteryRows`,
 `sdiRows`. Note that tables are sometimes **updated in place** rather than re-rendered,
@@ -825,9 +825,9 @@ separate sites that must agree.
 
 The user-facing CI selector offers **90% (z 1.645) and 95% (z 1.960) only**. Separately,
 premorbid-vs-achieved significance flagging uses a three-tier `*`/`**`/`***` scheme at
-1.645 / 1.960 / 2.576 — see `PREMORBID_CI_Z` (~1356). Do not conflate the two.
+1.645 / 1.960 / 2.576 — see `PREMORBID_CI_Z` (~1470). Do not conflate the two.
 
-**APA notes** live in the `APA_NOTES` object (~line 1934, under its banner at ~1923) and
+**APA notes** live in the `APA_NOTES` object (~line 2388, under its banner at ~2377) and
 render via `apaNoteHtml`.
 That is the single source of truth for the note text under every exported table — change
 methodology there, not in the markup.
