@@ -3,3 +3,5 @@ fix_encoding*
 temp_opie_*
 *.ipynb
 *.ps1
+# wrangler build/dry-run scratch dir
+.wrangler/

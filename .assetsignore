@@ -1,0 +1,27 @@
+# Files in the repo that must NOT be served from the public site.
+#
+# wrangler uploads every file under assets.directory, which here is the repo
+# root — there is no build output directory to point at, because this app has
+# no build step. So the exclusions live here instead. Same syntax as .gitignore.
+#
+# The repo is public, so nothing below is secret; the point is that development
+# material is not part of the product and should not be reachable at
+# psychometric-assist.com.
+
+# Development notes and the numeric regression harness.
+CLAUDE.md
+tools
+
+# Deploy configuration itself.
+wrangler.jsonc
+.assetsignore
+
+# Editor, VCS and tooling detritus.
+.git
+.gitignore
+.github
+.claude
+node_modules
+.DS_Store
+*.ps1
+*.ipynb
