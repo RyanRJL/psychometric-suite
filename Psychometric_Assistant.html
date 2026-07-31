@@ -1199,6 +1199,112 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .combo-ageband-note{flex:0 0 auto;display:flex;align-items:flex-start;gap:7px;padding:8px 11px;background:var(--note-bg);border-bottom:1px solid var(--border-soft);font-size:11px;color:var(--muted);line-height:1.45}
 .combo-ageband-note-icon{flex:0 0 auto;font-style:normal;font-size:12px;color:var(--accent);opacity:.7;margin-top:1px}
 
+/* METHODS & REFERENCES - two independently scrolling panes
+
+   The method and the reference list are consulted for different reasons and
+   rarely at the same point: you read the method, then you want the manual it
+   named. One column meant scrolling the whole method past to reach the
+   references and scrolling back. Side by side, each pane keeps its own scroll
+   position, so looking a source up does not lose your place in the prose.
+
+   HEIGHT IS BOUNDED so the panes scroll rather than the page. Same idiom as
+   #custom-tests .db-list, which is the only other bounded-scroll region here;
+   deliberately NOT the full-viewport app shell #charts uses, because this page
+   has no toolbar or canvas to anchor and the site footer should stay reachable.
+   The subtraction covers the top bar plus this section's own title block. */
+#about .methods-split{
+  display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
+  gap:0 40px;align-items:start;
+}
+#about .methods-pane{
+  min-width:0;                       /* or a long unbroken cell would widen the track */
+  max-height:calc(100vh - 260px);min-height:340px;
+  overflow-y:auto;overscroll-behavior:contain;
+  padding-right:22px;
+}
+#about .methods-pane-refs{border-left:1px solid var(--border-soft);padding-left:36px;padding-right:4px}
+/* The pane heading stays put while its own pane scrolls, so which column is
+   which is never in doubt once either is scrolled down. */
+#about .methods-pane > .block-title,
+#about .methods-pane .references-title{
+  position:sticky;top:0;z-index:2;
+  background:var(--paper);margin-top:0;
+  padding-top:2px;padding-bottom:8px;
+}
+/* .references is styled as a page footer - top margin, top rule, big gap. In a
+   pane of its own it IS the content, so that separation is wrong here. */
+#about .methods-pane-refs .references{margin-top:0;padding-top:0;border-top:none}
+
+/* One column again when there is no room for two. The height bound and the
+   inner scroll come off with it: a short pane inside a scrolling page is the
+   nested-scroll trap that makes a phone feel broken. */
+@media (max-width:1180px){
+  /* #about.section (1-1-0), not #about (1-0-0). A media query adds no
+     specificity, and the 1240px rule further down the file would otherwise win
+     on source order alone and leave the stacked prose set at full width. */
+  #about.section{max-width:780px!important}
+  #about .methods-split{grid-template-columns:1fr;gap:0}
+  #about .methods-pane{max-height:none;min-height:0;overflow-y:visible;padding-right:0}
+  #about .methods-pane-refs{border-left:none;padding-left:0;margin-top:40px;border-top:1px solid var(--border-soft);padding-top:24px}
+  #about .methods-pane > .block-title,
+  #about .methods-pane .references-title{position:static}
+}
+
+/* METHODS & REFERENCES - sub-structure
+   STANDALONE CLASS NAMES, deliberately. Per CLAUDE.md, design-system.css is a
+   later restyling layer that redeclares ~70 of this file's selectors, and
+   page-scoped blocks outrank plain class rules. A "methods-" name appears in
+   neither file, so these rules land without a single !important. Do not
+   rename them to reuse an existing class. */
+/* PAGE-SCOPED DELIBERATELY, and the plain class alone is NOT enough.
+   `#about h2, #about h3` at styles.css:4034 is specificity 1-0-1 and sets the
+   colour, family, size and margins of every heading on this page; a bare
+   `.methods-h3` is 0-1-0 and loses to it, silently — the heading rendered in
+   17px serif ink with none of the rules below applying. Enumerated rather than
+   guessed, per CLAUDE.md. `#about .methods-h3` is 1-1-0, which wins outright
+   and needs no !important. Keep the `#about` prefix if you touch these.
+
+   COLOUR IS var(--ink), NOT var(--accent), and that is not an oversight.
+   design-system.css remaps the legacy palette onto its own tokens and flattens
+   --accent to #1A1A1A, so an "accent" heading here renders identical to ink
+   while reading in the source as though it were red. Stating --ink outright
+   keeps the source honest about what ships. The heading is distinguished the
+   way this design language does it — the .panel-kicker / .references-title
+   idiom of uppercase, letterspacing and a hairline rule — not by hue. */
+#about .methods-h3{
+  font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--ink);
+  margin:30px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border-soft);
+  line-height:1.3;
+}
+#about .methods-h3:first-of-type{margin-top:20px}
+/* The exception roster. A table rather than a 500-word sentence: the question
+   a clinician actually asks of it is "what is MY instrument scored on", which
+   is a lookup, not a read. */
+.methods-table-wrap{overflow-x:auto;margin:4px 0 18px}
+.methods-table{
+  width:100%;border-collapse:collapse;
+  font-family:var(--sans);font-size:12px;color:var(--ink-2);line-height:1.5;
+}
+.methods-table th,.methods-table td{
+  text-align:left;vertical-align:top;padding:7px 12px 7px 0;
+  border-bottom:1px solid var(--border-soft);
+}
+.methods-table thead th{
+  font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--faint);font-weight:500;white-space:nowrap;
+}
+.methods-table tbody th{font-weight:600;color:var(--ink);white-space:nowrap}
+/* Widths set explicitly: left to itself the browser gave Source barely enough
+   room for "Table 3.4" and wrapped "Technical Manual, Tables 2.1-2.24" over
+   three lines, while the exclusions column - the one actually being read -
+   stayed cramped. */
+.methods-table th:nth-child(1),.methods-table td:nth-child(1){width:14%}
+.methods-table th:nth-child(2),.methods-table td:nth-child(2){width:21%}
+.methods-table th:nth-child(3),.methods-table td:nth-child(3){width:17%}
+.methods-table tbody tr:last-child th,
+.methods-table tbody tr:last-child td{border-bottom:none}
+
 /* FOOTER REFERENCES */
 .references{
   margin-top:48px;padding-top:24px;border-top:1px solid var(--border-soft);
@@ -1206,6 +1312,9 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .references-title{font-family:var(--sans);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--faint);font-weight:500;margin-bottom:10px}
 .references p{margin-bottom:8px;text-indent:-20px;padding-left:20px}
+.references-group{font-family:var(--sans);font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--faint);font-weight:500;margin:18px 0 8px}
+.references-group:first-of-type{margin-top:0}
+.references-note{font-family:var(--sans);font-size:11px;color:var(--faint);font-style:italic;margin-top:16px;text-indent:0;padding-left:0}
 
 /* MOBILE */
 @media (max-width:900px){
@@ -4023,7 +4132,16 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 }
 
 /* ---------- METHODS & REFERENCES ---------- */
-#about{max-width:780px!important}
+/* Widened from 780px for the two-pane split above. The !important is inherited
+   from the original rule, not newly introduced — something in design-system.css
+   sets .section widths and this has to outrank it. 1240px is not arbitrary: at
+   the 1.6fr/1fr split it leaves the method pane about 690px, which is roughly
+   70 characters at 13.5px and the widest this prose should be set. The stacked
+   layout puts it back to 780px in the media query above, because there the
+   section width IS the measure. */
+#about{max-width:1240px!important}
+/* The title block spans the full width and has no column to constrain it. */
+#about > .section-desc{max-width:720px}
 #about p, #about li{
   font-family:var(--sans);font-size:14px;line-height:1.65;
   color:#3F3F3F;margin-bottom:12px;
@@ -15831,8 +15949,7 @@ input[type="number"].ds-inline-bar-age-input{
         <em>a 12th-grade high-school graduate, not African-American, and not living in the
         US West</em>. Those categories have no UK equivalent. The US education terms do not
         count years of schooling; they capture how unusual a given level of attainment is
-        within the US population, so there is nothing here to map them onto. In the source
-        table, the terms this tool leaves out are worth as much as 18.9 points.
+        within the US population, so there is nothing here to map them onto.
         Expect these estimates to run <strong>high</strong> for patients who left school
         early and <strong>low</strong> for graduates, by an amount this tool cannot quantify.
         If you want a UK demographic estimate, use the Crawford &amp; Allan (2001) row on the
@@ -15929,65 +16046,196 @@ input[type="number"].ds-inline-bar-age-input{
     <h1 class="section-title">Methods &amp; <em>References</em></h1>
     <p class="section-desc">A clinical psychometric calculation tool for neuropsychological report writing. All computation is local; no patient data is ever transmitted.</p>
 
+    <div class="methods-split">
+      <div class="methods-pane methods-pane-methods">
     <h2 class="block-title">Methods &amp; conventions</h2>
+
+    <h3 class="methods-h3">What this tool does</h3>
     <p class="section-body-text">
-      This tool supports score conversion/equating, effect-size conversion, SDI, four RCI approaches (basic, practice-adjusted, standardised regression-based, and Crawford/Garthwaite), and premorbid estimation workflows. All calculations run locally in-browser; no patient data is transmitted off-device.
+      Seven working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Size Tools</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
     </p>
     <p class="section-body-text">
-      Score conversions assume an approximately normal reference distribution. Wechsler descriptor bands follow WAIS-IV/WMS-IV manual conventions; AACN descriptor labels follow Guilmette et al. (2020). SDI and RCI <em>p</em>-values are two-tailed. Jacobson &amp; Truax (1991), Iverson (2001), and McSweeney et al. (1993) implementations use the standard normal distribution; Crawford &amp; Garthwaite (2007) uses the Student <i>t</i> distribution with <i>N</i>−2 degrees of freedom.
+      The auto-fill normative database holds published parameters for seven instrument families — D-KEFS (original and Advanced), WAIS-IV, WMS-IV, WISC-V, CVLT-3, CVLT-C and the RBANS — with the retest sample size <i>N</i> where the publisher reports one. <i>N</i> is required for the Crawford &amp; Garthwaite method and may need entering by hand where it is unavailable. Clinicians should verify every imported parameter against the current manual, and against local service standards, before interpreting it.
+    </p>
+
+    <h3 class="methods-h3">Score conversion and classification</h3>
+    <p class="section-body-text">
+      Conversions between standard (M 100, SD 15), <i>T</i> (50, 10), scaled (10, 3) and <i>z</i> scores assume an approximately normal reference distribution. Two descriptor schemes are offered, and the one in force is named in the note beneath every exported table: Wechsler bands follow the WAIS-IV/WMS-IV manual conventions, and AACN labels follow Guilmette et al. (2020). Confidence levels throughout are 90% (<i>z</i> = 1.645) and 95% (<i>z</i> = 1.960); intervals round the estimate and the margin separately, so the printed bounds stay symmetric about the printed value.
+    </p>
+    <!-- methods-ci
+         SENTINEL PAIR, read by check.js sections 24 and 28, which assert that
+         this block still states how every printed interval was built. They
+         used to slice a single paragraph off a hard-coded opening phrase,
+         which quietly made a paragraph boundary load-bearing: the whole method
+         had to stay in one 1,100-word block or the checks would silently see
+         less than they were written to see. The contract is unchanged; only
+         the region it is measured over moved. Keep both comments in place, and
+         name no instrument inside this comment - check.js reads the markup
+         AFTER it precisely so a note about the checks cannot satisfy them. -->
+    <h3 class="methods-h3">Confidence intervals on Score Tables</h3>
+    <p class="section-body-text">
+      <strong>Confidence intervals and standard errors of measurement.</strong> The CI column is the obtained score ± <i>z</i> × SEM, where SEM = SD × √(1 − <i>r</i>), centred on the obtained score rather than on an estimated true score.
     </p>
     <p class="section-body-text">
-      The auto-fill normative database includes published retest parameters for major batteries (including D-KEFS, WAIS-IV, WMS-IV, CVLT-3, CVLT-C, RBANS, and WISC-V), with normative <i>N</i> where reported. <i>N</i> is required for Crawford/Garthwaite calculations and may need manual entry when unavailable. Clinicians should verify all imported parameters against the latest manual and local service standards before interpretation.
+      <strong>The standard deviation</strong> is the normative SD of the metric the score is reported in — 15, 10, 3 or 1 — because a coefficient computed on, or corrected to, the normative sample must be paired with that sample's variability. Where a measure's stored statistics are raw, its own standard deviation is used instead, that being the only one in the right units. Four publishers state that rule outright, and the arithmetic confirms it: this pairing reproduces every published standard error of measurement the app is able to check, exactly, at the precision each is printed to — all 300 cells of WAIS-IV Table 4.3, 242 of WISC-V Table 4.4, 240 of WMS-IV Table 3.3, 168 across the D-KEFS SEM tables, 126 of RBANS Update Table 3.7, and all 38 CVLT-3 measures in Tables 3.4 and 3.5.
     </p>
     <p class="section-body-text">
-      <strong>Confidence intervals and standard errors of measurement.</strong> Intervals on the Clinical Outcomes Table are calculated as the obtained score ± <i>z</i> × SEM, where SEM = SD × √(1 − <i>r</i>), centred on the obtained score rather than on an estimated true score. The reliability <i>r</i> is the <strong>test–retest coefficient</strong> held in the normative database, corrected for the normative sample's variability where the publisher reports a corrected value. The SD is the <strong>normative standard deviation of the metric the score is reported in</strong> (15, 10, 3 or 1), because a coefficient corrected to the normative sample must be paired with that sample's variability; where a measure's stored statistics are raw, its own standard deviation is used instead, that being the only one in the right units. This reproduces the standard error of measurement published by the test author where one is given — for all 38 CVLT-3 measures in Tables 3.4 and 3.5 of that manual, exactly. Test–retest reliability is the <strong>default</strong> basis, for two reasons: it keeps a single, stated basis across a table that may mix batteries, and it is the appropriate coefficient for the many timed measures in the database, since split-half and alpha are not valid reliability estimates for speeded tests. The WAIS-IV manual itself uses test–retest coefficients for Coding, Symbol Search and Cancellation for exactly this reason, describing the split-half coefficient as "not a proper reliability estimate" for a Processing Speed subtest; the values used here for those three are identical to the ones it publishes, in all 38 of the cells its Table 4.1 gives them. The default is set aside for a measure only where its publisher both reports an internal-consistency coefficient <em>and</em> derives its own published confidence intervals from it. That applies to the CVLT-C List A Trials 1–5 Total score, which uses the odd–even split-half coefficient of Table 6.5 of that manual and thereby reproduces the interval printed in its worked example exactly; to the D-KEFS Advanced Colour–Word Interference, Tower, Social Sorting and Risk–Reward Decision tests, whose manual publishes split-half coefficients by age band while keeping stability coefficients for the speeded Trail Making and Verbal Fluency tests; to those D-KEFS tests for which the technical manual tabulates internal consistency; and to the other 21 WAIS-IV subtest, process and composite scores, which take the split-half or alpha coefficient tabulated by normative age band in Table 4.1 of that manual. It applies also to the RBANS, whose Update manual tabulates reliability by normative age band in Table 3.6 and derives the standard errors of measurement of its Table 3.7 from it; that table is itself mixed, marking five subtests as estimated from test–retest, and those five accordingly keep a stability coefficient here, taken from the same table so that every RBANS measure is scored on the band for the patient's age. The four RBANS subtests reported as raw scores appear nowhere in that table, the manual publishing reliability for its eight scaled subtests only, and so no interval is shown for them. It applies finally to the WMS-IV, whose technical manual tabulates split-half and alpha coefficients by normative age band in Table 3.1 and derives the standard errors of measurement of its Table 3.3 from them, separately for the Adult and Older Adult batteries; the one measure that table marks as estimated from test–retest, the Verbal Paired Associates II Word Recall score, keeps a stability coefficient here, and the recognition memory measures are excluded altogether because their published reliability is a decision-consistency percentage rather than a correlation and cannot enter a standard error of measurement. It applies lastly to the WISC-V, whose technical manual obtains split-half coefficients by single year of age in Table 4.1 and derives the standard errors of measurement of its Table 4.4 from them; the three subtests it names as unsuited to a split-half estimate, Coding, Symbol Search and Cancellation, keep the corrected stability coefficient that manual uses in their place. Where a coefficient is published by age band, the interval uses the band for the patient's age when one is entered and the published all-ages coefficient otherwise, and the age used is stated in the note beneath the table. Reliable-change analysis is unaffected and always uses the retest coefficient, which measures a different thing.
+      <strong>The reliability</strong> is, by default, the retest coefficient held in the normative database — an alternate-form coefficient in the case of the CVLT-3, which publishes no same-form retest — corrected for the normative sample's variability where the publisher reports a corrected value. Retest is the default for two reasons: it keeps a single, stated basis across a table that may mix batteries, and it is the appropriate coefficient for the many timed measures in the database, since split-half and alpha are not valid reliability estimates for speeded tests. The WAIS-IV manual makes that second argument itself for Coding, Symbol Search and Cancellation, describing the split-half coefficient as "not a proper reliability estimate" for a Processing Speed subtest; the values used here for those three are the ones it publishes, in all 38 of the cells its Table 4.1 gives them.
     </p>
     <p class="section-body-text">
-      One consequence should be borne in mind when comparing output against a test manual: for the measures that remain on the test–retest default, where a manual derives its published intervals from internal-consistency reliability, and internal consistency is almost always the higher of the two coefficients, the intervals shown here run <strong>wider</strong> than the manual's. They are therefore the more conservative, and answer the question <em>how much would this score be expected to move on retesting</em> rather than <em>how precisely was it measured on the day</em>. Not every publisher offers that comparison. The CVLT-3 manual declines to report internal-consistency reliability for its measures at all, on the grounds that item scores on a word-list task are not independent — recalling one word alters the probability of recalling the others, both within a trial and on later ones — and reports alternate-form coefficients in its place.
+      That default is set aside for a measure only where its publisher both reports an internal-consistency coefficient <em>and</em> derives its own published intervals from it. Seven manuals meet that bar:
+    </p>
+    <div class="methods-table-wrap">
+      <!-- id read by check.js section 24: every instrument scored on internal
+           consistency must have a ROW here, not merely a mention somewhere in
+           the surrounding prose. -->
+      <table class="methods-table" id="methods-ci-roster">
+        <thead>
+          <tr><th scope="col">Instrument</th><th scope="col">Coefficient used</th><th scope="col">Source</th><th scope="col">Not applied to</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">CVLT-C</th>
+            <td>Odd–even split-half, by age</td>
+            <td>Manual Table 6.5</td>
+            <td>Every index but List A Trials 1–5 Total; item scores on a word-list task are not independent. The interval printed in the manual's own worked example reproduces exactly.</td>
+          </tr>
+          <tr>
+            <th scope="row">D-KEFS</th>
+            <td>Internal consistency, by normative age band</td>
+            <td>Technical Manual, Tables 2.1–2.24</td>
+            <td>Colour–Word Interference, whose only coefficient table is for a composite this app does not hold; Design Fluency, where item interdependence precluded the procedure; and five of the six Trail Making measures, the published table covering the composite alone.</td>
+          </tr>
+          <tr>
+            <th scope="row">D-KEFS Advanced</th>
+            <td>Split-half, by normative age band</td>
+            <td>Table 3.4</td>
+            <td>Trail Making and Verbal Fluency, which that manual treats as speeded and scores on stability coefficients.</td>
+          </tr>
+          <tr>
+            <th scope="row">WAIS-IV</th>
+            <td>Split-half or alpha, by normative age band</td>
+            <td>Table 4.1</td>
+            <td>Coding, Symbol Search and Cancellation — speeded. These keep the corrected stability coefficient the same table publishes for them.</td>
+          </tr>
+          <tr>
+            <th scope="row">WISC-V</th>
+            <td>Split-half, by single year of age</td>
+            <td>Table 4.1</td>
+            <td>Coding, Symbol Search and Cancellation, together with the Cancellation Random and Cancellation Structured process scores — speeded, and likewise on the corrected stability coefficient.</td>
+          </tr>
+          <tr>
+            <th scope="row">WMS-IV</th>
+            <td>Split-half or alpha, by normative age band, Adult and Older Adult batteries separately</td>
+            <td>Table 3.1</td>
+            <td>Verbal Paired Associates II Word Recall, a free-recall score with no consistent item count, which takes a stability coefficient. The recognition memory measures are absent altogether: their published reliability is a decision-consistency percentage, not a correlation, and cannot enter a standard error of measurement.</td>
+          </tr>
+          <tr>
+            <th scope="row">RBANS Update</th>
+            <td>Internal consistency, by normative age band</td>
+            <td>Table 3.6</td>
+            <td>Figure Copy, Semantic Fluency, Coding, Story Recall and Figure Recall, which that table itself marks as estimated from test–retest and which therefore keep a stability coefficient taken from the same table. The four subtests reported as raw scores appear nowhere in it, the manual publishing reliability for its eight scaled subtests only, so no interval is shown for them.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="section-body-text">
+      Which coefficient is right is a question for each manual rather than a policy of this tool, and the manuals genuinely disagree — the two D-KEFS manuals reach opposite conclusions about the same two test names. Each is followed as written, and the <strong>Data</strong> page names the basis actually in force for every measure in the database.
     </p>
     <p class="section-body-text">
-      <strong>Measures with no normative-sample coefficient, and the reliability control.</strong> Every interval here multiplies a normative standard deviation by a reliability, and that is only a valid standard error when the two describe the same group. Most manuals supply a coefficient computed on, or corrected to, their normative sample. Two do not: the D-KEFS and D-KEFS Advanced technical manuals report only the correlation observed in their own retest studies, a few dozen people each, and pair it with the normative standard deviation regardless. The D-KEFS manual states this outright, fixing the standard deviation unit at 3 for all its scaled scores and deriving its test–retest standard errors of measurement "from the total sample of cases"; its Table 2.8 shows the arithmetic, the three Design Fluency all-ages values of 1.94, 1.97 and 2.47 being exactly 3 × √(1 − <i>r</i>) on the uncorrected coefficient. Those measures are therefore scored the way their own manuals score them, and the intervals shown reproduce the published ones. The <strong>Data</strong> page labels each such measure <em>retest, uncorrected</em>, so which rows are on that footing can be read off rather than inferred.
+      <strong>Age.</strong> Where a coefficient is tabulated by age, the interval uses the band for the patient's age, and the age used is named in the note beneath the table. Entering an age is optional. If none is entered, or the age falls outside a measure's normed range, the publisher's all-ages figure is used instead: the published average where a manual prints one, and otherwise the total-sample retest coefficient — which for the D-KEFS is that manual's own second regime rather than a substitute for a missing number. Both paths are therefore the publisher's own figures.
     </p>
     <p class="section-body-text">
-      The statistical objection to that pairing is nonetheless real, so the Clinical Outcomes Table offers a <strong>reliability</strong> control with two settings. <em>Published</em>, the default, uses each manual's own coefficient and reproduces its printed interval. <em>Corrected</em> applies the standard range-restriction correction, r<sub>xx</sub> = 1 − (s²<sub>retest</sub> ÷ s²<sub>norm</sub>)(1 − <i>r</i>), to those measures alone, so that the coefficient describes the same population as the standard deviation it multiplies; a published coefficient is never overwritten in either setting. The correction is not a guess: across the 267 database entries that carry both an observed and a publisher-corrected coefficient it reproduces the publisher's own value to a median error of .003. But the resulting figures are <strong>not printed in the manuals concerned</strong>, which is why the default is <em>Published</em> and why the note beneath a corrected table says so. In practice it moves 46 of the measures reachable from that table, all of them D-KEFS or D-KEFS Advanced: at the 95% level 9 intervals widen and 4 narrow, 33 are unchanged after rounding, and the largest single change is 2 scaled-score points. Reliable-change analysis is not affected by the control.
+      <strong>Reliable-change analysis is unaffected by any of the above</strong> and always uses the retest coefficient, which measures a different thing.
     </p>
     <p class="section-body-text">
-      Where a coefficient is tabulated by age, the interval uses the band for the patient's age, and the age is named in the note beneath the table. If no age is entered, or the age falls outside a measure's normed range, the publisher's all-ages figure is used instead: the published average where a manual prints one, and otherwise the total-sample retest coefficient, which for the D-KEFS is that manual's own second regime rather than a substitute for a missing number. With the reliability control set to <em>Corrected</em>, that second fallback is corrected in the same way as any other retest coefficient.
+      One consequence is worth bearing in mind when comparing output against a test manual. For the measures that remain on the retest default, where a manual derives its published intervals from internal-consistency reliability — almost always the higher of the two coefficients — the intervals shown here run <strong>wider</strong> than the manual's. They are therefore the more conservative, and answer the question <em>how much would this score be expected to move on retesting</em> rather than <em>how precisely was it measured on the day</em>. Not every publisher offers that comparison: the CVLT-3 manual declines to report internal-consistency reliability at all, on the grounds that item scores on a word-list task are not independent — recalling one word alters the probability of recalling the others, both within a trial and on later ones — and reports alternate-form coefficients in their place.
+    </p>
+
+    <h3 class="methods-h3">Measures with no normative-sample coefficient, and the reliability control</h3>
+    <p class="section-body-text">
+      Every interval here multiplies a normative standard deviation by a reliability, and that is only a valid standard error of measurement when the two describe the same group. Most manuals supply a coefficient computed on, or corrected to, their normative sample. Three do not — the D-KEFS, D-KEFS Advanced and CVLT-C manuals report only the correlation observed in their own retest studies, a few dozen people each, and pair it with the normative standard deviation regardless.
     </p>
     <p class="section-body-text">
-      Reliable-change calculations use the same test–retest coefficients, paired with the standard deviation from the same retest sample so that both terms describe one population. Where a publisher reports a coefficient corrected to the normative sample's variability, that corrected value is offered as an option but is not the default, because it describes a differently-distributed population from the standard deviation it would be multiplied by. Reliability type varies by instrument and is stated in the notes beneath each generated table (for example, CVLT-3 coefficients are alternate-form, and RBANS Form A coefficients are same-form retest).
+      The D-KEFS manual states that outright, fixing the standard deviation unit at 3 for all its scaled scores and deriving its test–retest standard errors of measurement "from the total sample of cases". Its Table 2.8 shows the arithmetic: the three Design Fluency all-ages values of 1.94, 1.97 and 2.47 are exactly 3 × √(1 − <i>r</i>) on the uncorrected coefficient. Those measures are therefore scored the way their own manuals score them, and the intervals shown reproduce the published ones. The <strong>Data</strong> page labels each such measure <em>retest, uncorrected</em>, so which rows rest on that footing can be read off rather than inferred.
     </p>
     <p class="section-body-text">
-      Premorbid estimates combine ToPF-based and demographic equations with OPIE-4 prorated models, and include predicted-versus-achieved discrepancy outputs with confidence intervals, base-rate lookups, and APA-formatted export tables.
+      The statistical objection to the pairing is nonetheless real, so Score Tables offers a <strong>reliability</strong> control with two settings. <em>Published</em>, the default, uses each manual's own coefficient and reproduces its printed interval. <em>Corrected</em> applies the standard range-restriction correction of Allen and Yen, r<sub>xx</sub> = 1 − (s²<sub>retest</sub> ÷ s²<sub>norm</sub>)(1 − <i>r</i>), to those measures alone, so that the coefficient describes the same population as the standard deviation it multiplies. A published coefficient is never overwritten in either setting.
+    </p>
+    <p class="section-body-text">
+      The correction is not a guess: across the 267 database entries carrying both an observed and a publisher-corrected coefficient, it reproduces the publisher's own value to a median error of .003. But the resulting figures are <strong>not printed in the manuals concerned</strong>, which is why the default is <em>Published</em> and why the note beneath a corrected table says so. In practice the control moves 46 of the measures reachable from Score Tables, every one of them D-KEFS or D-KEFS Advanced: at the 95% level 9 intervals widen and 4 narrow, 33 are unchanged after rounding, and the largest single change is 2 scaled-score points. Reliable-change analysis is not affected by the control. Where a corrected reading is taken, the <strong>Data</strong> page follows it rather than continuing to show the published one.
+    </p>
+    <!-- /methods-ci -->
+
+    <h3 class="methods-h3">Change analysis</h3>
+    <p class="section-body-text">
+      Five methods, in ascending order of what they model. The <strong>Standard Deviation Index</strong> is descriptive only: SD Δ = (X₂ − X₁) ÷ SD, with no reliability correction. <strong>Simple Reliable Change</strong> (Jacobson &amp; Truax, 1991) tests the observed change against measurement error. <strong>Practice Effect-Adjusted</strong> change (Iverson, 2001) subtracts the mean retest gain observed in the normative sample first. <strong>McSweeney Regression-Based</strong> change (McSweeney et al., 1993) predicts the retest score from baseline and standardises the residual against the standard error of estimate. <strong>Crawford &amp; Garthwaite Regression-Based</strong> change (2007) does the same but with a standard error of prediction that accounts for the normative sample size and for the distance of the baseline score from the normative mean.
+    </p>
+    <p class="section-body-text">
+      All <em>p</em>-values are two-tailed. The first four methods use the standard normal distribution; Crawford &amp; Garthwaite uses the Student <i>t</i> distribution with <i>N</i> − 2 degrees of freedom, so a small normative sample raises the threshold — at <i>N</i> = 25 the 95% critical value is 2.069 against 1.960 for <i>z</i>.
+    </p>
+    <p class="section-body-text">
+      These calculations use the retest coefficient paired with the standard deviation of the same retest sample, so that both terms describe one population. Where a publisher reports a coefficient corrected to the normative sample's variability, that value is offered as an option but is not the default, because it describes a differently distributed population from the standard deviation it would be multiplied by — and in the two regression methods the coefficient is a fitted slope, so substituting it changes the predicted score rather than only the interval. Reliability type varies by instrument and is stated in the note beneath each generated table: CVLT-3 coefficients are alternate-form, RBANS Form A coefficients are same-form retest.
+    </p>
+    <p class="section-body-text">
+      Outcomes are reported as significance only — "Reliable change" or "No reliable change" — never as improvement or decline. The database holds many measures on which a higher score is the worse result (intrusions, perseverations, errors, false positives), and carries no score-direction flag, so reading a clinical direction off the sign of the statistic would assert the wrong conclusion for all of them. The signed statistic is displayed alongside, so the direction stays visible without the app interpreting it.
+    </p>
+
+    <h3 class="methods-h3">Premorbid estimation</h3>
+    <p class="section-body-text">
+      Premorbid estimates combine ToPF-based and demographic equations with OPIE-4 prorated models, and produce predicted-versus-achieved discrepancy output with confidence intervals, base-rate lookups and APA-formatted export tables. Predicted-versus-achieved significance flagging uses a three-tier scheme at <i>z</i> = 1.645 (*), 1.960 (**) and 2.576 (***); this is separate from the 90%/95% confidence-interval selector.
     </p>
     <p class="section-body-text">
       <strong>OPIE-4 is provided for illustration only in a UK context and its output should not be quoted as a concrete premorbid estimate.</strong> The regression terms reproduce Holdnack et al. (2013), Table eA5.8, but the published equations also carry US education, ethnicity and region terms that are not applied here, which fixes every prediction at the US reference category (12th-grade high-school graduate, not African-American, not resident in the western US). Those terms are omitted rather than mapped because the education dummies encode how unusual a given attainment level is <em>within the US population the model was fitted on</em>, not years of schooling, and that does not transfer: the US reference category corresponds to A-levels if matched by years but to GCSE/O-level if matched by population position, and UK school-leaving age was raised to 16 only in 1972, so leaving school without qualifications was normative for older cohorts in a way it was not in the US sample. Expect estimates to run high for patients who left school early and low for graduates, by an amount this tool cannot quantify. For a UK demographic estimate, use the Crawford &amp; Allan (2001) model.
     </p>
     <p class="section-body-text">
-      <strong>Base rates.</strong> The ToPF predicted-difference base rates are estimated from a normal model with SD equal to the model's standard error of estimate, not transcribed from observed standardisation-sample frequencies; they are labelled as such wherever they appear. Benchmarked against the empirical ACS discrepancy table, the parametric values run roughly 10% relatively low across the −5 to −20 band, so a given discrepancy is shown as marginally rarer than observed data suggest. The OPIE-4 discrepancy base rates (ACS Table eA5.12) are empirical.
+      <strong>Base rates.</strong> The ToPF predicted-difference base rates are <strong>estimated from a normal model</strong> with SD equal to the model's standard error of estimate, not transcribed from observed standardisation-sample frequencies; they are labelled as such wherever they appear. The published ToPF/ACS predicted-difference tables have not been transcribed, so the model has instead been benchmarked against the one genuinely empirical table available for a model of almost identical standard error of estimate — the OPIE-4 discrepancy base rates of ACS Table eA5.12. Against that table the parametric values run roughly 10% relatively low across the decisive −5 to −20 band: a discrepancy of −15 gives 3.78% here against about 4.3% empirically. The net effect is to show a given discrepancy as marginally rarer, and so marginally more pathological, than observed data suggest. The OPIE-4 discrepancy base rates are themselves empirical and are used as published.
     </p>
 
+      </div>
+
+      <div class="methods-pane methods-pane-refs">
     <div class="references">
       <div class="references-title">References</div>
+
+      <div class="references-group">Test manuals and technical sources</div>
+      <p>Delis, D. C., Kaplan, E., &amp; Kramer, J. H. (2001). <i>Delis–Kaplan Executive Function System (D-KEFS): Technical manual.</i> San Antonio, TX: The Psychological Corporation. [Internal-consistency coefficients and standard errors of measurement by age band, chapter 2 and Tables 2.1–2.26.]</p>
+      <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (1994). <i>California Verbal Learning Test – Children's Version (CVLT-C): Manual.</i> San Antonio, TX: The Psychological Corporation. [Split-half reliability and standard errors of measurement: Table 6.5. Standardised score equivalents: Tables A.1 and A.2.]</p>
+      <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test – Third Edition (CVLT-3): Manual.</i> Bloomington, MN: Pearson. [Alternate-form reliability and standard errors of measurement: Tables 3.4 and 3.5.]</p>
+      <p>Holdnack, J. A., Drozdick, L., Weiss, L. G., &amp; Iverson, G. L. (2013). <i>WAIS-IV, WMS-IV, and ACS: Advanced clinical interpretation.</i> Oxford: Academic Press. [OPIE-4 prorated regression coefficients: Table eA5.8. OPIE-4 discrepancy base rates: Table eA5.12.]</p>
+      <p>Randolph, C. (2012). <i>Repeatable Battery for the Assessment of Neuropsychological Status Update (RBANS Update): Manual.</i> Bloomington, MN: Pearson. [Reliability by age band: Table 3.6. Standard errors of measurement: Table 3.7. Test–retest and alternate-form data: Tables 3.8–3.9.]</p>
+      <p>Wechsler, D. (2010). <i>Wechsler Adult Intelligence Scale – Fourth UK Edition (WAIS–IV<sup>UK</sup>): Administration and scoring manual.</i> London: Pearson Assessment. [Longest-span base rates: Tables C.4 and C.5.]</p>
+      <p>Wechsler, D. (2010). <i>Wechsler Adult Intelligence Scale – Fourth UK Edition (WAIS–IV<sup>UK</sup>): Technical and interpretive manual.</i> London: Pearson Assessment. [Reliability coefficients: Table 4.1. Standard errors of measurement: Table 4.3. Test–retest stability parameters: Table 4.5.]</p>
+      <p>Wechsler, D. (2010). <i>Wechsler Memory Scale – Fourth UK Edition (WMS–IV<sup>UK</sup>): Technical and interpretive manual.</i> London: Pearson Assessment. [Reliability coefficients: Table 3.1. Standard errors of measurement: Table 3.3.]</p>
+      <p>Wechsler, D. (2011). <i>Test of Premorbid Functioning (ToPF-UK): Manual.</i> London: Pearson Assessment.</p>
+      <p>Wechsler, D. (2014). <i>Wechsler Intelligence Scale for Children – Fifth Edition (WISC-V): Technical and interpretive manual.</i> Bloomington, MN: NCS Pearson. [Reliability coefficients: Table 4.1. Standard errors of measurement: Table 4.4. Test–retest stability: Table 4.7.]</p>
+
+      <div class="references-group">Statistical and methodological sources</div>
+      <p>Allen, M. J., &amp; Yen, W. M. (1979). <i>Introduction to measurement theory.</i> Monterey, CA: Brooks/Cole. [Correction of a reliability coefficient for range restriction in the sample it was observed in.]</p>
+      <p>Cohen, J. (1988). <i>Statistical power analysis for the behavioral sciences</i> (2nd ed.). Hillsdale, NJ: Lawrence Erlbaum.</p>
       <p>Crawford, J. R., &amp; Allan, K. M. (2001). Estimating premorbid WAIS–R IQ with demographic variables: Regression equations derived from a UK sample. <i>The Clinical Neuropsychologist, 11</i>(2), 192–197.</p>
       <p>Crawford, J. R., &amp; Garthwaite, P. H. (2007). Using regression equations built from summary data in the neuropsychological assessment of the individual case. <i>Neuropsychology, 21</i>(5), 611–620.</p>
       <p>Crawford, J. R., Millar, J., &amp; Milne, A. B. (2001). Estimating premorbid IQ from demographic variables: A comparison of a regression equation vs. clinical judgement. <i>British Journal of Clinical Psychology, 40</i>(1), 97–105.</p>
       <p>Guilmette, T. J., Sweet, J. J., Hebben, N., Koltai, D., Mahone, E. M., Spiegler, B. J., Stucky, K., Westerveld, M., &amp; Conference Participants. (2020). American Academy of Clinical Neuropsychology consensus conference statement on uniform labeling of performance test scores. <i>The Clinical Neuropsychologist, 34</i>(3), 437–453.</p>
-      <p>Holdnack, J. A., Drozdick, L., Weiss, L. G., &amp; Iverson, G. L. (2013). <i>WAIS-IV, WMS-IV, and ACS: Advanced clinical interpretation.</i> Oxford: Academic Press.</p>
       <p>Iverson, G. L. (2001). Interpreting change on the WAIS-III/WMS-III in clinical samples. <i>Archives of Clinical Neuropsychology, 16</i>(2), 183–191.</p>
       <p>Jacobson, N. S., &amp; Truax, P. (1991). Clinical significance: A statistical approach to defining meaningful change in psychotherapy research. <i>Journal of Consulting and Clinical Psychology, 59</i>(1), 12–19.</p>
       <p>McSweeney, A. J., Naugle, R. I., Chelune, G. J., &amp; Lüders, H. (1993). "T scores for change": An illustration of a regression approach to depicting change in clinical neuropsychology. <i>The Clinical Neuropsychologist, 7</i>(3), 300–312.</p>
-      <p>Wechsler, D. (2010). <i>Wechsler Adult Intelligence Scale – Fourth UK Edition (WAIS–IV<sup>UK</sup>): Technical and interpretive manual.</i> London: Pearson Assessment. [Reliability coefficients, standard errors of measurement, and test–retest stability parameters: Tables 4.1, 4.3 and 4.5.]</p>
-      <p>Wechsler, D. (2011). <i>Test of Premorbid Functioning (TOPF-UK) manual.</i> London: Pearson Assessment.</p>
-      <p>Randolph, C. (2012). <i>Repeatable Battery for the Assessment of Neuropsychological Status Update (RBANS Update): Manual.</i> Bloomington, MN: Pearson.</p>
-      <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test – Third Edition (CVLT-3): Manual.</i> Bloomington, MN: Pearson.</p>
-      <p>Cohen, J. (1988). <i>Statistical power analysis for the behavioral sciences</i> (2nd ed.). Hillsdale, NJ: Lawrence Erlbaum.</p>
-      <p>Alnasser, A., Alamuddin, R., Algahtani, H., Alenezi, W., Alanazi, A., Almegren, J., Alsoudi, A., Alhazmi, A., Alsawah, A., Alnasser, H., Alruwaili, T., Al-Qattan, R., Al-Turki, M., Aljazeeri, Y., Al-Khushail, I., Alrashed, S., &amp; Aldahal, T. (2023). Paracetamol versus ibuprofen in treating episodic tension-type headache: a systematic review and network meta-analysis. <i>JAMA Network Open, 6</i>(11), e2343849.</p>
-      <p>Cuijpers, P., Cristea, I. A., Karyotaki, E., Reijnders, M., &amp; Huibers, M. J. (2016). How effective are cognitive behavioural therapies for major depression and anxiety disorders? A meta-analytic update of the evidence. <i>World Psychiatry, 15</i>(3), 245–254.</p>
-      <p>Furukawa, T. A., Cipriani, A., Barbui, C., &amp; Geddes, J. R. (2011). Phi index as a measure of clinical importance in meta-analysis: How to interpret a number needed to treat. <i>The Journal of Clinical Psychiatry, 72</i>(12), 1642–1648.</p>
-      <p>Health Survey for England (2021). <i>Data tables.</i> NHS Digital. Available at: https://digital.nhs.uk/data-and-information/publications/statistical/health-survey-for-england</p>
-      <p>Pesch, B., Kendzia, B., Gustavsson, P., Jöckel, K. H., Johnen, G., Pohlabeln, H., Olsson, A., Ahrens, W., Gross, I. M., Brüske, I., Wichmann, H. E., Musk, A. W., Vermeulen, R., Kromhout, H., Straif, K., &amp; Brüning, T. (2011). Cigarette smoking and lung cancer – relative risk estimates for the major histological types from a pooled analysis of case-control studies. <i>International Journal of Cancer, 131</i>(12), 2912–2921.</p>
       <p>Sawilowsky, S. S. (2009). New effect size rules of thumb. <i>Journal of Modern Applied Statistical Methods, 8</i>(2), 597–599.</p>
+
+      <div class="references-group">Effect-size benchmarks</div>
+      <p>Cipriani, A., Furukawa, T. A., Salanti, G., Chaimani, A., Atkinson, L. Z., Ogawa, Y., Leucht, S., Ruhe, H. G., Turner, E. H., Higgins, J. P. T., Egger, M., Takeshima, N., Hayasaka, Y., Imai, H., Shinohara, K., Tajika, A., Ioannidis, J. P. A., &amp; Geddes, J. R. (2018). Comparative efficacy and acceptability of 21 antidepressant drugs for the acute treatment of adults with major depressive disorder: A systematic review and network meta-analysis. <i>The Lancet, 391</i>(10128), 1357–1366.</p>
+      <p>Cuijpers, P., Geraedts, A. S., van Oppen, P., Andersson, G., Markowitz, J. C., &amp; van Straten, A. (2011). Interpersonal psychotherapy for depression: A meta-analysis. <i>American Journal of Psychiatry, 168</i>(6), 581–592.</p>
+      <p>Cuijpers, P., Miguel, C., Harrer, M., Plessen, C. Y., Ciharova, M., Ebert, D., &amp; Karyotaki, E. (2023). Cognitive behavior therapy vs. control conditions, other psychotherapies, pharmacotherapies and combined treatment for depression: A comprehensive meta-analysis including 409 trials with 52,702 patients. <i>World Psychiatry, 22</i>(1), 105–115.</p>
+      <p>Hofmann, S. G., &amp; Smits, J. A. J. (2008). Cognitive-behavioral therapy for adult anxiety disorders: A meta-analysis of randomized placebo-controlled trials. <i>The Journal of Clinical Psychiatry, 69</i>(4), 621–632.</p>
+      <p>Huhn, M., Nikolakopoulou, A., Schneider-Thoma, J., Krause, M., Samara, M., Peter, N., Arndt, T., Bäckers, L., Rothe, P., Cipriani, A., Davis, J., Salanti, G., &amp; Leucht, S. (2019). Comparative efficacy and tolerability of 32 oral antipsychotics for the acute treatment of adults with multi-episode schizophrenia: A systematic review and network meta-analysis. <i>The Lancet, 394</i>(10202), 939–951.</p>
+      <p>Pesch, B., Kendzia, B., Gustavsson, P., Jöckel, K.-H., Johnen, G., Pohlabeln, H., Olsson, A., Ahrens, W., Gross, I. M., Brüske, I., Wichmann, H.-E., Merletti, F., Richiardi, L., Simonato, L., Fortes, C., Siemiatycki, J., Parent, M.-E., Consonni, D., Landi, M. T., … Brüning, T. (2012). Cigarette smoking and lung cancer — Relative risk estimates for the major histological types from a pooled analysis of case–control studies. <i>International Journal of Cancer, 131</i>(5), 1210–1219.</p>
+      <p>Storebø, O. J., Storm, M. R. O., Pereira Ribeiro, J., Skoog, M., Groth, C., Callesen, H. E., Schaug, J. P., Darling Rasmussen, P., Huus, C.-M. L., Zwi, M., Kirubakaran, R., Simonsen, E., &amp; Gluud, C. (2023). Methylphenidate for children and adolescents with attention deficit hyperactivity disorder (ADHD). <i>Cochrane Database of Systematic Reviews, 3</i>, CD009885.</p>
+      <p>Watts, B. V., Schnurr, P. P., Mayo, L., Young-Xu, Y., Weeks, W. B., &amp; Friedman, M. J. (2013). Meta-analysis of the efficacy of treatments for posttraumatic stress disorder. <i>The Journal of Clinical Psychiatry, 74</i>(6), e541–e550.</p>
+      <p>Williams, A. C. de C., Fisher, E., Hearn, L., &amp; Eccleston, C. (2020). Psychological therapies for the management of chronic pain (excluding headache) in adults. <i>Cochrane Database of Systematic Reviews, 8</i>, CD007407.</p>
+      <p>Wolraich, M. L., Wilson, D. B., &amp; White, J. W. (1995). The effect of sugar on behavior or cognition in children: A meta-analysis. <i>JAMA, 274</i>(20), 1617–1621.</p>
+      <p class="references-note">The Effect Size Tools page also cites a UK Biobank male-versus-female adult height contrast (<i>d</i> = 2.04) attributed to Lui et al. (2021). That source could not be verified and is not listed here; treat the value as an illustrative anchor only.</p>
+    </div>
+      </div>
     </div>
   </section>
 
@@ -16113,6 +16361,23 @@ const WMS_COEF = [
    Omitting them is not a rounding detail. In the source table the education
    block spans up to 18.9 points (Matrix-only FSIQ, K–7th grade −11.57 through
    Bachelor's +7.13) and the African-American term reaches −8.31.
+
+   THAT 18.9 DOES NOT RECONCILE WITH THE ENDPOINTS BESIDE IT: 7.13 − (−11.57)
+   is 18.70. It cannot be settled from this project, because the education,
+   ethnicity and region coefficients are stored nowhere here — only the applied
+   terms are, and check.js §5 pins those alone. Table eA5.8 itself is needed.
+   Two candidates: the span is right and the parenthetical names the wrong top
+   category (a 17+/graduate dummy at ≈ +7.33 would give exactly 18.90, and US
+   education dummy sets in this literature usually do run past Bachelor's), or
+   the endpoints are right and 18.9 is a slip for 18.70. The first is likelier
+   on shape, which is not evidence.
+
+   So the caution box on the OPIE-4 tab no longer states a figure at all: it
+   gives the direction of the bias and says the tool cannot quantify it, which
+   is true whichever way the above resolves. DO NOT PUT A NUMBER BACK ON SCREEN
+   until Table eA5.8 has been re-read — an unciteable figure in a warning is
+   worse than no figure, this being a page whose whole job is to say that these
+   numbers should not be quoted.
 
    Why they are not mapped to UK equivalents: the dummies encode how unusual a
    given attainment level is *within the US population they were fitted on*, not
@@ -20029,7 +20294,7 @@ function resolveCiReliability(entry, normSD, age, correctRetest){
      D-KEFS scaled scores" — i.e. 3 x sqrt(1 - r) on the UNCORRECTED
      total-sample r. Table 2.8 proves it: Design Fluency's three All Ages SEMs
      are 1.94 / 1.97 / 2.47, and 3 x sqrt(1 - r) gives exactly those, where the
-     corrected coefficient gives 1.78 / 1.95 / 2.43. The remaining 22 are
+     corrected coefficient gives 1.78 / 1.95 / 2.43. The remaining 21 are
      D-KEFS Advanced Trail Making and Verbal Fluency, whose Table 3.4 rows ARE
      the retest coefficients — that manual's stated choice for its speeded
      tests.

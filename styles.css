@@ -1167,6 +1167,112 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .combo-ageband-note{flex:0 0 auto;display:flex;align-items:flex-start;gap:7px;padding:8px 11px;background:var(--note-bg);border-bottom:1px solid var(--border-soft);font-size:11px;color:var(--muted);line-height:1.45}
 .combo-ageband-note-icon{flex:0 0 auto;font-style:normal;font-size:12px;color:var(--accent);opacity:.7;margin-top:1px}
 
+/* METHODS & REFERENCES - two independently scrolling panes
+
+   The method and the reference list are consulted for different reasons and
+   rarely at the same point: you read the method, then you want the manual it
+   named. One column meant scrolling the whole method past to reach the
+   references and scrolling back. Side by side, each pane keeps its own scroll
+   position, so looking a source up does not lose your place in the prose.
+
+   HEIGHT IS BOUNDED so the panes scroll rather than the page. Same idiom as
+   #custom-tests .db-list, which is the only other bounded-scroll region here;
+   deliberately NOT the full-viewport app shell #charts uses, because this page
+   has no toolbar or canvas to anchor and the site footer should stay reachable.
+   The subtraction covers the top bar plus this section's own title block. */
+#about .methods-split{
+  display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
+  gap:0 40px;align-items:start;
+}
+#about .methods-pane{
+  min-width:0;                       /* or a long unbroken cell would widen the track */
+  max-height:calc(100vh - 260px);min-height:340px;
+  overflow-y:auto;overscroll-behavior:contain;
+  padding-right:22px;
+}
+#about .methods-pane-refs{border-left:1px solid var(--border-soft);padding-left:36px;padding-right:4px}
+/* The pane heading stays put while its own pane scrolls, so which column is
+   which is never in doubt once either is scrolled down. */
+#about .methods-pane > .block-title,
+#about .methods-pane .references-title{
+  position:sticky;top:0;z-index:2;
+  background:var(--paper);margin-top:0;
+  padding-top:2px;padding-bottom:8px;
+}
+/* .references is styled as a page footer - top margin, top rule, big gap. In a
+   pane of its own it IS the content, so that separation is wrong here. */
+#about .methods-pane-refs .references{margin-top:0;padding-top:0;border-top:none}
+
+/* One column again when there is no room for two. The height bound and the
+   inner scroll come off with it: a short pane inside a scrolling page is the
+   nested-scroll trap that makes a phone feel broken. */
+@media (max-width:1180px){
+  /* #about.section (1-1-0), not #about (1-0-0). A media query adds no
+     specificity, and the 1240px rule further down the file would otherwise win
+     on source order alone and leave the stacked prose set at full width. */
+  #about.section{max-width:780px!important}
+  #about .methods-split{grid-template-columns:1fr;gap:0}
+  #about .methods-pane{max-height:none;min-height:0;overflow-y:visible;padding-right:0}
+  #about .methods-pane-refs{border-left:none;padding-left:0;margin-top:40px;border-top:1px solid var(--border-soft);padding-top:24px}
+  #about .methods-pane > .block-title,
+  #about .methods-pane .references-title{position:static}
+}
+
+/* METHODS & REFERENCES - sub-structure
+   STANDALONE CLASS NAMES, deliberately. Per CLAUDE.md, design-system.css is a
+   later restyling layer that redeclares ~70 of this file's selectors, and
+   page-scoped blocks outrank plain class rules. A "methods-" name appears in
+   neither file, so these rules land without a single !important. Do not
+   rename them to reuse an existing class. */
+/* PAGE-SCOPED DELIBERATELY, and the plain class alone is NOT enough.
+   `#about h2, #about h3` at styles.css:4034 is specificity 1-0-1 and sets the
+   colour, family, size and margins of every heading on this page; a bare
+   `.methods-h3` is 0-1-0 and loses to it, silently — the heading rendered in
+   17px serif ink with none of the rules below applying. Enumerated rather than
+   guessed, per CLAUDE.md. `#about .methods-h3` is 1-1-0, which wins outright
+   and needs no !important. Keep the `#about` prefix if you touch these.
+
+   COLOUR IS var(--ink), NOT var(--accent), and that is not an oversight.
+   design-system.css remaps the legacy palette onto its own tokens and flattens
+   --accent to #1A1A1A, so an "accent" heading here renders identical to ink
+   while reading in the source as though it were red. Stating --ink outright
+   keeps the source honest about what ships. The heading is distinguished the
+   way this design language does it — the .panel-kicker / .references-title
+   idiom of uppercase, letterspacing and a hairline rule — not by hue. */
+#about .methods-h3{
+  font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--ink);
+  margin:30px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border-soft);
+  line-height:1.3;
+}
+#about .methods-h3:first-of-type{margin-top:20px}
+/* The exception roster. A table rather than a 500-word sentence: the question
+   a clinician actually asks of it is "what is MY instrument scored on", which
+   is a lookup, not a read. */
+.methods-table-wrap{overflow-x:auto;margin:4px 0 18px}
+.methods-table{
+  width:100%;border-collapse:collapse;
+  font-family:var(--sans);font-size:12px;color:var(--ink-2);line-height:1.5;
+}
+.methods-table th,.methods-table td{
+  text-align:left;vertical-align:top;padding:7px 12px 7px 0;
+  border-bottom:1px solid var(--border-soft);
+}
+.methods-table thead th{
+  font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--faint);font-weight:500;white-space:nowrap;
+}
+.methods-table tbody th{font-weight:600;color:var(--ink);white-space:nowrap}
+/* Widths set explicitly: left to itself the browser gave Source barely enough
+   room for "Table 3.4" and wrapped "Technical Manual, Tables 2.1-2.24" over
+   three lines, while the exclusions column - the one actually being read -
+   stayed cramped. */
+.methods-table th:nth-child(1),.methods-table td:nth-child(1){width:14%}
+.methods-table th:nth-child(2),.methods-table td:nth-child(2){width:21%}
+.methods-table th:nth-child(3),.methods-table td:nth-child(3){width:17%}
+.methods-table tbody tr:last-child th,
+.methods-table tbody tr:last-child td{border-bottom:none}
+
 /* FOOTER REFERENCES */
 .references{
   margin-top:48px;padding-top:24px;border-top:1px solid var(--border-soft);
@@ -1174,6 +1280,9 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .references-title{font-family:var(--sans);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--faint);font-weight:500;margin-bottom:10px}
 .references p{margin-bottom:8px;text-indent:-20px;padding-left:20px}
+.references-group{font-family:var(--sans);font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--faint);font-weight:500;margin:18px 0 8px}
+.references-group:first-of-type{margin-top:0}
+.references-note{font-family:var(--sans);font-size:11px;color:var(--faint);font-style:italic;margin-top:16px;text-indent:0;padding-left:0}
 
 /* MOBILE */
 @media (max-width:900px){
@@ -3991,7 +4100,16 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 }
 
 /* ---------- METHODS & REFERENCES ---------- */
-#about{max-width:780px!important}
+/* Widened from 780px for the two-pane split above. The !important is inherited
+   from the original rule, not newly introduced — something in design-system.css
+   sets .section widths and this has to outrank it. 1240px is not arbitrary: at
+   the 1.6fr/1fr split it leaves the method pane about 690px, which is roughly
+   70 characters at 13.5px and the widest this prose should be set. The stacked
+   layout puts it back to 780px in the media query above, because there the
+   section width IS the measure. */
+#about{max-width:1240px!important}
+/* The title block spans the full width and has no column to constrain it. */
+#about > .section-desc{max-width:720px}
 #about p, #about li{
   font-family:var(--sans);font-size:14px;line-height:1.65;
   color:#3F3F3F;margin-bottom:12px;
