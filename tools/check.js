@@ -4782,6 +4782,29 @@ check('the row grid declares as many columns as the header renders', () => {
   const bad = [];
   if (cols !== 11) bad.push('the grid declares ' + cols + ' columns, expected 11');
   if (cells !== cols) bad.push('the header renders ' + cells + ' cells against ' + cols + ' grid columns');
+
+  /* AND THE BODY ROW, which is the case that actually mislabels numbers.
+     Header and body are separate grid containers, so a template/header
+     mismatch only wraps them both the same way — ugly, not wrong. It goes
+     wrong when the BODY renders fewer cells than the header: everything after
+     the missing one slides left and sits under the wrong label.
+
+     Counted by cell class rather than by counting "<span", because the name
+     cell legitimately nests badge spans inside itself. */
+  const body = (APP_SRC.match(/<div class="db-subtest-row">\s*\n\s*<span class="name"[\s\S]*?<\/div>`;/) || [''])[0];
+  const bodyCells = {
+    name:       (body.match(/<span class="name"/g) || []).length,
+    num:        (body.match(/<span class="num">/g) || []).length,
+    reliability:(body.match(/<span class="db-rel">/g) || []).length,
+    basis:      (body.match(/<span class="db-basis/g) || []).length,
+    trailing:   (body.match(/'<span><\/span>'/g) || []).length
+  };
+  const want = { name:1, num:7, reliability:1, basis:1, trailing:1 };
+  Object.entries(want).forEach(([k, v]) => {
+    if (bodyCells[k] !== v) bad.push('the body row renders ' + bodyCells[k] + ' ' + k + ' cell(s), expected ' + v);
+  });
+  const bodyTotal = Object.values(bodyCells).reduce((a, n) => a + n, 0);
+  if (bodyTotal !== cells) bad.push('the body row renders ' + bodyTotal + ' cells against the header\'s ' + cells + ' — the numbers would sit under the wrong labels');
   if (!/\.db-subtest-row\{grid-template-columns:1fr/.test(CSS_SRC.replace(/\s+/g, ''))) {
     bad.push('the responsive single-column override is gone, so the table will overflow on a narrow screen');
   }
