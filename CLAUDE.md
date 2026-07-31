@@ -389,22 +389,29 @@ creates the moment a blank age starts costing a sharper interval. It carries its
 input, so the ask is also the fastest way to answer it; the value is written through to
 `#patient-age`, which stays the master.
 
-**Edge-triggered, not state-triggered.** `renderBattery()` runs on every keystroke in the
-table, so opening whenever the condition holds would re-open it continuously while
-someone types scores. It fires on the *transition* into "CI on, age-band measures present,
-no age" — which also fixes an ordering problem a click handler on the CI button would
-have: switching CI on with D-KEFS already loaded fires, **and** autofilling D-KEFS while CI
-is already on fires. A click handler catches only the first, and would fire on an RBANS
-table where the age changes nothing.
+**The rule is: the interval is on and no age is stored.** That is the whole condition —
+`batteryAgeWanted()`. It deliberately does **not** ask whether this table holds measures
+publishing reliability by age band. An earlier version did, and it was wrong in practice:
+a clinician who switches confidence intervals on has said they care about interval width,
+and cannot be expected to know which instruments tabulate by band. Requiring a qualifying
+measure made the prompt feel arbitrary and kept it silent in the case people actually hit.
+`check.js` §26 fails if that gate comes back.
 
-**Once per patient**, re-armed by an explicit reset — never by clearing the age alone, or
-someone who skipped and then blanked the field is asked twice about the same person.
-**There are two reset controls and conflating them is how this shipped broken**: the
-table's own "Clear all" (`#bat-clear` → `clearBattery`) empties the table, and the topbar
-"New patient" (`#topbar-clear-all`) empties every table *and* the age. Only the topbar one
-re-armed at first, so clearing the table and autofilling again got silence. Both re-arm
-now; removing a single row must not, or a table being edited down re-asks mid-edit.
-`check.js` §26 pins exactly **two** runtime `batAgePopArmed = true` sites, by name.
+Because the table may now hold **no** age-band measures, the body text has a third branch:
+a generic sentence for `n === 0`, since a count sentence would read "0 measures … publish
+their reliability". All three branches agree in subject, verb and pronoun, and all three
+are pinned.
+
+**Edge-triggered, not state-triggered.** `renderBattery()` runs on every keystroke in the
+table, so opening whenever the condition holds would re-open it continuously while someone
+types scores. It fires on the *transition* into the condition, which gives **once per
+switch-on** for free and needs no arming flag. Being asked again means switching the
+interval off and on, or clearing the age — both drop the condition and let it rise.
+
+**There used to be a `batAgePopArmed` flag limiting it to once per patient, and it was the
+source of the "it never re-shows" complaint**: it was re-armed only by the topbar "New
+patient", so clearing the table with `#bat-clear` and autofilling again got silence.
+Deleting the concept deleted the bug class — §26 fails if the flag reappears.
 
 **The opening click must not also dismiss it.** The popover opens from inside
 `renderBattery()`, which usually runs *during* a click — "Add selected tests", the CI
@@ -446,6 +453,13 @@ A transient popover can be missed, so **`.ds-patient-field.is-wanted`** is the r
 a dashed tint on the topbar field whenever an age would be read and none is set. Purely
 state-driven, so it cannot go stale, and mutually exclusive with `.is-live` by
 construction. That trace is why a purely transient prompt was not enough.
+
+**The residual is a narrower claim than the popover, and must stay narrower.** The popover
+asks "intervals are on and you have no age — want to add one?"; the dashed field asserts
+"an age would actually sharpen something here", which is only true where a measure
+publishes reliability by age band. They shared one predicate while they made the same
+claim; since the popover stopped requiring age-band measures they no longer can, or the
+field would assert something untrue on a CVLT-3 table. §26 pins both conditions separately.
 
 ##### `body{zoom:0.9}` splits measurement in two
 

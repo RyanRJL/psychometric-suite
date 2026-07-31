@@ -2172,11 +2172,26 @@ function refreshPatientAgeIndicator(){
    anywhere suggesting something is missing or wrong. If this ever starts
    reading as a validation error, it is wrong — see the CI-column note in
    CLAUDE.md. */
-let batAgePopArmed = true;      // reset by "New patient"
 let batAgePopLastWanted = false; // previous edge state
 
+/* THE RULE: the interval is switched on and no age is stored. That is all.
+
+   It deliberately does NOT ask whether this table holds measures that publish
+   reliability by age band. An earlier version did, and it was wrong in
+   practice: a clinician who turns on confidence intervals has said they care
+   about interval width, and they cannot be expected to know which instruments
+   tabulate reliability by band — that is the app's job, not theirs. Asking
+   only for the families that happen to qualify made the prompt feel arbitrary,
+   and it stayed silent in the case people actually hit.
+
+   Edge-triggered on this condition, which gives "once per switch-on" for free
+   and needs no arming flag: turning CI on with no age opens it, and it will
+   not re-open until the condition drops and returns. Clearing the age with CI
+   already on also opens it, which is right — that is the same situation
+   arriving by a different route. */
 function batteryAgeWanted(){
-  return batteryAgeBandRowCount() > 0 && patientAge() === null;
+  const ci = document.getElementById('bat-ci-level');
+  return !!ci && ci.value !== 'off' && patientAge() === null;
 }
 
 /* Anchored with position:fixed against the CI toggle's own rect, rather than
@@ -2245,13 +2260,20 @@ function openBatteryAgePop(n){
   if (!pop || !body) return;
   batAgePopJustOpened = true;
   setTimeout(() => { batAgePopJustOpened = false; }, 0);
-  /* Every clause agrees with the count — subject, verb and pronoun. Written
-     out per branch rather than assembled from fragments, because "1 measure
-     publish their reliability" is what fragment-assembly produced on the first
-     pass, and this is text a clinician reads while deciding. */
-  body.innerHTML = n === 1
-    ? '<strong>1 measure</strong> in this table publishes its reliability by age band. An age narrows its interval; left blank, it uses the published all-ages coefficient.'
-    : '<strong>' + n + ' measures</strong> in this table publish their reliability by age band. An age narrows their intervals; left blank, they use the published all-ages coefficient.';
+  /* Three branches, because the popover now opens whenever the interval is on
+     and no age is stored — so the table may hold NO age-band measures at all,
+     and a count sentence would read "0 measures ... publish their reliability".
+
+     Every clause agrees with its count: subject, verb and pronoun. Written out
+     per branch rather than assembled from shared fragments, because "1 measure
+     publish their reliability" is exactly what fragment-assembly produced on
+     the first pass, and this is text a clinician reads while deciding. */
+  body.innerHTML =
+    n === 0
+      ? 'Some measures publish their reliability by age band, and an age narrows those intervals. Without one they use the published all-ages coefficient, which is equally citable.'
+    : n === 1
+      ? '<strong>1 measure</strong> in this table publishes its reliability by age band. An age narrows its interval; left blank, it uses the published all-ages coefficient.'
+      : '<strong>' + n + ' measures</strong> in this table publish their reliability by age band. An age narrows their intervals; left blank, they use the published all-ages coefficient.';
   const input = document.getElementById('bat-age-pop-input');
   if (input) input.value = '';
   pop.classList.add('is-open');
@@ -2299,16 +2321,21 @@ function commitBatteryAgePop(){
 
 function refreshBatteryAgePrompt(){
   const wanted = batteryAgeWanted();
-  /* The residual state. Always truthful, no edge trigger, no dismissal — this
-     is what a clinician sees if the popover was skipped, or fired while they
-     were looking at the table rather than the top bar. */
-  const field = document.getElementById('patient-age-field');
-  if (field) field.classList.toggle('is-wanted', wanted);
 
-  if (wanted && !batAgePopLastWanted && batAgePopArmed){
-    batAgePopArmed = false;
-    openBatteryAgePop(batteryAgeBandRowCount());
-  }
+  /* THE RESIDUAL IS A DIFFERENT CLAIM, and keeps its own, narrower condition.
+     The popover asks "you have intervals on and no age — want to add one?";
+     the dashed field says "an age would actually sharpen something here". The
+     second is only true where a measure publishes reliability by age band, so
+     it stays on batteryAgeBandRowCount(). They were one predicate while the
+     popover made the same claim; they no longer do, and collapsing them would
+     make the field assert something untrue on a CVLT-3 table. */
+  const field = document.getElementById('patient-age-field');
+  if (field) field.classList.toggle('is-wanted', batteryAgeBandRowCount() > 0 && patientAge() === null);
+
+  /* No arming flag: the edge itself gives "once per switch-on". It re-opens
+     only when the condition drops and returns — CI off then on, or an age
+     entered then cleared. */
+  if (wanted && !batAgePopLastWanted) openBatteryAgePop(batteryAgeBandRowCount());
   if (!wanted) closeBatteryAgePop();
   batAgePopLastWanted = wanted;
 }
@@ -3114,17 +3141,11 @@ function loadFamilyIntoBattery(family){
   // for "things added to the report". (Old toast was a duplicate.)
 }
 function clearBattery(){
-  /* Re-arms the missing-age popover, exactly as "New patient" does. Emptying
-     this table IS a fresh start from the clinician's side, and the popover
-     shipped asking only once because only the topbar button re-armed it — so
-     clearing the table here and autofilling again got silence.
-
-     There are two reset controls and they are easy to conflate: this one
-     ("Clear all", #bat-clear) empties the table, and the topbar one
-     ("New patient", #topbar-clear-all) empties every table AND the age. Both
-     re-arm; nothing else may. Removing a single row must not, or a table being
-     edited down would re-ask mid-edit. */
-  batAgePopArmed = true;
+  /* No popover re-arming here any more. It used to be needed because the
+     popover fired once per patient and only a reset could re-enable it; the
+     trigger is now simply "interval on, no age stored", so switching CI off
+     and on asks again by itself and clearing the table changes nothing about
+     whether the question applies. */
   batteryRows.length = 0;
   document.getElementById('bat-family-input').value = '';
   renderBattery();
@@ -6296,11 +6317,6 @@ refreshAll();
   btn.addEventListener('click', () => {
     const ok = confirm('Start a new patient?\n\nThis clears every table you\'ve been working on across all tools, including the Working Report, and the patient age. It cannot be undone.');
     if (!ok) return;
-
-    /* A new patient re-arms the missing-age popover. This is the ONLY thing
-       that does: clearing the age alone must not, or a clinician who skipped
-       and then blanked the field would be asked again about the same person. */
-    batAgePopArmed = true;
 
     // Suppress the observers BEFORE any clearing happens. The 350ms debounce
     // means handlers from changes triggered during the cascade can fire well

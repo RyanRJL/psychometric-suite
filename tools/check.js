@@ -3446,33 +3446,18 @@ check('the missing-age popover is edge-triggered, not state-triggered', () => {
   if (!/batAgePopLastWanted/.test(fn)) bad.push('nothing records the previous state, so this cannot be edge-triggered');
   if (!/!batAgePopLastWanted/.test(fn)) bad.push('the open is not gated on the condition having just become true');
   if (!/batAgePopLastWanted = wanted/.test(fn)) bad.push('the previous state is never updated, so it fires once and never again');
-  /* Once per patient, and re-armed only by an explicit RESET — not by clearing
-     the age, or someone who skipped and then blanked the field is asked twice
-     about the same person.
-
-     TWO controls reset, and conflating them is how this shipped broken: the
-     table's own "Clear all" (#bat-clear -> clearBattery) empties the table, and
-     the topbar "New patient" (#topbar-clear-all) empties every table and the
-     age. Only the topbar one re-armed, so clearing the table and autofilling
-     again got silence — the exact complaint. Both are asserted by name. */
-  if (!/batAgePopArmed/.test(fn)) bad.push('the popover is not limited to once per patient');
-  if (!/batAgePopArmed = false/.test(fn)) bad.push('it never disarms, so it reopens for the same patient');
-  const clearIdx = APP_SRC.indexOf("getElementById('topbar-clear-all')");
-  const handler = clearIdx < 0 ? '' : APP_SRC.slice(clearIdx, clearIdx + 4000);
-  if (!/batAgePopArmed = true/.test(handler)) bad.push('"New patient" does not re-arm the popover');
-  if (!/batAgePopArmed = true/.test(extractFn(APP_SRC, 'clearBattery'))) {
-    bad.push('the table\'s own "Clear all" does not re-arm the popover');
+  /* NO ARMING FLAG. The edge itself gives "once per switch-on", and it re-opens
+     whenever the condition drops and returns — CI off then on, or an age
+     entered then cleared. An earlier version limited it to once per patient and
+     needed a flag re-armed by the reset controls; that flag was the source of
+     the "it never re-shows" complaint, because only one of the two reset
+     buttons re-armed it. Removing the concept removed the whole bug class. */
+  if (/batAgePopArmed/.test(APP_SRC)) {
+    bad.push('the once-per-patient arming flag is back; the edge trigger alone is the rule now');
   }
-  /* Removing ONE row is not a reset — a table being edited down must not
-     re-ask mid-edit. */
-  if (/batAgePopArmed = true/.test(extractFn(APP_SRC, 'batteryRemove'))) {
-    bad.push('removing a single row re-arms the popover, so editing a table re-asks');
+  if (!/if \(wanted && !batAgePopLastWanted\) openBatteryAgePop/.test(fn)) {
+    bad.push('the open is not driven by the bare edge');
   }
-  /* The declaration is the initial value, not a re-arm — strip it, then there
-     must be exactly TWO runtime assignments and they must be the two above. */
-  const rearms = (APP_SRC.replace(/let batAgePopArmed = true;/, '')
-                         .match(/batAgePopArmed = true/g) || []).length;
-  if (rearms !== 2) bad.push('batAgePopArmed is re-armed at ' + rearms + ' runtime sites; only the two reset controls may do it');
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -3512,13 +3497,23 @@ check('the click that opens the popover does not also dismiss it', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the missing-age popover opens only when an age would change a number', () => {
+check('the missing-age popover opens whenever the interval is on with no age', () => {
+  /* THE RULE, and it is deliberately not conditioned on the table's contents:
+     a clinician who switches confidence intervals on has said they care about
+     interval width, and cannot be expected to know which instruments tabulate
+     reliability by age band. Requiring an age-band measure made the prompt feel
+     arbitrary and kept it silent in the case people actually hit. */
   const wanted = extractFn(APP_SRC, 'batteryAgeWanted');
   const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
   const open = extractFn(APP_SRC, 'openBatteryAgePop');
   const bad = [];
   if (!/patientAge\(\) === null/.test(wanted)) bad.push('it does not require the age to be absent, so it can nag with one set');
-  if (!/batteryAgeBandRowCount\(\) > 0/.test(wanted)) bad.push('it does not require at least one age-band measure');
+  if (!/bat-ci-level/.test(wanted) || !/!== 'off'/.test(wanted)) {
+    bad.push('it is not gated on the interval being switched on');
+  }
+  if (/batteryAgeBandRowCount/.test(wanted)) {
+    bad.push('the open is gated on age-band measures again, which is the rule that was replaced');
+  }
   if (!/batteryAgeWanted\(\)/.test(fn)) bad.push('the refresh does not use the shared condition');
   if (!/closeBatteryAgePop\(\)/.test(fn)) bad.push('it never closes itself when the condition stops holding');
   /* Class, not [hidden]: the attribute lost this exact fight before, because
@@ -3602,29 +3597,31 @@ check('committing from the popover pulses the field the value landed in', () => 
   return bad.length === 0 || bad.join('; ');
 });
 
-check('a new patient can always be asked again', () => {
-  /* Once per PATIENT, not once per session. The popover must re-open for every
-     fresh reset — after one that was answered and after one that was skipped
-     alike, since both are answers about the previous person only.
-
-     Driven, not inspected: the arming flag and the edge state are stepped
-     through the same transitions the page performs. */
-  const src = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+check('switching the interval off and on asks again', () => {
+  /* The popover is limited to once per SWITCH-ON, by the edge alone. So the
+     way to be asked again is to switch the interval off and back on, or to
+     clear the age — both drop the condition and let it rise again. There is no
+     arming flag to go stale, which is what the previous design got wrong: it
+     asked once per patient and only one of the two reset buttons re-enabled
+     it, so clearing the table and autofilling again got silence. */
+  const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
   const bad = [];
-  /* The reset must clear the edge memory too. If batAgePopLastWanted stayed
-     true across a reset, the next patient's first age-band row would not
-     register as a transition and nothing would open. */
-  if (!/batAgePopLastWanted = wanted/.test(src)) {
-    bad.push('the edge state is not updated from the live condition, so a reset could strand it');
+  if (!/batAgePopLastWanted = wanted/.test(fn)) {
+    bad.push('the edge state is never updated from the live condition, so it fires once and never again');
   }
-  /* Clearing every row makes `wanted` false, which is what re-lowers the edge
-     — so the clear must actually re-render rather than only emptying state. */
-  const clearIdx = APP_SRC.indexOf("getElementById('topbar-clear-all')");
-  const handler = clearIdx < 0 ? '' : APP_SRC.slice(clearIdx, clearIdx + 4000);
-  if (!/batteryRows\.length = 0; renderBattery\(\)/.test(handler)) {
-    bad.push('"New patient" does not re-render the emptied table, so the edge state stays high');
+  if (!/if \(!wanted\) closeBatteryAgePop\(\)/.test(fn)) {
+    bad.push('it does not close when the condition drops, so the edge can never rise again');
   }
-  if (!/batAgePopArmed = true/.test(handler)) bad.push('"New patient" does not re-arm the popover');
+  /* Switching CI off must actually re-render, or the condition never drops and
+     the edge can never rise a second time. Both halves of that chain: the
+     buttons write to the hidden input and dispatch, and app.js re-renders on it. */
+  const DS_SRC = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
+  if (!/ciInput\.dispatchEvent\(new Event\('change'/.test(DS_SRC)) {
+    bad.push('the CI buttons do not dispatch change, so app.js never re-renders on a switch');
+  }
+  if (!/getElementById\('bat-ci-level'\)\.addEventListener\('change', renderBattery\)/.test(APP_SRC)) {
+    bad.push('nothing re-renders the table when the CI level changes');
+  }
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -3670,13 +3667,23 @@ check('a skipped or missed popover still leaves a trace on the field', () => {
      being lost — state-driven, so it cannot go stale. */
   const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
   const bad = [];
-  if (!/classList\.toggle\('is-wanted', wanted\)/.test(fn)) bad.push('the field carries no residual state');
+  if (!/classList\.toggle\('is-wanted'/.test(fn)) bad.push('the field carries no residual state');
   const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
   if (!/\.ds-patient-field\.is-wanted\s*\{/.test(DS_CSS)) bad.push('.is-wanted has no styling, so the trace is invisible');
-  /* is-wanted (age blank, would be read) and is-live (age set, being read) are
+  /* THE RESIDUAL IS A NARROWER CLAIM THAN THE POPOVER, and must stay so. The
+     popover asks "intervals are on and you have no age — want to add one?";
+     the dashed field asserts "an age would actually sharpen something here",
+     which is only true where a measure publishes reliability by age band. They
+     shared one predicate while they made the same claim; since the popover
+     stopped requiring age-band measures they must not, or the field would
+     assert something untrue on a CVLT-3 table. */
+  if (!/is-wanted', batteryAgeBandRowCount\(\) > 0/.test(fn)) {
+    bad.push('the residual no longer requires an age-band measure, so it claims an age helps where it does not');
+  }
+  /* is-wanted (age blank, would be read) and is-live (age set, being read) stay
      mutually exclusive by construction — one needs an age, the other needs
      none. If they ever overlap, the field claims both at once. */
-  if (!/patientAge\(\) === null/.test(extractFn(APP_SRC, 'batteryAgeWanted'))) {
+  if (!/patientAge\(\) === null/.test(fn.slice(fn.indexOf("is-wanted")))) {
     bad.push('is-wanted no longer requires a blank age, so it can co-occur with is-live');
   }
   return bad.length === 0 || bad.join('; ');
