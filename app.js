@@ -2624,8 +2624,16 @@ const APA_NOTES = {
        the total-sample retest coefficient — which is that manual's own second
        regime, not a substitute for a missing number. Naming a coefficient the
        manual does not print would send a reader looking for it. */
+    /* THE TAIL OF THIS SENTENCE DEPENDS ON THE BASIS CONTROL, and getting that
+       wrong is a false statement rather than a vague one. D-KEFS (original)
+       publishes rInternalByAge with no all-ages average, so an out-of-range or
+       blank age lands on the retest branch — and with the correction on, that
+       branch no longer yields the manual's total-sample figure. D-KEFS Tower
+       is the concrete case: stored r .44, corrected .359. Saying "the
+       total-sample retest coefficient" there would send a reader to a number
+       the table did not use. */
     ctx.ciAge != null
-      ? `For measures whose published reliability is tabulated by age, coefficients are those for age ${ctx.ciAge}; where no age is supplied, the publisher's all-ages figure is used instead — the published average where the manual prints one, otherwise the total-sample retest coefficient.`
+      ? `For measures whose published reliability is tabulated by age, coefficients are those for age ${ctx.ciAge}; where no age is supplied, the publisher's all-ages figure is used instead — the published average where the manual prints one, otherwise the total-sample retest coefficient${ctx.hasDerivedR ? ', corrected as described above' : ''}.`
       : '',
     // Must follow the EFFECTIVE flagging mode (batteryPremorbidMode). This
     // previously described the SD thresholds unconditionally, so with SEE
