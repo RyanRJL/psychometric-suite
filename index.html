@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260801e">
+<link rel="stylesheet" href="styles.css?v=20260801f">
 <link rel="stylesheet" href="design-system.css?v=20260730m">
 
 <style>
@@ -39,29 +39,6 @@
     width:100%;
     padding:22px 50px 28px;
     font-size:13.5px;
-  }
-  #change-main-title{
-    display:flex;
-    align-items:baseline;
-    gap:14px;
-    flex-wrap:wrap;
-  }
-  #change-main-title .change-title-model{
-    font-family:var(--sans);
-    font-size:16px;
-    font-weight:600;
-    letter-spacing:0.06em;
-    text-transform:uppercase;
-    color:var(--ink-2);
-  }
-  #change-main-title .change-title-model::before{
-    content:"";
-    display:inline-block;
-    width:1px;
-    height:20px;
-    background:var(--border);
-    margin-right:14px;
-    vertical-align:-4px;
   }
   #change-analysis .section-desc{max-width:880px;margin-bottom:16px}
   .change-flow-shell{
@@ -2333,7 +2310,6 @@
   consolidated.id = 'change-analysis';
   consolidated.innerHTML = `
     <div class="eyebrow" id="change-main-eyebrow">Standard Deviation Index</div>
-    <h1 class="section-title" id="change-main-title">Change <em>Analysis</em></h1>
     <p class="section-desc" id="change-main-desc">Formula basis: descriptive standard-deviation discrepancy, SD Δ = (X₂ − X₁) / SD; no reliability correction is applied.</p>
     <div class="change-flow-shell">
       <aside class="change-flow-side">
@@ -2355,7 +2331,6 @@
 
   const tabs = consolidated.querySelector('.change-method-tabs');
   const body = consolidated.querySelector('.change-method-body');
-  const mainTitle = consolidated.querySelector('#change-main-title');
   const mainEyebrow = consolidated.querySelector('#change-main-eyebrow');
   const mainDesc = consolidated.querySelector('#change-main-desc');
 
@@ -2613,12 +2588,10 @@
       panel.classList.toggle('active', panel.id === id);
     });
     if (id === 'overview'){
-      if (mainTitle) mainTitle.innerHTML = 'Change <em>Analysis</em>';
       if (mainEyebrow) mainEyebrow.textContent = 'About';
       if (mainDesc) mainDesc.innerHTML = 'Choose the method below that best fits your data and rigour requirements.';
     } else {
       const method = methods.find(item => item.id === id);
-      if (mainTitle && method) mainTitle.textContent = method.title;
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
       if (mainDesc && method) mainDesc.innerHTML = method.source;
     }
