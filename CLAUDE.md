@@ -145,7 +145,7 @@ the page is branded Iverson (2001) in six places.
 | File | Lines | Role |
 |---|---|---|
 | `data.js` | 1.8k | All constants, coefficients, lookup tables and `normDB`. Plain script, defines globals. Loads first. |
-| `app.js` | 8.2k | Every calculator. 223 top-level functions, 11 section banners. |
+| `app.js` | 8.2k | Every calculator. 218 top-level functions, 11 section banners. |
 | `design-system.js` | 1.1k | Page titles, microcopy, FOUC handling, the inline control bars. |
 | `app-effectsize-page.js` | 0.8k | The effect-size calculator, self-contained. |
 | `app-viz-page.js` | 1.4k | Score Charts page — one SVG chart per test family, one row per trial/subtest, self-contained. Draws only what the table's own functions return; has no settings of its own. |
@@ -188,7 +188,7 @@ Section banners (`/* ====`) mark the boundaries:
 | ~2847 | SDI |
 | ~3232 | RCI calculators (Basic / Practice / SRB / Crawford) |
 | ~3797 | Per-method autofill from the normative database |
-| ~4024 | Custom tests database management |
+| ~4024 | Norms Database (custom-test storage, import, the browser) |
 | ~4453 | Premorbid estimation |
 | ~5771 | Auth overlay |
 | ~5917 | Top-bar navigation bucket sync |
@@ -801,6 +801,39 @@ lookup in the database: **single year of age**, 6 to 16, not bands.
 
 Users can add custom tests; `getMergedDB()` merges those over `normDB`.
 
+### The Norms Database page
+
+The only view of `normDB` a clinician has. It was a flat alphabetical list of all
+115 groups — D-KEFS alone ran to **36 consecutive groups** — with columns stopping at
+the retest `r`. Now: one tab per instrument, built from the data at render time so a new
+family cannot be left out of the bar, plus two columns that say **which reliability the
+interval is actually built from and what it rests on**.
+
+That second part matters because 131 entries are scored on a coefficient the old columns
+never showed. `dbReliabilityBasis()` mirrors `getBatteryRowReliability()`'s preference
+order at a blank age — **if the two ever drift, the page tells a clinician their interval
+rests on a coefficient it does not**, so `check.js` §32 drives both over all 659 entries
+and compares. The basis string also carries `· by age` wherever a banded lookup exists,
+since the printed figure moves the moment an age is entered on Score Tables.
+
+Two rows print no interval, for different reasons, and the basis distinguishes them:
+`base rate — no interval` (scored by published lookup, never had a coefficient) and
+`none published` (the four raw RBANS subtests, absent from Table 3.6).
+
+**The typed entry form was removed.** Adding a family and typing its norms row by row is
+gone; import remains, so `ctValidateEntry` is now the *sole* gatekeeper into the clinical
+database rather than one of two — §19 keeps pinning it. The deletion was the exact hazard
+recorded above: `refreshAll()` is a top-level init statement that called
+`refreshFamilySelect()`, so removing the callee without the call would have thrown at boot
+and killed every statement after it. §17 catches that, and §32 asserts the whole removal
+in both directions.
+
+`.db-subtest-row` is a **grid declared twice** — desktop and the responsive block. A
+previous author avoided adding a real column for that reason and put the metric badge
+inside the name cell instead. Two columns were added anyway, so §32 pins the grid's column
+count against the header's cell count; if they disagree every cell shifts one place left
+and the table silently mislabels its own numbers.
+
 ---
 
 ## Domain conventions
@@ -850,15 +883,15 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 260 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 261 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
 pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
 reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
-Score Tables confidence intervals, documentation contracts, wiring (§16–17) and the
-raw-score metric (§18).
+Score Tables confidence intervals, documentation contracts, wiring (§16–17), the
+raw-score metric (§18) and the Norms Database view (§32).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

@@ -4082,50 +4082,98 @@ function ctValidateEntry(raw){
   return { ok:true, entry };
 }
 
-function refreshFamilySelect(selectedFamily){
-  const sel = document.getElementById('ct-family-select');
-  const current = selectedFamily || sel.value;
-  const merged = getMergedDB();
-  const custom = getCustom();
-  // Allow adding subtests to any family (built-in or custom). Built-in additions become custom overrides.
-  const families = Object.keys(merged).sort();
-  sel.innerHTML = families.map(f =>
-    `<option value="${escapeAttr(f)}">${escapeHtml(f)}${custom[f] ? ' (custom)' : ''}</option>`
-  ).join('');
-  if (current && families.includes(current)){
-    sel.value = current;
-  }
+/* Which instrument a group belongs to. D-KEFS Advanced must be tested before
+   plain D-KEFS, the latter being a prefix of the former. */
+function dbInstrumentOf(family, isCustom){
+  if (isCustom) return 'Custom';
+  if (/^D-KEFS Advanced/.test(family)) return 'D-KEFS Advanced';
+  return family.split(' ')[0];
 }
-function makeFamilyName(baseName, ageMode, ageMinRaw, ageMaxRaw){
-  const base = String(baseName || '').trim();
-  if (!base) return '';
-  const mode = String(ageMode || 'none');
-  if (mode === 'all'){
-    return `${base} · All Ages`;
+
+/* THE RELIABILITY THIS ROW'S CONFIDENCE INTERVAL IS ACTUALLY BUILT FROM.
+
+   Mirrors getBatteryRowReliability's preference order exactly, minus the two
+   age-band lookups, which need a patient age this page does not have — so what
+   is shown is the BLANK-AGE answer, which is also the app's fallback. Where a
+   by-age table exists the basis says so, because the printed figure will move
+   once an age is entered on Score Tables.
+
+   If this ever drifts from getBatteryRowReliability, the table advertises a
+   coefficient the app does not use. check.js pins the two together. */
+function dbReliabilityBasis(entry){
+  const banded = !!(entry.rInternalByAge || entry.rStabilityByAge);
+  let r = null, basis = null;
+  if (Number.isFinite(entry.rInternal))        { r = entry.rInternal;  basis = 'internal consistency'; }
+  else if (Number.isFinite(entry.rStability))  { r = entry.rStability; basis = 'stability, published'; }
+  else if (Number.isFinite(entry.rCorrected))  { r = entry.rCorrected; basis = 'retest, corrected'; }
+  else if (Number.isFinite(entry.r))           { r = entry.r;          basis = 'retest'; }
+  if (r === null){
+    /* No coefficient at all. Two quite different reasons, and the row should
+       say which: a base-rate measure is scored by published lookup and never
+       had one, whereas a raw RBANS subtest is simply absent from its manual's
+       reliability table. Neither prints an interval. */
+    if (entry.baseRates) return { r:null, basis:'base rate — no interval', none:true };
+    return { r:null, basis:'none published', none:true };
   }
-  if (mode === 'range'){
-    const min = parseInt(ageMinRaw, 10);
-    const max = parseInt(ageMaxRaw, 10);
-    if (!Number.isFinite(min) || !Number.isFinite(max)) return '';
-    if (min < 0 || max < 0 || min > max) return '';
-    return `${base} · Ages ${min}-${max}`;
-  }
-  return base;
+  if (banded) basis += ' · by age';
+  return { r, basis, none:false };
 }
+
+let dbActiveTab = 'All';
+
 function renderDbList(){
   const search = document.getElementById('ct-search').value.toLowerCase().trim();
   const merged = getMergedDB();
   const custom = getCustom();
   const list = document.getElementById('db-list');
+  const tabbar = document.getElementById('db-tabbar');
   const families = Object.keys(merged).sort();
-  list.innerHTML = '';
+
+  // Which groups survive the search, regardless of tab. Computed first so the
+  // tab counts can show where the matches are rather than only how many
+  // entries each instrument holds.
+  const matched = {};
   families.forEach(family => {
-    const isCustom = !!custom[family];
     const subtests = merged[family];
     const familyMatch = !search || family.toLowerCase().includes(search);
-    const matchedSubs = Object.entries(subtests).filter(([n]) => familyMatch || n.toLowerCase().includes(search));
-    if (!familyMatch && matchedSubs.length === 0) return;
-    const subsToShow = familyMatch ? Object.entries(subtests) : matchedSubs;
+    const subs = familyMatch
+      ? Object.entries(subtests)
+      : Object.entries(subtests).filter(([n]) => n.toLowerCase().includes(search));
+    if (familyMatch || subs.length) matched[family] = subs;
+  });
+
+  // --- tab bar, built from the data so a new instrument cannot be left out ---
+  const counts = {};
+  families.forEach(f => {
+    const inst = dbInstrumentOf(f, !!custom[f]);
+    counts[inst] = counts[inst] || { total:0, hits:0 };
+    counts[inst].total += Object.keys(merged[f]).length;
+    if (matched[f]) counts[inst].hits += matched[f].length;
+  });
+  const instruments = Object.keys(counts).sort((a, b) =>
+    a === 'Custom' ? 1 : b === 'Custom' ? -1 : a.localeCompare(b));
+  const totalAll = Object.values(counts).reduce((a, c) => a + c.total, 0);
+  const hitsAll  = Object.values(counts).reduce((a, c) => a + c.hits, 0);
+  if (dbActiveTab !== 'All' && !counts[dbActiveTab]) dbActiveTab = 'All';
+  if (tabbar){
+    const tab = (name, n) => `<button type="button" class="db-tab${name === dbActiveTab ? ' db-tab-on' : ''}" role="tab" aria-selected="${name === dbActiveTab}" data-db-tab="${escapeAttr(name)}">${escapeHtml(name)}<span class="db-tab-count">${n}</span></button>`;
+    tabbar.innerHTML = tab('All', search ? hitsAll : totalAll)
+      + instruments.map(i => tab(i, search ? counts[i].hits : counts[i].total)).join('');
+    tabbar.querySelectorAll('[data-db-tab]').forEach(b => b.addEventListener('click', () => {
+      dbActiveTab = b.dataset.dbTab;
+      renderDbList();
+    }));
+  }
+
+  // --- the list ---------------------------------------------------------------
+  list.innerHTML = '';
+  let shownRows = 0;
+  families.forEach(family => {
+    const subsToShow = matched[family];
+    if (!subsToShow) return;
+    const isCustom = !!custom[family];
+    if (dbActiveTab !== 'All' && dbInstrumentOf(family, isCustom) !== dbActiveTab) return;
+    shownRows += subsToShow.length;
     const fam = document.createElement('div');
     fam.className = 'db-test-family';
     fam.innerHTML = `
@@ -4135,25 +4183,46 @@ function renderDbList(){
       </div>
       <div class="db-subtests">
         <div class="db-subtest-row" style="font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid var(--border-soft);padding-bottom:6px">
-          <span>Subtest</span><span class="num-label">M₁</span><span class="num-label">SD₁</span><span class="num-label">M₂</span><span class="num-label">SD₂</span><span class="num-label">r</span><span class="num-label" title="Attenuation-corrected test–retest correlation">corr. r</span><span class="num-label">N</span><span></span>
+          <span>Subtest</span><span class="num-label">M₁</span><span class="num-label">SD₁</span><span class="num-label">M₂</span><span class="num-label">SD₂</span><span class="num-label">r</span><span class="num-label" title="Attenuation-corrected test–retest correlation">corr. r</span><span class="num-label">N</span><span class="num-label" title="The reliability this measure's confidence interval is built from, with no patient age entered">CI r</span><span title="Where that coefficient comes from">Basis</span><span></span>
         </div>
-        ${subsToShow.map(([name, p]) => `
+        ${subsToShow.map(([name, p]) => {
+          const rel = dbReliabilityBasis(p);
+          return `
           <div class="db-subtest-row">
-            <span class="name">${escapeHtml(name)}${p.metric ? `<span class="db-metric-tag">${escapeHtml(scoreTypeAbbr(p.metric) || p.metric)}</span>` : ''}</span>
+            <span class="name">${escapeHtml(name)}${p.metric ? `<span class="db-metric-tag">${escapeHtml(scoreTypeAbbr(p.metric) || p.metric)}</span>` : ''}${p.higherIsWorse ? '<span class="db-metric-tag" title="A high score is a poor result; the classification is computed from the reflected score">high = worse</span>' : ''}</span>
             <span class="num">${fmt(p.m1, 2)}</span>
             <span class="num">${fmt(p.sd1, 2)}</span>
-            <span class="num">${fmt(p.m2, 2)}</span>
-            <span class="num">${fmt(p.sd2, 2)}</span>
-            <span class="num">${fmt(p.r, 2)}</span>
-            <span class="num">${p.rCorrected == null ? '-' : fmt(p.rCorrected, 2)}</span>
-            <span class="num">${p.n == null ? '-' : escapeHtml(String(p.n))}</span>
+            <span class="num">${p.m2 == null ? '–' : fmt(p.m2, 2)}</span>
+            <span class="num">${p.sd2 == null ? '–' : fmt(p.sd2, 2)}</span>
+            <span class="num">${p.r == null ? '–' : fmt(p.r, 2)}</span>
+            <span class="num">${p.rCorrected == null ? '–' : fmt(p.rCorrected, 2)}</span>
+            <span class="num">${p.n == null ? '–' : escapeHtml(String(p.n))}</span>
+            <span class="db-rel">${rel.r == null ? '–' : fmt(rel.r, 2)}</span>
+            <span class="db-basis${rel.none ? ' db-basis-none' : ''}">${escapeHtml(rel.basis)}</span>
             ${isCustom ? `<button class="btn btn-ghost btn-icon" data-del-sub="${escapeAttr(family)}::${escapeAttr(name)}" title="Remove subtest">×</button>` : '<span></span>'}
-          </div>
-        `).join('')}
+          </div>`;
+        }).join('')}
       </div>
     `;
     list.appendChild(fam);
   });
+
+  /* A search that hits nothing in this tab but plenty elsewhere is the one
+     confusing state tabs introduce. Say so rather than showing an empty list. */
+  if (!shownRows){
+    const hint = document.createElement('div');
+    hint.className = 'db-hint';
+    if (search && hitsAll){
+      hint.innerHTML = `No match for "${escapeHtml(search)}" in ${escapeHtml(dbActiveTab)} — ${hitsAll} elsewhere. <button type="button" data-db-tab-all>Search all instruments</button>`;
+    } else if (search){
+      hint.textContent = `Nothing matches "${search}".`;
+    } else {
+      hint.textContent = 'No entries in this tab.';
+    }
+    list.appendChild(hint);
+    const b = hint.querySelector('[data-db-tab-all]');
+    if (b) b.addEventListener('click', () => { dbActiveTab = 'All'; renderDbList(); });
+  }
   list.querySelectorAll('[data-del-family]').forEach(b => b.addEventListener('click', () => {
     if (!confirm(`Delete custom family "${b.dataset.delFamily}" and all its subtests?`)) return;
     const c = getCustom(); delete c[b.dataset.delFamily]; saveCustom(c);
@@ -4178,8 +4247,10 @@ function renderDbList(){
    refreshAll() call at the bottom of this file silently stopped running.
    check.js section 17 now asserts that every project function called anywhere
    in the source actually exists. */
+/* `selectedFamily` is vestigial: it used to re-select the family that had just
+   been added in the entry form, and is kept only so the many existing
+   refreshAll(x) call sites need no edit. Nothing reads it now. */
 function refreshAll(selectedFamily){
-  refreshFamilySelect(selectedFamily);
   renderDbList();
   rebuildAllFamilyLists();
   rebuildBatteryFamilyList();
@@ -4196,190 +4267,7 @@ function refreshAll(selectedFamily){
    built-in raw families are tagged in normDB; this is the same escape hatch
    for tests the clinician enters. It also lets any other misclassification be
    corrected by hand rather than argued with. */
-const CT_METRIC_OPTIONS = [
-  { value:'',         label:'Auto (from mean)' },
-  { value:'scaled',   label:'Scaled (M 10, SD 3)' },
-  { value:'standard', label:'Standard (M 100, SD 15)' },
-  { value:'t',        label:'T (M 50, SD 10)' },
-  { value:'z',        label:'z (M 0, SD 1)' },
-  { value:'raw',      label:'Raw — no percentile' },
-];
-function ctEntryRowHtml(i, seed){
-  const row = seed || {};
-  const sel = String(row.metric == null ? '' : row.metric);
-  const opts = CT_METRIC_OPTIONS.map(o =>
-    `<option value="${escapeAttr(o.value)}"${o.value === sel ? ' selected' : ''}>${escapeHtml(o.label)}</option>`
-  ).join('');
-  return `<tr>
-    <td class="ct-row-num">${i + 1}</td>
-    <td><input class="ct-subtest-name" type="text" data-k="name" placeholder="Test name" value="${escapeAttr(row.name || '')}"></td>
-    <td><input type="number" step="any" data-k="m1" value="${row.m1 != null ? escapeAttr(row.m1) : ''}"></td>
-    <td><input type="number" step="any" data-k="sd1" value="${row.sd1 != null ? escapeAttr(row.sd1) : ''}"></td>
-    <td><input type="number" step="any" data-k="m2" value="${row.m2 != null ? escapeAttr(row.m2) : ''}"></td>
-    <td><input type="number" step="any" data-k="sd2" value="${row.sd2 != null ? escapeAttr(row.sd2) : ''}"></td>
-    <td><input type="number" step="0.01" min="0" max="0.99" data-k="r" value="${row.r != null ? escapeAttr(row.r) : ''}"></td>
-    <td><input type="number" step="1" min="3" data-k="n" value="${row.n != null ? escapeAttr(row.n) : ''}"></td>
-    <td><select class="ct-metric-select" data-k="metric" title="The score type this measure is reported on. Leave on Auto unless the app gets it wrong, or the measure is a raw score.">${opts}</select></td>
-    <td><button type="button" class="btn btn-ghost btn-icon" data-ct-del-row title="Delete row">×</button></td>
-  </tr>`;
-}
-function ctRenumberRows(){
-  const body = document.getElementById('ct-entry-body');
-  if (!body) return;
-  body.querySelectorAll('tr').forEach((tr, i) => {
-    const num = tr.querySelector('.ct-row-num');
-    if (num) num.textContent = String(i + 1);
-  });
-}
-function ctRenderRows(rows){
-  const body = document.getElementById('ct-entry-body');
-  if (!body) return;
-  body.innerHTML = rows.map((r, i) => ctEntryRowHtml(i, r)).join('');
-  /* Pure normative entry - every value on a row is read off one row of a test
-     manual, so Tab runs across the row and then on to the next. */
-  /* The metric cell is a <select>, so it is deliberately OUTSIDE the tab group:
-     tabbing across a row should run through the numbers read off one row of a
-     manual, and a dropdown in the middle of that would interrupt the rhythm.
-     It is still reachable by tab in normal DOM order. */
-  setupTableKeyNav(body, {
-    selector: 'input[data-k]',
-    keyOf: el => el.dataset.k,
-    rowGroups: [['name', 'm1', 'sd1', 'm2', 'sd2', 'r', 'n']]
-  });
-}
-function ctReadRows(){
-  const body = document.getElementById('ct-entry-body');
-  if (!body) return [];
-  const out = [];
-  body.querySelectorAll('tr').forEach(tr => {
-    const get = k => tr.querySelector(`[data-k="${k}"]`)?.value?.trim() || '';
-    const name = get('name');
-    const m1s = get('m1'), sd1s = get('sd1'), m2s = get('m2'), sd2s = get('sd2'), rs = get('r'), ns = get('n');
-    const metric = get('metric');
-    /* The metric select always has a value ('' for Auto), so it must NOT count
-       towards "has the user put anything in this row" — otherwise every blank
-       row would look filled and the trailing placeholder would be submitted. */
-    const any = [name,m1s,sd1s,m2s,sd2s,rs,ns].some(v => v !== '');
-    if (!any) return;
-    out.push({ name, m1s, sd1s, m2s, sd2s, rs, ns, metric });
-  });
-  return out;
-}
-function ctInitEntryRows(){
-  ctRenderRows([{ name:'Example index score', m1:100, sd1:15, m2:103, sd2:15, r:0.90, n:100 }, {}]);
-  const body = document.getElementById('ct-entry-body');
-  const addBlankRow = () => {
-    const rows = ctReadRows().map(r => ({ name:r.name, m1:r.m1s, sd1:r.sd1s, m2:r.m2s, sd2:r.sd2s, r:r.rs, n:r.ns, metric:r.metric }));
-    rows.push({});
-    ctRenderRows(rows);
-  };
-  document.getElementById('ct-add-row')?.addEventListener('click', () => {
-    addBlankRow();
-  });
-  document.getElementById('ct-load-example')?.addEventListener('click', () => {
-    const rows = ctReadRows().map(r => ({ name:r.name, m1:r.m1s, sd1:r.sd1s, m2:r.m2s, sd2:r.sd2s, r:r.rs, n:r.ns, metric:r.metric }));
-    rows.push({ name:'Example trial', m1:10, sd1:3, m2:11, sd2:3, r:0.80, n:100 });
-    ctRenderRows(rows);
-  });
-  document.getElementById('ct-clear-rows')?.addEventListener('click', () => ctRenderRows([{}]));
-  body?.addEventListener('click', e => {
-    const del = e.target.closest('[data-ct-del-row]');
-    if (!del) return;
-    const tr = del.closest('tr');
-    if (!tr) return;
-    tr.remove();
-    if (!body.querySelector('tr')){
-      ctRenderRows([{}]);
-    } else {
-      ctRenumberRows();
-    }
-  });
-  body?.addEventListener('keydown', e => {
-    if (e.key !== 'Tab' || e.shiftKey) return;
-    const target = e.target;
-    if (!(target instanceof HTMLInputElement)) return;
-    const tr = target.closest('tr');
-    if (!tr) return;
-    const rows = Array.from(body.querySelectorAll('tr'));
-    if (rows[rows.length - 1] !== tr) return;
-    const inputs = Array.from(tr.querySelectorAll('input'));
-    if (inputs[inputs.length - 1] !== target) return;
-    e.preventDefault();
-    addBlankRow();
-    const nextRows = body.querySelectorAll('tr');
-    const newLast = nextRows[nextRows.length - 1];
-    const firstInput = newLast?.querySelector('input[data-k="name"]');
-    if (firstInput) firstInput.focus();
-  });
-}
-document.getElementById('ct-add-family').addEventListener('click', () => {
-  const base = document.getElementById('ct-family').value.trim();
-  const ageMode = document.getElementById('ct-family-age-mode')?.value || 'none';
-  const ageMin = document.getElementById('ct-family-age-min')?.value || '';
-  const ageMax = document.getElementById('ct-family-age-max')?.value || '';
-  const name = makeFamilyName(base, ageMode, ageMin, ageMax);
-  if (!base) return showToast('Enter a family name', true);
-  if (!name) return showToast('Check age-band fields (use valid min/max ages)', true);
-  const c = getCustom();
-  if (c[name] || normDB[name]) return showToast('A family with that name already exists', true);
-  c[name] = {}; saveCustom(c);
-  document.getElementById('ct-family').value = '';
-  if (document.getElementById('ct-family-age-mode')) document.getElementById('ct-family-age-mode').value = 'none';
-  if (document.getElementById('ct-family-age-min')) document.getElementById('ct-family-age-min').value = '';
-  if (document.getElementById('ct-family-age-max')) document.getElementById('ct-family-age-max').value = '';
-  showToast(`✓ Added family "${name}"`);
-  refreshAll(name);
-});
-document.getElementById('ct-add-subtest').addEventListener('click', () => {
-  const family = document.getElementById('ct-family-select').value;
-  const rows = ctReadRows();
-  if (!family) return showToast('Select a family first', true);
-  if (rows.length === 0) return showToast('Add at least one row', true);
-  const c = getCustom();
-  // If user is adding to a built-in family, clone it first into custom (so we don't lose built-ins on conflict)
-  if (!c[family]){
-    if (normDB[family]) c[family] = { ...normDB[family] };
-    else c[family] = {};
-  }
-  let added = 0;
-  for (const r of rows){
-    const subtest = r.name;
-    const m1 = parseFloat(r.m1s), sd1 = parseFloat(r.sd1s), m2 = parseFloat(r.m2s), sd2 = parseFloat(r.sd2s), rel = parseFloat(r.rs);
-    const n = r.ns === '' ? null : parseInt(r.ns, 10);
-    if (!subtest) return showToast('Each used row needs a subtest name', true);
-    if ([m1, sd1, m2, sd2, rel].some(isNaN)) return showToast(`Fill all numeric fields for "${subtest}"`, true);
-    if (rel < 0 || rel >= 1) return showToast(`Reliability out of range for "${subtest}"`, true);
-    if (sd1 <= 0 || sd2 <= 0) return showToast(`SD must be positive for "${subtest}"`, true);
-    if (n !== null && (!Number.isFinite(n) || n < 3)) return showToast(`N must be ≥ 3 for "${subtest}"`, true);
-    const entry = { m1, sd1, m2, sd2, r: rel };
-    if (n !== null) entry.n = n;
-    /* Only store a declared metric when the user actually chose one. '' means
-       Auto, and writing metric:'' would look like a declaration to every
-       consumer while resolving to nothing. */
-    const metric = (r.metric || '').trim();
-    if (metric){
-      if (!CT_METRIC_OPTIONS.some(o => o.value === metric)){
-        return showToast(`Unknown score type for "${subtest}"`, true);
-      }
-      entry.metric = metric;
-    }
-    c[family][subtest] = entry;
-    added += 1;
-  }
-  saveCustom(c);
-  ctRenderRows([{}]);
-  showToast(`✓ Added ${added} row${added === 1 ? '' : 's'} to ${family}`);
-  refreshAll();
-});
 document.getElementById('ct-search').addEventListener('input', renderDbList);
-const ctAgeMode = document.getElementById('ct-family-age-mode');
-const ctAgeRange = document.getElementById('ct-family-age-range');
-if (ctAgeMode && ctAgeRange){
-  const syncCtAgeRange = () => { ctAgeRange.style.display = ctAgeMode.value === 'range' ? 'grid' : 'none'; };
-  ctAgeMode.addEventListener('change', syncCtAgeRange);
-  syncCtAgeRange();
-}
-ctInitEntryRows();
 document.getElementById('ct-export').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(getCustom(), null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);

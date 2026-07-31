@@ -1015,8 +1015,13 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   background:var(--accent);color:#fff;padding:2px 8px;border-radius:2px;font-weight:500;
 }
 .db-subtests{padding:8px 16px}
+/* 11 columns: measure, the 7 descriptive stats, the reliability the interval
+   is actually built from, its basis, and the custom-entry delete button.
+   Declared HERE and again in the responsive block below; check.js keeps the
+   two in step, which is what makes a real column safe to add. Nothing in
+   design-system.css matches .db-*, so no !important is needed. */
 .db-subtest-row{
-  display:grid;grid-template-columns:2fr repeat(7,1fr) auto;gap:8px;
+  display:grid;grid-template-columns:1.9fr repeat(7,0.72fr) 0.8fr 1.45fr auto;gap:8px;
   padding:6px 0;font-size:12.5px;align-items:center;
   border-bottom:1px dashed var(--border-soft);
 }
@@ -1044,6 +1049,41 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
    responsive block, so adding a real column would mean editing the template in
    two places and risking design-system.css overriding one of them. Sitting
    inside the existing name cell sidesteps the grid entirely. */
+/* Norms Database — instrument tabs and the reliability cell.
+
+   All standalone names. design-system.css defines no .db-* rule at all
+   (verified), so these win on their own and need no !important, per the CSS
+   cascade note in CLAUDE.md. */
+.db-tabbar{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 6px}
+.db-tab{
+  appearance:none;cursor:pointer;
+  padding:5px 11px;font-size:12px;line-height:1.6;
+  color:var(--ink-2);background:var(--paper);
+  border:1px solid var(--border-soft);border-radius:999px;
+}
+.db-tab:hover{color:var(--ink);border-color:var(--border)}
+.db-tab-on{
+  color:var(--paper);background:var(--ink);border-color:var(--ink);
+}
+.db-tab-count{
+  margin-left:6px;font-family:var(--mono);font-size:10px;opacity:0.7;
+}
+/* The reliability actually in force, and what it rests on. */
+.db-rel{font-family:var(--mono);color:var(--ink);text-align:right}
+.db-basis{
+  font-size:9.5px;line-height:1.4;color:var(--faint);
+  text-transform:uppercase;letter-spacing:0.05em;
+}
+.db-basis-none{font-style:italic;text-transform:none;letter-spacing:0}
+.db-hint{
+  margin:10px 0;padding:9px 12px;font-size:12px;color:var(--ink-2);
+  background:var(--paper);border:1px dashed var(--border-soft);border-radius:4px;
+}
+.db-hint button{
+  appearance:none;cursor:pointer;margin-left:8px;padding:2px 9px;font-size:11px;
+  color:var(--ink);background:transparent;
+  border:1px solid var(--border);border-radius:999px;
+}
 .db-metric-tag{
   display:inline-block;margin-left:6px;padding:1px 5px;
   font-family:var(--mono);font-size:9px;line-height:1.5;
