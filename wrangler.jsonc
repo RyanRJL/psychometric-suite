@@ -1,0 +1,49 @@
+{
+  // Cloudflare Workers deploy config for psychometric-suite.
+  //
+  // WHY THIS FILE EXISTS. The Workers project is git-connected to this repo
+  // with the deploy command `npx wrangler deploy` and no build command. There
+  // was no wrangler config anywhere in the repo or its history, so every
+  // git-triggered build failed instantly with empty output — wrangler had
+  // nothing to read. That is the whole cause of the permanently red
+  // "Workers Builds: psychometric-suite" check.
+  //
+  // NO BUILD STEP, deliberately. CLAUDE.md is explicit that this app has no
+  // toolchain and must work by double-clicking a single file. So this deploys
+  // the repo's own files as static assets, exactly as they sit on disk. Do not
+  // add a bundler here to make this config tidier.
+  "name": "psychometric-suite",
+  "compatibility_date": "2026-07-31",
+
+  // ASSETS-ONLY: there is no Worker script, so "main" is deliberately absent.
+  // Wrangler serves the asset directory directly.
+  "assets": {
+    "directory": ".",
+
+    // NOT "single-page-application", and this is the important one.
+    //
+    // The app looks like an SPA — every page lives in index.html and nav shows
+    // and hides sections — but it routes on the HASH (`#premorbid`), never on
+    // a path (see writeNavHistory in app.js). A hash never reaches the server,
+    // so there is no deep path for a fallback to rescue. Setting SPA mode here
+    // would return index.html with HTTP 200 for every mistyped or dead URL,
+    // turning genuine 404s into a page that looks like it worked. "none" lets
+    // a missing file be a missing file.
+    "not_found_handling": "none"
+  },
+
+  // ROUTING IS MANAGED IN THE DASHBOARD, NOT HERE — psychometric-assist.com
+  // plus three other routes are configured there.
+  //
+  // Omitting "routes" is NOT on its own enough to protect them: Cloudflare's
+  // documentation states that a deploy overrides dashboard-configured routes
+  // with whatever the config says. The documented way to keep the dashboard
+  // authoritative is to omit "routes" AND set workers_dev false, which is what
+  // this pair of decisions is. Adding a "routes" key here would take ownership
+  // of the custom domains away from the dashboard on the next deploy.
+  //
+  // If the *.workers.dev preview URL is wanted back, flip this to true — but
+  // re-read the paragraph above first, because that flag is load-bearing for
+  // more than the preview subdomain.
+  "workers_dev": false
+}
