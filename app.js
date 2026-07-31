@@ -1990,21 +1990,33 @@ const BATTERY_METRIC_SD = { z: 1, t: 10, scaled: 3, standard: 15 };
    RELIABILITY, in preference order:
      rInternal   — internal consistency, where the publisher reports one AND
                    builds its own published intervals from it. See data.js.
+     rStability  — a stability coefficient the publisher tabulates in that SAME
+                   reliability table, for measures it excludes from internal
+                   consistency. RBANS Update Table 3.6 is the first: footnote a
+                   marks five of its fourteen rows "based on test-retest".
      rCorrected  — retest r rescaled to the normative sample.
      r           — the raw retest coefficient.
    Internal consistency comes first because a confidence interval asks how
    precisely THIS administration measured the person, which is the question an
    internal-consistency coefficient answers. That preference is confined to
    this function: reliable change asks a different question and must keep the
-   retest coefficient — see the rInternal note in data.js. */
+   retest coefficient — see the rInternal note in data.js.
+
+   rStability is NOT an exception to the test-retest default; it IS that
+   default, sourced from the manual's own reliability table rather than from a
+   retest study group. It exists as a separate field only so that a stability
+   coefficient is never stored under a name the APA note and Methods &
+   References then describe as internal consistency. */
 /* Does this row's measure actually consult the patient age? Only measures
    whose publisher tabulates reliability by age band do, so the APA note can
-   say the age was used without asserting it on tables where nothing read it. */
+   say the age was used without asserting it on tables where nothing read it.
+   Either banded field counts — the question is whether an age was read, not
+   which basis the coefficient has. */
 function batteryRowUsesAgeBand(row){
   if (!row || !row.group) return false;
   const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
   const entry = db && db[row.group] && db[row.group][row.name];
-  return !!(entry && typeof entry === 'object' && entry.rInternalByAge);
+  return !!(entry && typeof entry === 'object' && (entry.rInternalByAge || entry.rStabilityByAge));
 }
 
 /* THE PATIENT'S AGE — one value, two inputs.
@@ -2063,16 +2075,24 @@ function batteryPatientAge(){ return patientAge(); }
    average. Both figures are the publisher's own, so either path is citable —
    and a blank age must never empty the column, which is why this degrades
    instead of refusing. */
-function rInternalForAge(entry, age){
-  const byAge = entry.rInternalByAge;
+function bandedReliabilityForAge(byAge, ageMax, age){
   if (!byAge || !Number.isFinite(age)) return null;
-  if (Number.isFinite(entry.rInternalAgeMax) && age > entry.rInternalAgeMax) return null;
+  if (Number.isFinite(ageMax) && age > ageMax) return null;
   let band = null;
   Object.keys(byAge).forEach(k => {
     const lo = Number(k);
     if (age >= lo && (band === null || lo > band)) band = lo;
   });
   return band === null ? null : byAge[band];
+}
+function rInternalForAge(entry, age){
+  return bandedReliabilityForAge(entry.rInternalByAge, entry.rInternalAgeMax, age);
+}
+/* Same lookup, for the stability coefficients a manual tabulates by age
+   alongside its internal-consistency ones. Kept as its own function rather
+   than a flag so that a grep for either field finds every site that reads it. */
+function rStabilityForAge(entry, age){
+  return bandedReliabilityForAge(entry.rStabilityByAge, entry.rStabilityAgeMax, age);
 }
 
 function getBatteryRowReliability(row, type, age){
@@ -2083,9 +2103,12 @@ function getBatteryRowReliability(row, type, age){
   if (!family) return null;
   const entry = family[row.name];
   if (!entry || typeof entry !== 'object') return null;
-  const rBand = rInternalForAge(entry, age);
+  const rBand  = rInternalForAge(entry, age);
+  const rSBand = rStabilityForAge(entry, age);
   const r = Number.isFinite(rBand)           ? rBand            :
+            Number.isFinite(rSBand)          ? rSBand           :
             Number.isFinite(entry.rInternal)  ? entry.rInternal  :
+            Number.isFinite(entry.rStability) ? entry.rStability :
             Number.isFinite(entry.rCorrected) ? entry.rCorrected :
             Number.isFinite(entry.r)          ? entry.r          : null;
   if (r === null) return null;
@@ -3809,10 +3832,24 @@ function ageBandLabel(f){
 // longest span would have scored every patient against All Ages: Longest Digit
 // Span Backward at a span of 4 is the 22nd percentile at 20-24 and the 59th at
 // 85-90, so up to 37 percentile points would have gone silently wrong.
+//
+// The second case is a band that is not a band at all but a SEPARATE BATTERY.
+// WMS-IV publishes an Adult battery (16-69) and an Older Adult battery (65-90)
+// with different subtests — no Designs, no Spatial Addition, no Visual Working
+// Memory Index in the older one — and different reliability for the SAME
+// measure. Age cannot choose between them, because 65-69 appears in both
+// (Logical Memory I is .79 in the adult battery and .83 in the older adult):
+// the clinician chose which to administer, so the clinician must choose here.
+// Collapsing them showed an 80-year-old the adult battery's measure list, and
+// its coefficients — 10 of the 12 shared measures printed a wrong interval.
+//
+// Declared per entry rather than inferred. A rule like "the two groups hold
+// different measures" would have worked today and broken silently the first
+// time a family's bands diverged for some other reason.
 function familyScoredByAgeBand(name){
   const fam = normDB[name];
   if (!fam) return false;
-  return Object.values(fam).some(e => e && typeof e === 'object' && e.baseRates);
+  return Object.values(fam).some(e => e && typeof e === 'object' && (e.baseRates || e.separateBattery));
 }
 function buildFamilyListHtml(families, opts){
   const flat = !!(opts && opts.flat);

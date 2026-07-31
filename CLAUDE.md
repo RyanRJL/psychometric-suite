@@ -213,7 +213,7 @@ for the pattern. Follow it when touching a table that contains inputs.
 
 ## `normDB`
 
-The reliability database: 113 groups, 641 entries, seven instrument families (D-KEFS,
+The reliability database: 115 groups, 659 entries, seven instrument families (D-KEFS,
 CVLT-3, CVLT-C, RBANS, WAIS-IV, WISC-V, WMS-IV).
 
 Group keys are `"<Instrument> <Category> · <Age band>"` — the separator is **U+00B7
@@ -300,7 +300,7 @@ is right almost everywhere (see the CI paragraphs in Methods & References). The 
 setting it aside is deliberately high: **the publisher must both report an
 internal-consistency coefficient AND derive its own published intervals from it.**
 
-Four manuals clear it, and `check.js` §24 pins the roster so a fifth cannot appear
+Seven manuals clear it, and `check.js` §24 pins the roster so an eighth cannot appear
 undocumented:
 
 | Source | Entries | Fields |
@@ -309,6 +309,9 @@ undocumented:
 | D-KEFS Advanced — CWIT, Tower, Social Sorting, Risk-Reward | 26 | `rInternal` + `rInternalByAge` |
 | D-KEFS (original) — VFT, Sorting, 20Q, Word Context, Tower, Proverb, TMT composite | 13 | `rInternalByAge` **only** |
 | WAIS-IV — Table 4.1, all but the three speeded subtests | 21 | `rInternal` + `rInternalByAge` |
+| RBANS Update — Table 3.6, the nine rows without footnote a | 9 | `rInternal` + `rInternalByAge` |
+| WMS-IV — Table 3.1, both batteries, all but VPA II Word Recall | 30 | `rInternal` + `rInternalByAge` |
+| WISC-V — Table 4.1, all but the three speeded subtests | 19 | `rInternal` + `rInternalByAge` |
 
 That roster check keys on **either** field. D-KEFS original carries no `rInternal` at
 all, so a check testing `rInternal` alone would let 13 entries change the basis of a
@@ -495,10 +498,6 @@ reconstruct `normDB`'s 16-29 / 30-54 / 55-69 / 70-90 groups exactly.
   every composite coefficient as internal consistency and publishes no other reliability
   for them. Excluding PSI while keeping FSIQ — which also draws on Processing Speed
   subtests — would be incoherent.
-- **NOT verified: that the manual's printed SEMs come from Table 4.1.** That needs Table
-  4.3, which was not available; the claim rests on the manual's stated method, the same
-  footing D-KEFS Advanced was admitted on. If Table 4.3 is obtained, pin it as §27 pins
-  the D-KEFS SEM cells.
 - **`WAIS-IV Longest Span` gets none of this** — base-rate scored, no retest data, absent
   from Table 4.1.
 
@@ -506,6 +505,152 @@ The §24 naming check could not catch a stale paragraph here: **"WAIS-IV" was al
 that paragraph in the opposite sense**, naming the manual only as a user of test–retest
 coefficients, so the roster grew and the check stayed green. §28 pins the substance of the
 wording instead.
+
+##### Table 4.3 — the SEM table, which settles what used to be taken on trust
+
+This section long carried a "NOT verified" note: that the manual builds its own SEMs from
+Table 4.1 rested on its stated method, Table 4.3 being unavailable. It is available now,
+and **all 300 published cells equal `populationSD × √(1 − rxx)` from the stored
+coefficients, exactly, at the printed 2 dp** (`check.js` §28). Nothing needed changing.
+
+Three things follow, and the second and third matter more than the confirmation.
+
+- **A second publisher states the SD rule.** Table 4.3's note: the SEMs use "the
+  reliability coefficients shown in Table 4.1 and the population standard deviations
+  (i.e., 3 for the subtests and 15 for the composite scores)". That is exactly what §23
+  derived independently from CVLT-3, and what `6de0d81` fixed. Over the 300 cells: this
+  app's pairing **300**, retest `r` 5, `rCorrected` 46 (the 38 speeded cells it owns, plus
+  8 coincidences), and **`sd1` against a normatively-scaled coefficient — the old pairing
+  — 29**.
+- **The blank-age fallback was unpinned, and now is not.** `rInternal` is what a patient
+  with no age is scored on, and nothing held it — the spot checks read `rInternalByAge`
+  only. Proven by mutation: moving Vocabulary's average .94 → .95 passed all 238 checks.
+  Because Table 4.3 fixes the 13 bands exactly and Table 4.1 averages with **Fisher's z**,
+  the average is now derivable from pinned values — Fisher's z reproduces all 24 stored
+  averages at 2 dp where the plain arithmetic mean manages 18. **That 18 is also why the
+  neighbouring check refuses to assert the average *differs* from the mean of its bands.**
+- **The two tables average the same 13 numbers by different methods, so nothing
+  reconciles them.** Table 4.3's footnote defines the average SEM as the RMS of the band
+  SEMs, and `RMS = √(mean(SD²(1−rᵢ))) = SD√(1 − mean(rᵢ))` — the **arithmetic** mean of the
+  coefficients, which reproduces 20 of 24 against **5** for the **Fisher's z** that Table
+  4.1's own average column uses. That is a property of the source. The blank-age interval
+  therefore keeps coming from Table 4.1's average *coefficient*: it is what an unknown band
+  needs and it is published, where inverting the average SEM would mean storing
+  `1 − (2.16/15)² = .9793` for FSIQ — the Twenty Questions rule. §28 pins the inconsistency
+  itself, so it fails if a corrected printing ever makes the two agree.
+
+It costs **two printed margins in 48** (24 measures × the two CI levels), both on a
+rounding knife-edge: FSIQ at 90% gives ±3 against ±4 (3.49 vs 3.55) and Digit Span
+Backward at 95% ±2 against ±3 (2.49 vs 2.55). §28 pins the pair, so a third joining them
+fails the check.
+
+**The gap is mostly rounding, not method** — the obvious reading is wrong, and it is worth
+knowing before re-opening this. Decomposing FSIQ: the arithmetic mean of the bands
+(.97923) gives 2.1617, which *is* Table 4.3's printed 2.16; Fisher's z unrounded (.97936)
+gives 2.1547; the stored published average (.98) gives 2.1213. **Method costs 0.007;
+rounding the published average to 2 dp costs 0.033** — about five times more. On VCI it is
+0.044 against 0.19.
+
+**A third option was weighed and declined — do not "discover" it and switch.** Using the
+Fisher-z average of the bands **unrounded** matches the manual's printed margin on 24 of
+24 at both CI levels, and invents nothing: the bands are pinned exactly by Table 4.3 and
+Fisher's z is Table 4.1's own stated method. It was declined because the app renders the
+coefficient it actually used, so the reliability cell would print `.979` where the manual
+prints `.98`, and a clinician cross-checking Table 4.1 would find a number that is not
+there. Reviewed and kept as-is, 2026-07-31. Entering an age sidesteps the whole question,
+and that path is exact.
+
+#### `rStability` — the same table, the other basis
+
+**RBANS Update Table 3.6 is the first published reliability table in this database that
+is mixed-basis *within itself*.** Its footnote a marks five of fourteen rows "Reliability
+estimates based on test–retest": Figure Copy, Semantic Fluency, Coding, Story Recall and
+Figure Recall. The other nine are internal consistency.
+
+Those five cannot take `rInternal*` — that field's name is asserted on screen by the APA
+note and by Methods & References, so storing a stability coefficient there would state
+something false, exactly as it would for WAIS-IV's three speeded subtests. But they also
+should not fall back to the retest *group's* coefficient, because Table 3.6 publishes a
+value for them **by normative age band** and derives its own printed SEM from it.
+
+Hence `rStability` / `rStabilityByAge` / `rStabilityAgeMax`, read by
+`getBatteryRowReliability` immediately after the internal-consistency fields. **It is not
+an exception to the test–retest default — it *is* that default**, sourced from the
+manual's own reliability table rather than from a retest study group. Five entries carry
+it and `check.js` §29 asserts it has not escaped RBANS.
+
+Corroborated: the adult bands equal this database's stored `rCorrected` **5 of 5**,
+against 1 of 5 for the raw `r` — the same transcription proof the WAIS-IV speeded three
+give. The adolescent bands match only 2 of 5, those being a different retest sample;
+Table 3.6 is stored as printed rather than reconciled to Table 3.8, and §29 pins the 2 so
+the mismatch reads as known rather than as an error.
+
+#### RBANS needed new `· All Ages` groups, and that fixed a live defect
+
+Every other RBANS group holds a retest study banded the way that study sampled (12-19,
+20-89). Score Tables shows one entry per instrument and picks the `· All Ages` group —
+and with none present, `buildFamilyListHtml` fell through to **whichever group was listed
+first**. Nothing chose it; it was object order. So every RBANS patient was scored on 55
+adolescents, differing from the 20-89 study on **12 of 18 measures**. Immediate Memory at
+an index of 100 printed 85–115 where Table 3.6 gives 90–110 at age 80.
+
+`RBANS Subtests · All Ages` and `RBANS Indices · All Ages` now carry the normative
+metrics (10/3 and 100/15, which are definitions, not data) and Table 3.6's coefficients.
+Every entry is `singleAdministration:true`, so `isSingleAdministrationFamily` keeps them
+out of Change Analysis and the SD Index, which go on using the retest groups — the same
+separation §25 enforces for D-KEFS Advanced.
+
+**The four raw subtests appear nowhere in Table 3.6** — the manual publishes reliability
+for its eight *scaled* subtests only, which is its own confirmation of the raw/scaled
+split §18 asserts from the data shape. They therefore print **no interval at all** in the
+All Ages group. That loss is deliberate: the interval they used to show came from 55
+adolescents whatever the patient's age, and `List Recognition` alone runs `r` .70 there
+against .27 in adults, so the honest adult interval is nearly twice the width that was
+printed. Their `m1`/`sd1` are the adult retest descriptives, carried over only so the row
+stays selectable and declares its metric; §29 asserts nothing derives from them.
+
+Note this made `singleAdministration` mean less than it used to. §3 required base rates
+on every such entry, conflating "no retest data" with "scored by base-rate lookup". These
+entries are scored by ordinary conversion, so the check now asks for m1/sd1, no retest
+fields, and **some** published basis — base rates, a reliability, or the raw tag.
+
+#### WMS-IV — two batteries, and the first band that must stay selectable
+
+**WMS-IV's age-band groups are separate norm sets, not separate retest samples.** The
+Adult battery is normed 16-69 (15 subtests, 5 indices); the Older Adult battery is normed
+65-90 and drops Designs, Spatial Addition and VWMI, leaving 8 and 4. Ages **65-69 are
+normed in both**, with different coefficients — Logical Memory I is `.79` adult against
+`.83` older adult — so age cannot pick the battery. The clinician picked it when they
+decided what to administer.
+
+So this family gets the opposite treatment to RBANS: no `· All Ages` group, and the band
+stays **selectable**. `familyScoredByAgeBand()` now returns true for `baseRates` **or**
+`separateBattery`, the latter declared per entry rather than inferred — a rule like "the
+two groups hold different measures" would have worked today and broken silently later.
+Collapsing them had been showing an 80-year-old the adult measure list and its
+coefficients, wrong on **10 of the 12 shared measures**. §30 asserts the 65-69 overlap
+both *exists* and *disagrees*, since that is the entire argument for the exemption.
+
+Tables 3.1 and 3.3, pp. 44-46, verified arithmetically: **all 240 published SEM cells**
+equal `SD √(1−rxx)` at the printed 2 dp, on 3 and 15. §25's "All Ages only" rule now
+reads "All Ages, or a separate battery", and `separateBattery` is pinned to WMS-IV's four
+groups so it cannot spread.
+
+- **VPA II Word Recall carries footnote b** — free recall has no consistent item count,
+  so internal consistency is inapplicable. It takes `rStability`, and Table 3.1's `.76`
+  equals the stored `rCorrected` in **both** batteries and neither raw `r`.
+- **The recognition memory measures are absent, and must stay absent.** Their published
+  reliability is a **decision-consistency percentage** — percent agreement of impaired vs
+  not-impaired at a 10th-percentile cut — because those tasks are cumulative percentages
+  with skewed distributions. A percent agreement is not a correlation and cannot enter
+  `SD √(1−rxx)`. They are in neither Table 3.1 nor `normDB`; §30 fails if one appears.
+- **`rInternalAgeMax` is the battery's ceiling**, 69 and 90, so an age past it takes the
+  published average rather than re-reading the top band.
+
+**Three manuals now split their two average columns the same way** — WAIS-IV 4.1/4.3,
+RBANS 3.6/3.7 and WMS-IV 3.1/3.3 all average coefficients by Fisher's z and SEMs by RMS,
+which is `SD √(1 − arithmetic mean)`. It is a publisher habit, not a one-off, and the
+stored average stays the published *coefficient* in every case.
 
 ### `baseRates` — measures scored by lookup rather than by conversion
 
@@ -647,7 +792,12 @@ alongside, so direction stays visible without the app interpreting it.
 
 Field coverage: `m1`, `sd1`, `m2`, `sd2` and `r` are present on **all 590** entries;
 `rCorrected` on only **233** — D-KEFS, CVLT-C and WISC-V have none at all, so any feature
-depending on it must degrade gracefully.
+depending on it must degrade gracefully. That absence is why **WISC-V is verified differently
+from the rest**: with no `rCorrected` to match the manual's stability rows against, Tables
+4.1/4.4 carry the transcription proof on their own (242 cells), and §31 additionally drives
+the shipped renderer through the manual's worked example — a 6-year-old at FSIQ 108 gives
+102–114 at 95% and 103–113 at 90%, exactly as p. 62 prints. WISC-V also has the finest
+lookup in the database: **single year of age**, 6 to 16, not bands.
 
 Users can add custom tests; `getMergedDB()` merges those over `normDB`.
 
@@ -700,9 +850,11 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 234 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 260 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
-Tables 4.5 (§4) and 4.1 (§28), OPIE-4 coefficients pinned to Table eA5.8, worked OPIE
+Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
+OPIE-4 coefficients
+pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
 reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
 Score Tables confidence intervals, documentation contracts, wiring (§16–17) and the
