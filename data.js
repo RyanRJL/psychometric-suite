@@ -1189,6 +1189,82 @@ const OPIE_BASE_RATES = {
     "Story Recall": { m1:11.6, sd1:2.3, m2:11.6, sd2:2.3, r:0.52, rCorrected:0.72, n:40 },
     "Figure Recall": { m1:10.4, sd1:3, m2:11.5, sd2:3, r:0.55, rCorrected:0.55, n:40 }
   },
+  /* ---------------------------------------------------------------
+     RBANS · All Ages — the Score Tables groups, and the only RBANS
+     groups carrying a reliability the publisher tabulates by age.
+
+     WHY THESE GROUPS EXIST. Every other RBANS group holds a RETEST
+     study, banded the way that study sampled (12-19, 20-89). Score
+     Tables shows one entry per instrument and picks the "· All Ages"
+     group; with none present it fell through to whichever group was
+     listed FIRST, so every patient — an 80-year-old included — was
+     scored on 55 adolescents. Immediate Memory printed 85-115 where
+     Table 3.6 gives 90-110 at that age.
+
+     SOURCE: RBANS Update Manual (Randolph 2012), Tables 3.6 and 3.7,
+     p. 42. 14 measures x 9 NORMATIVE age bands. It clears the bar this
+     project sets: the manual publishes the coefficients AND derives its
+     own printed SEMs from them — all 126 cells of Table 3.7 equal
+     SD sqrt(1 - rxx) on the SDs its note states ("SEMs expressed in
+     scaled score (subtest) and standard score (index) units", so 3 and
+     15). check.js section 29 pins every one.
+
+     TWO BASES IN ONE TABLE, WHICH IS WHY THERE ARE TWO FIELDS.
+     Table 3.6 footnote a marks five subtests "Reliability estimates
+     based on test-retest": Figure Copy, Semantic Fluency, Coding,
+     Story Recall, Figure Recall. Those take rStabilityByAge. The other
+     nine are internal consistency and take rInternalByAge. Storing the
+     five as rInternal would label a stability coefficient as internal
+     consistency, which the APA note and Methods & References then
+     assert on screen — the same mislabelling WAIS-IV Table 4.1 avoids
+     for its three speeded subtests.
+
+     The five are corroborated: their ADULT values equal this database's
+     stored rCorrected 5/5, against 1/5 for the raw r — the same
+     transcription proof the WAIS-IV speeded three give. The adolescent
+     columns match only 2/5; those bands are a different retest sample,
+     and Table 3.6 is taken as printed rather than reconciled to
+     Table 3.8.
+
+     THE FOUR RAW SUBTESTS APPEAR NOWHERE IN TABLE 3.6, which is an
+     independent confirmation of the raw/scaled split recorded above:
+     the manual publishes reliability for its eight SCALED subtests
+     only. They therefore carry no coefficient and print no interval.
+     That loss is deliberate — the interval they used to show came from
+     55 adolescents whatever the patient's age, and List Recognition
+     alone runs r .70 there against .27 in adults, so the honest adult
+     interval is nearly twice the width that was printed. m1/sd1 are the
+     adult retest descriptives, carried over only so the row stays
+     selectable and declares its metric; nothing on screen derives from
+     them, a raw row having no percentile, no classification and now no
+     interval. Pinned in section 29.
+
+     singleAdministration:true throughout: these groups hold no second
+     testing, so isSingleAdministrationFamily keeps them out of Change
+     Analysis and the SD Index, which go on using the retest groups.
+     --------------------------------------------------------------- */
+  "RBANS Indices · All Ages": {
+    "Immediate Memory": { m1:100, sd1:15, singleAdministration:true, rInternal:0.88, rInternalAgeMax:89, rInternalByAge:{12:0.93, 14:0.81, 16:0.86, 20:0.84, 40:0.88, 50:0.89, 60:0.85, 70:0.89, 80:0.9} },
+    "Visuospatial/Constructional": { m1:100, sd1:15, singleAdministration:true, rInternal:0.75, rInternalAgeMax:89, rInternalByAge:{12:0.64, 14:0.67, 16:0.53, 20:0.77, 40:0.81, 50:0.82, 60:0.84, 70:0.81, 80:0.78} },
+    "Attention": { m1:100, sd1:15, singleAdministration:true, rInternal:0.84, rInternalAgeMax:89, rInternalByAge:{12:0.81, 14:0.82, 16:0.81, 20:0.84, 40:0.84, 50:0.85, 60:0.83, 70:0.88, 80:0.85} },
+    "Language": { m1:100, sd1:15, singleAdministration:true, rInternal:0.8, rInternalAgeMax:89, rInternalByAge:{12:0.79, 14:0.8, 16:0.74, 20:0.75, 40:0.76, 50:0.87, 60:0.85, 70:0.81, 80:0.83} },
+    "Delayed Memory": { m1:100, sd1:15, singleAdministration:true, rInternal:0.84, rInternalAgeMax:89, rInternalByAge:{12:0.85, 14:0.85, 16:0.84, 20:0.84, 40:0.83, 50:0.84, 60:0.85, 70:0.83, 80:0.81} },
+    "Total Scale": { m1:100, sd1:15, singleAdministration:true, rInternal:0.93, rInternalAgeMax:89, rInternalByAge:{12:0.92, 14:0.91, 16:0.9, 20:0.92, 40:0.94, 50:0.95, 60:0.93, 70:0.93, 80:0.94} }
+  },
+  "RBANS Subtests · All Ages": {
+    "List Learning": { m1:10, sd1:3, singleAdministration:true, rInternal:0.85, rInternalAgeMax:89, rInternalByAge:{12:0.91, 14:0.88, 16:0.8, 20:0.82, 40:0.88, 50:0.85, 60:0.8, 70:0.86, 80:0.84} },
+    "Story Memory": { m1:10, sd1:3, singleAdministration:true, rInternal:0.78, rInternalAgeMax:89, rInternalByAge:{12:0.87, 14:0.55, 16:0.79, 20:0.71, 40:0.73, 50:0.82, 60:0.79, 70:0.8, 80:0.84} },
+    "Figure Copy": { m1:10, sd1:3, singleAdministration:true, rStability:0.5, rStabilityAgeMax:89, rStabilityByAge:{12:0.42, 14:0.42, 16:0.42, 20:0.54, 40:0.54, 50:0.54, 60:0.54, 70:0.54, 80:0.54} },
+    "Line Orientation": { m1:16, sd1:3.4, metric:'raw', singleAdministration:true },
+    "Picture Naming": { m1:9.8, sd1:0.4, metric:'raw', singleAdministration:true },
+    "Semantic Fluency": { m1:10, sd1:3, singleAdministration:true, rStability:0.57, rStabilityAgeMax:89, rStabilityByAge:{12:0.65, 14:0.65, 16:0.65, 20:0.52, 40:0.52, 50:0.52, 60:0.52, 70:0.52, 80:0.52} },
+    "Digit Span": { m1:10, sd1:3, singleAdministration:true, rInternal:0.83, rInternalAgeMax:89, rInternalByAge:{12:0.71, 14:0.86, 16:0.85, 20:0.84, 40:0.83, 50:0.85, 60:0.76, 70:0.86, 80:0.83} },
+    "Coding": { m1:10, sd1:3, singleAdministration:true, rStability:0.81, rStabilityAgeMax:89, rStabilityByAge:{12:0.76, 14:0.76, 16:0.76, 20:0.83, 40:0.83, 50:0.83, 60:0.83, 70:0.83, 80:0.83} },
+    "List Recall": { m1:6.2, sd1:2.4, metric:'raw', singleAdministration:true },
+    "List Recognition": { m1:19.6, sd1:0.8, metric:'raw', singleAdministration:true },
+    "Story Recall": { m1:10, sd1:3, singleAdministration:true, rStability:0.54, rStabilityAgeMax:89, rStabilityByAge:{12:0.45, 14:0.45, 16:0.45, 20:0.72, 40:0.72, 50:0.72, 60:0.72, 70:0.72, 80:0.72} },
+    "Figure Recall": { m1:10, sd1:3, singleAdministration:true, rStability:0.59, rStabilityAgeMax:89, rStabilityByAge:{12:0.71, 14:0.71, 16:0.71, 20:0.55, 40:0.55, 50:0.55, 60:0.55, 70:0.55, 80:0.55} }
+  },
   // RBANS alternate-form (index-level only). m1/sd1 = Form A, m2/sd2 = alt form.
   // Change-Analysis only (filtered out of Score Tables). Randolph 2012:
   // A→B Table 3.10 (ages 20-89), A→C Table 3.11 (all ages), A→D Table 3.12 (all ages).

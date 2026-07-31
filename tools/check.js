@@ -288,10 +288,10 @@ function eachRetestEntry(fn) {
   eachNormEntry((e, g, n) => { if (!e.singleAdministration) fn(e, g, n); });
 }
 
-check('113 groups and 641 entries present', () => {
+check('115 groups and 659 entries present', () => {
   const groups = Object.keys(D.normDB).length;
   let n = 0; eachNormEntry(() => n++);
-  return (groups === 113 && n === 641) || 'got ' + groups + ' groups / ' + n + ' entries';
+  return (groups === 115 && n === 659) || 'got ' + groups + ' groups / ' + n + ' entries';
 });
 check('every retest entry has m1, sd1, m2, sd2 and r', () => {
   const bad = [];
@@ -302,12 +302,34 @@ check('every retest entry has m1, sd1, m2, sd2 and r', () => {
   });
   return bad.length === 0 || bad.length + ' problems, first: ' + bad[0];
 });
-check('every single-administration entry has m1, sd1 and base rates, and NO r', () => {
+check('every single-administration entry has m1, sd1 and a published basis, and NO r', () => {
+  /* singleAdministration means one thing only: no second testing, so nothing
+     here may claim a retest coefficient.
+
+     It USED to also require baseRates, which conflated "no retest data" with
+     "scored by base-rate lookup". RBANS · All Ages broke that: those entries
+     are scored by ordinary metric conversion and carry the reliability the
+     RBANS Update tabulates by age, with no base rates anywhere. The invariant
+     that actually matters is that the entry has SOME published basis for what
+     it puts on screen — a base-rate table, or a reliability coefficient — and
+     is not simply an empty row.
+
+     The exception is a raw entry with neither. RBANS Line Orientation, Picture
+     Naming, List Recall and List Recognition are absent from Table 3.6, so
+     they derive nothing at all: no percentile, no classification, no interval.
+     They are allowed through because they still let a clinician record the raw
+     score, but they must be tagged raw, so this cannot become a way to smuggle
+     in a standardised measure with nothing behind it. */
   const bad = [];
   eachNormEntry((e, g, n) => {
     if (!e.singleAdministration) return;
     if (!Number.isFinite(e.m1) || !Number.isFinite(e.sd1)) bad.push(g + ' / ' + n + ' missing m1/sd1');
-    if (!e.baseRates || !Object.keys(e.baseRates).length) bad.push(g + ' / ' + n + ' has no base rates');
+    const hasRates = !!(e.baseRates && Object.keys(e.baseRates).length);
+    const hasRel = ['rInternal', 'rInternalByAge', 'rStability', 'rStabilityByAge']
+      .some((f) => e[f] != null);
+    if (!hasRates && !hasRel && e.metric !== 'raw') {
+      bad.push(g + ' / ' + n + ' has neither base rates nor a published reliability, and is not raw');
+    }
     /* Carrying an r here would be a claim the manual does not make, and would
        put the family back into the Change Analysis dropdowns. */
     for (const f of ['m2', 'sd2', 'r', 'rCorrected']) {
@@ -1094,11 +1116,13 @@ const batteryCtx = (() => {
   vm.runInContext(
     boundsSrc[0] + '\n' + metricSdSrc[0] + '\n' +
       (APP_SRC.match(/const PATIENT_AGE_INPUTS = \[[^\]]*\];/) || [''])[0] + '\n' +
-      ['patientAge', 'rInternalForAge', 'batteryPatientAge', 'getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml']
+      ['patientAge', 'bandedReliabilityForAge', 'rInternalForAge', 'rStabilityForAge',
+       'batteryPatientAge', 'getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml']
         .map((n) => extractFn(APP_SRC, n)).join('\n') +
       '\n;globalThis.__B = getBatteryCiHtml;'
       + '\n;globalThis.__REL = getBatteryRowReliability;'
-      + '\n;globalThis.__AGE = rInternalForAge;',
+      + '\n;globalThis.__AGE = rInternalForAge;'
+      + '\n;globalThis.__STAB = rStabilityForAge;',
     ctx
   );
   return ctx;
@@ -1106,6 +1130,7 @@ const batteryCtx = (() => {
 const batteryCi  = batteryCtx.__B;
 const batteryRel = batteryCtx.__REL;
 const rInternalForAge = batteryCtx.__AGE;
+const rStabilityForAge = batteryCtx.__STAB;
 
 const SCALED_ROW   = { name: 'Block Design', group: 'WAIS-IV Core Subtests · All Ages', scoreType: 'scaled' };
 const STANDARD_ROW = { name: 'Full Scale IQ', group: 'WAIS-IV Indices · All Ages',      scoreType: 'standard' };
@@ -1456,7 +1481,8 @@ const RAW_FAMILIES_WHOLE = [
   'CVLT-C Subtests (Raw Scores) · Age 16',
 ];
 const RBANS_RAW_SUBTESTS = ['Line Orientation', 'Picture Naming', 'List Recognition', 'List Recall'];
-const RBANS_GROUPS = ['RBANS Subtests · Ages 12-19', 'RBANS Subtests · Ages 20-89'];
+const RBANS_GROUPS = ['RBANS Subtests · Ages 12-19', 'RBANS Subtests · Ages 20-89',
+                      'RBANS Subtests · All Ages'];
 
 check('the CVLT-C raw-score families are tagged on every entry', () => {
   const bad = [];
@@ -1508,7 +1534,7 @@ check('every untagged RBANS subtest has a mean consistent with a scaled score', 
    Counted separately to keep the "raw and unscoreable" total honest. */
 const SPAN_GROUPS = Object.keys(D.normDB).filter(g => /^WAIS-IV Longest Span/.test(g));
 
-check('exactly 98 entries are tagged raw, and none outside the known groups', () => {
+check('exactly 102 entries are tagged raw, and none outside the known groups', () => {
   const fams = new Set([...RAW_FAMILIES_WHOLE, ...RBANS_GROUPS, ...SPAN_GROUPS]);
   let n = 0; const stray = [];
   eachNormEntry((e, g, name) => {
@@ -1517,7 +1543,11 @@ check('exactly 98 entries are tagged raw, and none outside the known groups', ()
     if (!fams.has(g)) stray.push(g + ' / ' + name);
   });
   if (stray.length) return 'tagged raw outside the known families: ' + stray.join(', ');
-  return n === 98 || 'got ' + n + ' tagged raw, expected 98 (39 CVLT-C + 8 RBANS + 51 longest span)';
+  /* 12 RBANS now, not 8: the · All Ages group repeats the same four raw
+     subtests. They are the four absent from RBANS Update Table 3.6, which is
+     the manual's own confirmation that its reliability table covers the eight
+     SCALED subtests only. */
+  return n === 102 || 'got ' + n + ' tagged raw, expected 102 (39 CVLT-C + 12 RBANS + 51 longest span)';
 });
 
 /* No standardised metric in this app has an SD below 1, so an entry whose sd1
@@ -2694,11 +2724,17 @@ check('rInternal appears only where a publisher derives its own intervals from i
      publish an internal-consistency interval would silently change that row's
      basis, so the roster is pinned.
 
-     Four sources so far:
+     Five sources so far:
        CVLT-C List A Trials 1-5 Total   3 entries, no by-age table
        D-KEFS Advanced CWIT/Tower/SST/RISK  26 entries, All Ages groups only
        D-KEFS (original)                13 entries, All Ages groups only
        WAIS-IV Technical Manual Table 4.1   21 entries, All Ages groups only
+       RBANS Update Table 3.6            9 entries, All Ages groups only
+
+     RBANS is the first source whose reliability table is MIXED-BASIS within
+     itself: five of its fourteen rows carry footnote a, "estimates based on
+     test-retest", and are held in rStability* instead. They must not appear
+     here, and section 29 asserts that separately.
 
      Keyed on EITHER field. D-KEFS original carries rInternalByAge with no
      rInternal — its manual publishes no all-ages average — so a roster that
@@ -2716,12 +2752,14 @@ check('rInternal appears only where a publisher derives its own intervals from i
   const dkefs = carriers.filter((c) => /^D-KEFS Advanced (Colour-Word Interference|Tower|Social Sorting|Risk-Reward Decision) · All Ages \//.test(c));
   const orig  = carriers.filter((c) => /^D-KEFS (?!Advanced)(Trail Making Test|Verbal Fluency|Sorting Test|Word Context Test|Tower Test|Word Proverb Test|Twenty Questions Test) · All Ages \//.test(c));
   const wais  = carriers.filter((c) => /^WAIS-IV (Core Subtests|Indices|Process Scores|Supplementary Subtests) · All Ages \//.test(c));
-  const stray = carriers.filter((c) => !cvltc.includes(c) && !dkefs.includes(c) && !orig.includes(c) && !wais.includes(c));
+  const rbans = carriers.filter((c) => /^RBANS (Subtests|Indices) · All Ages \//.test(c));
+  const stray = carriers.filter((c) => !cvltc.includes(c) && !dkefs.includes(c) && !orig.includes(c) && !wais.includes(c) && !rbans.includes(c));
   const bad = [];
   if (cvltc.length !== 3) bad.push('CVLT-C carriers: ' + cvltc.length + ', expected 3');
   if (dkefs.length !== 26) bad.push('D-KEFS Advanced carriers: ' + dkefs.length + ', expected 26');
   if (orig.length !== 13) bad.push('D-KEFS original carriers: ' + orig.length + ', expected 13');
   if (wais.length !== 21) bad.push('WAIS-IV carriers: ' + wais.length + ', expected 21');
+  if (rbans.length !== 9) bad.push('RBANS carriers: ' + rbans.length + ', expected 9');
   if (stray.length) bad.push('undocumented: ' + stray.slice(0, 3).join(', '));
   return bad.length === 0 || bad.join('; ');
 });
@@ -3757,6 +3795,262 @@ check('Methods & References states the WAIS-IV position, both halves of it', () 
   if (!/Table 4\.1/.test(para)) bad.push('the paragraph does not cite Table 4.1');
   ['Symbol Search', 'Coding', 'Cancellation'].forEach((n) => {
     if (!para.includes(n)) bad.push(n + ' is no longer named as an exclusion');
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+/* ==========================================================================
+   29. RBANS Update — Tables 3.6 and 3.7
+
+   PINNED SOURCE: RBANS Update Manual (Randolph 2012), p. 42.
+     Table 3.6  "Reliability Coefficients of RBANS Subtest and Index Scores by
+                Age Group". 14 measures x 9 normative bands (12-13, 14-15,
+                16-19, 20-39, 40-49, 50-59, 60-69, 70-79, 80-89) plus an
+                overall average.
+                footnote a  "Reliability estimates based on test-retest."
+                            — on Figure Copy, Semantic Fluency, Coding,
+                            Story Recall and Figure Recall ONLY.
+                footnote b  "Average reliability coefficients were calculated
+                            using Fisher's z transformation."
+     Table 3.7  the SEMs, same shape. Note: "SEMs expressed in scaled score
+                (subtest) and standard score (index) units."
+                footnote a  the average SEM is the RMS across bands.
+
+   This is the fifth internal-consistency source and the first whose table is
+   MIXED-BASIS within itself, which is why rStability* exists. It is also the
+   first family that needed new · All Ages groups: every other RBANS group
+   holds a retest study, and Score Tables was falling through to whichever was
+   listed first — scoring an 80-year-old on 55 adolescents.
+   ========================================================================== */
+heading('29. RBANS Update — Tables 3.6 and 3.7');
+
+/* [family, population SD, normDB name, footnote a?, Table 3.6 bands, its
+   average, Table 3.7 bands, its average]. Read off the supplied tables. */
+const RBANS_BANDS = [12, 14, 16, 20, 40, 50, 60, 70, 80];
+const RBANS_ALL = { sub: 'RBANS Subtests · All Ages', idx: 'RBANS Indices · All Ages' };
+const RBANS_T = [
+  ['sub', 3, "List Learning", false,
+    [0.91, 0.88, 0.8, 0.82, 0.88, 0.85, 0.8, 0.86, 0.84], 0.85,
+    [0.9, 1.04, 1.34, 1.27, 1.04, 1.16, 1.34, 1.12, 1.2], 1.17],
+  ['sub', 3, "Story Memory", false,
+    [0.87, 0.55, 0.79, 0.71, 0.73, 0.82, 0.79, 0.8, 0.84], 0.78,
+    [1.08, 2.01, 1.37, 1.62, 1.56, 1.27, 1.37, 1.34, 1.2], 1.45],
+  ['sub', 3, "Figure Copy", true,
+    [0.42, 0.42, 0.42, 0.54, 0.54, 0.54, 0.54, 0.54, 0.54], 0.5,
+    [2.28, 2.28, 2.28, 2.03, 2.03, 2.03, 2.03, 2.03, 2.03], 2.12],
+  ['sub', 3, "Semantic Fluency", true,
+    [0.65, 0.65, 0.65, 0.52, 0.52, 0.52, 0.52, 0.52, 0.52], 0.57,
+    [1.77, 1.77, 1.77, 2.08, 2.08, 2.08, 2.08, 2.08, 2.08], 1.98],
+  ['sub', 3, "Digit Span", false,
+    [0.71, 0.86, 0.85, 0.84, 0.83, 0.85, 0.76, 0.86, 0.83], 0.83,
+    [1.62, 1.12, 1.16, 1.2, 1.24, 1.16, 1.47, 1.12, 1.24], 1.27],
+  ['sub', 3, "Coding", true,
+    [0.76, 0.76, 0.76, 0.83, 0.83, 0.83, 0.83, 0.83, 0.83], 0.81,
+    [1.47, 1.47, 1.47, 1.24, 1.24, 1.24, 1.24, 1.24, 1.24], 1.32],
+  ['sub', 3, "Story Recall", true,
+    [0.45, 0.45, 0.45, 0.72, 0.72, 0.72, 0.72, 0.72, 0.72], 0.54,
+    [2.22, 2.22, 2.22, 1.59, 1.59, 1.59, 1.59, 1.59, 1.59], 1.82],
+  ['sub', 3, "Figure Recall", true,
+    [0.71, 0.71, 0.71, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55], 0.59,
+    [1.62, 1.62, 1.62, 2.01, 2.01, 2.01, 2.01, 2.01, 2.01], 1.89],
+  ['idx', 15, "Immediate Memory", false,
+    [0.93, 0.81, 0.86, 0.84, 0.88, 0.89, 0.85, 0.89, 0.9], 0.88,
+    [3.97, 6.54, 5.61, 6, 5.2, 4.97, 5.81, 4.97, 4.74], 5.36],
+  ['idx', 15, "Visuospatial/Constructional", false,
+    [0.64, 0.67, 0.53, 0.77, 0.81, 0.82, 0.84, 0.81, 0.78], 0.75,
+    [9, 8.62, 10.28, 7.19, 6.54, 6.36, 6, 6.54, 7.04], 7.63],
+  ['idx', 15, "Attention", false,
+    [0.81, 0.82, 0.81, 0.84, 0.84, 0.85, 0.83, 0.88, 0.85], 0.84,
+    [6.54, 6.36, 6.54, 6, 6, 5.81, 6.18, 5.2, 5.81], 6.06],
+  ['idx', 15, "Language", false,
+    [0.79, 0.8, 0.74, 0.75, 0.76, 0.87, 0.85, 0.81, 0.83], 0.8,
+    [6.87, 6.71, 7.65, 7.5, 7.35, 5.41, 5.81, 6.54, 6.18], 6.71],
+  ['idx', 15, "Delayed Memory", false,
+    [0.85, 0.85, 0.84, 0.84, 0.83, 0.84, 0.85, 0.83, 0.81], 0.84,
+    [5.81, 5.81, 6, 6, 6.18, 6, 5.81, 6.18, 6.54], 6.04],
+  ['idx', 15, "Total Scale", false,
+    [0.92, 0.91, 0.9, 0.92, 0.94, 0.95, 0.93, 0.93, 0.94], 0.93,
+    [4.24, 4.5, 4.74, 4.24, 3.67, 3.35, 3.97, 3.97, 3.67], 4.06]
+];
+const rb2 = (v) => Math.round(v * 100) / 100;
+
+check('Table 3.7 reproduces from the stored coefficients, all 126 cells', () => {
+  /* The bar this project sets for setting the retest default aside: the
+     publisher must report the coefficient AND derive its own published
+     intervals from it. Table 3.7 is that derivation, and it reproduces
+     exactly at the printed 2dp on the SDs the manual's own note states. */
+  const bad = [];
+  let n = 0;
+  RBANS_T.forEach(([fam, sd, name, retest, coef, , sems]) => {
+    const e = D.normDB[RBANS_ALL[fam]][name];
+    const byAge = retest ? e.rStabilityByAge : e.rInternalByAge;
+    if (!byAge) { bad.push(name + ' carries no by-age lookup'); return; }
+    RBANS_BANDS.forEach((lo, i) => {
+      n++;
+      if (byAge[lo] !== coef[i]) { bad.push(name + ' @' + lo + ': stored ' + byAge[lo] + ', Table 3.6 prints ' + coef[i]); return; }
+      const der = rb2(sd * Math.sqrt(1 - byAge[lo]));
+      if (der !== sems[i]) bad.push(name + ' @' + lo + ': rxx ' + byAge[lo] + ' gives SEM ' + der + ', Table 3.7 prints ' + sems[i]);
+    });
+  });
+  if (n !== 126) bad.push('expected 126 cells, tested ' + n);
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('the five footnote-a measures are stability, and are never called internal consistency', () => {
+  /* THE REASON THERE ARE TWO FIELDS. Table 3.6 marks these five "estimates
+     based on test-retest". Storing them in rInternal would change no number
+     while labelling a stability coefficient as internal consistency, which
+     Methods & References and the APA note then assert on screen — exactly the
+     mislabelling WAIS-IV Table 4.1 avoids for its three speeded subtests, and
+     D-KEFS Advanced for TMT and VFT.
+
+     Asserted in both directions, so neither field can drift into the other. */
+  const bad = [];
+  RBANS_T.forEach(([fam, , name, retest]) => {
+    const e = D.normDB[RBANS_ALL[fam]][name];
+    if (retest) {
+      if (!e.rStabilityByAge) bad.push(name + ' is footnote a but has no rStabilityByAge');
+      if (Number.isFinite(e.rInternal) || e.rInternalByAge) bad.push(name + ' is footnote a yet carries an internal-consistency field');
+    } else {
+      if (!e.rInternalByAge) bad.push(name + ' is unmarked but has no rInternalByAge');
+      if (Number.isFinite(e.rStability) || e.rStabilityByAge) bad.push(name + ' is unmarked yet carries a stability field');
+    }
+  });
+  const stab = [];
+  Object.entries(D.normDB).forEach(([g, tab]) => Object.entries(tab).forEach(([n, e]) => {
+    if (e && typeof e === 'object' && (Number.isFinite(e.rStability) || e.rStabilityByAge)) stab.push(g + ' / ' + n);
+  }));
+  if (stab.length !== 5) bad.push('rStability appears on ' + stab.length + ' entries, expected 5 (RBANS only)');
+  if (stab.some((c) => !/^RBANS Subtests · All Ages \//.test(c))) bad.push('rStability has escaped RBANS: ' + stab.join(', '));
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the adult stability values are this database\'s own rCorrected, 5 of 5', () => {
+  /* THE TRANSCRIPTION PROOF, and the same one the WAIS-IV speeded three give.
+     Table 3.6's footnote-a rows are corrected stability coefficients, so for
+     the adult bands they must equal what the retest group already stores. The
+     raw r must NOT fit, or the comparison is measuring nothing.
+
+     The adolescent bands match only 2 of 5. They are a different retest sample
+     and Table 3.6 is stored as printed rather than reconciled to Table 3.8 —
+     recorded here so the mismatch reads as known rather than as an error. */
+  let corr = 0, raw = 0, adoCorr = 0;
+  RBANS_T.forEach(([fam, , name, retest, coef]) => {
+    if (!retest) return;
+    const adult = D.normDB['RBANS Subtests · Ages 20-89'][name];
+    const ado = D.normDB['RBANS Subtests · Ages 12-19'][name];
+    if (adult.rCorrected === coef[3]) corr++;
+    if (adult.r === coef[3]) raw++;
+    if (ado.rCorrected === coef[0]) adoCorr++;
+  });
+  const bad = [];
+  if (corr !== 5) bad.push('adult bands match stored rCorrected ' + corr + '/5, expected 5');
+  if (raw > 1) bad.push('the raw retest r reproduces ' + raw + '/5 — the comparison has stopped discriminating');
+  if (adoCorr !== 2) bad.push('adolescent bands match rCorrected ' + adoCorr + '/5, expected 2 — re-read the note in data.js');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the four raw subtests carry no coefficient and print no interval', () => {
+  /* They appear nowhere in Table 3.6 — the manual publishes reliability for
+     its eight SCALED subtests only, which is its own confirmation of the
+     raw/scaled split section 18 asserts from the data shape.
+
+     Their m1/sd1 are the adult retest descriptives, carried over so the row
+     stays selectable and declares its metric. Nothing may derive from them:
+     a raw row has no percentile, no classification, and now no interval. If
+     an interval ever appears here it means a coefficient was invented. */
+  const bad = [];
+  RBANS_RAW_SUBTESTS.forEach((name) => {
+    const e = D.normDB[RBANS_ALL.sub][name];
+    if (!e) { bad.push(name + ' missing from the All Ages group'); return; }
+    if (e.metric !== 'raw') bad.push(name + ' is not tagged raw');
+    ['rInternal', 'rInternalByAge', 'rStability', 'rStabilityByAge', 'r', 'rCorrected'].forEach((f) => {
+      if (e[f] != null) bad.push(name + ' carries ' + f + ', which Table 3.6 does not publish');
+    });
+    const row = { name, group: RBANS_ALL.sub, scoreType: 'raw' };
+    [null, 8, 45, 88].forEach((age) => {
+      if (batteryCi(e.m1, row, '95', age)) bad.push(name + ' printed an interval at age ' + age);
+    });
+  });
+  if (RBANS_T.some(([, , n]) => RBANS_RAW_SUBTESTS.includes(n))) bad.push('a raw subtest has appeared in Table 3.6');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the age band drives the interval, and a blank age falls back to the average', () => {
+  /* End to end through the shipped renderer, on both bases.
+
+     Immediate Memory is the sharpest probe and the reason these groups exist:
+     before them Score Tables read the Ages 12-19 retest group for everyone and
+     printed 85-115 at an index of 100. Table 3.6 gives .90 at 80-89. */
+  const bad = [];
+  const im = { name: 'Immediate Memory', group: RBANS_ALL.idx, scoreType: 'standard' };
+  const e = D.normDB[RBANS_ALL.idx]['Immediate Memory'];
+  if (batteryRel(im, 'standard', 82).r !== 0.9) bad.push('Immediate Memory at 82 did not read the 80-89 band');
+  if (batteryRel(im, 'standard', 12).r !== 0.93) bad.push('Immediate Memory at 12 did not read the 12-13 band');
+  [null, undefined, NaN, 5, 95].forEach((age) => {
+    const rel = batteryRel(im, 'standard', age);
+    if (!rel) { bad.push('no interval at age ' + age); return; }
+    if (rel.r !== e.rInternal) bad.push('age ' + age + ' used r ' + rel.r + ', expected the published average ' + e.rInternal);
+  });
+  // the same, on a stability measure, so the second field is proven live
+  const cod = { name: 'Coding', group: RBANS_ALL.sub, scoreType: 'scaled' };
+  if (batteryRel(cod, 'scaled', 14).r !== 0.76) bad.push('Coding at 14 did not read its adolescent band');
+  if (batteryRel(cod, 'scaled', 45).r !== 0.83) bad.push('Coding at 45 did not read its adult band');
+  if (batteryRel(cod, 'scaled', null).r !== 0.81) bad.push('Coding with a blank age did not fall back to its published average');
+  // and the defect these groups fix: the old and new answers must differ
+  const wasCi = batteryCi(100, { name: 'Immediate Memory', group: 'RBANS Indices · Ages 12-19', scoreType: 'standard' }, '95', 82);
+  const nowCi = batteryCi(100, im, '95', 82);
+  if (wasCi === nowCi) bad.push('the All Ages group prints the same interval as the adolescent retest group — the fix is inert');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the All Ages groups stay out of Change Analysis and the SD Index', () => {
+  /* They hold no second testing, so a row loaded there could never compute.
+     isSingleAdministrationFamily is what keeps them out; the retest groups
+     must keep answering false, or reliable change loses RBANS entirely. */
+  const ctx = { getMergedDB: () => D.normDB, normDB: D.normDB };
+  vm.createContext(ctx);
+  vm.runInContext(extractFn(APP_SRC, 'isSingleAdministrationFamily') + ';globalThis.__F = isSingleAdministrationFamily;', ctx);
+  const f = ctx.__F;
+  const bad = [];
+  Object.values(RBANS_ALL).forEach((g) => { if (!f(g)) bad.push(g + ' is not recognised as single-administration'); });
+  ['RBANS Subtests · Ages 12-19', 'RBANS Subtests · Ages 20-89', 'RBANS Indices · Ages 12-19', 'RBANS Indices · Ages 20-89']
+    .forEach((g) => { if (f(g)) bad.push(g + ' was wrongly excluded from Change Analysis'); });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('RBANS averages its two tables the way WAIS-IV does, by two different methods', () => {
+  /* Footnote b on Table 3.6 says Fisher's z; footnote a on Table 3.7 says the
+     RMS of the band SEMs, which is algebraically SD sqrt(1 - ARITHMETIC mean).
+     The same inconsistency section 28 records for WAIS-IV Tables 4.1 and 4.3,
+     in a second manual — so it is a habit of the publisher, not a one-off, and
+     the stored average stays the published COEFFICIENT either way. */
+  const atanh = (r) => 0.5 * Math.log((1 + r) / (1 - r));
+  const tanh = (z) => (Math.exp(2 * z) - 1) / (Math.exp(2 * z) + 1);
+  let fisher = 0, arith = 0, rms = 0;
+  RBANS_T.forEach(([, sd, , , coef, cAvg, sems, sAvg]) => {
+    if (rb2(tanh(coef.reduce((a, r) => a + atanh(r), 0) / coef.length)) === cAvg) fisher++;
+    if (rb2(coef.reduce((a, r) => a + r, 0) / coef.length) === cAvg) arith++;
+    if (rb2(Math.sqrt(sems.reduce((a, s) => a + s * s, 0) / sems.length)) === sAvg) rms++;
+  });
+  const bad = [];
+  if (fisher < 12) bad.push('Fisher z reproduces only ' + fisher + '/14 of the Table 3.6 averages');
+  if (fisher <= arith) bad.push('Fisher z (' + fisher + ') no longer beats the arithmetic mean (' + arith + ') — re-read footnote b');
+  if (rms !== 14) bad.push('the RMS reading fits ' + rms + '/14 of the Table 3.7 averages');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the stored averages are Table 3.6\'s own average column', () => {
+  /* The blank-age fallback, pinned to the printed value rather than derived —
+     the manual prints this column, unlike D-KEFS original. */
+  const bad = [];
+  RBANS_T.forEach(([fam, , name, retest, , cAvg]) => {
+    const e = D.normDB[RBANS_ALL[fam]][name];
+    const got = retest ? e.rStability : e.rInternal;
+    if (got !== cAvg) bad.push(name + ': stored ' + got + ', Table 3.6 prints ' + cAvg);
+    const max = retest ? e.rStabilityAgeMax : e.rInternalAgeMax;
+    if (max !== 89) bad.push(name + ' has age max ' + max + ', expected 89 (the table stops at 80-89)');
   });
   return bad.length === 0 || bad.join('; ');
 });

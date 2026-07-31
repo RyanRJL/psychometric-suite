@@ -19509,7 +19509,7 @@ input[type="number"].ds-inline-bar-age-input{
       The auto-fill normative database includes published retest parameters for major batteries (including D-KEFS, WAIS-IV, WMS-IV, CVLT-3, CVLT-C, RBANS, and WISC-V), with normative <i>N</i> where reported. <i>N</i> is required for Crawford/Garthwaite calculations and may need manual entry when unavailable. Clinicians should verify all imported parameters against the latest manual and local service standards before interpretation.
     </p>
     <p class="section-body-text">
-      <strong>Confidence intervals and standard errors of measurement.</strong> Intervals on the Clinical Outcomes Table are calculated as the obtained score ± <i>z</i> × SEM, where SEM = SD × √(1 − <i>r</i>), centred on the obtained score rather than on an estimated true score. The reliability <i>r</i> is the <strong>test–retest coefficient</strong> held in the normative database, corrected for the normative sample's variability where the publisher reports a corrected value. The SD is the <strong>normative standard deviation of the metric the score is reported in</strong> (15, 10, 3 or 1), because a coefficient corrected to the normative sample must be paired with that sample's variability; where a measure's stored statistics are raw, its own standard deviation is used instead, that being the only one in the right units. This reproduces the standard error of measurement published by the test author where one is given — for all 38 CVLT-3 measures in Tables 3.4 and 3.5 of that manual, exactly. Test–retest reliability is the <strong>default</strong> basis, for two reasons: it keeps a single, stated basis across a table that may mix batteries, and it is the appropriate coefficient for the many timed measures in the database, since split-half and alpha are not valid reliability estimates for speeded tests. The WAIS-IV manual itself uses test–retest coefficients for Coding, Symbol Search and Cancellation for exactly this reason, describing the split-half coefficient as "not a proper reliability estimate" for a Processing Speed subtest; the values used here for those three are identical to the ones it publishes, in all 38 of the cells its Table 4.1 gives them. The default is set aside for a measure only where its publisher both reports an internal-consistency coefficient <em>and</em> derives its own published confidence intervals from it. That applies to the CVLT-C List A Trials 1–5 Total score, which uses the odd–even split-half coefficient of Table 6.5 of that manual and thereby reproduces the interval printed in its worked example exactly; to the D-KEFS Advanced Colour–Word Interference, Tower, Social Sorting and Risk–Reward Decision tests, whose manual publishes split-half coefficients by age band while keeping stability coefficients for the speeded Trail Making and Verbal Fluency tests; to those D-KEFS tests for which the technical manual tabulates internal consistency; and to the other 21 WAIS-IV subtest, process and composite scores, which take the split-half or alpha coefficient tabulated by normative age band in Table 4.1 of that manual. Where a coefficient is published by age band, the interval uses the band for the patient's age when one is entered and the published all-ages coefficient otherwise, and the age used is stated in the note beneath the table. Reliable-change analysis is unaffected and always uses the retest coefficient, which measures a different thing.
+      <strong>Confidence intervals and standard errors of measurement.</strong> Intervals on the Clinical Outcomes Table are calculated as the obtained score ± <i>z</i> × SEM, where SEM = SD × √(1 − <i>r</i>), centred on the obtained score rather than on an estimated true score. The reliability <i>r</i> is the <strong>test–retest coefficient</strong> held in the normative database, corrected for the normative sample's variability where the publisher reports a corrected value. The SD is the <strong>normative standard deviation of the metric the score is reported in</strong> (15, 10, 3 or 1), because a coefficient corrected to the normative sample must be paired with that sample's variability; where a measure's stored statistics are raw, its own standard deviation is used instead, that being the only one in the right units. This reproduces the standard error of measurement published by the test author where one is given — for all 38 CVLT-3 measures in Tables 3.4 and 3.5 of that manual, exactly. Test–retest reliability is the <strong>default</strong> basis, for two reasons: it keeps a single, stated basis across a table that may mix batteries, and it is the appropriate coefficient for the many timed measures in the database, since split-half and alpha are not valid reliability estimates for speeded tests. The WAIS-IV manual itself uses test–retest coefficients for Coding, Symbol Search and Cancellation for exactly this reason, describing the split-half coefficient as "not a proper reliability estimate" for a Processing Speed subtest; the values used here for those three are identical to the ones it publishes, in all 38 of the cells its Table 4.1 gives them. The default is set aside for a measure only where its publisher both reports an internal-consistency coefficient <em>and</em> derives its own published confidence intervals from it. That applies to the CVLT-C List A Trials 1–5 Total score, which uses the odd–even split-half coefficient of Table 6.5 of that manual and thereby reproduces the interval printed in its worked example exactly; to the D-KEFS Advanced Colour–Word Interference, Tower, Social Sorting and Risk–Reward Decision tests, whose manual publishes split-half coefficients by age band while keeping stability coefficients for the speeded Trail Making and Verbal Fluency tests; to those D-KEFS tests for which the technical manual tabulates internal consistency; and to the other 21 WAIS-IV subtest, process and composite scores, which take the split-half or alpha coefficient tabulated by normative age band in Table 4.1 of that manual. It applies also to the RBANS, whose Update manual tabulates reliability by normative age band in Table 3.6 and derives the standard errors of measurement of its Table 3.7 from it; that table is itself mixed, marking five subtests as estimated from test–retest, and those five accordingly keep a stability coefficient here, taken from the same table so that every RBANS measure is scored on the band for the patient's age. The four RBANS subtests reported as raw scores appear nowhere in that table, the manual publishing reliability for its eight scaled subtests only, and so no interval is shown for them. Where a coefficient is published by age band, the interval uses the band for the patient's age when one is entered and the published all-ages coefficient otherwise, and the age used is stated in the note beneath the table. Reliable-change analysis is unaffected and always uses the retest coefficient, which measures a different thing.
     </p>
     <p class="section-body-text">
       One consequence should be borne in mind when comparing output against a test manual: for the measures that remain on the test–retest default, where a manual derives its published intervals from internal-consistency reliability, and internal consistency is almost always the higher of the two coefficients, the intervals shown here run <strong>wider</strong> than the manual's. They are therefore the more conservative, and answer the question <em>how much would this score be expected to move on retesting</em> rather than <em>how precisely was it measured on the day</em>. Not every publisher offers that comparison. The CVLT-3 manual declines to report internal-consistency reliability for its measures at all, on the grounds that item scores on a word-list task are not independent — recalling one word alters the probability of recalling the others, both within a trial and on later ones — and reports alternate-form coefficients in its place.
@@ -20759,6 +20759,82 @@ const OPIE_BASE_RATES = {
     "List Recognition": { m1:19.6, sd1:0.8, m2:19.8, sd2:0.5, r:0.27, n:40, metric:'raw' },
     "Story Recall": { m1:11.6, sd1:2.3, m2:11.6, sd2:2.3, r:0.52, rCorrected:0.72, n:40 },
     "Figure Recall": { m1:10.4, sd1:3, m2:11.5, sd2:3, r:0.55, rCorrected:0.55, n:40 }
+  },
+  /* ---------------------------------------------------------------
+     RBANS · All Ages — the Score Tables groups, and the only RBANS
+     groups carrying a reliability the publisher tabulates by age.
+
+     WHY THESE GROUPS EXIST. Every other RBANS group holds a RETEST
+     study, banded the way that study sampled (12-19, 20-89). Score
+     Tables shows one entry per instrument and picks the "· All Ages"
+     group; with none present it fell through to whichever group was
+     listed FIRST, so every patient — an 80-year-old included — was
+     scored on 55 adolescents. Immediate Memory printed 85-115 where
+     Table 3.6 gives 90-110 at that age.
+
+     SOURCE: RBANS Update Manual (Randolph 2012), Tables 3.6 and 3.7,
+     p. 42. 14 measures x 9 NORMATIVE age bands. It clears the bar this
+     project sets: the manual publishes the coefficients AND derives its
+     own printed SEMs from them — all 126 cells of Table 3.7 equal
+     SD sqrt(1 - rxx) on the SDs its note states ("SEMs expressed in
+     scaled score (subtest) and standard score (index) units", so 3 and
+     15). check.js section 29 pins every one.
+
+     TWO BASES IN ONE TABLE, WHICH IS WHY THERE ARE TWO FIELDS.
+     Table 3.6 footnote a marks five subtests "Reliability estimates
+     based on test-retest": Figure Copy, Semantic Fluency, Coding,
+     Story Recall, Figure Recall. Those take rStabilityByAge. The other
+     nine are internal consistency and take rInternalByAge. Storing the
+     five as rInternal would label a stability coefficient as internal
+     consistency, which the APA note and Methods & References then
+     assert on screen — the same mislabelling WAIS-IV Table 4.1 avoids
+     for its three speeded subtests.
+
+     The five are corroborated: their ADULT values equal this database's
+     stored rCorrected 5/5, against 1/5 for the raw r — the same
+     transcription proof the WAIS-IV speeded three give. The adolescent
+     columns match only 2/5; those bands are a different retest sample,
+     and Table 3.6 is taken as printed rather than reconciled to
+     Table 3.8.
+
+     THE FOUR RAW SUBTESTS APPEAR NOWHERE IN TABLE 3.6, which is an
+     independent confirmation of the raw/scaled split recorded above:
+     the manual publishes reliability for its eight SCALED subtests
+     only. They therefore carry no coefficient and print no interval.
+     That loss is deliberate — the interval they used to show came from
+     55 adolescents whatever the patient's age, and List Recognition
+     alone runs r .70 there against .27 in adults, so the honest adult
+     interval is nearly twice the width that was printed. m1/sd1 are the
+     adult retest descriptives, carried over only so the row stays
+     selectable and declares its metric; nothing on screen derives from
+     them, a raw row having no percentile, no classification and now no
+     interval. Pinned in section 29.
+
+     singleAdministration:true throughout: these groups hold no second
+     testing, so isSingleAdministrationFamily keeps them out of Change
+     Analysis and the SD Index, which go on using the retest groups.
+     --------------------------------------------------------------- */
+  "RBANS Indices · All Ages": {
+    "Immediate Memory": { m1:100, sd1:15, singleAdministration:true, rInternal:0.88, rInternalAgeMax:89, rInternalByAge:{12:0.93, 14:0.81, 16:0.86, 20:0.84, 40:0.88, 50:0.89, 60:0.85, 70:0.89, 80:0.9} },
+    "Visuospatial/Constructional": { m1:100, sd1:15, singleAdministration:true, rInternal:0.75, rInternalAgeMax:89, rInternalByAge:{12:0.64, 14:0.67, 16:0.53, 20:0.77, 40:0.81, 50:0.82, 60:0.84, 70:0.81, 80:0.78} },
+    "Attention": { m1:100, sd1:15, singleAdministration:true, rInternal:0.84, rInternalAgeMax:89, rInternalByAge:{12:0.81, 14:0.82, 16:0.81, 20:0.84, 40:0.84, 50:0.85, 60:0.83, 70:0.88, 80:0.85} },
+    "Language": { m1:100, sd1:15, singleAdministration:true, rInternal:0.8, rInternalAgeMax:89, rInternalByAge:{12:0.79, 14:0.8, 16:0.74, 20:0.75, 40:0.76, 50:0.87, 60:0.85, 70:0.81, 80:0.83} },
+    "Delayed Memory": { m1:100, sd1:15, singleAdministration:true, rInternal:0.84, rInternalAgeMax:89, rInternalByAge:{12:0.85, 14:0.85, 16:0.84, 20:0.84, 40:0.83, 50:0.84, 60:0.85, 70:0.83, 80:0.81} },
+    "Total Scale": { m1:100, sd1:15, singleAdministration:true, rInternal:0.93, rInternalAgeMax:89, rInternalByAge:{12:0.92, 14:0.91, 16:0.9, 20:0.92, 40:0.94, 50:0.95, 60:0.93, 70:0.93, 80:0.94} }
+  },
+  "RBANS Subtests · All Ages": {
+    "List Learning": { m1:10, sd1:3, singleAdministration:true, rInternal:0.85, rInternalAgeMax:89, rInternalByAge:{12:0.91, 14:0.88, 16:0.8, 20:0.82, 40:0.88, 50:0.85, 60:0.8, 70:0.86, 80:0.84} },
+    "Story Memory": { m1:10, sd1:3, singleAdministration:true, rInternal:0.78, rInternalAgeMax:89, rInternalByAge:{12:0.87, 14:0.55, 16:0.79, 20:0.71, 40:0.73, 50:0.82, 60:0.79, 70:0.8, 80:0.84} },
+    "Figure Copy": { m1:10, sd1:3, singleAdministration:true, rStability:0.5, rStabilityAgeMax:89, rStabilityByAge:{12:0.42, 14:0.42, 16:0.42, 20:0.54, 40:0.54, 50:0.54, 60:0.54, 70:0.54, 80:0.54} },
+    "Line Orientation": { m1:16, sd1:3.4, metric:'raw', singleAdministration:true },
+    "Picture Naming": { m1:9.8, sd1:0.4, metric:'raw', singleAdministration:true },
+    "Semantic Fluency": { m1:10, sd1:3, singleAdministration:true, rStability:0.57, rStabilityAgeMax:89, rStabilityByAge:{12:0.65, 14:0.65, 16:0.65, 20:0.52, 40:0.52, 50:0.52, 60:0.52, 70:0.52, 80:0.52} },
+    "Digit Span": { m1:10, sd1:3, singleAdministration:true, rInternal:0.83, rInternalAgeMax:89, rInternalByAge:{12:0.71, 14:0.86, 16:0.85, 20:0.84, 40:0.83, 50:0.85, 60:0.76, 70:0.86, 80:0.83} },
+    "Coding": { m1:10, sd1:3, singleAdministration:true, rStability:0.81, rStabilityAgeMax:89, rStabilityByAge:{12:0.76, 14:0.76, 16:0.76, 20:0.83, 40:0.83, 50:0.83, 60:0.83, 70:0.83, 80:0.83} },
+    "List Recall": { m1:6.2, sd1:2.4, metric:'raw', singleAdministration:true },
+    "List Recognition": { m1:19.6, sd1:0.8, metric:'raw', singleAdministration:true },
+    "Story Recall": { m1:10, sd1:3, singleAdministration:true, rStability:0.54, rStabilityAgeMax:89, rStabilityByAge:{12:0.45, 14:0.45, 16:0.45, 20:0.72, 40:0.72, 50:0.72, 60:0.72, 70:0.72, 80:0.72} },
+    "Figure Recall": { m1:10, sd1:3, singleAdministration:true, rStability:0.59, rStabilityAgeMax:89, rStabilityByAge:{12:0.71, 14:0.71, 16:0.71, 20:0.55, 40:0.55, 50:0.55, 60:0.55, 70:0.55, 80:0.55} }
   },
   // RBANS alternate-form (index-level only). m1/sd1 = Form A, m2/sd2 = alt form.
   // Change-Analysis only (filtered out of Score Tables). Randolph 2012:
@@ -23167,21 +23243,33 @@ const BATTERY_METRIC_SD = { z: 1, t: 10, scaled: 3, standard: 15 };
    RELIABILITY, in preference order:
      rInternal   — internal consistency, where the publisher reports one AND
                    builds its own published intervals from it. See data.js.
+     rStability  — a stability coefficient the publisher tabulates in that SAME
+                   reliability table, for measures it excludes from internal
+                   consistency. RBANS Update Table 3.6 is the first: footnote a
+                   marks five of its fourteen rows "based on test-retest".
      rCorrected  — retest r rescaled to the normative sample.
      r           — the raw retest coefficient.
    Internal consistency comes first because a confidence interval asks how
    precisely THIS administration measured the person, which is the question an
    internal-consistency coefficient answers. That preference is confined to
    this function: reliable change asks a different question and must keep the
-   retest coefficient — see the rInternal note in data.js. */
+   retest coefficient — see the rInternal note in data.js.
+
+   rStability is NOT an exception to the test-retest default; it IS that
+   default, sourced from the manual's own reliability table rather than from a
+   retest study group. It exists as a separate field only so that a stability
+   coefficient is never stored under a name the APA note and Methods &
+   References then describe as internal consistency. */
 /* Does this row's measure actually consult the patient age? Only measures
    whose publisher tabulates reliability by age band do, so the APA note can
-   say the age was used without asserting it on tables where nothing read it. */
+   say the age was used without asserting it on tables where nothing read it.
+   Either banded field counts — the question is whether an age was read, not
+   which basis the coefficient has. */
 function batteryRowUsesAgeBand(row){
   if (!row || !row.group) return false;
   const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
   const entry = db && db[row.group] && db[row.group][row.name];
-  return !!(entry && typeof entry === 'object' && entry.rInternalByAge);
+  return !!(entry && typeof entry === 'object' && (entry.rInternalByAge || entry.rStabilityByAge));
 }
 
 /* THE PATIENT'S AGE — one value, two inputs.
@@ -23240,16 +23328,24 @@ function batteryPatientAge(){ return patientAge(); }
    average. Both figures are the publisher's own, so either path is citable —
    and a blank age must never empty the column, which is why this degrades
    instead of refusing. */
-function rInternalForAge(entry, age){
-  const byAge = entry.rInternalByAge;
+function bandedReliabilityForAge(byAge, ageMax, age){
   if (!byAge || !Number.isFinite(age)) return null;
-  if (Number.isFinite(entry.rInternalAgeMax) && age > entry.rInternalAgeMax) return null;
+  if (Number.isFinite(ageMax) && age > ageMax) return null;
   let band = null;
   Object.keys(byAge).forEach(k => {
     const lo = Number(k);
     if (age >= lo && (band === null || lo > band)) band = lo;
   });
   return band === null ? null : byAge[band];
+}
+function rInternalForAge(entry, age){
+  return bandedReliabilityForAge(entry.rInternalByAge, entry.rInternalAgeMax, age);
+}
+/* Same lookup, for the stability coefficients a manual tabulates by age
+   alongside its internal-consistency ones. Kept as its own function rather
+   than a flag so that a grep for either field finds every site that reads it. */
+function rStabilityForAge(entry, age){
+  return bandedReliabilityForAge(entry.rStabilityByAge, entry.rStabilityAgeMax, age);
 }
 
 function getBatteryRowReliability(row, type, age){
@@ -23260,9 +23356,12 @@ function getBatteryRowReliability(row, type, age){
   if (!family) return null;
   const entry = family[row.name];
   if (!entry || typeof entry !== 'object') return null;
-  const rBand = rInternalForAge(entry, age);
+  const rBand  = rInternalForAge(entry, age);
+  const rSBand = rStabilityForAge(entry, age);
   const r = Number.isFinite(rBand)           ? rBand            :
+            Number.isFinite(rSBand)          ? rSBand           :
             Number.isFinite(entry.rInternal)  ? entry.rInternal  :
+            Number.isFinite(entry.rStability) ? entry.rStability :
             Number.isFinite(entry.rCorrected) ? entry.rCorrected :
             Number.isFinite(entry.r)          ? entry.r          : null;
   if (r === null) return null;

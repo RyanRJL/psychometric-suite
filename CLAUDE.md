@@ -213,7 +213,7 @@ for the pattern. Follow it when touching a table that contains inputs.
 
 ## `normDB`
 
-The reliability database: 113 groups, 641 entries, seven instrument families (D-KEFS,
+The reliability database: 115 groups, 659 entries, seven instrument families (D-KEFS,
 CVLT-3, CVLT-C, RBANS, WAIS-IV, WISC-V, WMS-IV).
 
 Group keys are `"<Instrument> <Category> · <Age band>"` — the separator is **U+00B7
@@ -300,7 +300,7 @@ is right almost everywhere (see the CI paragraphs in Methods & References). The 
 setting it aside is deliberately high: **the publisher must both report an
 internal-consistency coefficient AND derive its own published intervals from it.**
 
-Four manuals clear it, and `check.js` §24 pins the roster so a fifth cannot appear
+Five manuals clear it, and `check.js` §24 pins the roster so a sixth cannot appear
 undocumented:
 
 | Source | Entries | Fields |
@@ -309,6 +309,7 @@ undocumented:
 | D-KEFS Advanced — CWIT, Tower, Social Sorting, Risk-Reward | 26 | `rInternal` + `rInternalByAge` |
 | D-KEFS (original) — VFT, Sorting, 20Q, Word Context, Tower, Proverb, TMT composite | 13 | `rInternalByAge` **only** |
 | WAIS-IV — Table 4.1, all but the three speeded subtests | 21 | `rInternal` + `rInternalByAge` |
+| RBANS Update — Table 3.6, the nine rows without footnote a | 9 | `rInternal` + `rInternalByAge` |
 
 That roster check keys on **either** field. D-KEFS original carries no `rInternal` at
 all, so a check testing `rInternal` alone would let 13 entries change the basis of a
@@ -557,6 +558,60 @@ prints `.98`, and a clinician cross-checking Table 4.1 would find a number that 
 there. Reviewed and kept as-is, 2026-07-31. Entering an age sidesteps the whole question,
 and that path is exact.
 
+#### `rStability` — the same table, the other basis
+
+**RBANS Update Table 3.6 is the first published reliability table in this database that
+is mixed-basis *within itself*.** Its footnote a marks five of fourteen rows "Reliability
+estimates based on test–retest": Figure Copy, Semantic Fluency, Coding, Story Recall and
+Figure Recall. The other nine are internal consistency.
+
+Those five cannot take `rInternal*` — that field's name is asserted on screen by the APA
+note and by Methods & References, so storing a stability coefficient there would state
+something false, exactly as it would for WAIS-IV's three speeded subtests. But they also
+should not fall back to the retest *group's* coefficient, because Table 3.6 publishes a
+value for them **by normative age band** and derives its own printed SEM from it.
+
+Hence `rStability` / `rStabilityByAge` / `rStabilityAgeMax`, read by
+`getBatteryRowReliability` immediately after the internal-consistency fields. **It is not
+an exception to the test–retest default — it *is* that default**, sourced from the
+manual's own reliability table rather than from a retest study group. Five entries carry
+it and `check.js` §29 asserts it has not escaped RBANS.
+
+Corroborated: the adult bands equal this database's stored `rCorrected` **5 of 5**,
+against 1 of 5 for the raw `r` — the same transcription proof the WAIS-IV speeded three
+give. The adolescent bands match only 2 of 5, those being a different retest sample;
+Table 3.6 is stored as printed rather than reconciled to Table 3.8, and §29 pins the 2 so
+the mismatch reads as known rather than as an error.
+
+#### RBANS needed new `· All Ages` groups, and that fixed a live defect
+
+Every other RBANS group holds a retest study banded the way that study sampled (12-19,
+20-89). Score Tables shows one entry per instrument and picks the `· All Ages` group —
+and with none present, `buildFamilyListHtml` fell through to **whichever group was listed
+first**. Nothing chose it; it was object order. So every RBANS patient was scored on 55
+adolescents, differing from the 20-89 study on **12 of 18 measures**. Immediate Memory at
+an index of 100 printed 85–115 where Table 3.6 gives 90–110 at age 80.
+
+`RBANS Subtests · All Ages` and `RBANS Indices · All Ages` now carry the normative
+metrics (10/3 and 100/15, which are definitions, not data) and Table 3.6's coefficients.
+Every entry is `singleAdministration:true`, so `isSingleAdministrationFamily` keeps them
+out of Change Analysis and the SD Index, which go on using the retest groups — the same
+separation §25 enforces for D-KEFS Advanced.
+
+**The four raw subtests appear nowhere in Table 3.6** — the manual publishes reliability
+for its eight *scaled* subtests only, which is its own confirmation of the raw/scaled
+split §18 asserts from the data shape. They therefore print **no interval at all** in the
+All Ages group. That loss is deliberate: the interval they used to show came from 55
+adolescents whatever the patient's age, and `List Recognition` alone runs `r` .70 there
+against .27 in adults, so the honest adult interval is nearly twice the width that was
+printed. Their `m1`/`sd1` are the adult retest descriptives, carried over only so the row
+stays selectable and declares its metric; §29 asserts nothing derives from them.
+
+Note this made `singleAdministration` mean less than it used to. §3 required base rates
+on every such entry, conflating "no retest data" with "scored by base-rate lookup". These
+entries are scored by ordinary conversion, so the check now asks for m1/sd1, no retest
+fields, and **some** published basis — base rates, a reliability, or the raw tag.
+
 ### `baseRates` — measures scored by lookup rather than by conversion
 
 **WAIS-IV Longest Span (Process)** is the first family scored from a published
@@ -750,9 +805,10 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 239 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 247 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
-Tables 4.5 (§4) and 4.1/4.3 (§28), OPIE-4 coefficients pinned to Table eA5.8, worked OPIE
+Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), OPIE-4 coefficients
+pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
 reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
 Score Tables confidence intervals, documentation contracts, wiring (§16–17) and the
