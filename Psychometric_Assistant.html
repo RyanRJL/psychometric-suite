@@ -3368,15 +3368,6 @@ details summary:hover{color:var(--ink)}
    ===================================================================== */
 
 /* Page intro: less noisy formula text, drop the duplicate eyebrow */
-#change-analysis #change-main-title{
-  font-family:var(--serif)!important;
-  font-size:24px!important;
-  font-weight:600!important;
-  letter-spacing:-0.01em!important;
-  line-height:1.2!important;
-  margin-bottom:6px!important;
-  color:#1A1A1A!important;
-}
 #change-analysis .section-desc{
   font-family:var(--sans)!important;
   font-size:13px!important;
@@ -5741,7 +5732,6 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* Header text â€” eyebrow, title, formula description */
 #change-analysis > #change-main-eyebrow,
-#change-analysis > #change-main-title,
 #change-analysis > #change-main-desc{
   max-width:1320px;
   margin-left:auto!important;
@@ -13768,29 +13758,6 @@ input[type="number"].ds-inline-bar-age-input{
     padding:22px 50px 28px;
     font-size:13.5px;
   }
-  #change-main-title{
-    display:flex;
-    align-items:baseline;
-    gap:14px;
-    flex-wrap:wrap;
-  }
-  #change-main-title .change-title-model{
-    font-family:var(--sans);
-    font-size:16px;
-    font-weight:600;
-    letter-spacing:0.06em;
-    text-transform:uppercase;
-    color:var(--ink-2);
-  }
-  #change-main-title .change-title-model::before{
-    content:"";
-    display:inline-block;
-    width:1px;
-    height:20px;
-    background:var(--border);
-    margin-right:14px;
-    vertical-align:-4px;
-  }
   #change-analysis .section-desc{max-width:880px;margin-bottom:16px}
   .change-flow-shell{
     display:block;
@@ -14092,44 +14059,6 @@ input[type="number"].ds-inline-bar-age-input{
     margin-top:0;
   }
   .change-active-method{display:none}
-  #change-analysis .formula-disclosure{
-    display:none;
-    align-items:flex-start;
-    gap:8px;
-    margin:7px 0 8px;
-    max-width:100%;
-  }
-  #change-analysis .formula-disclosure summary{
-    flex:0 0 auto;
-    min-height:26px;
-    padding:4px 10px;
-    border-color:rgba(156,61,42,0.22);
-    background:transparent;
-    color:var(--accent);
-    box-shadow:none;
-    font-size:11px;
-  }
-  #change-analysis .formula-disclosure summary:hover{
-    background:var(--accent-tint);
-    border-color:rgba(156,61,42,0.32);
-  }
-  #change-analysis .formula-disclosure[open] summary{
-    margin-bottom:0;
-  }
-  #change-analysis .formula-disclosure .info-box{
-    flex:1 1 auto;
-    max-width:none;
-    margin:0;
-    padding:5px 9px;
-    min-height:26px;
-    border-color:var(--border-soft);
-    background:rgba(250,247,241,0.42);
-    font-size:10.5px;
-    line-height:1.35;
-    white-space:nowrap;
-    overflow-x:auto;
-    overflow-y:hidden;
-  }
   .change-method-panel > .panel,
   .change-method-panel > .autofill-panel,
   .change-method-panel > .apa-wrap{
@@ -15157,10 +15086,6 @@ input[type="number"].ds-inline-bar-age-input{
     <h1 class="section-title">Basic <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">Jacobson &amp; Truax (1991). Computes whether observed change exceeds measurement error, using the test's reliability coefficient and standard deviation.</p>
 
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> SEM = SD · √(1 − r) · S<sub>diff</sub> = √(2 · SEM²) · RCI = (X₂ − X₁) / S<sub>diff</sub>
-    </div></details>
-
     <div class="panel">
       <div class="field-row-3">
         <div class="field">
@@ -15242,10 +15167,6 @@ input[type="number"].ds-inline-bar-age-input{
     <div class="eyebrow">Reliable Change Indices (RCI) · Practice Effects</div>
     <h1 class="section-title">Practice Effect-Adjusted <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">Iverson (2001). Adjusts the standard RCI to control for the average improvement (practice effect) observed between assessments in the normative sample.</p>
-
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> SEM<sub>i</sub> = SD<sub>i</sub> · √(1 − r) &nbsp;·&nbsp; S<sub>diff</sub> = √(SEM₁² + SEM₂²) &nbsp;·&nbsp; RCI = [(X₂ − X₁) − (M₂ − M₁)] / S<sub>diff</sub>
-    </div></details>
 
     <div class="panel">
       <div class="field-row-3">
@@ -15331,10 +15252,6 @@ input[type="number"].ds-inline-bar-age-input{
     <div class="eyebrow">Reliable Change Indices (RCI) · Regression-Based</div>
     <h1 class="section-title">McSweeney Regression-Based (SRB) <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">McSweeney et al. (1993). Predicts each patient's expected retest score from their baseline and the normative sample's regression parameters; the residual is standardised against the standard error of estimate.</p>
-
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> Slope b = r · (SD₂/SD₁) &nbsp;·&nbsp; Intercept a = M₂ − b · M₁ &nbsp;·&nbsp; ŷ₂ = a + b · X₁ &nbsp;·&nbsp; SEE = SD₂ · √(1 − r²) &nbsp;·&nbsp; RCI = (X₂ − ŷ₂) / SEE
-    </div></details>
 
     <div class="panel">
       <div class="field-row-3">
@@ -15424,10 +15341,6 @@ input[type="number"].ds-inline-bar-age-input{
     <div class="eyebrow">Reliable Change Indices (RCI) · Regression-Based (Crawford)</div>
     <h1 class="section-title">Crawford Regression-Based <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">Crawford &amp; Garthwaite (2007). Extends the standardised regression-based approach to use a <i>t</i>-distributed test statistic that incorporates the normative sample size (N), correctly accounting for uncertainty in the regression parameters when N is modest. Returns a sample-size-adjusted standard error of prediction.</p>
-
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> Slope b = r · (SD₂/SD₁) &nbsp;·&nbsp; Intercept a = M₂ − b · M₁ &nbsp;·&nbsp; ŷ₂ = a + b · X₁ &nbsp;·&nbsp; SEE = SD₂ · √(1 − r²) &nbsp;·&nbsp; SE<sub>pred</sub> = SEE · √(1 + 1/N + (X₁ − M₁)² / ((N − 1) · SD₁²)) &nbsp;·&nbsp; <i>t</i>(RB) = (X₂ − ŷ₂) / SE<sub>pred</sub> with df = N − 2
-    </div></details>
 
     <div class="panel">
       <div class="field-row-3">
@@ -25125,7 +25038,7 @@ const ReportBundle = (function(){
     const doc = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
 <meta charset="utf-8">
-<title>Assessment Report</title>
+<title>Assessment Report â€” Bundled</title>
 <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->
 <style>
   @page { margin: 1in; }
@@ -28347,7 +28260,7 @@ if (document.readyState === 'loading'){
       const pctCell = batteryRowPctCell(r);
       const details = batteryClassificationDetails(r, cls);
 
-      let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(vizRowFacts(r, type, ciLevel, ciText, pctCell, details))}${r.higherIsWorse ? ' (error measure - bands reversed)' : ''}</title>`;
+      let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(vizRowFacts(r, type, ciLevel, ciText, pctCell, details))}${r.higherIsWorse ? ' (error measure - bands reversed)' : ''} â€” Bundled</title>`;
       row += `<text class="viz-row-name" x="${COL.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name))}${r.higherIsWorse ? ' ↓' : ''}</text>`;
       row += `<text class="viz-row-score" x="${COL.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${escapeHtml(String(r.score))}</text>`;
 
@@ -28356,7 +28269,7 @@ if (document.readyState === 'loading'){
         const x0 = vizX(edges[b], axis), x1 = vizX(edges[b + 1], axis);
         const level = levels[ci] || {};
         row += `<rect class="viz-band" x="${x0.toFixed(1)}" y="${rowY + 3}" width="${(x1 - x0).toFixed(1)}" height="${ROW_H - 6}" fill="${DESC_COLOURS[ci]}">` +
-               `<title>${escapeHtml(level.label || '')} (standard-score ${escapeHtml(level.range || '')})</title></rect>`;
+               `<title>${escapeHtml(level.label || '')} (standard-score ${escapeHtml(level.range || '')}) â€” Bundled</title></rect>`;
       }
 
       const ci = vizParseCi(ciText);
@@ -28415,7 +28328,7 @@ if (document.readyState === 'loading'){
 
       const hasScore = Number.isFinite(v) && Number.isInteger(v);
       const br = hasScore ? baseRateAtOrAbove(entry, v) : null;
-      let row = `<title>${escapeHtml(r.name)}: span ${escapeHtml(String(r.score))}, ${BAT_BASERATE_LABEL.toLowerCase()} ${hasScore ? fmtBaseRate(br) : '–'}% obtained this span or higher</title>`;
+      let row = `<title>${escapeHtml(r.name)}: span ${escapeHtml(String(r.score))}, ${BAT_BASERATE_LABEL.toLowerCase()} ${hasScore ? fmtBaseRate(br) : '–'}% obtained this span or higher â€” Bundled</title>`;
       row += `<text class="viz-row-name" x="${COL.nameEnd}" y="${rowY + ROW_H / 2 + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name))}</text>`;
       row += `<text class="viz-row-score" x="${COL.scoreMid}" y="${rowY + ROW_H / 2 + 4.5}" text-anchor="middle">${escapeHtml(String(r.score))}</text>`;
 
@@ -28722,7 +28635,7 @@ if (document.readyState === 'loading'){
          corrupted metric rather than a shortened name. */
       const tag = mixed ? ` (${scoreTypeAbbr(type)})` : '';
       const shownName = vizTruncate(r.name, mixed ? 20 : 28) + tag;
-      let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(vizRowFacts(r, type, ciLevel, ciText, pctCell, details))}${r.higherIsWorse ? ' (error measure - bands reversed)' : ''}</title>`;
+      let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(vizRowFacts(r, type, ciLevel, ciText, pctCell, details))}${r.higherIsWorse ? ' (error measure - bands reversed)' : ''} â€” Bundled</title>`;
       row += `<text class="viz-row-name" x="${COL.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(shownName)}${r.higherIsWorse ? ' ↓' : ''}</text>`;
       row += `<text class="viz-row-score" x="${COL.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${escapeHtml(String(r.score))}</text>`;
 
@@ -28731,7 +28644,7 @@ if (document.readyState === 'loading'){
         const x0 = vizX(edges[b], axis), x1 = vizX(edges[b + 1], axis);
         const level = levels[bi] || {};
         row += `<rect class="viz-band" x="${x0.toFixed(1)}" y="${rowY + 3}" width="${Math.max(0, x1 - x0).toFixed(1)}" height="${ROW_H - 6}" fill="${DESC_COLOURS[bi]}">` +
-               `<title>${escapeHtml(level.label || '')} (standard-score ${escapeHtml(level.range || '')})</title></rect>`;
+               `<title>${escapeHtml(level.label || '')} (standard-score ${escapeHtml(level.range || '')}) â€” Bundled</title></rect>`;
       }
 
       /* The interval is converted bound-by-bound from the one the table
@@ -28802,7 +28715,7 @@ if (document.readyState === 'loading'){
          repeating it on the right would say the same thing twice. */
       const alsoScored = type !== 'raw' && r.score !== '' && !isNaN(parseFloat(r.score));
 
-      let row = `<title>${escapeHtml(r.name)}: raw ${v}${alsoScored ? `, ${scoreTypeLabel(type).toLowerCase()} ${r.score}` : ''}</title>`;
+      let row = `<title>${escapeHtml(r.name)}: raw ${v}${alsoScored ? `, ${scoreTypeLabel(type).toLowerCase()} ${r.score}` : ''} â€” Bundled</title>`;
       row += `<text class="viz-row-name" x="${COL.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name))}</text>`;
       row += `<text class="viz-row-score" x="${COL.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${v}</text>`;
       // A hairline across the plot gives each dot a baseline to sit on, so
@@ -28983,7 +28896,7 @@ if (document.readyState === 'loading'){
       const midY = rowY + ROW_H / 2;
       const t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
 
-      let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, RCI ${fmt(res.calc.rci, 2)}, p ${fmtP(res.calc.p)} — ${res.outcome.label}</title>`;
+      let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, RCI ${fmt(res.calc.rci, 2)}, p ${fmtP(res.calc.p)} — ${res.outcome.label} â€” Bundled</title>`;
       row += `<text class="viz-row-name" x="${COL_CHANGE.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name, 24))}</text>`;
       row += `<text class="viz-row-score" x="${COL_CHANGE.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}</text>`;
 
@@ -29130,7 +29043,7 @@ if (document.readyState === 'loading'){
       const pRound = Math.round(row.predicted);
 
       let g = `<title>${escapeHtml(row.label)}: predicted ${pRound}${row.lo != null ? ` (${row.lo}–${row.hi})` : ''}` +
-              `${row.achieved != null ? `, achieved ${row.achieved}, difference ${row.diffText}${row.brText ? `, base rate ${row.brText}` : ''}` : ', no achieved score entered'}</title>`;
+              `${row.achieved != null ? `, achieved ${row.achieved}, difference ${row.diffText}${row.brText ? `, base rate ${row.brText}` : ''}` : ', no achieved score entered'} â€” Bundled</title>`;
       g += `<text class="viz-row-name" x="${COL_CHANGE.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(row.label, 26))}</text>`;
       g += `<text class="viz-row-score" x="${COL_CHANGE.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${pRound}${row.achieved != null ? ` → ${row.achieved}` : ''}</text>`;
 
@@ -29210,7 +29123,7 @@ if (document.readyState === 'loading'){
         const midY = rowY + ROW_H / 2;
         const sig = sdiCvHit(change, cv);
         const label = sig ? 'Significant change' : 'No significant change';
-        let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, SD Δ ${fmt(change, 2)} — ${label}</title>`;
+        let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, SD Δ ${fmt(change, 2)} — ${label} â€” Bundled</title>`;
         row += `<text class="viz-row-name" x="${COL_CHANGE.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name, 24))}</text>`;
         row += `<text class="viz-row-score" x="${COL_CHANGE.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}</text>`;
         const bx0 = vizXd(-crit, axis), bx1 = vizXd(crit, axis);
@@ -29652,7 +29565,6 @@ if (document.readyState === 'loading'){
   consolidated.id = 'change-analysis';
   consolidated.innerHTML = `
     <div class="eyebrow" id="change-main-eyebrow">Standard Deviation Index</div>
-    <h1 class="section-title" id="change-main-title">Change <em>Analysis</em></h1>
     <p class="section-desc" id="change-main-desc">Formula basis: descriptive standard-deviation discrepancy, SD Δ = (X₂ − X₁) / SD; no reliability correction is applied.</p>
     <div class="change-flow-shell">
       <aside class="change-flow-side">
@@ -29674,7 +29586,6 @@ if (document.readyState === 'loading'){
 
   const tabs = consolidated.querySelector('.change-method-tabs');
   const body = consolidated.querySelector('.change-method-body');
-  const mainTitle = consolidated.querySelector('#change-main-title');
   const mainEyebrow = consolidated.querySelector('#change-main-eyebrow');
   const mainDesc = consolidated.querySelector('#change-main-desc');
 
@@ -29932,12 +29843,10 @@ if (document.readyState === 'loading'){
       panel.classList.toggle('active', panel.id === id);
     });
     if (id === 'overview'){
-      if (mainTitle) mainTitle.innerHTML = 'Change <em>Analysis</em>';
       if (mainEyebrow) mainEyebrow.textContent = 'About';
       if (mainDesc) mainDesc.innerHTML = 'Choose the method below that best fits your data and rigour requirements.';
     } else {
       const method = methods.find(item => item.id === id);
-      if (mainTitle && method) mainTitle.textContent = method.title;
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
       if (mainDesc && method) mainDesc.innerHTML = method.source;
     }

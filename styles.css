@@ -3336,15 +3336,6 @@ details summary:hover{color:var(--ink)}
    ===================================================================== */
 
 /* Page intro: less noisy formula text, drop the duplicate eyebrow */
-#change-analysis #change-main-title{
-  font-family:var(--serif)!important;
-  font-size:24px!important;
-  font-weight:600!important;
-  letter-spacing:-0.01em!important;
-  line-height:1.2!important;
-  margin-bottom:6px!important;
-  color:#1A1A1A!important;
-}
 #change-analysis .section-desc{
   font-family:var(--sans)!important;
   font-size:13px!important;
@@ -5709,7 +5700,6 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* Header text â€” eyebrow, title, formula description */
 #change-analysis > #change-main-eyebrow,
-#change-analysis > #change-main-title,
 #change-analysis > #change-main-desc{
   max-width:1320px;
   margin-left:auto!important;

@@ -653,6 +653,78 @@ check('McSweeney SRB slope and SEE are computable for every retest entry', () =>
   return bad.length === 0 || bad.join('; ');
 });
 
+/* Crawford's residual SD and standard error of prediction were pinned by
+   nothing at all, which is how the "View formula" block on that page came to
+   print McSweeney's SEE — SD2 sqrt(1 - r^2), with no (N-1)/(N-2) — above a
+   statistic computed with the factor. Nobody saw it, the block having been
+   display:none since the five methods were consolidated onto one page, and the
+   whole block is now deleted. These two checks make the arithmetic itself
+   assertable, so the next description of it can be checked against something.
+
+   Both formulas are re-derived here rather than imported, per this file's rule.
+   Eq. 4: the residual SD carries (N-1)/(N-2) because r and sd2 are sample
+   statistics on N-1 df while the t reference distribution wants N-2. Eq. 5:
+   predicting a NEW case adds 1 (the case's own error) and 1/N + the leverage
+   term (uncertainty in the fitted line). */
+check('Crawford SEE and SEpred reproduce Crawford & Garthwaite (2007) Eqs. 4-5', () => {
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(
+    APP_SRC.split('\n').slice(0, 105).join('\n')
+    + ';' + extractFn(APP_SRC, 'rciEffectiveR')
+    + ';' + extractFn(APP_SRC, 'calcCrawfordRow')
+    + ';var rciState = {};'
+    + ';globalThis.__C = calcCrawfordRow;', c);
+  const bad = [];
+  // Drive it over the shipped norms, at a baseline deliberately off the mean so
+  // the leverage term cannot be zero and pass by cancellation.
+  eachRetestEntry((e, g, n) => {
+    if (!Number.isFinite(e.n) || e.n < 3) return;
+    const x1 = e.m1 + e.sd1, x2 = e.m2;
+    const got = c.__C({ m1:e.m1, sd1:e.sd1, m2:e.m2, sd2:e.sd2, r:e.r, n:e.n, t1:x1, t2:x2 }, 'rci-crawford');
+    if (!got) { bad.push(g + ' / ' + n + ': no result'); return; }
+    const slope = e.r * (e.sd2 / e.sd1);
+    const predicted = (e.m2 - slope * e.m1) + slope * x1;
+    const see = e.sd2 * Math.sqrt((1 - e.r * e.r) * (e.n - 1) / (e.n - 2));
+    const sePred = see * Math.sqrt(1 + 1 / e.n + ((x1 - e.m1) ** 2) / ((e.n - 1) * e.sd1 * e.sd1));
+    const t = (x2 - predicted) / sePred;
+    const off = [];
+    if (Math.abs(got.see - see) > 1e-12) off.push('SEE ' + got.see + ' vs ' + see);
+    if (Math.abs(got.sePred - sePred) > 1e-12) off.push('SEpred ' + got.sePred + ' vs ' + sePred);
+    if (got.df !== e.n - 2) off.push('df ' + got.df + ' vs ' + (e.n - 2));
+    if (Math.abs(got.rci - t) > 1e-12) off.push('t ' + got.rci + ' vs ' + t);
+    if (off.length) bad.push(g + ' / ' + n + ': ' + off.join(', '));
+  });
+  return bad.length === 0 || bad.length + ' entries differ, first: ' + bad[0];
+});
+
+check('the (N−1)/(N−2) factor is what separates Crawford SEE from McSweeney SEE', () => {
+  // Guards the reasoning above: if the factor were negligible, describing the
+  // two SEEs with one formula would be harmless and this pinning unmotivated.
+  // It is not — it always inflates, and most at the smallest shipped N.
+  const ns = [];
+  eachRetestEntry((e) => { if (Number.isFinite(e.n) && e.n >= 3) ns.push(e.n); });
+  if (!ns.length) return 'no entries carry an N';
+  const smallest = Math.min(...ns);
+  const infl = Math.sqrt((smallest - 1) / (smallest - 2)) - 1;
+  if (!(infl > 0.01)) return 'at the smallest shipped N (' + smallest + ') the factor inflates SEE by only ' + (infl * 100).toFixed(2) + '%';
+  const biggest = Math.max(...ns);
+  if (!(Math.sqrt((biggest - 1) / (biggest - 2)) - 1 < infl)) return 'the factor does not shrink as N grows';
+  return true;
+});
+
+check('the dead per-method formula blocks are gone from the Change Analysis page', () => {
+  // They were display:none from the moment the five methods were consolidated,
+  // so their text could drift from the code unseen — and did, on Crawford.
+  // The Score Charts disclosure is live and must stay.
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const all = [...html.matchAll(/<details class="formula-disclosure"/g)].length;
+  if (all !== 1) return html.match(/View formula/) ? 'a per-method "View formula" block is back' : 'expected exactly the Score Charts disclosure, found ' + all;
+  if (!/#charts[\s\S]{0,80}|id="charts"/.test(html)) return 'Score Charts section not found';
+  if (/#change-analysis \.formula-disclosure/.test(html)) return 'the page-scoped CSS for the deleted blocks is back';
+  return true;
+});
+
 /* ==========================================================================
    8. Base rates
    ========================================================================== */
