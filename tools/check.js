@@ -3436,53 +3436,141 @@ check('the missing-age prompt and the topbar pip share one predicate', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the missing-age prompt appears only when an age would change a number', () => {
+check('the missing-age popover is edge-triggered, not state-triggered', () => {
+  /* renderBattery() runs on EVERY keystroke in the table. Opening whenever the
+     condition holds would re-open the popover continuously while a clinician
+     types scores, which is the difference between a prompt and a fault. It
+     must fire on the transition into the condition instead. */
   const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
   const bad = [];
-  if (!/patientAge\(\) === null/.test(fn)) bad.push('the prompt does not require the age to be absent, so it can nag with one set');
-  if (!/n > 0/.test(fn)) bad.push('the prompt does not require at least one age-band measure');
-  /* Class, not [hidden]: the attribute lost this exact fight before, because
-     the element's own display outranked the browser default. */
-  if (!/classList\.toggle\('is-shown'/.test(fn)) bad.push('the prompt is not shown by a class toggle');
-  if (/\.hidden\s*=/.test(fn)) bad.push('the prompt is gated on [hidden] — the cascade trap CLAUDE.md records');
-  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
-  const css = DS_CSS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s*\{/g, '{');
-  if (!/\.bat-age-prompt\{[^}]*display:\s*none/.test(css)) bad.push('.bat-age-prompt is not display:none by default');
-  if (!/\.bat-age-prompt\.is-shown\{[^}]*display:\s*flex/.test(css)) bad.push('.is-shown never reveals the prompt');
-  /* Rows and CI level change without the age being touched. */
-  const render = extractFn(APP_SRC, 'renderBattery');
-  if (!/refreshBatteryAgePrompt\(\)/.test(render)) bad.push('renderBattery never refreshes the prompt');
-  if (!/id="bat-age-prompt"/.test(HTML_SRC)) bad.push('the prompt element is missing from index.html');
+  if (!/batAgePopLastWanted/.test(fn)) bad.push('nothing records the previous state, so this cannot be edge-triggered');
+  if (!/!batAgePopLastWanted/.test(fn)) bad.push('the open is not gated on the condition having just become true');
+  if (!/batAgePopLastWanted = wanted/.test(fn)) bad.push('the previous state is never updated, so it fires once and never again');
+  /* Once per patient, and re-armed ONLY by "New patient" — not by clearing the
+     age, or someone who skipped and then blanked the field is asked twice
+     about the same person. */
+  if (!/batAgePopArmed/.test(fn)) bad.push('the popover is not limited to once per patient');
+  if (!/batAgePopArmed = false/.test(fn)) bad.push('it never disarms, so it reopens for the same patient');
+  const clearIdx = APP_SRC.indexOf("getElementById('topbar-clear-all')");
+  const handler = clearIdx < 0 ? '' : APP_SRC.slice(clearIdx, clearIdx + 4000);
+  if (!/batAgePopArmed = true/.test(handler)) bad.push('"New patient" does not re-arm the popover');
+  /* The declaration is the initial value, not a re-arm — strip it, then there
+     must be exactly ONE runtime assignment and it must be the one above. */
+  const rearms = (APP_SRC.replace(/let batAgePopArmed = true;/, '')
+                         .match(/batAgePopArmed = true/g) || []).length;
+  if (rearms !== 1) bad.push('batAgePopArmed is re-armed at ' + rearms + ' runtime sites; only "New patient" may do it');
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the missing-age prompt offers, and never scolds', () => {
-  /* A blank age is legitimate and citable — those measures fall back to the
-     publisher's own all-ages coefficient — so this must not read as a
-     validation failure. CLAUDE.md: never make the age required, because a
-     blank age presenting as broken is the failure being avoided. */
+check('the missing-age popover opens only when an age would change a number', () => {
+  const wanted = extractFn(APP_SRC, 'batteryAgeWanted');
   const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+  const open = extractFn(APP_SRC, 'openBatteryAgePop');
   const bad = [];
-  if (!/all-ages coefficient/.test(fn)) bad.push('the prompt does not say what happens if the age is left blank');
-  [/\brequired\b/i, /\bmust\b/i, /\berror\b/i, /\binvalid\b/i, /\bmissing\b/i, /\bplease\b/i].forEach(re => {
-    if (re.test(fn)) bad.push('the wording reads as a validation error (' + re.source + ')');
-  });
-  /* Warning and destructive tints would say the same thing in colour. */
+  if (!/patientAge\(\) === null/.test(wanted)) bad.push('it does not require the age to be absent, so it can nag with one set');
+  if (!/batteryAgeBandRowCount\(\) > 0/.test(wanted)) bad.push('it does not require at least one age-band measure');
+  if (!/batteryAgeWanted\(\)/.test(fn)) bad.push('the refresh does not use the shared condition');
+  if (!/closeBatteryAgePop\(\)/.test(fn)) bad.push('it never closes itself when the condition stops holding');
+  /* Class, not [hidden]: the attribute lost this exact fight before, because
+     an element's own display outranked the browser default. */
+  if (!/classList\.add\('is-open'\)/.test(open)) bad.push('the popover is not opened by a class');
+  if (/\.hidden\s*=/.test(open)) bad.push('the popover is gated on [hidden] — the cascade trap CLAUDE.md records');
   const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
-  const block = (DS_CSS.match(/\.bat-age-prompt\{[\s\S]*?\}/) || [''])[0];
-  if (/--ds-warning|--ds-destructive/.test(block)) bad.push('the prompt is styled as a warning');
-  /* It names the count, so nobody has to audit the table to decide if it is
-     worth typing — and every clause must agree with that count. The first
-     version read "1 measure in this table publish their reliability", which is
-     the failure fragment-assembly produces: the subject was pluralised and the
-     verb and pronoun were not. Assert all three agree, in both branches. */
-  if (!/'1 measure'/.test(fn)) bad.push('the prompt does not name the number of measures');
-  if (!/publishes its reliability/.test(fn)) bad.push('no singular clause — one measure will take a plural verb');
-  if (!/publish their reliability/.test(fn)) bad.push('no plural clause');
-  if (!/it uses the published all-ages coefficient/.test(fn)) bad.push('the singular fallback sentence disagrees in number');
-  if (!/they use the published all-ages coefficient/.test(fn)) bad.push('the plural fallback sentence disagrees in number');
+  const css = DS_CSS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s*\{/g, '{');
+  if (!/\.ds-age-pop\{[^}]*display:\s*none/.test(css)) bad.push('.ds-age-pop is not display:none by default');
+  if (!/\.ds-age-pop\.is-open\{[^}]*display:\s*block/.test(css)) bad.push('.is-open never reveals the popover');
+  if (!/id="bat-age-pop"/.test(HTML_SRC)) bad.push('the popover is missing from index.html');
+  /* Rows and CI level change without the age being touched. */
+  if (!/refreshBatteryAgePrompt\(\)/.test(extractFn(APP_SRC, 'renderBattery'))) {
+    bad.push('renderBattery never refreshes it');
+  }
   return bad.length === 0 || bad.join('; ');
 });
+
+check('the missing-age popover offers, and never scolds or blocks', () => {
+  /* A blank age is legitimate and citable — those measures fall back to the
+     publisher's own all-ages coefficient — so this must not read as a
+     validation failure OR as something that has to be answered before work can
+     continue. CLAUDE.md: never make the age required. */
+  const open = extractFn(APP_SRC, 'openBatteryAgePop');
+  const bad = [];
+  if (!/all-ages coefficient/.test(open)) bad.push('it does not say what happens if the age is left blank');
+  [/\brequired\b/i, /\bmust\b/i, /\berror\b/i, /\binvalid\b/i, /\bmissing\b/i, /\bplease\b/i].forEach((re) => {
+    if (re.test(open)) bad.push('the wording reads as a validation error (' + re.source + ')');
+  });
+  /* Every clause agrees with the count. The first version of this text read
+     "1 measure ... publish their reliability" — the failure fragment-assembly
+     produces. Both branches are written out and both are pinned. */
+  if (!/1 measure/.test(open)) bad.push('it does not name the number of measures');
+  if (!/publishes its reliability/.test(open)) bad.push('no singular clause — one measure will take a plural verb');
+  if (!/publish their reliability/.test(open)) bad.push('no plural clause');
+  if (!/it uses the published all-ages coefficient/.test(open)) bad.push('the singular fallback sentence disagrees in number');
+  if (!/they use the published all-ages coefficient/.test(open)) bad.push('the plural fallback sentence disagrees in number');
+  /* The skip must name the alternative, not merely dismiss. */
+  if (!/Skip . use all-ages/.test(HTML_SRC)) bad.push('the skip does not name the alternative it selects');
+  /* NON-BLOCKING. No backdrop, no warning colouring, no full-viewport cover. */
+  if (/backdrop-element|is-modal|aria-modal="true"/.test(open + HTML_SRC)) bad.push('the popover behaves as a modal');
+  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const block = (DS_CSS.match(/\.ds-age-pop\{[\s\S]*?\n\}/) || [''])[0];
+  if (/--ds-warning|--ds-destructive/.test(block)) bad.push('the popover is styled as a warning');
+  if (/inset:\s*0/.test(block)) bad.push('the popover covers the viewport — that is a modal');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the popover positions itself in one coordinate space, not two', () => {
+  /* styles.css sets body{zoom:0.9} — a deliberate global 10% downscale. That
+     splits measurement in two, and mixing the halves is silent:
+
+       getBoundingClientRect()  VISUAL px  (already scaled)
+       offsetWidth              LAYOUT px  (unscaled — 320 for a box occupying
+                                            282 visual px)
+       style.top / style.left   LAYOUT px  (the browser applies the zoom)
+
+     The first version read rects and offsetWidth together and wrote the result
+     back unscaled, putting the popover 19px ABOVE its anchor and 58px off
+     centre. Nothing threw and no check noticed; it was found by measuring the
+     rendered page. These assertions pin the fix. */
+  /* Comments stripped: this function's own prose names offsetWidth in order to
+     warn against it, and a bare match would flag the warning as the offence. */
+  const fn = extractFn(APP_SRC, 'positionBatteryAgePop')
+               .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const bad = [];
+  if (/offsetWidth/.test(fn)) bad.push('offsetWidth is layout px and is being mixed with visual-px rects');
+  if (!/pageZoomFactor\(\)/.test(fn)) bad.push('the page zoom is not accounted for when writing style.top/left');
+  if (!/\/ z\)/.test(fn)) bad.push('nothing divides by the zoom on the way out');
+  /* Read from the element, never hardcoded — changing the 0.9 in styles.css
+     must not silently break the anchoring. */
+  const zf = extractFn(APP_SRC, 'pageZoomFactor');
+  if (!/getComputedStyle\(document\.body\)\.zoom/.test(zf)) bad.push('the zoom factor is not read from the page');
+  if (/0\.9/.test(zf)) bad.push('the zoom factor is hardcoded');
+  if (!/\|\| 1|\? z :/.test(zf)) bad.push('no fallback where zoom is unsupported, so positioning would become NaN');
+  /* And the value it compensates for must still be there. */
+  const CSS = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
+  if (!/body\{[^}]*zoom:\s*0?\.9/.test(CSS)) {
+    bad.push('body zoom is gone from styles.css — re-derive this, the compensation may now be wrong');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a skipped or missed popover still leaves a trace on the field', () => {
+  /* The popover is transient and fires once per patient. If it is skipped, or
+     fires while the clinician is looking at the table rather than the top bar,
+     the message is gone. The residual .is-wanted state is what stops that
+     being lost — state-driven, so it cannot go stale. */
+  const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+  const bad = [];
+  if (!/classList\.toggle\('is-wanted', wanted\)/.test(fn)) bad.push('the field carries no residual state');
+  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  if (!/\.ds-patient-field\.is-wanted\s*\{/.test(DS_CSS)) bad.push('.is-wanted has no styling, so the trace is invisible');
+  /* is-wanted (age blank, would be read) and is-live (age set, being read) are
+     mutually exclusive by construction — one needs an age, the other needs
+     none. If they ever overlap, the field claims both at once. */
+  if (!/patientAge\(\) === null/.test(extractFn(APP_SRC, 'batteryAgeWanted'))) {
+    bad.push('is-wanted no longer requires a blank age, so it can co-occur with is-live');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
 
 check('an out-of-range age is explained rather than left blank', () => {
   const src = extractFn(APP_SRC, 'calcPremorbid');

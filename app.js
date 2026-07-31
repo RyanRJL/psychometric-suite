@@ -496,6 +496,9 @@ function navigateTo(target, opts){
        long after init. */
     if (typeof refreshPatientAgeIndicator === 'function') refreshPatientAgeIndicator();
     if (typeof refreshBatteryAgePrompt === 'function') refreshBatteryAgePrompt();
+    /* The popover is anchored to a control on Score Tables, so it cannot
+       survive a page change — its anchor goes with it. */
+    if (target !== 'battery' && typeof closeBatteryAgePop === 'function') closeBatteryAgePop();
   };
 
   // Re-selecting the page you're already on shouldn't flash it away and back.
@@ -2144,66 +2147,153 @@ function refreshPatientAgeIndicator(){
   field.classList.toggle('is-live', patientAgeIsInUse());
 }
 
-/* THE MISSING-AGE PROMPT.
+/* THE MISSING-AGE POPOVER.
 
-   Just-in-time, and the timing is the whole point: it appears at the moment a
-   blank age starts costing a sharper interval, and it clears itself the moment
-   one is typed. Nothing to dismiss, nothing persisted — the empty-age state is
-   not a first-run state, it is the opening state of EVERY patient, so a
-   one-time hint would teach it once and never help again.
+   Asks for the age at the moment a blank one starts costing a sharper
+   interval, anchored to the Score CI toggle — the control that creates that
+   moment.
 
-   IT IS AN OFFER, NOT A DEMAND. A blank age is a legitimate, citable state:
-   those measures fall back to the publisher's own all-ages coefficient. So the
-   wording says what is gained, never that something is missing or wrong, and
-   the styling is a quiet line rather than a warning box. If this ever starts
-   reading as an error, it is wrong — see the CI-column note in CLAUDE.md.
+   EDGE-TRIGGERED, NOT STATE-TRIGGERED. renderBattery() runs on every keystroke
+   in the table, so opening whenever the condition holds would re-open it
+   continuously while someone types scores. It opens on the TRANSITION into the
+   condition, which also fixes the ordering problem a click handler would have:
+   CI switched on with D-KEFS already loaded fires, and D-KEFS autofilled while
+   CI is already on fires too. A handler on the CI button would catch only the
+   first, and would fire on an RBANS table where the age changes nothing.
 
-   It cannot over-claim, because batteryAgeBandRowCount() is the same predicate
-   that lights the topbar pip: no rows publish reliability by age, or the
-   interval is switched off, and there is nothing to say. */
-function refreshBatteryAgePrompt(){
-  const el = document.getElementById('bat-age-prompt');
-  if (!el) return;
-  const n = batteryAgeBandRowCount();
-  const show = n > 0 && patientAge() === null;
-  el.classList.toggle('is-shown', show);
-  if (!show) return;
-  /* Name the number. "Some measures" would leave the clinician counting rows
-     to work out whether it is worth typing.
+   ONCE PER PATIENT. Re-armed only by "New patient", not by clearing the age —
+   a clinician who skipped, then cleared the age, has already answered. The
+   residual .is-wanted state on the topbar field is what carries the message
+   after that, so a skipped or missed popover still leaves a trace.
 
-     Every clause agrees with the count — subject, verb and pronoun. Written
-     out per branch rather than assembled from fragments, because "1 measure
-     publish their reliability" is exactly what fragment-assembly produced on
-     the first pass, and this text sits above a table that goes into reports. */
-  const one = n === 1;
-  const subject = one ? '1 measure' : n + ' measures';
-  const clause  = one
-    ? 'publishes its reliability by age band. Add the patient’s age to use it — left blank, it uses the published all-ages coefficient.'
-    : 'publish their reliability by age band. Add the patient’s age to use it — left blank, they use the published all-ages coefficient.';
-  el.innerHTML =
-      '<span class="bat-age-prompt-text">'
-    +   '<strong>' + subject + '</strong> in this table ' + clause
-    + '</span>'
-    + '<button type="button" class="bat-age-prompt-action" data-focus-patient-age>Add age</button>';
+   IT IS AN OFFER, NOT A DEMAND. A blank age is legitimate and citable: those
+   measures fall back to the publisher's own all-ages coefficient. Hence no
+   backdrop, no dimming, a skip that names the real alternative, and no word
+   anywhere suggesting something is missing or wrong. If this ever starts
+   reading as a validation error, it is wrong — see the CI-column note in
+   CLAUDE.md. */
+let batAgePopArmed = true;      // reset by "New patient"
+let batAgePopLastWanted = false; // previous edge state
+
+function batteryAgeWanted(){
+  return batteryAgeBandRowCount() > 0 && patientAge() === null;
 }
 
-/* The field is in the topbar and the prompt is halfway down the page, so the
-   button both focuses it and flashes it — a caret appearing off-screen would
-   look like the button did nothing. */
-document.addEventListener('click', e => {
-  if (!e.target.closest('[data-focus-patient-age]')) return;
-  const input = document.getElementById('patient-age');
+/* Anchored with position:fixed against the CI toggle's own rect, rather than
+   nested inside the inline bar: that bar is rebuilt by design-system.js, and a
+   child would be destroyed with it. Clamped to the viewport so a narrow window
+   cannot push it off-screen.
+
+   MIND THE PAGE ZOOM. styles.css sets `body{zoom:0.9}` — a deliberate global
+   10% downscale. That splits measurement into two coordinate spaces and they
+   are easy to mix:
+
+     getBoundingClientRect()  VISUAL px   (already scaled by 0.9)
+     offsetWidth              LAYOUT px   (unscaled — reports 320 for a 320px
+                                          box that occupies 282 visual px)
+     style.top / style.left   LAYOUT px   (the browser multiplies by the zoom)
+
+   The first version read rects and offsetWidth together and wrote the result
+   straight back, which put the popover 19px ABOVE its anchor and 58px off
+   centre — a systematic error, not a layout-timing one, which is why
+   re-positioning did not shift it. Everything below is computed in visual px
+   and divided by the zoom on the way out. The factor is read from the element
+   rather than hardcoded, so changing that 0.9 cannot silently break this. */
+function pageZoomFactor(){
+  const z = parseFloat(getComputedStyle(document.body).zoom);
+  return Number.isFinite(z) && z > 0 ? z : 1;
+}
+
+function positionBatteryAgePop(){
+  const pop = document.getElementById('bat-age-pop');
+  if (!pop || !pop.classList.contains('is-open')) return;
+  const anchor = document.querySelector('#battery .ds-inline-bar-toggle[aria-label="Score confidence interval"]')
+              || document.querySelector('#battery .ds-inline-bar');
+  if (!anchor) return;
+  const z = pageZoomFactor();
+  const a = anchor.getBoundingClientRect();
+  const w = pop.getBoundingClientRect().width;   // visual px — NOT offsetWidth
+  const centre = a.left + a.width / 2;
+  const left = Math.max(12, Math.min(centre - w / 2, window.innerWidth - w - 12));
+  pop.style.top  = ((a.bottom + 10) / z) + 'px';
+  pop.style.left = (left / z) + 'px';
+  const arrow = pop.querySelector('.ds-age-pop-arrow');
+  if (arrow) arrow.style.left = (Math.max(14, Math.min(centre - left, w - 14)) / z) + 'px';
+}
+
+function openBatteryAgePop(n){
+  const pop = document.getElementById('bat-age-pop');
+  const body = document.getElementById('bat-age-pop-body');
+  if (!pop || !body) return;
+  /* Every clause agrees with the count — subject, verb and pronoun. Written
+     out per branch rather than assembled from fragments, because "1 measure
+     publish their reliability" is what fragment-assembly produced on the first
+     pass, and this is text a clinician reads while deciding. */
+  body.innerHTML = n === 1
+    ? '<strong>1 measure</strong> in this table publishes its reliability by age band. An age narrows its interval; left blank, it uses the published all-ages coefficient.'
+    : '<strong>' + n + ' measures</strong> in this table publish their reliability by age band. An age narrows their intervals; left blank, they use the published all-ages coefficient.';
+  const input = document.getElementById('bat-age-pop-input');
+  if (input) input.value = '';
+  pop.classList.add('is-open');
+  positionBatteryAgePop();
+}
+
+function closeBatteryAgePop(){
+  const pop = document.getElementById('bat-age-pop');
+  if (pop) pop.classList.remove('is-open');
+}
+
+/* Writes through to the master and lets its own listener do the rest — the
+   sync, the re-render and the pip all hang off that one 'input' event. */
+function commitBatteryAgePop(){
+  const input = document.getElementById('bat-age-pop-input');
+  const master = document.getElementById('patient-age');
+  if (!input || !master) return;
+  const v = parseFloat(input.value);
+  if (!Number.isFinite(v)) { input.focus(); return; }
+  master.value = String(v);
+  master.dispatchEvent(new Event('input', { bubbles: true }));
+  closeBatteryAgePop();
+}
+
+function refreshBatteryAgePrompt(){
+  const wanted = batteryAgeWanted();
+  /* The residual state. Always truthful, no edge trigger, no dismissal — this
+     is what a clinician sees if the popover was skipped, or fired while they
+     were looking at the table rather than the top bar. */
   const field = document.getElementById('patient-age-field');
-  if (!input) return;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  input.focus();
-  if (field){
-    field.classList.remove('is-flash');
-    void field.offsetWidth;              // restart the animation on a repeat click
-    field.classList.add('is-flash');
-    setTimeout(() => field.classList.remove('is-flash'), 1200);
+  if (field) field.classList.toggle('is-wanted', wanted);
+
+  if (wanted && !batAgePopLastWanted && batAgePopArmed){
+    batAgePopArmed = false;
+    openBatteryAgePop(batteryAgeBandRowCount());
+  }
+  if (!wanted) closeBatteryAgePop();
+  batAgePopLastWanted = wanted;
+}
+
+document.addEventListener('click', e => {
+  if (e.target.closest('#bat-age-pop-add')){ commitBatteryAgePop(); return; }
+  if (e.target.closest('#bat-age-pop-skip')){ closeBatteryAgePop(); return; }
+  /* Outside click dismisses — but not a click on the CI toggle that opened it,
+     which would close it in the same gesture that asked for it. */
+  const pop = document.getElementById('bat-age-pop');
+  if (!pop || !pop.classList.contains('is-open')) return;
+  if (e.target.closest('#bat-age-pop')) return;
+  if (e.target.closest('.ds-inline-bar-toggle[aria-label="Score confidence interval"]')) return;
+  closeBatteryAgePop();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeBatteryAgePop();
+  else if (e.key === 'Enter' && e.target && e.target.id === 'bat-age-pop-input'){
+    e.preventDefault();
+    commitBatteryAgePop();
   }
 });
+/* Fixed positioning does not follow the page, so it is recomputed rather than
+   left pointing at empty space. */
+window.addEventListener('scroll', positionBatteryAgePop, { passive: true });
+window.addEventListener('resize', positionBatteryAgePop);
 
 /* Pick the published coefficient for the patient's age band.
    rInternalByAge is keyed by the LOWER BOUND of each normative band, so the
@@ -6153,6 +6243,11 @@ refreshAll();
   btn.addEventListener('click', () => {
     const ok = confirm('Start a new patient?\n\nThis clears every table you\'ve been working on across all tools, including the Working Report, and the patient age. It cannot be undone.');
     if (!ok) return;
+
+    /* A new patient re-arms the missing-age popover. This is the ONLY thing
+       that does: clearing the age alone must not, or a clinician who skipped
+       and then blanked the field would be asked again about the same person. */
+    batAgePopArmed = true;
 
     // Suppress the observers BEFORE any clearing happens. The 350ms debounce
     // means handlers from changes triggered during the cascade can fire well

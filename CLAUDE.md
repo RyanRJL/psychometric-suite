@@ -382,27 +382,60 @@ and from `navigateTo()` (the page changes with neither changing). The pip is tog
 **class**, never `[hidden]` — the element it replaced used the attribute and stayed on
 screen, because its own `display:flex` outranked the browser default.
 
-#### The missing-age prompt
+#### The missing-age popover
 
-`#bat-age-prompt` sits above the Score Tables table and appears when that table holds
-measures publishing reliability by age band, the CI column is on, and **no age is set**.
-`refreshBatteryAgePrompt()` fills it; typing an age clears it. Nothing is dismissible and
-nothing is persisted, deliberately: **a blank age is not a first-run state, it is the
-opening state of every patient**, so a one-time hint would teach it once and never help
-again.
+`#bat-age-pop` is a glass popover anchored to the **Score CI toggle** — the control that
+creates the moment a blank age starts costing a sharper interval. It carries its own age
+input, so the ask is also the fastest way to answer it; the value is written through to
+`#patient-age`, which stays the master.
 
-The pip and the prompt are opposite halves of one question and both route through
-**`batteryAgeBandRowCount()`** — so a table showing the prompt while the pip is lit, or
-neither, is unrepresentable rather than merely unlikely. That count excludes `isExample`
-rows: seeded rows are not the clinician's data and must not be counted into a claim about
-"measures in this table".
+**Edge-triggered, not state-triggered.** `renderBattery()` runs on every keystroke in the
+table, so opening whenever the condition holds would re-open it continuously while
+someone types scores. It fires on the *transition* into "CI on, age-band measures present,
+no age" — which also fixes an ordering problem a click handler on the CI button would
+have: switching CI on with D-KEFS already loaded fires, **and** autofilling D-KEFS while CI
+is already on fires. A click handler catches only the first, and would fire on an RBANS
+table where the age changes nothing.
 
-**It offers, it never scolds.** A blank age is legitimate and citable, so the wording says
-what is gained, uses the primary tint rather than `--ds-warning`, and never says
-*required*, *must*, *missing* or *please*. `check.js` §26 asserts all of that, including
-that every clause agrees with the count — the first version read "1 measure in this table
-**publish their** reliability", which is what assembling the sentence from shared fragments
-produces. Singular and plural are now written out separately and both are pinned.
+**Once per patient**, re-armed only by "New patient" — not by clearing the age, or someone
+who skipped and then blanked the field is asked twice about the same person.
+`check.js` §26 asserts there is exactly **one** runtime `batAgePopArmed = true`.
+
+The pip and the popover are opposite halves of one question and both route through
+**`batteryAgeBandRowCount()`**, so a table lighting the pip while asking for an age is
+unrepresentable. That count excludes `isExample` rows: seeded rows are not the clinician's
+data and must not be counted into a claim about "measures in this table".
+
+**It offers, it never scolds, and it never blocks.** No backdrop, nothing dimmed, Escape
+and outside-click dismiss, and the skip reads *"Skip — use all-ages"* rather than
+"Dismiss" because that names the alternative actually being chosen. Primary tint, never
+`--ds-warning`. §26 pins all of it, including that every clause agrees with the count —
+the first version read "1 measure in this table **publish their** reliability", which is
+what assembling the sentence from shared fragments produces.
+
+A transient popover can be missed, so **`.ds-patient-field.is-wanted`** is the residual:
+a dashed tint on the topbar field whenever an age would be read and none is set. Purely
+state-driven, so it cannot go stale, and mutually exclusive with `.is-live` by
+construction. That trace is why a purely transient prompt was not enough.
+
+##### `body{zoom:0.9}` splits measurement in two
+
+`styles.css` line 33 applies a deliberate global 10% downscale. Anything positioning an
+element from a measured rect has to respect it, and mixing the halves is silent:
+
+| | space |
+|---|---|
+| `getBoundingClientRect()` | **visual** px, already scaled |
+| `offsetWidth` / `offsetHeight` | **layout** px — reports 320 for a box occupying 282 |
+| `style.top` / `style.left` | **layout** px — the browser applies the zoom |
+
+The first version of `positionBatteryAgePop` read rects and `offsetWidth` together and
+wrote the result straight back, putting the popover **19px above its anchor and 58px off
+centre**. Nothing threw, no check noticed, and re-positioning did not shift it — the error
+is systematic, not a layout-timing race, which is the tell. It was found by measuring the
+rendered page. `pageZoomFactor()` reads the factor off the element rather than hardcoding
+`0.9`, and §26 fails if `offsetWidth` returns, if the divide disappears, or if that `0.9`
+leaves `styles.css` without this being re-derived.
 
 The topbar button is **"New patient"**, not "Clear all tables": it clears every table
 *and* the age, because once age is a header-level property of the patient, two controls
@@ -1108,7 +1141,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 284 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 287 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
