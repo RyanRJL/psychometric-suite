@@ -3368,15 +3368,6 @@ details summary:hover{color:var(--ink)}
    ===================================================================== */
 
 /* Page intro: less noisy formula text, drop the duplicate eyebrow */
-#change-analysis #change-main-title{
-  font-family:var(--serif)!important;
-  font-size:24px!important;
-  font-weight:600!important;
-  letter-spacing:-0.01em!important;
-  line-height:1.2!important;
-  margin-bottom:6px!important;
-  color:#1A1A1A!important;
-}
 #change-analysis .section-desc{
   font-family:var(--sans)!important;
   font-size:13px!important;
@@ -5741,7 +5732,6 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* Header text â€” eyebrow, title, formula description */
 #change-analysis > #change-main-eyebrow,
-#change-analysis > #change-main-title,
 #change-analysis > #change-main-desc{
   max-width:1320px;
   margin-left:auto!important;
@@ -13767,29 +13757,6 @@ input[type="number"].ds-inline-bar-age-input{
     width:100%;
     padding:22px 50px 28px;
     font-size:13.5px;
-  }
-  #change-main-title{
-    display:flex;
-    align-items:baseline;
-    gap:14px;
-    flex-wrap:wrap;
-  }
-  #change-main-title .change-title-model{
-    font-family:var(--sans);
-    font-size:16px;
-    font-weight:600;
-    letter-spacing:0.06em;
-    text-transform:uppercase;
-    color:var(--ink-2);
-  }
-  #change-main-title .change-title-model::before{
-    content:"";
-    display:inline-block;
-    width:1px;
-    height:20px;
-    background:var(--border);
-    margin-right:14px;
-    vertical-align:-4px;
   }
   #change-analysis .section-desc{max-width:880px;margin-bottom:16px}
   .change-flow-shell{
@@ -29359,7 +29326,6 @@ if (document.readyState === 'loading'){
   consolidated.id = 'change-analysis';
   consolidated.innerHTML = `
     <div class="eyebrow" id="change-main-eyebrow">Standard Deviation Index</div>
-    <h1 class="section-title" id="change-main-title">Change <em>Analysis</em></h1>
     <p class="section-desc" id="change-main-desc">Formula basis: descriptive standard-deviation discrepancy, SD Δ = (X₂ − X₁) / SD; no reliability correction is applied.</p>
     <div class="change-flow-shell">
       <aside class="change-flow-side">
@@ -29381,7 +29347,6 @@ if (document.readyState === 'loading'){
 
   const tabs = consolidated.querySelector('.change-method-tabs');
   const body = consolidated.querySelector('.change-method-body');
-  const mainTitle = consolidated.querySelector('#change-main-title');
   const mainEyebrow = consolidated.querySelector('#change-main-eyebrow');
   const mainDesc = consolidated.querySelector('#change-main-desc');
 
@@ -29639,12 +29604,10 @@ if (document.readyState === 'loading'){
       panel.classList.toggle('active', panel.id === id);
     });
     if (id === 'overview'){
-      if (mainTitle) mainTitle.innerHTML = 'Change <em>Analysis</em>';
       if (mainEyebrow) mainEyebrow.textContent = 'About';
       if (mainDesc) mainDesc.innerHTML = 'Choose the method below that best fits your data and rigour requirements.';
     } else {
       const method = methods.find(item => item.id === id);
-      if (mainTitle && method) mainTitle.textContent = method.title;
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
       if (mainDesc && method) mainDesc.innerHTML = method.source;
     }
