@@ -72,6 +72,7 @@ function extractFn(source, name) {
 }
 
 const APP_SRC = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
+const HTML_SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
 /* Pull a top-level `const NAME = ...;` declaration straight out of the shipped
    file, so a sandbox gets the REAL value rather than a copy that can drift.
@@ -1198,19 +1199,24 @@ const batteryCtx = (() => {
   const ctx = {
     normDB: D.normDB,
     getMergedDB: () => D.normDB,
-    document: { getElementById: () => ({ value: 'scaled' }) }
+    /* #bat-type answers 'scaled' for rowScoreType; #bat-ci-basis is ABSENT on
+       purpose, so batteryCiCorrectRetest has to fall back to published. The
+       checks pass the flag explicitly when they want the other reading. */
+    document: { getElementById: (id) => (id === 'bat-ci-basis' ? null : { value: 'scaled' }) }
   };
   vm.createContext(ctx);
   vm.runInContext(
     boundsSrc[0] + '\n' + metricSdSrc[0] + '\n' +
       (APP_SRC.match(/const PATIENT_AGE_INPUTS = \[[^\]]*\];/) || [''])[0] + '\n' +
       ['patientAge', 'bandedReliabilityForAge', 'rInternalForAge', 'rStabilityForAge',
+       'derivedCorrectedR', 'batteryCiCorrectRetest', 'resolveCiReliability',
        'batteryPatientAge', 'getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml']
         .map((n) => extractFn(APP_SRC, n)).join('\n') +
       '\n;globalThis.__B = getBatteryCiHtml;'
       + '\n;globalThis.__REL = getBatteryRowReliability;'
       + '\n;globalThis.__AGE = rInternalForAge;'
-      + '\n;globalThis.__STAB = rStabilityForAge;',
+      + '\n;globalThis.__STAB = rStabilityForAge;'
+      + '\n;globalThis.__CORR = batteryCiCorrectRetest;',
     ctx
   );
   return ctx;
@@ -1219,6 +1225,7 @@ const batteryCi  = batteryCtx.__B;
 const batteryRel = batteryCtx.__REL;
 const rInternalForAge = batteryCtx.__AGE;
 const rStabilityForAge = batteryCtx.__STAB;
+const batteryCiCorrectRetest = batteryCtx.__CORR;
 
 const SCALED_ROW   = { name: 'Block Design', group: 'WAIS-IV Core Subtests · All Ages', scoreType: 'scaled' };
 const STANDARD_ROW = { name: 'Full Scale IQ', group: 'WAIS-IV Indices · All Ages',      scoreType: 'standard' };
@@ -1337,6 +1344,58 @@ check('the OPIE tooltips state that sex and an age range are required', () => {
   return (/sex/i.test(t) && /16-90|16–90/.test(t)) || 'opieDefault no longer states the input requirements';
 });
 
+check('the CI method lives on the Methods page, and the note stays short', () => {
+  /* THE DIVISION OF LABOUR BETWEEN THE TWO, which is a judgement that will not
+     survive on its own. The APA note is pasted into a report and read by people
+     who do not have this app; the Methods page is read by whoever wants the
+     reasoning. Detail migrates back into the note one well-meant sentence at a
+     time unless something objects.
+
+     The test for what MUST stay in the note is what an exported table could be
+     misread as without it. The uncorrected pairing fails that test — it is what
+     those manuals themselves do, so the interval matches the published one and
+     a reader checking it finds agreement. The DERIVED coefficient passes it: a
+     reader cross-checking the manual will not find that value and would
+     reasonably conclude the table is wrong, so the note must declare it however
+     terse the rest becomes. That one sentence is the load-bearing assertion
+     here; the length bound only stops the rest growing back around it. */
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(APP_SRC.match(/const APA_NOTES = \{[\s\S]*?\n\};/)[0] + ';globalThis.__N = APA_NOTES;', c);
+  const note = (ctx) => c.__N.bat({ classification: 'wechsler', ciLevel: '95', ...ctx }).filter(Boolean).join(' ');
+  const bad = [];
+
+  /* A corrected table must say the coefficients are not the published ones.
+     Both halves: that they were corrected, and what that costs the reader. */
+  const derived = note({ hasDerivedR: true });
+  if (!/corrected to the normative sample/i.test(derived)) {
+    bad.push('a corrected table no longer says its coefficients were corrected');
+  }
+  if (!/not the values those manuals print|differ from the published/i.test(derived)) {
+    bad.push('a corrected table no longer warns that its intervals differ from the published ones');
+  }
+  if (/corrected/i.test(note({}))) {
+    bad.push('an uncorrected table claims a correction it did not make');
+  }
+
+  /* And the note must stay a note. 900 characters is roughly twice the current
+     default-state length — loose enough not to fire on ordinary rewording,
+     tight enough that a migrated paragraph trips it. */
+  const plain = note({ ciAge: 45 }).replace(/<[^>]+>/g, '');
+  if (plain.length > 900) bad.push('the CI note is ' + plain.length + ' characters; the method belongs on the Methods page');
+
+  /* The Methods page has to have actually received what left the note, or the
+     reasoning is simply gone. These are the two claims that moved. */
+  const about = HTML_SRC.slice(HTML_SRC.indexOf('Methods &amp; conventions'));
+  [[/retest, uncorrected/, 'the retest-uncorrected label is not explained on the Methods page'],
+   [/Table 2\.8/, 'the Methods page no longer cites the D-KEFS evidence for the uncorrected pairing'],
+   [/reliability<\/strong> control|<strong>reliability<\/strong>/i, 'the Methods page does not describe the reliability control'],
+   [/median error of \.003/, 'the Methods page no longer states how the correction was validated']]
+    .forEach(([re, msg]) => { if (!re.test(about)) bad.push(msg); });
+
+  return bad.length === 0 || bad.join('; ');
+});
+
 /* ==========================================================================
    16. Wiring — does the app actually start, and is the corrected-r toggle
    confined to the two methods where it is defensible?
@@ -1351,7 +1410,6 @@ check('the OPIE tooltips state that sex and an age range are required', () => {
    ========================================================================== */
 heading('16. Wiring');
 
-const HTML_SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 /* styles.css, for the few checks that assert a layout invariant the markup
    and the renderer both depend on. design-system.css is deliberately NOT read:
    nothing asserted here has a rule in it. */
@@ -2780,9 +2838,15 @@ check('rInternal is used ONLY for the confidence interval, never by RCI', () => 
   const RCI_FNS = ['calcBasicRow', 'calcPracticeRow', 'calcSrbRow', 'calcCrawfordRow', 'rciEffectiveR'];
   const bad = RCI_FNS.filter((n) => /rInternal/.test(extractFn(APP_SRC, n)));
   if (bad.length) return bad.join(', ') + ' read rInternal; reliable change must use the retest coefficient';
-  // And it must actually be reachable from the CI path, or the field is inert.
-  return /rInternal/.test(extractFn(APP_SRC, 'getBatteryRowReliability'))
-    || 'getBatteryRowReliability never reads rInternal, so the field does nothing';
+  /* And it must actually be reachable from the CI path, or the field is inert.
+     The preference chain moved into resolveCiReliability when Score Tables and
+     the Data page were made to share one resolver, so that is where the read
+     now has to be — and getBatteryRowReliability has to still call it. */
+  if (!/rInternal/.test(extractFn(APP_SRC, 'resolveCiReliability'))) {
+    return 'resolveCiReliability never reads rInternal, so the field does nothing';
+  }
+  return /resolveCiReliability\(/.test(extractFn(APP_SRC, 'getBatteryRowReliability'))
+    || 'getBatteryRowReliability no longer calls resolveCiReliability, so the CI path has left the chain';
 });
 
 check('rInternal appears only where a publisher derives its own intervals from it', () => {
@@ -3411,6 +3475,99 @@ check('the two D-KEFS manuals disagree, and both are honoured', () => {
   }
   if (has('D-KEFS Design Fluency · All Ages', 'Filled Dots')) {
     bad.push('Design Fluency gained one; its manual says item interdependence precluded it');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the manual pairs its normative SD with the UNCORRECTED retest r', () => {
+  /* PINNED SOURCE: D-KEFS Technical Manual Table 2.8, Design Fluency, All Ages
+     — SEM 1.94 / 1.97 / 2.47 for Filled Dots, Empty Dots and Switching.
+
+     WHY THIS CHECK EXISTS, AND IT IS NOT ABOUT DESIGN FLUENCY. Every measure
+     in this app whose interval rests on a bare retest r pairs that r with the
+     NORMATIVE SD of its metric — 3 for a D-KEFS scaled score. r describes the
+     retest study's sample, the SD describes the norm group, and pairing terms
+     from two populations normally makes SD sqrt(1 - rxx) an invalid error
+     variance. That argument is sound, and the Allen & Yen / Magnusson
+     correction that repairs it,
+
+         rxx = 1 - (sd1^2 / normSD^2)(1 - r)
+
+     reproduces the published rCorrected to a median error of .003 across the
+     267 entries carrying both. Applying it in resolveCiReliability was built
+     and tested; it would have moved 260 entries, 47 of them reachable from
+     Score Tables — every one of them D-KEFS or D-KEFS Advanced.
+
+     IT WAS REJECTED BECAUSE THE PUBLISHER GOT THERE FIRST. The manual states
+     the pairing (p. 19: test-retest SEMs "were derived from the total sample
+     of cases"; "The standard deviation unit is 3 for all D-KEFS scaled
+     scores") and Table 2.8 is that arithmetic on the page. Correcting would
+     print a coefficient the cited manual does not contain, on the one family
+     where its own working is checkable — the same ground on which the
+     unrounded Fisher's-z WAIS-IV average was declined.
+
+     It is OFFERED, though — the reliability-basis control on Score Tables
+     applies it deliberately, with the APA note saying so. What must never
+     happen is it becoming the default, or leaking into a caller that did not
+     ask, so this drives the SHIPPED renderer in both states.
+
+     Four assertions, and the middle two are the load-bearing ones:
+       1. the uncorrected r reproduces Table 2.8 exactly;
+       2. the DEFAULT reading — no flag passed at all — still gives it, so the
+          published interval is what an untouched app prints;
+       3. the corrected reading does NOT reproduce Table 2.8, so the two
+          readings genuinely separate and the choice is a real one;
+       4. a missing control reads as published, so a harness or a page whose
+          control failed to build cannot land on derived coefficients.
+
+     If a corrected printing of the manual ever makes the corrected value fit,
+     3 fails, which is the signal to re-read this note rather than assume a
+     regression. */
+  const T28 = { 'Filled Dots': 1.94, 'Empty Dots': 1.97, 'Switching': 2.47 };
+  const group = 'D-KEFS Design Fluency · All Ages';
+  const bad = [];
+  let corrHits = 0;
+  Object.entries(T28).forEach(([name, sem]) => {
+    const e = D.normDB[group][name];
+    const row = { name, group, scoreType: 'scaled' };
+    const at = (rel) => Math.round(3 * Math.sqrt(1 - rel.r) * 100) / 100;
+
+    const plain = Math.round(3 * Math.sqrt(1 - e.r) * 100) / 100;
+    if (plain !== sem) bad.push(name + ': 3 sqrt(1 - r) = ' + plain + ', Table 2.8 prints ' + sem);
+
+    // 2. the default, with no flag passed — what an untouched app prints
+    const dflt = batteryRel(row, 'scaled', undefined);
+    if (at(dflt) !== sem) {
+      bad.push(name + ': the DEFAULT reading gives SEM ' + at(dflt) + ', Table 2.8 prints ' + sem
+        + ' — the correction has become the default');
+    }
+    if (dflt.basis !== 'retest, uncorrected') bad.push(name + ': default basis is "' + dflt.basis + '"');
+    if (batteryRel(row, 'scaled', undefined, false).r !== dflt.r) {
+      bad.push(name + ': explicitly asking for published differs from the default');
+    }
+
+    // 3. and the corrected reading must be a DIFFERENT number
+    const corr = batteryRel(row, 'scaled', undefined, true);
+    if (corr.basis !== 'retest, corrected here') bad.push(name + ': corrected basis is "' + corr.basis + '"');
+    if (at(corr) === sem) corrHits++;
+  });
+  if (corrHits) {
+    bad.push(corrHits + ' of 3 also reproduce from the range-corrected coefficient — '
+      + 'the two readings no longer separate, so the argument in this check needs re-checking');
+  }
+  /* 4. The control's own default, read straight from the markup rather than
+        from the function, because that is the value a browser actually loads. */
+  if (!/id="bat-ci-basis"[^>]*value="published"/.test(HTML_SRC)) {
+    bad.push('#bat-ci-basis does not default to published in index.html');
+  }
+  if (batteryCiCorrectRetest() !== false) {
+    bad.push('batteryCiCorrectRetest returns true with no control present; a missing control must read as published');
+  }
+  /* A published coefficient must never be overwritten, whatever the toggle
+     says. Cheapest proof: a measure with internal consistency is unmoved. */
+  const wais = { name: 'Vocabulary', group: 'WAIS-IV Core Subtests · All Ages', scoreType: 'scaled' };
+  if (batteryRel(wais, 'scaled', undefined, true).r !== batteryRel(wais, 'scaled', undefined, false).r) {
+    bad.push('the toggle moved a published internal-consistency coefficient; it must reach only the retest branch');
   }
   return bad.length === 0 || bad.join('; ');
 });
@@ -4868,45 +5025,100 @@ check('the stored averages are Table 4.1\'s own average column', () => {
 heading('32. Norms Database view');
 
 const dbCtx = (() => {
-  const ctx = { normDB: D.normDB, getMergedDB: () => D.normDB };
+  /* No #bat-ci-basis here, which is the point: batteryCiCorrectRetest must
+     read "published" from a missing control, so a harness (or a page that
+     failed to build the bar) can never land on derived coefficients by
+     accident. The checks below pass the flag explicitly to drive both states. */
+  const ctx = { normDB: D.normDB, getMergedDB: () => D.normDB,
+                document: { getElementById: () => null } };
   vm.createContext(ctx);
   vm.runInContext(
-    ['dbReliabilityBasis', 'dbInstrumentOf'].map((n) => extractFn(APP_SRC, n)).join('\n') +
-    ';globalThis.__BASIS = dbReliabilityBasis; globalThis.__INST = dbInstrumentOf;',
+    (APP_SRC.match(/const BATTERY_METRIC_SD = \{[^;]*;/) || [''])[0] + '\n' +
+    (APP_SRC.match(/const SCORE_METRICS = [^;]*;/) || [''])[0] + '\n' +
+    ['inferScoreType', 'inferScoreTypeForSubtest', 'bandedReliabilityForAge',
+     'rInternalForAge', 'rStabilityForAge', 'derivedCorrectedR',
+     'batteryCiCorrectRetest', 'resolveCiReliability',
+     'dbReliabilityBasis', 'dbInstrumentOf'].map((n) => extractFn(APP_SRC, n)).join('\n') +
+    ';globalThis.__BASIS = dbReliabilityBasis; globalThis.__INST = dbInstrumentOf;'
+    + 'globalThis.inferScoreTypeForSubtest = inferScoreTypeForSubtest;',
     ctx
   );
   return ctx;
 })();
 const dbBasis = dbCtx.__BASIS;
 const dbInstrument = dbCtx.__INST;
+const dbType = dbCtx.inferScoreTypeForSubtest;
 
 check('the reliability column shows what the app would actually use', () => {
-  /* THE LOAD-BEARING CHECK. dbReliabilityBasis and getBatteryRowReliability are
-     separate functions reading the same fields in the same order, and only one
-     of them decides what gets printed on a report. If they diverge, this page
-     tells a clinician their interval rests on a coefficient it does not.
+  /* THE LOAD-BEARING CHECK. Score Tables renders the interval; this page tells
+     the clinician what it rests on. If they diverge, the page advertises a
+     coefficient the report does not use.
 
-     Driven over every entry in normDB, at a blank age, which is the state this
-     page renders in. Compared against the SHIPPED renderer, not a copy. */
+     The two used to be separate functions reading the same fields in the same
+     order, pinned together here — a mirror, and this check had to be
+     strengthened twice because a mirror is only as good as the next person's
+     memory. They now share resolveCiReliability, so the ORDER cannot drift.
+     What can still drift is the ARGUMENTS each entry point passes in, which is
+     what this now covers: driven over every entry at a blank age, through both
+     public functions, comparing the coefficient AND the basis string.
+
+     The score type is the app's own inferScoreTypeForSubtest rather than a
+     shortcut restated here, because that is what an auto-filled Score Tables
+     row carries and what dbReliabilityBasis asks for. Restating it would let
+     the two disagree about the metric while agreeing about everything else.
+
+     DRIVEN IN BOTH STATES OF THE RELIABILITY-BASIS CONTROL. That control lives
+     on Score Tables but this page has to follow it: showing the published
+     reading while the table is set to corrected is exactly the defect the
+     shared resolver exists to prevent, and it would be invisible — the page
+     would look right, on its own terms, while contradicting the report. */
   const bad = [];
-  let n = 0, withR = 0;
+  let n = 0, withR = 0, moved = 0;
   Object.entries(D.normDB).forEach(([group, tab]) => {
     Object.entries(tab).forEach(([name, e]) => {
       if (!e || typeof e !== 'object') return;
       n++;
-      const shown = dbBasis(e);
-      const type = e.metric === 'raw' ? 'raw' : (e.m1 > 50 ? 'standard' : 'scaled');
-      const used = batteryRel({ name, group, scoreType: type }, type, undefined);
-      if (!used) {
-        if (!shown.none) bad.push(group + ' / ' + name + ': table shows ' + shown.r + ' but the app builds no interval');
-        return;
-      }
-      withR++;
-      if (shown.r !== used.r) bad.push(group + ' / ' + name + ': table shows ' + shown.r + ', the renderer uses ' + used.r);
+      const type = dbType(group, name, e);
+      [false, true].forEach((corr) => {
+        const shown = dbBasis(e, group, name, corr);
+        const used = batteryRel({ name, group, scoreType: type }, type, undefined, corr);
+        const at = corr ? ' [corrected]' : '';
+        if (!used) {
+          if (!shown.none) bad.push(group + ' / ' + name + at + ': table shows ' + shown.r + ' but the app builds no interval');
+          return;
+        }
+        if (!corr) withR++;
+        if (shown.r !== used.r) bad.push(group + ' / ' + name + at + ': table shows ' + shown.r + ', the renderer uses ' + used.r);
+        if (shown.basis !== used.basis) bad.push(group + ' / ' + name + at + ': table says "' + shown.basis + '", the renderer says "' + used.basis + '"');
+      });
+      if (dbBasis(e, group, name, true).r !== dbBasis(e, group, name, false).r) moved++;
     });
   });
   if (n !== 671) bad.push('expected 671 entries, walked ' + n);
   if (withR < 550) bad.push('only ' + withR + ' entries produced an interval — the comparison has stopped covering the database');
+  /* And the control must actually do something, or the agreement above is
+     vacuous — two functions can hardly disagree about a flag neither reads.
+     From the 298 entries on the retest pairing:
+
+       -36  CVLT-C, sd1 in raw words while the row displays T or z
+       - 2  corrected value outside (0, 1), so not a reliability
+       -14  sd1 exactly equals the normative SD, so the correction is identity
+       ---
+        246 actually move
+
+     The 14 are worth knowing about before treating a shortfall as a bug: a
+     D-KEFS retest sample whose SD is a round 3.0 is unrestricted by
+     definition, and there is nothing for the formula to do. */
+  if (moved !== 246) bad.push('the basis control moves ' + moved + ' entries, expected 246');
+  /* And the shared resolver must actually be shared. Both entry points calling
+     it is what makes the order impossible to drift; if one grows its own copy
+     of the chain the check above would still pass on the day it was written. */
+  if (!/resolveCiReliability\(/.test(extractFn(APP_SRC, 'dbReliabilityBasis'))) {
+    bad.push('dbReliabilityBasis no longer calls resolveCiReliability — the page has its own copy of the chain again');
+  }
+  if (!/resolveCiReliability\(/.test(extractFn(APP_SRC, 'getBatteryRowReliability'))) {
+    bad.push('getBatteryRowReliability no longer calls resolveCiReliability');
+  }
   return bad.length === 0 || bad.slice(0, 4).join('; ');
 });
 
@@ -4925,22 +5137,77 @@ check('the basis names the right source, and says when age will move it', () => 
     ['CVLT-3 Indices · Ages 16-44', 'T1-5 Correct', 'retest, corrected'],
     ['WISC-V Indices · All Ages', 'Fluid Reasoning Index', 'internal consistency · by age'],
     ['RBANS Subtests · All Ages', 'List Recognition', 'none published'],
-    ['WAIS-IV Longest Span (Process) · Ages 16-17', 'Longest Digit Span Forward', 'base rate — no interval']
+    ['WAIS-IV Longest Span (Process) · Ages 16-17', 'Longest Digit Span Forward', 'base rate — no interval'],
+    /* THE TWO RETEST LABELS, WHICH MUST NOT COLLAPSE INTO EACH OTHER. Both
+       rest on the retest study's own correlation, but they are different
+       claims about the SD it is paired with, and the whole point of the pair
+       is that a clinician can tell them apart.
+
+       "retest, uncorrected" — a normative SD is in force, so the coefficient
+       and the SD describe different populations. That is the publisher's own
+       pairing for these measures (D-KEFS Technical Manual p. 19), not a defect
+       to be silently repaired; see resolveCiReliability.
+       "retest" — the row is displayed raw, so sd1 IS the SD in force and the
+       coefficient sits beside its own sample's SD. No qualifier is warranted,
+       and adding one would read as a fault where there is none.
+
+       CVLT-C lands on "uncorrected" and belongs there, which is not obvious:
+       metric:'raw' makes it look like the second case, but reportedAs puts the
+       row on a T or z metric, so the SD in force is the normative 10 or 1
+       while r was measured on raw words recalled. Same mismatch, and the one
+       place where no correction could repair it even in principle. */
+    ['D-KEFS Colour-Word Interference · All Ages', 'Colour Naming', 'retest, uncorrected'],
+    ['D-KEFS Tower Test · All Ages', 'Total Achievement Score', 'retest, uncorrected · by age'],
+    ['CVLT-C Subtests (Raw Scores) · Age 8', 'Perseverations', 'retest, uncorrected'],
+    ['RBANS Subtests · Ages 20-89', 'List Recognition', 'retest']
   ];
   cases.forEach(([g, n, want]) => {
     const e = D.normDB[g] && D.normDB[g][n];
     if (!e) { bad.push('missing fixture ' + g + ' / ' + n); return; }
-    const got = dbBasis(e).basis;
+    const got = dbBasis(e, g, n).basis;
     if (got !== want) bad.push(g + ' / ' + n + ': basis "' + got + '", expected "' + want + '"');
   });
   /* The two no-interval reasons must stay distinguishable. A base-rate measure
      never had a coefficient; a raw RBANS subtest is absent from its manual's
      reliability table. Both print nothing, for quite different reasons. */
   const kinds = new Set();
-  Object.values(D.normDB).forEach((tab) => Object.values(tab).forEach((e) => {
-    if (e && typeof e === 'object') { const b = dbBasis(e); if (b.none) kinds.add(b.basis); }
+  Object.entries(D.normDB).forEach(([g, tab]) => Object.entries(tab).forEach(([n, e]) => {
+    if (e && typeof e === 'object') { const b = dbBasis(e, g, n); if (b.none) kinds.add(b.basis); }
   }));
   if (kinds.size !== 2) bad.push('expected 2 distinct no-interval reasons, found ' + [...kinds].join(' / '));
+  /* THE WHOLE DISTRIBUTION, so that a change of basis anywhere in the database
+     has to be acknowledged here rather than sliding through unnoticed. These
+     are counts of what the app builds its intervals from today:
+
+       internal consistency        118  (3 bare + 115 by age)
+       stability, published         12
+       retest, corrected           180  a published rCorrected
+       retest, uncorrected         298  (285 + 13 by age) — the retest study's
+                                        own r used with a normative SD, which
+                                        is these manuals' own pairing
+       retest                        8  raw display, r beside its own sample SD
+       none published / base rate   55  no interval at all
+
+     PLAIN "retest" IS EXACTLY THE FOUR RAW RBANS SUBTESTS IN EACH OF THE TWO
+     RETEST BANDS. Nothing else in the database is displayed raw, so if that 8
+     moves, either a family has been tagged metric:'raw' or one has lost the
+     tag — both of which change what a percentile means, not just a label. */
+  const tally = {};
+  Object.entries(D.normDB).forEach(([g, tab]) => Object.entries(tab).forEach(([n, e]) => {
+    if (!e || typeof e !== 'object') return;
+    const b = dbBasis(e, g, n).basis;
+    tally[b] = (tally[b] || 0) + 1;
+  }));
+  const want = {
+    'internal consistency': 3, 'internal consistency · by age': 115,
+    'stability, published · by age': 12, 'retest, corrected': 180,
+    'retest, uncorrected': 285, 'retest, uncorrected · by age': 13,
+    'retest': 8, 'none published': 4, 'base rate — no interval': 51
+  };
+  Object.entries(want).forEach(([k, v]) => {
+    if (tally[k] !== v) bad.push('basis "' + k + '": ' + (tally[k] || 0) + ' entries, expected ' + v);
+  });
+  Object.keys(tally).forEach((k) => { if (!(k in want)) bad.push('unaccounted basis "' + k + '"'); });
   return bad.length === 0 || bad.join('; ');
 });
 
