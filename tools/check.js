@@ -1264,6 +1264,10 @@ check('the OPIE tooltips state that sex and an age range are required', () => {
 heading('16. Wiring');
 
 const HTML_SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+/* styles.css, for the few checks that assert a layout invariant the markup
+   and the renderer both depend on. design-system.css is deliberately NOT read:
+   nothing asserted here has a rule in it. */
+const CSS_SRC = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
 const DATA_SRC = fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8');
 
 /* Bare top-level calls, i.e. at column 0 and not inside any function. Anything
@@ -1779,8 +1783,16 @@ check('sdiComputeChange rejects a row whose metric has no SD unit', () => {
    Number.isFinite - produced a confidence interval with its lower bound above
    its upper bound, and an r of 1.5 made sqrt(1-r) NaN.
 
-   ctValidateEntry now holds those rules once. These checks pin it to the same
-   thresholds the form uses.
+   ctValidateEntry holds those rules once.
+
+   THE TYPED FORM IS GONE. The "Add a test family" and "Add subtests" UI was
+   removed once the page became a norms browser, so the four checks that drove
+   ctEntryRowHtml, ctReadRows, CT_METRIC_OPTIONS and the add-subtest handler
+   went with it — they tested markup that no longer exists.
+
+   ctValidateEntry itself stays and matters MORE than before, not less: import
+   is now the only way custom data enters the clinical database, so it is the
+   sole gatekeeper. Everything below still pins it.
    ========================================================================== */
 heading('19. Custom-test entry validation');
 
@@ -1901,31 +1913,6 @@ check('the import try block covers parsing only, not refreshAll()', () => {
    was guessed from the mean, because the entry form had nowhere to say what
    the score type was. A custom "Recognition total" (M 19.6, SD 0.8) at 19 -
    genuinely the 23rd percentile - printed as the 99.9th, "Very Superior". */
-check('the custom-test entry form offers a score type for every metric', () => {
-  const src = extractFn(APP_SRC, 'ctEntryRowHtml');
-  if (!/data-k="metric"/.test(src)) return 'no metric control on the entry row';
-  const opts = [...APP_SRC.matchAll(/\{\s*value:'([a-z]*)',\s*label:/g)].map(m => m[1]);
-  const want = ['', 'scaled', 'standard', 't', 'z', 'raw'];
-  const missing = want.filter(w => !opts.includes(w));
-  return missing.length === 0
-    || 'CT_METRIC_OPTIONS missing: ' + missing.map(m => m === '' ? '(auto)' : m).join(', ');
-});
-
-check('the score-type column is in the entry table markup', () => {
-  return /Score type<\/th>/.test(HTML_SRC) || 'no "Score type" header in the ct entry table';
-});
-
-check('ctReadRows carries the metric through, but blank rows stay blank', () => {
-  const src = extractFn(APP_SRC, 'ctReadRows');
-  if (!/get\('metric'\)/.test(src)) return 'ctReadRows does not read the metric cell';
-  if (!/out\.push\(\{[^}]*metric/.test(src)) return 'ctReadRows does not return the metric';
-  /* The select always has a value, so it must not count towards "is this row
-     used" - otherwise the trailing placeholder row would submit itself. */
-  const anyLine = src.match(/const any = \[([^\]]*)\]/);
-  if (!anyLine) return 'could not find the row-is-used test';
-  return !/metric/.test(anyLine[1])
-    || 'metric counts towards "row is used"; every blank row would submit';
-});
 
 check('a declared metric overrides the mean-based guess', () => {
   const src = extractFn(APP_SRC, 'inferScoreTypeForSubtest');
@@ -1935,15 +1922,6 @@ check('a declared metric overrides the mean-based guess', () => {
   const meanAt = src.indexOf("return 'z'");
   return (declaredAt !== -1 && declaredAt < meanAt)
     || 'the declared metric is checked after the mean heuristic, so the guess wins';
-});
-
-check('the save handler stores only a metric the app can resolve', () => {
-  const start = APP_SRC.indexOf("getElementById('ct-add-subtest')");
-  if (start === -1) return 'add-subtest handler not found';
-  const src = APP_SRC.slice(start, start + 2200);
-  if (!/CT_METRIC_OPTIONS\.some/.test(src)) return 'handler no longer validates the chosen metric';
-  if (!/if \(metric\)\{/.test(src)) return 'handler no longer skips the Auto case';
-  return true;
 });
 
 check('getCustom survives malformed localStorage instead of throwing', () => {
@@ -4666,6 +4644,197 @@ check('the stored averages are Table 4.1\'s own average column', () => {
     const max = stab ? e.rStabilityAgeMax : e.rInternalAgeMax;
     if (max !== 16) bad.push(name + ' has age max ' + max + ', expected 16');
   });
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+/* ==========================================================================
+   32. Norms Database view
+
+   The page that lets a clinician SEE what the app scores from. Until now it
+   listed all 115 groups flat and alphabetically — D-KEFS alone ran to 36
+   consecutive groups — and its columns stopped at the retest r, so the 131
+   entries whose interval is built from a published internal-consistency or
+   stability coefficient showed no sign of it.
+
+   The risk a reliability column introduces is that it drifts from the renderer
+   and starts advertising a coefficient the app does not use. That is what the
+   first check exists to prevent.
+   ========================================================================== */
+heading('32. Norms Database view');
+
+const dbCtx = (() => {
+  const ctx = { normDB: D.normDB, getMergedDB: () => D.normDB };
+  vm.createContext(ctx);
+  vm.runInContext(
+    ['dbReliabilityBasis', 'dbInstrumentOf'].map((n) => extractFn(APP_SRC, n)).join('\n') +
+    ';globalThis.__BASIS = dbReliabilityBasis; globalThis.__INST = dbInstrumentOf;',
+    ctx
+  );
+  return ctx;
+})();
+const dbBasis = dbCtx.__BASIS;
+const dbInstrument = dbCtx.__INST;
+
+check('the reliability column shows what the app would actually use', () => {
+  /* THE LOAD-BEARING CHECK. dbReliabilityBasis and getBatteryRowReliability are
+     separate functions reading the same fields in the same order, and only one
+     of them decides what gets printed on a report. If they diverge, this page
+     tells a clinician their interval rests on a coefficient it does not.
+
+     Driven over every entry in normDB, at a blank age, which is the state this
+     page renders in. Compared against the SHIPPED renderer, not a copy. */
+  const bad = [];
+  let n = 0, withR = 0;
+  Object.entries(D.normDB).forEach(([group, tab]) => {
+    Object.entries(tab).forEach(([name, e]) => {
+      if (!e || typeof e !== 'object') return;
+      n++;
+      const shown = dbBasis(e);
+      const type = e.metric === 'raw' ? 'raw' : (e.m1 > 50 ? 'standard' : 'scaled');
+      const used = batteryRel({ name, group, scoreType: type }, type, undefined);
+      if (!used) {
+        if (!shown.none) bad.push(group + ' / ' + name + ': table shows ' + shown.r + ' but the app builds no interval');
+        return;
+      }
+      withR++;
+      if (shown.r !== used.r) bad.push(group + ' / ' + name + ': table shows ' + shown.r + ', the renderer uses ' + used.r);
+    });
+  });
+  if (n !== 659) bad.push('expected 659 entries, walked ' + n);
+  if (withR < 550) bad.push('only ' + withR + ' entries produced an interval — the comparison has stopped covering the database');
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('the basis names the right source, and says when age will move it', () => {
+  /* The figure alone is not enough: .90 from a manual's split-half table and
+     .90 from a retest study are different claims, and CLAUDE.md treats an
+     on-screen statement of method as a contract. Also asserts the "by age"
+     suffix, without which a clinician would not know the printed value changes
+     the moment an age is entered on Score Tables. */
+  const bad = [];
+  const cases = [
+    ['WAIS-IV Indices · All Ages', 'Full Scale IQ', 'internal consistency · by age'],
+    ['RBANS Subtests · All Ages', 'Coding', 'stability, published · by age'],
+    ['WMS-IV Subtests · Ages 16-69', 'Verbal Paired Associates II - Word Recall', 'stability, published · by age'],
+    ['WISC-V Subtests · All Ages', 'Symbol Search', 'stability, published · by age'],
+    ['CVLT-3 Indices · Ages 16-44', 'T1-5 Correct', 'retest, corrected'],
+    ['WISC-V Indices · All Ages', 'Fluid Reasoning Index', 'internal consistency · by age'],
+    ['RBANS Subtests · All Ages', 'List Recognition', 'none published'],
+    ['WAIS-IV Longest Span (Process) · Ages 16-17', 'Longest Digit Span Forward', 'base rate — no interval']
+  ];
+  cases.forEach(([g, n, want]) => {
+    const e = D.normDB[g] && D.normDB[g][n];
+    if (!e) { bad.push('missing fixture ' + g + ' / ' + n); return; }
+    const got = dbBasis(e).basis;
+    if (got !== want) bad.push(g + ' / ' + n + ': basis "' + got + '", expected "' + want + '"');
+  });
+  /* The two no-interval reasons must stay distinguishable. A base-rate measure
+     never had a coefficient; a raw RBANS subtest is absent from its manual's
+     reliability table. Both print nothing, for quite different reasons. */
+  const kinds = new Set();
+  Object.values(D.normDB).forEach((tab) => Object.values(tab).forEach((e) => {
+    if (e && typeof e === 'object') { const b = dbBasis(e); if (b.none) kinds.add(b.basis); }
+  }));
+  if (kinds.size !== 2) bad.push('expected 2 distinct no-interval reasons, found ' + [...kinds].join(' / '));
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('every group lands in exactly one instrument tab', () => {
+  /* The tab bar is built from the data at render time so a new family cannot
+     be left out of it. D-KEFS Advanced must be tested before plain D-KEFS,
+     the latter being a prefix of the former — the same ordering trap
+     caIntervalLabel documents. */
+  const bad = [];
+  const tabs = {};
+  Object.keys(D.normDB).forEach((g) => {
+    const inst = dbInstrument(g, false);
+    tabs[inst] = (tabs[inst] || 0) + 1;
+  });
+  const want = { 'CVLT-3':4, 'CVLT-C':3, 'D-KEFS':36, 'D-KEFS Advanced':23, 'RBANS':9, 'WAIS-IV':34, 'WISC-V':2, 'WMS-IV':4 };
+  Object.entries(want).forEach(([k, v]) => {
+    if (tabs[k] !== v) bad.push(k + ': ' + (tabs[k] || 0) + ' groups, expected ' + v);
+  });
+  const stray = Object.keys(tabs).filter((k) => !(k in want));
+  if (stray.length) bad.push('unexpected tab(s): ' + stray.join(', '));
+  if (dbInstrument('anything at all', true) !== 'Custom') bad.push('a custom family does not land in the Custom tab');
+  if (dbInstrument('D-KEFS Advanced Tower · All Ages', false) === 'D-KEFS') bad.push('D-KEFS Advanced is being swallowed by the D-KEFS prefix');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the row grid declares as many columns as the header renders', () => {
+  /* styles.css declares .db-subtest-row twice — once for the desktop grid and
+     once in the responsive block. A previous author avoided adding a real
+     column for exactly that reason and put the metric badge inside the name
+     cell instead. Two columns were added anyway, so the fragility is pinned
+     rather than dodged: if the template and the header ever disagree, every
+     cell after the mismatch shifts one place left and the table silently
+     mislabels its own numbers. */
+  const grid = (CSS_SRC.match(/\.db-subtest-row\{[\s\S]*?grid-template-columns:([^;]+);/) || [])[1];
+  if (!grid) return 'the .db-subtest-row grid declaration is gone';
+  let cols = 0;
+  grid.trim().split(/\s+(?![^(]*\))/).forEach((tok) => {
+    const rep = tok.match(/^repeat\((\d+),/);
+    cols += rep ? Number(rep[1]) : 1;
+  });
+  const header = (APP_SRC.match(/<span>Subtest<\/span>[\s\S]*?<span><\/span>\s*<\/div>/) || [''])[0];
+  const cells = (header.match(/<span[\s>]/g) || []).length;
+  const bad = [];
+  if (cols !== 11) bad.push('the grid declares ' + cols + ' columns, expected 11');
+  if (cells !== cols) bad.push('the header renders ' + cells + ' cells against ' + cols + ' grid columns');
+
+  /* AND THE BODY ROW, which is the case that actually mislabels numbers.
+     Header and body are separate grid containers, so a template/header
+     mismatch only wraps them both the same way — ugly, not wrong. It goes
+     wrong when the BODY renders fewer cells than the header: everything after
+     the missing one slides left and sits under the wrong label.
+
+     Counted by cell class rather than by counting "<span", because the name
+     cell legitimately nests badge spans inside itself. */
+  const body = (APP_SRC.match(/<div class="db-subtest-row">\s*\n\s*<span class="name"[\s\S]*?<\/div>`;/) || [''])[0];
+  const bodyCells = {
+    name:       (body.match(/<span class="name"/g) || []).length,
+    num:        (body.match(/<span class="num">/g) || []).length,
+    reliability:(body.match(/<span class="db-rel">/g) || []).length,
+    basis:      (body.match(/<span class="db-basis/g) || []).length,
+    trailing:   (body.match(/'<span><\/span>'/g) || []).length
+  };
+  const want = { name:1, num:7, reliability:1, basis:1, trailing:1 };
+  Object.entries(want).forEach(([k, v]) => {
+    if (bodyCells[k] !== v) bad.push('the body row renders ' + bodyCells[k] + ' ' + k + ' cell(s), expected ' + v);
+  });
+  const bodyTotal = Object.values(bodyCells).reduce((a, n) => a + n, 0);
+  if (bodyTotal !== cells) bad.push('the body row renders ' + bodyTotal + ' cells against the header\'s ' + cells + ' — the numbers would sit under the wrong labels');
+  if (!/\.db-subtest-row\{grid-template-columns:1fr/.test(CSS_SRC.replace(/\s+/g, ''))) {
+    bad.push('the responsive single-column override is gone, so the table will overflow on a narrow screen');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the typed entry form is gone, and took none of its neighbours with it', () => {
+  /* THE DELETION GUARD. refreshAll() is a top-level init statement that used to
+     call refreshFamilySelect(); leaving that call behind while removing the
+     callee is the exact failure CLAUDE.md records for
+     refreshReportWriterOptions — it throws at boot and every top-level
+     statement after it silently stops running.
+
+     Asserted both ways: the add-form machinery must be absent, and the things
+     that survive it must still be present and wired. */
+  const gone = ['refreshFamilySelect', 'makeFamilyName', 'CT_METRIC_OPTIONS', 'ctEntryRowHtml',
+                'ctRenumberRows', 'ctRenderRows', 'ctReadRows', 'ctInitEntryRows'];
+  const bad = [];
+  gone.forEach((n) => { if (new RegExp('\\b' + n + '\\b').test(APP_SRC)) bad.push(n + ' is still referenced'); });
+  ['getCustom', 'saveCustom', 'getMergedDB', 'renderDbList', 'refreshAll', 'ctValidateEntry']
+    .forEach((n) => { if (!new RegExp('^function ' + n + '\\s*\\(', 'm').test(APP_SRC)) bad.push(n + ' was removed and must not have been'); });
+  if (!/^refreshAll\(\);/m.test(APP_SRC)) bad.push('refreshAll is no longer called at top level');
+  /* Import is now the ONLY route into the clinical database, so its validation
+     and its own handler have to survive. */
+  if (!/ct-import/.test(APP_SRC)) bad.push('the import handler is gone, leaving no way to load custom tests');
+  if (!/ctValidateEntry\(/.test(APP_SRC)) bad.push('import no longer validates what it saves');
+  ['ct-add-family', 'ct-add-subtest', 'ct-entry-body', 'ct-family-select']
+    .forEach((id) => { if (HTML_SRC.includes('id="' + id + '"')) bad.push('markup for ' + id + ' is still in index.html'); });
+  ['ct-search', 'ct-export', 'ct-import', 'db-list', 'db-tabbar']
+    .forEach((id) => { if (!HTML_SRC.includes('id="' + id + '"')) bad.push('markup for ' + id + ' is missing'); });
   return bad.length === 0 || bad.join('; ');
 });
 

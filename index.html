@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260727a">
+<link rel="stylesheet" href="styles.css?v=20260801a">
 <link rel="stylesheet" href="design-system.css?v=20260730m">
 
 <style>
@@ -2124,66 +2124,13 @@
 
   <!-- ========== 09 CUSTOM TESTS ========== -->
   <section class="section" id="custom-tests">
-    <div class="eyebrow">Settings · Custom Tests</div>
-    <h1 class="section-title">Custom Tests</h1>
-    <p class="section-desc">Add your own normative data for any test you regularly use. Custom tests appear alongside built-in tests in the auto-fill database. Stored locally in this browser only.</p>
+    <div class="eyebrow">Reference · Norms Database</div>
+    <h1 class="section-title">Norms Database</h1>
+    <p class="section-desc">Every normative entry the app scores from, by instrument. Shows the descriptive statistics, the reliability actually used to build each confidence interval, and the basis that coefficient rests on. Custom tests imported from a file appear alongside the built-in ones and are stored locally in this browser.</p>
 
-    <div class="panel panel-emphasis">
-      <h3 class="sub-title" style="margin-top:0">Add a test family</h3>
-      <div class="field-row-3">
-        <div class="field">
-          <label>Test family name <span class="hint">e.g., RAVLT</span></label>
-          <input type="text" id="ct-family" placeholder="Test family name">
-        </div>
-        <div class="field">
-          <label>Age band</label>
-          <select id="ct-family-age-mode">
-            <option value="none">None</option>
-            <option value="all">All Ages</option>
-            <option value="range">Specific range</option>
-          </select>
-        </div>
-        <div class="field-row-3" id="ct-family-age-range" style="display:none;grid-column:1 / -1">
-          <div class="field">
-            <label>Min age</label>
-            <input type="number" id="ct-family-age-min" min="0" step="1" placeholder="e.g., 65">
-          </div>
-          <div class="field">
-            <label>Max age</label>
-            <input type="number" id="ct-family-age-max" min="0" step="1" placeholder="e.g., 90">
-          </div>
-          <div class="field"></div>
-        </div>
-        <div class="field" style="display:flex;align-items:end;gap:8px">
-          <button class="btn btn-primary" id="ct-add-family">Add family</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h3 class="sub-title" style="margin-top:0">Add subtests/trials to a family</h3>
-      <div class="field" style="max-width:420px;margin-bottom:10px">
-        <label>Family</label>
-        <select id="ct-family-select"></select>
-      </div>
-      <table class="input-table ct-entry-table">
-        <thead>
-          <tr><th style="width:40px">#</th><th>Subtest</th><th>M₁</th><th>SD₁</th><th>M₂</th><th>SD₂</th><th>R</th><th>N</th><th style="width:170px" title="The score type this measure is reported on. Leave on Auto unless the app gets it wrong, or the measure is a raw score with no percentile.">Score type</th><th style="width:44px"></th></tr>
-        </thead>
-        <tbody id="ct-entry-body"></tbody>
-      </table>
-      <div class="controls-row" style="margin-top:10px">
-        <button class="btn btn-ghost" id="ct-add-row">+ Add test row</button>
-        <button class="btn btn-ghost" id="ct-load-example">+ Load example row</button>
-        <button class="btn" id="ct-clear-rows">Clear all rows</button>
-        <button class="btn btn-primary" id="ct-add-subtest">Add rows to family</button>
-      </div>
-    </div>
-
-    <h2 class="block-title">Database</h2>
     <div class="controls-row">
       <div class="field" style="flex:1">
-        <input type="text" id="ct-search" placeholder="Search test families and subtests…">
+        <input type="text" id="ct-search" placeholder="Search instruments and measures…">
       </div>
       <button class="btn" id="ct-export">Export custom tests (JSON)</button>
       <label class="btn" style="cursor:pointer">
@@ -2191,6 +2138,9 @@
         <input type="file" id="ct-import" accept=".json" style="display:none">
       </label>
     </div>
+    <!-- One tab per instrument, built from normDB at render time so a new
+         family cannot be left out of the bar. Search spans every tab. -->
+    <div class="db-tabbar" id="db-tabbar" role="tablist"></div>
     <div class="db-list" id="db-list"><div class="db-test-family">
       <div class="db-test-family-header">
         <span>CVLT-3 Indices · Ages 16-44 </span>
@@ -5916,8 +5866,8 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260731h"></script>
-<script src="app.js?v=20260731b"></script>
+<script src="data.js?v=20260801a"></script>
+<script src="app.js?v=20260801a"></script>
 <script src="design-system.js?v=20260731b" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 <script src="app-viz-page.js?v=20260730m"></script>
