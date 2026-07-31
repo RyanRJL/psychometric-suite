@@ -30,7 +30,7 @@
     'rci-crawford':   'Crawford Regression-Based',
     'premorbid':      'Premorbid Estimation',
     'about':          'Methods & References',
-    'custom-tests':   'Norms Database'
+    'custom-tests':   'Data'
   };
 
   function setTitleForTarget(target){
@@ -383,6 +383,19 @@
           <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci="95" role="radio" aria-checked="false">95%</button>
         </div>
       </div>
+      <!-- Which coefficient the interval rests on. Revealed with the CI
+           toggle, like the age slot, because it drives nothing else on this
+           page. "Published" is the default and reproduces each manual's own
+           printed interval; see #bat-ci-basis in index.html. -->
+      <div class="ds-inline-bar-section ds-inline-bar-cibasis" hidden>
+        <span class="ds-inline-bar-label">Reliability</span>
+        <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Reliability coefficient basis">
+          <button type="button" class="ds-inline-bar-toggle-btn is-active" data-bat-ci-basis="published" role="radio" aria-checked="true"
+            title="Use each manual's own coefficient and pairing. Reproduces the interval the manual prints.">Published</button>
+          <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci-basis="corrected" role="radio" aria-checked="false"
+            title="Where a manual publishes no coefficient computed on the normative sample, correct its retest coefficient to the normative sample's variability. Departs from the manual's printed interval.">Corrected</button>
+        </div>
+      </div>
       <!-- Slot for #bat-age, moved in below. Empty in the markup on purpose:
            the input is declared in index.html so it exists before app.js wires
            its listener, and is adopted here rather than rebuilt. Revealed with
@@ -532,8 +545,13 @@
 
     /* Wire Score CI toggle */
     const ciInput = document.getElementById('bat-ci-level');
+    const basisSlot = bar.querySelector('.ds-inline-bar-cibasis');
     if (ciInput){
-      const ciBtns = bar.querySelectorAll('[data-bat-ci]');
+      /* [data-bat-ci], not [data-bat-ci-basis] — the dataset key for the
+         latter is batCiBasis, so a loose attribute selector would sweep the
+         basis buttons into the CI radiogroup and the two would fight over
+         is-active. */
+      const ciBtns = bar.querySelectorAll('[data-bat-ci]:not([data-bat-ci-basis])');
       const syncCi = () => {
         const v = ciInput.value || 'off';
         ciBtns.forEach(b => {
@@ -541,8 +559,10 @@
           b.classList.toggle('is-active', active);
           b.setAttribute('aria-checked', active ? 'true' : 'false');
         });
-        /* Ask for the age at the moment it starts mattering. */
+        /* Ask for the age, and offer the basis, at the moment they start
+           mattering — neither drives anything with the interval switched off. */
         if (ageSlot) ageSlot.hidden = (v === 'off');
+        if (basisSlot) basisSlot.hidden = (v === 'off');
       };
       ciBtns.forEach(b => {
         b.addEventListener('click', () => {
@@ -553,6 +573,32 @@
       });
       ciInput.addEventListener('change', syncCi);
       syncCi();
+    }
+
+    /* Wire the reliability-basis toggle. Same shape as the CI toggle above:
+       the hidden input is the state, the buttons only write to it, and the
+       'change' event is what app.js listens to — so the table and the Data
+       page both re-render from one source rather than from the button. */
+    const basisInput = document.getElementById('bat-ci-basis');
+    if (basisInput){
+      const basisBtns = bar.querySelectorAll('[data-bat-ci-basis]');
+      const syncBasis = () => {
+        const v = basisInput.value || 'published';
+        basisBtns.forEach(b => {
+          const active = b.dataset.batCiBasis === v;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+      };
+      basisBtns.forEach(b => {
+        b.addEventListener('click', () => {
+          basisInput.value = b.dataset.batCiBasis;
+          basisInput.dispatchEvent(new Event('change', { bubbles: true }));
+          syncBasis();
+        });
+      });
+      basisInput.addEventListener('change', syncBasis);
+      syncBasis();
     }
 
     /* Wire Raw column toggle */

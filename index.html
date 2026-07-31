@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260801b">
+<link rel="stylesheet" href="styles.css?v=20260801f">
 <link rel="stylesheet" href="design-system.css?v=20260730m">
 
 <style>
@@ -39,29 +39,6 @@
     width:100%;
     padding:22px 50px 28px;
     font-size:13.5px;
-  }
-  #change-main-title{
-    display:flex;
-    align-items:baseline;
-    gap:14px;
-    flex-wrap:wrap;
-  }
-  #change-main-title .change-title-model{
-    font-family:var(--sans);
-    font-size:16px;
-    font-weight:600;
-    letter-spacing:0.06em;
-    text-transform:uppercase;
-    color:var(--ink-2);
-  }
-  #change-main-title .change-title-model::before{
-    content:"";
-    display:inline-block;
-    width:1px;
-    height:20px;
-    background:var(--border);
-    margin-right:14px;
-    vertical-align:-4px;
   }
   #change-analysis .section-desc{max-width:880px;margin-bottom:16px}
   .change-flow-shell{
@@ -364,44 +341,6 @@
     margin-top:0;
   }
   .change-active-method{display:none}
-  #change-analysis .formula-disclosure{
-    display:none;
-    align-items:flex-start;
-    gap:8px;
-    margin:7px 0 8px;
-    max-width:100%;
-  }
-  #change-analysis .formula-disclosure summary{
-    flex:0 0 auto;
-    min-height:26px;
-    padding:4px 10px;
-    border-color:rgba(156,61,42,0.22);
-    background:transparent;
-    color:var(--accent);
-    box-shadow:none;
-    font-size:11px;
-  }
-  #change-analysis .formula-disclosure summary:hover{
-    background:var(--accent-tint);
-    border-color:rgba(156,61,42,0.32);
-  }
-  #change-analysis .formula-disclosure[open] summary{
-    margin-bottom:0;
-  }
-  #change-analysis .formula-disclosure .info-box{
-    flex:1 1 auto;
-    max-width:none;
-    margin:0;
-    padding:5px 9px;
-    min-height:26px;
-    border-color:var(--border-soft);
-    background:rgba(250,247,241,0.42);
-    font-size:10.5px;
-    line-height:1.35;
-    white-space:nowrap;
-    overflow-x:auto;
-    overflow-y:hidden;
-  }
   .change-method-panel > .panel,
   .change-method-panel > .autofill-panel,
   .change-method-panel > .apa-wrap{
@@ -705,7 +644,7 @@
     <div class="nav-item" data-target="charts"><span class="nav-item-num">04</span>Score Charts</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">05</span>Score Converter</div>
     <div class="nav-item" data-target="effectsize"><span class="nav-item-num">06</span>Effect Size Tools</div>
-    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Norms Database</div>
+    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Data</div>
     <div class="nav-item" data-target="about"><span class="nav-item-num">08</span>Methods &amp; References</div>
   </nav>
 
@@ -962,6 +901,25 @@
           <input type="hidden" id="bat-prem-threshold" value="sd">
           <!-- Score CI: "off" | "90" | "95" -->
           <input type="hidden" id="bat-ci-level" value="off">
+          <!-- Which reliability the interval rests on: "published" | "corrected".
+               DEFAULT PUBLISHED, and that default is the load-bearing part.
+               A few hundred measures have no coefficient computed on the
+               normative sample, so their interval pairs the retest study's own
+               r with the normative SD of the metric. That is those manuals'
+               OWN pairing (D-KEFS Technical Manual p. 19, Table 2.8), so
+               "published" reproduces the printed figure and is what a
+               clinician cross-checking the manual must find.
+
+               "corrected" applies the Allen & Yen / Magnusson variability
+               correction to those measures instead. It is offered because the
+               statistical objection to the publishers' pairing is real, not
+               because the publishers are wrong; the APA note says which basis
+               produced the table either way. Same shape as the RCI pages'
+               corrected-r toggle, and off for the same reason.
+
+               Like #bat-ci-level, declared here rather than built by
+               design-system.js so app.js can wire its listener at init. -->
+          <input type="hidden" id="bat-ci-basis" value="published">
           <!-- Patient age. Optional, and only consulted where a publisher
                reports its reliability by age band (see rInternalByAge in
                data.js). Left blank, those measures fall back to the published
@@ -1410,10 +1368,6 @@
     <h1 class="section-title">Basic <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">Jacobson &amp; Truax (1991). Computes whether observed change exceeds measurement error, using the test's reliability coefficient and standard deviation.</p>
 
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> SEM = SD · √(1 − r) · S<sub>diff</sub> = √(2 · SEM²) · RCI = (X₂ − X₁) / S<sub>diff</sub>
-    </div></details>
-
     <div class="panel">
       <div class="field-row-3">
         <div class="field">
@@ -1495,10 +1449,6 @@
     <div class="eyebrow">Reliable Change Indices (RCI) · Practice Effects</div>
     <h1 class="section-title">Practice Effect-Adjusted <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">Iverson (2001). Adjusts the standard RCI to control for the average improvement (practice effect) observed between assessments in the normative sample.</p>
-
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> SEM<sub>i</sub> = SD<sub>i</sub> · √(1 − r) &nbsp;·&nbsp; S<sub>diff</sub> = √(SEM₁² + SEM₂²) &nbsp;·&nbsp; RCI = [(X₂ − X₁) − (M₂ − M₁)] / S<sub>diff</sub>
-    </div></details>
 
     <div class="panel">
       <div class="field-row-3">
@@ -1584,10 +1534,6 @@
     <div class="eyebrow">Reliable Change Indices (RCI) · Regression-Based</div>
     <h1 class="section-title">McSweeney Regression-Based (SRB) <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">McSweeney et al. (1993). Predicts each patient's expected retest score from their baseline and the normative sample's regression parameters; the residual is standardised against the standard error of estimate.</p>
-
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> Slope b = r · (SD₂/SD₁) &nbsp;·&nbsp; Intercept a = M₂ − b · M₁ &nbsp;·&nbsp; ŷ₂ = a + b · X₁ &nbsp;·&nbsp; SEE = SD₂ · √(1 − r²) &nbsp;·&nbsp; RCI = (X₂ − ŷ₂) / SEE
-    </div></details>
 
     <div class="panel">
       <div class="field-row-3">
@@ -1677,10 +1623,6 @@
     <div class="eyebrow">Reliable Change Indices (RCI) · Regression-Based (Crawford)</div>
     <h1 class="section-title">Crawford Regression-Based <span class="ink">Reliable Change Index</span></h1>
     <p class="section-desc">Crawford &amp; Garthwaite (2007). Extends the standardised regression-based approach to use a <i>t</i>-distributed test statistic that incorporates the normative sample size (N), correctly accounting for uncertainty in the regression parameters when N is modest. Returns a sample-size-adjusted standard error of prediction.</p>
-
-    <details class="formula-disclosure"><summary>View formula</summary><div class="info-box">
-      <strong>Formula.</strong> Slope b = r · (SD₂/SD₁) &nbsp;·&nbsp; Intercept a = M₂ − b · M₁ &nbsp;·&nbsp; ŷ₂ = a + b · X₁ &nbsp;·&nbsp; SEE = SD₂ · √(1 − r²) &nbsp;·&nbsp; SE<sub>pred</sub> = SEE · √(1 + 1/N + (X₁ − M₁)² / ((N − 1) · SD₁²)) &nbsp;·&nbsp; <i>t</i>(RB) = (X₂ − ŷ₂) / SE<sub>pred</sub> with df = N − 2
-    </div></details>
 
     <div class="panel">
       <div class="field-row-3">
@@ -2124,10 +2066,6 @@
 
   <!-- ========== 09 CUSTOM TESTS ========== -->
   <section class="section" id="custom-tests">
-    <div class="eyebrow">Reference · Norms Database</div>
-    <h1 class="section-title">Norms Database</h1>
-    <p class="section-desc">Every normative entry the app scores from, by instrument. Shows the descriptive statistics, the reliability actually used to build each confidence interval, and the basis that coefficient rests on. Custom tests imported from a file appear alongside the built-in ones and are stored locally in this browser.</p>
-
     <div class="controls-row">
       <div class="field" style="flex:1">
         <input type="text" id="ct-search" placeholder="Search instruments and measures…">
@@ -2186,6 +2124,15 @@
       One consequence should be borne in mind when comparing output against a test manual: for the measures that remain on the test–retest default, where a manual derives its published intervals from internal-consistency reliability, and internal consistency is almost always the higher of the two coefficients, the intervals shown here run <strong>wider</strong> than the manual's. They are therefore the more conservative, and answer the question <em>how much would this score be expected to move on retesting</em> rather than <em>how precisely was it measured on the day</em>. Not every publisher offers that comparison. The CVLT-3 manual declines to report internal-consistency reliability for its measures at all, on the grounds that item scores on a word-list task are not independent — recalling one word alters the probability of recalling the others, both within a trial and on later ones — and reports alternate-form coefficients in its place.
     </p>
     <p class="section-body-text">
+      <strong>Measures with no normative-sample coefficient, and the reliability control.</strong> Every interval here multiplies a normative standard deviation by a reliability, and that is only a valid standard error when the two describe the same group. Most manuals supply a coefficient computed on, or corrected to, their normative sample. Two do not: the D-KEFS and D-KEFS Advanced technical manuals report only the correlation observed in their own retest studies, a few dozen people each, and pair it with the normative standard deviation regardless. The D-KEFS manual states this outright, fixing the standard deviation unit at 3 for all its scaled scores and deriving its test–retest standard errors of measurement "from the total sample of cases"; its Table 2.8 shows the arithmetic, the three Design Fluency all-ages values of 1.94, 1.97 and 2.47 being exactly 3 × √(1 − <i>r</i>) on the uncorrected coefficient. Those measures are therefore scored the way their own manuals score them, and the intervals shown reproduce the published ones. The <strong>Data</strong> page labels each such measure <em>retest, uncorrected</em>, so which rows are on that footing can be read off rather than inferred.
+    </p>
+    <p class="section-body-text">
+      The statistical objection to that pairing is nonetheless real, so the Clinical Outcomes Table offers a <strong>reliability</strong> control with two settings. <em>Published</em>, the default, uses each manual's own coefficient and reproduces its printed interval. <em>Corrected</em> applies the standard range-restriction correction, r<sub>xx</sub> = 1 − (s²<sub>retest</sub> ÷ s²<sub>norm</sub>)(1 − <i>r</i>), to those measures alone, so that the coefficient describes the same population as the standard deviation it multiplies; a published coefficient is never overwritten in either setting. The correction is not a guess: across the 267 database entries that carry both an observed and a publisher-corrected coefficient it reproduces the publisher's own value to a median error of .003. But the resulting figures are <strong>not printed in the manuals concerned</strong>, which is why the default is <em>Published</em> and why the note beneath a corrected table says so. In practice it moves 46 of the measures reachable from that table, all of them D-KEFS or D-KEFS Advanced: at the 95% level 9 intervals widen and 4 narrow, 33 are unchanged after rounding, and the largest single change is 2 scaled-score points. Reliable-change analysis is not affected by the control.
+    </p>
+    <p class="section-body-text">
+      Where a coefficient is tabulated by age, the interval uses the band for the patient's age, and the age is named in the note beneath the table. If no age is entered, or the age falls outside a measure's normed range, the publisher's all-ages figure is used instead: the published average where a manual prints one, and otherwise the total-sample retest coefficient, which for the D-KEFS is that manual's own second regime rather than a substitute for a missing number. With the reliability control set to <em>Corrected</em>, that second fallback is corrected in the same way as any other retest coefficient.
+    </p>
+    <p class="section-body-text">
       Reliable-change calculations use the same test–retest coefficients, paired with the standard deviation from the same retest sample so that both terms describe one population. Where a publisher reports a coefficient corrected to the normative sample's variability, that corrected value is offered as an option but is not the default, because it describes a differently-distributed population from the standard deviation it would be multiplied by. Reliability type varies by instrument and is stated in the notes beneath each generated table (for example, CVLT-3 coefficients are alternate-form, and RBANS Form A coefficients are same-form retest).
     </p>
     <p class="section-body-text">
@@ -2228,7 +2175,7 @@
 <footer class="site-footer" role="contentinfo">
   <div class="site-footer-inner">
     <div class="site-footer-links">
-      <button type="button" class="site-footer-link nav-item" data-target="custom-tests">Norms Database</button>
+      <button type="button" class="site-footer-link nav-item" data-target="custom-tests">Data</button>
       <button type="button" class="site-footer-link nav-item" data-target="about">Methods &amp; References</button>
     </div>
     <div class="ds-version-stamp" title="Build version and last update">
@@ -2239,9 +2186,9 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260801a"></script>
-<script src="app.js?v=20260801d"></script>
-<script src="design-system.js?v=20260731b" defer></script>
+<script src="data.js?v=20260801b"></script>
+<script src="app.js?v=20260801j"></script>
+<script src="design-system.js?v=20260801b" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 <script src="app-viz-page.js?v=20260730m"></script>
 
@@ -2337,7 +2284,6 @@
   consolidated.id = 'change-analysis';
   consolidated.innerHTML = `
     <div class="eyebrow" id="change-main-eyebrow">Standard Deviation Index</div>
-    <h1 class="section-title" id="change-main-title">Change <em>Analysis</em></h1>
     <p class="section-desc" id="change-main-desc">Formula basis: descriptive standard-deviation discrepancy, SD Δ = (X₂ − X₁) / SD; no reliability correction is applied.</p>
     <div class="change-flow-shell">
       <aside class="change-flow-side">
@@ -2359,7 +2305,6 @@
 
   const tabs = consolidated.querySelector('.change-method-tabs');
   const body = consolidated.querySelector('.change-method-body');
-  const mainTitle = consolidated.querySelector('#change-main-title');
   const mainEyebrow = consolidated.querySelector('#change-main-eyebrow');
   const mainDesc = consolidated.querySelector('#change-main-desc');
 
@@ -2617,12 +2562,10 @@
       panel.classList.toggle('active', panel.id === id);
     });
     if (id === 'overview'){
-      if (mainTitle) mainTitle.innerHTML = 'Change <em>Analysis</em>';
       if (mainEyebrow) mainEyebrow.textContent = 'About';
       if (mainDesc) mainDesc.innerHTML = 'Choose the method below that best fits your data and rigour requirements.';
     } else {
       const method = methods.find(item => item.id === id);
-      if (mainTitle && method) mainTitle.textContent = method.title;
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
       if (mainDesc && method) mainDesc.innerHTML = method.source;
     }

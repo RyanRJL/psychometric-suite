@@ -72,6 +72,7 @@ function extractFn(source, name) {
 }
 
 const APP_SRC = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
+const HTML_SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
 /* Pull a top-level `const NAME = ...;` declaration straight out of the shipped
    file, so a sandbox gets the REAL value rather than a copy that can drift.
@@ -288,10 +289,10 @@ function eachRetestEntry(fn) {
   eachNormEntry((e, g, n) => { if (!e.singleAdministration) fn(e, g, n); });
 }
 
-check('115 groups and 659 entries present', () => {
+check('116 groups and 671 entries present', () => {
   const groups = Object.keys(D.normDB).length;
   let n = 0; eachNormEntry(() => n++);
-  return (groups === 115 && n === 659) || 'got ' + groups + ' groups / ' + n + ' entries';
+  return (groups === 116 && n === 671) || 'got ' + groups + ' groups / ' + n + ' entries';
 });
 check('every retest entry has m1, sd1, m2, sd2 and r', () => {
   const bad = [];
@@ -363,16 +364,32 @@ check('difference variance sd1^2 + sd2^2 - 2r*sd1*sd2 is positive everywhere', (
   });
   return bad.length === 0 || bad.join('; ');
 });
-check('rCorrected present on exactly 233 of the 590 retest entries', () => {
+check('rCorrected present on exactly 267 of the retest entries', () => {
   let n = 0; eachNormEntry(e => { if (Number.isFinite(e.rCorrected)) n++; });
-  return n === 233 || 'got ' + n;
+  return n === 267 || 'got ' + n;
 });
-check('D-KEFS, CVLT-C and WISC-V carry no rCorrected at all', () => {
+check('D-KEFS and CVLT-C carry no rCorrected, but WISC-V now does', () => {
+  /* WISC-V USED TO BE ON THIS LIST, AND THAT WAS AN ERROR OF FACT, not a
+     property of the source. Its Technical Manual Table 4.7 prints a corrected
+     r for all 34 rows; the database simply never captured it. Nothing scored
+     differently — rInternal outranks rCorrected in the CI chain and reliable
+     change defaults to the raw r — but the corrected-r option on the Basic RCI
+     page was silently unusable for WISC-V alone.
+
+     D-KEFS and CVLT-C are genuinely without it, so the check keeps biting for
+     them, and now asserts the WISC-V position instead of assuming it. */
   const bad = [];
   eachNormEntry((e, g, n) => {
-    if (/^(D-KEFS|CVLT-C|WISC-V)\b/.test(g) && Number.isFinite(e.rCorrected)) bad.push(g + ' / ' + n);
+    if (/^(D-KEFS|CVLT-C)\b/.test(g) && Number.isFinite(e.rCorrected)) bad.push(g + ' / ' + n + ' unexpectedly has one');
   });
-  return bad.length === 0 || bad.join('; ');
+  let wisc = 0, wiscTotal = 0;
+  eachNormEntry((e, g) => {
+    if (!/^WISC-V\b/.test(g)) return;
+    wiscTotal++;
+    if (Number.isFinite(e.rCorrected)) wisc++;
+  });
+  if (wisc !== wiscTotal) bad.push(wiscTotal - wisc + ' WISC-V entries lack the corrected r Table 4.7 publishes');
+  return bad.length === 0 || bad.slice(0, 3).join('; ');
 });
 check('group keys use the U+00B7 middle dot as separator', () => {
   const bad = Object.keys(D.normDB).filter(k => k.includes(' - ') || !k.includes('·'));
@@ -634,6 +651,78 @@ check('McSweeney SRB slope and SEE are computable for every retest entry', () =>
     if (!Number.isFinite(slope) || !Number.isFinite(see) || see <= 0) bad.push(g + ' / ' + n);
   });
   return bad.length === 0 || bad.join('; ');
+});
+
+/* Crawford's residual SD and standard error of prediction were pinned by
+   nothing at all, which is how the "View formula" block on that page came to
+   print McSweeney's SEE — SD2 sqrt(1 - r^2), with no (N-1)/(N-2) — above a
+   statistic computed with the factor. Nobody saw it, the block having been
+   display:none since the five methods were consolidated onto one page, and the
+   whole block is now deleted. These two checks make the arithmetic itself
+   assertable, so the next description of it can be checked against something.
+
+   Both formulas are re-derived here rather than imported, per this file's rule.
+   Eq. 4: the residual SD carries (N-1)/(N-2) because r and sd2 are sample
+   statistics on N-1 df while the t reference distribution wants N-2. Eq. 5:
+   predicting a NEW case adds 1 (the case's own error) and 1/N + the leverage
+   term (uncertainty in the fitted line). */
+check('Crawford SEE and SEpred reproduce Crawford & Garthwaite (2007) Eqs. 4-5', () => {
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(
+    APP_SRC.split('\n').slice(0, 105).join('\n')
+    + ';' + extractFn(APP_SRC, 'rciEffectiveR')
+    + ';' + extractFn(APP_SRC, 'calcCrawfordRow')
+    + ';var rciState = {};'
+    + ';globalThis.__C = calcCrawfordRow;', c);
+  const bad = [];
+  // Drive it over the shipped norms, at a baseline deliberately off the mean so
+  // the leverage term cannot be zero and pass by cancellation.
+  eachRetestEntry((e, g, n) => {
+    if (!Number.isFinite(e.n) || e.n < 3) return;
+    const x1 = e.m1 + e.sd1, x2 = e.m2;
+    const got = c.__C({ m1:e.m1, sd1:e.sd1, m2:e.m2, sd2:e.sd2, r:e.r, n:e.n, t1:x1, t2:x2 }, 'rci-crawford');
+    if (!got) { bad.push(g + ' / ' + n + ': no result'); return; }
+    const slope = e.r * (e.sd2 / e.sd1);
+    const predicted = (e.m2 - slope * e.m1) + slope * x1;
+    const see = e.sd2 * Math.sqrt((1 - e.r * e.r) * (e.n - 1) / (e.n - 2));
+    const sePred = see * Math.sqrt(1 + 1 / e.n + ((x1 - e.m1) ** 2) / ((e.n - 1) * e.sd1 * e.sd1));
+    const t = (x2 - predicted) / sePred;
+    const off = [];
+    if (Math.abs(got.see - see) > 1e-12) off.push('SEE ' + got.see + ' vs ' + see);
+    if (Math.abs(got.sePred - sePred) > 1e-12) off.push('SEpred ' + got.sePred + ' vs ' + sePred);
+    if (got.df !== e.n - 2) off.push('df ' + got.df + ' vs ' + (e.n - 2));
+    if (Math.abs(got.rci - t) > 1e-12) off.push('t ' + got.rci + ' vs ' + t);
+    if (off.length) bad.push(g + ' / ' + n + ': ' + off.join(', '));
+  });
+  return bad.length === 0 || bad.length + ' entries differ, first: ' + bad[0];
+});
+
+check('the (N−1)/(N−2) factor is what separates Crawford SEE from McSweeney SEE', () => {
+  // Guards the reasoning above: if the factor were negligible, describing the
+  // two SEEs with one formula would be harmless and this pinning unmotivated.
+  // It is not — it always inflates, and most at the smallest shipped N.
+  const ns = [];
+  eachRetestEntry((e) => { if (Number.isFinite(e.n) && e.n >= 3) ns.push(e.n); });
+  if (!ns.length) return 'no entries carry an N';
+  const smallest = Math.min(...ns);
+  const infl = Math.sqrt((smallest - 1) / (smallest - 2)) - 1;
+  if (!(infl > 0.01)) return 'at the smallest shipped N (' + smallest + ') the factor inflates SEE by only ' + (infl * 100).toFixed(2) + '%';
+  const biggest = Math.max(...ns);
+  if (!(Math.sqrt((biggest - 1) / (biggest - 2)) - 1 < infl)) return 'the factor does not shrink as N grows';
+  return true;
+});
+
+check('the dead per-method formula blocks are gone from the Change Analysis page', () => {
+  // They were display:none from the moment the five methods were consolidated,
+  // so their text could drift from the code unseen — and did, on Crawford.
+  // The Score Charts disclosure is live and must stay.
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const all = [...html.matchAll(/<details class="formula-disclosure"/g)].length;
+  if (all !== 1) return html.match(/View formula/) ? 'a per-method "View formula" block is back' : 'expected exactly the Score Charts disclosure, found ' + all;
+  if (!/#charts[\s\S]{0,80}|id="charts"/.test(html)) return 'Score Charts section not found';
+  if (/#change-analysis \.formula-disclosure/.test(html)) return 'the page-scoped CSS for the deleted blocks is back';
+  return true;
 });
 
 /* ==========================================================================
@@ -1110,19 +1199,24 @@ const batteryCtx = (() => {
   const ctx = {
     normDB: D.normDB,
     getMergedDB: () => D.normDB,
-    document: { getElementById: () => ({ value: 'scaled' }) }
+    /* #bat-type answers 'scaled' for rowScoreType; #bat-ci-basis is ABSENT on
+       purpose, so batteryCiCorrectRetest has to fall back to published. The
+       checks pass the flag explicitly when they want the other reading. */
+    document: { getElementById: (id) => (id === 'bat-ci-basis' ? null : { value: 'scaled' }) }
   };
   vm.createContext(ctx);
   vm.runInContext(
     boundsSrc[0] + '\n' + metricSdSrc[0] + '\n' +
       (APP_SRC.match(/const PATIENT_AGE_INPUTS = \[[^\]]*\];/) || [''])[0] + '\n' +
       ['patientAge', 'bandedReliabilityForAge', 'rInternalForAge', 'rStabilityForAge',
+       'derivedCorrectedR', 'batteryCiCorrectRetest', 'resolveCiReliability',
        'batteryPatientAge', 'getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml']
         .map((n) => extractFn(APP_SRC, n)).join('\n') +
       '\n;globalThis.__B = getBatteryCiHtml;'
       + '\n;globalThis.__REL = getBatteryRowReliability;'
       + '\n;globalThis.__AGE = rInternalForAge;'
-      + '\n;globalThis.__STAB = rStabilityForAge;',
+      + '\n;globalThis.__STAB = rStabilityForAge;'
+      + '\n;globalThis.__CORR = batteryCiCorrectRetest;',
     ctx
   );
   return ctx;
@@ -1131,6 +1225,7 @@ const batteryCi  = batteryCtx.__B;
 const batteryRel = batteryCtx.__REL;
 const rInternalForAge = batteryCtx.__AGE;
 const rStabilityForAge = batteryCtx.__STAB;
+const batteryCiCorrectRetest = batteryCtx.__CORR;
 
 const SCALED_ROW   = { name: 'Block Design', group: 'WAIS-IV Core Subtests · All Ages', scoreType: 'scaled' };
 const STANDARD_ROW = { name: 'Full Scale IQ', group: 'WAIS-IV Indices · All Ages',      scoreType: 'standard' };
@@ -1249,6 +1344,58 @@ check('the OPIE tooltips state that sex and an age range are required', () => {
   return (/sex/i.test(t) && /16-90|16–90/.test(t)) || 'opieDefault no longer states the input requirements';
 });
 
+check('the CI method lives on the Methods page, and the note stays short', () => {
+  /* THE DIVISION OF LABOUR BETWEEN THE TWO, which is a judgement that will not
+     survive on its own. The APA note is pasted into a report and read by people
+     who do not have this app; the Methods page is read by whoever wants the
+     reasoning. Detail migrates back into the note one well-meant sentence at a
+     time unless something objects.
+
+     The test for what MUST stay in the note is what an exported table could be
+     misread as without it. The uncorrected pairing fails that test — it is what
+     those manuals themselves do, so the interval matches the published one and
+     a reader checking it finds agreement. The DERIVED coefficient passes it: a
+     reader cross-checking the manual will not find that value and would
+     reasonably conclude the table is wrong, so the note must declare it however
+     terse the rest becomes. That one sentence is the load-bearing assertion
+     here; the length bound only stops the rest growing back around it. */
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(APP_SRC.match(/const APA_NOTES = \{[\s\S]*?\n\};/)[0] + ';globalThis.__N = APA_NOTES;', c);
+  const note = (ctx) => c.__N.bat({ classification: 'wechsler', ciLevel: '95', ...ctx }).filter(Boolean).join(' ');
+  const bad = [];
+
+  /* A corrected table must say the coefficients are not the published ones.
+     Both halves: that they were corrected, and what that costs the reader. */
+  const derived = note({ hasDerivedR: true });
+  if (!/corrected to the normative sample/i.test(derived)) {
+    bad.push('a corrected table no longer says its coefficients were corrected');
+  }
+  if (!/not the values those manuals print|differ from the published/i.test(derived)) {
+    bad.push('a corrected table no longer warns that its intervals differ from the published ones');
+  }
+  if (/corrected/i.test(note({}))) {
+    bad.push('an uncorrected table claims a correction it did not make');
+  }
+
+  /* And the note must stay a note. 900 characters is roughly twice the current
+     default-state length — loose enough not to fire on ordinary rewording,
+     tight enough that a migrated paragraph trips it. */
+  const plain = note({ ciAge: 45 }).replace(/<[^>]+>/g, '');
+  if (plain.length > 900) bad.push('the CI note is ' + plain.length + ' characters; the method belongs on the Methods page');
+
+  /* The Methods page has to have actually received what left the note, or the
+     reasoning is simply gone. These are the two claims that moved. */
+  const about = HTML_SRC.slice(HTML_SRC.indexOf('Methods &amp; conventions'));
+  [[/retest, uncorrected/, 'the retest-uncorrected label is not explained on the Methods page'],
+   [/Table 2\.8/, 'the Methods page no longer cites the D-KEFS evidence for the uncorrected pairing'],
+   [/reliability<\/strong> control|<strong>reliability<\/strong>/i, 'the Methods page does not describe the reliability control'],
+   [/median error of \.003/, 'the Methods page no longer states how the correction was validated']]
+    .forEach(([re, msg]) => { if (!re.test(about)) bad.push(msg); });
+
+  return bad.length === 0 || bad.join('; ');
+});
+
 /* ==========================================================================
    16. Wiring — does the app actually start, and is the corrected-r toggle
    confined to the two methods where it is defensible?
@@ -1263,7 +1410,6 @@ check('the OPIE tooltips state that sex and an age range are required', () => {
    ========================================================================== */
 heading('16. Wiring');
 
-const HTML_SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 /* styles.css, for the few checks that assert a layout invariant the markup
    and the renderer both depend on. design-system.css is deliberately NOT read:
    nothing asserted here has a rule in it. */
@@ -2692,9 +2838,15 @@ check('rInternal is used ONLY for the confidence interval, never by RCI', () => 
   const RCI_FNS = ['calcBasicRow', 'calcPracticeRow', 'calcSrbRow', 'calcCrawfordRow', 'rciEffectiveR'];
   const bad = RCI_FNS.filter((n) => /rInternal/.test(extractFn(APP_SRC, n)));
   if (bad.length) return bad.join(', ') + ' read rInternal; reliable change must use the retest coefficient';
-  // And it must actually be reachable from the CI path, or the field is inert.
-  return /rInternal/.test(extractFn(APP_SRC, 'getBatteryRowReliability'))
-    || 'getBatteryRowReliability never reads rInternal, so the field does nothing';
+  /* And it must actually be reachable from the CI path, or the field is inert.
+     The preference chain moved into resolveCiReliability when Score Tables and
+     the Data page were made to share one resolver, so that is where the read
+     now has to be — and getBatteryRowReliability has to still call it. */
+  if (!/rInternal/.test(extractFn(APP_SRC, 'resolveCiReliability'))) {
+    return 'resolveCiReliability never reads rInternal, so the field does nothing';
+  }
+  return /resolveCiReliability\(/.test(extractFn(APP_SRC, 'getBatteryRowReliability'))
+    || 'getBatteryRowReliability no longer calls resolveCiReliability, so the CI path has left the chain';
 });
 
 check('rInternal appears only where a publisher derives its own intervals from it', () => {
@@ -2709,7 +2861,7 @@ check('rInternal appears only where a publisher derives its own intervals from i
        WAIS-IV Technical Manual Table 4.1   21 entries, All Ages groups only
        RBANS Update Table 3.6            9 entries, All Ages groups only
        WMS-IV Technical Manual Table 3.1 30 entries, on the two BATTERY groups
-       WISC-V Technical Manual Table 4.1 19 entries, All Ages groups only
+       WISC-V Technical Manual Table 4.1 29 entries, All Ages groups only
 
      RBANS is the first source whose reliability table is MIXED-BASIS within
      itself: five of its fourteen rows carry footnote a, "estimates based on
@@ -2734,7 +2886,7 @@ check('rInternal appears only where a publisher derives its own intervals from i
   const wais  = carriers.filter((c) => /^WAIS-IV (Core Subtests|Indices|Process Scores|Supplementary Subtests) · All Ages \//.test(c));
   const rbans = carriers.filter((c) => /^RBANS (Subtests|Indices) · All Ages \//.test(c));
   const wms   = carriers.filter((c) => /^WMS-IV (Subtests|Indices) · Ages (16-69|65-90) \//.test(c));
-  const wisc  = carriers.filter((c) => /^WISC-V (Subtests|Indices) · All Ages \//.test(c));
+  const wisc  = carriers.filter((c) => /^WISC-V (Subtests|Indices|Process Scores) · All Ages \//.test(c));
   const stray = carriers.filter((c) => !cvltc.includes(c) && !dkefs.includes(c) && !orig.includes(c) && !wais.includes(c) && !rbans.includes(c) && !wms.includes(c) && !wisc.includes(c));
   const bad = [];
   if (cvltc.length !== 3) bad.push('CVLT-C carriers: ' + cvltc.length + ', expected 3');
@@ -2748,7 +2900,10 @@ check('rInternal appears only where a publisher derives its own intervals from i
   if (wms.length !== 30) bad.push('WMS-IV carriers: ' + wms.length + ', expected 30');
   /* 19, not 22: Coding, Symbol Search and Cancellation are the three the
      manual names as improper for split-half, and are held in rStability. */
-  if (wisc.length !== 19) bad.push('WISC-V carriers: ' + wisc.length + ', expected 19');
+  /* 29 = 13 core subtests (16 less the three speeded) + 11 indices (6 primary
+     + 5 ancillary) + 5 process scores (7 less the two Cancellation ones).
+     The five excluded are held in rStability and counted by section 29. */
+  if (wisc.length !== 29) bad.push('WISC-V carriers: ' + wisc.length + ', expected 29');
   if (stray.length) bad.push('undocumented: ' + stray.slice(0, 3).join(', '));
   return bad.length === 0 || bad.join('; ');
 });
@@ -3320,6 +3475,99 @@ check('the two D-KEFS manuals disagree, and both are honoured', () => {
   }
   if (has('D-KEFS Design Fluency · All Ages', 'Filled Dots')) {
     bad.push('Design Fluency gained one; its manual says item interdependence precluded it');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the manual pairs its normative SD with the UNCORRECTED retest r', () => {
+  /* PINNED SOURCE: D-KEFS Technical Manual Table 2.8, Design Fluency, All Ages
+     — SEM 1.94 / 1.97 / 2.47 for Filled Dots, Empty Dots and Switching.
+
+     WHY THIS CHECK EXISTS, AND IT IS NOT ABOUT DESIGN FLUENCY. Every measure
+     in this app whose interval rests on a bare retest r pairs that r with the
+     NORMATIVE SD of its metric — 3 for a D-KEFS scaled score. r describes the
+     retest study's sample, the SD describes the norm group, and pairing terms
+     from two populations normally makes SD sqrt(1 - rxx) an invalid error
+     variance. That argument is sound, and the Allen & Yen / Magnusson
+     correction that repairs it,
+
+         rxx = 1 - (sd1^2 / normSD^2)(1 - r)
+
+     reproduces the published rCorrected to a median error of .003 across the
+     267 entries carrying both. Applying it in resolveCiReliability was built
+     and tested; it would have moved 260 entries, 47 of them reachable from
+     Score Tables — every one of them D-KEFS or D-KEFS Advanced.
+
+     IT WAS REJECTED BECAUSE THE PUBLISHER GOT THERE FIRST. The manual states
+     the pairing (p. 19: test-retest SEMs "were derived from the total sample
+     of cases"; "The standard deviation unit is 3 for all D-KEFS scaled
+     scores") and Table 2.8 is that arithmetic on the page. Correcting would
+     print a coefficient the cited manual does not contain, on the one family
+     where its own working is checkable — the same ground on which the
+     unrounded Fisher's-z WAIS-IV average was declined.
+
+     It is OFFERED, though — the reliability-basis control on Score Tables
+     applies it deliberately, with the APA note saying so. What must never
+     happen is it becoming the default, or leaking into a caller that did not
+     ask, so this drives the SHIPPED renderer in both states.
+
+     Four assertions, and the middle two are the load-bearing ones:
+       1. the uncorrected r reproduces Table 2.8 exactly;
+       2. the DEFAULT reading — no flag passed at all — still gives it, so the
+          published interval is what an untouched app prints;
+       3. the corrected reading does NOT reproduce Table 2.8, so the two
+          readings genuinely separate and the choice is a real one;
+       4. a missing control reads as published, so a harness or a page whose
+          control failed to build cannot land on derived coefficients.
+
+     If a corrected printing of the manual ever makes the corrected value fit,
+     3 fails, which is the signal to re-read this note rather than assume a
+     regression. */
+  const T28 = { 'Filled Dots': 1.94, 'Empty Dots': 1.97, 'Switching': 2.47 };
+  const group = 'D-KEFS Design Fluency · All Ages';
+  const bad = [];
+  let corrHits = 0;
+  Object.entries(T28).forEach(([name, sem]) => {
+    const e = D.normDB[group][name];
+    const row = { name, group, scoreType: 'scaled' };
+    const at = (rel) => Math.round(3 * Math.sqrt(1 - rel.r) * 100) / 100;
+
+    const plain = Math.round(3 * Math.sqrt(1 - e.r) * 100) / 100;
+    if (plain !== sem) bad.push(name + ': 3 sqrt(1 - r) = ' + plain + ', Table 2.8 prints ' + sem);
+
+    // 2. the default, with no flag passed — what an untouched app prints
+    const dflt = batteryRel(row, 'scaled', undefined);
+    if (at(dflt) !== sem) {
+      bad.push(name + ': the DEFAULT reading gives SEM ' + at(dflt) + ', Table 2.8 prints ' + sem
+        + ' — the correction has become the default');
+    }
+    if (dflt.basis !== 'retest, uncorrected') bad.push(name + ': default basis is "' + dflt.basis + '"');
+    if (batteryRel(row, 'scaled', undefined, false).r !== dflt.r) {
+      bad.push(name + ': explicitly asking for published differs from the default');
+    }
+
+    // 3. and the corrected reading must be a DIFFERENT number
+    const corr = batteryRel(row, 'scaled', undefined, true);
+    if (corr.basis !== 'retest, corrected here') bad.push(name + ': corrected basis is "' + corr.basis + '"');
+    if (at(corr) === sem) corrHits++;
+  });
+  if (corrHits) {
+    bad.push(corrHits + ' of 3 also reproduce from the range-corrected coefficient — '
+      + 'the two readings no longer separate, so the argument in this check needs re-checking');
+  }
+  /* 4. The control's own default, read straight from the markup rather than
+        from the function, because that is the value a browser actually loads. */
+  if (!/id="bat-ci-basis"[^>]*value="published"/.test(HTML_SRC)) {
+    bad.push('#bat-ci-basis does not default to published in index.html');
+  }
+  if (batteryCiCorrectRetest() !== false) {
+    bad.push('batteryCiCorrectRetest returns true with no control present; a missing control must read as published');
+  }
+  /* A published coefficient must never be overwritten, whatever the toggle
+     says. Cheapest proof: a measure with internal consistency is unmoved. */
+  const wais = { name: 'Vocabulary', group: 'WAIS-IV Core Subtests · All Ages', scoreType: 'scaled' };
+  if (batteryRel(wais, 'scaled', undefined, true).r !== batteryRel(wais, 'scaled', undefined, false).r) {
+    bad.push('the toggle moved a published internal-consistency coefficient; it must reach only the retest branch');
   }
   return bad.length === 0 || bad.join('; ');
 });
@@ -3945,11 +4193,13 @@ check('the five footnote-a measures are stability, and are never called internal
      31 pin the WMS-IV and WISC-V carriers. */
   const rbans = stab.filter((c) => /^RBANS Subtests · All Ages \//.test(c));
   const wms = stab.filter((c) => /^WMS-IV Subtests · Ages (16-69|65-90) \/ Verbal Paired Associates II - Word Recall$/.test(c));
-  const wisc = stab.filter((c) => /^WISC-V Subtests · All Ages \/ (Coding|Symbol Search|Cancellation)$/.test(c));
+  const wisc = stab.filter((c) => /^WISC-V (Subtests|Process Scores) · All Ages \/ (Coding|Symbol Search|Cancellation|Cancellation Random|Cancellation Structured)$/.test(c));
   if (rbans.length !== 5) bad.push('RBANS rStability carriers: ' + rbans.length + ', expected 5');
   if (wms.length !== 2) bad.push('WMS-IV rStability carriers: ' + wms.length + ', expected 2');
-  if (wisc.length !== 3) bad.push('WISC-V rStability carriers: ' + wisc.length + ', expected 3');
-  if (stab.length !== 10) bad.push('rStability appears on ' + stab.length + ' entries, expected 10 (RBANS 5 + WMS-IV 2 + WISC-V 3)');
+  /* 5 for WISC-V: the three speeded subtests the manual names, plus the two
+     Cancellation process scores derived from the same speeded task. */
+  if (wisc.length !== 5) bad.push('WISC-V rStability carriers: ' + wisc.length + ', expected 5');
+  if (stab.length !== 12) bad.push('rStability appears on ' + stab.length + ' entries, expected 12 (RBANS 5 + WMS-IV 2 + WISC-V 5)');
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -4635,6 +4885,117 @@ check('WISC-V splits its two average columns the way the other manuals do', () =
   return bad.length === 0 || bad.join('; ');
 });
 
+check('Table 4.7 — the retest study, pinned for every measure it covers', () => {
+  /* PINNED SOURCE: WISC-V Technical and Interpretive Manual, Table 4.7,
+     "Stability Coefficients of Subtest, Process, and Composite Scores", all
+     ages. 34 rows: first- and second-testing means and SDs, n, r12, and a
+     corrected r.
+
+     Transcribed from a photograph of the table rather than a spreadsheet, so
+     it was checked two ways before being stored. Cohen's (1996) Formula 10.4
+     reproduces the printed Standard Difference from the means and SDs on 34 of
+     34 rows, which no misread digit survives; and the 22 measures already in
+     normDB matched their m1/sd1/m2/sd2/n/r exactly, which also proves the r12
+     column was not confused with the corrected one — comparing stored r
+     against the corrected column matches 1 of 22, against r12 22 of 22. */
+  const NEWROWS = [
+  ['proc', 'Block Design No Time Bonus', 9.6, 2.8, 10.8, 3.2, 207, 0.78, 0.81],
+  ['proc', 'Block Design Partial', 9.8, 3.1, 10.8, 3.1, 208, 0.84, 0.84],
+  ['proc', 'Digit Span Forward', 9.9, 2.7, 10.2, 3.0, 213, 0.78, 0.82],
+  ['proc', 'Digit Span Backward', 9.9, 2.8, 10.2, 2.9, 201, 0.72, 0.76],
+  ['proc', 'Digit Span Sequencing', 9.5, 2.7, 10.1, 2.9, 200, 0.74, 0.79],
+  ['proc', 'Cancellation Random', 9.9, 2.9, 11.1, 2.9, 200, 0.78, 0.81],
+  ['proc', 'Cancellation Structured', 9.9, 2.8, 10.9, 3.1, 209, 0.78, 0.82],
+  ['idx', 'Quantitative Reasoning Index', 99.2, 13.4, 102.4, 13.7, 216, 0.76, 0.81],
+  ['idx', 'Auditory Working Memory Index', 98.7, 13.3, 100.9, 14.6, 217, 0.85, 0.88],
+  ['idx', 'Nonverbal Index', 98.5, 14.0, 105.5, 13.8, 216, 0.86, 0.88],
+  ['idx', 'General Ability Index', 98.0, 13.7, 103.6, 13.3, 213, 0.89, 0.91],
+  ['idx', 'Cognitive Proficiency Index', 99.3, 14.0, 105.5, 14.8, 212, 0.84, 0.86],
+  ];
+  const BACKFILL = [
+  ['sub', 'Similarities', 0.88],
+  ['sub', 'Vocabulary', 0.9],
+  ['sub', 'Information', 0.88],
+  ['sub', 'Comprehension', 0.83],
+  ['sub', 'Block Design', 0.81],
+  ['sub', 'Visual Puzzles', 0.8],
+  ['sub', 'Matrix Reasoning', 0.78],
+  ['sub', 'Figure Weights', 0.82],
+  ['sub', 'Picture Concepts', 0.71],
+  ['sub', 'Arithmetic', 0.84],
+  ['sub', 'Digit Span', 0.82],
+  ['sub', 'Picture Span', 0.8],
+  ['sub', 'Letter-Number Sequencing', 0.82],
+  ['sub', 'Coding', 0.81],
+  ['sub', 'Symbol Search', 0.8],
+  ['sub', 'Cancellation', 0.82],
+  ['idx', 'Verbal Comprehension Index', 0.94],
+  ['idx', 'Visuospatial Index', 0.84],
+  ['idx', 'Fluid Reasoning Index', 0.75],
+  ['idx', 'Working Memory Index', 0.82],
+  ['idx', 'Processing Speed Index', 0.83],
+  ['idx', 'Full Scale IQ', 0.92],
+  ];
+  const G = { sub:'WISC-V Subtests · All Ages', idx:'WISC-V Indices · All Ages',
+              proc:'WISC-V Process Scores · All Ages' };
+  const bad = [];
+  NEWROWS.forEach(([g, name, m1, sd1, m2, sd2, n, r, rc]) => {
+    const e = D.normDB[G[g]][name];
+    if (!e) { bad.push(name + ' is missing'); return; }
+    const want = { m1, sd1, m2, sd2, n, r, rCorrected: rc };
+    Object.entries(want).forEach(([f, v]) => {
+      if (e[f] !== v) bad.push(name + ' ' + f + ': stored ' + e[f] + ', Table 4.7 prints ' + v);
+    });
+  });
+  BACKFILL.forEach(([g, name, rc]) => {
+    const e = D.normDB[G[g]][name];
+    if (e.rCorrected !== rc) bad.push(name + ' rCorrected: stored ' + e.rCorrected + ', Table 4.7 prints ' + rc);
+  });
+  if (NEWROWS.length + BACKFILL.length !== 34) bad.push('expected all 34 rows of Table 4.7, have ' + (NEWROWS.length + BACKFILL.length));
+  /* The checksum that validated the photograph, kept live: if a mean or SD is
+     ever edited, its row's Standard Difference stops reconciling. */
+  const SD_DIFF = { 'Block Design No Time Bonus':0.40, 'Block Design Partial':0.32,
+    'Digit Span Forward':0.11, 'Digit Span Backward':0.11, 'Digit Span Sequencing':0.21,
+    'Cancellation Random':0.41, 'Cancellation Structured':0.34,
+    'Quantitative Reasoning Index':0.24, 'Auditory Working Memory Index':0.16,
+    'Nonverbal Index':0.50, 'General Ability Index':0.41, 'Cognitive Proficiency Index':0.43 };
+  Object.entries(SD_DIFF).forEach(([name, want]) => {
+    const g = name.includes('Index') ? 'idx' : 'proc';
+    const e = D.normDB[G[g]][name];
+    const d = (e.m2 - e.m1) / Math.sqrt((e.sd1 ** 2 + e.sd2 ** 2) / 2);
+    if (Math.round(d * 100) / 100 !== want) bad.push(name + ': standard difference ' + d.toFixed(3) + ', Table 4.7 prints ' + want);
+  });
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('the two Cancellation process scores are stability, the other five are not', () => {
+  /* The manual names Cancellation among the subtests for which "the split-half
+     coefficient is not a proper reliability estimate", and its two process
+     scores inherit that. Confirmed from the data as well as the prose: a
+     stability coefficient is broadcast from the retest study's coarse bands,
+     so it repeats across the 11 single-year bands, where an internal-
+     consistency row varies freely. */
+  const P = D.normDB['WISC-V Process Scores · All Ages'];
+  const distinct = (name) => {
+    const e = P[name];
+    const t = e.rInternalByAge || e.rStabilityByAge;
+    return new Set(Object.values(t)).size;
+  };
+  const bad = [];
+  ['Cancellation Random', 'Cancellation Structured'].forEach((n) => {
+    if (!P[n].rStabilityByAge) bad.push(n + ' is not held as a stability coefficient');
+    if (Number.isFinite(P[n].rInternal) || P[n].rInternalByAge) bad.push(n + ' is labelled internal consistency');
+    if (distinct(n) > 4) bad.push(n + ' varies across ' + distinct(n) + ' values — that is not a broadcast stability coefficient');
+  });
+  ['Block Design No Time Bonus', 'Block Design Partial', 'Digit Span Forward',
+   'Digit Span Backward', 'Digit Span Sequencing'].forEach((n) => {
+    if (!P[n].rInternalByAge) bad.push(n + ' lost its internal-consistency lookup');
+    if (Number.isFinite(P[n].rStability) || P[n].rStabilityByAge) bad.push(n + ' is labelled stability');
+    if (distinct(n) < 6) bad.push(n + ' varies across only ' + distinct(n) + ' values — check whether it is really internal consistency');
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('the stored averages are Table 4.1\'s own average column', () => {
   const bad = [];
   WISC_T.forEach(([fam, , name, stab, , cAvg]) => {
@@ -4664,45 +5025,100 @@ check('the stored averages are Table 4.1\'s own average column', () => {
 heading('32. Norms Database view');
 
 const dbCtx = (() => {
-  const ctx = { normDB: D.normDB, getMergedDB: () => D.normDB };
+  /* No #bat-ci-basis here, which is the point: batteryCiCorrectRetest must
+     read "published" from a missing control, so a harness (or a page that
+     failed to build the bar) can never land on derived coefficients by
+     accident. The checks below pass the flag explicitly to drive both states. */
+  const ctx = { normDB: D.normDB, getMergedDB: () => D.normDB,
+                document: { getElementById: () => null } };
   vm.createContext(ctx);
   vm.runInContext(
-    ['dbReliabilityBasis', 'dbInstrumentOf'].map((n) => extractFn(APP_SRC, n)).join('\n') +
-    ';globalThis.__BASIS = dbReliabilityBasis; globalThis.__INST = dbInstrumentOf;',
+    (APP_SRC.match(/const BATTERY_METRIC_SD = \{[^;]*;/) || [''])[0] + '\n' +
+    (APP_SRC.match(/const SCORE_METRICS = [^;]*;/) || [''])[0] + '\n' +
+    ['inferScoreType', 'inferScoreTypeForSubtest', 'bandedReliabilityForAge',
+     'rInternalForAge', 'rStabilityForAge', 'derivedCorrectedR',
+     'batteryCiCorrectRetest', 'resolveCiReliability',
+     'dbReliabilityBasis', 'dbInstrumentOf'].map((n) => extractFn(APP_SRC, n)).join('\n') +
+    ';globalThis.__BASIS = dbReliabilityBasis; globalThis.__INST = dbInstrumentOf;'
+    + 'globalThis.inferScoreTypeForSubtest = inferScoreTypeForSubtest;',
     ctx
   );
   return ctx;
 })();
 const dbBasis = dbCtx.__BASIS;
 const dbInstrument = dbCtx.__INST;
+const dbType = dbCtx.inferScoreTypeForSubtest;
 
 check('the reliability column shows what the app would actually use', () => {
-  /* THE LOAD-BEARING CHECK. dbReliabilityBasis and getBatteryRowReliability are
-     separate functions reading the same fields in the same order, and only one
-     of them decides what gets printed on a report. If they diverge, this page
-     tells a clinician their interval rests on a coefficient it does not.
+  /* THE LOAD-BEARING CHECK. Score Tables renders the interval; this page tells
+     the clinician what it rests on. If they diverge, the page advertises a
+     coefficient the report does not use.
 
-     Driven over every entry in normDB, at a blank age, which is the state this
-     page renders in. Compared against the SHIPPED renderer, not a copy. */
+     The two used to be separate functions reading the same fields in the same
+     order, pinned together here — a mirror, and this check had to be
+     strengthened twice because a mirror is only as good as the next person's
+     memory. They now share resolveCiReliability, so the ORDER cannot drift.
+     What can still drift is the ARGUMENTS each entry point passes in, which is
+     what this now covers: driven over every entry at a blank age, through both
+     public functions, comparing the coefficient AND the basis string.
+
+     The score type is the app's own inferScoreTypeForSubtest rather than a
+     shortcut restated here, because that is what an auto-filled Score Tables
+     row carries and what dbReliabilityBasis asks for. Restating it would let
+     the two disagree about the metric while agreeing about everything else.
+
+     DRIVEN IN BOTH STATES OF THE RELIABILITY-BASIS CONTROL. That control lives
+     on Score Tables but this page has to follow it: showing the published
+     reading while the table is set to corrected is exactly the defect the
+     shared resolver exists to prevent, and it would be invisible — the page
+     would look right, on its own terms, while contradicting the report. */
   const bad = [];
-  let n = 0, withR = 0;
+  let n = 0, withR = 0, moved = 0;
   Object.entries(D.normDB).forEach(([group, tab]) => {
     Object.entries(tab).forEach(([name, e]) => {
       if (!e || typeof e !== 'object') return;
       n++;
-      const shown = dbBasis(e);
-      const type = e.metric === 'raw' ? 'raw' : (e.m1 > 50 ? 'standard' : 'scaled');
-      const used = batteryRel({ name, group, scoreType: type }, type, undefined);
-      if (!used) {
-        if (!shown.none) bad.push(group + ' / ' + name + ': table shows ' + shown.r + ' but the app builds no interval');
-        return;
-      }
-      withR++;
-      if (shown.r !== used.r) bad.push(group + ' / ' + name + ': table shows ' + shown.r + ', the renderer uses ' + used.r);
+      const type = dbType(group, name, e);
+      [false, true].forEach((corr) => {
+        const shown = dbBasis(e, group, name, corr);
+        const used = batteryRel({ name, group, scoreType: type }, type, undefined, corr);
+        const at = corr ? ' [corrected]' : '';
+        if (!used) {
+          if (!shown.none) bad.push(group + ' / ' + name + at + ': table shows ' + shown.r + ' but the app builds no interval');
+          return;
+        }
+        if (!corr) withR++;
+        if (shown.r !== used.r) bad.push(group + ' / ' + name + at + ': table shows ' + shown.r + ', the renderer uses ' + used.r);
+        if (shown.basis !== used.basis) bad.push(group + ' / ' + name + at + ': table says "' + shown.basis + '", the renderer says "' + used.basis + '"');
+      });
+      if (dbBasis(e, group, name, true).r !== dbBasis(e, group, name, false).r) moved++;
     });
   });
-  if (n !== 659) bad.push('expected 659 entries, walked ' + n);
+  if (n !== 671) bad.push('expected 671 entries, walked ' + n);
   if (withR < 550) bad.push('only ' + withR + ' entries produced an interval — the comparison has stopped covering the database');
+  /* And the control must actually do something, or the agreement above is
+     vacuous — two functions can hardly disagree about a flag neither reads.
+     From the 298 entries on the retest pairing:
+
+       -36  CVLT-C, sd1 in raw words while the row displays T or z
+       - 2  corrected value outside (0, 1), so not a reliability
+       -14  sd1 exactly equals the normative SD, so the correction is identity
+       ---
+        246 actually move
+
+     The 14 are worth knowing about before treating a shortfall as a bug: a
+     D-KEFS retest sample whose SD is a round 3.0 is unrestricted by
+     definition, and there is nothing for the formula to do. */
+  if (moved !== 246) bad.push('the basis control moves ' + moved + ' entries, expected 246');
+  /* And the shared resolver must actually be shared. Both entry points calling
+     it is what makes the order impossible to drift; if one grows its own copy
+     of the chain the check above would still pass on the day it was written. */
+  if (!/resolveCiReliability\(/.test(extractFn(APP_SRC, 'dbReliabilityBasis'))) {
+    bad.push('dbReliabilityBasis no longer calls resolveCiReliability — the page has its own copy of the chain again');
+  }
+  if (!/resolveCiReliability\(/.test(extractFn(APP_SRC, 'getBatteryRowReliability'))) {
+    bad.push('getBatteryRowReliability no longer calls resolveCiReliability');
+  }
   return bad.length === 0 || bad.slice(0, 4).join('; ');
 });
 
@@ -4721,22 +5137,77 @@ check('the basis names the right source, and says when age will move it', () => 
     ['CVLT-3 Indices · Ages 16-44', 'T1-5 Correct', 'retest, corrected'],
     ['WISC-V Indices · All Ages', 'Fluid Reasoning Index', 'internal consistency · by age'],
     ['RBANS Subtests · All Ages', 'List Recognition', 'none published'],
-    ['WAIS-IV Longest Span (Process) · Ages 16-17', 'Longest Digit Span Forward', 'base rate — no interval']
+    ['WAIS-IV Longest Span (Process) · Ages 16-17', 'Longest Digit Span Forward', 'base rate — no interval'],
+    /* THE TWO RETEST LABELS, WHICH MUST NOT COLLAPSE INTO EACH OTHER. Both
+       rest on the retest study's own correlation, but they are different
+       claims about the SD it is paired with, and the whole point of the pair
+       is that a clinician can tell them apart.
+
+       "retest, uncorrected" — a normative SD is in force, so the coefficient
+       and the SD describe different populations. That is the publisher's own
+       pairing for these measures (D-KEFS Technical Manual p. 19), not a defect
+       to be silently repaired; see resolveCiReliability.
+       "retest" — the row is displayed raw, so sd1 IS the SD in force and the
+       coefficient sits beside its own sample's SD. No qualifier is warranted,
+       and adding one would read as a fault where there is none.
+
+       CVLT-C lands on "uncorrected" and belongs there, which is not obvious:
+       metric:'raw' makes it look like the second case, but reportedAs puts the
+       row on a T or z metric, so the SD in force is the normative 10 or 1
+       while r was measured on raw words recalled. Same mismatch, and the one
+       place where no correction could repair it even in principle. */
+    ['D-KEFS Colour-Word Interference · All Ages', 'Colour Naming', 'retest, uncorrected'],
+    ['D-KEFS Tower Test · All Ages', 'Total Achievement Score', 'retest, uncorrected · by age'],
+    ['CVLT-C Subtests (Raw Scores) · Age 8', 'Perseverations', 'retest, uncorrected'],
+    ['RBANS Subtests · Ages 20-89', 'List Recognition', 'retest']
   ];
   cases.forEach(([g, n, want]) => {
     const e = D.normDB[g] && D.normDB[g][n];
     if (!e) { bad.push('missing fixture ' + g + ' / ' + n); return; }
-    const got = dbBasis(e).basis;
+    const got = dbBasis(e, g, n).basis;
     if (got !== want) bad.push(g + ' / ' + n + ': basis "' + got + '", expected "' + want + '"');
   });
   /* The two no-interval reasons must stay distinguishable. A base-rate measure
      never had a coefficient; a raw RBANS subtest is absent from its manual's
      reliability table. Both print nothing, for quite different reasons. */
   const kinds = new Set();
-  Object.values(D.normDB).forEach((tab) => Object.values(tab).forEach((e) => {
-    if (e && typeof e === 'object') { const b = dbBasis(e); if (b.none) kinds.add(b.basis); }
+  Object.entries(D.normDB).forEach(([g, tab]) => Object.entries(tab).forEach(([n, e]) => {
+    if (e && typeof e === 'object') { const b = dbBasis(e, g, n); if (b.none) kinds.add(b.basis); }
   }));
   if (kinds.size !== 2) bad.push('expected 2 distinct no-interval reasons, found ' + [...kinds].join(' / '));
+  /* THE WHOLE DISTRIBUTION, so that a change of basis anywhere in the database
+     has to be acknowledged here rather than sliding through unnoticed. These
+     are counts of what the app builds its intervals from today:
+
+       internal consistency        118  (3 bare + 115 by age)
+       stability, published         12
+       retest, corrected           180  a published rCorrected
+       retest, uncorrected         298  (285 + 13 by age) — the retest study's
+                                        own r used with a normative SD, which
+                                        is these manuals' own pairing
+       retest                        8  raw display, r beside its own sample SD
+       none published / base rate   55  no interval at all
+
+     PLAIN "retest" IS EXACTLY THE FOUR RAW RBANS SUBTESTS IN EACH OF THE TWO
+     RETEST BANDS. Nothing else in the database is displayed raw, so if that 8
+     moves, either a family has been tagged metric:'raw' or one has lost the
+     tag — both of which change what a percentile means, not just a label. */
+  const tally = {};
+  Object.entries(D.normDB).forEach(([g, tab]) => Object.entries(tab).forEach(([n, e]) => {
+    if (!e || typeof e !== 'object') return;
+    const b = dbBasis(e, g, n).basis;
+    tally[b] = (tally[b] || 0) + 1;
+  }));
+  const want = {
+    'internal consistency': 3, 'internal consistency · by age': 115,
+    'stability, published · by age': 12, 'retest, corrected': 180,
+    'retest, uncorrected': 285, 'retest, uncorrected · by age': 13,
+    'retest': 8, 'none published': 4, 'base rate — no interval': 51
+  };
+  Object.entries(want).forEach(([k, v]) => {
+    if (tally[k] !== v) bad.push('basis "' + k + '": ' + (tally[k] || 0) + ' entries, expected ' + v);
+  });
+  Object.keys(tally).forEach((k) => { if (!(k in want)) bad.push('unaccounted basis "' + k + '"'); });
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -4751,7 +5222,7 @@ check('every group resolves to exactly one instrument', () => {
     const inst = dbInstrument(g, false);
     tabs[inst] = (tabs[inst] || 0) + 1;
   });
-  const want = { 'CVLT-3':4, 'CVLT-C':3, 'D-KEFS':36, 'D-KEFS Advanced':23, 'RBANS':9, 'WAIS-IV':34, 'WISC-V':2, 'WMS-IV':4 };
+  const want = { 'CVLT-3':4, 'CVLT-C':3, 'D-KEFS':36, 'D-KEFS Advanced':23, 'RBANS':9, 'WAIS-IV':34, 'WISC-V':3, 'WMS-IV':4 };
   Object.entries(want).forEach(([k, v]) => {
     if (tabs[k] !== v) bad.push(k + ': ' + (tabs[k] || 0) + ' groups, expected ' + v);
   });
