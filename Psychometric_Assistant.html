@@ -8938,6 +8938,97 @@ body.rb-docked-active{padding-right:0}
   text-align:left;
   padding-left:24px;
 }
+
+/* Column-heading explainers.
+   Standalone classes (`change-overview-colh*`) and a private attribute
+   (`data-coltip`, not `data-tooltip`) so nothing here can collide with the
+   global [data-tooltip] rules in design-system.css. The tooltip drops BELOW
+   the heading — the table sits at the top of the panel, so a popover above
+   the header row would open off the top of the viewport. */
+#change-analysis .change-overview-colh-label{
+  position:relative;
+  display:inline-block;
+  cursor:help;
+  text-decoration:underline dotted rgba(20,15,5,0.28);
+  text-underline-offset:3px;
+  outline:none;
+}
+#change-analysis .change-overview-colh-label:hover,
+#change-analysis .change-overview-colh-label:focus-visible{
+  color:#9C3D2A;
+  text-decoration-color:rgba(156,61,42,0.55);
+}
+#change-analysis .change-overview-colh-label::before{
+  content:attr(data-coltip);
+  position:absolute;
+  top:calc(100% + 10px);
+  left:50%;
+  transform:translateX(-50%) translateY(-4px);
+  width:320px;
+  padding:12px 14px;
+  /* Dark, to match every other tooltip in the app. The white treatment a few
+     rules below on .change-overview-info is dead letter: design-system.css
+     §30a forces [data-tooltip] popovers dark with !important, so the "?"
+     bubbles beside it render dark whatever styles.css asks for. These use a
+     private attribute and so are not caught by that rule — they have to state
+     the dark look themselves or the two tooltips on one table disagree. */
+  background:rgba(15,18,24,0.96);
+  color:#FFFFFF;
+  border:1px solid rgba(15,18,24,0.96);
+  border-radius:8px;
+  font-family:var(--sans);
+  font-size:12.5px;
+  line-height:1.55;
+  font-weight:400;
+  letter-spacing:0;
+  text-transform:none;
+  text-decoration:none;
+  text-align:left;
+  white-space:normal;
+  z-index:60;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 160ms var(--ease), transform 160ms var(--ease);
+  box-shadow:0 12px 28px rgba(15,18,24,0.22);
+}
+#change-analysis .change-overview-colh-label::after{
+  content:"";
+  position:absolute;
+  top:calc(100% + 4px);
+  left:50%;
+  transform:translateX(-50%);
+  border-width:0 6px 6px 6px;
+  border-style:solid;
+  border-color:transparent transparent rgba(15,18,24,0.96) transparent;
+  z-index:61;
+  opacity:0;
+  transition:opacity 160ms var(--ease);
+}
+/* Last dimension column: a centred popover would hang off the right edge of
+   the table on a narrow window, so anchor it to the heading's right instead. */
+#change-analysis .change-overview-colh-label.is-end::before{
+  left:auto;
+  right:0;
+  transform:translateY(-4px);
+}
+#change-analysis .change-overview-colh-label.is-end::after{
+  left:auto;
+  right:16px;
+  transform:none;
+}
+#change-analysis .change-overview-colh-label:hover::before,
+#change-analysis .change-overview-colh-label:focus-visible::before{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+#change-analysis .change-overview-colh-label.is-end:hover::before,
+#change-analysis .change-overview-colh-label.is-end:focus-visible::before{
+  transform:translateY(0);
+}
+#change-analysis .change-overview-colh-label:hover::after,
+#change-analysis .change-overview-colh-label:focus-visible::after{
+  opacity:1;
+}
 #change-analysis .change-overview-row{
   cursor:pointer;
   transition:background 140ms var(--ease);
@@ -9001,14 +9092,17 @@ body.rb-docked-active{padding-right:0}
   vertical-align:middle;
 }
 
-/* Method-title row: title on the left, info button pushed to the far right
-   of the cell so all "?" buttons sit in a single vertical column regardless
-   of title length. */
+/* Method-title row: the "?" sits immediately after the title it explains.
+   It used to be pushed to the far right of the cell (justify-content:
+   space-between) so the buttons formed a tidy vertical column — but the
+   method column is ~40% of the table, which left the button floating a long
+   way from the row it belongs to and reading as unrelated to it. Proximity
+   beats alignment here. */
 #change-analysis .change-overview-table-titlerow{
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:12px;
+  justify-content:flex-start;
+  gap:8px;
 }
 #change-analysis .change-overview-table-title{
   flex:0 1 auto;
@@ -20401,9 +20495,16 @@ const APA_NOTES = {
     'Difference = Achieved − Predicted.',
     'Base rate = estimated % at or below this discrepancy, from a normal model with SD = SEE (negative discrepancies only). These are parametric estimates, not observed standardisation-sample frequencies, and run slightly low against published empirical figures.'
   ],
-  'pre-opiepredict': () => [
+  'pre-opiepredict': ctx => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
-    'Illustrative only in a UK context; these values should not be quoted as concrete premorbid estimates. The published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Those categories have no valid UK equivalent.',
+    /* The UK caveat MUST travel with the exported table — pasted into a report
+       it is the only thing standing between these numbers and a reader who
+       takes them as premorbid estimates. On screen it is redundant: the
+       .caution-box at the top of this tab already states it at greater length,
+       so the mirrored note (ctx.onScreen) drops it rather than warning twice on
+       one page. Do not delete it outright; check.js §15 pins both halves. */
+    ctx.onScreen ? '' :
+      'Illustrative only in a UK context; these values should not be quoted as concrete premorbid estimates. The published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Those categories have no valid UK equivalent.',
     'The three FSIQ rows predict three different prorated criteria, as do the three GAI rows; they are not interchangeable and are not expected to agree.',
     'Difference = Achieved − Predicted.',
     'Base rate = % of the US standardisation sample at or below this discrepancy (ACS Table eA5.12).'
@@ -20419,12 +20520,16 @@ function apaNoteHtml(id, ctx){
 }
 /* Fill the on-screen info boxes that mirror an APA note, so the guidance beside
    the interactive table and the note in the generated table stay identical.
-   Only context-free notes can be mirrored this way. */
+   Only context-free notes can be mirrored this way.
+
+   `onScreen` is the ONE licensed difference between the two renderings: a note
+   may drop a sentence that the surrounding page already states in full. It may
+   not add, soften or reword one — the exported note stays the superset. */
 function renderStaticApaNotes(){
   document.querySelectorAll('[data-apa-note]').forEach(el => {
     const build = APA_NOTES[el.dataset.apaNote];
     if (!build) return;
-    const body = build({}).filter(s => s && s.trim()).join(' ');
+    const body = build({ onScreen: true }).filter(s => s && s.trim()).join(' ');
     if (body) el.innerHTML = `<strong>Note.</strong> ${body}`;
   });
 }
@@ -29774,6 +29879,23 @@ if (document.readyState === 'loading'){
     'rci-srb':      'Regression-based reliable change (McSweeney et al., 1993). Predicts each patient\'s expected retest score from their baseline using the norm sample\'s regression parameters, then standardises the residual against the SEE. Handles regression to the mean.',
     'rci-crawford': 'Most rigorous. Crawford & Garthwaite (2007) extend the regression-based approach with a t-distributed test that incorporates the normative sample size and the patient\'s distance from the norm mean. Preferred when N is modest or the patient is far from the norm mean.'
   };
+  /* Column-heading explainers. Each column names a distinct threat to
+     reading a retest difference, and the tick pattern only means anything to
+     someone who knows which threat is which — "regression to mean" in
+     particular is routinely read as the opposite of what it is. Hover or
+     focus a heading to see the definition. Kept separate from
+     METHOD_EXPLAINERS above: those describe a method, these a concept. */
+  const DIMENSION_EXPLAINERS = {
+    'me':       'No test measures without error, so a score would vary somewhat on retest even if the patient had not changed at all. Methods that adjust for it use the test\'s reliability and standard deviation to work out how large a difference has to be before it exceeds that expected fluctuation.',
+    'practice': 'Taking the same test twice tends to raise the second score by itself — through familiarity with the format, remembered items or rehearsed strategy. Methods that adjust for it subtract the average gain the normative retest sample showed, so an ordinary practice gain is not read as recovery.',
+    'rtm':      'On retest, extreme scores drift back towards the mean: unusually low first scores tend to rise and unusually high ones tend to fall, purely as a statistical consequence of imperfect reliability. Methods that adjust for it predict the expected retest score from the baseline by regression rather than assuming it should stay the same.',
+    'n':        'The normative regression parameters are themselves estimates from a finite sample, and a prediction for a patient far from the norm mean is less certain than one near it. Methods that adjust for it widen the standard error accordingly and use a t-distribution, which matters most when the normative N is modest.'
+  };
+  function makeColHead(key, labelHtml, atEnd){
+    return `<th class="change-overview-colh">` +
+      `<span class="change-overview-colh-label${atEnd ? ' is-end' : ''}" tabindex="0" data-coltip="${DIMENSION_EXPLAINERS[key]}">${labelHtml}</span>` +
+    `</th>`;
+  }
   const TICK_SVG = `<svg class="change-overview-tick" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,8.5 7,12 13,4"/></svg>`;
   function makeRow(id, title, cite){
     const flags = ADJUST_BY_METHOD[id];
@@ -29803,10 +29925,10 @@ if (document.readyState === 'loading'){
       <thead>
         <tr>
           <th class="change-overview-table-method-h">Method</th>
-          <th>Measurement<br>error</th>
-          <th>Practice<br>effect</th>
-          <th>Regression<br>to mean</th>
-          <th>Sample-size<br>adjustment</th>
+          ${makeColHead('me',       'Measurement<br>error')}
+          ${makeColHead('practice', 'Practice<br>effect')}
+          ${makeColHead('rtm',      'Regression<br>to mean')}
+          ${makeColHead('n',        'Sample-size<br>adjustment', true)}
           <th aria-hidden="true"></th>
         </tr>
       </thead>
