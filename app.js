@@ -289,22 +289,21 @@ function openOnlyNavGroup(group){
 const activeNavGroup = document.querySelector('.nav-item.active')?.closest('.nav-group');
 if (activeNavGroup) openOnlyNavGroup(activeNavGroup);
 
-const CUSTOM_TESTS_PASSWORD = 'unlock';
-const CUSTOM_TESTS_UNLOCK_KEY = 'customTestsUnlocked';
-function isCustomTestsUnlocked(){
-  return sessionStorage.getItem(CUSTOM_TESTS_UNLOCK_KEY) === 'true';
-}
-function requestCustomTestsUnlock(){
-  const entered = window.prompt('Custom Tests is password-protected. Enter password:');
-  if (entered == null) return false;
-  if (entered === CUSTOM_TESTS_PASSWORD){
-    sessionStorage.setItem(CUSTOM_TESTS_UNLOCK_KEY, 'true');
-    showToast('✓ Custom Tests unlocked for this session');
-    return true;
-  }
-  showToast('Incorrect password', true);
-  return false;
-}
+/* The Norms Database page used to be Custom Tests, where a clinician could type
+   new normative entries straight into the scoring database. It was gated behind
+   a window.prompt for that reason.
+
+   The typed form is gone and the page is now a read-only view of published
+   norms, so there is nothing left to protect: the coefficients in it are
+   printed in the manuals they are cited from. The gate also never provided any
+   real protection, the password having been a literal in the shipped bundle.
+
+   It had a concrete cost too. window.prompt() is ignored in a sandboxed iframe,
+   so the call returned null, navigateTo returned false, and the nav item did
+   nothing at all with no error — which is how this was found.
+
+   Import is the only thing that still writes to the database, and it validates
+   every entry through ctValidateEntry. */
 
 document.querySelectorAll('.nav-label').forEach(label => {
   label.addEventListener('click', () => {
@@ -457,12 +456,6 @@ function runPageTransition(swap){
 function navigateTo(target, opts){
   const o = opts || {};
   if (!isNavigableSection(target)) return false;
-
-  // Gate before anything visible changes, so a declined unlock leaves the UI
-  // exactly as it was rather than half-navigated.
-  if (target === 'custom-tests' && !isCustomTestsUnlocked()){
-    if (!requestCustomTestsUnlock()) return false;
-  }
 
   /* Highlight exactly one nav item. Several can share a target — the five
      Change Analysis methods all point at #change-analysis — so lighting every
