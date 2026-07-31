@@ -1075,8 +1075,30 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
    ~700px and left a canyon between the measure names and M1. Capped, with the
    trailing (delete-button) column made the flexible one instead, so slack
    collects harmlessly at the right edge rather than in the middle of the data. */
-.db-td-measure{white-space:normal;min-width:150px;max-width:300px;color:var(--ink)}
-.db-table th:last-child,.db-table td:last-child{width:100%}
+.db-td-measure{white-space:normal;color:var(--ink)}
+/* FIXED LAYOUT, because auto layout has no good answer here. At width:100% it
+   hands all the spare space to whichever column can grow — that was Measure,
+   which opened a canyon before M1 — and capping Measure only moved the same
+   gap to the right-hand edge. Declaring a share per column fills the width
+   evenly at any window size, and nothing can absorb the slack alone. */
+.db-table{table-layout:fixed}
+.db-table th:nth-child(1),.db-table td:nth-child(1){width:8%}
+.db-table th:nth-child(2),.db-table td:nth-child(2){width:9%}
+.db-table th:nth-child(3),.db-table td:nth-child(3){width:7%}
+.db-table th:nth-child(4),.db-table td:nth-child(4){width:19%}
+.db-table th:nth-child(5),.db-table td:nth-child(5),
+.db-table th:nth-child(6),.db-table td:nth-child(6),
+.db-table th:nth-child(7),.db-table td:nth-child(7),
+.db-table th:nth-child(8),.db-table td:nth-child(8),
+.db-table th:nth-child(9),.db-table td:nth-child(9){width:5%}
+.db-table th:nth-child(10),.db-table td:nth-child(10){width:6%}
+.db-table th:nth-child(11),.db-table td:nth-child(11){width:4%}
+.db-table th:nth-child(12),.db-table td:nth-child(12){width:5%}
+.db-table th:nth-child(13),.db-table td:nth-child(13){width:14%}
+.db-table th:nth-child(14),.db-table td:nth-child(14){width:3%}
+/* Long measure names wrap inside their share instead of forcing the table
+   wider; everything else is short enough to stay on one line. */
+.db-table td{overflow:hidden;text-overflow:ellipsis}
 .db-td-ctx{color:var(--muted);font-size:11.5px}
 .db-td-num{font-family:var(--mono);color:var(--ink-2)}
 .db-td-rel{color:var(--ink);font-weight:600}
