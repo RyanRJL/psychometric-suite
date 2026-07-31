@@ -300,7 +300,7 @@ is right almost everywhere (see the CI paragraphs in Methods & References). The 
 setting it aside is deliberately high: **the publisher must both report an
 internal-consistency coefficient AND derive its own published intervals from it.**
 
-Five manuals clear it, and `check.js` §24 pins the roster so a sixth cannot appear
+Six manuals clear it, and `check.js` §24 pins the roster so a seventh cannot appear
 undocumented:
 
 | Source | Entries | Fields |
@@ -310,6 +310,7 @@ undocumented:
 | D-KEFS (original) — VFT, Sorting, 20Q, Word Context, Tower, Proverb, TMT composite | 13 | `rInternalByAge` **only** |
 | WAIS-IV — Table 4.1, all but the three speeded subtests | 21 | `rInternal` + `rInternalByAge` |
 | RBANS Update — Table 3.6, the nine rows without footnote a | 9 | `rInternal` + `rInternalByAge` |
+| WMS-IV — Table 3.1, both batteries, all but VPA II Word Recall | 30 | `rInternal` + `rInternalByAge` |
 
 That roster check keys on **either** field. D-KEFS original carries no `rInternal` at
 all, so a check testing `rInternal` alone would let 13 entries change the basis of a
@@ -612,6 +613,44 @@ on every such entry, conflating "no retest data" with "scored by base-rate looku
 entries are scored by ordinary conversion, so the check now asks for m1/sd1, no retest
 fields, and **some** published basis — base rates, a reliability, or the raw tag.
 
+#### WMS-IV — two batteries, and the first band that must stay selectable
+
+**WMS-IV's age-band groups are separate norm sets, not separate retest samples.** The
+Adult battery is normed 16-69 (15 subtests, 5 indices); the Older Adult battery is normed
+65-90 and drops Designs, Spatial Addition and VWMI, leaving 8 and 4. Ages **65-69 are
+normed in both**, with different coefficients — Logical Memory I is `.79` adult against
+`.83` older adult — so age cannot pick the battery. The clinician picked it when they
+decided what to administer.
+
+So this family gets the opposite treatment to RBANS: no `· All Ages` group, and the band
+stays **selectable**. `familyScoredByAgeBand()` now returns true for `baseRates` **or**
+`separateBattery`, the latter declared per entry rather than inferred — a rule like "the
+two groups hold different measures" would have worked today and broken silently later.
+Collapsing them had been showing an 80-year-old the adult measure list and its
+coefficients, wrong on **10 of the 12 shared measures**. §30 asserts the 65-69 overlap
+both *exists* and *disagrees*, since that is the entire argument for the exemption.
+
+Tables 3.1 and 3.3, pp. 44-46, verified arithmetically: **all 240 published SEM cells**
+equal `SD √(1−rxx)` at the printed 2 dp, on 3 and 15. §25's "All Ages only" rule now
+reads "All Ages, or a separate battery", and `separateBattery` is pinned to WMS-IV's four
+groups so it cannot spread.
+
+- **VPA II Word Recall carries footnote b** — free recall has no consistent item count,
+  so internal consistency is inapplicable. It takes `rStability`, and Table 3.1's `.76`
+  equals the stored `rCorrected` in **both** batteries and neither raw `r`.
+- **The recognition memory measures are absent, and must stay absent.** Their published
+  reliability is a **decision-consistency percentage** — percent agreement of impaired vs
+  not-impaired at a 10th-percentile cut — because those tasks are cumulative percentages
+  with skewed distributions. A percent agreement is not a correlation and cannot enter
+  `SD √(1−rxx)`. They are in neither Table 3.1 nor `normDB`; §30 fails if one appears.
+- **`rInternalAgeMax` is the battery's ceiling**, 69 and 90, so an age past it takes the
+  published average rather than re-reading the top band.
+
+**Three manuals now split their two average columns the same way** — WAIS-IV 4.1/4.3,
+RBANS 3.6/3.7 and WMS-IV 3.1/3.3 all average coefficients by Fisher's z and SEMs by RMS,
+which is `SD √(1 − arithmetic mean)`. It is a publisher habit, not a one-off, and the
+stored average stays the published *coefficient* in every case.
+
 ### `baseRates` — measures scored by lookup rather than by conversion
 
 **WAIS-IV Longest Span (Process)** is the first family scored from a published
@@ -805,9 +844,10 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 247 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 254 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
-Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), OPIE-4 coefficients
+Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30),
+OPIE-4 coefficients
 pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
 reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,

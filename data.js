@@ -1636,44 +1636,92 @@ const OPIE_BASE_RATES = {
     "Longest Digit Span Sequence": { m1:5.7, sd1:1.4, median:6,
       metric:'raw', singleAdministration:true, baseRates:{9:2.6,8:8,7:21.2,6:63.9,5:80.4,4:93.5,3:96.6,2:99.5,0:100} }
   },
+  /* ---------------------------------------------------------------
+     WMS-IV — TWO BATTERIES, NOT TWO AGE BANDS. This is the only family
+     here whose age-band groups are separate norm sets rather than
+     separate retest samples, which is why its entries carry
+     separateBattery:true and why Score Tables keeps the band
+     SELECTABLE instead of collapsing to one canonical group.
+
+     The Adult battery is normed 16-69 and has 15 subtests and 5
+     indices; the Older Adult battery is normed 65-90 and drops
+     Designs, Spatial Addition and the Visual Working Memory Index,
+     leaving 8 and 4. Ages 65-69 are normed in BOTH, with different
+     coefficients — Logical Memory I is .79 in the adult battery and
+     .83 in the older adult — so age cannot choose between them. The
+     clinician chose when they decided which battery to administer.
+     Collapsing them showed an 80-year-old the adult measure list and
+     its coefficients; 10 of the 12 shared measures printed a wrong
+     interval. check.js section 30 asserts the overlap exists AND
+     disagrees, because that is the whole argument for the exemption.
+
+     SOURCE: WMS-IV Technical and Interpretive Manual (GB), chapter 3,
+     Tables 3.1 and 3.3, pp. 44-46. It clears the bar arithmetically,
+     not on stated method: all 240 published SEM cells in Table 3.3
+     equal SD sqrt(1 - rxx) from Table 3.1 at the printed 2dp, on 3
+     for subtests and 15 for indices.
+
+     ONE MEASURE IS STABILITY, AND CARRIES footnote b. Verbal Paired
+     Associates II Word Recall: "an examinee states as many items as
+     he or she can freely recall... there is not a consistent number
+     of items to evaluate across individuals", so internal consistency
+     is not appropriate. It takes rStability, the field RBANS Update
+     Table 3.6 introduced. Corroborated the usual way — Table 3.1's
+     .76 equals this database's stored rCorrected in BOTH batteries
+     and neither raw r.
+
+     THE RECOGNITION MEMORY MEASURES ARE DELIBERATELY ABSENT, and must
+     stay absent. The manual reports their reliability as a DECISION-
+     CONSISTENCY percentage: percent agreement of impaired vs not
+     impaired at a 10th-percentile cut, used because those tasks are
+     cumulative percentages with skewed distributions whose retest
+     correlations are attenuated by range restriction. A percent
+     agreement is not a correlation and cannot enter
+     SEM = SD sqrt(1 - rxx). They are in neither Table 3.1 nor normDB;
+     section 30 fails if one ever appears.
+
+     rInternalAgeMax is the BATTERY's ceiling — 69 for Adult, 90 for
+     Older Adult — so an age past it takes the published average
+     rather than silently re-reading the topmost band.
+     --------------------------------------------------------------- */
   "WMS-IV Indices · Ages 16-69": {
-    "Auditory Memory Index": { m1:100.1, sd1:14.1, m2:111.6, sd2:14.4, r:0.81, rCorrected:0.83, n:168 },
-    "Visual Memory Index": { m1:100, sd1:14.8, m2:112.1, sd2:16.6, r:0.8, rCorrected:0.81, n:144 },
-    "Visual Working Memory Index": { m1:99.5, sd1:14.4, m2:103.8, sd2:15.6, r:0.82, rCorrected:0.83, n:171 },
-    "Immediate Memory Index": { m1:99.9, sd1:14.9, m2:112.3, sd2:15.6, r:0.81, rCorrected:0.81, n:154 },
-    "Delayed Memory Index": { m1:100.4, sd1:13.9, m2:114.1, sd2:15, r:0.79, rCorrected:0.82, n:150 }
+    "Auditory Memory Index": { m1:100.1, sd1:14.1, m2:111.6, sd2:14.4, r:0.81, rCorrected:0.83, n:168, separateBattery:true, rInternal:0.95, rInternalAgeMax:69, rInternalByAge:{16:0.94, 18:0.95, 20:0.95, 25:0.97, 30:0.94, 35:0.96, 45:0.95, 55:0.95, 65:0.94} },
+    "Visual Memory Index": { m1:100, sd1:14.8, m2:112.1, sd2:16.6, r:0.8, rCorrected:0.81, n:144, separateBattery:true, rInternal:0.96, rInternalAgeMax:69, rInternalByAge:{16:0.96, 18:0.97, 20:0.96, 25:0.96, 30:0.96, 35:0.96, 45:0.95, 55:0.96, 65:0.95} },
+    "Visual Working Memory Index": { m1:99.5, sd1:14.4, m2:103.8, sd2:15.6, r:0.82, rCorrected:0.83, n:171, separateBattery:true, rInternal:0.93, rInternalAgeMax:69, rInternalByAge:{16:0.89, 18:0.92, 20:0.94, 25:0.94, 30:0.94, 35:0.91, 45:0.93, 55:0.93, 65:0.92} },
+    "Immediate Memory Index": { m1:99.9, sd1:14.9, m2:112.3, sd2:15.6, r:0.81, rCorrected:0.81, n:154, separateBattery:true, rInternal:0.95, rInternalAgeMax:69, rInternalByAge:{16:0.93, 18:0.95, 20:0.95, 25:0.96, 30:0.95, 35:0.95, 45:0.94, 55:0.94, 65:0.93} },
+    "Delayed Memory Index": { m1:100.4, sd1:13.9, m2:114.1, sd2:15, r:0.79, rCorrected:0.82, n:150, separateBattery:true, rInternal:0.94, rInternalAgeMax:69, rInternalByAge:{16:0.93, 18:0.95, 20:0.95, 25:0.96, 30:0.92, 35:0.94, 45:0.94, 55:0.94, 65:0.92} }
   },
   "WMS-IV Indices · Ages 65-90": {
-    "Auditory Memory Index": { m1:101.5, sd1:12.9, m2:112.1, sd2:14.5, r:0.82, rCorrected:0.87, n:69 },
-    "Visual Memory Index": { m1:101.6, sd1:14.6, m2:112.6, sd2:17, r:0.79, rCorrected:0.8, n:70 },
-    "Immediate Memory Index": { m1:101.5, sd1:13.9, m2:113.9, sd2:14.2, r:0.84, rCorrected:0.86, n:69 },
-    "Delayed Memory Index": { m1:101.7, sd1:13.1, m2:112.7, sd2:14.4, r:0.8, rCorrected:0.85, n:71 }
+    "Auditory Memory Index": { m1:101.5, sd1:12.9, m2:112.1, sd2:14.5, r:0.82, rCorrected:0.87, n:69, separateBattery:true, rInternal:0.95, rInternalAgeMax:90, rInternalByAge:{65:0.95, 70:0.94, 75:0.95, 80:0.95, 85:0.95} },
+    "Visual Memory Index": { m1:101.6, sd1:14.6, m2:112.6, sd2:17, r:0.79, rCorrected:0.8, n:70, separateBattery:true, rInternal:0.97, rInternalAgeMax:90, rInternalByAge:{65:0.96, 70:0.97, 75:0.96, 80:0.97, 85:0.97} },
+    "Immediate Memory Index": { m1:101.5, sd1:13.9, m2:113.9, sd2:14.2, r:0.84, rCorrected:0.86, n:69, separateBattery:true, rInternal:0.95, rInternalAgeMax:90, rInternalByAge:{65:0.94, 70:0.95, 75:0.94, 80:0.94, 85:0.96} },
+    "Delayed Memory Index": { m1:101.7, sd1:13.1, m2:112.7, sd2:14.4, r:0.8, rCorrected:0.85, n:71, separateBattery:true, rInternal:0.92, rInternalAgeMax:90, rInternalByAge:{65:0.92, 70:0.91, 75:0.91, 80:0.93, 85:0.92} }
   },
   "WMS-IV Subtests · Ages 16-69": {
-    "Logical Memory I": { m1:10.3, sd1:2.9, m2:12.2, sd2:2.6, r:0.72, rCorrected:0.74, n:173 },
-    "Logical Memory II": { m1:10.3, sd1:2.8, m2:12.6, sd2:2.9, r:0.67, rCorrected:0.71, n:172 },
-    "Verbal Paired Associates I": { m1:9.8, sd1:3.1, m2:12.1, sd2:3.4, r:0.76, rCorrected:0.74, n:171 },
-    "Verbal Paired Associates II": { m1:9.8, sd1:3, m2:10.8, sd2:2.7, r:0.76, rCorrected:0.76, n:170 },
-    "Verbal Paired Associates II - Word Recall": { m1:10, sd1:2.9, m2:10.9, sd2:3.2, r:0.74, rCorrected:0.76, n:170 },
-    "Designs I": { m1:10, sd1:2.9, m2:11.1, sd2:3.4, r:0.73, rCorrected:0.75, n:157 },
-    "Designs I - Content": { m1:10.1, sd1:3, m2:11.2, sd2:3.3, r:0.64, rCorrected:0.64, n:157 },
-    "Designs I - Spatial": { m1:10.2, sd1:2.9, m2:10.9, sd2:3.1, r:0.56, rCorrected:0.59, n:157 },
-    "Designs II": { m1:10.2, sd1:2.7, m2:11.9, sd2:3.2, r:0.72, rCorrected:0.77, n:151 },
-    "Designs II - Content": { m1:10.3, sd1:3, m2:11.5, sd2:3.4, r:0.64, rCorrected:0.64, n:151 },
-    "Designs II - Spatial": { m1:10.3, sd1:2.7, m2:11.6, sd2:2.6, r:0.5, rCorrected:0.6, n:151 },
-    "Visual Reproduction I": { m1:10, sd1:2.8, m2:11.9, sd2:2.8, r:0.62, rCorrected:0.67, n:170 },
-    "Visual Reproduction II": { m1:10.1, sd1:2.8, m2:12.9, sd2:3, r:0.59, rCorrected:0.64, n:169 },
-    "Spatial Addition": { m1:9.9, sd1:2.8, m2:10.7, sd2:3, r:0.74, rCorrected:0.77, n:172 },
-    "Symbol Span": { m1:10, sd1:3, m2:10.6, sd2:3.1, r:0.72, rCorrected:0.72, n:172 }
+    "Logical Memory I": { m1:10.3, sd1:2.9, m2:12.2, sd2:2.6, r:0.72, rCorrected:0.74, n:173, separateBattery:true, rInternal:0.82, rInternalAgeMax:69, rInternalByAge:{16:0.8, 18:0.84, 20:0.79, 25:0.87, 30:0.82, 35:0.86, 45:0.77, 55:0.81, 65:0.79} },
+    "Logical Memory II": { m1:10.3, sd1:2.8, m2:12.6, sd2:2.9, r:0.67, rCorrected:0.71, n:172, separateBattery:true, rInternal:0.85, rInternalAgeMax:69, rInternalByAge:{16:0.8, 18:0.87, 20:0.85, 25:0.9, 30:0.81, 35:0.9, 45:0.87, 55:0.84, 65:0.8} },
+    "Verbal Paired Associates I": { m1:9.8, sd1:3.1, m2:12.1, sd2:3.4, r:0.76, rCorrected:0.74, n:171, separateBattery:true, rInternal:0.94, rInternalAgeMax:69, rInternalByAge:{16:0.93, 18:0.93, 20:0.94, 25:0.95, 30:0.94, 35:0.94, 45:0.94, 55:0.94, 65:0.93} },
+    "Verbal Paired Associates II": { m1:9.8, sd1:3, m2:10.8, sd2:2.7, r:0.76, rCorrected:0.76, n:170, separateBattery:true, rInternal:0.85, rInternalAgeMax:69, rInternalByAge:{16:0.87, 18:0.84, 20:0.84, 25:0.89, 30:0.82, 35:0.84, 45:0.85, 55:0.85, 65:0.82} },
+    "Verbal Paired Associates II - Word Recall": { m1:10, sd1:2.9, m2:10.9, sd2:3.2, r:0.74, rCorrected:0.76, n:170, separateBattery:true, rStability:0.76, rStabilityAgeMax:69, rStabilityByAge:{16:0.76, 18:0.76, 20:0.76, 25:0.76, 30:0.76, 35:0.76, 45:0.76, 55:0.76, 65:0.76} },
+    "Designs I": { m1:10, sd1:2.9, m2:11.1, sd2:3.4, r:0.73, rCorrected:0.75, n:157, separateBattery:true, rInternal:0.85, rInternalAgeMax:69, rInternalByAge:{16:0.84, 18:0.9, 20:0.87, 25:0.83, 30:0.88, 35:0.85, 45:0.83, 55:0.82, 65:0.82} },
+    "Designs I - Content": { m1:10.1, sd1:3, m2:11.2, sd2:3.3, r:0.64, rCorrected:0.64, n:157, separateBattery:true, rInternal:0.77, rInternalAgeMax:69, rInternalByAge:{16:0.71, 18:0.77, 20:0.75, 25:0.88, 30:0.77, 35:0.76, 45:0.75, 55:0.81, 65:0.66} },
+    "Designs I - Spatial": { m1:10.2, sd1:2.9, m2:10.9, sd2:3.1, r:0.56, rCorrected:0.59, n:157, separateBattery:true, rInternal:0.76, rInternalAgeMax:69, rInternalByAge:{16:0.76, 18:0.78, 20:0.7, 25:0.78, 30:0.83, 35:0.73, 45:0.76, 55:0.71, 65:0.77} },
+    "Designs II": { m1:10.2, sd1:2.7, m2:11.9, sd2:3.2, r:0.72, rCorrected:0.77, n:151, separateBattery:true, rInternal:0.85, rInternalAgeMax:69, rInternalByAge:{16:0.88, 18:0.9, 20:0.87, 25:0.84, 30:0.87, 35:0.81, 45:0.8, 55:0.83, 65:0.82} },
+    "Designs II - Content": { m1:10.3, sd1:3, m2:11.5, sd2:3.4, r:0.64, rCorrected:0.64, n:151, separateBattery:true, rInternal:0.77, rInternalAgeMax:69, rInternalByAge:{16:0.81, 18:0.76, 20:0.79, 25:0.84, 30:0.79, 35:0.77, 45:0.7, 55:0.75, 65:0.71} },
+    "Designs II - Spatial": { m1:10.3, sd1:2.7, m2:11.6, sd2:2.6, r:0.5, rCorrected:0.6, n:151, separateBattery:true, rInternal:0.74, rInternalAgeMax:69, rInternalByAge:{16:0.74, 18:0.82, 20:0.69, 25:0.73, 30:0.75, 35:0.7, 45:0.68, 55:0.81, 65:0.67} },
+    "Visual Reproduction I": { m1:10, sd1:2.8, m2:11.9, sd2:2.8, r:0.62, rCorrected:0.67, n:170, separateBattery:true, rInternal:0.93, rInternalAgeMax:69, rInternalByAge:{16:0.92, 18:0.94, 20:0.88, 25:0.95, 30:0.93, 35:0.92, 45:0.93, 55:0.96, 65:0.92} },
+    "Visual Reproduction II": { m1:10.1, sd1:2.8, m2:12.9, sd2:3, r:0.59, rCorrected:0.64, n:169, separateBattery:true, rInternal:0.97, rInternalAgeMax:69, rInternalByAge:{16:0.97, 18:0.98, 20:0.97, 25:0.97, 30:0.96, 35:0.97, 45:0.97, 55:0.98, 65:0.98} },
+    "Spatial Addition": { m1:9.9, sd1:2.8, m2:10.7, sd2:3, r:0.74, rCorrected:0.77, n:172, separateBattery:true, rInternal:0.91, rInternalAgeMax:69, rInternalByAge:{16:0.89, 18:0.89, 20:0.92, 25:0.92, 30:0.89, 35:0.91, 45:0.92, 55:0.93, 65:0.9} },
+    "Symbol Span": { m1:10, sd1:3, m2:10.6, sd2:3.1, r:0.72, rCorrected:0.72, n:172, separateBattery:true, rInternal:0.88, rInternalAgeMax:69, rInternalByAge:{16:0.81, 18:0.88, 20:0.89, 25:0.9, 30:0.92, 35:0.86, 45:0.89, 55:0.88, 65:0.85} }
   },
   "WMS-IV Subtests · Ages 65-90": {
-    "Logical Memory I": { m1:10, sd1:2.9, m2:12, sd2:3.3, r:0.77, rCorrected:0.79, n:69 },
-    "Logical Memory II": { m1:10, sd1:2.7, m2:12.1, sd2:2.8, r:0.71, rCorrected:0.77, n:71 },
-    "Verbal Paired Associates I": { m1:10.4, sd1:2.8, m2:12.1, sd2:2.9, r:0.76, rCorrected:0.79, n:71 },
-    "Verbal Paired Associates II": { m1:10.4, sd1:2.7, m2:11.5, sd2:2.7, r:0.77, rCorrected:0.81, n:71 },
-    "Verbal Paired Associates II - Word Recall": { m1:10.5, sd1:2.8, m2:11.7, sd2:2.7, r:0.72, rCorrected:0.76, n:71 },
-    "Visual Reproduction I": { m1:10.2, sd1:3.1, m2:12, sd2:3.1, r:0.79, rCorrected:0.78, n:71 },
-    "Visual Reproduction II": { m1:10.5, sd1:2.8, m2:12.3, sd2:3.1, r:0.64, rCorrected:0.69, n:71 },
-    "Symbol Span": { m1:10.1, sd1:2.8, m2:10.7, sd2:3, r:0.69, rCorrected:0.73, n:69 }
+    "Logical Memory I": { m1:10, sd1:2.9, m2:12, sd2:3.3, r:0.77, rCorrected:0.79, n:69, separateBattery:true, rInternal:0.86, rInternalAgeMax:90, rInternalByAge:{65:0.83, 70:0.88, 75:0.87, 80:0.84, 85:0.88} },
+    "Logical Memory II": { m1:10, sd1:2.7, m2:12.1, sd2:2.8, r:0.71, rCorrected:0.77, n:71, separateBattery:true, rInternal:0.87, rInternalAgeMax:90, rInternalByAge:{65:0.85, 70:0.87, 75:0.88, 80:0.87, 85:0.89} },
+    "Verbal Paired Associates I": { m1:10.4, sd1:2.8, m2:12.1, sd2:2.9, r:0.76, rCorrected:0.79, n:71, separateBattery:true, rInternal:0.93, rInternalAgeMax:90, rInternalByAge:{65:0.94, 70:0.92, 75:0.92, 80:0.92, 85:0.93} },
+    "Verbal Paired Associates II": { m1:10.4, sd1:2.7, m2:11.5, sd2:2.7, r:0.77, rCorrected:0.81, n:71, separateBattery:true, rInternal:0.74, rInternalAgeMax:90, rInternalByAge:{65:0.82, 70:0.71, 75:0.71, 80:0.78, 85:0.68} },
+    "Verbal Paired Associates II - Word Recall": { m1:10.5, sd1:2.8, m2:11.7, sd2:2.7, r:0.72, rCorrected:0.76, n:71, separateBattery:true, rStability:0.76, rStabilityAgeMax:90, rStabilityByAge:{65:0.76, 70:0.76, 75:0.76, 80:0.76, 85:0.76} },
+    "Visual Reproduction I": { m1:10.2, sd1:3.1, m2:12, sd2:3.1, r:0.79, rCorrected:0.78, n:71, separateBattery:true, rInternal:0.93, rInternalAgeMax:90, rInternalByAge:{65:0.92, 70:0.94, 75:0.92, 80:0.92, 85:0.93} },
+    "Visual Reproduction II": { m1:10.5, sd1:2.8, m2:12.3, sd2:3.1, r:0.64, rCorrected:0.69, n:71, separateBattery:true, rInternal:0.96, rInternalAgeMax:90, rInternalByAge:{65:0.95, 70:0.96, 75:0.96, 80:0.97, 85:0.96} },
+    "Symbol Span": { m1:10.1, sd1:2.8, m2:10.7, sd2:3, r:0.69, rCorrected:0.73, n:69, separateBattery:true, rInternal:0.84, rInternalAgeMax:90, rInternalByAge:{65:0.88, 70:0.87, 75:0.81, 80:0.84, 85:0.76} }
   }
 };

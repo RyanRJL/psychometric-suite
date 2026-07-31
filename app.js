@@ -3832,10 +3832,24 @@ function ageBandLabel(f){
 // longest span would have scored every patient against All Ages: Longest Digit
 // Span Backward at a span of 4 is the 22nd percentile at 20-24 and the 59th at
 // 85-90, so up to 37 percentile points would have gone silently wrong.
+//
+// The second case is a band that is not a band at all but a SEPARATE BATTERY.
+// WMS-IV publishes an Adult battery (16-69) and an Older Adult battery (65-90)
+// with different subtests — no Designs, no Spatial Addition, no Visual Working
+// Memory Index in the older one — and different reliability for the SAME
+// measure. Age cannot choose between them, because 65-69 appears in both
+// (Logical Memory I is .79 in the adult battery and .83 in the older adult):
+// the clinician chose which to administer, so the clinician must choose here.
+// Collapsing them showed an 80-year-old the adult battery's measure list, and
+// its coefficients — 10 of the 12 shared measures printed a wrong interval.
+//
+// Declared per entry rather than inferred. A rule like "the two groups hold
+// different measures" would have worked today and broken silently the first
+// time a family's bands diverged for some other reason.
 function familyScoredByAgeBand(name){
   const fam = normDB[name];
   if (!fam) return false;
-  return Object.values(fam).some(e => e && typeof e === 'object' && e.baseRates);
+  return Object.values(fam).some(e => e && typeof e === 'object' && (e.baseRates || e.separateBattery));
 }
 function buildFamilyListHtml(families, opts){
   const flat = !!(opts && opts.flat);
