@@ -213,7 +213,7 @@ for the pattern. Follow it when touching a table that contains inputs.
 
 ## `normDB`
 
-The reliability database: 115 groups, 659 entries, seven instrument families (D-KEFS,
+The reliability database: 116 groups, 671 entries, seven instrument families (D-KEFS,
 CVLT-3, CVLT-C, RBANS, WAIS-IV, WISC-V, WMS-IV).
 
 Group keys are `"<Instrument> <Category> · <Age band>"` — the separator is **U+00B7
@@ -311,7 +311,7 @@ undocumented:
 | WAIS-IV — Table 4.1, all but the three speeded subtests | 21 | `rInternal` + `rInternalByAge` |
 | RBANS Update — Table 3.6, the nine rows without footnote a | 9 | `rInternal` + `rInternalByAge` |
 | WMS-IV — Table 3.1, both batteries, all but VPA II Word Recall | 30 | `rInternal` + `rInternalByAge` |
-| WISC-V — Table 4.1, all but the three speeded subtests | 19 | `rInternal` + `rInternalByAge` |
+| WISC-V — Table 4.1, all but the three speeded subtests and the two Cancellation process scores | 29 | `rInternal` + `rInternalByAge` |
 
 That roster check keys on **either** field. D-KEFS original carries no `rInternal` at
 all, so a check testing `rInternal` alone would let 13 entries change the basis of a
@@ -791,13 +791,36 @@ wrong clinical conclusion for all of them. The signed statistic is displayed
 alongside, so direction stays visible without the app interpreting it.
 
 Field coverage: `m1`, `sd1`, `m2`, `sd2` and `r` are present on **all 590** entries;
-`rCorrected` on only **233** — D-KEFS, CVLT-C and WISC-V have none at all, so any feature
-depending on it must degrade gracefully. That absence is why **WISC-V is verified differently
-from the rest**: with no `rCorrected` to match the manual's stability rows against, Tables
-4.1/4.4 carry the transcription proof on their own (242 cells), and §31 additionally drives
-the shipped renderer through the manual's worked example — a 6-year-old at FSIQ 108 gives
-102–114 at 95% and 103–113 at 90%, exactly as p. 62 prints. WISC-V also has the finest
-lookup in the database: **single year of age**, 6 to 16, not bands.
+`rCorrected` on **267** — D-KEFS and CVLT-C have none at all, so any feature depending on it
+must degrade gracefully.
+
+**WISC-V used to be on that list, and that was an error of fact rather than a property of the
+source.** Its Table 4.7 prints a corrected `r` for all 34 rows; the database had simply never
+captured it. Nothing scored differently — `rInternal` outranks `rCorrected` in the CI chain
+and reliable change defaults to the raw `r` — but the corrected-`r` option on the Basic RCI
+page was silently unusable for WISC-V alone. All 22 existing entries were backfilled from
+Table 4.7 and §3 now asserts the position instead of assuming it.
+
+WISC-V is still **verified differently from the rest** in one respect: Tables 4.1/4.4 carry
+the transcription proof on their own (242 cells), and §31 drives the shipped renderer through
+the manual's worked example — a 6-year-old at FSIQ 108 gives 102–114 at 95% and 103–113 at
+90%, exactly as p. 62 prints. It also has the finest lookup in the database: **single year of
+age**, 6 to 16, not bands.
+
+Table 4.7 also filled the family out. It was holding 22 of the 34 measures the manual
+publishes; the 7 process scores now live in `WISC-V Process Scores · All Ages`, mirroring
+WAIS-IV, and the 5 ancillary indices sit with the primary ones. **`Cancellation Random` and
+`Cancellation Structured` take `rStability`**, the manual naming Cancellation among the
+subtests for which split-half is improper — confirmed from the data too, since a stability
+coefficient broadcast from the retest study's coarse bands repeats across single years (3 and
+2 distinct values across 11 bands, against 7–9 for the internal-consistency rows).
+
+That table came from a photograph rather than a spreadsheet, so it was checked two ways before
+being stored, and both checks are now live in §31: Cohen's Formula 10.4 reproduces the printed
+Standard Difference from the means and SDs on 34 of 34 rows, and the 22 measures already held
+matched their `m1`/`sd1`/`m2`/`sd2`/`n`/`r` exactly — which also proves the `r₁₂` column was
+not confused with the corrected one, stored `r` matching `r₁₂` 22 of 22 and the corrected
+column 1 of 22.
 
 Users can add custom tests; `getMergedDB()` merges those over `normDB`.
 
@@ -899,7 +922,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 261 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 263 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
