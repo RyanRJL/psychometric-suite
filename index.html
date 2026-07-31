@@ -2501,7 +2501,7 @@
      METHOD_EXPLAINERS above: those describe a method, these a concept. */
   const DIMENSION_EXPLAINERS = {
     'me':       'No test measures without error, so a score would vary somewhat on retest even if the patient had not changed at all. Methods that adjust for it use the test\'s reliability and standard deviation to work out how large a difference has to be before it exceeds that expected fluctuation.',
-    'practice': 'Taking the same test twice tends to raise the second score by itself — through familiarity with the format, remembered items or rehearsed strategy. Methods that adjust for it subtract the average gain the normative retest sample showed, so an ordinary practice gain is not read as recovery.',
+    'practice': 'Taking the same test twice tends to raise the second score by itself, through familiarity with the format, remembered items or rehearsed strategy. Methods that adjust for it subtract the average gain the normative retest sample showed, so an ordinary practice gain is not read as recovery.',
     'rtm':      'On retest, extreme scores drift back towards the mean: unusually low first scores tend to rise and unusually high ones tend to fall, purely as a statistical consequence of imperfect reliability. Methods that adjust for it predict the expected retest score from the baseline by regression rather than assuming it should stay the same.',
     'n':        'The normative regression parameters are themselves estimates from a finite sample, and a prediction for a patient far from the norm mean is less certain than one near it. Methods that adjust for it widen the standard error accordingly and use a t-distribution, which matters most when the normative N is modest.'
   };
