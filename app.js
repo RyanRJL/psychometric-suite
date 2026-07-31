@@ -2568,7 +2568,7 @@ function loadFamilyIntoBattery(family){
   // A custom family created but not yet populated. Bail BEFORE dropping a blank
   // row, or the user loses a row and sees nothing added.
   if (!names.length){
-    showToast(`${family} has no tests yet - add some in the Norms Database`, true);
+    showToast(`${family} has no tests yet - add some in Data`, true);
     return;
   }
   // If the family is already on the table, append only the subtests that aren't
@@ -5902,7 +5902,7 @@ refreshAll();
     'change-analysis': 'Change Analysis',
     charts: 'Score Charts',
     premorbid: 'Premorbid Estimation',
-    'custom-tests': 'Norms Database',
+    'custom-tests': 'Data',
     about: 'Methods & References'
   };
 

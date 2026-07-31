@@ -1066,7 +1066,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
    Scoped by id so it cannot leak to the other sections, and an id (1-0-0)
    outranks the three separate .section max-widths (0-1-0) across styles.css
    and design-system.css without needing !important. */
-#custom-tests{max-width:none;padding-left:32px;padding-right:32px}
+#custom-tests{max-width:1480px;padding-left:32px;padding-right:32px}
 /* Taller, not unbounded. The header cells are position:sticky inside this
    container, so removing the cap would make them stick to the viewport instead
    — and slide under the fixed 108px topbar. Capping to the window keeps the
@@ -1102,7 +1102,13 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
    right-aligned — measure names included. Qualified to 0-2-1 so it wins
    honestly rather than with !important. The exact trap CLAUDE.md records. */
 .db-table th.db-th-text,.db-table td.db-td-text{text-align:left}
-.db-td-measure{white-space:normal;min-width:160px;color:var(--ink)}
+/* A table at width:100% hands every spare pixel to whichever column can grow,
+   and Measure was the only one allowed to wrap — so on a wide monitor it took
+   ~700px and left a canyon between the measure names and M1. Capped, with the
+   trailing (delete-button) column made the flexible one instead, so slack
+   collects harmlessly at the right edge rather than in the middle of the data. */
+.db-td-measure{white-space:normal;min-width:150px;max-width:300px;color:var(--ink)}
+.db-table th:last-child,.db-table td:last-child{width:100%}
 .db-td-ctx{color:var(--muted);font-size:11.5px}
 .db-td-num{font-family:var(--mono);color:var(--ink-2)}
 .db-td-rel{color:var(--ink);font-weight:600}
@@ -14405,7 +14411,7 @@ input[type="number"].ds-inline-bar-age-input{
     <div class="nav-item" data-target="charts"><span class="nav-item-num">04</span>Score Charts</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">05</span>Score Converter</div>
     <div class="nav-item" data-target="effectsize"><span class="nav-item-num">06</span>Effect Size Tools</div>
-    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Norms Database</div>
+    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Data</div>
     <div class="nav-item" data-target="about"><span class="nav-item-num">08</span>Methods &amp; References</div>
   </nav>
 
@@ -15824,9 +15830,8 @@ input[type="number"].ds-inline-bar-age-input{
 
   <!-- ========== 09 CUSTOM TESTS ========== -->
   <section class="section" id="custom-tests">
-    <div class="eyebrow">Reference · Norms Database</div>
-    <h1 class="section-title">Norms Database</h1>
-    <p class="section-desc">Every normative entry the app scores from, by instrument. Shows the descriptive statistics, the reliability actually used to build each confidence interval, and the basis that coefficient rests on. Custom tests imported from a file appear alongside the built-in ones and are stored locally in this browser.</p>
+    <div class="eyebrow">Reference · Data</div>
+    <h1 class="section-title">Data</h1>
 
     <div class="controls-row">
       <div class="field" style="flex:1">
@@ -15928,7 +15933,7 @@ input[type="number"].ds-inline-bar-age-input{
 <footer class="site-footer" role="contentinfo">
   <div class="site-footer-inner">
     <div class="site-footer-links">
-      <button type="button" class="site-footer-link nav-item" data-target="custom-tests">Norms Database</button>
+      <button type="button" class="site-footer-link nav-item" data-target="custom-tests">Data</button>
       <button type="button" class="site-footer-link nav-item" data-target="about">Methods &amp; References</button>
     </div>
     <div class="ds-version-stamp" title="Build version and last update">
@@ -20329,7 +20334,7 @@ function loadFamilyIntoBattery(family){
   // A custom family created but not yet populated. Bail BEFORE dropping a blank
   // row, or the user loses a row and sees nothing added.
   if (!names.length){
-    showToast(`${family} has no tests yet - add some in the Norms Database`, true);
+    showToast(`${family} has no tests yet - add some in Data`, true);
     return;
   }
   // If the family is already on the table, append only the subtests that aren't
@@ -23663,7 +23668,7 @@ refreshAll();
     'change-analysis': 'Change Analysis',
     charts: 'Score Charts',
     premorbid: 'Premorbid Estimation',
-    'custom-tests': 'Norms Database',
+    'custom-tests': 'Data',
     about: 'Methods & References'
   };
 
@@ -25956,7 +25961,7 @@ if (document.readyState === 'loading'){
     'rci-crawford':   'Crawford Regression-Based',
     'premorbid':      'Premorbid Estimation',
     'about':          'Methods & References',
-    'custom-tests':   'Norms Database'
+    'custom-tests':   'Data'
   };
 
   function setTitleForTarget(target){
