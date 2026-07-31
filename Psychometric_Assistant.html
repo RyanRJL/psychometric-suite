@@ -15824,16 +15824,19 @@ input[type="number"].ds-inline-bar-age-input{
     <div class="pre-tab-content" id="pre-opiepredict">
       <div class="caution-box" style="margin-top:0;margin-bottom:14px">
         <strong>Illustrative only: do not quote these numbers in a UK report.</strong>
-        The coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published
-        equations also carry US <em>education</em>, <em>ethnicity</em> and <em>region</em> terms that
-        are not applied here. Every patient is therefore scored at the US reference category:
-        <em>12th-grade high-school graduate, not African-American, not resident in the US West</em>.
-        Those categories have no valid UK equivalent: the US education dummies encode how unusual a
-        given attainment level is in the US population, not years of schooling, so they cannot be
-        mapped across. In the source table that omitted block spans up to 18.9 points.
-        Expect these estimates to run <strong>high</strong> for patients who left school early and
-        <strong>low</strong> for graduates, by an amount this tool cannot quantify.
-        For a UK demographic estimate use the Crawford &amp; Allan (2001) row on the Estimates tab.
+        The coefficients here reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the
+        published equations also include terms for US <em>education</em>, <em>ethnicity</em>
+        and <em>region</em>, and this tool does not apply them. Every patient is therefore
+        scored as though they were the US reference case:
+        <em>a 12th-grade high-school graduate, not African-American, and not living in the
+        US West</em>. Those categories have no UK equivalent. The US education terms do not
+        count years of schooling; they capture how unusual a given level of attainment is
+        within the US population, so there is nothing here to map them onto. In the source
+        table, the terms this tool leaves out are worth as much as 18.9 points.
+        Expect these estimates to run <strong>high</strong> for patients who left school
+        early and <strong>low</strong> for graduates, by an amount this tool cannot quantify.
+        If you want a UK demographic estimate, use the Crawford &amp; Allan (2001) row on the
+        Estimates tab.
       </div>
       <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter age (16–90), sex, plus Vocabulary and/or Matrix Reasoning raw scores in the Inputs panel above. Rows appear automatically for each model whose required inputs are present. Enter the patient's actual FSIQ / GAI in the Achieved column - the prorated index is calculated per ACS manual procedures, excluding the subtest(s) used as predictors. The three FSIQ rows predict three different prorated criteria and are not expected to agree with each other.</p>
 
