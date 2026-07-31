@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260801f">
+<link rel="stylesheet" href="styles.css?v=20260801g">
 <link rel="stylesheet" href="design-system.css?v=20260730m">
 
 <style>
@@ -736,17 +736,24 @@
         <div class="home-db-card-arrow">→</div>
       </button>
 
-      <button class="home-db-card home-db-card--muted" onclick="document.querySelector('.nav-item[data-target=&quot;about&quot;]').click()">
+      <!-- Score Charts. Not `home-db-card--muted`: that dimming marked the
+           reference tile that used to sit here as secondary to the tools
+           around it, and this is a tool. Methods & References keeps its
+           sidebar entry (08) and its footer link, so it is still two clicks
+           from anywhere; it just no longer takes a slot in the tool grid.
+           Bars scaled from the top-bar icon (20 -> 22 viewBox) so the two
+           read as the same page. -->
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;charts&quot;]').click()">
         <div class="home-db-card-icon">
           <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 2h10l4 4v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/>
-            <polyline points="14,2 14,6 18,6"/>
-            <line x1="7" y1="10" x2="15" y2="10"/>
-            <line x1="7" y1="14" x2="12" y2="14"/>
+            <line x1="3" y1="18.5" x2="19" y2="18.5"/>
+            <line x1="6" y1="15.5" x2="6" y2="10"/>
+            <line x1="11" y1="15.5" x2="11" y2="4.5"/>
+            <line x1="16" y1="15.5" x2="16" y2="7.5"/>
           </svg>
         </div>
-        <div class="home-db-card-name">Methods &amp; References</div>
-        <div class="home-db-card-desc">Formulas, citations and statistical conventions used throughout the suite</div>
+        <div class="home-db-card-name">Score Charts</div>
+        <div class="home-db-card-desc">Chart scores entered elsewhere in the suite against classification and reliable-change bands</div>
         <div class="home-db-card-arrow">→</div>
       </button>
 
@@ -2004,17 +2011,20 @@
     <!-- Tab C: OPIE-4 vs WAIS-IV -->
     <div class="pre-tab-content" id="pre-opiepredict">
       <div class="caution-box" style="margin-top:0;margin-bottom:14px">
-        <strong>Illustrative only — do not quote these numbers in a UK report.</strong>
-        The coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published
-        equations also carry US <em>education</em>, <em>ethnicity</em> and <em>region</em> terms that
-        are not applied here. Every patient is therefore scored at the US reference category:
-        <em>12th-grade high-school graduate, not African-American, not resident in the US West</em>.
-        Those categories have no valid UK equivalent — the US education dummies encode how unusual a
-        given attainment level is in the US population, not years of schooling, so they cannot be
-        mapped across. In the source table that omitted block spans up to 18.9 points.
-        Expect these estimates to run <strong>high</strong> for patients who left school early and
-        <strong>low</strong> for graduates, by an amount this tool cannot quantify.
-        For a UK demographic estimate use the Crawford &amp; Allan (2001) row on the Estimates tab.
+        <strong>Illustrative only: do not quote these numbers in a UK report.</strong>
+        The coefficients here reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the
+        published equations also include terms for US <em>education</em>, <em>ethnicity</em>
+        and <em>region</em>, and this tool does not apply them. Every patient is therefore
+        scored as though they were the US reference case:
+        <em>a 12th-grade high-school graduate, not African-American, and not living in the
+        US West</em>. Those categories have no UK equivalent. The US education terms do not
+        count years of schooling; they capture how unusual a given level of attainment is
+        within the US population, so there is nothing here to map them onto. In the source
+        table, the terms this tool leaves out are worth as much as 18.9 points.
+        Expect these estimates to run <strong>high</strong> for patients who left school
+        early and <strong>low</strong> for graduates, by an amount this tool cannot quantify.
+        If you want a UK demographic estimate, use the Crawford &amp; Allan (2001) row on the
+        Estimates tab.
       </div>
       <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter age (16–90), sex, plus Vocabulary and/or Matrix Reasoning raw scores in the Inputs panel above. Rows appear automatically for each model whose required inputs are present. Enter the patient's actual FSIQ / GAI in the Achieved column - the prorated index is calculated per ACS manual procedures, excluding the subtest(s) used as predictors. The three FSIQ rows predict three different prorated criteria and are not expected to agree with each other.</p>
 
@@ -2187,7 +2197,7 @@
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260801b"></script>
-<script src="app.js?v=20260801j"></script>
+<script src="app.js?v=20260801k"></script>
 <script src="design-system.js?v=20260801b" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 <script src="app-viz-page.js?v=20260730m"></script>
@@ -2493,6 +2503,23 @@
     'rci-srb':      'Regression-based reliable change (McSweeney et al., 1993). Predicts each patient\'s expected retest score from their baseline using the norm sample\'s regression parameters, then standardises the residual against the SEE. Handles regression to the mean.',
     'rci-crawford': 'Most rigorous. Crawford & Garthwaite (2007) extend the regression-based approach with a t-distributed test that incorporates the normative sample size and the patient\'s distance from the norm mean. Preferred when N is modest or the patient is far from the norm mean.'
   };
+  /* Column-heading explainers. Each column names a distinct threat to
+     reading a retest difference, and the tick pattern only means anything to
+     someone who knows which threat is which — "regression to mean" in
+     particular is routinely read as the opposite of what it is. Hover or
+     focus a heading to see the definition. Kept separate from
+     METHOD_EXPLAINERS above: those describe a method, these a concept. */
+  const DIMENSION_EXPLAINERS = {
+    'me':       'No test measures without error, so a score would vary somewhat on retest even if the patient had not changed at all. Methods that adjust for it use the test\'s reliability and standard deviation to work out how large a difference has to be before it exceeds that expected fluctuation.',
+    'practice': 'Taking the same test twice tends to raise the second score by itself, through familiarity with the format, remembered items or rehearsed strategy. Methods that adjust for it subtract the average gain the normative retest sample showed, so an ordinary practice gain is not read as recovery.',
+    'rtm':      'On retest, extreme scores drift back towards the mean: unusually low first scores tend to rise and unusually high ones tend to fall, purely as a statistical consequence of imperfect reliability. Methods that adjust for it predict the expected retest score from the baseline by regression rather than assuming it should stay the same.',
+    'n':        'The normative regression parameters are themselves estimates from a finite sample, and a prediction for a patient far from the norm mean is less certain than one near it. Methods that adjust for it widen the standard error accordingly and use a t-distribution, which matters most when the normative N is modest.'
+  };
+  function makeColHead(key, labelHtml, atEnd){
+    return `<th class="change-overview-colh">` +
+      `<span class="change-overview-colh-label${atEnd ? ' is-end' : ''}" tabindex="0" data-coltip="${DIMENSION_EXPLAINERS[key]}">${labelHtml}</span>` +
+    `</th>`;
+  }
   const TICK_SVG = `<svg class="change-overview-tick" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3,8.5 7,12 13,4"/></svg>`;
   function makeRow(id, title, cite){
     const flags = ADJUST_BY_METHOD[id];
@@ -2522,10 +2549,10 @@
       <thead>
         <tr>
           <th class="change-overview-table-method-h">Method</th>
-          <th>Measurement<br>error</th>
-          <th>Practice<br>effect</th>
-          <th>Regression<br>to mean</th>
-          <th>Sample-size<br>adjustment</th>
+          ${makeColHead('me',       'Measurement<br>error')}
+          ${makeColHead('practice', 'Practice<br>effect')}
+          ${makeColHead('rtm',      'Regression<br>to mean')}
+          ${makeColHead('n',        'Sample-size<br>adjustment', true)}
           <th aria-hidden="true"></th>
         </tr>
       </thead>
