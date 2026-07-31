@@ -20134,14 +20134,49 @@ const OPIE_BASE_RATES = {
    the 65-69 band. That average is computed over ages 16-69, which is the only
    sample there is, so it stays citable.
 
-   WHAT IS PROVEN AND WHAT IS NOT. Proven from the pages to hand: the manual
-   reports internal consistency, states which subtests are excluded and why,
-   and Table 4.1's speeded rows reproduce this database's rCorrected 35/35.
-   NOT verified arithmetically: that the manual's own printed SEMs and
-   confidence intervals are built from Table 4.1 — that needs Table 4.3, which
-   was not available. It rests instead on the manual's stated method, which is
-   the same footing D-KEFS Advanced was admitted on. If Table 4.3 is obtained,
-   pin it the way section 27 pins the D-KEFS SEM cells.
+   TABLE 4.3 CONFIRMS THE LOT, ARITHMETICALLY. This paragraph used to record
+   that the manual builds its own SEMs from Table 4.1 as unproven — the claim
+   rested on the manual's stated method, Table 4.3 not being available. It is
+   available now, and every one of its 300 published cells equals
+   populationSD * sqrt(1 - the coefficient stored here), exactly, at the
+   printed 2dp. check.js section 28 pins all 300.
+
+   Three things fall out of it, beyond the confirmation itself.
+
+   The SD question is settled by a second publisher. Table 4.3's note says the
+   SEMs use "the reliability coefficients shown in Table 4.1 and the population
+   standard deviations (i.e., 3 for the subtests and 15 for the composite
+   scores)" — which is the rule section 23 derived independently from the
+   CVLT-3 manual's SEM column, and the pairing 6de0d81 replaced. Reproductions
+   over the 300 cells: this app's pairing 300, the retest r 5, rCorrected 46
+   (the 38 speeded cells it legitimately owns, plus 8 coincidences), and sd1
+   against the normatively-scaled coefficient — the old pairing — 29.
+
+   The speeded three are confirmed twice over, through a different table: their
+   Table 4.3 cells reproduce from rCorrected, as their Table 4.1 cells already
+   did 38/38.
+
+   The blank-age fallback is now pinned, and was not before. rInternal is what
+   a patient with no age entered is scored on, and nothing held it: the spot
+   checks read rInternalByAge only. Confirmed by mutation — moving Vocabulary's
+   average .94 -> .95 passed every check in the file. Table 4.3 fixes the 13
+   band coefficients exactly, and Table 4.1's average column is computed with
+   Fisher's z, so the average is now derivable from pinned values: Fisher's z
+   over the bands reproduces all 24 stored averages at 2dp, where the plain
+   arithmetic mean manages 18.
+
+   WHAT TABLE 4.3'S OWN AVERAGE COLUMN IS NOT. Its footnote a defines the
+   average SEM as the RMS of the band SEMs — a summary across ages, not the SEM
+   of the average coefficient, and the two differ. The app keeps deriving its
+   blank-age interval from Table 4.1's average COEFFICIENT, which is what a
+   patient of unknown band actually needs and is published. Backing a
+   coefficient out of the average SEM instead would mean storing
+   1 - (2.16/15)^2 = .9793 for FSIQ, a number the manual never prints; that is
+   the Twenty Questions rule. The cost is two printed margins in 48
+   (24 measures x the two offered CI levels), both on a rounding knife-edge:
+   FSIQ at 90% prints +/-3 here against +/-4 from the average SEM (3.49 vs
+   3.55), and Digit Span Backward at 95% +/-2 against +/-3 (2.49 vs 2.55).
+   Entering an age avoids the question entirely, and that path is exact.
 
    LEAVE WAIS-IV Longest Span (Process) ALONE. It is scored by published base
    rate, has no retest data at all, and appears nowhere in Table 4.1.

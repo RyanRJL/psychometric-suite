@@ -495,10 +495,6 @@ reconstruct `normDB`'s 16-29 / 30-54 / 55-69 / 70-90 groups exactly.
   every composite coefficient as internal consistency and publishes no other reliability
   for them. Excluding PSI while keeping FSIQ — which also draws on Processing Speed
   subtests — would be incoherent.
-- **NOT verified: that the manual's printed SEMs come from Table 4.1.** That needs Table
-  4.3, which was not available; the claim rests on the manual's stated method, the same
-  footing D-KEFS Advanced was admitted on. If Table 4.3 is obtained, pin it as §27 pins
-  the D-KEFS SEM cells.
 - **`WAIS-IV Longest Span` gets none of this** — base-rate scored, no retest data, absent
   from Table 4.1.
 
@@ -506,6 +502,40 @@ The §24 naming check could not catch a stale paragraph here: **"WAIS-IV" was al
 that paragraph in the opposite sense**, naming the manual only as a user of test–retest
 coefficients, so the roster grew and the check stayed green. §28 pins the substance of the
 wording instead.
+
+##### Table 4.3 — the SEM table, which settles what used to be taken on trust
+
+This section long carried a "NOT verified" note: that the manual builds its own SEMs from
+Table 4.1 rested on its stated method, Table 4.3 being unavailable. It is available now,
+and **all 300 published cells equal `populationSD × √(1 − rxx)` from the stored
+coefficients, exactly, at the printed 2 dp** (`check.js` §28). Nothing needed changing.
+
+Three things follow, and the second and third matter more than the confirmation.
+
+- **A second publisher states the SD rule.** Table 4.3's note: the SEMs use "the
+  reliability coefficients shown in Table 4.1 and the population standard deviations
+  (i.e., 3 for the subtests and 15 for the composite scores)". That is exactly what §23
+  derived independently from CVLT-3, and what `6de0d81` fixed. Over the 300 cells: this
+  app's pairing **300**, retest `r` 5, `rCorrected` 46 (the 38 speeded cells it owns, plus
+  8 coincidences), and **`sd1` against a normatively-scaled coefficient — the old pairing
+  — 29**.
+- **The blank-age fallback was unpinned, and now is not.** `rInternal` is what a patient
+  with no age is scored on, and nothing held it — the spot checks read `rInternalByAge`
+  only. Proven by mutation: moving Vocabulary's average .94 → .95 passed all 238 checks.
+  Because Table 4.3 fixes the 13 bands exactly and Table 4.1 averages with **Fisher's z**,
+  the average is now derivable from pinned values — Fisher's z reproduces all 24 stored
+  averages at 2 dp where the plain arithmetic mean manages 18. **That 18 is also why the
+  neighbouring check refuses to assert the average *differs* from the mean of its bands.**
+- **Table 4.3's own average column is a different quantity — do not adopt it.** Its
+  footnote defines the average SEM as the **RMS of the band SEMs**, a summary across ages,
+  not the SEM of the average coefficient. The blank-age interval keeps coming from Table
+  4.1's average *coefficient*, which is what an unknown band needs and is published;
+  inverting the average SEM would mean storing `1 − (2.16/15)² = .9793` for FSIQ, a number
+  the manual never prints — the Twenty Questions rule. It costs **two printed margins in
+  48** (24 measures × the two CI levels), both on a rounding knife-edge: FSIQ at 90% gives
+  ±3 against ±4 (3.49 vs 3.55) and Digit Span Backward at 95% ±2 against ±3 (2.49 vs
+  2.55). Entering an age sidesteps it, and that path is exact. §28 pins the pair, so a
+  third joining them fails the check.
 
 ### `baseRates` — measures scored by lookup rather than by conversion
 
@@ -700,9 +730,9 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 234 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 239 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
-Tables 4.5 (§4) and 4.1 (§28), OPIE-4 coefficients pinned to Table eA5.8, worked OPIE
+Tables 4.5 (§4) and 4.1/4.3 (§28), OPIE-4 coefficients pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
 reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
 Score Tables confidence intervals, documentation contracts, wiring (§16–17) and the

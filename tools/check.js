@@ -3286,12 +3286,26 @@ check('the two D-KEFS manuals disagree, and both are honoured', () => {
      Table 4.1 24 measures x 13 NORMATIVE age bands (16-17, 18-19, 20-24,
                25-29, 30-34, 35-44, 45-54, 55-64, 65-69, 70-74, 75-79, 80-84,
                85-90) plus an overall average via Fisher's z.
+     Table 4.3 the SEMs those coefficients produce, same 24 x 13 shape, plus an
+               overall average SEM. 300 published cells; LN, FW and CA print a
+               dash above 65-69, being normed only that far.
+     Table 4.3 note. "The reliability coefficients shown in Table 4.1 and the
+               population standard deviations (i.e., 3 for the subtests and 15
+               for the composite scores) were used to compute the SEMs."
+               a "The average SEMs were calculated by averaging the squared
+               SEMs for each age group and obtaining the square root of the
+               result."
 
-   NOT PINNED, and deliberately so: that the manual's own printed SEMs and
-   intervals are computed from Table 4.1. That needs Table 4.3, which was not
-   available. The claim rests on the manual's stated method — the same footing
-   D-KEFS Advanced was admitted on in section 25. If Table 4.3 is obtained,
-   pin it the way section 27 pins the D-KEFS SEM cells.
+   Table 4.3 was obtained after the coefficients were stored, and it closes what
+   this section previously recorded as unproven: that the manual builds its own
+   SEMs from Table 4.1. It is now arithmetic, not the publisher's word for it —
+   all 300 banded cells below, exactly, to the printed 2dp.
+
+   It settles the SD question too, and independently of section 23. That section
+   derived "pair the coefficient with the NORMATIVE SD, not sd1" from the CVLT-3
+   manual's SEM column; this note states the same rule outright for a different
+   publisher, and the 300 cells only reproduce that way. The pairing 6de0d81
+   replaced — sd1 against a normatively-scaled coefficient — reproduces 29.
    ========================================================================== */
 heading('28. WAIS-IV internal consistency — Table 4.1');
 
@@ -3398,6 +3412,223 @@ check('spot values match Table 4.1 as printed', () => {
     const got = D.normDB[g][n].rInternalByAge[age];
     if (got !== rxx) bad.push(n + ' band ' + age + ': stored ' + got + ', Table 4.1 prints ' + rxx);
   });
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Table 4.3 as printed. Rows are [family, population SD, normDB name, the 13
+   normative bands in order, overall average SEM]; null is the dash the manual
+   prints above 65-69 for the three measures normed only that far. Read off the
+   supplied table rather than retyped. */
+const WAIS_T43_BANDS = [16, 18, 20, 25, 30, 35, 45, 55, 65, 70, 75, 80, 85];
+const WAIS_T43 = [
+  ['core', 3, 'Block Design', [1.04, 1.08, 1.2, 0.95, 0.9, 0.99, 0.95, 1.04, 1.08, 0.99, 1.27, 1.34, 1.12], 1.08],
+  ['core', 3, 'Similarities', [1.31, 1.16, 1.16, 1.12, 1.08, 1.04, 1.04, 1.08, 1.04, 0.95, 1.12, 0.9, 0.9], 1.07],
+  ['core', 3, 'Digit Span', [0.99, 0.85, 0.9, 0.73, 0.73, 0.73, 0.73, 0.85, 0.79, 0.73, 0.79, 0.85, 0.85], 0.81],
+  ['core', 3, 'Matrix Reasoning', [1.04, 1.08, 1.04, 0.9, 0.9, 0.95, 0.95, 0.95, 0.9, 0.9, 0.73, 1.12, 0.85], 0.95],
+  ['core', 3, 'Vocabulary', [0.79, 0.79, 0.73, 0.79, 0.79, 0.73, 0.73, 0.73, 0.67, 0.67, 0.73, 0.73, 0.6], 0.73],
+  ['core', 3, 'Arithmetic', [0.99, 1.04, 1.2, 0.99, 0.95, 0.99, 0.9, 1.04, 0.99, 1.2, 0.95, 0.99, 1.12], 1.03],
+  ['core', 3, 'Symbol Search', [1.31, 1.31, 1.31, 1.31, 1.56, 1.56, 1.56, 1.31, 1.31, 1.12, 1.12, 1.12, 1.12], 1.32],
+  ['core', 3, 'Visual Puzzles', [0.95, 0.99, 0.95, 0.9, 0.95, 1.04, 0.85, 0.99, 0.85, 0.99, 0.99, 1.27, 1.41], 1.02],
+  ['core', 3, 'Information', [0.99, 0.9, 0.9, 0.9, 0.9, 0.85, 0.73, 0.67, 0.73, 0.73, 0.73, 0.73, 0.6], 0.8],
+  ['core', 3, 'Coding', [1.16, 1.16, 1.16, 1.16, 1.2, 1.2, 1.2, 0.99, 0.99, 1.12, 1.12, 1.12, 1.12], 1.13],
+  ['supp', 3, 'Letter-Number Sequencing', [0.95, 0.95, 1.16, 1.04, 0.9, 1.12, 1.04, 1.08, 1.04, null, null, null, null], 1.03],
+  ['supp', 3, 'Figure Weights', [0.95, 0.85, 1.04, 0.9, 0.85, 0.99, 0.9, 0.99, 0.95, null, null, null, null], 0.94],
+  ['supp', 3, 'Comprehension', [1.27, 1.08, 1.08, 1.04, 1.16, 0.99, 1.16, 1.08, 1.08, 1.27, 1.08, 1.08, 0.95], 1.11],
+  ['supp', 3, 'Cancellation', [1.31, 1.31, 1.31, 1.31, 1.62, 1.62, 1.62, 1.34, 1.34, null, null, null, null], 1.43],
+  ['supp', 3, 'Picture Completion', [1.34, 1.2, 1.27, 1.27, 1.12, 1.2, 1.24, 1.12, 1.16, 0.99, 1.12, 1.24, 1.27], 1.2],
+  ['proc', 3, 'Block Design No Time Bonus', [1.08, 1.12, 1.31, 1.04, 0.99, 1.08, 1.08, 1.12, 1.16, 1.04, 1.27, 1.34, 1.12], 1.14],
+  ['proc', 3, 'Digit Span Forward', [1.44, 1.47, 1.34, 1.16, 1.44, 1.2, 1.24, 1.44, 1.37, 1.04, 1.31, 1.31, 1.41], 1.33],
+  ['proc', 3, 'Digit Span Backward', [1.37, 1.34, 1.34, 1.2, 1.2, 1.12, 1.12, 1.27, 1.41, 1.37, 1.34, 1.44, 1.27], 1.3],
+  ['proc', 3, 'Digit Span Sequencing', [1.56, 1.37, 1.27, 1.31, 1.34, 1.24, 1.27, 1.37, 1.31, 1.12, 1.12, 1.2, 0.85], 1.27],
+  ['idx', 15, 'Verbal Comprehension Index', [3.67, 3, 3, 3, 3, 3, 2.6, 2.6, 2.6, 2.6, 3, 2.6, 2.12], 2.85],
+  ['idx', 15, 'Perceptual Reasoning Index', [3.35, 3.67, 3.67, 3, 3, 3.35, 3, 3.35, 3.35, 3.35, 3.67, 4.24, 3.97], 3.48],
+  ['idx', 15, 'Working Memory Index', [3.97, 3.67, 4.24, 3.35, 3.35, 3.35, 3.35, 3.67, 3.67, 3.97, 3.35, 3.67, 3.97], 3.67],
+  ['idx', 15, 'Processing Speed Index', [5.2, 4.74, 4.74, 4.74, 5.41, 5.41, 5.41, 4.5, 4.5, 4.5, 4.24, 4.24, 4.24], 4.78],
+  ['idx', 15, 'Full Scale IQ', [2.6, 2.12, 2.12, 2.12, 2.12, 2.12, 2.12, 2.12, 2.12, 2.12, 2.12, 2.12, 2.12], 2.16]
+];
+
+/* The coefficient the app would use for a given measure at a given band: the
+   stored internal-consistency lookup, except on the speeded three, where the
+   manual's Table 4.1 value is the corrected stability coefficient rCorrected
+   already holds. Deliberately reads the same fields the renderer reads. */
+function waisCoefficientAt(fam, name, lo) {
+  const all = D.normDB[WAIS_ALL[fam]][name];
+  if (all.rInternalByAge && Number.isFinite(all.rInternalByAge[lo])) return all.rInternalByAge[lo];
+  const banded = D.normDB[WAIS_ALL[fam].replace('· All Ages', '· Ages ' + WAIS_RETEST_BAND[lo])];
+  return banded && banded[name] ? banded[name].rCorrected : null;
+}
+const round2 = (v) => Math.round(v * 100) / 100;
+
+check('Table 4.3 reproduces from the stored coefficients, all 300 cells', () => {
+  /* THE CLAIM THIS SECTION USED TO RECORD AS UNPROVEN. The manual's own SEM
+     table is now arithmetic rather than the publisher's word: every printed
+     cell equals populationSD * sqrt(1 - the coefficient this app stores),
+     to the printed 2dp, with nothing to spare and no tolerance allowed.
+
+     It covers the speeded three as well, which is a second and independent
+     confirmation of the 38/38 rCorrected finding above — this time through a
+     different table. */
+  const bad = [];
+  let n = 0;
+  WAIS_T43.forEach(([fam, sd, name, cells]) => {
+    cells.forEach((printed, i) => {
+      if (printed === null) return;
+      const lo = WAIS_T43_BANDS[i];
+      const rxx = waisCoefficientAt(fam, name, lo);
+      if (rxx == null) { bad.push(name + ' band ' + lo + ': no coefficient stored'); return; }
+      n++;
+      const der = round2(sd * Math.sqrt(1 - rxx));
+      if (der !== printed) bad.push(name + ' band ' + lo + ': rxx ' + rxx + ' gives ' + der + ', Table 4.3 prints ' + printed);
+    });
+  });
+  if (n !== 300) bad.push('expected 300 published cells, tested ' + n);
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('no other SD or coefficient could have produced Table 4.3', () => {
+  /* Falsification, four ways, because a table of SEMs around 1.0 is exactly
+     the kind of thing that half-fits several models.
+
+     The sd1 row is the one that matters beyond this section: it is the pairing
+     6de0d81 replaced, and Table 4.3's note independently states the rule
+     section 23 derived from a different publisher — "the population standard
+     deviations (i.e., 3 for the subtests and 15 for the composite scores) were
+     used". If that row ever climbs, the SD the renderer picks has drifted. */
+  const tally = { rawR: 0, corrected: 0, sd1: 0 };
+  WAIS_T43.forEach(([fam, sd, name, cells]) => {
+    cells.forEach((printed, i) => {
+      if (printed === null) return;
+      const lo = WAIS_T43_BANDS[i];
+      const rxx = waisCoefficientAt(fam, name, lo);
+      const g = D.normDB[WAIS_ALL[fam].replace('· All Ages', '· Ages ' + WAIS_RETEST_BAND[lo])];
+      const e = g && g[name];
+      if (!e) return;
+      if (Number.isFinite(e.r) && round2(sd * Math.sqrt(1 - e.r)) === printed) tally.rawR++;
+      if (Number.isFinite(e.rCorrected) && round2(sd * Math.sqrt(1 - e.rCorrected)) === printed) tally.corrected++;
+      if (Number.isFinite(e.sd1) && rxx != null && round2(e.sd1 * Math.sqrt(1 - rxx)) === printed) tally.sd1++;
+    });
+  });
+  const bad = [];
+  if (tally.rawR > 10) bad.push('the retest r reproduces ' + tally.rawR + ' of 300 — it should reproduce almost none');
+  // rCorrected legitimately accounts for the 38 speeded cells; well above that
+  // would mean the two fields have converged and the pin has stopped biting.
+  if (tally.corrected > 60) bad.push('rCorrected reproduces ' + tally.corrected + ' of 300, beyond the 38 speeded cells it owns');
+  if (tally.sd1 > 45) bad.push('sd1 reproduces ' + tally.sd1 + ' of 300 — the retest SD should not fit the manual\'s SEMs');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the average SEM column is an RMS across bands, not the average coefficient', () => {
+  /* Table 4.3's own footnote a: "The average SEMs were calculated by averaging
+     the squared SEMs for each age group and obtaining the square root of the
+     result." So the average column is a summary ACROSS ages, not the SEM of
+     the average coefficient — and the two are not the same number.
+
+     This is why the app does not and should not use it. The blank-age fallback
+     needs a reliability COEFFICIENT for a patient whose band is unknown, and
+     Table 4.1's Fisher-z average is exactly that and is published. Table 4.3's
+     average is a descriptive statistic about the table. Backing a coefficient
+     out of it would mean storing 1 - (2.16/15)^2 = .9793 for FSIQ, a number
+     the manual never prints — the Twenty Questions rule, section 27.
+
+     Recorded rather than acted on, and the cost is stated in the next check. */
+  const bad = [];
+  let rms = 0, fromAvg = 0, n = 0;
+  WAIS_T43.forEach(([fam, sd, name, cells, avg]) => {
+    n++;
+    const sems = [];
+    cells.forEach((printed, i) => {
+      if (printed === null) return;
+      const rxx = waisCoefficientAt(fam, name, WAIS_T43_BANDS[i]);
+      if (rxx != null) sems.push(sd * Math.sqrt(1 - rxx));
+    });
+    const derivedRms = Math.sqrt(sems.reduce((a, s) => a + s * s, 0) / sems.length);
+    if (Math.abs(derivedRms - avg) <= 0.007) rms++;
+    const all = D.normDB[WAIS_ALL[fam]][name];
+    const overall = Number.isFinite(all.rInternal) ? all.rInternal : all.rCorrected;
+    if (round2(sd * Math.sqrt(1 - overall)) === avg) fromAvg++;
+  });
+  /* The RMS reading fits all 24 within 0.007 — the residue is the manual
+     computing from unrounded coefficients, damped by sqrt(13) across bands.
+     The average-coefficient reading fits 5, i.e. no better than coincidence
+     on numbers this close together. */
+  if (rms !== n) bad.push('the RMS reading fits only ' + rms + ' of ' + n + ' averages');
+  if (fromAvg > 8) bad.push('the average coefficient now reproduces ' + fromAvg + ' of ' + n + ' — the two readings have converged, re-read footnote a');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the published overall average is the Fisher-z average of its own bands', () => {
+  /* THE BLANK-AGE FALLBACK, WHICH NOTHING PREVIOUSLY PINNED. rInternal is what
+     a patient with no age entered is scored on, and until Table 4.3 arrived
+     there was no way to hold it: the spot check above only reads
+     rInternalByAge, and "an average is present" only tests that it is a number.
+     Verified by mutation — moving Vocabulary's average .94 -> .95 passed all
+     238 checks.
+
+     Table 4.3 fixes the 13 band coefficients exactly, and Table 4.1's average
+     column is computed with Fisher's z, so the average is now derivable from
+     values this file already pins rather than taken on trust.
+
+     Note WHICH average, because it discriminates: Fisher's z reproduces all 24
+     stored values to the printed 2dp, the arithmetic mean only 18. That 18 is
+     also why the sibling check below refuses to assert the average DIFFERS
+     from the mean of its bands — over coefficients this close together the two
+     agree more often than not. */
+  const atanh = (r) => 0.5 * Math.log((1 + r) / (1 - r));
+  const tanh = (z) => (Math.exp(2 * z) - 1) / (Math.exp(2 * z) + 1);
+  const bad = [];
+  let n = 0, arith = 0;
+  WAIS_T43.forEach(([fam, , name]) => {
+    const all = D.normDB[WAIS_ALL[fam]][name];
+    const stored = Number.isFinite(all.rInternal) ? all.rInternal : all.rCorrected;
+    const bands = [];
+    WAIS_T43_BANDS.forEach((lo) => {
+      const rxx = waisCoefficientAt(fam, name, lo);
+      // The speeded three repeat one retest value per span, so de-duplicating
+      // is wrong: Table 4.1 prints a value in every band and averages all 13.
+      if (rxx != null && !(all.rInternalAgeMax && lo > all.rInternalAgeMax)) bands.push(rxx);
+    });
+    if (!bands.length) { bad.push(name + ': no band coefficients to average'); return; }
+    n++;
+    const fisher = round2(tanh(bands.reduce((a, r) => a + atanh(r), 0) / bands.length));
+    if (fisher !== stored) bad.push(name + ': Fisher-z average of its bands is ' + fisher + ', stored ' + stored);
+    if (round2(bands.reduce((a, r) => a + r, 0) / bands.length) === stored) arith++;
+  });
+  if (n !== 24) bad.push('expected 24 measures, averaged ' + n);
+  if (arith > 20) bad.push('the arithmetic mean now fits ' + arith + ' of ' + n + ' — the two readings have converged, and this check no longer shows the manual uses Fisher\'s z');
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('the blank-age fallback departs from Table 4.3 in exactly two printed margins', () => {
+  /* What the choice above costs, measured the way section 27 insists this kind
+     of discrepancy is judged: on the margin actually printed, not on the gap
+     between the two statistics.
+
+     Over 24 measures x both offered CI levels, the app's blank-age fallback
+     and the manual's average SEM round to the same half-width in 46 of 48
+     cases. The two that differ are knife-edge:
+       FSIQ at 90%   1.645 * 2.1213 = 3.49 -> +/-3;  1.645 * 2.16 = 3.55 -> +/-4
+       DSB  at 95%   1.960 * 1.2728 = 2.49 -> +/-2;  1.960 * 1.30 = 2.55 -> +/-3
+     Both straddle .5. Entering an age — the primary path, and the one Table 4.3
+     verifies exactly — sidesteps the question entirely.
+
+     Pinned as a fact so it cannot drift unnoticed in either direction: if a
+     third measure joins them the fallback needs re-arguing, and if these two
+     ever agree the note above is stale. */
+  const bad = [];
+  const seen = [];
+  WAIS_T43.forEach(([fam, sd, name, , avg]) => {
+    const all = D.normDB[WAIS_ALL[fam]][name];
+    const overall = Number.isFinite(all.rInternal) ? all.rInternal : all.rCorrected;
+    const appSem = sd * Math.sqrt(1 - overall);
+    [['90', 1.645], ['95', 1.96]].forEach(([label, z]) => {
+      if (Math.round(z * appSem) !== Math.round(z * avg)) seen.push(name + ' @' + label);
+    });
+  });
+  const want = ['Digit Span Backward @95', 'Full Scale IQ @90'];
+  const got = seen.slice().sort();
+  if (got.join(' | ') !== want.join(' | ')) {
+    bad.push('expected exactly [' + want.join(', ') + '], got [' + got.join(', ') + ']');
+  }
   return bad.length === 0 || bad.join('; ');
 });
 
