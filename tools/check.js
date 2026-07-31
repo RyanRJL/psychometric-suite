@@ -3446,19 +3446,69 @@ check('the missing-age popover is edge-triggered, not state-triggered', () => {
   if (!/batAgePopLastWanted/.test(fn)) bad.push('nothing records the previous state, so this cannot be edge-triggered');
   if (!/!batAgePopLastWanted/.test(fn)) bad.push('the open is not gated on the condition having just become true');
   if (!/batAgePopLastWanted = wanted/.test(fn)) bad.push('the previous state is never updated, so it fires once and never again');
-  /* Once per patient, and re-armed ONLY by "New patient" — not by clearing the
-     age, or someone who skipped and then blanked the field is asked twice
-     about the same person. */
+  /* Once per patient, and re-armed only by an explicit RESET — not by clearing
+     the age, or someone who skipped and then blanked the field is asked twice
+     about the same person.
+
+     TWO controls reset, and conflating them is how this shipped broken: the
+     table's own "Clear all" (#bat-clear -> clearBattery) empties the table, and
+     the topbar "New patient" (#topbar-clear-all) empties every table and the
+     age. Only the topbar one re-armed, so clearing the table and autofilling
+     again got silence — the exact complaint. Both are asserted by name. */
   if (!/batAgePopArmed/.test(fn)) bad.push('the popover is not limited to once per patient');
   if (!/batAgePopArmed = false/.test(fn)) bad.push('it never disarms, so it reopens for the same patient');
   const clearIdx = APP_SRC.indexOf("getElementById('topbar-clear-all')");
   const handler = clearIdx < 0 ? '' : APP_SRC.slice(clearIdx, clearIdx + 4000);
   if (!/batAgePopArmed = true/.test(handler)) bad.push('"New patient" does not re-arm the popover');
+  if (!/batAgePopArmed = true/.test(extractFn(APP_SRC, 'clearBattery'))) {
+    bad.push('the table\'s own "Clear all" does not re-arm the popover');
+  }
+  /* Removing ONE row is not a reset — a table being edited down must not
+     re-ask mid-edit. */
+  if (/batAgePopArmed = true/.test(extractFn(APP_SRC, 'batteryRemove'))) {
+    bad.push('removing a single row re-arms the popover, so editing a table re-asks');
+  }
   /* The declaration is the initial value, not a re-arm — strip it, then there
-     must be exactly ONE runtime assignment and it must be the one above. */
+     must be exactly TWO runtime assignments and they must be the two above. */
   const rearms = (APP_SRC.replace(/let batAgePopArmed = true;/, '')
                          .match(/batAgePopArmed = true/g) || []).length;
-  if (rearms !== 1) bad.push('batAgePopArmed is re-armed at ' + rearms + ' runtime sites; only "New patient" may do it');
+  if (rearms !== 2) bad.push('batAgePopArmed is re-armed at ' + rearms + ' runtime sites; only the two reset controls may do it');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the click that opens the popover does not also dismiss it', () => {
+  /* IT SHIPPED BROKEN THIS WAY, and nothing here could see it. The popover
+     opens from inside renderBattery(), which usually runs DURING a click —
+     "Add selected tests", the CI toggle, a row edit. That same click keeps
+     bubbling to the document-level outside-click handler, which finds a
+     popover that is now open with a target outside it, and closes it. Net
+     result on the real UI: OPEN immediately followed by CLOSE, nothing on
+     screen, and no error.
+
+     Every check and every browser probe missed it because they called
+     renderBattery() directly, so no click was ever in flight. The lesson is in
+     the guard, not just the fix: the dismissal must ignore the opening click.
+
+     An earlier version special-cased the CI toggle by selector, which fixed one
+     route and left autofill — the commonest one — broken. The guard has to be
+     about WHEN, not about which element. */
+  const open = extractFn(APP_SRC, 'openBatteryAgePop');
+  const bad = [];
+  if (!/batAgePopJustOpened = true/.test(open)) bad.push('opening does not mark itself, so the same click can dismiss it');
+  if (!/setTimeout\(\(\) => \{ batAgePopJustOpened = false; \}, 0\)/.test(open)) {
+    bad.push('the just-opened flag is never cleared, so outside-click dismissal dies entirely');
+  }
+  /* The document click handler must consult it. Grab the handler that mentions
+     the skip button, which is the popover's own click delegate. */
+  const i = APP_SRC.indexOf("bat-age-pop-skip'");
+  const handler = i < 0 ? '' : APP_SRC.slice(i, i + 1200);
+  if (!/if \(batAgePopJustOpened\) return;/.test(handler)) {
+    bad.push('the outside-click handler does not skip the opening click');
+  }
+  /* And it must not have regressed to naming a specific control. */
+  if (/Score confidence interval"\]'\)\) return;/.test(handler)) {
+    bad.push('the guard is back to exempting one selector, which leaves every other open route broken');
+  }
   return bad.length === 0 || bad.join('; ');
 });
 

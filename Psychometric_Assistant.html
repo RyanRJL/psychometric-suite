@@ -20758,10 +20758,30 @@ function positionBatteryAgePop(){
   if (arrow) arrow.style.left = (Math.max(14, Math.min(centre - left, w - 14)) / z) + 'px';
 }
 
+/* THE OPENING CLICK MUST NOT ALSO DISMISS IT.
+
+   The popover opens from inside renderBattery(), which usually runs during a
+   click — "Add selected tests", the CI toggle, a row edit. That same click then
+   continues bubbling to the document-level outside-click handler below, which
+   sees a popover that is now open, sees the target is not inside it, and closes
+   it. Net effect: OPEN immediately followed by CLOSE, and nothing on screen.
+
+   That is exactly how this shipped. It went unnoticed because the checks and my
+   browser probes called renderBattery() directly, so no click was ever in
+   flight and the dismissal never ran — the bug only exists on the real UI path.
+
+   The flag is cleared on a timeout so it survives the whole synchronous
+   dispatch of the opening click and no longer. It replaces an earlier
+   special-case exemption for the CI toggle, which fixed one route and left
+   every other one broken. */
+let batAgePopJustOpened = false;
+
 function openBatteryAgePop(n){
   const pop = document.getElementById('bat-age-pop');
   const body = document.getElementById('bat-age-pop-body');
   if (!pop || !body) return;
+  batAgePopJustOpened = true;
+  setTimeout(() => { batAgePopJustOpened = false; }, 0);
   /* Every clause agrees with the count — subject, verb and pronoun. Written
      out per branch rather than assembled from fragments, because "1 measure
      publish their reliability" is what fragment-assembly produced on the first
@@ -20833,12 +20853,13 @@ function refreshBatteryAgePrompt(){
 document.addEventListener('click', e => {
   if (e.target.closest('#bat-age-pop-add')){ commitBatteryAgePop(); return; }
   if (e.target.closest('#bat-age-pop-skip')){ closeBatteryAgePop(); return; }
-  /* Outside click dismisses — but not a click on the CI toggle that opened it,
-     which would close it in the same gesture that asked for it. */
+  /* Outside click dismisses — but never the click that opened it. See the note
+     on batAgePopJustOpened: the open happens inside renderBattery(), mid-click,
+     so without this the same gesture that asks the question also answers it. */
   const pop = document.getElementById('bat-age-pop');
   if (!pop || !pop.classList.contains('is-open')) return;
+  if (batAgePopJustOpened) return;
   if (e.target.closest('#bat-age-pop')) return;
-  if (e.target.closest('.ds-inline-bar-toggle[aria-label="Score confidence interval"]')) return;
   closeBatteryAgePop();
 });
 document.addEventListener('keydown', e => {
@@ -21630,6 +21651,17 @@ function loadFamilyIntoBattery(family){
   // for "things added to the report". (Old toast was a duplicate.)
 }
 function clearBattery(){
+  /* Re-arms the missing-age popover, exactly as "New patient" does. Emptying
+     this table IS a fresh start from the clinician's side, and the popover
+     shipped asking only once because only the topbar button re-armed it — so
+     clearing the table here and autofilling again got silence.
+
+     There are two reset controls and they are easy to conflate: this one
+     ("Clear all", #bat-clear) empties the table, and the topbar one
+     ("New patient", #topbar-clear-all) empties every table AND the age. Both
+     re-arm; nothing else may. Removing a single row must not, or a table being
+     edited down would re-ask mid-edit. */
+  batAgePopArmed = true;
   batteryRows.length = 0;
   document.getElementById('bat-family-input').value = '';
   renderBattery();

@@ -397,9 +397,29 @@ have: switching CI on with D-KEFS already loaded fires, **and** autofilling D-KE
 is already on fires. A click handler catches only the first, and would fire on an RBANS
 table where the age changes nothing.
 
-**Once per patient**, re-armed only by "New patient" — not by clearing the age, or someone
-who skipped and then blanked the field is asked twice about the same person.
-`check.js` §26 asserts there is exactly **one** runtime `batAgePopArmed = true`.
+**Once per patient**, re-armed by an explicit reset — never by clearing the age alone, or
+someone who skipped and then blanked the field is asked twice about the same person.
+**There are two reset controls and conflating them is how this shipped broken**: the
+table's own "Clear all" (`#bat-clear` → `clearBattery`) empties the table, and the topbar
+"New patient" (`#topbar-clear-all`) empties every table *and* the age. Only the topbar one
+re-armed at first, so clearing the table and autofilling again got silence. Both re-arm
+now; removing a single row must not, or a table being edited down re-asks mid-edit.
+`check.js` §26 pins exactly **two** runtime `batAgePopArmed = true` sites, by name.
+
+**The opening click must not also dismiss it.** The popover opens from inside
+`renderBattery()`, which usually runs *during* a click — "Add selected tests", the CI
+toggle, a row edit. That same click keeps bubbling to the document-level outside-click
+handler, which finds a popover that is now open with a target outside it, and closes it:
+OPEN then CLOSE, nothing on screen, no error. `batAgePopJustOpened` is set on open and
+cleared on a `setTimeout(…, 0)`, so it survives exactly the synchronous dispatch of the
+opening click. An earlier version special-cased the CI toggle *by selector*, which fixed
+one route and left autofill — the commonest — broken; the guard has to be about **when**,
+not about which element.
+
+**That bug was invisible to every check and every browser probe**, because they all called
+`renderBattery()` directly and no click was ever in flight. It only exists on the real UI
+path. When verifying anything that opens from a render, drive the actual controls —
+`.combo-add`, `#bat-clear`, `[data-bat-ci]` — not the functions behind them.
 
 The pip and the popover are opposite halves of one question and both route through
 **`batteryAgeBandRowCount()`**, so a table lighting the pip while asking for an age is
@@ -1150,7 +1170,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 289 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 290 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
