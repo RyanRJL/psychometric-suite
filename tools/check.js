@@ -72,6 +72,7 @@ function extractFn(source, name) {
 }
 
 const APP_SRC = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
+const HTML_SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
 /* Pull a top-level `const NAME = ...;` declaration straight out of the shipped
    file, so a sandbox gets the REAL value rather than a copy that can drift.
@@ -1271,6 +1272,58 @@ check('the OPIE tooltips state that sex and an age range are required', () => {
   return (/sex/i.test(t) && /16-90|16–90/.test(t)) || 'opieDefault no longer states the input requirements';
 });
 
+check('the CI method lives on the Methods page, and the note stays short', () => {
+  /* THE DIVISION OF LABOUR BETWEEN THE TWO, which is a judgement that will not
+     survive on its own. The APA note is pasted into a report and read by people
+     who do not have this app; the Methods page is read by whoever wants the
+     reasoning. Detail migrates back into the note one well-meant sentence at a
+     time unless something objects.
+
+     The test for what MUST stay in the note is what an exported table could be
+     misread as without it. The uncorrected pairing fails that test — it is what
+     those manuals themselves do, so the interval matches the published one and
+     a reader checking it finds agreement. The DERIVED coefficient passes it: a
+     reader cross-checking the manual will not find that value and would
+     reasonably conclude the table is wrong, so the note must declare it however
+     terse the rest becomes. That one sentence is the load-bearing assertion
+     here; the length bound only stops the rest growing back around it. */
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(APP_SRC.match(/const APA_NOTES = \{[\s\S]*?\n\};/)[0] + ';globalThis.__N = APA_NOTES;', c);
+  const note = (ctx) => c.__N.bat({ classification: 'wechsler', ciLevel: '95', ...ctx }).filter(Boolean).join(' ');
+  const bad = [];
+
+  /* A corrected table must say the coefficients are not the published ones.
+     Both halves: that they were corrected, and what that costs the reader. */
+  const derived = note({ hasDerivedR: true });
+  if (!/corrected to the normative sample/i.test(derived)) {
+    bad.push('a corrected table no longer says its coefficients were corrected');
+  }
+  if (!/not the values those manuals print|differ from the published/i.test(derived)) {
+    bad.push('a corrected table no longer warns that its intervals differ from the published ones');
+  }
+  if (/corrected/i.test(note({}))) {
+    bad.push('an uncorrected table claims a correction it did not make');
+  }
+
+  /* And the note must stay a note. 900 characters is roughly twice the current
+     default-state length — loose enough not to fire on ordinary rewording,
+     tight enough that a migrated paragraph trips it. */
+  const plain = note({ ciAge: 45 }).replace(/<[^>]+>/g, '');
+  if (plain.length > 900) bad.push('the CI note is ' + plain.length + ' characters; the method belongs on the Methods page');
+
+  /* The Methods page has to have actually received what left the note, or the
+     reasoning is simply gone. These are the two claims that moved. */
+  const about = HTML_SRC.slice(HTML_SRC.indexOf('Methods &amp; conventions'));
+  [[/retest, uncorrected/, 'the retest-uncorrected label is not explained on the Methods page'],
+   [/Table 2\.8/, 'the Methods page no longer cites the D-KEFS evidence for the uncorrected pairing'],
+   [/reliability<\/strong> control|<strong>reliability<\/strong>/i, 'the Methods page does not describe the reliability control'],
+   [/median error of \.003/, 'the Methods page no longer states how the correction was validated']]
+    .forEach(([re, msg]) => { if (!re.test(about)) bad.push(msg); });
+
+  return bad.length === 0 || bad.join('; ');
+});
+
 /* ==========================================================================
    16. Wiring — does the app actually start, and is the corrected-r toggle
    confined to the two methods where it is defensible?
@@ -1285,7 +1338,6 @@ check('the OPIE tooltips state that sex and an age range are required', () => {
    ========================================================================== */
 heading('16. Wiring');
 
-const HTML_SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 /* styles.css, for the few checks that assert a layout invariant the markup
    and the renderer both depend on. design-system.css is deliberately NOT read:
    nothing asserted here has a rule in it. */

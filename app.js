@@ -2591,49 +2591,50 @@ const APA_NOTES = {
     // publisher reports internal consistency at all. Full rationale is in
     // Methods & References.
     ctx.ciLevel && ctx.ciLevel !== 'off'
-      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM, where SEM = SD × √(1 − r) on the normative standard deviation of the reported metric. The reliability r is the retest or alternate-form coefficient published for each measure, except where the test author derives its own published intervals from an internal-consistency coefficient, in which case that coefficient is used. Intervals resting on a retest coefficient run wider than a manual's internal-consistency interval.`
+      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM, where SEM = SD × √(1 − r) on the normative standard deviation of the reported metric. The reliability r is the coefficient each test's manual uses for its own published intervals — internal consistency where the publisher reports one, otherwise the test–retest coefficient.`
       : '',
-    /* WHERE THE PAIRING IS THE PUBLISHER'S OWN COMPROMISE, SAY SO. Some
-       measures have no coefficient computed on the normative sample, so the
-       interval rests on the retest study's own correlation used with the
-       normative SD. That is what their manuals do (D-KEFS Technical Manual
-       p. 19; D-KEFS Advanced Table 3.4), and correcting it would print a
-       figure those manuals do not contain — see resolveCiReliability. But a
-       reader comparing two tables should not have to work out which measures
-       are on that footing, so it is stated, and stated ONLY when a measure in
-       THIS table is actually on it. */
-    ctx.hasUncorrectedR
-      ? 'For measures whose manual publishes no coefficient computed on the normative sample, the interval uses that manual\'s own pairing: the test–retest correlation from its retest study, with the normative standard deviation of the metric.'
-      : '',
+    /* NO SENTENCE FOR THE UNCORRECTED PAIRING. It used to have one, and it has
+       been moved wholesale to Methods & References.
+
+       The test is what an exported table can be MISREAD as without it. Here,
+       nothing: the retest coefficient beside a normative SD is what those
+       manuals themselves do, so the interval matches the published one and a
+       reader checking it finds agreement. It is a caveat about precision, which
+       belongs with the other caveats, not a departure needing declaration.
+
+       The derived coefficient below fails that same test, which is why it keeps
+       its sentence. */
     /* THE ONLY COEFFICIENT IN THIS APP THAT IS NOT A PUBLISHED NUMBER, so a
-       table built on it has to say so and say how it was obtained — a reader
-       cross-checking the manual will not find this value there. Stated only
-       when a measure in THIS table actually used it: the control is a page
-       setting, so it can be on while every measure present takes a published
-       coefficient and nothing was in fact corrected. Same rule the age
-       sentence above follows. */
+       table built on it has to say so — a reader cross-checking the manual will
+       not find this value there, and would reasonably conclude the table is
+       wrong. Kept in the note for that reason alone, when everything else about
+       the CI method moved to Methods & References: this is the one thing the
+       exported artefact cannot be left to imply. The derivation itself is on
+       the Methods page; what survives here is the fact and its consequence.
+
+       Stated only when a measure in THIS table actually used it — the control
+       is a page setting, so it can be on while every measure present takes a
+       published coefficient and nothing was in fact corrected. Same rule the
+       age sentence below follows. */
     ctx.hasDerivedR
-      ? 'Where a manual publishes no coefficient computed on the normative sample, its test–retest correlation has been corrected to the normative sample\'s variability for this table, as rₓₓ = 1 − (s²ᵣₑₜₑₛₜ ÷ s²ₙₒᵣₘ)(1 − r), so that it describes the same population as the standard deviation it is paired with. These corrected coefficients are not printed in the manuals concerned, which report the uncorrected value; intervals for those measures therefore differ from the published ones.'
+      ? 'Coefficients for measures whose manual publishes no normative-sample reliability have been corrected to the normative sample\'s variability for this table. These are not the values those manuals print, so the intervals concerned differ from the published ones.'
       : '',
     /* Which age band the coefficients were drawn from. Without this the
        interval cannot be reproduced from the manual, because for these
-       measures the published reliability changes with age. */
-    /* The fallback is deliberately NOT described as an all-ages internal-
-       consistency figure. D-KEFS Advanced publishes an Average column, but the
-       original D-KEFS publishes none at all, so there the blank-age fallback is
-       the total-sample retest coefficient — which is that manual's own second
-       regime, not a substitute for a missing number. Naming a coefficient the
-       manual does not print would send a reader looking for it. */
-    /* THE TAIL OF THIS SENTENCE DEPENDS ON THE BASIS CONTROL, and getting that
-       wrong is a false statement rather than a vague one. D-KEFS (original)
-       publishes rInternalByAge with no all-ages average, so an out-of-range or
-       blank age lands on the retest branch — and with the correction on, that
-       branch no longer yields the manual's total-sample figure. D-KEFS Tower
-       is the concrete case: stored r .44, corrected .359. Saying "the
-       total-sample retest coefficient" there would send a reader to a number
-       the table did not use. */
+       measures the published reliability changes with age.
+
+       THE TAIL NO LONGER NAMES THE FALLBACK COEFFICIENT, and that is a fix
+       rather than a trim. It used to end "otherwise the total-sample retest
+       coefficient", which the reliability-basis control can falsify: D-KEFS
+       (original) publishes rInternalByAge with no all-ages average, so an
+       out-of-range age lands on the retest branch, and with the correction on
+       that branch no longer yields the manual's figure — Tower's stored r is
+       .44 against a corrected .359. Naming the fallback needed a conditional
+       clause to stay true; saying only that a fallback happened needs none, and
+       says everything a reader must know to reproduce the row. Which
+       coefficient each fallback resolves to is on the Methods page. */
     ctx.ciAge != null
-      ? `For measures whose published reliability is tabulated by age, coefficients are those for age ${ctx.ciAge}; where no age is supplied, the publisher's all-ages figure is used instead — the published average where the manual prints one, otherwise the total-sample retest coefficient${ctx.hasDerivedR ? ', corrected as described above' : ''}.`
+      ? `For measures whose published reliability is tabulated by age, coefficients are those for age ${ctx.ciAge}, or the publisher's all-ages figure where that age falls outside a measure's normed range.`
       : '',
     // Must follow the EFFECTIVE flagging mode (batteryPremorbidMode). This
     // previously described the SD thresholds unconditionally, so with SEE
