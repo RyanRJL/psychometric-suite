@@ -384,9 +384,12 @@
         </div>
       </div>
       <!-- Which coefficient the interval rests on. Revealed with the CI
-           toggle, like the age slot, because it drives nothing else on this
-           page. "Published" is the default and reproduces each manual's own
-           printed interval; see #bat-ci-basis in index.html. -->
+           toggle, because it drives nothing else on this page. "Published" is
+           the default and reproduces each manual's own printed interval; see
+           #bat-ci-basis in index.html.
+
+           This one belongs in the bar in a way the patient age never did: it
+           is a view setting for THIS table, not a property of the person. -->
       <div class="ds-inline-bar-section ds-inline-bar-cibasis" hidden>
         <span class="ds-inline-bar-label">Reliability</span>
         <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Reliability coefficient basis">
@@ -396,14 +399,10 @@
             title="Where a manual publishes no coefficient computed on the normative sample, correct its retest coefficient to the normative sample's variability. Departs from the manual's printed interval.">Corrected</button>
         </div>
       </div>
-      <!-- Slot for #bat-age, moved in below. Empty in the markup on purpose:
-           the input is declared in index.html so it exists before app.js wires
-           its listener, and is adopted here rather than rebuilt. Revealed with
-           the CI toggle, because the interval is the only thing it drives on
-           this page - relax that if a second consumer appears. -->
-      <div class="ds-inline-bar-section ds-inline-bar-age" hidden>
-        <span class="ds-inline-bar-label">Age</span>
-      </div>
+      <!-- No age slot. The patient age is #patient-age in the top bar: it is a
+           property of the person, not a view setting for this table, and it
+           belongs beside neither Show Raw nor Score CI. This bar holds view
+           settings only. -->
       ${classSelect ? `
         <div class="ds-inline-bar-section ds-inline-bar-right">
           <span class="ds-inline-bar-label">Classification</span>
@@ -526,23 +525,6 @@
       refresh();
     }
 
-    /* Adopt the patient-age input into the bar.
-
-       It is declared in index.html, inside .bat-premorbid-block, which this
-       function hides wholesale via ds-legacy-hidden — so left where it is, it
-       renders at 0x0 and the user can never reach it. That is exactly what
-       happened when the field was first added.
-
-       MOVED, not rebuilt. app.js attaches its 'input' listener at init, and
-       this file is deferred so it runs afterwards; an element created here
-       would never get that listener. Moving a node carries its listeners and
-       its value with it. */
-    const ageInput = document.getElementById('bat-age');
-    const ageSlot  = bar.querySelector('.ds-inline-bar-age');
-    if (ageInput && ageSlot && ageInput.parentElement !== ageSlot){
-      ageSlot.appendChild(ageInput);
-    }
-
     /* Wire Score CI toggle */
     const ciInput = document.getElementById('bat-ci-level');
     const basisSlot = bar.querySelector('.ds-inline-bar-cibasis');
@@ -559,9 +541,10 @@
           b.classList.toggle('is-active', active);
           b.setAttribute('aria-checked', active ? 'true' : 'false');
         });
-        /* Ask for the age, and offer the basis, at the moment they start
-           mattering — neither drives anything with the interval switched off. */
-        if (ageSlot) ageSlot.hidden = (v === 'off');
+        /* Offer the basis at the moment it starts mattering — it drives
+           nothing with the interval switched off. The patient age used to be
+           revealed here too; it now lives in the top bar and is always on
+           screen, because a field a clinician never saw was the defect. */
         if (basisSlot) basisSlot.hidden = (v === 'off');
       };
       ciBtns.forEach(b => {

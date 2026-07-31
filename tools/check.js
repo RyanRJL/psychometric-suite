@@ -3207,7 +3207,8 @@ check('the APA note states the age whenever one changed a coefficient', () => {
 /* ==========================================================================
    26. Shared patient age
 
-   One patient, one age, two inputs (#bat-age, #pre-age).
+   One patient, one age. The master is #patient-age in the top bar; #pre-age on
+   Premorbid mirrors it.
 
    TWO premorbid models read age: OPIE-4 (calcPremorbid) and the ToPF-predicted
    WMS-IV indices (calcPredict). Both are adult-only. Before the age was shared,
@@ -3260,10 +3261,13 @@ check('every use of age in calcPremorbid is range-gated', () => {
     || 'the OPIE-4 prediction is no longer guarded by opieAgeOk';
 });
 
-check('the two age inputs are declared as one shared value', () => {
+check('the two age inputs are declared as one shared value, master first', () => {
   const bad = [];
-  if (!/const PATIENT_AGE_INPUTS = \[[^\]]*'bat-age'[^\]]*'pre-age'[^\]]*\]/.test(APP_SRC)) {
-    bad.push('PATIENT_AGE_INPUTS no longer names both inputs');
+  /* Order is load-bearing, not cosmetic: patientAge() returns the FIRST input
+     holding a finite value, so if the two ever drift the top-bar box — the one
+     visible from every page — must be the one that wins. */
+  if (!/const PATIENT_AGE_INPUTS = \[\s*'patient-age'\s*,\s*'pre-age'\s*\]/.test(APP_SRC)) {
+    bad.push('PATIENT_AGE_INPUTS is not exactly [patient-age, pre-age] in that order');
   }
   const sync = extractFn(APP_SRC, 'syncPatientAge');
   /* Dispatching on the sibling would make the two inputs echo each other
@@ -3285,43 +3289,126 @@ check('#pre-age accepts the full shared range, not just adults', () => {
     || 'min="' + min[1] + '" still excludes the ages Score Tables is normed for';
 });
 
-check('the age input is reachable, not stranded in the hidden legacy panel', () => {
-  /* IT SHIPPED UNREACHABLE ONCE. #bat-age is declared inside
-     .bat-premorbid-block, which buildBatteryInlineBar hides wholesale with
-     ds-legacy-hidden — so the field rendered at 0x0 and no user could ever
-     type in it. Every check passed, because they all called the reliability
-     code directly and never asked whether the input could be reached.
+check('the master age field is in the top bar, on every page, ungated', () => {
+  /* IT SHIPPED UNREACHABLE ONCE, AND AWKWARD TWICE MORE. As #bat-age it was
+     declared inside .bat-premorbid-block, which buildBatteryInlineBar hides
+     wholesale with ds-legacy-hidden — so the field rendered at 0x0 and no user
+     could ever type in it. Every check passed, because they all called the
+     reliability code directly and never asked whether the input could be
+     reached. Moved into the Score Tables control bar it then took width from
+     the test-family search, and being revealed only with the CI toggle it
+     stayed invisible to anyone who never turned CI on.
 
-     It stays in the markup (app.js wires its listener at init and
-     design-system.js is deferred, so the element must pre-exist) and is MOVED
-     into the control bar. These assertions pin that arrangement. */
+     It now lives in the top bar, which is plain markup rendered on every page.
+     These assertions pin that arrangement. */
   const DS_SRC = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
-  const bad = [];
-  const fn = DS_SRC.slice(DS_SRC.indexOf('function buildBatteryInlineBar'));
-  if (!/ds-inline-bar-age/.test(fn)) bad.push('the control bar has no slot for the age field');
-  if (!/appendChild\(ageInput\)/.test(fn)) bad.push('the age input is never moved into the bar');
-  /* Rebuilding rather than moving would drop the listener app.js already
-     attached, leaving a box that looks right and changes nothing. */
-  if (/createElement\(['"]input['"]\)[^;]*bat-age/.test(fn)) bad.push('the age input is rebuilt rather than moved');
-  if (!/ageSlot\.hidden\s*=/.test(fn)) bad.push('the age slot is never revealed with the CI toggle');
-  /* And setting .hidden must actually hide it. The slot is also a
-     .ds-inline-bar-section, whose display:flex outranks the browser default
-     for [hidden] — so without an explicit rule the box stayed on screen with
-     the CI toggle off. It did exactly that before this rule was added. */
   const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
-  if (!/\.ds-inline-bar-age\[hidden\]\s*\{[^}]*display:\s*none\s*!important/.test(DS_CSS)) {
-    bad.push('nothing overrides .ds-inline-bar-section display:flex, so [hidden] will not hide the age box');
+  const bad = [];
+
+  /* Declared in the top bar itself — not in a page section, which would make it
+     disappear with that section on navigation. */
+  const header = HTML_SRC.slice(HTML_SRC.indexOf('<header class="topbar"'),
+                                HTML_SRC.indexOf('</header>'));
+  if (!/id="patient-age"/.test(header)) bad.push('#patient-age is not declared inside the topbar header');
+  if (!/id="patient-age-field"/.test(header)) bad.push('the .ds-patient-field wrapper is missing from the topbar');
+  /* A <label for> rather than a bare span: the previous field needed an
+     aria-label precisely because its visible text was not associated. */
+  if (!/<label class="ds-patient-field-label" for="patient-age">/.test(header)) {
+    bad.push('the visible label is not associated with the input');
   }
+  /* Never gated. The whole defect being fixed is a field only some users saw. */
+  if (/<div class="ds-patient-field"[^>]*\shidden/.test(header)) bad.push('the field ships hidden');
+
+  /* app.js must bind it, or it is a box that changes nothing. */
+  if (!/getElementById\('patient-age'\)\?\.addEventListener\('input'/.test(APP_SRC)) {
+    bad.push('nothing binds an input listener to #patient-age');
+  }
+
+  /* The old arrangement must be fully gone, not half-removed: a surviving
+     adopt-into-the-bar would move an element that no longer exists. */
+  if (/bat-age/.test(DS_SRC)) bad.push('design-system.js still references bat-age');
+  if (/ds-inline-bar-age/.test(DS_SRC)) bad.push('design-system.js still builds an age slot in the control bar');
+  if (/id="bat-age"/.test(HTML_SRC)) bad.push('#bat-age is still declared in index.html');
+  if (/getElementById\('bat-age'\)/.test(APP_SRC)) bad.push('app.js still binds #bat-age');
+
+  /* The pip must be class-driven. The element it replaces used [hidden] and
+     stayed on screen, because its own display:flex outranked the browser
+     default — the cascade defeat CLAUDE.md records. Owning the default in a
+     standalone class cannot lose that fight, so assert the default exists. */
+  const cssNoComments = DS_CSS.replace(/\/\*[\s\S]*?\*\//g, '');
+  if (!/\.ds-patient-field-live\{[^}]*display:\s*none/.test(cssNoComments.replace(/\s*\{/g, '{'))) {
+    bad.push('.ds-patient-field-live is not display:none by default, so the pip will always show');
+  }
+  if (!/\.ds-patient-field\.is-live \.ds-patient-field-live\{[^}]*display:\s*inline-flex/.test(cssNoComments.replace(/\s*\{/g, '{'))) {
+    bad.push('.is-live never reveals the pip');
+  }
+  /* And it must be reached only through the class, never the attribute. */
+  if (/ds-patient-field-live[^{]*\[hidden\]/.test(cssNoComments)) {
+    bad.push('the pip is gated on [hidden] — the exact cascade trap this replaced');
+  }
+
   /* The family dropdown is pinned to the search box's width (left:0/right:0),
-     and the search sits in the flexible section, so ANY section added to this
-     bar narrows the dropdown. Adding the age box clipped its header row and
-     wrapped the family names. The floor is what stops that recurring. */
-  if (!/\.ds-inline-bar-search \.combo-list\{[^}]*min-width:/.test(DS_CSS.replace(/\/\*[\s\S]*?\*\//g, ''))) {
+     and the search sits in the flexible section, so ANY section added to that
+     bar narrows the dropdown. The age box did it once. The floor stays even
+     though the age box has gone: it is the general fix, not an age patch. */
+  if (!/\.ds-inline-bar-search \.combo-list\{[^}]*min-width:/.test(cssNoComments)) {
     bad.push('the family dropdown has no min-width, so a crowded bar will clip it again');
   }
-  /* And it must still be declared in the markup, or the move has nothing to
-     move and app.js has nothing to bind. */
-  if (!/id="bat-age"/.test(HTML_SRC)) bad.push('#bat-age is no longer declared in index.html');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the "in use" pip is driven by what actually reads the age', () => {
+  /* A permanently visible "Patient age 72" on a page where nothing consults it
+     would claim work the app is not doing. Score Tables must use the SAME
+     condition that decides the APA note's ciAge, so the screen and the exported
+     table cannot disagree about whether the age was read. */
+  const fn = extractFn(APP_SRC, 'patientAgeIsInUse');
+  const bad = [];
+  if (!fn) return 'patientAgeIsInUse is gone — the pip has no definition';
+  if (!/batteryRowUsesAgeBand/.test(fn)) bad.push('Score Tables does not test whether any row reads an age band');
+  if (!/bat-ci-level/.test(fn)) bad.push('Score Tables ignores the CI level, so the pip lights when no interval is shown');
+  if (!/OPIE_AGE_MIN/.test(fn) || !/TOPF_AGE_MAX/.test(fn)) {
+    bad.push('Premorbid does not bound the age by its two consumers');
+  }
+  /* Rows and CI level change without the age being touched, so the refresh has
+     to hang off the render, not only off the input listener. */
+  const render = extractFn(APP_SRC, 'renderBattery');
+  if (!/refreshPatientAgeIndicator\(\)/.test(render)) {
+    bad.push('renderBattery never refreshes the pip, so adding a D-KEFS row will not light it');
+  }
+  /* And the page can change with neither the rows nor the age changing. */
+  const nav = extractFn(APP_SRC, 'navigateTo');
+  if (!/refreshPatientAgeIndicator/.test(nav)) {
+    bad.push('navigateTo never refreshes the pip, so it goes stale on page change');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('"New patient" clears the age, not just the tables', () => {
+  /* The button clears every table; once the age is a header-level property of
+     the patient, leaving it behind is how a previous patient's age survives
+     onto the next person's report. */
+  const i = APP_SRC.indexOf("getElementById('topbar-clear-all')");
+  if (i < 0) return 'the clear-all handler is gone';
+  const handler = APP_SRC.slice(i, i + 4000);
+  const bad = [];
+  if (!/'patient-age'/.test(handler)) bad.push('the master age input is not among the cleared fields');
+  if (!/new patient\?/i.test(handler)) bad.push('the confirm text no longer says what it does');
+  if (!/patient age/.test(handler)) bad.push('the confirm text does not warn that the age goes too');
+  if (!/<span>New patient<\/span>/.test(HTML_SRC)) bad.push('the button is still labelled for tables alone');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the premorbid Age box says it is a mirror', () => {
+  /* It was a bare <label>Age</label>. The ONLY place the sharing was ever
+     announced was a title tooltip on #bat-age — which was itself hidden behind
+     the CI toggle, so the one statement of the behaviour lived on the one
+     control the user could not see. */
+  const bad = [];
+  if (!/class="pre-age-mirror-note"/.test(HTML_SRC)) bad.push('the mirror note is missing from the markup');
+  if (!/Shared with the patient age in the header/.test(HTML_SRC)) bad.push('the note does not say where the value comes from');
+  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  if (!/\.pre-age-mirror-note\s*\{/.test(DS_CSS)) bad.push('the note has no styling, so it will inherit whatever .field gives it');
   return bad.length === 0 || bad.join('; ');
 });
 

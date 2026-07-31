@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<style>
+<style data-inlined-from="styles.css">
 :root{
   --paper:#F1F4F9;
   --paper-2:#EFF1F4;
@@ -9462,7 +9462,7 @@ body.rb-docked-active{padding-right:0}
 }
 
 </style>
-<style>
+<style data-inlined-from="design-system.css">
 /* =============================================================================
    PSYCHOMETRIC ASSISTANT — DESIGN SYSTEM (practice build)
    Loaded AFTER styles.css. Overrides legacy ad-hoc rules with a token-based,
@@ -11512,36 +11512,11 @@ input[type="text"].ds-inline-bar-input{
     border-color var(--ds-duration-fast) var(--ds-ease),
     box-shadow var(--ds-duration-fast) var(--ds-ease) !important;
 }
-/* The hidden ATTRIBUTE does not hide this section on its own: it is also a
-   .ds-inline-bar-section, and that rule sets display:flex, which outranks the
-   browser default of display:none for [hidden]. Without this the age box stayed
-   on screen with the CI toggle off — the same class of cascade defeat recorded
-   in CLAUDE.md. Scoped to this standalone class so no other bar section moves. */
-.ds-inline-bar-age[hidden]{ display: none !important; }
-
-/* Patient-age box in the battery control bar. A STANDALONE class rather than a
-   modifier on .ds-inline-bar-input, which is the 40px-left-padded search field
-   with a magnifier icon behind it — reusing that would inherit the icon gap and
-   the 100% width. See the CSS cascade note in CLAUDE.md. */
-input.ds-inline-bar-age-input,
-input[type="number"].ds-inline-bar-age-input{
-  width: 82px !important;
-  height: 38px !important;
-  padding: 0 10px !important;
-  background: var(--ds-surface) !important;
-  border: 1px solid var(--ds-border-strong) !important;
-  border-radius: var(--ds-radius-sm) !important;
-  font-family: var(--sans) !important;
-  font-size: var(--ds-text-base) !important;
-  color: var(--ds-text) !important;
-  box-shadow: 0 1px 2px rgba(15,18,24,0.04) inset !important;
-  box-sizing: border-box !important;
-  text-align: center !important;
-}
-.ds-inline-bar-age-input::placeholder{
-  color: var(--ds-text-faint);
-  font-style: normal;
-}
+/* The patient-age box that used to live in this bar is now #patient-age in the
+   top bar — see .ds-patient-field at the end of this file. Its two rules here
+   (.ds-inline-bar-age[hidden] and .ds-inline-bar-age-input) went with it. The
+   .ds-inline-bar-search .combo-list min-width floor STAYS: it is the general
+   fix for any section crowding this bar, not an age-specific patch. */
 
 .ds-inline-bar-input::placeholder{
   color: var(--ds-text-faint);
@@ -13960,6 +13935,166 @@ input[type="number"].ds-inline-bar-age-input{
 .viz-rail-foot{ margin-top: auto; }
 .viz-rail-foot + .viz-rail-foot{ margin-top: var(--ds-space-3); }
 
+/* ============================================================================
+   40. PATIENT AGE — the master field in the top bar
+
+   One patient, one age, entered here and mirrored into #pre-age on Premorbid.
+   It previously sat in the Score Tables inline control bar, which is where
+   view settings live; age is a property of the person, so it moved up here
+   where it is visible on every page and survives navigation.
+
+   A STANDALONE CLASS FAMILY, deliberately. Nothing here is a modifier on
+   .ds-inline-bar-*, .field or .topbar-*, all of which are declared in both
+   stylesheets and in page-scoped blocks — see the CSS cascade note in
+   CLAUDE.md. A fresh name sidesteps every class-versus-class fight, and the
+   wrapper and label rules below accordingly carry no !important.
+
+   THE INPUT ITSELF IS THE EXCEPTION, and it is not a specificity problem.
+   styles.css declares
+
+     input[type="text"], input[type="number"], ... { padding: 9px 12px !important }
+
+   plus !important font-size and border-radius on the same broad selector. An
+   !important declaration beats a non-important one no matter how specific the
+   loser is, so `input[type="number"].ds-patient-field-input` still lost on
+   padding (9px 12px against the 0 7px this box needs at 26px tall), on radius
+   and on font-size — while silently winning on width, height and text-align,
+   which that rule does not set. A half-styled box is the worst outcome, so the
+   input block is armed throughout, exactly as .ds-inline-bar-age-input was.
+   Measured, not guessed: computed styles were read off the running page.
+   ============================================================================ */
+.ds-patient-field{
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 4px 0 11px;
+  background: var(--ds-surface-subtle);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    background   var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-patient-field-label{
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  white-space: nowrap;
+  margin: 0;
+  cursor: pointer;
+}
+input.ds-patient-field-input,
+input[type="number"].ds-patient-field-input{
+  width: 52px !important;
+  height: 26px !important;
+  padding: 0 7px !important;
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: var(--ds-radius-xs) !important;
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-sm) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  color: var(--ds-text) !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  box-shadow: none !important;
+  /* The spinners cost more width than they earn at 52px, and an age is typed
+     rather than nudged. */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.ds-patient-field-input::-webkit-outer-spin-button,
+.ds-patient-field-input::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Blank is a legitimate, citable state — the measures that read an age fall
+   back to their publisher's all-ages coefficient. So the empty field is quiet,
+   never a prompt and never an error colour. */
+.ds-patient-field-input::placeholder{
+  color: var(--ds-text-faint);
+  font-weight: var(--ds-weight-regular);
+}
+.ds-patient-field-input:focus{
+  outline: none;
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 3px var(--ds-primary-tint);
+}
+.ds-patient-field:focus-within{
+  border-color: var(--ds-border-strong);
+  background: var(--ds-surface);
+}
+
+/* THE "IN USE" PIP. Hidden by default and revealed by .is-live on the wrapper,
+   which refreshPatientAgeIndicator() sets. Note it is display:none by default
+   and NOT the [hidden] attribute: the element this replaces was hidden that
+   way and stayed on screen, because its own display:flex outranked the
+   browser default for [hidden]. Owning the default here cannot lose. */
+.ds-patient-field-live{
+  display: none;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px 0 2px;
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-primary);
+  white-space: nowrap;
+}
+.ds-patient-field.is-live{
+  border-color: rgba(156,61,42,0.35);
+  background: var(--ds-primary-tint);
+}
+.ds-patient-field.is-live .ds-patient-field-live{ display: inline-flex; }
+.ds-patient-field-dot{
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ds-primary);
+  flex-shrink: 0;
+}
+/* Keeps the right-hand inset even when the pip is hidden, so the box does not
+   change width as the pip comes and goes. */
+.ds-patient-field-pad{ width: 5px; flex-shrink: 0; }
+
+/* The premorbid page's Age box is the mirror, and says so. It was a bare label
+   with nothing said at all, which is how the sharing stayed invisible: the only
+   place it was ever announced was a title tooltip on the box that was itself
+   hidden behind the CI toggle. */
+.pre-age-mirror-note{
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-medium);
+  line-height: var(--ds-leading-snug);
+  color: var(--ds-primary);
+}
+.pre-age-mirror-note svg{
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* NARROW SCREENS. The brand row already carries the wordmark, the page title
+   and an action; the age field is a fourth thing. Below 720px the words go and
+   the numbers stay — the age keeps its input, both buttons keep their icons,
+   and the pip keeps its dot but loses "in use". */
+@media (max-width: 720px){
+  .ds-patient-field{ margin-left: auto; padding-left: 6px; }
+  .ds-patient-field-label{ display: none; }
+  .ds-patient-field-live{ padding: 0 6px 0 2px; }
+  .ds-patient-field-live span:last-child{ display: none; }
+}
+
 </style>
 
 <style>
@@ -14452,13 +14587,52 @@ input[type="number"].ds-inline-bar-age-input{
       </button>
       <span class="topbar-divider" aria-hidden="true"></span>
       <div class="topbar-page-title" id="topbar-page-title">Home</div>
-      <button type="button" class="topbar-clear" id="topbar-clear-all" title="Clear every table you've been working on this session" aria-label="Clear all tables">
+
+      <!-- THE PATIENT'S AGE — the master input.
+
+           One patient, one age, and this is where it is typed. #pre-age on the
+           Premorbid page mirrors it (see PATIENT_AGE_INPUTS in app.js).
+
+           WHY THE TOP BAR. Age is a property of the PERSON, not a view setting
+           for any one table. It previously sat in the Score Tables control bar
+           beside Show Raw and Score CI, which are both view settings, and was
+           revealed only when a CI level was chosen — so a clinician who never
+           turned CI on never saw an age field at all. Here it is on every page,
+           it survives navigation without being re-rendered, and it keeps its
+           full label instead of being truncated to "Age" to spare the search
+           box its width.
+
+           OPTIONAL, AND MUST STAY SO. Blank — or outside a measure's normed
+           range — falls back to the publisher's own all-ages coefficient, so
+           the CI column never empties. Both paths are citable. Not bounded to
+           16-90: the measures that read it are normed from age 5.
+
+           THE "IN USE" PIP is lit by refreshPatientAgeIndicator() only where a
+           measure actually reads the age, so a permanently visible field cannot
+           imply work it is not doing. It is toggled by a CLASS on the wrapper,
+           never by the [hidden] attribute — see the CSS cascade note in
+           CLAUDE.md, and what .ds-inline-bar-age[hidden] had to do to win. -->
+      <div class="ds-patient-field" id="patient-age-field">
+        <label class="ds-patient-field-label" for="patient-age">Patient age</label>
+        <input type="number" id="patient-age" class="ds-patient-field-input"
+               min="5" max="90" step="1" placeholder="—"
+               title="Optional. Used where a test publishes its reliability by age band, which sharpens the confidence interval. Left blank, those measures use the published all-ages coefficient instead. Shared with the age on the Premorbid page.">
+        <span class="ds-patient-field-live" id="patient-age-live" title="A measure on this page is reading the patient age.">
+          <span class="ds-patient-field-dot" aria-hidden="true"></span><span>in use</span>
+        </span>
+        <span class="ds-patient-field-pad" aria-hidden="true"></span>
+      </div>
+
+      <!-- Clears the tables AND the age: you are switching patient, not tidying
+           one table. Two controls that each cleared half the patient is how a
+           previous age survives onto the next person's report. -->
+      <button type="button" class="topbar-clear" id="topbar-clear-all" title="Clear every table you've been working on this session, and the patient age" aria-label="Start a new patient">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M3 4h10"/>
           <path d="M5.5 4V2.5h5V4"/>
           <path d="M4 4l1 9h6l1-9"/>
         </svg>
-        <span>Clear all tables</span>
+        <span>New patient</span>
       </button>
       <!-- DONATION BUTTON — kept for easy re-activation, remove comment tags to restore
       <a class="topbar-kofi" href="https://ko-fi.com/clinpsyry" target="_blank" rel="noopener noreferrer" title="Support free clinical tools">
@@ -14857,30 +15031,11 @@ input[type="number"].ds-inline-bar-age-input{
                Like #bat-ci-level, declared here rather than built by
                design-system.js so app.js can wire its listener at init. -->
           <input type="hidden" id="bat-ci-basis" value="published">
-          <!-- Patient age. Optional, and only consulted where a publisher
-               reports its reliability by age band (see rInternalByAge in
-               data.js). Left blank, those measures fall back to the published
-               all-ages coefficient, so the column never empties. Deliberately
-               NOT bounded to 16-90 like the premorbid page's age: the measures
-               that read it are normed from age 8.
-
-               IT DOES NOT DISPLAY HERE. buildBatteryInlineBar (design-system.js)
-               moves this input into the inline control bar beside the Score CI
-               toggle, because this whole panel is hidden by ds-legacy-hidden.
-               It has to be declared in the markup rather than built by that
-               function, because app.js wires its listener at init and
-               design-system.js is deferred, so the element must already exist.
-               Moving a node preserves its listeners; building it later would
-               not. -->
-          <div class="field bat-field-compact bat-field-age">
-            <label>Patient age <span class="hint">optional — sharpens intervals</span></label>
-            <!-- aria-label, because the visible label in the control bar is
-                 shortened to "Age" to keep the bar from squeezing the search
-                 box, and the span beside it is not a <label for>. -->
-            <input type="number" id="bat-age" class="ds-inline-bar-age-input" min="5" max="90" step="1"
-                   placeholder="34" aria-label="Patient age"
-                   title="Optional. Used where a test publishes its reliability by age band, which sharpens the confidence interval. Left blank, those measures use the published all-ages coefficient instead. Shared with the age on the Premorbid page.">
-          </div>
+          <!-- The patient age used to be declared here and moved into the
+               inline control bar by buildBatteryInlineBar. It now lives in the
+               top bar as #patient-age — one field, every page, never gated
+               behind the CI toggle. Score Tables reads it through
+               batteryPatientAge(), which is unchanged. -->
         </div>
       </div>
 
@@ -15720,13 +15875,24 @@ input[type="number"].ds-inline-bar-age-input{
             <input type="number" id="pre-edu" min="0" max="30" step="0.5">
           </div>
           <div class="field">
-            <label>Age</label>
-            <!-- min is 5, not 16, because this box now holds the shared
-                 patient age (see PATIENT_AGE_INPUTS in app.js) and Score
-                 Tables is normed from 5. The 16-90 limit that matters is
+            <label for="pre-age">Age</label>
+            <!-- min is 5, not 16, because this box holds the shared patient
+                 age (see PATIENT_AGE_INPUTS in app.js) and Score Tables is
+                 normed from 5. The 16-90 limit that matters is
                  OPIE_AGE_MIN/MAX, enforced in code before OPIE-4 computes
-                 anything; no other premorbid model reads age at all. -->
+                 anything; the ToPF-predicted WMS-IV indices bound themselves
+                 with TOPF_AGE_MIN/MAX.
+
+                 It stays on this page because Age is a genuine member of this
+                 demographic block — OPIE-4 reads it alongside Sex — but the
+                 master is #patient-age in the top bar, and the note below says
+                 so. It was previously a bare label with nothing said at all,
+                 which is how the sharing stayed invisible. -->
             <input type="number" id="pre-age" min="5" max="90" step="1">
+            <div class="pre-age-mirror-note">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 9.5L2.5 6.5l3-3"/><path d="M2.5 6.5h8a3 3 0 0 1 3 3v3"/></svg>
+              <span>Shared with the patient age in the header</span>
+            </div>
           </div>
         </div>
       </div>
@@ -16256,7 +16422,7 @@ input[type="number"].ds-inline-bar-age-input{
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script>
+<script data-inlined-from="data.js">
 /* ============================================================
    DATA · constants, lookup tables, coefficients and tooltip strings
    Extracted from Psychometric Calculators · Clinical Suite
@@ -18092,7 +18258,7 @@ const OPIE_BASE_RATES = {
 };
 
 </script>
-<script>
+<script data-inlined-from="app.js">
 /* ============================================================
    PSYCHOMETRIC CALCULATORS · Clinical Suite
    ============================================================ */
@@ -18585,6 +18751,11 @@ function navigateTo(target, opts){
     // dropped you into the middle of every page you navigated to.
     if (o.scroll !== false) window.scrollTo({ top: 0, behavior: 'auto' });
     staggerSectionContent(document.getElementById(target));
+    /* The age field is in the top bar and outlives the section swap, but
+       whether anything on the new page reads it does not — so the pip is
+       re-evaluated per page. Defined later in the file; this runs on click,
+       long after init. */
+    if (typeof refreshPatientAgeIndicator === 'function') refreshPatientAgeIndicator();
   };
 
   // Re-selecting the page you're already on shouldn't flash it away and back.
@@ -20107,28 +20278,42 @@ function batteryRowUsesAgeBand(row){
   return !!(entry && typeof entry === 'object' && (entry.rInternalByAge || entry.rStabilityByAge));
 }
 
-/* THE PATIENT'S AGE — one value, two inputs.
+/* THE PATIENT'S AGE — one value, one master, one mirror.
 
-   There is one patient and therefore one age, but it is entered on two pages:
-   #bat-age on Score Tables (which reads it for the measures whose published
-   reliability varies by age band) and #pre-age on Premorbid. Two boxes that
-   can hold different ages for the same patient is a defect waiting to happen,
-   so they are kept in step.
+   There is one patient and therefore one age. It is typed into #patient-age in
+   the top bar, which is on screen on every page, and mirrored into #pre-age on
+   Premorbid, which keeps a field because Age is a genuine member of that
+   demographic block (OPIE-4 reads it alongside Sex). Two boxes that can hold
+   different ages for the same patient is a defect waiting to happen, so they
+   are kept in step.
+
+   WHY THE MASTER MOVED TO THE TOP BAR. It used to be #bat-age, declared in the
+   Score Tables markup and moved by design-system.js into that page's inline
+   control bar, revealed only once a CI level was chosen. Three problems, all
+   from the same cause — patient-level data living in a page-level control bar:
+   it shipped rendering at 0x0 inside a wholesale-hidden panel; once moved, it
+   took width from the test-family search and its label had to be truncated to
+   "Age"; and being gated behind the CI toggle meant a clinician who never
+   turned CI on never saw an age field. In the top bar it is simply always
+   there, on every page, under its own name.
 
    WHY THAT IS SAFE DESPITE THE DIFFERENT RANGES. #pre-age used to declare
    min="16" because ToPF and OPIE-4 are adult instruments, while Score Tables
-   needs from age 5 (CVLT-C) and 8 (D-KEFS Advanced). It turns out only ONE
-   model on the premorbid page reads age at all — OPIE-4 — and it already
-   gates on OPIE_AGE_MIN/OPIE_AGE_MAX before computing anything. The ToPF and
-   WAIS-IV/WMS-IV demographic equations have no age term; they run on ToPF
-   score, education and sex. So a paediatric age makes OPIE-4 decline, which
-   is correct because it is not normed for children, and changes nothing else.
+   needs from age 5 (CVLT-C) and 8 (D-KEFS Advanced). Both premorbid consumers
+   bound the value themselves before computing — OPIE-4 on
+   OPIE_AGE_MIN/OPIE_AGE_MAX, the ToPF-predicted WMS-IV indices on
+   TOPF_AGE_MIN/TOPF_AGE_MAX. So a paediatric age makes those decline, which is
+   correct because they are not normed for children, and changes nothing else.
    The min attribute was a claim the code did not rely on, and is relaxed to
    match so the browser stops flagging a legitimate age as invalid.
 
+   ORDER MATTERS HERE. patientAge() returns the first input holding a finite
+   value, so the master is listed first: if the two ever drift, the top-bar box
+   — the one the clinician can see from every page — is the one that wins.
+
    The listeners write the sibling's .value and do NOT dispatch an event on it.
    Dispatching would have each input echo the other indefinitely. */
-const PATIENT_AGE_INPUTS = ['bat-age', 'pre-age'];
+const PATIENT_AGE_INPUTS = ['patient-age', 'pre-age'];
 
 function patientAge(){
   for (let i = 0; i < PATIENT_AGE_INPUTS.length; i++){
@@ -20152,6 +20337,55 @@ function syncPatientAge(sourceId){
 
 /* Kept as the Score Tables reader so the CI code states what it wants. */
 function batteryPatientAge(){ return patientAge(); }
+
+/* IS THE AGE ACTUALLY BEING READ ON THE PAGE IN FRONT OF YOU?
+
+   The field is permanent and on every page, but only measures whose publisher
+   tabulates reliability by age band consult it — D-KEFS Advanced, D-KEFS
+   original and WAIS-IV. On a table of CVLT-3 and RBANS rows the age changes
+   nothing. A permanently visible "Patient age 72" would imply otherwise, so the
+   pip beside it lights only where something reads the value.
+
+   Score Tables uses EXACTLY the expression that decides the APA note's ciAge,
+   so the screen and the exported table cannot disagree about whether the age
+   was read. Premorbid asks whether the age is in range for a model on that page
+   — OPIE-4, or the ToPF-predicted WMS-IV indices — since those are the only two
+   consumers there.
+
+   This is a UI affordance, not a printed claim: the load-bearing statement is
+   still the APA note, which is unchanged. */
+function patientAgeIsInUse(){
+  if (patientAge() === null) return false;
+  const active = document.querySelector('.section.active');
+  const page = active ? active.id : '';
+
+  if (page === 'battery'){
+    const ci = document.getElementById('bat-ci-level');
+    if (!ci || ci.value === 'off') return false;
+    return Array.isArray(batteryRows) && batteryRows.some(r => batteryRowUsesAgeBand(r));
+  }
+
+  if (page === 'premorbid'){
+    const a = patientAge();
+    const inOpie = (typeof OPIE_AGE_MIN === 'number' && typeof OPIE_AGE_MAX === 'number')
+                   && a >= OPIE_AGE_MIN && a <= OPIE_AGE_MAX;
+    const inTopf = (typeof TOPF_AGE_MIN === 'number' && typeof TOPF_AGE_MAX === 'number')
+                   && a >= TOPF_AGE_MIN && a <= TOPF_AGE_MAX;
+    return inOpie || inTopf;
+  }
+
+  return false;
+}
+
+/* Toggled by CLASS, never by the [hidden] attribute. The last element that
+   tried [hidden] here was .ds-inline-bar-age, whose own display:flex outranked
+   the browser default and left it on screen — see the CSS cascade note in
+   CLAUDE.md. A class the stylesheet owns outright cannot lose that fight. */
+function refreshPatientAgeIndicator(){
+  const field = document.getElementById('patient-age-field');
+  if (!field) return;
+  field.classList.toggle('is-live', patientAgeIsInUse());
+}
 
 /* Pick the published coefficient for the patient's age band.
    rInternalByAge is keyed by the LOWER BOUND of each normative band, so the
@@ -20549,6 +20783,11 @@ function renderBattery(){
       columns: ['name', 'raw', 'score']
     });
   renderBatteryApa();
+  /* Whether the age is being read depends on the rows and the CI level, both of
+     which can change without the age itself being touched — adding a D-KEFS row
+     or switching CI off. Hooked here so every one of those paths updates the
+     pip; renderBattery() is what they all end in. */
+  refreshPatientAgeIndicator();
 }
 
 
@@ -21152,14 +21391,19 @@ document.getElementById('bat-ci-basis').addEventListener('change', () => {
   renderBattery();
   if (typeof renderDbList === 'function' && document.getElementById('db-tbody')) renderDbList();
 });
-/* 'input', not 'change': the intervals are the only thing this drives, and
-   waiting for blur leaves a stale age visibly paired with fresh numbers.
-   Mirrors into #pre-age and recalculates the premorbid page, because the two
-   boxes hold one patient's age — see the note on PATIENT_AGE_INPUTS. */
-document.getElementById('bat-age')?.addEventListener('input', () => {
-  syncPatientAge('bat-age');
+/* The master patient age. Bound here rather than beside the nav code because
+   everything it recalculates is on this page or the premorbid one.
+
+   'input', not 'change': waiting for blur leaves a stale age visibly paired
+   with fresh numbers. Mirrors into #pre-age and recalculates the premorbid
+   page, because the two boxes hold one patient's age — see the note on
+   PATIENT_AGE_INPUTS. The element is in the top bar, which is markup, so it
+   exists by the time this runs; the optional chaining is belt-and-braces. */
+document.getElementById('patient-age')?.addEventListener('input', () => {
+  syncPatientAge('patient-age');
   renderBattery();
   if (typeof calcPremorbid === 'function'){ calcPremorbid(); calcPredict(); calcOpiePredict(); }
+  refreshPatientAgeIndicator();
 });
 document.getElementById('bat-clear').addEventListener('click', clearBattery);
 
@@ -23626,14 +23870,15 @@ function setupPremorbidListeners(){
     el.addEventListener('input', () => { calcPremorbid(); calcPredict(); calcOpiePredict(); });
     el.addEventListener('change', () => { calcPremorbid(); calcPredict(); calcOpiePredict(); });
   });
-  /* The other half of the shared patient age. Separate from the loop above so
+  /* The mirror half of the shared patient age. Separate from the loop above so
      the premorbid recalcs stay exactly as they were; this only adds the mirror
-     into #bat-age and the Score Tables re-render. */
+     into #patient-age and the Score Tables re-render. */
   const ageEl = preGet('pre-age');
   if (ageEl){
     const mirror = () => {
       syncPatientAge('pre-age');
       if (typeof renderBattery === 'function') renderBattery();
+      if (typeof refreshPatientAgeIndicator === 'function') refreshPatientAgeIndicator();
     };
     ageEl.addEventListener('input', mirror);
     ageEl.addEventListener('change', mirror);
@@ -23964,7 +24209,7 @@ wireSdiAutofill();
 // Final initialization
 refreshAll();
 
-/* ---------- GLOBAL CLEAR — Topbar "Clear all tables" button ----------
+/* ---------- GLOBAL CLEAR — Topbar "New patient" button ----------
    Wipes every tool's session data in one action: battery rows, SDI rows,
    the four RCI methods, premorbid inputs, working report items.
 
@@ -23975,7 +24220,7 @@ refreshAll();
   const btn = document.getElementById('topbar-clear-all');
   if (!btn) return;
   btn.addEventListener('click', () => {
-    const ok = confirm('Are you sure?\n\nThis clears every table you\'ve been working on across all tools, including the Working Report. It cannot be undone.');
+    const ok = confirm('Start a new patient?\n\nThis clears every table you\'ve been working on across all tools, including the Working Report, and the patient age. It cannot be undone.');
     if (!ok) return;
 
     // Suppress the observers BEFORE any clearing happens. The 350ms debounce
@@ -23995,9 +24240,13 @@ refreshAll();
         if (typeof clearMethodRows === 'function') clearMethodRows(m);
       });
     } catch(e){}
-    // Premorbid inputs (predictors + demographics)
+    /* Premorbid inputs (predictors + demographics), and the master patient age.
+       #patient-age is listed explicitly rather than left to the #pre-age mirror:
+       the mirror would in fact carry the blank across, but a patient identity
+       that survives "New patient" because one listener was reordered is the
+       failure this button exists to prevent. Clear both, assert neither. */
     try {
-      ['pre-topf','pre-vc','pre-mr','pre-sex','pre-occ','pre-edu','pre-age'].forEach(id => {
+      ['patient-age','pre-topf','pre-vc','pre-mr','pre-sex','pre-occ','pre-edu','pre-age'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         el.value = '';
@@ -25577,7 +25826,7 @@ ${buildReportHtmlBody()}
         else if (action === 'minimise') close();
         else if (action === 'maximise') toggleMaximised();
         else if (action === 'clear')    {
-          // Forward to the topbar's "Clear all tables" button so it does
+          // Forward to the topbar's "New patient" button so it does
           // the full session wipe (every tool + the bundle), with a single
           // confirm. Falls back to local-only clear if the topbar button
           // isn't available for any reason.
@@ -26487,7 +26736,7 @@ if (document.readyState === 'loading'){
 }
 
 </script>
-<script>
+<script data-inlined-from="design-system.js" defer>
 /* =============================================================================
    PSYCHOMETRIC ASSISTANT - DESIGN SYSTEM JS (practice build)
    Small enhancements that turn the SPA into something that feels
@@ -26874,9 +27123,12 @@ if (document.readyState === 'loading'){
         </div>
       </div>
       <!-- Which coefficient the interval rests on. Revealed with the CI
-           toggle, like the age slot, because it drives nothing else on this
-           page. "Published" is the default and reproduces each manual's own
-           printed interval; see #bat-ci-basis in index.html. -->
+           toggle, because it drives nothing else on this page. "Published" is
+           the default and reproduces each manual's own printed interval; see
+           #bat-ci-basis in index.html.
+
+           This one belongs in the bar in a way the patient age never did: it
+           is a view setting for THIS table, not a property of the person. -->
       <div class="ds-inline-bar-section ds-inline-bar-cibasis" hidden>
         <span class="ds-inline-bar-label">Reliability</span>
         <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Reliability coefficient basis">
@@ -26886,14 +27138,10 @@ if (document.readyState === 'loading'){
             title="Where a manual publishes no coefficient computed on the normative sample, correct its retest coefficient to the normative sample's variability. Departs from the manual's printed interval.">Corrected</button>
         </div>
       </div>
-      <!-- Slot for #bat-age, moved in below. Empty in the markup on purpose:
-           the input is declared in index.html so it exists before app.js wires
-           its listener, and is adopted here rather than rebuilt. Revealed with
-           the CI toggle, because the interval is the only thing it drives on
-           this page - relax that if a second consumer appears. -->
-      <div class="ds-inline-bar-section ds-inline-bar-age" hidden>
-        <span class="ds-inline-bar-label">Age</span>
-      </div>
+      <!-- No age slot. The patient age is #patient-age in the top bar: it is a
+           property of the person, not a view setting for this table, and it
+           belongs beside neither Show Raw nor Score CI. This bar holds view
+           settings only. -->
       ${classSelect ? `
         <div class="ds-inline-bar-section ds-inline-bar-right">
           <span class="ds-inline-bar-label">Classification</span>
@@ -27016,23 +27264,6 @@ if (document.readyState === 'loading'){
       refresh();
     }
 
-    /* Adopt the patient-age input into the bar.
-
-       It is declared in index.html, inside .bat-premorbid-block, which this
-       function hides wholesale via ds-legacy-hidden — so left where it is, it
-       renders at 0x0 and the user can never reach it. That is exactly what
-       happened when the field was first added.
-
-       MOVED, not rebuilt. app.js attaches its 'input' listener at init, and
-       this file is deferred so it runs afterwards; an element created here
-       would never get that listener. Moving a node carries its listeners and
-       its value with it. */
-    const ageInput = document.getElementById('bat-age');
-    const ageSlot  = bar.querySelector('.ds-inline-bar-age');
-    if (ageInput && ageSlot && ageInput.parentElement !== ageSlot){
-      ageSlot.appendChild(ageInput);
-    }
-
     /* Wire Score CI toggle */
     const ciInput = document.getElementById('bat-ci-level');
     const basisSlot = bar.querySelector('.ds-inline-bar-cibasis');
@@ -27049,9 +27280,10 @@ if (document.readyState === 'loading'){
           b.classList.toggle('is-active', active);
           b.setAttribute('aria-checked', active ? 'true' : 'false');
         });
-        /* Ask for the age, and offer the basis, at the moment they start
-           mattering — neither drives anything with the interval switched off. */
-        if (ageSlot) ageSlot.hidden = (v === 'off');
+        /* Offer the basis at the moment it starts mattering — it drives
+           nothing with the interval switched off. The patient age used to be
+           revealed here too; it now lives in the top bar and is always on
+           screen, because a field a clinician never saw was the defect. */
         if (basisSlot) basisSlot.hidden = (v === 'off');
       };
       ciBtns.forEach(b => {
@@ -27626,7 +27858,7 @@ if (document.readyState === 'loading'){
 })();
 
 </script>
-<script>
+<script data-inlined-from="app-effectsize-page.js">
 /* =====================================================================
    Effect Size Tools - page module (#effectsize)
    ===================================================================== */
@@ -28458,7 +28690,7 @@ if (document.readyState === 'loading'){
 })();
 
 </script>
-<script>
+<script data-inlined-from="app-viz-page.js">
 /* =====================================================================
    Score Charts - page module (#charts)
 

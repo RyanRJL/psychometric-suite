@@ -2047,36 +2047,11 @@ input[type="text"].ds-inline-bar-input{
     border-color var(--ds-duration-fast) var(--ds-ease),
     box-shadow var(--ds-duration-fast) var(--ds-ease) !important;
 }
-/* The hidden ATTRIBUTE does not hide this section on its own: it is also a
-   .ds-inline-bar-section, and that rule sets display:flex, which outranks the
-   browser default of display:none for [hidden]. Without this the age box stayed
-   on screen with the CI toggle off — the same class of cascade defeat recorded
-   in CLAUDE.md. Scoped to this standalone class so no other bar section moves. */
-.ds-inline-bar-age[hidden]{ display: none !important; }
-
-/* Patient-age box in the battery control bar. A STANDALONE class rather than a
-   modifier on .ds-inline-bar-input, which is the 40px-left-padded search field
-   with a magnifier icon behind it — reusing that would inherit the icon gap and
-   the 100% width. See the CSS cascade note in CLAUDE.md. */
-input.ds-inline-bar-age-input,
-input[type="number"].ds-inline-bar-age-input{
-  width: 82px !important;
-  height: 38px !important;
-  padding: 0 10px !important;
-  background: var(--ds-surface) !important;
-  border: 1px solid var(--ds-border-strong) !important;
-  border-radius: var(--ds-radius-sm) !important;
-  font-family: var(--sans) !important;
-  font-size: var(--ds-text-base) !important;
-  color: var(--ds-text) !important;
-  box-shadow: 0 1px 2px rgba(15,18,24,0.04) inset !important;
-  box-sizing: border-box !important;
-  text-align: center !important;
-}
-.ds-inline-bar-age-input::placeholder{
-  color: var(--ds-text-faint);
-  font-style: normal;
-}
+/* The patient-age box that used to live in this bar is now #patient-age in the
+   top bar — see .ds-patient-field at the end of this file. Its two rules here
+   (.ds-inline-bar-age[hidden] and .ds-inline-bar-age-input) went with it. The
+   .ds-inline-bar-search .combo-list min-width floor STAYS: it is the general
+   fix for any section crowding this bar, not an age-specific patch. */
 
 .ds-inline-bar-input::placeholder{
   color: var(--ds-text-faint);
@@ -4494,3 +4469,163 @@ input[type="number"].ds-inline-bar-age-input{
 .viz-rail-foot .viz-axis-note{ margin: 0; font-size: var(--ds-text-xs); line-height: var(--ds-leading-snug); }
 .viz-rail-foot{ margin-top: auto; }
 .viz-rail-foot + .viz-rail-foot{ margin-top: var(--ds-space-3); }
+
+/* ============================================================================
+   40. PATIENT AGE — the master field in the top bar
+
+   One patient, one age, entered here and mirrored into #pre-age on Premorbid.
+   It previously sat in the Score Tables inline control bar, which is where
+   view settings live; age is a property of the person, so it moved up here
+   where it is visible on every page and survives navigation.
+
+   A STANDALONE CLASS FAMILY, deliberately. Nothing here is a modifier on
+   .ds-inline-bar-*, .field or .topbar-*, all of which are declared in both
+   stylesheets and in page-scoped blocks — see the CSS cascade note in
+   CLAUDE.md. A fresh name sidesteps every class-versus-class fight, and the
+   wrapper and label rules below accordingly carry no !important.
+
+   THE INPUT ITSELF IS THE EXCEPTION, and it is not a specificity problem.
+   styles.css declares
+
+     input[type="text"], input[type="number"], ... { padding: 9px 12px !important }
+
+   plus !important font-size and border-radius on the same broad selector. An
+   !important declaration beats a non-important one no matter how specific the
+   loser is, so `input[type="number"].ds-patient-field-input` still lost on
+   padding (9px 12px against the 0 7px this box needs at 26px tall), on radius
+   and on font-size — while silently winning on width, height and text-align,
+   which that rule does not set. A half-styled box is the worst outcome, so the
+   input block is armed throughout, exactly as .ds-inline-bar-age-input was.
+   Measured, not guessed: computed styles were read off the running page.
+   ============================================================================ */
+.ds-patient-field{
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 4px 0 11px;
+  background: var(--ds-surface-subtle);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-ease),
+    background   var(--ds-duration-fast) var(--ds-ease);
+}
+.ds-patient-field-label{
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  white-space: nowrap;
+  margin: 0;
+  cursor: pointer;
+}
+input.ds-patient-field-input,
+input[type="number"].ds-patient-field-input{
+  width: 52px !important;
+  height: 26px !important;
+  padding: 0 7px !important;
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: var(--ds-radius-xs) !important;
+  font-family: var(--sans) !important;
+  font-size: var(--ds-text-sm) !important;
+  font-weight: var(--ds-weight-semibold) !important;
+  color: var(--ds-text) !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  box-shadow: none !important;
+  /* The spinners cost more width than they earn at 52px, and an age is typed
+     rather than nudged. */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.ds-patient-field-input::-webkit-outer-spin-button,
+.ds-patient-field-input::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Blank is a legitimate, citable state — the measures that read an age fall
+   back to their publisher's all-ages coefficient. So the empty field is quiet,
+   never a prompt and never an error colour. */
+.ds-patient-field-input::placeholder{
+  color: var(--ds-text-faint);
+  font-weight: var(--ds-weight-regular);
+}
+.ds-patient-field-input:focus{
+  outline: none;
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 3px var(--ds-primary-tint);
+}
+.ds-patient-field:focus-within{
+  border-color: var(--ds-border-strong);
+  background: var(--ds-surface);
+}
+
+/* THE "IN USE" PIP. Hidden by default and revealed by .is-live on the wrapper,
+   which refreshPatientAgeIndicator() sets. Note it is display:none by default
+   and NOT the [hidden] attribute: the element this replaces was hidden that
+   way and stayed on screen, because its own display:flex outranked the
+   browser default for [hidden]. Owning the default here cannot lose. */
+.ds-patient-field-live{
+  display: none;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px 0 2px;
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-primary);
+  white-space: nowrap;
+}
+.ds-patient-field.is-live{
+  border-color: rgba(156,61,42,0.35);
+  background: var(--ds-primary-tint);
+}
+.ds-patient-field.is-live .ds-patient-field-live{ display: inline-flex; }
+.ds-patient-field-dot{
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ds-primary);
+  flex-shrink: 0;
+}
+/* Keeps the right-hand inset even when the pip is hidden, so the box does not
+   change width as the pip comes and goes. */
+.ds-patient-field-pad{ width: 5px; flex-shrink: 0; }
+
+/* The premorbid page's Age box is the mirror, and says so. It was a bare label
+   with nothing said at all, which is how the sharing stayed invisible: the only
+   place it was ever announced was a title tooltip on the box that was itself
+   hidden behind the CI toggle. */
+.pre-age-mirror-note{
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-medium);
+  line-height: var(--ds-leading-snug);
+  color: var(--ds-primary);
+}
+.pre-age-mirror-note svg{
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* NARROW SCREENS. The brand row already carries the wordmark, the page title
+   and an action; the age field is a fourth thing. Below 720px the words go and
+   the numbers stay — the age keeps its input, both buttons keep their icons,
+   and the pip keeps its dot but loses "in use". */
+@media (max-width: 720px){
+  .ds-patient-field{ margin-left: auto; padding-left: 6px; }
+  .ds-patient-field-label{ display: none; }
+  .ds-patient-field-live{ padding: 0 6px 0 2px; }
+  .ds-patient-field-live span:last-child{ display: none; }
+}

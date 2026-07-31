@@ -490,6 +490,11 @@ function navigateTo(target, opts){
     // dropped you into the middle of every page you navigated to.
     if (o.scroll !== false) window.scrollTo({ top: 0, behavior: 'auto' });
     staggerSectionContent(document.getElementById(target));
+    /* The age field is in the top bar and outlives the section swap, but
+       whether anything on the new page reads it does not — so the pip is
+       re-evaluated per page. Defined later in the file; this runs on click,
+       long after init. */
+    if (typeof refreshPatientAgeIndicator === 'function') refreshPatientAgeIndicator();
   };
 
   // Re-selecting the page you're already on shouldn't flash it away and back.
@@ -2012,28 +2017,42 @@ function batteryRowUsesAgeBand(row){
   return !!(entry && typeof entry === 'object' && (entry.rInternalByAge || entry.rStabilityByAge));
 }
 
-/* THE PATIENT'S AGE — one value, two inputs.
+/* THE PATIENT'S AGE — one value, one master, one mirror.
 
-   There is one patient and therefore one age, but it is entered on two pages:
-   #bat-age on Score Tables (which reads it for the measures whose published
-   reliability varies by age band) and #pre-age on Premorbid. Two boxes that
-   can hold different ages for the same patient is a defect waiting to happen,
-   so they are kept in step.
+   There is one patient and therefore one age. It is typed into #patient-age in
+   the top bar, which is on screen on every page, and mirrored into #pre-age on
+   Premorbid, which keeps a field because Age is a genuine member of that
+   demographic block (OPIE-4 reads it alongside Sex). Two boxes that can hold
+   different ages for the same patient is a defect waiting to happen, so they
+   are kept in step.
+
+   WHY THE MASTER MOVED TO THE TOP BAR. It used to be #bat-age, declared in the
+   Score Tables markup and moved by design-system.js into that page's inline
+   control bar, revealed only once a CI level was chosen. Three problems, all
+   from the same cause — patient-level data living in a page-level control bar:
+   it shipped rendering at 0x0 inside a wholesale-hidden panel; once moved, it
+   took width from the test-family search and its label had to be truncated to
+   "Age"; and being gated behind the CI toggle meant a clinician who never
+   turned CI on never saw an age field. In the top bar it is simply always
+   there, on every page, under its own name.
 
    WHY THAT IS SAFE DESPITE THE DIFFERENT RANGES. #pre-age used to declare
    min="16" because ToPF and OPIE-4 are adult instruments, while Score Tables
-   needs from age 5 (CVLT-C) and 8 (D-KEFS Advanced). It turns out only ONE
-   model on the premorbid page reads age at all — OPIE-4 — and it already
-   gates on OPIE_AGE_MIN/OPIE_AGE_MAX before computing anything. The ToPF and
-   WAIS-IV/WMS-IV demographic equations have no age term; they run on ToPF
-   score, education and sex. So a paediatric age makes OPIE-4 decline, which
-   is correct because it is not normed for children, and changes nothing else.
+   needs from age 5 (CVLT-C) and 8 (D-KEFS Advanced). Both premorbid consumers
+   bound the value themselves before computing — OPIE-4 on
+   OPIE_AGE_MIN/OPIE_AGE_MAX, the ToPF-predicted WMS-IV indices on
+   TOPF_AGE_MIN/TOPF_AGE_MAX. So a paediatric age makes those decline, which is
+   correct because they are not normed for children, and changes nothing else.
    The min attribute was a claim the code did not rely on, and is relaxed to
    match so the browser stops flagging a legitimate age as invalid.
 
+   ORDER MATTERS HERE. patientAge() returns the first input holding a finite
+   value, so the master is listed first: if the two ever drift, the top-bar box
+   — the one the clinician can see from every page — is the one that wins.
+
    The listeners write the sibling's .value and do NOT dispatch an event on it.
    Dispatching would have each input echo the other indefinitely. */
-const PATIENT_AGE_INPUTS = ['bat-age', 'pre-age'];
+const PATIENT_AGE_INPUTS = ['patient-age', 'pre-age'];
 
 function patientAge(){
   for (let i = 0; i < PATIENT_AGE_INPUTS.length; i++){
@@ -2057,6 +2076,55 @@ function syncPatientAge(sourceId){
 
 /* Kept as the Score Tables reader so the CI code states what it wants. */
 function batteryPatientAge(){ return patientAge(); }
+
+/* IS THE AGE ACTUALLY BEING READ ON THE PAGE IN FRONT OF YOU?
+
+   The field is permanent and on every page, but only measures whose publisher
+   tabulates reliability by age band consult it — D-KEFS Advanced, D-KEFS
+   original and WAIS-IV. On a table of CVLT-3 and RBANS rows the age changes
+   nothing. A permanently visible "Patient age 72" would imply otherwise, so the
+   pip beside it lights only where something reads the value.
+
+   Score Tables uses EXACTLY the expression that decides the APA note's ciAge,
+   so the screen and the exported table cannot disagree about whether the age
+   was read. Premorbid asks whether the age is in range for a model on that page
+   — OPIE-4, or the ToPF-predicted WMS-IV indices — since those are the only two
+   consumers there.
+
+   This is a UI affordance, not a printed claim: the load-bearing statement is
+   still the APA note, which is unchanged. */
+function patientAgeIsInUse(){
+  if (patientAge() === null) return false;
+  const active = document.querySelector('.section.active');
+  const page = active ? active.id : '';
+
+  if (page === 'battery'){
+    const ci = document.getElementById('bat-ci-level');
+    if (!ci || ci.value === 'off') return false;
+    return Array.isArray(batteryRows) && batteryRows.some(r => batteryRowUsesAgeBand(r));
+  }
+
+  if (page === 'premorbid'){
+    const a = patientAge();
+    const inOpie = (typeof OPIE_AGE_MIN === 'number' && typeof OPIE_AGE_MAX === 'number')
+                   && a >= OPIE_AGE_MIN && a <= OPIE_AGE_MAX;
+    const inTopf = (typeof TOPF_AGE_MIN === 'number' && typeof TOPF_AGE_MAX === 'number')
+                   && a >= TOPF_AGE_MIN && a <= TOPF_AGE_MAX;
+    return inOpie || inTopf;
+  }
+
+  return false;
+}
+
+/* Toggled by CLASS, never by the [hidden] attribute. The last element that
+   tried [hidden] here was .ds-inline-bar-age, whose own display:flex outranked
+   the browser default and left it on screen — see the CSS cascade note in
+   CLAUDE.md. A class the stylesheet owns outright cannot lose that fight. */
+function refreshPatientAgeIndicator(){
+  const field = document.getElementById('patient-age-field');
+  if (!field) return;
+  field.classList.toggle('is-live', patientAgeIsInUse());
+}
 
 /* Pick the published coefficient for the patient's age band.
    rInternalByAge is keyed by the LOWER BOUND of each normative band, so the
@@ -2454,6 +2522,11 @@ function renderBattery(){
       columns: ['name', 'raw', 'score']
     });
   renderBatteryApa();
+  /* Whether the age is being read depends on the rows and the CI level, both of
+     which can change without the age itself being touched — adding a D-KEFS row
+     or switching CI off. Hooked here so every one of those paths updates the
+     pip; renderBattery() is what they all end in. */
+  refreshPatientAgeIndicator();
 }
 
 
@@ -3057,14 +3130,19 @@ document.getElementById('bat-ci-basis').addEventListener('change', () => {
   renderBattery();
   if (typeof renderDbList === 'function' && document.getElementById('db-tbody')) renderDbList();
 });
-/* 'input', not 'change': the intervals are the only thing this drives, and
-   waiting for blur leaves a stale age visibly paired with fresh numbers.
-   Mirrors into #pre-age and recalculates the premorbid page, because the two
-   boxes hold one patient's age — see the note on PATIENT_AGE_INPUTS. */
-document.getElementById('bat-age')?.addEventListener('input', () => {
-  syncPatientAge('bat-age');
+/* The master patient age. Bound here rather than beside the nav code because
+   everything it recalculates is on this page or the premorbid one.
+
+   'input', not 'change': waiting for blur leaves a stale age visibly paired
+   with fresh numbers. Mirrors into #pre-age and recalculates the premorbid
+   page, because the two boxes hold one patient's age — see the note on
+   PATIENT_AGE_INPUTS. The element is in the top bar, which is markup, so it
+   exists by the time this runs; the optional chaining is belt-and-braces. */
+document.getElementById('patient-age')?.addEventListener('input', () => {
+  syncPatientAge('patient-age');
   renderBattery();
   if (typeof calcPremorbid === 'function'){ calcPremorbid(); calcPredict(); calcOpiePredict(); }
+  refreshPatientAgeIndicator();
 });
 document.getElementById('bat-clear').addEventListener('click', clearBattery);
 
@@ -5531,14 +5609,15 @@ function setupPremorbidListeners(){
     el.addEventListener('input', () => { calcPremorbid(); calcPredict(); calcOpiePredict(); });
     el.addEventListener('change', () => { calcPremorbid(); calcPredict(); calcOpiePredict(); });
   });
-  /* The other half of the shared patient age. Separate from the loop above so
+  /* The mirror half of the shared patient age. Separate from the loop above so
      the premorbid recalcs stay exactly as they were; this only adds the mirror
-     into #bat-age and the Score Tables re-render. */
+     into #patient-age and the Score Tables re-render. */
   const ageEl = preGet('pre-age');
   if (ageEl){
     const mirror = () => {
       syncPatientAge('pre-age');
       if (typeof renderBattery === 'function') renderBattery();
+      if (typeof refreshPatientAgeIndicator === 'function') refreshPatientAgeIndicator();
     };
     ageEl.addEventListener('input', mirror);
     ageEl.addEventListener('change', mirror);
@@ -5869,7 +5948,7 @@ wireSdiAutofill();
 // Final initialization
 refreshAll();
 
-/* ---------- GLOBAL CLEAR — Topbar "Clear all tables" button ----------
+/* ---------- GLOBAL CLEAR — Topbar "New patient" button ----------
    Wipes every tool's session data in one action: battery rows, SDI rows,
    the four RCI methods, premorbid inputs, working report items.
 
@@ -5880,7 +5959,7 @@ refreshAll();
   const btn = document.getElementById('topbar-clear-all');
   if (!btn) return;
   btn.addEventListener('click', () => {
-    const ok = confirm('Are you sure?\n\nThis clears every table you\'ve been working on across all tools, including the Working Report. It cannot be undone.');
+    const ok = confirm('Start a new patient?\n\nThis clears every table you\'ve been working on across all tools, including the Working Report, and the patient age. It cannot be undone.');
     if (!ok) return;
 
     // Suppress the observers BEFORE any clearing happens. The 350ms debounce
@@ -5900,9 +5979,13 @@ refreshAll();
         if (typeof clearMethodRows === 'function') clearMethodRows(m);
       });
     } catch(e){}
-    // Premorbid inputs (predictors + demographics)
+    /* Premorbid inputs (predictors + demographics), and the master patient age.
+       #patient-age is listed explicitly rather than left to the #pre-age mirror:
+       the mirror would in fact carry the blank across, but a patient identity
+       that survives "New patient" because one listener was reordered is the
+       failure this button exists to prevent. Clear both, assert neither. */
     try {
-      ['pre-topf','pre-vc','pre-mr','pre-sex','pre-occ','pre-edu','pre-age'].forEach(id => {
+      ['patient-age','pre-topf','pre-vc','pre-mr','pre-sex','pre-occ','pre-edu','pre-age'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         el.value = '';
@@ -7482,7 +7565,7 @@ ${buildReportHtmlBody()}
         else if (action === 'minimise') close();
         else if (action === 'maximise') toggleMaximised();
         else if (action === 'clear')    {
-          // Forward to the topbar's "Clear all tables" button so it does
+          // Forward to the topbar's "New patient" button so it does
           // the full session wipe (every tool + the bundle), with a single
           // confirm. Falls back to local-only clear if the topbar button
           // isn't available for any reason.

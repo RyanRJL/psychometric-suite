@@ -355,12 +355,36 @@ Keys are the band's **lower bound**; `rInternalForAge` takes the greatest key �
 on an entry rather than a separate group.
 
 The age is read through `batteryPatientAge()`, which since 616a70a delegates to
-`patientAge()` — **one shared value** behind `#bat-age` on Score Tables and `#pre-age` on
-Premorbid, pinned by `check.js` §26. It is **optional**. Blank, or outside
-`rInternalAgeMax`, falls back to `rInternal` where one is published — the manual's own
-all-ages figure, so both paths are citable — and to the retest `r` where none is, which is
-the D-KEFS original case below. **Never make it required**: a blank age silently emptying
-the CI column would read as the app being broken.
+`patientAge()` — **one shared value**. The master is **`#patient-age` in the top bar**,
+mirrored into `#pre-age` on Premorbid; `PATIENT_AGE_INPUTS` lists the master **first**,
+because `patientAge()` returns the first input holding a finite value. Pinned by
+`check.js` §26. It is **optional**. Blank, or outside `rInternalAgeMax`, falls back to
+`rInternal` where one is published — the manual's own all-ages figure, so both paths are
+citable — and to the retest `r` where none is, which is the D-KEFS original case below.
+**Never make it required**: a blank age silently emptying the CI column would read as the
+app being broken.
+
+It used to be `#bat-age`, declared in the Score Tables markup and moved by
+`design-system.js` into that page's inline control bar. That cost three fixes in
+succession, all from one cause — **patient-level data living in a page-level control
+bar**: it shipped rendering at 0×0 inside a wholesale-hidden panel (`d6e80e8`); once
+moved, it took width from the test-family search and its label had to be truncated to
+"Age" (`5cea561`); and being revealed only with the CI toggle, a clinician who never
+turned CI on never saw an age field at all. The inline bar now holds **view settings
+only** — Show Raw, Score CI, Classification. If you are tempted to put another
+patient-level field on a page, put it in the top bar instead.
+
+A `.ds-patient-field.is-live` pip beside the field lights only where a measure actually
+reads the age — `patientAgeIsInUse()`, which on Score Tables uses **the same expression
+that decides the APA note's `ciAge`**, so screen and export cannot disagree. It is
+refreshed from `renderBattery()` (rows and CI level change without the age being touched)
+and from `navigateTo()` (the page changes with neither changing). The pip is toggled by a
+**class**, never `[hidden]` — the element it replaced used the attribute and stayed on
+screen, because its own `display:flex` outranked the browser default.
+
+The topbar button is **"New patient"**, not "Clear all tables": it clears every table
+*and* the age, because once age is a header-level property of the patient, two controls
+that each clear half of one is how a previous age survives onto the next person's report.
 
 Three constraints, all in `check.js` §25:
 
