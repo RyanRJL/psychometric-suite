@@ -2088,6 +2088,94 @@ function rStabilityForAge(entry, age){
   return bandedReliabilityForAge(entry.rStabilityByAge, entry.rStabilityAgeMax, age);
 }
 
+/* THE ONE PLACE THAT DECIDES WHICH COEFFICIENT AN INTERVAL RESTS ON.
+
+   Score Tables renders the interval; the Data page tells the clinician what it
+   rests on. Those were two functions reading the same fields in the same order,
+   pinned together by check.js S32 — which caught nothing for a while and then
+   had to be strengthened twice, because a mirror is only ever as good as the
+   next person's memory. They now share this one resolver, so the two cannot
+   drift; S32 still drives both entry points, which is where the remaining
+   drift risk lives (the arguments each one passes in).
+
+   Returns the coefficient AND the name of its source, because .90 from a
+   split-half table and .90 from a retest study are different claims and this
+   project treats an on-screen statement of method as a contract.
+
+   `age` is optional throughout. The Data page has no patient, so it renders
+   the blank-age answer, which is also the app's own fallback. */
+function resolveCiReliability(entry, normSD, age){
+  if (!entry || typeof entry !== 'object') return null;
+  const banded = !!(entry.rInternalByAge || entry.rStabilityByAge);
+  const rBand  = rInternalForAge(entry, age);
+  const rSBand = rStabilityForAge(entry, age);
+  let r = null, basis = null;
+  if (Number.isFinite(rBand))                 { r = rBand;            basis = 'internal consistency'; }
+  else if (Number.isFinite(rSBand))           { r = rSBand;           basis = 'stability, published'; }
+  else if (Number.isFinite(entry.rInternal))  { r = entry.rInternal;  basis = 'internal consistency'; }
+  else if (Number.isFinite(entry.rStability)) { r = entry.rStability; basis = 'stability, published'; }
+  else if (Number.isFinite(entry.rCorrected)) { r = entry.rCorrected; basis = 'retest, corrected'; }
+  /* THE UNCORRECTED RETEST COEFFICIENT, AND WHY IT STAYS UNCORRECTED.
+
+     This is the last resort, and it pairs a coefficient measured on the retest
+     STUDY's sample with the NORMATIVE SD of the displayed metric. Those are
+     different populations, which normally makes SD sqrt(1 - rxx) an invalid
+     error variance — the very mismatch the Score Tables CI fixed in the other
+     direction when it stopped pairing rCorrected with sd1.
+
+     APPLYING THE RANGE-RESTRICTION CORRECTION HERE WAS BUILT, TESTED AND
+     REJECTED. Allen & Yen / Magnusson gives
+
+         rxx(unrestricted) = 1 - (sd1^2 / normSD^2)(1 - r)
+
+     and it is a good formula: over the 267 entries carrying both a raw r and a
+     published rCorrected it reproduces the publisher's own figure to a median
+     error of .003. It would have moved 260 stored entries, 47 of them
+     reachable from Score Tables.
+
+     It was rejected because EVERY ONE of those 47 belongs to a manual that has
+     already made this pairing itself, deliberately. D-KEFS Technical Manual
+     p. 19 says test-retest SEMs "were derived from the total sample of cases"
+     and p. 19 fixes "The standard deviation unit is 3 for all D-KEFS scaled
+     scores" — i.e. 3 x sqrt(1 - r) on the UNCORRECTED total-sample r. Table
+     2.8 proves it: Design Fluency's three All Ages SEMs are 1.94 / 1.97 /
+     2.47, and 3 x sqrt(1 - r) gives exactly those, where the corrected
+     coefficient would give 1.78 / 1.95 / 2.43. The remaining 22 are D-KEFS
+     Advanced Trail Making and Verbal Fluency, whose Table 3.4 rows ARE the
+     retest coefficients — that manual's stated choice for its speeded tests.
+
+     So correcting here would print a number the cited manual does not contain,
+     on measures where the publisher's own arithmetic is on the page. That is
+     the same ground on which the unrounded Fisher's-z WAIS-IV average was
+     declined: the app renders the coefficient it actually used, and a
+     clinician cross-checking the manual must find it there.
+
+     What is shipped instead is the LABEL. "retest, uncorrected" on the Data
+     page says plainly that this interval rests on a retest-study coefficient
+     used with a normative SD, so the compromise is visible rather than
+     silent. Two quite different states share the raw r and the label separates
+     them: with a normative SD in force the pairing is the publisher's own
+     compromise; with none, the row is shown raw and r sits beside its own
+     sample's SD, which is simply correct and needs no qualifier. */
+  else if (Number.isFinite(entry.r))          { r = entry.r;
+    basis = Number.isFinite(normSD) ? 'retest, uncorrected' : 'retest'; }
+  if (r === null){
+    /* No coefficient at all. Two quite different reasons, and the row should
+       say which: a base-rate measure is scored by published lookup and never
+       had one, whereas a raw RBANS subtest is simply absent from its manual's
+       reliability table. Neither prints an interval. */
+    if (entry.baseRates) return { r:null, basis:'base rate — no interval', none:true };
+    return { r:null, basis:'none published', none:true };
+  }
+  /* Unconditional, and it has to be: D-KEFS (original) publishes
+     rInternalByAge with NO all-ages average, so at a blank age it lands on the
+     retest branch above while still being a measure whose printed figure moves
+     the moment an age is entered. Suffixing only the internal-consistency
+     branches would silence exactly the rows that most need the warning. */
+  if (banded) basis += ' · by age';
+  return { r, basis, none:false };
+}
+
 function getBatteryRowReliability(row, type, age){
   if (!row.group) return null;
   const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
@@ -2096,20 +2184,15 @@ function getBatteryRowReliability(row, type, age){
   if (!family) return null;
   const entry = family[row.name];
   if (!entry || typeof entry !== 'object') return null;
-  const rBand  = rInternalForAge(entry, age);
-  const rSBand = rStabilityForAge(entry, age);
-  const r = Number.isFinite(rBand)           ? rBand            :
-            Number.isFinite(rSBand)          ? rSBand           :
-            Number.isFinite(entry.rInternal)  ? entry.rInternal  :
-            Number.isFinite(entry.rStability) ? entry.rStability :
-            Number.isFinite(entry.rCorrected) ? entry.rCorrected :
-            Number.isFinite(entry.r)          ? entry.r          : null;
-  if (r === null) return null;
   /* BATTERY_METRIC_SD has no 'raw' key, so a row shown raw falls through to
-     the entry's own SD — the only one in its units. */
-  const sd = BATTERY_METRIC_SD[type] ||
-             (Number.isFinite(entry.sd1) ? entry.sd1 : null);
-  return sd !== null ? { r, sd } : null;
+     the entry's own SD — the only one in its units — and, for the same reason,
+     takes no range-restriction correction. */
+  const normSD = BATTERY_METRIC_SD[type];
+  const rel = resolveCiReliability(entry, normSD, age);
+  if (!rel || rel.none) return null;
+  const sd = Number.isFinite(normSD) ? normSD
+           : (Number.isFinite(entry.sd1) ? entry.sd1 : null);
+  return sd !== null ? { r: rel.r, sd, basis: rel.basis } : null;
 }
 /* Hard limits imposed by the score scale itself, used to keep an interval from
    printing a value the scale cannot produce. Only scaled scores have a
@@ -2419,6 +2502,18 @@ const APA_NOTES = {
     ctx.ciLevel && ctx.ciLevel !== 'off'
       ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM, where SEM = SD × √(1 − r) on the normative standard deviation of the reported metric. The reliability r is the retest or alternate-form coefficient published for each measure, except where the test author derives its own published intervals from an internal-consistency coefficient, in which case that coefficient is used. Intervals resting on a retest coefficient run wider than a manual's internal-consistency interval.`
       : '',
+    /* WHERE THE PAIRING IS THE PUBLISHER'S OWN COMPROMISE, SAY SO. Some
+       measures have no coefficient computed on the normative sample, so the
+       interval rests on the retest study's own correlation used with the
+       normative SD. That is what their manuals do (D-KEFS Technical Manual
+       p. 19; D-KEFS Advanced Table 3.4), and correcting it would print a
+       figure those manuals do not contain — see resolveCiReliability. But a
+       reader comparing two tables should not have to work out which measures
+       are on that footing, so it is stated, and stated ONLY when a measure in
+       THIS table is actually on it. */
+    ctx.hasUncorrectedR
+      ? 'For measures whose manual publishes no coefficient computed on the normative sample, the interval uses that manual\'s own pairing: the test–retest correlation from its retest study, with the normative standard deviation of the metric.'
+      : '',
     /* Which age band the coefficients were drawn from. Without this the
        interval cannot be reproduced from the manual, because for these
        measures the published reliability changes with age. */
@@ -2554,6 +2649,16 @@ function renderBatteryApa(){
          no measure reads one would be its own misstatement. */
       ciAge: (ciLevel !== 'off' && batteryPatientAge() !== null
               && valid.some(r => batteryRowUsesAgeBand(r))) ? batteryPatientAge() : null,
+      /* Asked of the SHIPPED resolver, at the age actually in force, rather
+         than re-tested against the fields here — a second reading of the
+         preference chain is a second thing to keep in step. Prefix match,
+         because the basis can carry a " · by age" suffix: D-KEFS (original)
+         publishes rInternalByAge with no all-ages average, so at a blank age
+         such a row is BOTH uncorrected and a measure whose coefficient moves
+         the moment an age is entered. */
+      hasUncorrectedR: ciLevel !== 'off' && valid.some(r =>
+        ((getBatteryRowReliability(r, rowScoreType(r), batteryPatientAge()) || {}).basis || '')
+          .startsWith('retest, uncorrected')),
       premorbid: prem ? fmt(prem.estimate, 0) : null,
       premorbidMode: prem ? batteryPremorbidMode(prem) : null
     })}
@@ -4085,31 +4190,23 @@ function dbInstrumentOf(family, isCustom){
 
 /* THE RELIABILITY THIS ROW'S CONFIDENCE INTERVAL IS ACTUALLY BUILT FROM.
 
-   Mirrors getBatteryRowReliability's preference order exactly, minus the two
-   age-band lookups, which need a patient age this page does not have — so what
-   is shown is the BLANK-AGE answer, which is also the app's fallback. Where a
-   by-age table exists the basis says so, because the printed figure will move
-   once an age is entered on Score Tables.
+   No longer a mirror of getBatteryRowReliability — both now call
+   resolveCiReliability, so the page cannot advertise a coefficient the app
+   does not use. What is left to get wrong is the ARGUMENTS, and there is one
+   that matters: the range-restriction correction needs the normative SD, which
+   depends on the metric the score is displayed in. Score Tables gets that from
+   the row (rowScoreType), which for an auto-filled row is
+   inferScoreTypeForSubtest's answer — so this page asks the same question of
+   the same function rather than inventing a shortcut. check.js S32 drives both
+   entry points over every entry and compares.
 
-   If this ever drifts from getBatteryRowReliability, the table advertises a
-   coefficient the app does not use. check.js pins the two together. */
-function dbReliabilityBasis(entry){
-  const banded = !!(entry.rInternalByAge || entry.rStabilityByAge);
-  let r = null, basis = null;
-  if (Number.isFinite(entry.rInternal))        { r = entry.rInternal;  basis = 'internal consistency'; }
-  else if (Number.isFinite(entry.rStability))  { r = entry.rStability; basis = 'stability, published'; }
-  else if (Number.isFinite(entry.rCorrected))  { r = entry.rCorrected; basis = 'retest, corrected'; }
-  else if (Number.isFinite(entry.r))           { r = entry.r;          basis = 'retest'; }
-  if (r === null){
-    /* No coefficient at all. Two quite different reasons, and the row should
-       say which: a base-rate measure is scored by published lookup and never
-       had one, whereas a raw RBANS subtest is simply absent from its manual's
-       reliability table. Neither prints an interval. */
-    if (entry.baseRates) return { r:null, basis:'base rate — no interval', none:true };
-    return { r:null, basis:'none published', none:true };
-  }
-  if (banded) basis += ' · by age';
-  return { r, basis, none:false };
+   No patient age, so this renders the BLANK-AGE answer, which is also the
+   app's own fallback. Where a by-age table exists the basis says so, because
+   the printed figure will move once an age is entered on Score Tables. */
+function dbReliabilityBasis(entry, family, name){
+  const type = inferScoreTypeForSubtest(family, name, entry);
+  const rel = resolveCiReliability(entry, BATTERY_METRIC_SD[type], undefined);
+  return rel || { r:null, basis:'none published', none:true };
 }
 
 /* Sort state for the Norms Database table. Key is a column id, not an index,
@@ -4154,7 +4251,7 @@ function dbFlatRows(){
     const category = isCustom ? base : (base.slice(instrument.length).trim() || base);
     Object.entries(merged[family]).forEach(([name, e]) => {
       if (!e || typeof e !== 'object') return;
-      rows.push({ family, isCustom, instrument, category, band, name, e, rel: dbReliabilityBasis(e) });
+      rows.push({ family, isCustom, instrument, category, band, name, e, rel: dbReliabilityBasis(e, family, name) });
     });
   });
   return rows;

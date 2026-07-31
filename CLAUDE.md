@@ -405,6 +405,50 @@ regime, confirmed by Design Fluency Table 2.8, whose three All Ages SEMs all rep
 `3 × √(1 − r)`. Both paths are the publisher's own figures, so the column stays citable
 either way. Averaging the bands to manufacture an `rInternal` would be inventing a number.
 
+##### Table 2.8 is also why the range-restriction correction was built, tested and rejected
+
+**Do not "discover" this and apply it.** The reasoning is sound right up to the last step,
+which is exactly what makes it worth recording.
+
+Every interval in this app is `SD × √(1 − rxx)`, valid only when both terms describe the
+same group. 298 entries fall through to the retest study's own `r` paired with a
+**normative** SD — two populations. `rCorrected` is the fix where a manual prints one, but
+D-KEFS, D-KEFS Advanced and CVLT-C print none at all. The Allen & Yen / Magnusson
+correction repairs it arithmetically:
+
+```
+rxx(unrestricted) = 1 − (sd1² ÷ normSD²)(1 − r)
+```
+
+and it is a **good formula, not a guess**: over the 267 entries carrying both a raw `r` and
+a published `rCorrected` it reproduces the publisher's own figure to a median error of
+**.003**, 193 of them inside .005. Applying it in `resolveCiReliability` would have moved
+260 stored entries, **47 of them reachable from Score Tables**.
+
+It was rejected because **every one of those 47 belongs to a manual that has already made
+this pairing itself, deliberately.** D-KEFS Technical Manual p. 19 says test–retest SEMs
+"were derived from the total sample of cases" and fixes "The standard deviation unit is 3
+for all D-KEFS scaled scores" — i.e. `3 × √(1 − r)` on the **uncorrected** total-sample `r`.
+Table 2.8 is that arithmetic on the page: Design Fluency's three All Ages SEMs are
+1.94 / 1.97 / 2.47, and `3 × √(1 − r)` gives exactly those, where the corrected coefficient
+gives 1.78 / 1.95 / 2.43. The remaining 22 are D-KEFS Advanced Trail Making and Verbal
+Fluency, whose Table 3.4 rows *are* the retest coefficients — that manual's stated choice
+for its speeded tests.
+
+So correcting would print a coefficient the cited manual does not contain, on the one family
+whose own working is checkable. **Same ground as the declined unrounded Fisher's-z WAIS-IV
+average**: the app renders the coefficient it actually used, and a clinician cross-checking
+the manual must find it there. What shipped instead is the *label* — `retest, uncorrected`
+on the Data page and a sentence in the APA note — so the compromise is visible rather than
+silent.
+
+`check.js` §27 asserts **both** directions, and the second is the load-bearing one: the
+uncorrected `r` must still reproduce Table 2.8, and the corrected one must still fail to. It
+also greps `resolveCiReliability` for `sd1` (comments stripped — the function documents the
+formula at length) so the correction cannot creep back in. If a corrected printing ever
+makes the corrected value fit, the check fails too, which is the signal to re-read this
+section rather than assume a regression.
+
 Four exclusions, four different reasons — each an easy silent mistake, each pinned:
 
 - **Colour-Word Interference, all four.** Its only coefficient table (2.9) is for the
@@ -838,9 +882,15 @@ weakest, which are still on a raw retest coefficient, which move with the patien
 
 Two columns say **which reliability the interval is actually built from and what it rests
 on**. 131 entries are scored on a coefficient the old columns never showed.
-`dbReliabilityBasis()` mirrors `getBatteryRowReliability()`'s preference order at a blank
-age — **if the two drift, the page tells a clinician their interval rests on a coefficient
-it does not** — so `check.js` §32 drives both over all 659 entries and compares.
+`dbReliabilityBasis()` and `getBatteryRowReliability()` were two functions reading the same
+fields in the same order — **if they drift, the page tells a clinician their interval rests
+on a coefficient it does not** — and the mirror had to be strengthened twice, because a
+mirror is only as good as the next person's memory. They now **share one resolver,
+`resolveCiReliability(entry, normSD, age)`**, so the preference order cannot drift at all.
+What can still drift is the *arguments*: the correction-relevant one is the normative SD,
+which depends on the displayed metric, so the page asks `inferScoreTypeForSubtest` — the
+same function autofill uses to set `row.scoreType`. §32 drives both entry points over all
+671 entries and compares the coefficient **and** the basis string.
 
 Internal consistency and published stability **never co-occur on an entry** — 0 of 659, a
 measure being one or the other within its manual's reliability table. What does co-occur is
@@ -853,6 +903,27 @@ is blank on every row.
 Two rows print no interval, for different reasons, and the basis distinguishes them:
 `base rate — no interval` (scored by published lookup, never had a coefficient) and
 `none published` (the four raw RBANS subtests, absent from Table 3.6).
+
+**The two retest labels are a distinction, not a synonym pair**, and §32 pins the whole
+distribution so a change of basis anywhere has to be acknowledged rather than slide through:
+
+| Basis | Entries | What it means |
+|---|---|---|
+| `internal consistency` (+ `· by age`) | 3 + 115 | published split-half / alpha |
+| `stability, published · by age` | 12 | the manual's own reliability table, stability rows |
+| `retest, corrected` | 180 | a published `rCorrected` |
+| `retest, uncorrected` (+ `· by age`) | 285 + 13 | the retest study's own `r`, used with a **normative** SD |
+| `retest` | 8 | raw display — `r` beside its own sample's `sd1` |
+| `none published` / `base rate` | 4 + 51 | no interval at all |
+
+`retest, uncorrected` is the honest name for a real compromise: `r` describes the retest
+study's sample and the SD describes the norm group. **It is not a defect to be repaired —
+see the D-KEFS note below.** Plain `retest` is exactly the four raw RBANS subtests in each
+of the two retest bands; nothing else in the database is displayed raw, so if that 8 moves,
+a family has gained or lost `metric:'raw'`, which changes what a percentile means.
+CVLT-C lands on `uncorrected` and belongs there, which is not obvious: `metric:'raw'` makes
+it look like the second case, but `reportedAs` puts the row on T or z, so the SD in force is
+the normative 10 or 1 while `r` was measured on raw words recalled.
 
 **`DB_COLUMNS` gives each column one `get`, used for both display and sorting**, so a
 column cannot order by something other than what it shows. §32 pins that, and pins the two
@@ -922,7 +993,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 263 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 264 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
