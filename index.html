@@ -962,6 +962,25 @@
           <input type="hidden" id="bat-prem-threshold" value="sd">
           <!-- Score CI: "off" | "90" | "95" -->
           <input type="hidden" id="bat-ci-level" value="off">
+          <!-- Which reliability the interval rests on: "published" | "corrected".
+               DEFAULT PUBLISHED, and that default is the load-bearing part.
+               A few hundred measures have no coefficient computed on the
+               normative sample, so their interval pairs the retest study's own
+               r with the normative SD of the metric. That is those manuals'
+               OWN pairing (D-KEFS Technical Manual p. 19, Table 2.8), so
+               "published" reproduces the printed figure and is what a
+               clinician cross-checking the manual must find.
+
+               "corrected" applies the Allen & Yen / Magnusson variability
+               correction to those measures instead. It is offered because the
+               statistical objection to the publishers' pairing is real, not
+               because the publishers are wrong; the APA note says which basis
+               produced the table either way. Same shape as the RCI pages'
+               corrected-r toggle, and off for the same reason.
+
+               Like #bat-ci-level, declared here rather than built by
+               design-system.js so app.js can wire its listener at init. -->
+          <input type="hidden" id="bat-ci-basis" value="published">
           <!-- Patient age. Optional, and only consulted where a publisher
                reports its reliability by age band (see rInternalByAge in
                data.js). Left blank, those measures fall back to the published
@@ -2236,8 +2255,8 @@
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260801b"></script>
-<script src="app.js?v=20260801e"></script>
-<script src="design-system.js?v=20260801a" defer></script>
+<script src="app.js?v=20260801f"></script>
+<script src="design-system.js?v=20260801b" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 <script src="app-viz-page.js?v=20260730m"></script>
 

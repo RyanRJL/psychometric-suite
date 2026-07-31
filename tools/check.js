@@ -1126,20 +1126,24 @@ const batteryCtx = (() => {
   const ctx = {
     normDB: D.normDB,
     getMergedDB: () => D.normDB,
-    document: { getElementById: () => ({ value: 'scaled' }) }
+    /* #bat-type answers 'scaled' for rowScoreType; #bat-ci-basis is ABSENT on
+       purpose, so batteryCiCorrectRetest has to fall back to published. The
+       checks pass the flag explicitly when they want the other reading. */
+    document: { getElementById: (id) => (id === 'bat-ci-basis' ? null : { value: 'scaled' }) }
   };
   vm.createContext(ctx);
   vm.runInContext(
     boundsSrc[0] + '\n' + metricSdSrc[0] + '\n' +
       (APP_SRC.match(/const PATIENT_AGE_INPUTS = \[[^\]]*\];/) || [''])[0] + '\n' +
       ['patientAge', 'bandedReliabilityForAge', 'rInternalForAge', 'rStabilityForAge',
-       'resolveCiReliability',
+       'derivedCorrectedR', 'batteryCiCorrectRetest', 'resolveCiReliability',
        'batteryPatientAge', 'getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml']
         .map((n) => extractFn(APP_SRC, n)).join('\n') +
       '\n;globalThis.__B = getBatteryCiHtml;'
       + '\n;globalThis.__REL = getBatteryRowReliability;'
       + '\n;globalThis.__AGE = rInternalForAge;'
-      + '\n;globalThis.__STAB = rStabilityForAge;',
+      + '\n;globalThis.__STAB = rStabilityForAge;'
+      + '\n;globalThis.__CORR = batteryCiCorrectRetest;',
     ctx
   );
   return ctx;
@@ -1148,6 +1152,7 @@ const batteryCi  = batteryCtx.__B;
 const batteryRel = batteryCtx.__REL;
 const rInternalForAge = batteryCtx.__AGE;
 const rStabilityForAge = batteryCtx.__STAB;
+const batteryCiCorrectRetest = batteryCtx.__CORR;
 
 const SCALED_ROW   = { name: 'Block Design', group: 'WAIS-IV Core Subtests · All Ages', scoreType: 'scaled' };
 const STANDARD_ROW = { name: 'Full Scale IQ', group: 'WAIS-IV Indices · All Ages',      scoreType: 'standard' };
@@ -3377,34 +3382,68 @@ check('the manual pairs its normative SD with the UNCORRECTED retest r', () => {
      where its own working is checkable — the same ground on which the
      unrounded Fisher's-z WAIS-IV average was declined.
 
-     So this asserts BOTH directions, and the second is the load-bearing one:
-     the uncorrected r must still reproduce Table 2.8, and the corrected one
-     must still fail to. If a future change applies the correction, the app and
-     the manual part company and this fails. If a corrected printing of the
-     manual ever makes the corrected value fit, it also fails, which is the
-     signal to re-read this note rather than to assume a regression. */
+     It is OFFERED, though — the reliability-basis control on Score Tables
+     applies it deliberately, with the APA note saying so. What must never
+     happen is it becoming the default, or leaking into a caller that did not
+     ask, so this drives the SHIPPED renderer in both states.
+
+     Four assertions, and the middle two are the load-bearing ones:
+       1. the uncorrected r reproduces Table 2.8 exactly;
+       2. the DEFAULT reading — no flag passed at all — still gives it, so the
+          published interval is what an untouched app prints;
+       3. the corrected reading does NOT reproduce Table 2.8, so the two
+          readings genuinely separate and the choice is a real one;
+       4. a missing control reads as published, so a harness or a page whose
+          control failed to build cannot land on derived coefficients.
+
+     If a corrected printing of the manual ever makes the corrected value fit,
+     3 fails, which is the signal to re-read this note rather than assume a
+     regression. */
   const T28 = { 'Filled Dots': 1.94, 'Empty Dots': 1.97, 'Switching': 2.47 };
   const group = 'D-KEFS Design Fluency · All Ages';
   const bad = [];
   let corrHits = 0;
   Object.entries(T28).forEach(([name, sem]) => {
     const e = D.normDB[group][name];
+    const row = { name, group, scoreType: 'scaled' };
+    const at = (rel) => Math.round(3 * Math.sqrt(1 - rel.r) * 100) / 100;
+
     const plain = Math.round(3 * Math.sqrt(1 - e.r) * 100) / 100;
     if (plain !== sem) bad.push(name + ': 3 sqrt(1 - r) = ' + plain + ', Table 2.8 prints ' + sem);
-    const rxx = 1 - (e.sd1 * e.sd1) / 9 * (1 - e.r);
-    if (Math.round(3 * Math.sqrt(1 - rxx) * 100) / 100 === sem) corrHits++;
+
+    // 2. the default, with no flag passed — what an untouched app prints
+    const dflt = batteryRel(row, 'scaled', undefined);
+    if (at(dflt) !== sem) {
+      bad.push(name + ': the DEFAULT reading gives SEM ' + at(dflt) + ', Table 2.8 prints ' + sem
+        + ' — the correction has become the default');
+    }
+    if (dflt.basis !== 'retest, uncorrected') bad.push(name + ': default basis is "' + dflt.basis + '"');
+    if (batteryRel(row, 'scaled', undefined, false).r !== dflt.r) {
+      bad.push(name + ': explicitly asking for published differs from the default');
+    }
+
+    // 3. and the corrected reading must be a DIFFERENT number
+    const corr = batteryRel(row, 'scaled', undefined, true);
+    if (corr.basis !== 'retest, corrected here') bad.push(name + ': corrected basis is "' + corr.basis + '"');
+    if (at(corr) === sem) corrHits++;
   });
   if (corrHits) {
     bad.push(corrHits + ' of 3 also reproduce from the range-corrected coefficient — '
       + 'the two readings no longer separate, so the argument in this check needs re-checking');
   }
-  /* And the correction must not have crept into the shipped chain. Cheap, and
-     it is the thing the prose above is actually protecting. Comments are
-     stripped first: the function DOCUMENTS the formula at length, so a naive
-     grep matches its own explanation of why it does not use it. */
-  const code = extractFn(APP_SRC, 'resolveCiReliability').replace(/\/\*[\s\S]*?\*\//g, '');
-  if (/\bsd1\b/.test(code)) {
-    bad.push('resolveCiReliability now reads sd1, so it is computing a variability correction; Table 2.8 says the manual does not');
+  /* 4. The control's own default, read straight from the markup rather than
+        from the function, because that is the value a browser actually loads. */
+  if (!/id="bat-ci-basis"[^>]*value="published"/.test(HTML_SRC)) {
+    bad.push('#bat-ci-basis does not default to published in index.html');
+  }
+  if (batteryCiCorrectRetest() !== false) {
+    bad.push('batteryCiCorrectRetest returns true with no control present; a missing control must read as published');
+  }
+  /* A published coefficient must never be overwritten, whatever the toggle
+     says. Cheapest proof: a measure with internal consistency is unmoved. */
+  const wais = { name: 'Vocabulary', group: 'WAIS-IV Core Subtests · All Ages', scoreType: 'scaled' };
+  if (batteryRel(wais, 'scaled', undefined, true).r !== batteryRel(wais, 'scaled', undefined, false).r) {
+    bad.push('the toggle moved a published internal-consistency coefficient; it must reach only the retest branch');
   }
   return bad.length === 0 || bad.join('; ');
 });
@@ -4862,13 +4901,19 @@ check('the stored averages are Table 4.1\'s own average column', () => {
 heading('32. Norms Database view');
 
 const dbCtx = (() => {
-  const ctx = { normDB: D.normDB, getMergedDB: () => D.normDB };
+  /* No #bat-ci-basis here, which is the point: batteryCiCorrectRetest must
+     read "published" from a missing control, so a harness (or a page that
+     failed to build the bar) can never land on derived coefficients by
+     accident. The checks below pass the flag explicitly to drive both states. */
+  const ctx = { normDB: D.normDB, getMergedDB: () => D.normDB,
+                document: { getElementById: () => null } };
   vm.createContext(ctx);
   vm.runInContext(
     (APP_SRC.match(/const BATTERY_METRIC_SD = \{[^;]*;/) || [''])[0] + '\n' +
     (APP_SRC.match(/const SCORE_METRICS = [^;]*;/) || [''])[0] + '\n' +
     ['inferScoreType', 'inferScoreTypeForSubtest', 'bandedReliabilityForAge',
-     'rInternalForAge', 'rStabilityForAge', 'resolveCiReliability',
+     'rInternalForAge', 'rStabilityForAge', 'derivedCorrectedR',
+     'batteryCiCorrectRetest', 'resolveCiReliability',
      'dbReliabilityBasis', 'dbInstrumentOf'].map((n) => extractFn(APP_SRC, n)).join('\n') +
     ';globalThis.__BASIS = dbReliabilityBasis; globalThis.__INST = dbInstrumentOf;'
     + 'globalThis.inferScoreTypeForSubtest = inferScoreTypeForSubtest;',
@@ -4896,27 +4941,51 @@ check('the reliability column shows what the app would actually use', () => {
      The score type is the app's own inferScoreTypeForSubtest rather than a
      shortcut restated here, because that is what an auto-filled Score Tables
      row carries and what dbReliabilityBasis asks for. Restating it would let
-     the two disagree about the metric while agreeing about everything else. */
+     the two disagree about the metric while agreeing about everything else.
+
+     DRIVEN IN BOTH STATES OF THE RELIABILITY-BASIS CONTROL. That control lives
+     on Score Tables but this page has to follow it: showing the published
+     reading while the table is set to corrected is exactly the defect the
+     shared resolver exists to prevent, and it would be invisible — the page
+     would look right, on its own terms, while contradicting the report. */
   const bad = [];
-  let n = 0, withR = 0;
+  let n = 0, withR = 0, moved = 0;
   Object.entries(D.normDB).forEach(([group, tab]) => {
     Object.entries(tab).forEach(([name, e]) => {
       if (!e || typeof e !== 'object') return;
       n++;
-      const shown = dbBasis(e, group, name);
       const type = dbType(group, name, e);
-      const used = batteryRel({ name, group, scoreType: type }, type, undefined);
-      if (!used) {
-        if (!shown.none) bad.push(group + ' / ' + name + ': table shows ' + shown.r + ' but the app builds no interval');
-        return;
-      }
-      withR++;
-      if (shown.r !== used.r) bad.push(group + ' / ' + name + ': table shows ' + shown.r + ', the renderer uses ' + used.r);
-      if (shown.basis !== used.basis) bad.push(group + ' / ' + name + ': table says "' + shown.basis + '", the renderer says "' + used.basis + '"');
+      [false, true].forEach((corr) => {
+        const shown = dbBasis(e, group, name, corr);
+        const used = batteryRel({ name, group, scoreType: type }, type, undefined, corr);
+        const at = corr ? ' [corrected]' : '';
+        if (!used) {
+          if (!shown.none) bad.push(group + ' / ' + name + at + ': table shows ' + shown.r + ' but the app builds no interval');
+          return;
+        }
+        if (!corr) withR++;
+        if (shown.r !== used.r) bad.push(group + ' / ' + name + at + ': table shows ' + shown.r + ', the renderer uses ' + used.r);
+        if (shown.basis !== used.basis) bad.push(group + ' / ' + name + at + ': table says "' + shown.basis + '", the renderer says "' + used.basis + '"');
+      });
+      if (dbBasis(e, group, name, true).r !== dbBasis(e, group, name, false).r) moved++;
     });
   });
   if (n !== 671) bad.push('expected 671 entries, walked ' + n);
   if (withR < 550) bad.push('only ' + withR + ' entries produced an interval — the comparison has stopped covering the database');
+  /* And the control must actually do something, or the agreement above is
+     vacuous — two functions can hardly disagree about a flag neither reads.
+     From the 298 entries on the retest pairing:
+
+       -36  CVLT-C, sd1 in raw words while the row displays T or z
+       - 2  corrected value outside (0, 1), so not a reliability
+       -14  sd1 exactly equals the normative SD, so the correction is identity
+       ---
+        246 actually move
+
+     The 14 are worth knowing about before treating a shortfall as a bug: a
+     D-KEFS retest sample whose SD is a round 3.0 is unrestricted by
+     definition, and there is nothing for the formula to do. */
+  if (moved !== 246) bad.push('the basis control moves ' + moved + ' entries, expected 246');
   /* And the shared resolver must actually be shared. Both entry points calling
      it is what makes the order impossible to drift; if one grows its own copy
      of the chain the check above would still pass on the day it was written. */

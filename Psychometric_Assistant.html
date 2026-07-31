@@ -14690,6 +14690,25 @@ input[type="number"].ds-inline-bar-age-input{
           <input type="hidden" id="bat-prem-threshold" value="sd">
           <!-- Score CI: "off" | "90" | "95" -->
           <input type="hidden" id="bat-ci-level" value="off">
+          <!-- Which reliability the interval rests on: "published" | "corrected".
+               DEFAULT PUBLISHED, and that default is the load-bearing part.
+               A few hundred measures have no coefficient computed on the
+               normative sample, so their interval pairs the retest study's own
+               r with the normative SD of the metric. That is those manuals'
+               OWN pairing (D-KEFS Technical Manual p. 19, Table 2.8), so
+               "published" reproduces the printed figure and is what a
+               clinician cross-checking the manual must find.
+
+               "corrected" applies the Allen & Yen / Magnusson variability
+               correction to those measures instead. It is offered because the
+               statistical objection to the publishers' pairing is real, not
+               because the publishers are wrong; the APA note says which basis
+               produced the table either way. Same shape as the RCI pages'
+               corrected-r toggle, and off for the same reason.
+
+               Like #bat-ci-level, declared here rather than built by
+               design-system.js so app.js can wire its listener at init. -->
+          <input type="hidden" id="bat-ci-basis" value="published">
           <!-- Patient age. Optional, and only consulted where a publisher
                reports its reliability by age band (see rInternalByAge in
                data.js). Left blank, those measures fall back to the published
@@ -19873,6 +19892,61 @@ function rStabilityForAge(entry, age){
   return bandedReliabilityForAge(entry.rStabilityByAge, entry.rStabilityAgeMax, age);
 }
 
+/* THE RANGE-RESTRICTION CORRECTION — OFFERED, NOT IMPOSED.
+
+   Every interval here is SD x sqrt(1 - rxx), which is only a valid error
+   variance when both terms describe the same group. 298 entries pair the retest
+   study's own r with the NORMATIVE SD of the displayed metric — two
+   populations. Allen & Yen / Magnusson repairs that arithmetically:
+
+       rxx(unrestricted) = 1 - (sd1^2 / normSD^2)(1 - r)
+
+   with sd1 the retest sample's SD at first testing. It is a good formula, not a
+   guess: over the 267 entries carrying both a raw r and a published rCorrected
+   it reproduces the publisher's own figure to a median error of .003.
+
+   IT IS NOT THE DEFAULT, AND MUST NOT BECOME ONE. Every measure it reaches on
+   Score Tables is D-KEFS or D-KEFS Advanced, and both manuals make the
+   uncorrected pairing themselves, deliberately — D-KEFS Technical Manual p. 19
+   fixes SD 3 for all scaled scores and derives its test-retest SEMs from the
+   total sample, which Table 2.8 shows on the page. Applying this by default
+   would print a coefficient the cited manual does not contain. It is offered
+   because the statistical objection is real, and the APA note names whichever
+   basis produced the table. See resolveCiReliability and check.js S27.
+
+   Three refusals, each a distinct way of being wrong:
+
+   - NO NORMATIVE SD. Undefined only when the row is displayed raw, and then
+     sd1 already IS the SD in force — same sample, nothing to correct.
+   - metric:'raw', EVEN WHEN DISPLAYED ON A STANDARDISED METRIC. CVLT-C is the
+     case: sd1 is in words recalled while reportedAs puts the row on T or z, so
+     the ratio of the two is meaningless.
+   - A RESULT OUTSIDE (0, 1) IS NOT A RELIABILITY. Two entries go negative —
+     D-KEFS Design Fluency Switching (Ages 20-49) and D-KEFS Advanced Social
+     Sorting Total Number of Conceptual Level Responses (Ages 8-18) — both
+     retest samples being more variable than the norm group on a coefficient
+     already near .22. They keep the published r even with the toggle on.
+
+   NEVER REACHES RELIABLE CHANGE. There r pairs with sd1/sd2, the same sample's
+   SDs, so the pairing is already self-consistent; and in McSweeney and Crawford
+   r is a fitted regression slope, where a population-corrected value gives a
+   line that was never fitted to anything. */
+function derivedCorrectedR(entry, normSD){
+  if (!entry || !Number.isFinite(normSD) || normSD <= 0) return null;
+  if (entry.metric === 'raw') return null;
+  if (!Number.isFinite(entry.r) || !Number.isFinite(entry.sd1) || entry.sd1 <= 0) return null;
+  const rxx = 1 - (entry.sd1 * entry.sd1) / (normSD * normSD) * (1 - entry.r);
+  return (rxx > 0 && rxx < 1) ? rxx : null;
+}
+
+/* Score Tables' reliability-basis control, read here so that every consumer —
+   the table, the APA note and the Data page — asks one question of one input.
+   Absent element means published, which is also the markup's default: a
+   missing control must never silently switch the app onto derived numbers. */
+function batteryCiCorrectRetest(){
+  return document.getElementById('bat-ci-basis')?.value === 'corrected';
+}
+
 /* THE ONE PLACE THAT DECIDES WHICH COEFFICIENT AN INTERVAL RESTS ON.
 
    Score Tables renders the interval; the Data page tells the clinician what it
@@ -19888,8 +19962,12 @@ function rStabilityForAge(entry, age){
    project treats an on-screen statement of method as a contract.
 
    `age` is optional throughout. The Data page has no patient, so it renders
-   the blank-age answer, which is also the app's own fallback. */
-function resolveCiReliability(entry, normSD, age){
+   the blank-age answer, which is also the app's own fallback.
+
+   `correctRetest` is the Score Tables reliability-basis control, and it reaches
+   ONLY the last branch — a published coefficient is never overwritten, whatever
+   the toggle says. */
+function resolveCiReliability(entry, normSD, age, correctRetest){
   if (!entry || typeof entry !== 'object') return null;
   const banded = !!(entry.rInternalByAge || entry.rStabilityByAge);
   const rBand  = rInternalForAge(entry, age);
@@ -19915,35 +19993,46 @@ function resolveCiReliability(entry, normSD, age){
 
      and it is a good formula: over the 267 entries carrying both a raw r and a
      published rCorrected it reproduces the publisher's own figure to a median
-     error of .003. It would have moved 260 stored entries, 47 of them
-     reachable from Score Tables.
+     error of .003. It moves 246 stored entries, 46 of them reachable from
+     Score Tables — and every one of those 46 is D-KEFS or D-KEFS Advanced.
 
-     It was rejected because EVERY ONE of those 47 belongs to a manual that has
-     already made this pairing itself, deliberately. D-KEFS Technical Manual
-     p. 19 says test-retest SEMs "were derived from the total sample of cases"
-     and p. 19 fixes "The standard deviation unit is 3 for all D-KEFS scaled
-     scores" — i.e. 3 x sqrt(1 - r) on the UNCORRECTED total-sample r. Table
-     2.8 proves it: Design Fluency's three All Ages SEMs are 1.94 / 1.97 /
-     2.47, and 3 x sqrt(1 - r) gives exactly those, where the corrected
-     coefficient would give 1.78 / 1.95 / 2.43. The remaining 22 are D-KEFS
-     Advanced Trail Making and Verbal Fluency, whose Table 3.4 rows ARE the
-     retest coefficients — that manual's stated choice for its speeded tests.
+     CORRECTING BY DEFAULT WAS REJECTED, because EVERY ONE of those 46 belongs
+     to a manual that has already made this pairing itself, deliberately.
+     D-KEFS Technical Manual p. 19 says test-retest SEMs "were derived from the
+     total sample of cases" and fixes "The standard deviation unit is 3 for all
+     D-KEFS scaled scores" — i.e. 3 x sqrt(1 - r) on the UNCORRECTED
+     total-sample r. Table 2.8 proves it: Design Fluency's three All Ages SEMs
+     are 1.94 / 1.97 / 2.47, and 3 x sqrt(1 - r) gives exactly those, where the
+     corrected coefficient gives 1.78 / 1.95 / 2.43. The remaining 22 are
+     D-KEFS Advanced Trail Making and Verbal Fluency, whose Table 3.4 rows ARE
+     the retest coefficients — that manual's stated choice for its speeded
+     tests.
 
-     So correcting here would print a number the cited manual does not contain,
-     on measures where the publisher's own arithmetic is on the page. That is
-     the same ground on which the unrounded Fisher's-z WAIS-IV average was
-     declined: the app renders the coefficient it actually used, and a
-     clinician cross-checking the manual must find it there.
+     So correcting here by default would print a number the cited manual does
+     not contain, on measures where the publisher's own arithmetic is on the
+     page. That is the same ground on which the unrounded Fisher's-z WAIS-IV
+     average was declined: the app renders the coefficient it actually used,
+     and a clinician cross-checking the manual must find it there.
 
-     What is shipped instead is the LABEL. "retest, uncorrected" on the Data
-     page says plainly that this interval rests on a retest-study coefficient
-     used with a normative SD, so the compromise is visible rather than
-     silent. Two quite different states share the raw r and the label separates
+     WHAT SHIPPED IS THE LABEL, AND THE CHOICE. "retest, uncorrected" says
+     plainly that this interval rests on a retest-study coefficient used with a
+     normative SD, so the compromise is visible rather than silent; and the
+     Score Tables reliability control lets a clinician take the corrected
+     reading deliberately, with the APA note saying which they took. Off by
+     default, exactly as the RCI pages' corrected-r toggle is.
+
+     Two quite different states share the published r and the label separates
      them: with a normative SD in force the pairing is the publisher's own
      compromise; with none, the row is shown raw and r sits beside its own
-     sample's SD, which is simply correct and needs no qualifier. */
+     sample's SD, which is simply correct and needs no qualifier — and is why
+     the correction is not offered there either. */
   else if (Number.isFinite(entry.r))          { r = entry.r;
-    basis = Number.isFinite(normSD) ? 'retest, uncorrected' : 'retest'; }
+    basis = Number.isFinite(normSD) ? 'retest, uncorrected' : 'retest';
+    if (correctRetest){
+      const derived = derivedCorrectedR(entry, normSD);
+      if (derived !== null)                   { r = derived;          basis = 'retest, corrected here'; }
+    }
+  }
   if (r === null){
     /* No coefficient at all. Two quite different reasons, and the row should
        say which: a base-rate measure is scored by published lookup and never
@@ -19961,7 +20050,10 @@ function resolveCiReliability(entry, normSD, age){
   return { r, basis, none:false };
 }
 
-function getBatteryRowReliability(row, type, age){
+/* `correctRetest` is optional and defaults to the control's current state, the
+   same way getBatteryCiHtml defaults `age`. Passing it explicitly is what lets
+   both readings be exercised without a DOM. */
+function getBatteryRowReliability(row, type, age, correctRetest){
   if (!row.group) return null;
   const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
   if (!db) return null;
@@ -19973,12 +20065,30 @@ function getBatteryRowReliability(row, type, age){
      the entry's own SD — the only one in its units — and, for the same reason,
      takes no range-restriction correction. */
   const normSD = BATTERY_METRIC_SD[type];
-  const rel = resolveCiReliability(entry, normSD, age);
+  const effCorr = correctRetest !== undefined ? correctRetest : batteryCiCorrectRetest();
+  const rel = resolveCiReliability(entry, normSD, age, effCorr);
   if (!rel || rel.none) return null;
   const sd = Number.isFinite(normSD) ? normSD
            : (Number.isFinite(entry.sd1) ? entry.sd1 : null);
   return sd !== null ? { r: rel.r, sd, basis: rel.basis } : null;
 }
+/* DOES ANY ROW IN THIS TABLE REST ON THIS BASIS?
+
+   Asked of the SHIPPED resolver, at the age and control state actually in
+   force, rather than re-tested against the entry's fields — a second reading of
+   the preference chain is a second thing to keep in step, and the APA note is a
+   contract about what produced the numbers above it.
+
+   PREFIX MATCH, because the basis can carry a " · by age" suffix: D-KEFS
+   (original) publishes rInternalByAge with no all-ages average, so at a blank
+   age such a row is BOTH on a retest coefficient and a measure whose figure
+   moves the moment an age is entered. */
+function batteryBasisPresent(rows, prefix){
+  return rows.some(r =>
+    ((getBatteryRowReliability(r, rowScoreType(r), batteryPatientAge()) || {}).basis || '')
+      .startsWith(prefix));
+}
+
 /* Hard limits imposed by the score scale itself, used to keep an interval from
    printing a value the scale cannot produce. Only scaled scores have a
    universal ceiling (Wechsler subtests run 1-19); "standard" and T are generic
@@ -20299,6 +20409,16 @@ const APA_NOTES = {
     ctx.hasUncorrectedR
       ? 'For measures whose manual publishes no coefficient computed on the normative sample, the interval uses that manual\'s own pairing: the test–retest correlation from its retest study, with the normative standard deviation of the metric.'
       : '',
+    /* THE ONLY COEFFICIENT IN THIS APP THAT IS NOT A PUBLISHED NUMBER, so a
+       table built on it has to say so and say how it was obtained — a reader
+       cross-checking the manual will not find this value there. Stated only
+       when a measure in THIS table actually used it: the control is a page
+       setting, so it can be on while every measure present takes a published
+       coefficient and nothing was in fact corrected. Same rule the age
+       sentence above follows. */
+    ctx.hasDerivedR
+      ? 'Where a manual publishes no coefficient computed on the normative sample, its test–retest correlation has been corrected to the normative sample\'s variability for this table, as rₓₓ = 1 − (s²ᵣₑₜₑₛₜ ÷ s²ₙₒᵣₘ)(1 − r), so that it describes the same population as the standard deviation it is paired with. These corrected coefficients are not printed in the manuals concerned, which report the uncorrected value; intervals for those measures therefore differ from the published ones.'
+      : '',
     /* Which age band the coefficients were drawn from. Without this the
        interval cannot be reproduced from the manual, because for these
        measures the published reliability changes with age. */
@@ -20434,16 +20554,12 @@ function renderBatteryApa(){
          no measure reads one would be its own misstatement. */
       ciAge: (ciLevel !== 'off' && batteryPatientAge() !== null
               && valid.some(r => batteryRowUsesAgeBand(r))) ? batteryPatientAge() : null,
-      /* Asked of the SHIPPED resolver, at the age actually in force, rather
-         than re-tested against the fields here — a second reading of the
-         preference chain is a second thing to keep in step. Prefix match,
-         because the basis can carry a " · by age" suffix: D-KEFS (original)
-         publishes rInternalByAge with no all-ages average, so at a blank age
-         such a row is BOTH uncorrected and a measure whose coefficient moves
-         the moment an age is entered. */
-      hasUncorrectedR: ciLevel !== 'off' && valid.some(r =>
-        ((getBatteryRowReliability(r, rowScoreType(r), batteryPatientAge()) || {}).basis || '')
-          .startsWith('retest, uncorrected')),
+      hasUncorrectedR: ciLevel !== 'off' && batteryBasisPresent(valid, 'retest, uncorrected'),
+      /* The corrected reading is a departure from every manual cited in this
+         table, so it is the one thing here a reader most needs told. Asked the
+         same way and for the same reason: the control being on does not mean a
+         coefficient was actually corrected. */
+      hasDerivedR: ciLevel !== 'off' && batteryBasisPresent(valid, 'retest, corrected here'),
       premorbid: prem ? fmt(prem.estimate, 0) : null,
       premorbidMode: prem ? batteryPremorbidMode(prem) : null
     })}
@@ -20716,6 +20832,15 @@ document.getElementById('bat-prem-score').addEventListener('input', e => {
 });
 document.getElementById('bat-prem-threshold').addEventListener('change', () => { updatePremorbidLinkStatus(); renderBattery(); });
 document.getElementById('bat-ci-level').addEventListener('change', renderBattery);
+/* The reliability basis drives the table AND the Data page, which reports what
+   the app's intervals rest on — leaving that page on the old reading would make
+   it advertise a coefficient the table is no longer using. Guarded because
+   renderDbList needs the Data page's markup, which is present in index.html but
+   not in every harness that loads app.js. */
+document.getElementById('bat-ci-basis').addEventListener('change', () => {
+  renderBattery();
+  if (typeof renderDbList === 'function' && document.getElementById('db-tbody')) renderDbList();
+});
 /* 'input', not 'change': the intervals are the only thing this drives, and
    waiting for blur leaves a stale age visibly paired with fresh numbers.
    Mirrors into #pre-age and recalculates the premorbid page, because the two
@@ -21987,10 +22112,17 @@ function dbInstrumentOf(family, isCustom){
 
    No patient age, so this renders the BLANK-AGE answer, which is also the
    app's own fallback. Where a by-age table exists the basis says so, because
-   the printed figure will move once an age is entered on Score Tables. */
-function dbReliabilityBasis(entry, family, name){
+   the printed figure will move once an age is entered on Score Tables.
+
+   IT DOES FOLLOW THE RELIABILITY-BASIS CONTROL, though that control lives on
+   Score Tables. The whole point of this page is to say what the app's
+   intervals rest on; showing the published reading while the table is set to
+   corrected would be the exact defect the shared resolver exists to prevent.
+   renderDbList is therefore re-run when the control changes. */
+function dbReliabilityBasis(entry, family, name, correctRetest){
   const type = inferScoreTypeForSubtest(family, name, entry);
-  const rel = resolveCiReliability(entry, BATTERY_METRIC_SD[type], undefined);
+  const effCorr = correctRetest !== undefined ? correctRetest : batteryCiCorrectRetest();
+  const rel = resolveCiReliability(entry, BATTERY_METRIC_SD[type], undefined, effCorr);
   return rel || { r:null, basis:'none published', none:true };
 }
 
@@ -26430,6 +26562,19 @@ if (document.readyState === 'loading'){
           <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci="95" role="radio" aria-checked="false">95%</button>
         </div>
       </div>
+      <!-- Which coefficient the interval rests on. Revealed with the CI
+           toggle, like the age slot, because it drives nothing else on this
+           page. "Published" is the default and reproduces each manual's own
+           printed interval; see #bat-ci-basis in index.html. -->
+      <div class="ds-inline-bar-section ds-inline-bar-cibasis" hidden>
+        <span class="ds-inline-bar-label">Reliability</span>
+        <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Reliability coefficient basis">
+          <button type="button" class="ds-inline-bar-toggle-btn is-active" data-bat-ci-basis="published" role="radio" aria-checked="true"
+            title="Use each manual's own coefficient and pairing. Reproduces the interval the manual prints.">Published</button>
+          <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci-basis="corrected" role="radio" aria-checked="false"
+            title="Where a manual publishes no coefficient computed on the normative sample, correct its retest coefficient to the normative sample's variability. Departs from the manual's printed interval.">Corrected</button>
+        </div>
+      </div>
       <!-- Slot for #bat-age, moved in below. Empty in the markup on purpose:
            the input is declared in index.html so it exists before app.js wires
            its listener, and is adopted here rather than rebuilt. Revealed with
@@ -26579,8 +26724,13 @@ if (document.readyState === 'loading'){
 
     /* Wire Score CI toggle */
     const ciInput = document.getElementById('bat-ci-level');
+    const basisSlot = bar.querySelector('.ds-inline-bar-cibasis');
     if (ciInput){
-      const ciBtns = bar.querySelectorAll('[data-bat-ci]');
+      /* [data-bat-ci], not [data-bat-ci-basis] — the dataset key for the
+         latter is batCiBasis, so a loose attribute selector would sweep the
+         basis buttons into the CI radiogroup and the two would fight over
+         is-active. */
+      const ciBtns = bar.querySelectorAll('[data-bat-ci]:not([data-bat-ci-basis])');
       const syncCi = () => {
         const v = ciInput.value || 'off';
         ciBtns.forEach(b => {
@@ -26588,8 +26738,10 @@ if (document.readyState === 'loading'){
           b.classList.toggle('is-active', active);
           b.setAttribute('aria-checked', active ? 'true' : 'false');
         });
-        /* Ask for the age at the moment it starts mattering. */
+        /* Ask for the age, and offer the basis, at the moment they start
+           mattering — neither drives anything with the interval switched off. */
         if (ageSlot) ageSlot.hidden = (v === 'off');
+        if (basisSlot) basisSlot.hidden = (v === 'off');
       };
       ciBtns.forEach(b => {
         b.addEventListener('click', () => {
@@ -26600,6 +26752,32 @@ if (document.readyState === 'loading'){
       });
       ciInput.addEventListener('change', syncCi);
       syncCi();
+    }
+
+    /* Wire the reliability-basis toggle. Same shape as the CI toggle above:
+       the hidden input is the state, the buttons only write to it, and the
+       'change' event is what app.js listens to — so the table and the Data
+       page both re-render from one source rather than from the button. */
+    const basisInput = document.getElementById('bat-ci-basis');
+    if (basisInput){
+      const basisBtns = bar.querySelectorAll('[data-bat-ci-basis]');
+      const syncBasis = () => {
+        const v = basisInput.value || 'published';
+        basisBtns.forEach(b => {
+          const active = b.dataset.batCiBasis === v;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+      };
+      basisBtns.forEach(b => {
+        b.addEventListener('click', () => {
+          basisInput.value = b.dataset.batCiBasis;
+          basisInput.dispatchEvent(new Event('change', { bubbles: true }));
+          syncBasis();
+        });
+      });
+      basisInput.addEventListener('change', syncBasis);
+      syncBasis();
     }
 
     /* Wire Raw column toggle */

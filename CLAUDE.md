@@ -405,10 +405,10 @@ regime, confirmed by Design Fluency Table 2.8, whose three All Ages SEMs all rep
 `3 × √(1 − r)`. Both paths are the publisher's own figures, so the column stays citable
 either way. Averaging the bands to manufacture an `rInternal` would be inventing a number.
 
-##### Table 2.8 is also why the range-restriction correction was built, tested and rejected
+##### Table 2.8 is also why the range-restriction correction is offered but never the default
 
-**Do not "discover" this and apply it.** The reasoning is sound right up to the last step,
-which is exactly what makes it worth recording.
+**Do not "discover" this and switch the default.** The reasoning is sound right up to the
+last step, which is exactly what makes it worth recording.
 
 Every interval in this app is `SD × √(1 − rxx)`, valid only when both terms describe the
 same group. 298 entries fall through to the retest study's own `r` paired with a
@@ -422,32 +422,53 @@ rxx(unrestricted) = 1 − (sd1² ÷ normSD²)(1 − r)
 
 and it is a **good formula, not a guess**: over the 267 entries carrying both a raw `r` and
 a published `rCorrected` it reproduces the publisher's own figure to a median error of
-**.003**, 193 of them inside .005. Applying it in `resolveCiReliability` would have moved
-260 stored entries, **47 of them reachable from Score Tables**.
+**.003**, 193 of them inside .005. It moves **246 stored entries, 46 of them reachable from
+Score Tables** — 25 D-KEFS, 21 D-KEFS Advanced, and nothing else.
 
-It was rejected because **every one of those 47 belongs to a manual that has already made
-this pairing itself, deliberately.** D-KEFS Technical Manual p. 19 says test–retest SEMs
-"were derived from the total sample of cases" and fixes "The standard deviation unit is 3
-for all D-KEFS scaled scores" — i.e. `3 × √(1 − r)` on the **uncorrected** total-sample `r`.
-Table 2.8 is that arithmetic on the page: Design Fluency's three All Ages SEMs are
-1.94 / 1.97 / 2.47, and `3 × √(1 − r)` gives exactly those, where the corrected coefficient
-gives 1.78 / 1.95 / 2.43. The remaining 22 are D-KEFS Advanced Trail Making and Verbal
-Fluency, whose Table 3.4 rows *are* the retest coefficients — that manual's stated choice
-for its speeded tests.
+Making it the default was rejected because **every one of those 46 belongs to a manual that
+has already made this pairing itself, deliberately.** D-KEFS Technical Manual p. 19 says
+test–retest SEMs "were derived from the total sample of cases" and fixes "The standard
+deviation unit is 3 for all D-KEFS scaled scores" — i.e. `3 × √(1 − r)` on the
+**uncorrected** total-sample `r`. Table 2.8 is that arithmetic on the page: Design Fluency's
+three All Ages SEMs are 1.94 / 1.97 / 2.47, and `3 × √(1 − r)` gives exactly those, where
+the corrected coefficient gives 1.78 / 1.95 / 2.43. The remaining 21 are D-KEFS Advanced
+Trail Making and Verbal Fluency, whose Table 3.4 rows *are* the retest coefficients — that
+manual's stated choice for its speeded tests.
 
-So correcting would print a coefficient the cited manual does not contain, on the one family
-whose own working is checkable. **Same ground as the declined unrounded Fisher's-z WAIS-IV
-average**: the app renders the coefficient it actually used, and a clinician cross-checking
-the manual must find it there. What shipped instead is the *label* — `retest, uncorrected`
-on the Data page and a sentence in the APA note — so the compromise is visible rather than
-silent.
+So correcting by default would print a coefficient the cited manual does not contain, on the
+one family whose own working is checkable. **Same ground as the declined unrounded Fisher's-z
+WAIS-IV average**: the app renders the coefficient it actually used, and a clinician
+cross-checking the manual must find it there.
 
-`check.js` §27 asserts **both** directions, and the second is the load-bearing one: the
-uncorrected `r` must still reproduce Table 2.8, and the corrected one must still fail to. It
-also greps `resolveCiReliability` for `sd1` (comments stripped — the function documents the
-formula at length) so the correction cannot creep back in. If a corrected printing ever
-makes the corrected value fit, the check fails too, which is the signal to re-read this
-section rather than assume a regression.
+**What shipped is the label and the choice.** `retest, uncorrected` on the Data page names
+the compromise rather than hiding it, and the **Score Tables reliability control**
+(`#bat-ci-basis`, Published / Corrected) lets a clinician take the corrected reading
+deliberately. Off by default, exactly as the RCI pages' corrected-`r` toggle is, and for the
+same reason. The APA note carries a different sentence in each state, so an exported table
+always says which basis produced it. The Data page **follows the control** — showing the
+published reading while the table is set to corrected would be precisely the drift the shared
+resolver exists to prevent.
+
+What the choice costs, so it can be made with the size in view: at 95% it moves **9 of the 46
+printed margins wider and 4 narrower; 33 are unchanged** once rounded. The largest single
+shift is **2 scaled-score points**, on D-KEFS Advanced Multitasking Index.
+
+Three counts to know before treating a shortfall as a bug. Of the 298 entries on the retest
+pairing, **36 CVLT-C** are refused (`sd1` in raw words while the row displays T or z), **2**
+produce a value outside (0, 1) — D-KEFS Design Fluency Switching (Ages 20-49) and D-KEFS
+Advanced Social Sorting Total Number of Conceptual Level Responses (Ages 8-18), both retest
+samples being more variable than the norm group on a coefficient near .22 — and **14** have
+`sd1` exactly equal to the normative SD, where the correction is the identity because the
+sample was not restricted at all.
+
+`check.js` §27 drives the shipped renderer in **both** states and asserts four things: the
+uncorrected `r` reproduces Table 2.8; the **default** reading still does, so an untouched app
+prints the published interval; the corrected reading does **not**, so the two genuinely
+separate; and a **missing control reads as published**, so no harness can land on derived
+coefficients by accident. It also proves the toggle cannot move a published coefficient.
+§32 drives the Data page and the table in both states and pins the 246. If a corrected
+printing of the manual ever makes the two readings agree, §27 fails — that is the signal to
+re-read this section rather than assume a regression.
 
 Four exclusions, four different reasons — each an easy silent mistake, each pinned:
 
@@ -917,8 +938,10 @@ distribution so a change of basis anywhere has to be acknowledged rather than sl
 | `none published` / `base rate` | 4 + 51 | no interval at all |
 
 `retest, uncorrected` is the honest name for a real compromise: `r` describes the retest
-study's sample and the SD describes the norm group. **It is not a defect to be repaired —
-see the D-KEFS note below.** Plain `retest` is exactly the four raw RBANS subtests in each
+study's sample and the SD describes the norm group. **It is not a defect to be repaired by
+default — see the D-KEFS note above.** With the Score Tables reliability control set to
+Corrected, 246 of those entries move to a sixth basis, `retest, corrected here`, and this
+page follows the control rather than showing a stale reading. Plain `retest` is exactly the four raw RBANS subtests in each
 of the two retest bands; nothing else in the database is displayed raw, so if that 8 moves,
 a family has gained or lost `metric:'raw'`, which changes what a percentile means.
 CVLT-C lands on `uncorrected` and belongs there, which is not obvious: `metric:'raw'` makes
