@@ -14336,6 +14336,19 @@ input[type="number"].ds-age-pop-input{
   }
 }
 
+/* The hidden ATTRIBUTE does not hide this section on its own: it is also a
+   .ds-inline-bar-section, and that rule sets display:flex, which outranks the
+   browser default of display:none for [hidden]. Without this the Reliability
+   toggle stayed on screen with the Score CI toggle off — visible, clickable,
+   and driving nothing, because the basis only moves a confidence interval and
+   there is no interval to move.
+
+   The identical defeat is recorded in CLAUDE.md for .ds-inline-bar-age, which
+   carried the same fix. The cibasis slot shipped with the `hidden` attribute
+   and no rule to make it bite, so it had never actually hidden. Scoped to the
+   standalone class so no other bar section moves. */
+.ds-inline-bar-cibasis[hidden]{ display: none !important; }
+
 </style>
 
 <style>

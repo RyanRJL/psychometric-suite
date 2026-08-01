@@ -3347,6 +3347,27 @@ check('the master age field is in the top bar, on every page, ungated', () => {
     bad.push('the pip is gated on [hidden] — the exact cascade trap this replaced');
   }
 
+  /* EVERY [hidden] SECTION IN THAT BAR NEEDS ITS OWN RULE. .ds-inline-bar-section
+     sets display:flex, which outranks the browser default of display:none for
+     [hidden] — so a section marked hidden stays on screen unless a rule says
+     otherwise. It caught .ds-inline-bar-age once, and then caught
+     .ds-inline-bar-cibasis, which shipped with the attribute and no rule and so
+     had never once hidden: the Reliability toggle sat there with the interval
+     switched off, clickable and driving nothing.
+
+     Asserted generically over the bar's markup rather than per class, so the
+     next section to be added is covered without anyone remembering. */
+  const DS_SRC2 = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
+  const barFn = DS_SRC2.slice(DS_SRC2.indexOf('function buildBatteryInlineBar'));
+  const hiddenSections = [...barFn.matchAll(/class="ds-inline-bar-section ([a-z-]+)"\s+hidden/g)].map(m => m[1]);
+  hiddenSections.forEach((cls) => {
+    const re = new RegExp('\\.' + cls + '\\[hidden\\]\\s*\\{[^}]*display:\\s*none\\s*!important');
+    if (!re.test(DS_CSS)) {
+      bad.push('.' + cls + ' ships [hidden] but nothing overrides .ds-inline-bar-section display:flex, so it will never hide');
+    }
+  });
+  if (!hiddenSections.length) bad.push('no [hidden] bar sections found — re-derive this check if the bar changed shape');
+
   /* The family dropdown is pinned to the search box's width (left:0/right:0),
      and the search sits in the flexible section, so ANY section added to that
      bar narrows the dropdown. The age box did it once. The floor stays even
