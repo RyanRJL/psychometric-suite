@@ -203,18 +203,36 @@ comes from either side, and the split is the whole design:
   column pickers all re-render without a score being touched. The CI selector is
   precisely how the third table used to appear.
 
-The other three offer themselves in the page, under their own table
-(`refreshConsentControls`). **Two places that offer must not go**, both settled by
-driving the real UI rather than reading the markup:
+The other three offer themselves through a **floating card** in the corner the
+Working Report already owns, above the chip where `.rb-add-prompt` sits
+(`refreshConsentControls`). **Three homes were tried; two of them fail**, and all
+of it was settled by driving the real UI rather than reading the markup:
 
 - **The APA toolbar.** `styles.css` hides every page's inline APA panel outright
   (`.apa-wrap{display:none!important}`) — the drawer is the canonical view of a
   rendered table. The first version mounted the control there: present in the
   DOM, `0×0`, invisible. If you are adding any control near a rendered APA table,
   it does not render.
-- **A transient prompt by the chip.** It can be missed, and with the add buttons
-  gone there would then be no way to collect that method's table at all short of
-  typing in it.
+- **In the method panel, under its table.** Visible, but a Change Analysis table
+  runs past a dozen rows, so the offer is below the fold exactly while the scores
+  that produce it are being entered.
+- **Floating, which is what ships.** Mounted on `<body>`, never in the panel:
+  `position:fixed` resolves against the nearest **transformed** ancestor, and
+  `staggerSectionContent` animates panel children on every page entry.
+
+Three things already own that corner and all outrank it — the **open drawer**,
+the **first-run onboarding bubble** (offering a table to someone who has not yet
+been told there is a report to put it in is the wrong order), and the **pills**,
+which stack above the card off its *measured* height. That measurement crosses
+the `body{zoom:0.9}` boundary — `getBoundingClientRect` is visual px, `style.bottom`
+is layout px — so it divides by `pageZoomFactor()`, same as `positionBatteryAgePop`.
+
+Only the method **on screen** offers, tested on the panel rather than the APA
+container (which is inside the hidden `.apa-wrap`, so testing it would find nothing
+ever visible). Switching method tabs changes which card is due without touching any
+APA container, so `watchMethodPanels` watches the panels' **class** — and
+`#change-analysis` too, since leaving the page entirely leaves the panels' own
+classes untouched.
 
 The gate sits **above** the auto-split, or an unaccepted method holding two test
 families collects as `rci-srb-apa::RBANS Indices` while the parent is still
@@ -1247,7 +1265,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 298 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 299 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients

@@ -7568,7 +7568,14 @@ body.rb-docked-active{padding-right:0}
 .apa-toolbar .rb-add-btn:active{transform:translateY(0)}
 .apa-toolbar .rb-add-btn svg{width:12px;height:12px}
 
-/* ---- The "add this method's table" offer, inline in a Change Analysis panel ----
+/* ---- The "add this method's table" offer ----
+   A floating card in the corner the Working Report already owns, sitting above
+   the chip in the same place .rb-add-prompt uses. It was in the page first,
+   directly under the table it offers, and that was wrong for the reason the
+   chip is in a corner at all: a Change Analysis table runs to thirteen-plus
+   rows, so anything below it is off screen exactly while the clinician is
+   entering the scores that produce it.
+
    Every class here is standalone rather than a modifier on an existing one:
    design-system.css and the #change-analysis page-scoped block both restyle the
    shared panel/box/btn names, and either would outrank anything added here.
@@ -7576,19 +7583,30 @@ body.rb-docked-active{padding-right:0}
 
    Primary tint, never --ds-warning: nothing is wrong, the app is offering. */
 .rb-offer-box{
+  position:fixed;
+  right:20px;                            /* aligned to the chip's right edge */
+  bottom:82px;                           /* clears the chip, as the pills do */
+  z-index:9003;                          /* above the chip and the pills */
+  width:min(360px, calc(100vw - 40px));
   display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:18px;
-  flex-wrap:wrap;
-  margin-top:18px;
-  padding:14px 18px;
-  border:1px solid rgba(156,61,42,0.28);
+  flex-direction:column;
+  gap:12px;
+  padding:15px 17px;
+  border:1px solid rgba(156,61,42,0.30);
+  border-left:3px solid #9C3D2A;
   border-radius:8px;
-  background:rgba(156,61,42,0.05);
+  background:#FFFFFF;
   font-family:var(--sans);
+  box-shadow:
+    0 1px 2px rgba(20,15,8,0.06),
+    0 10px 30px rgba(20,15,8,0.16);
+  animation:rb-offer-in 260ms cubic-bezier(0.2,0.8,0.2,1) both;
 }
-.rb-offer-text{display:flex;flex-direction:column;gap:3px;min-width:260px;flex:1 1 320px}
+@keyframes rb-offer-in{
+  from{opacity:0;transform:translateY(8px)}
+  to  {opacity:1;transform:translateY(0)}
+}
+.rb-offer-text{display:flex;flex-direction:column;gap:4px}
 .rb-offer-text strong{
   font-size:12.5px;
   font-weight:600;
@@ -7596,28 +7614,28 @@ body.rb-docked-active{padding-right:0}
   letter-spacing:0.01em;
 }
 .rb-offer-text span{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
-.rb-offer-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.rb-offer-actions{display:flex;align-items:center;gap:8px}
 .rb-offer-add,
 .rb-offer-skip{
   font-family:var(--sans);
   font-size:12.5px;
   font-weight:600;
   letter-spacing:0.01em;
-  height:36px;
-  padding:0 16px;
+  min-height:34px;
+  padding:0 14px;
   border-radius:6px;
   cursor:pointer;
   white-space:nowrap;
   transition:background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
-.rb-offer-add{background:#9C3D2A;border:1px solid #9C3D2A;color:#FFFFFF}
+.rb-offer-add{flex:1 1 auto;background:#9C3D2A;border:1px solid #9C3D2A;color:#FFFFFF}
 .rb-offer-add:hover{background:#8A3424;border-color:#8A3424}
-.rb-offer-skip{background:transparent;border:1px solid rgba(20,15,8,0.18);color:var(--ink-2)}
+.rb-offer-skip{flex:0 0 auto;background:transparent;border:1px solid rgba(20,15,8,0.18);color:var(--ink-2)}
 .rb-offer-skip:hover{border-color:rgba(20,15,8,0.34);color:#1A1410}
-@media (max-width:700px){
-  .rb-offer-box{align-items:flex-start}
-  .rb-offer-actions{width:100%}
-  .rb-offer-add,.rb-offer-skip{flex:1 1 auto}
+/* Motion is decoration here, not the mechanism — the card is state-driven and
+   stays put, so removing the entrance leaves it fully legible. */
+@media (prefers-reduced-motion:reduce){
+  .rb-offer-box{animation:none}
 }
 @media print{.rb-offer-box{display:none!important}}
 

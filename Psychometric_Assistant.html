@@ -7600,7 +7600,14 @@ body.rb-docked-active{padding-right:0}
 .apa-toolbar .rb-add-btn:active{transform:translateY(0)}
 .apa-toolbar .rb-add-btn svg{width:12px;height:12px}
 
-/* ---- The "add this method's table" offer, inline in a Change Analysis panel ----
+/* ---- The "add this method's table" offer ----
+   A floating card in the corner the Working Report already owns, sitting above
+   the chip in the same place .rb-add-prompt uses. It was in the page first,
+   directly under the table it offers, and that was wrong for the reason the
+   chip is in a corner at all: a Change Analysis table runs to thirteen-plus
+   rows, so anything below it is off screen exactly while the clinician is
+   entering the scores that produce it.
+
    Every class here is standalone rather than a modifier on an existing one:
    design-system.css and the #change-analysis page-scoped block both restyle the
    shared panel/box/btn names, and either would outrank anything added here.
@@ -7608,19 +7615,30 @@ body.rb-docked-active{padding-right:0}
 
    Primary tint, never --ds-warning: nothing is wrong, the app is offering. */
 .rb-offer-box{
+  position:fixed;
+  right:20px;                            /* aligned to the chip's right edge */
+  bottom:82px;                           /* clears the chip, as the pills do */
+  z-index:9003;                          /* above the chip and the pills */
+  width:min(360px, calc(100vw - 40px));
   display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:18px;
-  flex-wrap:wrap;
-  margin-top:18px;
-  padding:14px 18px;
-  border:1px solid rgba(156,61,42,0.28);
+  flex-direction:column;
+  gap:12px;
+  padding:15px 17px;
+  border:1px solid rgba(156,61,42,0.30);
+  border-left:3px solid #9C3D2A;
   border-radius:8px;
-  background:rgba(156,61,42,0.05);
+  background:#FFFFFF;
   font-family:var(--sans);
+  box-shadow:
+    0 1px 2px rgba(20,15,8,0.06),
+    0 10px 30px rgba(20,15,8,0.16);
+  animation:rb-offer-in 260ms cubic-bezier(0.2,0.8,0.2,1) both;
 }
-.rb-offer-text{display:flex;flex-direction:column;gap:3px;min-width:260px;flex:1 1 320px}
+@keyframes rb-offer-in{
+  from{opacity:0;transform:translateY(8px)}
+  to  {opacity:1;transform:translateY(0)}
+}
+.rb-offer-text{display:flex;flex-direction:column;gap:4px}
 .rb-offer-text strong{
   font-size:12.5px;
   font-weight:600;
@@ -7628,28 +7646,28 @@ body.rb-docked-active{padding-right:0}
   letter-spacing:0.01em;
 }
 .rb-offer-text span{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
-.rb-offer-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.rb-offer-actions{display:flex;align-items:center;gap:8px}
 .rb-offer-add,
 .rb-offer-skip{
   font-family:var(--sans);
   font-size:12.5px;
   font-weight:600;
   letter-spacing:0.01em;
-  height:36px;
-  padding:0 16px;
+  min-height:34px;
+  padding:0 14px;
   border-radius:6px;
   cursor:pointer;
   white-space:nowrap;
   transition:background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
-.rb-offer-add{background:#9C3D2A;border:1px solid #9C3D2A;color:#FFFFFF}
+.rb-offer-add{flex:1 1 auto;background:#9C3D2A;border:1px solid #9C3D2A;color:#FFFFFF}
 .rb-offer-add:hover{background:#8A3424;border-color:#8A3424}
-.rb-offer-skip{background:transparent;border:1px solid rgba(20,15,8,0.18);color:var(--ink-2)}
+.rb-offer-skip{flex:0 0 auto;background:transparent;border:1px solid rgba(20,15,8,0.18);color:var(--ink-2)}
 .rb-offer-skip:hover{border-color:rgba(20,15,8,0.34);color:#1A1410}
-@media (max-width:700px){
-  .rb-offer-box{align-items:flex-start}
-  .rb-offer-actions{width:100%}
-  .rb-offer-add,.rb-offer-skip{flex:1 1 auto}
+/* Motion is decoration here, not the mechanism — the card is state-driven and
+   stays put, so removing the entrance leaves it fully legible. */
+@media (prefers-reduced-motion:reduce){
+  .rb-offer-box{animation:none}
 }
 @media print{.rb-offer-box{display:none!important}}
 
@@ -26159,6 +26177,27 @@ const ReportBundle = (function(){
   function setupAllObservers(){
     SOURCE_IDS.forEach(id => ensureObserver(id));
   }
+  /* Which method is on screen decides which card shows, and switching method
+     tabs changes that without touching any APA container — so the capture
+     observers above never fire for it. Watch the panels' own class instead,
+     the way the top-bar nav sync does: it covers the method tabs, the page nav
+     and the URL-restore path without needing a hook in each. */
+  function watchMethodPanels(){
+    CONSENT_SOURCES.forEach(sourceId => {
+      const panel = document.getElementById(sourceId)?.closest('section');
+      if (!panel) return;
+      new MutationObserver(() => refreshConsentControls())
+        .observe(panel, { attributes: true, attributeFilter: ['class'] });
+    });
+    /* In the consolidated Change Analysis page the method panels live inside
+       #change-analysis, so leaving the page entirely leaves their own classes
+       untouched. */
+    const host = document.getElementById('change-analysis');
+    if (host){
+      new MutationObserver(() => refreshConsentControls())
+        .observe(host, { attributes: true, attributeFilter: ['class'] });
+    }
+  }
 
   /* ---------- accepting a consent-gated source ----------
      Two callers, and the difference between them is the whole design:
@@ -26202,49 +26241,86 @@ const ReportBundle = (function(){
      the method is open, and needs no stacking or drawer-position handling.
      It offers and it never blocks: the calculator above it works untouched
      whether the offer is taken, declined or ignored. */
-  function offerHostFor(sourceId){
+  /* ONE element, mounted on <body>, never inside the method panel.
+
+     Mounting it in the panel and letting `display:none` on the inactive panels
+     hide it was tried and is wrong twice over: `position:fixed` resolves against
+     the nearest TRANSFORMED ancestor, and staggerSectionContent animates panel
+     children on every page entry, so the card would anchor to a moving box; and
+     a card that scrolls with a thirteen-row table is below the fold exactly when
+     the clinician needs it. On <body> its position is the viewport, full stop. */
+  let offerEl = null;
+  function offerHost(){
+    if (offerEl && offerEl.isConnected) return offerEl;
+    offerEl = document.createElement('div');
+    offerEl.id = 'rb-offer-host';
+    document.body.appendChild(offerEl);
+    return offerEl;
+  }
+  /* The panel, not the APA container: the container lives inside .apa-wrap,
+     which is display:none on every page, so it is never itself on screen. */
+  function methodPanelVisible(sourceId){
     const container = document.getElementById(sourceId);
-    /* The method's <section>. In the consolidated Change Analysis page these
-       are moved to become .change-method-panel children, so walk up from the
-       APA container rather than assuming where the section sits. */
     const panel = container ? container.closest('section') : null;
-    if (!panel) return null;
-    let host = panel.querySelector(`[data-rb-consent="${CSS.escape(sourceId)}"]`);
-    if (!host){
-      host = document.createElement('div');
-      host.setAttribute('data-rb-consent', sourceId);
-      /* Before the (hidden) APA panel, which puts it directly after the
-         table's own "+ Add test row / Clear all rows" actions. */
-      const apaWrap = container.closest('.apa-wrap');
-      if (apaWrap && apaWrap.parentElement) apaWrap.parentElement.insertBefore(host, apaWrap);
-      else panel.appendChild(host);
+    return !!(panel && panel.getClientRects().length);
+  }
+  function offerableSource(){
+    /* Only ever one: the method currently open. The other three are behind
+       display:none, and stacking cards for pages nobody is looking at would be
+       four questions about one decision. */
+    for (const sourceId of CONSENT_SOURCES){
+      if (!methodPanelVisible(sourceId)) continue;
+      if (isSourceAccepted(sourceId)) continue;
+      if (state.consent[consentParent(sourceId)] === 'declined') continue;
+      const container = document.getElementById(sourceId);
+      if (container && container.querySelector('.apa-table')) return sourceId;
     }
-    return host;
+    return null;
   }
   function refreshConsentControls(){
-    CONSENT_SOURCES.forEach(sourceId => {
-      const host = offerHostFor(sourceId);
-      if (!host) return;
-      const container = document.getElementById(sourceId);
-      const hasTable = !!(container && container.querySelector('.apa-table'));
-      /* No table to offer, already accepted, or declined for this patient. */
-      if (!hasTable || isSourceAccepted(sourceId) || state.consent[consentParent(sourceId)] === 'declined'){
+    const host = offerHost();
+    /* Two things already own this corner and both outrank the offer:
+
+       - the open drawer, where the clinician is looking at the report itself.
+       - the first-run onboarding bubble, which explains what the Working Report
+         IS. Offering a table to someone who has not yet been told there is a
+         report to put it in is the wrong order, and the two cards overlap.
+
+       Both are transient, and the offer is state-driven, so it cannot go stale
+       while it waits: closing the drawer or dismissing the hint brings it back. */
+    const hintUp = !state.onboardingSeen && state.minimized;
+    const sourceId = (state.minimized && !hintUp) ? offerableSource() : null;
+    if (!sourceId){
+      if (host.firstChild){
         host.innerHTML = '';
-        return;
+        /* Clear the marker too, or a method that goes away and comes back —
+           switch tab and switch back — would be blocked by the guard below and
+           never re-render. */
+        delete host.dataset.rbFor;
+        reflowPillStack();
       }
-      const label = escapeHtmlLocal(SOURCE_METHOD_NAMES[sourceId] || 'This table');
-      host.innerHTML = `
-        <div class="rb-offer-box">
-          <div class="rb-offer-text">
-            <strong>Not in the working report</strong>
-            <span>These scores were entered on another Change Analysis tab, so the ${label} table has not been collected. Add it if you want it in the report.</span>
-          </div>
-          <div class="rb-offer-actions">
-            <button class="rb-offer-add" type="button" data-rb-accept="${escapeHtmlLocal(sourceId)}">Add to report</button>
-            <button class="rb-offer-skip" type="button" data-rb-decline="${escapeHtmlLocal(sourceId)}">Not this one</button>
-          </div>
-        </div>`;
-    });
+      return;
+    }
+    /* Rebuilding while it is already offering the same method would restart the
+       entrance animation on every keystroke in the table. The pill reflow still
+       runs: pills stack off the card's measured height, and a pill can arrive
+       (or the card rewrap on resize) while the offer itself is unchanged. */
+    if (host.dataset.rbFor === sourceId){ reflowPillStack(); return; }
+    host.dataset.rbFor = sourceId;
+    const label = escapeHtmlLocal(SOURCE_METHOD_NAMES[sourceId] || 'this method');
+    host.innerHTML = `
+      <div class="rb-offer-box" role="status">
+        <div class="rb-offer-text">
+          <strong>Not in the working report</strong>
+          <span>These scores were entered on another Change Analysis tab, so the ${label} table has not been collected.</span>
+        </div>
+        <div class="rb-offer-actions">
+          <button class="rb-offer-add" type="button" data-rb-accept="${escapeHtmlLocal(sourceId)}">Add to report</button>
+          <button class="rb-offer-skip" type="button" data-rb-decline="${escapeHtmlLocal(sourceId)}">Not this one</button>
+        </div>
+      </div>`;
+    /* Pills stack from the chip upward; with the card there they start above it. */
+    reflowPillStack();
   }
   /* Declining is per patient, not permanent: it clears with the bundle, and
      entering data in the method accepts it outright. */
@@ -27230,9 +27306,20 @@ ${buildReportHtmlBody()}
   function reflowPillStack(){
     if (!rootEl) return;
     const pills = rootEl.querySelectorAll('.rb-add-prompt:not(.is-flying)');
+    /* The consent card occupies the same corner, so pills start above it when
+       it is showing. Measured rather than assumed: the card wraps to two or
+       three lines depending on the method name and the viewport. Its rect is in
+       VISUAL px (body carries zoom:0.9) while `bottom` is applied in LAYOUT px,
+       so the height is divided back out — see pageZoomFactor. */
+    const card = document.querySelector('#rb-offer-host .rb-offer-box');
+    let base = PILL_BASE_BOTTOM;
+    if (card){
+      const z = (typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1) || 1;
+      base += Math.round(card.getBoundingClientRect().height / z) + PILL_GAP;
+    }
     // Newest pill (last added to DOM) sits closest to the chip; stack upward
     [...pills].reverse().forEach((pill, i) => {
-      pill.style.bottom = (PILL_BASE_BOTTOM + i * (PILL_HEIGHT + PILL_GAP)) + 'px';
+      pill.style.bottom = (base + i * (PILL_HEIGHT + PILL_GAP)) + 'px';
     });
   }
 
@@ -27676,6 +27763,9 @@ ${buildReportHtmlBody()}
 
     renderItems();
     decorateEditableHeaders();
+    /* The card hides while the drawer is open, and open/close routes through
+       here. Safe from recursion: refreshConsentControls never calls render. */
+    refreshConsentControls();
 
     // Auto-scroll to the most recently changed item - only if drawer is open
     if (lastChangedItemId && !state.minimized){
@@ -27697,6 +27787,7 @@ ${buildReportHtmlBody()}
     injectUI();
     bindEvents();
     setupAllObservers();
+    watchMethodPanels();
     render();
     refreshConsentControls();
     setInterval(() => {

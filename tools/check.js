@@ -6339,31 +6339,80 @@ check('a bundle saved before consent existed keeps collecting', () => {
   return true;
 });
 
-check('the offer is in the page, not in the hidden APA panel', () => {
-  /* styles.css hides every page's inline APA panel outright - the drawer is the
-     canonical view of a rendered table. A control placed in the APA toolbar is
-     in the markup and nowhere at all to the clinician, which is exactly where
-     the first version of this feature put it. */
+check('the offer floats on <body>, clear of both places it cannot live', () => {
+  /* Two homes were tried and both fail, for different reasons:
+
+       - the APA toolbar. styles.css hides every page's inline APA panel
+         outright, the drawer being the canonical view of a rendered table, so a
+         control there is in the markup and nowhere at all to the clinician.
+       - in the method panel, under the table it offers. A Change Analysis table
+         runs past a dozen rows, so the offer is below the fold exactly while
+         the scores that produce it are being entered.
+
+     Hence a fixed card, and hence mounted on <body>: `position:fixed` resolves
+     against the nearest TRANSFORMED ancestor, and staggerSectionContent
+     animates panel children on every page entry. */
   if (!/\.apa-wrap\{display:none!important\}/.test(CSS_SRC)){
     return 'the APA panel is no longer hidden - re-derive where the offer belongs';
   }
-  const fn = extractFn(APP_SRC, 'offerHostFor');
-  if (/apa-toolbar/.test(fn)) return 'the offer is mounted in the APA toolbar, which never renders';
-  if (!/closest\('section'\)/.test(fn)){
-    return 'the offer is not anchored to the method panel; the consolidated Change Analysis page moves these sections';
-  }
-  const render = extractFn(APP_SRC, 'refreshConsentControls');
-  /* It offers, it never scolds: both ways out are one click, and it is tinted
-     with the primary colour rather than the warning one. */
-  if (!/data-rb-accept/.test(render) || !/data-rb-decline/.test(render)){
-    return 'the offer does not carry both an accept and a decline';
+  const mount = extractFn(APP_SRC, 'offerHost');
+  if (/apa-toolbar/.test(mount)) return 'the offer is mounted in the APA toolbar, which never renders';
+  if (!/document\.body\.appendChild/.test(mount)){
+    return 'the offer is not mounted on <body>, so a transformed ancestor can capture its fixed positioning';
   }
   const start = CSS_SRC.indexOf('.rb-offer-box{');
   if (start === -1) return 'the offer has no styling';
-  if (/--ds-warning/.test(CSS_SRC.slice(start, start + 1400))){
-    return 'the offer is styled as a warning; nothing is wrong, the app is offering';
-  }
+  const css = CSS_SRC.slice(start, start + 1200);
+  if (!/position:fixed/.test(css)) return 'the offer no longer floats, so a long table hides it';
+  /* It offers, it never scolds: primary tint, never the warning colour. */
+  if (/--ds-warning/.test(css)) return 'the offer is styled as a warning; nothing is wrong, the app is offering';
   return true;
+});
+
+check('only the method on screen offers, and never behind the open drawer', () => {
+  const fn = extractFn(APP_SRC, 'refreshConsentControls');
+  const bad = [];
+  /* Both ways out are one click. */
+  if (!/data-rb-accept/.test(fn) || !/data-rb-decline/.test(fn)){
+    bad.push('the offer does not carry both an accept and a decline');
+  }
+  /* One card, for the open method only. All four are gated at once, and the
+     other three sit behind display:none — stacking a card for each would be
+     four questions about one decision. */
+  if (!/state\.minimized && !hintUp\) \? offerableSource\(\) : null/.test(fn)){
+    bad.push('the card does not stand down for the open drawer and the first-run hint, which share its corner');
+  }
+  if (!/!state\.onboardingSeen && state\.minimized/.test(fn)){
+    bad.push('the card does not test the onboarding hint, so the two overlap on first run');
+  }
+  const pick = extractFn(APP_SRC, 'offerableSource');
+  if (!/methodPanelVisible/.test(pick)){
+    bad.push('the card does not test which method is on screen, so a hidden method can claim it');
+  }
+  /* The panel, not the APA container: the container is inside .apa-wrap, which
+     is display:none everywhere, so testing IT would find nothing ever visible. */
+  const vis = extractFn(APP_SRC, 'methodPanelVisible');
+  if (!/closest\('section'\)/.test(vis) || !/getClientRects/.test(vis)){
+    bad.push('visibility is not measured on the method panel');
+  }
+  /* Switching method tabs changes which card is due without touching any APA
+     container, so the capture observers never fire for it.
+
+     BOTH observers, counted. There are two — the four method panels, and
+     #change-analysis itself, since leaving the page entirely leaves the method
+     panels' own classes untouched. Asserting the attributeFilter string merely
+     APPEARS was this check's first version, and mutation proved it inert: the
+     panel observer could drop to childList while the page-level one kept the
+     string alive. */
+  const watch = extractFn(APP_SRC, 'watchMethodPanels');
+  const classWatchers = (watch.match(/attributeFilter: \['class'\]/g) || []).length;
+  if (classWatchers < 2){
+    bad.push('only ' + classWatchers + ' of the 2 class watchers remain, so the card goes stale on a tab switch or on leaving the page');
+  }
+  if (!/getElementById\('change-analysis'\)/.test(watch)){
+    bad.push('the consolidated Change Analysis page is not watched, so the card survives leaving it');
+  }
+  return bad.length === 0 || bad.join('; ');
 });
 
 // ---------------------------------------------------------------------------
