@@ -184,6 +184,30 @@ appears and updates it silently thereafter. There are no "+ Add to report"
 buttons; the table appearing **is** the clinician's intent, because every tool
 owns its own data.
 
+**Which makes an APA renderer that emits its shell unconditionally a bug in the
+report, not a cosmetic one.** The observer's only test is
+`container.querySelector('.apa-table')`, so a renderer that always writes a table
+always offers one. `renderOpiePredictApa` did: `getOpiePredictions` returns all
+eight models unconditionally with `val:null` where the inputs are missing, so the
+container permanently held eight rows of dashes. Its two siblings had guards
+(`renderPreEstimatesApa` needs a valid estimate, `renderPrePredictApa` an achieved
+score) and it did not.
+
+The **top-bar patient age** is what made it reachable from everywhere, and is the
+general shape to watch for: `#patient-age` is on every page and its listener
+recalculates the premorbid page, so typing an age *anywhere* mutated that
+container and put an empty OPIE-4 table in the report. A shared header field
+reaches renderers the clinician is nowhere near.
+
+The guard is a finite prediction on at least one model — age in range, sex, and
+Vocabulary or Matrix Reasoning — **not** an achieved score. This is the only place
+OPIE-4 predictions are reported, unlike the ToPF tab which has
+`renderPreEstimatesApa` beside it, so requiring one would keep the premorbid
+estimate itself out of the report. Consent gating is not the alternative and
+`check.js` §34 forbids it here: OPIE owns its own data. `check.js` §35 pins all
+three renderers, the OPIE condition, and the age listener that makes it
+load-bearing.
+
 Except that the four RCI methods do not. They share **one** row set
 (`RCI_SHARED_ROWS`), deliberately, so norms and scores are entered once and carry
 across every method — which means a table entered on one is already complete on
@@ -1265,7 +1289,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 299 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 302 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -1274,7 +1298,8 @@ predictions, reliable-change thresholds and direction-neutral outcome labels, ba
 reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
 Score Tables confidence intervals, documentation contracts, wiring (§16–17), the
 raw-score metric (§18), the Norms Database view (§32), age-band filtering of the
-family dropdowns (§33) and consent gating on the Change Analysis methods (§34).
+family dropdowns (§33), consent gating on the Change Analysis methods (§34) and the
+empty-state guard on every premorbid APA renderer (§35).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

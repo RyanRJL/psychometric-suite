@@ -6415,6 +6415,106 @@ check('only the method on screen offers, and never behind the open drawer', () =
   return bad.length === 0 || bad.join('; ');
 });
 
+/* ==========================================================================
+   35. An APA container with no data must hold no table
+
+   The Working Report's observer collects any container holding an .apa-table.
+   So a renderer that emits its table shell unconditionally is not merely
+   showing an empty table - it is putting an empty table in a clinical report.
+
+   The OPIE-4 renderer did exactly that, and the top-bar patient age is what
+   surfaced it: #patient-age is on EVERY page and its listener recalculates the
+   premorbid page, so typing an age anywhere in the app mutated a container that
+   always held eight rows of dashes, and an OPIE-4 table appeared in the report
+   for a patient with no OPIE-4 data. Reproduced on the real UI.
+
+   The invariant:
+
+     A PREMORBID APA RENDERER MUST RETURN BEFORE ITS TABLE SHELL WHEN THERE IS
+     NOTHING TO REPORT.
+
+   Its two siblings already did (renderPreEstimatesApa needs a valid estimate,
+   renderPrePredictApa needs an achieved score); this pins all three, so the one
+   that regressed cannot regress alone and a fourth cannot arrive without one.
+   Source-text assertions, in the idiom of sections 16, 17 and 34 - the feature
+   is DOM-bound and there is nothing numeric to pin.
+   ========================================================================== */
+heading('35. An APA container with no data must hold no table');
+
+check('every premorbid APA renderer returns before its table shell when empty', () => {
+  const bad = [];
+  ['renderPreEstimatesApa', 'renderPrePredictApa', 'renderOpiePredictApa'].forEach(name => {
+    const fn = extractFn(APP_SRC, name);
+    if (!fn){ bad.push(name + ' is gone'); return; }
+    const marker = fn.indexOf('class="apa-table"');
+    if (marker < 0){ bad.push(name + ' no longer writes a table'); return; }
+    /* The boundary is the ASSIGNMENT that writes the shell, not the class name
+       inside it: the class sits within the template literal, so slicing at it
+       leaves that same `out.innerHTML =` in the text and the test passes on the
+       shell it is supposed to be looking past. Mutation found this - deleting
+       the OPIE-4 guard outright left the check green. */
+    const shell = fn.lastIndexOf('out.innerHTML =', marker);
+    if (shell < 0){ bad.push(name + ' no longer assigns its table to the container'); return; }
+    /* An innerHTML write ABOVE the shell - the empty state - and a return with
+       it. Testing merely for a bare `return;` was this check's first version
+       and mutation proved it inert: all three open with `if (!out) return;`,
+       which would have kept it green with the guard deleted. Position is the
+       whole point, a branch below the shell having already handed the observer
+       a table to collect. */
+    const above = fn.slice(0, shell);
+    if (!/out\.innerHTML =/.test(above) || !/\breturn;/.test(above)){
+      bad.push(name + ' writes its table shell unconditionally, so an empty table reaches the working report');
+    }
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the OPIE-4 guard tests the predictions, which is the only thing that can be absent', () => {
+  /* getOpiePredictions pushes all eight models unconditionally and marks the
+     unusable ones val:null, so rows.length is ALWAYS 8 and a length test would
+     be inert. Derived here rather than asserted from memory. */
+  const gp = extractFn(APP_SRC, 'getOpiePredictions');
+  const pushes = (gp.match(/pushModel\(/g) || []).length - 1;   // less the definition
+  if (pushes !== 8) return 'getOpiePredictions pushes ' + pushes + ' models, not 8 - re-derive this check';
+  if (!/list\.push\(\{ key, label, val: canPredict \? predict\(c\) : null/.test(gp)){
+    return 'pushModel no longer pushes unconditionally, so the premise of the guard has changed';
+  }
+
+  const fn = extractFn(APP_SRC, 'renderOpiePredictApa');
+  /* The guarding branch alone, not everything above the shell: the rendering
+     loop between them reads preState.achieved legitimately, and slicing to the
+     shell would sweep it in. */
+  const at = fn.search(/rows\.some\(r => r\.val != null && Number\.isFinite\(r\.val\)\)/);
+  if (at < 0) return 'the guard does not test for a finite prediction';
+  const guard = fn.slice(at, fn.indexOf('return;', at) + 7);
+  /* NOT an achieved score. This is the only place OPIE-4 predictions are
+     reported - unlike the ToPF tab, which has renderPreEstimatesApa beside it -
+     so requiring one would keep the premorbid estimate itself out of the
+     report. */
+  if (/preState\.achieved/.test(guard)){
+    return 'the guard requires an achieved score, which would withhold the OPIE-4 estimate itself';
+  }
+  return true;
+});
+
+check('the top-bar age still recalculates OPIE-4 from every page, which is why the guard is load-bearing', () => {
+  /* If this ever stops being true the guard is still correct, but the failure
+     it defends against is no longer reachable from every page - and anyone
+     reading section 35 should be told the premise moved rather than trust a
+     stale account of it. */
+  const at = APP_SRC.indexOf("getElementById('patient-age')?.addEventListener");
+  if (at < 0) return 'nothing binds the master age input';
+  const handler = APP_SRC.slice(at, at + 800);
+  if (!/calcOpiePredict\(\)/.test(handler)){
+    return 'the master age listener no longer calls calcOpiePredict - re-read section 35';
+  }
+  const header = (HTML_SRC.match(/<header[\s\S]*?<\/header>/) || [''])[0];
+  if (!/id="patient-age"/.test(header)){
+    return '#patient-age is no longer in the topbar, so it is not on every page';
+  }
+  return true;
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

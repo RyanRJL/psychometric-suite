@@ -6026,6 +6026,29 @@ function renderOpiePredictApa(){
   const mult = preCiMult();
   const rows = preState.opieRows || [];
 
+  /* NOTHING ENTERED YET → NO TABLE. Its two siblings already do this
+     (renderPreEstimatesApa needs a valid estimate, renderPrePredictApa needs an
+     achieved score); this one did not, and getOpiePredictions ALWAYS returns its
+     eight models — `val:null` where the inputs are absent — so the container
+     always held a full .apa-table of dashes.
+
+     That is not cosmetic. The Working Report's observer collects any container
+     holding an .apa-table, and the top-bar patient age recalculates the premorbid
+     page from EVERY page (the #patient-age listener calls calcOpiePredict). So
+     typing an age anywhere in the app mutated this container and put an empty
+     OPIE-4 table in the report, for a patient with no OPIE data and possibly on a
+     page that has nothing to do with premorbid estimation.
+
+     The test is a finite prediction on at least one model, which needs age in
+     range, sex, and Vocabulary or Matrix Reasoning — i.e. the clinician has
+     actually run OPIE-4. NOT the presence of an achieved score: unlike the ToPF
+     tab, this is the only place OPIE-4 predictions are reported, so requiring one
+     would keep the premorbid estimate itself out of the report. */
+  if (!rows.some(r => r.val != null && Number.isFinite(r.val))){
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter age, sex and at least one of Vocabulary or Matrix Reasoning to generate OPIE-4 predictions.</div>';
+    return;
+  }
+
   const byGroup = { FSIQ:[], GAI:[], INDEX:[] };
   rows.forEach(r => {
     if (r.key.startsWith('FSIQ_')) byGroup.FSIQ.push(r);
