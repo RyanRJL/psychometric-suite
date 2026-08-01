@@ -2591,6 +2591,33 @@ function batteryBasisPresent(rows, prefix){
       .startsWith(prefix));
 }
 
+/* WHY A ROW'S INTERVAL IS BLANK — and the two reasons must stay apart.
+
+   getBatteryRowReliability returns null for both, which is right for the
+   arithmetic and useless for the note: a base-rate measure is scored by
+   published lookup and never had a coefficient, whereas a raw RBANS subtest is
+   simply absent from its manual's reliability table. resolveCiReliability
+   already distinguishes them ('base rate — no interval' vs 'none published'),
+   so ask it directly rather than re-deriving the difference here.
+
+   Verified over normDB at age 45: 51 base-rate rows and 4 none-published,
+   against 209 that do print an interval. */
+function batteryBlankCiReasons(rows){
+  const db = typeof getMergedDB === 'function' ? getMergedDB() : null;
+  const out = { baseRate: false, nonePublished: false };
+  if (!db) return out;
+  rows.forEach(row => {
+    const entry = row.group && db[row.group] ? db[row.group][row.name] : null;
+    if (!entry || typeof entry !== 'object') return;
+    const type = rowScoreType(row);
+    const rel = resolveCiReliability(entry, BATTERY_METRIC_SD[type], batteryPatientAge());
+    if (!rel || !rel.none) return;
+    if (rel.basis === 'base rate — no interval') out.baseRate = true;
+    else out.nonePublished = true;
+  });
+  return out;
+}
+
 /* Hard limits imposed by the score scale itself, used to keep an interval from
    printing a value the scale cannot produce. Only scaled scores have a
    universal ceiling (Wechsler subtests run 1-19); "standard" and T are generic
@@ -2905,6 +2932,42 @@ const APA_NOTES = {
     ctx.ciLevel && ctx.ciLevel !== 'off'
       ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM, where SEM = SD × √(1 − r) on the normative standard deviation of the reported metric. The reliability r is the coefficient each test's manual uses for its own published intervals: internal consistency where the publisher reports one, otherwise the test–retest coefficient.`
       : '',
+    /* THE SENTENCE ABOVE IS FALSE WITHOUT THIS ONE, on any table holding a
+       measure whose publisher tabulates reliability BY AGE BAND while no age
+       was entered.
+
+       D-KEFS (original) is the case: it publishes rInternalByAge with no
+       all-ages average, so at a blank age resolveCiReliability falls through
+       to the retest branch — and the sentence above then claims internal
+       consistency was used "where the publisher reports one" when the
+       publisher does report one and the app did not use it. Verified: D-KEFS
+       Tower Total Achievement takes r .44 at a blank age against .72 at 45.
+
+       This is the same defect the comment above records fixing once already
+       for CVLT-3, recurring by a different route. The predicate is exact:
+       'retest, uncorrected · by age' can only arise when the entry HAS banded
+       coefficients (the suffix is added only for those) and the retest r was
+       used anyway. batteryBasisPresent asks the shipped resolver at the age
+       actually in force, so it cannot disagree with the printed intervals. */
+    ctx.ageBandNotSelected
+      ? 'One or more measures here publish their reliability by age band. No patient age was entered, so the published all-ages or test–retest coefficient was used for those measures instead; entering an age narrows their intervals.'
+      : '',
+    /* A BLANK INTERVAL MUST SAY WHY IT IS BLANK. Every other deliberate blank
+       in this table already carries a sentence — the raw percentile above and
+       the higher-is-worse pairing — on the stated ground that an absent value
+       reads as an oversight rather than as the refusal it is. The CI column
+       was the one left out: 55 measures reachable from Score Tables print no
+       interval, for two quite different reasons that must not be merged.
+
+       Sourced from resolveCiReliability rather than getBatteryRowReliability,
+       because the latter collapses both to null and the distinction is the
+       whole point of the sentence. */
+    ctx.blankCiBaseRate
+      ? 'Longest-span measures are scored from a published base-rate table rather than by conversion, and have no reliability coefficient, so no confidence interval is shown for them.'
+      : '',
+    ctx.blankCiNonePublished
+      ? 'Where a measure is absent from its manual\'s reliability table, no coefficient is available and no confidence interval is shown for it.'
+      : '',
     /* NO SENTENCE FOR THE UNCORRECTED PAIRING. It used to have one, and it has
        been moved wholesale to Methods & References.
 
@@ -3082,7 +3145,14 @@ function renderBatteryApa(){
          no measure reads one would be its own misstatement. */
       ciAge: (ciLevel !== 'off' && batteryPatientAge() !== null
               && valid.some(r => batteryRowUsesAgeBand(r))) ? batteryPatientAge() : null,
-      hasUncorrectedR: ciLevel !== 'off' && batteryBasisPresent(valid, 'retest, uncorrected'),
+      /* A publisher tabulates reliability by age band and the band was not
+         selected — no age entered, or one outside the normed range. The suffix
+         is added only to banded entries, so this prefix cannot match anything
+         else. Without it the CI-method sentence above is false. */
+      ageBandNotSelected: ciLevel !== 'off' && batteryBasisPresent(valid, 'retest, uncorrected · by age'),
+      /* Why a blank interval is blank. Two reasons, never merged. */
+      blankCiBaseRate:      ciLevel !== 'off' && batteryBlankCiReasons(valid).baseRate,
+      blankCiNonePublished: ciLevel !== 'off' && batteryBlankCiReasons(valid).nonePublished,
       /* The corrected reading is a departure from every manual cited in this
          table, so it is the one thing here a reader most needs told. Asked the
          same way and for the same reason: the control being on does not mean a
@@ -3388,6 +3458,12 @@ document.getElementById('patient-age')?.addEventListener('input', () => {
   if (typeof calcPremorbid === 'function'){ calcPremorbid(); calcPredict(); calcOpiePredict(); }
   refreshPatientAgeIndicator();
   rebuildFamilyListsForAge();
+  /* The Data page reports which coefficient an interval rests on, and that
+     answer moves with the age for every banded measure. Left un-rendered it
+     would keep showing the previous patient's reading — the same staleness the
+     reliability-basis control is re-rendered for. Guarded because renderDbList
+     needs that page's markup. */
+  if (typeof renderDbList === 'function' && document.getElementById('db-tbody')) renderDbList();
 });
 document.getElementById('bat-clear').addEventListener('click', clearBattery);
 
@@ -4768,10 +4844,27 @@ function dbInstrumentOf(family, isCustom){
    intervals rest on; showing the published reading while the table is set to
    corrected would be the exact defect the shared resolver exists to prevent.
    renderDbList is therefore re-run when the control changes. */
-function dbReliabilityBasis(entry, family, name, correctRetest){
+function dbReliabilityBasis(entry, family, name, correctRetest, age){
   const type = inferScoreTypeForSubtest(family, name, entry);
   const effCorr = correctRetest !== undefined ? correctRetest : batteryCiCorrectRetest();
-  const rel = resolveCiReliability(entry, BATTERY_METRIC_SD[type], undefined, effCorr);
+  /* THE PATIENT AGE IS PART OF THE ANSWER, and passing `undefined` here was a
+     defect rather than a simplification.
+
+     These two columns exist to say what the app's intervals actually rest on.
+     Hard-coding a blank age made them state the no-age reading whatever the
+     patient age was — so with an age of 45 set, 74 of 209 entries reachable
+     from Score Tables showed a different r from the one that produced the
+     printed interval, and 13 named a different KIND of coefficient entirely.
+     D-KEFS Tower Total Achievement read "retest, uncorrected · by age, r .44"
+     while the table built its interval on "internal consistency · by age,
+     r .72". That is precisely what CLAUDE.md warns of: the page telling a
+     clinician their interval rests on a coefficient it does not.
+
+     The page already follows the reliability-basis control from Score Tables
+     for exactly this reason. The age is the same kind of state and is now
+     followed the same way. */
+  const effAge = age !== undefined ? age : batteryPatientAge();
+  const rel = resolveCiReliability(entry, BATTERY_METRIC_SD[type], effAge, effCorr);
   return rel || { r:null, basis:'none published', none:true };
 }
 

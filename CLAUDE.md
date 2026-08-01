@@ -1105,6 +1105,18 @@ CVLT-C lands on `uncorrected` and belongs there, which is not obvious: `metric:'
 it look like the second case, but `reportedAs` puts the row on T or z, so the SD in force is
 the normative 10 or 1 while `r` was measured on raw words recalled.
 
+**The page follows the patient age as well as the reliability control.**
+`dbReliabilityBasis` used to hard-code `undefined` for age, so the two columns stated the
+no-age reading whatever age was set — with 45 entered, **74 of the 209 entries reachable
+from Score Tables showed a different `r` from the one that built the printed interval, and
+13 named a different *kind* of coefficient**. D-KEFS Tower Total Achievement read
+`retest, uncorrected · by age, r .44` against the table's `internal consistency · by age,
+r .72`, because D-KEFS (original) publishes `rInternalByAge` with no all-ages average and a
+blank age falls through to the retest branch. That is exactly the failure this page's own
+resolver exists to prevent. §32's mirror check could not see it: it drove **both** entry
+points at a blank age, so they agreed trivially. It now also drives them at seven ages that
+actually select a band.
+
 **`DB_COLUMNS` gives each column one `get`, used for both display and sorting**, so a
 column cannot order by something other than what it shows. §32 pins that, and pins the two
 reliability columns to `dbReliabilityBasis` specifically — found by mutation that pointing
@@ -1184,7 +1196,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 290 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 292 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients

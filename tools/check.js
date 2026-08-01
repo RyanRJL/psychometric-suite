@@ -5574,9 +5574,16 @@ const dbCtx = (() => {
   vm.runInContext(
     (APP_SRC.match(/const BATTERY_METRIC_SD = \{[^;]*;/) || [''])[0] + '\n' +
     (APP_SRC.match(/const SCORE_METRICS = [^;]*;/) || [''])[0] + '\n' +
+    extractConst(APP_SRC, 'PATIENT_AGE_INPUTS') + '\n' +
+    /* batteryPatientAge is extracted because dbReliabilityBasis now defaults to
+       it: the Data page follows the patient age the way it already follows the
+       reliability-basis control. With the stubbed document it returns null,
+       which is the blank-age reading — and the checks that care about a real
+       age pass one explicitly rather than relying on that. */
     ['inferScoreType', 'inferScoreTypeForSubtest', 'bandedReliabilityForAge',
      'rInternalForAge', 'rStabilityForAge', 'derivedCorrectedR',
-     'batteryCiCorrectRetest', 'resolveCiReliability',
+     'batteryCiCorrectRetest', 'patientAge', 'batteryPatientAge',
+     'resolveCiReliability',
      'dbReliabilityBasis', 'dbInstrumentOf'].map((n) => extractFn(APP_SRC, n)).join('\n') +
     ';globalThis.__BASIS = dbReliabilityBasis; globalThis.__INST = dbInstrumentOf;'
     + 'globalThis.inferScoreTypeForSubtest = inferScoreTypeForSubtest;',
@@ -5671,6 +5678,52 @@ check('the reliability control costs what Methods & References says it costs', (
       if (!block.includes(needle)) bad.push(what + ' is no longer stated on the Methods page');
     });
 
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the two entry points still agree once a patient age is entered', () => {
+  /* THE GAP THAT SHIPPED. The neighbouring check drives both entry points at a
+     BLANK age, and dbReliabilityBasis used to hard-code `undefined` — so the
+     two agreed trivially and the check could never see the disagreement that
+     mattered. With an age of 45 set, 74 of 209 entries reachable from Score
+     Tables showed a different coefficient on the Data page from the one that
+     built the printed interval, and 13 named a different KIND: D-KEFS Tower
+     Total Achievement read "retest, uncorrected · by age, r .44" against the
+     table's "internal consistency · by age, r .72", because D-KEFS (original)
+     publishes rInternalByAge with no all-ages average and a blank age falls
+     through to the retest branch.
+
+     CLAUDE.md states the invariant plainly — if the two drift, the page tells a
+     clinician their interval rests on a coefficient it does not. This drives
+     them at ages that actually select a band, which is where the drift lived.
+
+     An invariant, not a pinned figure: two functions, same entry, same
+     arguments, same answer. */
+  const AGES = [8, 12, 16, 25, 45, 67, 80];
+  const bad = [];
+  let compared = 0;
+  Object.entries(D.normDB).forEach(([group, tab]) => {
+    Object.entries(tab).forEach(([name, e]) => {
+      if (!e || typeof e !== 'object') return;
+      const type = dbType(group, name, e);
+      AGES.forEach((age) => {
+        [false, true].forEach((corr) => {
+          const shown = dbBasis(e, group, name, corr, age);
+          const used  = batteryRel({ name, group, scoreType: type }, type, age, corr);
+          if (!shown || shown.none) return;      // no interval either way
+          if (!used) return;
+          compared++;
+          if (shown.r !== used.r || shown.basis !== used.basis){
+            if (bad.length < 5) bad.push(group + ' / ' + name + ' @' + age +
+              (corr ? ' [corrected]' : '') +
+              ': page says ' + shown.basis + ' r=' + shown.r +
+              ', table used ' + used.basis + ' r=' + used.r);
+          }
+        });
+      });
+    });
+  });
+  if (!compared) return 'nothing was compared — the harness is not exercising either entry point';
   return bad.length === 0 || bad.join('; ');
 });
 
