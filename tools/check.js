@@ -6185,6 +6185,187 @@ check('changing the age rebuilds all three dropdowns', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
+
+/* ==========================================================================
+   34. Consent gating on the four Change Analysis methods
+
+   The four RCI methods share ONE row set (RCI_SHARED_ROWS), deliberately, so a
+   person's norms and scores are entered once and carry across every method.
+   The cost of that sharing is that a table entered on one method is already
+   complete on the other three, and the working report's MutationObserver
+   collected whichever of them happened to re-render: merely re-selecting the CI
+   level on a method never opened put a third near-identical table in the
+   report. Reproduced on the real UI before the fix, not inferred.
+
+   So those four, alone in the app, collect nothing until ACCEPTED. Every other
+   tool owns its own data, so its table appearing IS the clinician's intent, and
+   gating one of those would cost a click for nothing.
+
+   The invariant, which is what makes the roster derivable rather than a list
+   someone has to remember:
+
+     A METHOD READING THE SHARED ROW SET MUST BE CONSENT-GATED.
+
+   These are source-text assertions in the idiom of sections 16 and 17: the
+   feature is DOM-bound and observer-driven, so there is nothing numeric to pin.
+   What they defend is the wiring - which paths grant consent, which must not,
+   and that the gate sits where it cannot be walked around.
+   ========================================================================== */
+heading('34. Consent gating on the four Change Analysis methods');
+
+check('every method sharing RCI_SHARED_ROWS is consent-gated, and nothing else is', () => {
+  /* Derive the roster from rciState rather than restating it: a fifth method
+     added to the shared row set must be gated too, and a check holding its own
+     copy of the list would go on passing while that method leaked. */
+  const stateBlock = APP_SRC.slice(APP_SRC.indexOf('const rciState = {'));
+  const sharing = [...stateBlock.slice(0, stateBlock.indexOf('\n};')).matchAll(
+    /'([\w-]+)':\s*\{\s*rows:RCI_SHARED_ROWS/g)].map(m => m[1]);
+  if (sharing.length < 4) return 'found only ' + sharing.length + ' methods on the shared row set';
+
+  const m = APP_SRC.match(/const CONSENT_SOURCES = new Set\(\[([^\]]*)\]\)/);
+  if (!m) return 'CONSENT_SOURCES is gone - the gate has been removed';
+  const gated = [...m[1].matchAll(/'([\w:-]+)'/g)].map(x => x[1]).sort();
+  const expected = sharing.map(s => s + '-apa').sort();
+  if (gated.join() !== expected.join()){
+    return 'gated [' + gated.join(', ') + '] but the shared row set is [' + expected.join(', ') + ']';
+  }
+  /* The gate is a cost - a table the clinician must ask for. Anything whose
+     data is its own must stay out of it. */
+  const wrong = ['bat-apa', 'sdi-apa', 'pre-estimates-apa', 'pre-predict-apa', 'pre-opiepredict-apa']
+    .filter(id => gated.includes(id));
+  if (wrong.length) return wrong.join(' and ') + ' own their own data and must not be gated';
+  return true;
+});
+
+check('the gate sits above the auto-split, so child items cannot slip past it', () => {
+  /* extractGroupsFromHtml/splitAndUpsert turn a multi-family table into one
+     item per family. If the acceptance test ran after them, an ungated method
+     holding two families would collect as "rci-srb-apa::CVLT-3 Indices" and
+     friends while the parent was still refused. */
+  const fn = extractFn(APP_SRC, 'captureSource');
+  const gate  = fn.indexOf('isSourceAccepted');
+  const split = fn.indexOf('extractGroupsFromHtml');
+  if (gate === -1)  return 'captureSource no longer tests acceptance - every method auto-collects again';
+  if (split === -1) return 'the auto-split is gone from captureSource; re-derive this check';
+  if (gate > split) return 'the acceptance test runs AFTER the auto-split, so split child items bypass it';
+  /* Consent keys off the parent, or a split child would be judged on its own
+     and "rci-srb-apa::CVLT-3 Indices" would never match an accepted parent.
+
+     Assert the LOOKUP, not the mention. Testing for the word `consentParent`
+     was this check's first version and mutation proved it inert: leaving the
+     `const parent = consentParent(...)` line in place while reading
+     `state.consent[sourceId]` kept the word and broke the behaviour. */
+  const accepted = extractFn(APP_SRC, 'isSourceAccepted');
+  if (!/const parent = consentParent\(sourceId\)/.test(accepted)){
+    return 'isSourceAccepted does not resolve the parent, so split children are judged separately';
+  }
+  if (!/state\.consent\[parent\]/.test(accepted)){
+    return 'isSourceAccepted resolves the parent but does not look consent up by it';
+  }
+  return true;
+});
+
+check('entering data accepts the method; changing a view setting does not', () => {
+  const bad = [];
+  /* Granting on data entry is what keeps the method the clinician is actually
+     working in behaving exactly as it did before: silent auto-collect. */
+  const rowInput = APP_SRC.match(/const m = e\.target\.dataset\.m[\s\S]{0,200}/);
+  if (!rowInput || !/rciMarkMethodUsed\(m\)/.test(rowInput[0])){
+    bad.push('typing a score does not accept the method, so the tab being worked in offers instead of collecting');
+  }
+  if (!/rciMarkMethodUsed\(method\)/.test(extractFn(APP_SRC, 'loadFamilyIntoMethod'))){
+    bad.push('autofilling a family does not accept the method');
+  }
+  if (!/rciMarkMethodUsed\(method\)/.test(extractFn(APP_SRC, 'rciAddRow'))){
+    bad.push('adding a row does not accept the method');
+  }
+  /* And the other half, which is the actual bug: the CI selector and the
+     corrected-r toggle re-render the APA table without a score being touched.
+     Accepting there would restore the behaviour this whole section removes.
+
+     Window BOTH SIDES of the anchor. Reading forward only was this check's own
+     first version, and mutation proved it inert: the grant naturally goes at
+     the TOP of a handler, so `rciMarkMethodUsed(...)` inserted immediately
+     before `.cv = parseFloat(...)` sat outside the match and passed. */
+  const around = (anchor, span) => {
+    const i = APP_SRC.indexOf(anchor);
+    return i === -1 ? null : APP_SRC.slice(Math.max(0, i - span), i + anchor.length + span);
+  };
+  const cvHandler = around('.cv = parseFloat(e.target.value)', 160);
+  if (!cvHandler) bad.push('the CI-level handler has moved; re-derive this check');
+  else if (/rciMarkMethodUsed/.test(cvHandler)){
+    bad.push('changing the CI level accepts the method - this is the original defect');
+  }
+  const corrHandler = around('useCorrectedR = !!e.target.checked', 160);
+  if (!corrHandler) bad.push('the corrected-r handler has moved; re-derive this check');
+  else if (/rciMarkMethodUsed/.test(corrHandler)){
+    bad.push('the corrected-r toggle accepts the method');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('consent is cleared with the report it belongs to', () => {
+  /* A method accepted for the last patient must not go on silently collecting
+     for the next one. "New patient" routes through clearSilent. */
+  const bad = [];
+  if (!/state\.consent = \{\}/.test(extractFn(APP_SRC, 'clearSilent'))){
+    bad.push('"New patient" leaves consent standing, so it survives onto the next patient');
+  }
+  if (!/state\.consent = \{\}/.test(extractFn(APP_SRC, 'clear'))){
+    bad.push('starting a new report leaves consent standing');
+  }
+  /* Deleting a gated method's LAST table withdraws consent, or the next
+     keystroke anywhere in the shared row set puts it straight back. Only the
+     last: a split table losing one family must keep collecting the rest. */
+  const rm = extractFn(APP_SRC, 'remove');
+  if (!/delete state\.consent\[parent\]/.test(rm)){
+    bad.push('deleting a gated table does not withdraw consent, so it silently returns');
+  }
+  if (!/!state\.items\.some/.test(rm)){
+    bad.push('consent is withdrawn without checking for remaining items, so one deleted family stops the others updating');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a bundle saved before consent existed keeps collecting', () => {
+  /* Those tables were accepted by the act of collecting them. Without the
+     migration, a report in progress silently stops updating on reload - which
+     reads as the app losing data. */
+  const fn = extractFn(APP_SRC, 'load');
+  if (!/state\.items\.forEach/.test(fn) || !/state\.consent\[parent\] = true/.test(fn)){
+    return 'load() does not grant consent to already-collected tables';
+  }
+  if (!/consent: \(parsed\.consent/.test(fn)) return 'load() does not read a saved consent map';
+  return true;
+});
+
+check('the offer is in the page, not in the hidden APA panel', () => {
+  /* styles.css hides every page's inline APA panel outright - the drawer is the
+     canonical view of a rendered table. A control placed in the APA toolbar is
+     in the markup and nowhere at all to the clinician, which is exactly where
+     the first version of this feature put it. */
+  if (!/\.apa-wrap\{display:none!important\}/.test(CSS_SRC)){
+    return 'the APA panel is no longer hidden - re-derive where the offer belongs';
+  }
+  const fn = extractFn(APP_SRC, 'offerHostFor');
+  if (/apa-toolbar/.test(fn)) return 'the offer is mounted in the APA toolbar, which never renders';
+  if (!/closest\('section'\)/.test(fn)){
+    return 'the offer is not anchored to the method panel; the consolidated Change Analysis page moves these sections';
+  }
+  const render = extractFn(APP_SRC, 'refreshConsentControls');
+  /* It offers, it never scolds: both ways out are one click, and it is tinted
+     with the primary colour rather than the warning one. */
+  if (!/data-rb-accept/.test(render) || !/data-rb-decline/.test(render)){
+    return 'the offer does not carry both an accept and a decline';
+  }
+  const start = CSS_SRC.indexOf('.rb-offer-box{');
+  if (start === -1) return 'the offer has no styling';
+  if (/--ds-warning/.test(CSS_SRC.slice(start, start + 1400))){
+    return 'the offer is styled as a warning; nothing is wrong, the app is offering';
+  }
+  return true;
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

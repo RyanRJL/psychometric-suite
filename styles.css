@@ -7568,6 +7568,59 @@ body.rb-docked-active{padding-right:0}
 .apa-toolbar .rb-add-btn:active{transform:translateY(0)}
 .apa-toolbar .rb-add-btn svg{width:12px;height:12px}
 
+/* ---- The "add this method's table" offer, inline in a Change Analysis panel ----
+   Every class here is standalone rather than a modifier on an existing one:
+   design-system.css and the #change-analysis page-scoped block both restyle the
+   shared panel/box/btn names, and either would outrank anything added here.
+   Same reasoning as .caution-box above.
+
+   Primary tint, never --ds-warning: nothing is wrong, the app is offering. */
+.rb-offer-box{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  flex-wrap:wrap;
+  margin-top:18px;
+  padding:14px 18px;
+  border:1px solid rgba(156,61,42,0.28);
+  border-radius:8px;
+  background:rgba(156,61,42,0.05);
+  font-family:var(--sans);
+}
+.rb-offer-text{display:flex;flex-direction:column;gap:3px;min-width:260px;flex:1 1 320px}
+.rb-offer-text strong{
+  font-size:12.5px;
+  font-weight:600;
+  color:#9C3D2A;
+  letter-spacing:0.01em;
+}
+.rb-offer-text span{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.rb-offer-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.rb-offer-add,
+.rb-offer-skip{
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:600;
+  letter-spacing:0.01em;
+  height:36px;
+  padding:0 16px;
+  border-radius:6px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.rb-offer-add{background:#9C3D2A;border:1px solid #9C3D2A;color:#FFFFFF}
+.rb-offer-add:hover{background:#8A3424;border-color:#8A3424}
+.rb-offer-skip{background:transparent;border:1px solid rgba(20,15,8,0.18);color:var(--ink-2)}
+.rb-offer-skip:hover{border-color:rgba(20,15,8,0.34);color:#1A1410}
+@media (max-width:700px){
+  .rb-offer-box{align-items:flex-start}
+  .rb-offer-actions{width:100%}
+  .rb-offer-add,.rb-offer-skip{flex:1 1 auto}
+}
+@media print{.rb-offer-box{display:none!important}}
+
 @media print{.rb-root{display:none!important}}
 
 /* =====================================================================

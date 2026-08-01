@@ -7600,6 +7600,59 @@ body.rb-docked-active{padding-right:0}
 .apa-toolbar .rb-add-btn:active{transform:translateY(0)}
 .apa-toolbar .rb-add-btn svg{width:12px;height:12px}
 
+/* ---- The "add this method's table" offer, inline in a Change Analysis panel ----
+   Every class here is standalone rather than a modifier on an existing one:
+   design-system.css and the #change-analysis page-scoped block both restyle the
+   shared panel/box/btn names, and either would outrank anything added here.
+   Same reasoning as .caution-box above.
+
+   Primary tint, never --ds-warning: nothing is wrong, the app is offering. */
+.rb-offer-box{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  flex-wrap:wrap;
+  margin-top:18px;
+  padding:14px 18px;
+  border:1px solid rgba(156,61,42,0.28);
+  border-radius:8px;
+  background:rgba(156,61,42,0.05);
+  font-family:var(--sans);
+}
+.rb-offer-text{display:flex;flex-direction:column;gap:3px;min-width:260px;flex:1 1 320px}
+.rb-offer-text strong{
+  font-size:12.5px;
+  font-weight:600;
+  color:#9C3D2A;
+  letter-spacing:0.01em;
+}
+.rb-offer-text span{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.rb-offer-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.rb-offer-add,
+.rb-offer-skip{
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:600;
+  letter-spacing:0.01em;
+  height:36px;
+  padding:0 16px;
+  border-radius:6px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.rb-offer-add{background:#9C3D2A;border:1px solid #9C3D2A;color:#FFFFFF}
+.rb-offer-add:hover{background:#8A3424;border-color:#8A3424}
+.rb-offer-skip{background:transparent;border:1px solid rgba(20,15,8,0.18);color:var(--ink-2)}
+.rb-offer-skip:hover{border-color:rgba(20,15,8,0.34);color:#1A1410}
+@media (max-width:700px){
+  .rb-offer-box{align-items:flex-start}
+  .rb-offer-actions{width:100%}
+  .rb-offer-add,.rb-offer-skip{flex:1 1 auto}
+}
+@media print{.rb-offer-box{display:none!important}}
+
 @media print{.rb-root{display:none!important}}
 
 /* =====================================================================
@@ -22465,7 +22518,23 @@ const rciState = {
 function newRciRow(method){
   return { name:'', sd:'', m1:'', sd1:'', m2:'', sd2:'', r:'', rCorrected:'', n:'', t1:'', t2:'' };
 }
-function rciAddRow(method){ rciState[method].rows.push(newRciRow(method)); renderRci(method); }
+/* The four methods share ONE row set, so entering scores on one of them fills
+   in the other three as a side effect. The working report therefore collects a
+   method only once it has been ACCEPTED, and entering data IS the acceptance —
+   this marks it, so the tab the clinician is actually working in collects
+   silently, exactly as it did before. The other three offer themselves through
+   the "Add to report" control on their own APA toolbar.
+
+   Deliberately NOT called from the view settings: the CI level, the corrected-r
+   toggle and the column pickers all re-render the APA table without a score
+   being touched, and re-selecting the CI level on a method never opened was
+   precisely how a third table used to appear in the report. */
+function rciMarkMethodUsed(method){
+  if (!rciState[method]) return;
+  if (typeof ReportBundle === 'undefined' || !ReportBundle.acceptSource) return;
+  ReportBundle.acceptSource(`${method}-apa`, { capture: false });
+}
+function rciAddRow(method){ rciMarkMethodUsed(method); rciState[method].rows.push(newRciRow(method)); renderRci(method); }
 function rciRemove(method, i){ rciState[method].rows.splice(i, 1); renderRci(method); }
 function rciRemoveGroup(method, group){
   const rows = rciState[method].rows;
@@ -22670,6 +22739,7 @@ function renderRciDateHeader(method){
       const target = e.target.dataset.target;
       const which = e.target.dataset.dateHead;
       if (!rciState[target] || !which) return;
+      rciMarkMethodUsed(target);
       rciState[target][which] = e.target.value;
       renderRciApa(target);
     });
@@ -22785,6 +22855,7 @@ function renderRci(method){
   tbody.querySelectorAll('input').forEach(inp => {
     inp.addEventListener('input', e => {
       const m = e.target.dataset.m, i = +e.target.dataset.r, f = e.target.dataset.f;
+      rciMarkMethodUsed(m);
       rciState[m].rows[i][f] = e.target.value;
       // Update only this row's computed cells (don't destroy focus)
       updateRciRow(m, i, e.target.closest('tr'));
@@ -23266,6 +23337,7 @@ function loadFamilyIntoMethod(method, family){
   // SHARED array (never reassign .rows, which would break the shared link).
   dropFirstBlankRow(rciState[method].rows);
   rciState[method].rows.push(...newRows);
+  rciMarkMethodUsed(method);
   renderRci(method);
   // Toast suppressed - the working-report pill is the single feedback channel
 }
@@ -25341,7 +25413,32 @@ const ReportBundle = (function(){
   }
   const SOURCE_IDS = Object.keys(SOURCE_LABELS);
 
-  let state = { items: [], minimized: true, drawerWidth: null, onboardingSeen: false, maximised: false };
+  let state = { items: [], minimized: true, drawerWidth: null, onboardingSeen: false, maximised: false, consent: {} };
+  /* ---------- consent-gated sources ----------
+     The four Change Analysis methods share ONE row set (RCI_SHARED_ROWS), so a
+     table entered on one method is already complete on the other three: the
+     moment anything on a sibling tab caused a re-render — the CI selector, a
+     date, an autofill — its APA table appeared and the observer below collected
+     it, putting up to four near-identical tables in the report from one entry.
+
+     So these four do not auto-collect. A method is collected once it has been
+     ACCEPTED, which happens either because the clinician entered data in it
+     (rciMarkMethodUsed, which is what makes the method they are actually
+     working in behave exactly as before) or because they pressed the "Add to
+     report" control on that method's own APA toolbar. Consent is per method and
+     persists with the bundle, so an accepted method goes on updating silently.
+
+     Nothing else in the app is gated: every other tool owns its own data, so
+     its table appearing IS the clinician's intent. */
+  const CONSENT_SOURCES = new Set(['rci-basic-apa','rci-practice-apa','rci-srb-apa','rci-crawford-apa']);
+  /* Split items are keyed "<sourceId>::<family>" — consent lives on the parent. */
+  function consentParent(sourceId){ return String(sourceId || '').split('::')[0]; }
+  function isConsentGated(sourceId){ return CONSENT_SOURCES.has(consentParent(sourceId)); }
+  function isSourceAccepted(sourceId){
+    const parent = consentParent(sourceId);
+    if (!CONSENT_SOURCES.has(parent)) return true;
+    return state.consent[parent] === true;
+  }
   /* Last seen body-row count per source. Used to decide whether the pill
      should fire - we only want it on actual row additions, not score edits. */
   const lastRowCount = {};
@@ -25459,10 +25556,18 @@ const ReportBundle = (function(){
           minimized: parsed.minimized !== false,
           drawerWidth: (Number.isFinite(w) && w >= 320) ? w : null,
           onboardingSeen: parsed.onboardingSeen === true,
-          maximised: parsed.maximised === true
+          maximised: parsed.maximised === true,
+          consent: (parsed.consent && typeof parsed.consent === 'object') ? parsed.consent : {}
         };
       }
-    } catch(e){ state = { items:[], minimized:true, drawerWidth:null, onboardingSeen:false, maximised:false }; }
+    } catch(e){ state = { items:[], minimized:true, drawerWidth:null, onboardingSeen:false, maximised:false, consent:{} }; }
+    /* A bundle saved before consent existed carries collected RCI tables and no
+       consent map. Those tables were accepted by the act of collecting them, so
+       grant it — otherwise a report in progress would silently stop updating. */
+    state.items.forEach(i => {
+      const parent = consentParent(i.sourceId);
+      if (CONSENT_SOURCES.has(parent)) state.consent[parent] = true;
+    });
   }
   function save(){
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
@@ -25892,22 +25997,40 @@ const ReportBundle = (function(){
     }
   }
   function remove(id){
+    const gone = state.items.find(i => i.id === id);
     state.items = state.items.filter(i => i.id !== id);
+    /* Deleting a gated method's last table is a decision about that method, so
+       it withdraws consent — otherwise the next keystroke anywhere in the
+       shared row set would silently put it straight back. Only when the last
+       one goes: a split table losing one family must keep collecting the rest. */
+    if (gone){
+      const parent = consentParent(gone.sourceId);
+      if (CONSENT_SOURCES.has(parent) && !state.items.some(i => consentParent(i.sourceId) === parent)){
+        delete state.consent[parent];
+      }
+    }
     save();
     render();
+    refreshConsentControls();
   }
   function clear(){
     if (!state.items.length) return;
     if (!window.confirm('Start a new report?\n\nThis clears all collected tables - the change cannot be undone.')) return;
     state.items = [];
+    state.consent = {};
     save();
     render();
+    refreshConsentControls();
     if (typeof showToast === 'function') showToast('New report started');
   }
+  /* Consent goes with the report it belongs to. A method accepted for the last
+     patient must not go on silently collecting for the next one. */
   function clearSilent(){
     state.items = [];
+    state.consent = {};
     save();
     render();
+    refreshConsentControls();
   }
   /* Observer suppression - lets a global "clear all" wipe state without
      the auto-add MutationObserver immediately re-populating from the
@@ -25934,6 +26057,8 @@ const ReportBundle = (function(){
      - Subtle chip pulse only on first auto-add for a source.
      - When a container becomes empty, the bundle entry is PRESERVED - clearing
        inputs by accident shouldn't wipe your collected report.
+     - EXCEPT for the four consent-gated sources above, which collect nothing
+       until accepted. See CONSENT_SOURCES.
   */
   function ensureObserver(sourceId){
     if (observers.has(sourceId)) return;
@@ -25944,17 +26069,37 @@ const ReportBundle = (function(){
     if (lastRowCount[sourceId] == null){
       lastRowCount[sourceId] = countTableRows(container);
     }
-    const handler = debounce(() => {
+    const handler = debounce(() => captureSource(sourceId), 350);
+    const obs = new MutationObserver(handler);
+    obs.observe(container, { childList: true, subtree: true, characterData: true });
+    observers.set(sourceId, obs);
+  }
+  /* The capture itself, factored out of the observer so the "Add to report"
+     control can run exactly the same path the moment consent is given —
+     otherwise an accepted table would sit out of the report until the next
+     stray mutation happened to fire. */
+  function captureSource(sourceId, opts){
+    const o = opts || {};
+    const container = document.getElementById(sourceId);
+    if (!container) return;
+    {
       // Bail out during a global clear so we don't immediately re-populate
       // the bundle from residual APA HTML during the clear cascade.
       if (_suppressed) return;
       // Always update the row-count tracker first, even if we're about to
       // early-return, so cleared tables don't leave stale counts behind.
       const currentRowCount = countTableRows(container);
-      const rowsAdded = currentRowCount > (lastRowCount[sourceId] || 0);
+      const rowsAdded = o.forceAnnounce === true || currentRowCount > (lastRowCount[sourceId] || 0);
       lastRowCount[sourceId] = currentRowCount;
 
+      /* The offer control appears and disappears with the table, so it is
+         refreshed on every pass — including the ones that early-return. */
+      refreshConsentControls();
       if (!container.querySelector('.apa-table')) return;
+      /* Not accepted yet: render nothing into the report. The control on this
+         method's APA toolbar is now offering it. Sits ABOVE the auto-split
+         branch so a multi-family table cannot slip past as child items. */
+      if (!isSourceAccepted(sourceId)) return;
       if (typeof buildStandaloneHtml !== 'function') return;
       const rawHtml = buildStandaloneHtml(container);
       const html = applyMeaningfulTitle(rawHtml, sourceId);
@@ -26008,13 +26153,108 @@ const ReportBundle = (function(){
         // and pulse the chip on impact, so we don't need a separate flashChip().
         showAddPrompt(pillLabelFor(html, sourceId), sourceId);
       }
-    }, 350);
-    const obs = new MutationObserver(handler);
-    obs.observe(container, { childList: true, subtree: true, characterData: true });
-    observers.set(sourceId, obs);
+    }
+    refreshConsentControls();
   }
   function setupAllObservers(){
     SOURCE_IDS.forEach(id => ensureObserver(id));
+  }
+
+  /* ---------- accepting a consent-gated source ----------
+     Two callers, and the difference between them is the whole design:
+       - capture:true  — the clinician pressed "Add to report", so collect the
+                         table now and announce it exactly as an auto-add does.
+       - capture:false — the clinician entered data in this method. Consent is
+                         recorded, and the render that entry is about to cause
+                         reaches the observer as an ordinary auto-add. Calling
+                         capture here instead would re-save and re-render the
+                         drawer on every keystroke. */
+  function acceptSource(sourceId, opts){
+    const parent = consentParent(sourceId);
+    if (!CONSENT_SOURCES.has(parent)) return;
+    if (state.consent[parent] === true) return;
+    state.consent[parent] = true;
+    save();
+    if (!opts || opts.capture !== false){
+      captureSource(parent, { forceAnnounce: true });
+    }
+    refreshConsentControls();
+  }
+  function resetConsent(){
+    state.consent = {};
+    save();
+    refreshConsentControls();
+  }
+
+  /* ---------- the offer, inline in each gated method panel ----------
+     It goes IN THE PAGE, directly under that method's own table.
+
+     Two places it must not go, both established by driving the real UI:
+       - the APA toolbar. `styles.css` hides every page's inline APA panel
+         outright (`.apa-wrap{display:none!important}`) because the drawer is
+         the canonical view of a rendered table, so a control there is on
+         screen in the markup and nowhere at all to the clinician.
+       - a transient prompt near the chip. It can be missed, and with the
+         "+ Add to report" buttons long gone there would then be no way to
+         collect that method's table short of typing in it.
+
+     In-flow and state-driven, so it cannot go stale, cannot be missed while
+     the method is open, and needs no stacking or drawer-position handling.
+     It offers and it never blocks: the calculator above it works untouched
+     whether the offer is taken, declined or ignored. */
+  function offerHostFor(sourceId){
+    const container = document.getElementById(sourceId);
+    /* The method's <section>. In the consolidated Change Analysis page these
+       are moved to become .change-method-panel children, so walk up from the
+       APA container rather than assuming where the section sits. */
+    const panel = container ? container.closest('section') : null;
+    if (!panel) return null;
+    let host = panel.querySelector(`[data-rb-consent="${CSS.escape(sourceId)}"]`);
+    if (!host){
+      host = document.createElement('div');
+      host.setAttribute('data-rb-consent', sourceId);
+      /* Before the (hidden) APA panel, which puts it directly after the
+         table's own "+ Add test row / Clear all rows" actions. */
+      const apaWrap = container.closest('.apa-wrap');
+      if (apaWrap && apaWrap.parentElement) apaWrap.parentElement.insertBefore(host, apaWrap);
+      else panel.appendChild(host);
+    }
+    return host;
+  }
+  function refreshConsentControls(){
+    CONSENT_SOURCES.forEach(sourceId => {
+      const host = offerHostFor(sourceId);
+      if (!host) return;
+      const container = document.getElementById(sourceId);
+      const hasTable = !!(container && container.querySelector('.apa-table'));
+      /* No table to offer, already accepted, or declined for this patient. */
+      if (!hasTable || isSourceAccepted(sourceId) || state.consent[consentParent(sourceId)] === 'declined'){
+        host.innerHTML = '';
+        return;
+      }
+      const label = escapeHtmlLocal(SOURCE_METHOD_NAMES[sourceId] || 'This table');
+      host.innerHTML = `
+        <div class="rb-offer-box">
+          <div class="rb-offer-text">
+            <strong>Not in the working report</strong>
+            <span>These scores were entered on another Change Analysis tab, so the ${label} table has not been collected. Add it if you want it in the report.</span>
+          </div>
+          <div class="rb-offer-actions">
+            <button class="rb-offer-add" type="button" data-rb-accept="${escapeHtmlLocal(sourceId)}">Add to report</button>
+            <button class="rb-offer-skip" type="button" data-rb-decline="${escapeHtmlLocal(sourceId)}">Not this one</button>
+          </div>
+        </div>`;
+    });
+  }
+  /* Declining is per patient, not permanent: it clears with the bundle, and
+     entering data in the method accepts it outright. */
+  function declineSource(sourceId){
+    const parent = consentParent(sourceId);
+    if (!CONSENT_SOURCES.has(parent)) return;
+    if (state.consent[parent] === true) return;
+    state.consent[parent] = 'declined';
+    save();
+    refreshConsentControls();
   }
 
   /* ---------- exports ---------- */
@@ -26559,6 +26799,15 @@ ${buildReportHtmlBody()}
 
   function bindEvents(){
     if (!rootEl) return;
+    /* The consent control lives on the calculator page, not in the drawer, so
+       it needs its own listener — the handler below returns early for anything
+       outside #report-bundle-root. */
+    document.addEventListener('click', e => {
+      const acceptBtn = e.target.closest('[data-rb-accept]');
+      if (acceptBtn){ e.preventDefault(); acceptSource(acceptBtn.dataset.rbAccept); return; }
+      const declineBtn = e.target.closest('[data-rb-decline]');
+      if (declineBtn){ e.preventDefault(); declineSource(declineBtn.dataset.rbDecline); }
+    });
     // Delegated click handler at the DOCUMENT level
     document.addEventListener('click', e => {
       // Per-item Options menu close-on-outside-click
@@ -27449,6 +27698,7 @@ ${buildReportHtmlBody()}
     bindEvents();
     setupAllObservers();
     render();
+    refreshConsentControls();
     setInterval(() => {
       if (state.minimized) return;
       rootEl?.querySelectorAll('[data-rb-time]').forEach(el => {
@@ -27478,7 +27728,8 @@ ${buildReportHtmlBody()}
     });
   }
 
-  return { init, addOrReplace, remove, clear, clearSilent, setSuppressed, isSuppressed, copyAll, exportWord, exportExcel, open, close, toggle, showKofiPrompt: maybeShowKofiToast };
+  return { init, addOrReplace, remove, clear, clearSilent, setSuppressed, isSuppressed, copyAll, exportWord, exportExcel, open, close, toggle, showKofiPrompt: maybeShowKofiToast,
+           acceptSource, isSourceAccepted, isConsentGated, resetConsent, refreshConsentControls };
 })();
 
 if (document.readyState === 'loading'){
