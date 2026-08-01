@@ -3418,12 +3418,25 @@ check('the mirror note\'s arrow points up, at the header it names', () => {
      misses that form. */
   const paths = [...note.matchAll(/<path d="([^"]+)"/g)].map(m => m[1]);
   if (paths.length < 2) return 'the arrow is no longer a stem plus a head — re-derive this check';
-  const nums = paths[1].match(/-?\d*\.?\d+/g);
-  if (!nums || nums.length < 6) return 'the arrowhead is not a two-segment chevron any more — re-derive this check';
-  const [, y0, , dy1] = nums.map(Number);
-  const legY = y0, apexY = y0 + dy1;
-  return apexY < legY
-    || 'the arrowhead apex (y=' + apexY + ') is not above its legs (y=' + legY + '), so it does not point up';
+  const head = paths[1].match(/-?\d*\.?\d+/g);
+  const stem = paths[0].match(/-?\d*\.?\d+/g);
+  if (!head || head.length < 6) return 'the arrowhead is not a two-segment chevron any more — re-derive this check';
+  if (!stem || stem.length < 2) return 'the stem is unreadable — re-derive this check';
+  const [hx0, hy0, hdx1, hdy1] = head.map(Number);
+  const apexX = hx0 + hdx1, apexY = hy0 + hdy1, legY = hy0;
+  const tailX = Number(stem[0]);
+  const bad = [];
+  if (!(apexY < legY)) {
+    bad.push('the arrowhead apex (y=' + apexY + ') is not above its legs (y=' + legY + '), so it does not point up');
+  }
+  /* AND the tail must start to the RIGHT of the head. The icon sits left of
+     the sentence, so a stroke that begins on the left travels AWAY from the
+     message before turning — it reads as left-to-up. Starting on the right
+     makes the line leave the text and turn up toward the header. */
+  if (!(tailX > apexX)) {
+    bad.push('the tail starts at x=' + tailX + ', left of the head at x=' + apexX + ', so it reads left-to-up instead of coming from the message');
+  }
+  return bad.length === 0 || bad.join('; ');
 });
 
 check('the premorbid Age box says it is a mirror', () => {

@@ -16166,12 +16166,21 @@ input[type="number"].ds-age-pop-input{
                  which is how the sharing stayed invisible. -->
             <input type="number" id="pre-age" min="5" max="90" step="1">
             <div class="pre-age-mirror-note">
-              <!-- Points UP, at the top bar. It was a reply-style arrow whose
-                   head pointed left and down, which is the one direction the
-                   header is not: the sentence says "in the header" and the
-                   glyph sent the eye the other way. Stem leaves the field,
-                   turns, and the head sits at the top. -->
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 13.5h5a3 3 0 0 0 3-3V4.2"/><path d="M7.8 6.9l2.7-2.7 2.7 2.7"/></svg>
+              <!-- Reads right-to-up: the tail starts on the RIGHT, beside the
+                   sentence it belongs to, runs left along the bottom, rounds
+                   the corner and points UP at the top bar.
+
+                   Two earlier versions got the direction wrong in two different
+                   ways. The first was a reply glyph whose head pointed left and
+                   down — the one direction the header is not. The second turned
+                   the head upward but kept the tail on the left, so the stroke
+                   travelled away from the text before turning, and read as
+                   left-to-up. The tail has to leave the message.
+
+                   The arc is sweep-flag 1: sweep 0 bulges out of the turn and
+                   renders as an S rather than a rounded corner. Checked by
+                   measuring both, not by reasoning about the flag. -->
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 13.5H8.5a3 3 0 0 1-3-3V4.2"/><path d="M2.8 6.9l2.7-2.7 2.7 2.7"/></svg>
               <span>Shared with the patient age in the header</span>
             </div>
           </div>
