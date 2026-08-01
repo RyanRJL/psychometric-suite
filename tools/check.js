@@ -5666,6 +5666,39 @@ check('the reliability control costs what Methods & References says it costs', (
   if (stray.length) bad.push('the control also moves ' + stray.join(', ')
     + '; Methods & References says every moved measure is D-KEFS or D-KEFS Advanced');
 
+  /* THE SAME FIGURES ARE NOW QUOTED IN A THIRD PLACE — the Corrected button's
+     tooltip, which is the only explanation a clinician gets at the moment of
+     choosing. Methods & References, this check and that tooltip must agree, or
+     the control describes itself differently depending on where you read it.
+     Derived above, not restated: these compare against the computed values. */
+  const DS = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
+  const tip = (DS.match(/title="([^"]*)"[^>]*>Corrected</) || ['', ''])[1];
+  if (!tip) bad.push('the Corrected button has no tooltip, so the control has no explanation');
+  else {
+    if (!tip.includes(String(moved) + ' measures')) bad.push('the tooltip does not say it affects ' + moved + ' measures');
+    if (!tip.includes(String(wider + narrower) + ' printed margins')) {
+      bad.push('the tooltip does not say ' + (wider + narrower) + ' margins move');
+    }
+    if (!tip.includes(String(wider) + ' wider')) bad.push('the tooltip disagrees on how many widen');
+    if (!tip.includes(String(narrower) + ' narrower')) bad.push('the tooltip disagrees on how many narrow');
+    if (!tip.includes(String(maxShift) + ' scaled-score points')) bad.push('the tooltip disagrees on the largest shift');
+    /* The honesty claim is the load-bearing half: this is the one coefficient
+       in the app that cannot be looked up, and the tooltip is where a clinician
+       decides whether to use it. */
+    if (!/appears in no manual/.test(tip)) {
+      bad.push('the tooltip no longer says the corrected number appears in no manual');
+    }
+    /* And the printed formula must be the one the code actually applies —
+       derivedCorrectedR computes 1 - (sd1^2 / normSD^2) * (1 - r). */
+    if (!/1 − \(retest-sample SD² ÷ normative SD²\) × \(1 − r\)/.test(tip)) {
+      bad.push('the tooltip formula is missing or no longer matches derivedCorrectedR');
+    }
+    const src = extractFn(APP_SRC, 'derivedCorrectedR');
+    if (!/1 - \(entry\.sd1 \* entry\.sd1\) \/ \(normSD \* normSD\) \* \(1 - entry\.r\)/.test(src)) {
+      bad.push('derivedCorrectedR no longer computes what the tooltip prints — re-derive both');
+    }
+  }
+
   /* And the sentence must still be on the page saying it. Asserted against the
      rendered figures above, so editing one without the other fails. */
   const block = methodsCiBlock().replace(/<[^>]+>/g, '');

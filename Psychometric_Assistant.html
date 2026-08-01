@@ -27881,13 +27881,24 @@ if (document.readyState === 'loading'){
 
            This one belongs in the bar in a way the patient age never did: it
            is a view setting for THIS table, not a property of the person. -->
+      <!-- THE TOOLTIPS ARE THE CONTROL'S ONLY EXPLANATION, so they carry the
+           whole answer rather than a restatement of the button label. Written
+           after a clinician read the two words and could not tell what either
+           did — "Published/Corrected" is meaningless without knowing that only
+           the r changes, and that it changes for almost no measures.
+
+           Newlines via &#10;, which native title honours. Kept as title rather
+           than a styled tooltip deliberately: this bar's sections have caused
+           enough trouble already, and title costs nothing in cascade risk,
+           needs no positioning maths (see the body{zoom:0.9} note in
+           CLAUDE.md), and is read out by screen readers. -->
       <div class="ds-inline-bar-section ds-inline-bar-cibasis" hidden>
-        <span class="ds-inline-bar-label">Reliability</span>
+        <span class="ds-inline-bar-label" title="Which reliability coefficient r the confidence intervals are built from.&#10;&#10;Every interval is score ± z × SD × √(1 − r). This changes only the r, and only for the few measures — almost all D-KEFS — whose published r comes from a small retest study rather than the norm group.">Reliability</span>
         <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Reliability coefficient basis">
           <button type="button" class="ds-inline-bar-toggle-btn is-active" data-bat-ci-basis="published" role="radio" aria-checked="true"
-            title="Use each manual's own coefficient and pairing. Reproduces the interval the manual prints.">Published</button>
+            title="Uses the manual's own r, paired the way the manual pairs it, so the interval matches the one the manual prints.&#10;&#10;This is the default, and the D-KEFS manual makes that same pairing deliberately — its Table 2.8 shows the working.">Published</button>
           <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci-basis="corrected" role="radio" aria-checked="false"
-            title="Where a manual publishes no coefficient computed on the normative sample, correct its retest coefficient to the normative sample's variability. Departs from the manual's printed interval.">Corrected</button>
+            title="Adjusts the manual's r to estimate what it would have been in the normative sample. Statistically tidier pairing — but the resulting number appears in no manual.&#10;&#10;corrected r = 1 − (retest-sample SD² ÷ normative SD²) × (1 − r)&#10;&#10;Affects 46 measures, every one D-KEFS or D-KEFS Advanced. At 95% it moves 13 printed margins — 9 wider, 4 narrower — by at most 2 scaled-score points. The APA note records that it was used.">Corrected</button>
         </div>
       </div>
       <!-- No age slot. The patient age is #patient-age in the top bar: it is a
