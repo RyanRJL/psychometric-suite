@@ -177,6 +177,57 @@ Do not confuse the Report Writer with the **Working Report bundle**
 (`app.js`, "WORKING REPORT BUNDLE v2"), which is live and collects APA tables from
 every calculator into a drawer.
 
+#### Collection is automatic, except on the four Change Analysis methods
+
+A `MutationObserver` per APA container collects a tool's table the moment one
+appears and updates it silently thereafter. There are no "+ Add to report"
+buttons; the table appearing **is** the clinician's intent, because every tool
+owns its own data.
+
+Except that the four RCI methods do not. They share **one** row set
+(`RCI_SHARED_ROWS`), deliberately, so norms and scores are entered once and carry
+across every method — which means a table entered on one is already complete on
+the other three. Anything that made a sibling tab re-render therefore collected
+it: entering scores on Simple Reliable Change, autofilling on Practice-Adjusted,
+then merely **re-selecting the CI level** on McSweeney put a third
+near-identical table in the report.
+
+So those four collect nothing until **accepted** (`CONSENT_SOURCES`). Acceptance
+comes from either side, and the split is the whole design:
+
+- **Entering data accepts the method** — `rciMarkMethodUsed`, called from the row
+  inputs, the autofill, add-row and the date headers. This is what keeps the tab
+  actually being worked in behaving exactly as before: silent auto-collect, no
+  new click in the common case.
+- **The view settings do not** — the CI selector, the corrected-r toggle, the
+  column pickers all re-render without a score being touched. The CI selector is
+  precisely how the third table used to appear.
+
+The other three offer themselves in the page, under their own table
+(`refreshConsentControls`). **Two places that offer must not go**, both settled by
+driving the real UI rather than reading the markup:
+
+- **The APA toolbar.** `styles.css` hides every page's inline APA panel outright
+  (`.apa-wrap{display:none!important}`) — the drawer is the canonical view of a
+  rendered table. The first version mounted the control there: present in the
+  DOM, `0×0`, invisible. If you are adding any control near a rendered APA table,
+  it does not render.
+- **A transient prompt by the chip.** It can be missed, and with the add buttons
+  gone there would then be no way to collect that method's table at all short of
+  typing in it.
+
+The gate sits **above** the auto-split, or an unaccepted method holding two test
+families collects as `rci-srb-apa::RBANS Indices` while the parent is still
+refused. Consent persists with the bundle and clears with it; deleting a gated
+method's **last** table withdraws it, or the next keystroke anywhere in the shared
+row set puts the table straight back. A bundle saved before consent existed grants
+itself consent on load — those tables were accepted by the act of collecting them,
+and without it a report in progress silently stops updating on reload.
+
+`check.js` §34 derives the gated roster from **which methods read
+`RCI_SHARED_ROWS`** rather than restating it, so a fifth method joining the shared
+set has to be gated rather than leaking past a hard-coded list.
+
 ### Navigating `app.js`
 
 Section banners (`/* ====`) mark the boundaries:
@@ -1196,7 +1247,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 292 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 298 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -1204,8 +1255,8 @@ pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
 reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
 Score Tables confidence intervals, documentation contracts, wiring (§16–17), the
-raw-score metric (§18), the Norms Database view (§32) and age-band filtering of the
-family dropdowns (§33).
+raw-score metric (§18), the Norms Database view (§32), age-band filtering of the
+family dropdowns (§33) and consent gating on the Change Analysis methods (§34).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is
