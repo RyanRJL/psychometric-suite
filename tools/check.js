@@ -3403,6 +3403,29 @@ check('"New patient" clears the age, not just the tables', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
+check('the mirror note\'s arrow points up, at the header it names', () => {
+  /* It shipped as a reply-style glyph whose head pointed left and down — the
+     one direction the top bar is not. The sentence says "in the header" and the
+     icon sent the eye the other way.
+
+     Asserted geometrically rather than by matching the path string, so a
+     redraw is free as long as it still points up: in SVG a SMALLER y is higher,
+     so the arrowhead's apex must sit above both of its legs. */
+  const note = (HTML_SRC.match(/<div class="pre-age-mirror-note">[\s\S]*?<\/div>/) || [''])[0];
+  if (!note) return 'the mirror note is gone';
+  /* Numbers pulled straight out of the d string, because SVG lets the minus
+     sign double as a separator ("l2.7-2.7") and a delimiter-based pattern
+     misses that form. */
+  const paths = [...note.matchAll(/<path d="([^"]+)"/g)].map(m => m[1]);
+  if (paths.length < 2) return 'the arrow is no longer a stem plus a head — re-derive this check';
+  const nums = paths[1].match(/-?\d*\.?\d+/g);
+  if (!nums || nums.length < 6) return 'the arrowhead is not a two-segment chevron any more — re-derive this check';
+  const [, y0, , dy1] = nums.map(Number);
+  const legY = y0, apexY = y0 + dy1;
+  return apexY < legY
+    || 'the arrowhead apex (y=' + apexY + ') is not above its legs (y=' + legY + '), so it does not point up';
+});
+
 check('the premorbid Age box says it is a mirror', () => {
   /* It was a bare <label>Age</label>. The ONLY place the sharing was ever
      announced was a title tooltip on #bat-age — which was itself hidden behind
