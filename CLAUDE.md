@@ -270,6 +270,42 @@ and without it a report in progress silently stops updating on reload.
 `RCI_SHARED_ROWS`** rather than restating it, so a fifth method joining the shared
 set has to be gated rather than leaking past a hard-coded list.
 
+#### The shared rows also walk past Crawford's own dropdown filter
+
+Crawford is the only method needing the retest **N**, so `populateFamilyList`
+hides families publishing none (`familyHasN`). The shared row set defeats that
+filter completely: load one of those families on Simple Reliable Change,
+Practice-Adjusted or SRB, switch to Crawford, and the rows are sitting there with
+N blank. **A dropdown filter cannot gate data that arrives through a sibling
+tab.**
+
+It is exactly the **16 WAIS-IV age-band groups** — `normDB` carries a retest N on
+`· All Ages` only — and nothing else; the other 84 families the three
+non-Crawford methods offer carry their N across correctly. Established by driving
+the real UI over all 100, not by reading `normDB`, because the question is
+whether the shipped loader propagates the field.
+
+The row then reported **"Awaiting values"**, which is untrue in the way that
+costs an hour: nothing is awaited, the figure is not in the database, and typing
+both scores produces nothing. `numericProblem` now returns **`N not published`**
+for it, with the full explanation as a tooltip (`RCI_STATUS_TITLES`) since a
+status cell cannot hold it. Tested **above** the required-field sweep, or the
+clinician enters both scores before learning the row can never compute. The N
+input stays editable, so a clinician reading N off the manual for that band can
+still enter it by hand, and a **hand-entered row keeps reading "Awaiting
+values"** — it has no `group`, so there is nothing to look up.
+
+**Never fill it from the family's `· All Ages` entry**, which is the tempting
+repair and a clinical error. That N is the whole retest sample — WAIS-IV FSIQ,
+298 — where a band holds a subsample of it, and Crawford & Garthwaite (2007)
+Eq. 5 divides by n, so borrowing it shrinks the standard error of prediction and
+overstates significance. `check.js` §36 asserts the size gap is real and that
+neither `loadFamilyIntoMethod` nor `rciRowLacksPublishedN` so much as mentions
+All Ages. It also derives the back-door roster from `normDB` rather than listing
+it, and fails if a **non-WAIS-IV** family ever joins it or if the roster empties
+— the latter meaning the message has become dead code, which is worth being told
+about.
+
 ### Navigating `app.js`
 
 Section banners (`/* ====`) mark the boundaries:
@@ -1289,7 +1325,7 @@ ever replace `BASE_RATES` with real published frequencies, update the labels in 
 
 ## Verifying calculations
 
-`node tools/check.js` runs 302 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 306 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -1298,8 +1334,9 @@ predictions, reliable-change thresholds and direction-neutral outcome labels, ba
 reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
 Score Tables confidence intervals, documentation contracts, wiring (§16–17), the
 raw-score metric (§18), the Norms Database view (§32), age-band filtering of the
-family dropdowns (§33), consent gating on the Change Analysis methods (§34) and the
-empty-state guard on every premorbid APA renderer (§35).
+family dropdowns (§33), consent gating on the Change Analysis methods (§34), the
+empty-state guard on every premorbid APA renderer (§35) and the Crawford rows that
+reach the tab without a published N (§36).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

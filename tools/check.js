@@ -6515,6 +6515,127 @@ check('the top-bar age still recalculates OPIE-4 from every page, which is why t
   return true;
 });
 
+/* ==========================================================================
+   36. Crawford rows that arrive without a retest N
+
+   Crawford & Garthwaite (2007) is the only method needing N, so its dropdown
+   hides families publishing none (familyHasN). All four methods share ONE row
+   set, though, so those families still arrive the back way: load one on any of
+   the other three and switch tab. The rows are then present with N blank, and
+   the status column used to read "Awaiting values" - untrue in the way that
+   costs an hour, since nothing is awaited and entering both scores produces
+   nothing. Found on the real UI, over all 100 families the other methods
+   offer: exactly the 16 WAIS-IV age-band groups, and every one of them already
+   refused by Crawford's own dropdown.
+
+   Two things need defending, and the second matters more than the first:
+   that the status names the cause, and that nothing ever manufactures an N.
+   ========================================================================== */
+heading('36. Crawford rows reaching the tab without a published N');
+
+/* Both entry points are re-derived from normDB rather than listed, so a family
+   gaining or losing an N moves the rosters instead of failing a hard-coded
+   count. familyHasN is driven straight out of app.js. */
+const CRAWFORD_ENV = (() => {
+  const c = { getMergedDB: () => D.normDB };
+  vm.createContext(c);
+  vm.runInContext(
+    ['familyHasN', 'rciRowLacksPublishedN', 'numericProblem'].map(n => extractFn(APP_SRC, n)).join('\n') +
+      ';globalThis.__E = { familyHasN, rciRowLacksPublishedN, numericProblem };',
+    c
+  );
+  return c.__E;
+})();
+
+check('every family Crawford refuses lacks a usable N on every one of its entries', () => {
+  /* The premise of the whole feature: the dropdown filter and the row-level
+     status must be answering the same question, or a family could be offered
+     on Crawford and then report "N not published" on its own rows. */
+  const bad = [];
+  for (const fam of Object.keys(D.normDB)) {
+    const entries = D.normDB[fam];
+    const offered = CRAWFORD_ENV.familyHasN(entries);
+    for (const name of Object.keys(entries)) {
+      const lacks = CRAWFORD_ENV.rciRowLacksPublishedN({ group: fam, name });
+      if (offered && lacks) bad.push(fam + ' / ' + name + ' is offered on Crawford but has no usable N');
+      if (!offered && !lacks && Object.keys(entries).length === 1) {
+        bad.push(fam + ' / ' + name + ' has an N but its family is refused');
+      }
+    }
+  }
+  return bad.length === 0 || bad.slice(0, 5).join('; ');
+});
+
+check('the back-door families are real, and are the WAIS-IV age bands', () => {
+  /* If this ever empties, the reachability that motivates the status message
+     is gone and the message is dead code - which is worth being told about
+     rather than leaving in place unexplained. */
+  const backDoor = Object.keys(D.normDB).filter(fam => {
+    const entries = D.normDB[fam];
+    if (CRAWFORD_ENV.familyHasN(entries)) return false;
+    // singleAdministration families are filtered out of every Change Analysis
+    // method, so they never reach Crawford by any route.
+    return !Object.values(entries).every(e => e.singleAdministration);
+  });
+  if (backDoor.length === 0) return 'no family lacks an N any more; re-read section 36';
+  const notWais = backDoor.filter(f => !/^WAIS-IV /.test(f));
+  return notWais.length === 0 || 'a non-WAIS-IV family now reaches Crawford without an N: ' + notWais.join(', ');
+});
+
+check('such a row is told its N is not published, not that values are awaited', () => {
+  const fam = Object.keys(D.normDB).find(f =>
+    /^WAIS-IV Indices · Ages /.test(f) && !CRAWFORD_ENV.familyHasN(D.normDB[f]));
+  if (!fam) return 'no WAIS-IV age band lacks an N; re-read section 36';
+  const name = Object.keys(D.normDB[fam])[0];
+  const e = D.normDB[fam][name];
+  const row = { group: fam, name, m1: String(e.m1), sd1: String(e.sd1), m2: String(e.m2),
+                sd2: String(e.sd2), r: String(e.r), n: '', t1: '', t2: '' };
+
+  /* Before the scores are entered as well as after. The cause is tested ahead
+     of the field sweep precisely so the clinician is not asked to fill in two
+     scores before learning the row can never compute. */
+  const bare = CRAWFORD_ENV.numericProblem(row, 'rci-crawford');
+  if (bare !== 'N not published') return 'with no scores the status reads "' + bare + '"';
+  const scored = CRAWFORD_ENV.numericProblem({ ...row, t1: '100', t2: '92' }, 'rci-crawford');
+  if (scored !== 'N not published') return 'with scores entered the status reads "' + scored + '"';
+
+  // The other three methods do not use N, so they must be unaffected.
+  for (const m of ['rci-basic', 'rci-practice', 'rci-srb']) {
+    const s = CRAWFORD_ENV.numericProblem({ ...row, sd: String(e.sd1), t1: '100', t2: '92' }, m);
+    if (s === 'N not published') return m + ' reports a missing N, which it does not use';
+  }
+  // A hand-entered row has no family to look up and must read the generic status.
+  const hand = CRAWFORD_ENV.numericProblem({ name: 'My own test', n: '', t1: '', t2: '' }, 'rci-crawford');
+  if (hand !== 'Awaiting values') return 'a hand-entered row reads "' + hand + '"';
+  // Typing an N by hand must clear it - the row is scoreable, just not autofillable.
+  const typed = CRAWFORD_ENV.numericProblem({ ...row, n: '75', t1: '100', t2: '92' }, 'rci-crawford');
+  if (typed === 'N not published') return 'a hand-typed N of 75 was ignored';
+  return true;
+});
+
+check('nothing manufactures an N from the family All Ages entry', () => {
+  /* The tempting repair, and a clinical error. `· All Ages` holds the WHOLE
+     retest sample - WAIS-IV FSIQ, n 298 - where a band holds a subsample of
+     it, and Crawford Eq. 5 divides by n, so borrowing it shrinks the standard
+     error of prediction and overstates significance. Assert the size gap is
+     real, then assert the autofill reads only the entry's own n. */
+  const all = D.normDB['WAIS-IV Indices · All Ages'];
+  if (!all || !(all['Full Scale IQ'] || {}).n) return 'WAIS-IV Indices · All Ages no longer carries an n';
+  const bands = Object.keys(D.normDB).filter(f => /^WAIS-IV Indices · Ages /.test(f));
+  if (bands.length < 2) return 'the WAIS-IV Indices age bands are gone; re-derive this check';
+  if (all['Full Scale IQ'].n < 4 * bands.length) {
+    return 'the All Ages n is no longer plainly larger than a band could hold';
+  }
+  const load = extractFn(APP_SRC, 'loadFamilyIntoMethod');
+  if (!/n:\s*\(p\.n\s*!=\s*null\s*\?\s*String\(p\.n\)\s*:\s*''\)/.test(load)) {
+    return 'loadFamilyIntoMethod no longer fills n from the entry it is loading, and nothing else may';
+  }
+  if (/All Ages/.test(load)) return 'loadFamilyIntoMethod mentions All Ages - it must never borrow that n';
+  const lacks = extractFn(APP_SRC, 'rciRowLacksPublishedN');
+  if (/All Ages/.test(lacks)) return 'rciRowLacksPublishedN consults All Ages instead of the row own entry';
+  return true;
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
