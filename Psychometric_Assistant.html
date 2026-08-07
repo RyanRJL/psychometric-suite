@@ -22793,7 +22793,8 @@ function renderRci(method){
     const rciStr = calc ? fmt(calc.rci, 2) : '';
     const pStr = calc ? fmtP(calc.p) : '';
     const status = !calc ? numericProblem(r, method) : '';
-    const outcome = calc ? rciOutcome(calc.rci, cv, calc.df) : { label: status, cls: (status === 'Awaiting values' ? 'status-awaiting' : 'status-check') };
+    const outcome = calc ? rciOutcome(calc.rci, cv, calc.df) : { label: status, cls: (status === 'Awaiting values' ? 'status-awaiting' : 'status-check'), title: RCI_STATUS_TITLES[status] || '' };
+    const outcomeTitle = outcome.title ? ` title="${escapeAttr(outcome.title)}"` : '';
     const predStr = calc ? fmt(calc.predicted, 2) : '';
 
     const tr = document.createElement('tr');
@@ -22810,7 +22811,7 @@ function renderRci(method){
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
         <td class="computed">${rciStr}</td>
         <td class="computed">${pStr}</td>
-        <td class="computed ${outcome.cls}">${outcome.label}</td>
+        <td class="computed ${outcome.cls}"${outcomeTitle}>${outcome.label}</td>
         <td class="row-actions"><button onclick="rciRemove('${method}',${i})">×</button></td>
       `;
     } else if (method === 'rci-practice'){
@@ -22826,7 +22827,7 @@ function renderRci(method){
         <td><input type="number" step="any" data-m="${method}" data-r="${i}" data-f="t2" value="${escapeAttr(r.t2)}"></td>
         <td class="computed">${rciStr}</td>
         <td class="computed">${pStr}</td>
-        <td class="computed ${outcome.cls}">${outcome.label}</td>
+        <td class="computed ${outcome.cls}"${outcomeTitle}>${outcome.label}</td>
         <td class="row-actions"><button onclick="rciRemove('${method}',${i})">×</button></td>
       `;
     } else if (method === 'rci-srb'){
@@ -22843,7 +22844,7 @@ function renderRci(method){
         <td class="computed">${predStr}</td>
         <td class="computed">${rciStr}</td>
         <td class="computed">${pStr}</td>
-        <td class="computed ${outcome.cls}">${outcome.label}</td>
+        <td class="computed ${outcome.cls}"${outcomeTitle}>${outcome.label}</td>
         <td class="row-actions"><button onclick="rciRemove('${method}',${i})">×</button></td>
       `;
     } else if (method === 'rci-crawford'){
@@ -22861,7 +22862,7 @@ function renderRci(method){
         <td class="computed">${predStr}</td>
         <td class="computed">${rciStr}</td>
         <td class="computed">${pStr}</td>
-        <td class="computed ${outcome.cls}">${outcome.label}</td>
+        <td class="computed ${outcome.cls}"${outcomeTitle}>${outcome.label}</td>
         <td class="row-actions"><button onclick="rciRemove('${method}',${i})">×</button></td>
       `;
     }
@@ -22895,7 +22896,9 @@ function updateRciRow(method, i, tr){
   else if (method === 'rci-srb') calc = calcSrbRow(r, method);
   else if (method === 'rci-crawford') calc = calcCrawfordRow(r, method);
   const cells = tr.querySelectorAll('.computed');
-  cells.forEach(c => { c.className = 'computed'; });
+  /* Clear the title with the class: this runs in place on every keystroke, so
+     a status tooltip left behind would hang on a cell now showing an outcome. */
+  cells.forEach(c => { c.className = 'computed'; c.title = ''; });
   tr.classList.remove('row-awaiting','row-check');
   if (!calc){
     const status = numericProblem(r, method);
@@ -23298,6 +23301,35 @@ function familyHasN(familyEntries){
     const n = (p && p.n != null) ? Number(p.n) : NaN;
     return Number.isFinite(n) && n >= 3;
   });
+}
+/* The other side of familyHasN, and the reason the filter above is not enough.
+
+   Crawford is the only method needing the retest N, so its dropdown hides
+   families publishing none. But all four methods share ONE row set, so those
+   families still arrive the back way: load one on Simple Reliable Change,
+   Practice-Adjusted or SRB, switch to Crawford, and the rows are sitting there
+   with N blank. That is every WAIS-IV age-band group — 16 of the 100 families
+   the other three offer — because normDB carries a retest N on `· All Ages`
+   only. Confirmed by driving the real UI over all 100: those 16 and nothing
+   else, and every one already refused by Crawford's own dropdown.
+
+   The row then reported "Awaiting values", which is untrue in the way that
+   costs time: nothing is awaited, the figure is not in the database, and
+   entering both scores produces nothing. Naming the cause is the whole fix.
+   The N input stays editable, so a clinician reading N off the manual for that
+   age band can still enter it by hand.
+
+   NEVER fill it from the family's `· All Ages` entry. That N is the whole
+   retest sample — WAIS-IV FSIQ, 298 — where a band holds a subsample of it,
+   and Crawford & Garthwaite (2007) Eq. 5 divides by n: too large an N shrinks
+   the standard error of prediction and overstates significance. */
+function rciRowLacksPublishedN(row){
+  if (!row || !row.group || !row.name) return false;  // hand-entered: nothing to look up
+  const db = getMergedDB();
+  const entry = db[row.group] && db[row.group][row.name];
+  if (!entry) return false;
+  const n = (entry.n != null) ? Number(entry.n) : NaN;
+  return !(Number.isFinite(n) && n >= 3);
 }
 function populateFamilyList(list){
   const db = getMergedDB();
@@ -24900,7 +24932,16 @@ function toggleNormsLock(tableId, force){
 function hasAnyRowValue(row){
   return Object.keys(row || {}).some(k => String(row[k] ?? '').trim() !== '');
 }
+/* Longer than a table cell can hold, so the status carries it as a tooltip.
+   Keyed by the status string itself; anything without an entry gets none. */
+const RCI_STATUS_TITLES = {
+  'N not published': 'The normative database holds no retest sample size for this measure, and the Crawford & Garthwaite (2007) t reference distribution needs one. The other three methods do not use N, so this measure can still be scored on them. If the manual publishes N for this age band, enter it by hand.'
+};
 function numericProblem(row, method){
+  /* Tested before the field sweep below, not inside it: the sweep reports
+     "Awaiting values" until t1 and t2 are filled, so the clinician would enter
+     both scores before finding out the row can never compute. */
+  if (method === 'rci-crawford' && String(row.n ?? '').trim() === '' && rciRowLacksPublishedN(row)) return 'N not published';
   const req = method === 'rci-basic' ? ['sd','r','t1','t2'] : method === 'rci-crawford' ? ['m1','sd1','m2','sd2','r','n','t1','t2'] : ['m1','sd1','m2','sd2','r','t1','t2'];
   for (const k of req){
     if (String(row[k] ?? '').trim() === '') return 'Awaiting values';
@@ -24930,6 +24971,7 @@ function clearOutcomeStatus(td){
 }
 function setOutcomeStatus(td, label, mode){
   td.textContent = label;
+  td.title = RCI_STATUS_TITLES[label] || '';
   td.classList.add(mode === 'check' ? 'status-check' : 'status-awaiting');
 }
 function insertStepBefore(el, num, title, copy){
