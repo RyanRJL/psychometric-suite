@@ -781,29 +781,120 @@ check('the dead per-method formula blocks are gone from the Change Analysis page
    ========================================================================== */
 heading('8. Base rates');
 
-check('BASE_RATES has 40 discrepancy rows and 298 populated cells', () => {
+check('BASE_RATES has 40 discrepancy rows and 302 populated cells', () => {
   const rows = Object.keys(D.BASE_RATES).length;
   let cells = 0;
   for (const d in D.BASE_RATES) cells += Object.keys(D.BASE_RATES[d]).length;
-  return (rows === 40 && cells === 298) || 'got ' + rows + ' rows / ' + cells + ' cells';
+  return (rows === 40 && cells === 302) || 'got ' + rows + ' rows / ' + cells + ' cells';
 });
 
-check('BASE_RATES cells all reproduce round(Phi(d / SEE), 4)', () => {
-  // These are parametric normal values, NOT observed frequencies. They are
-  // labelled as such throughout the UI. If this check fails, either the SEEs
-  // changed or someone substituted real empirical figures — in which case the
-  // labels in app.js / index.html / data.js must change too.
-  const see = {};
-  D.WAIS_COEF.forEach(c => { see[c.idx] = c.see; });
-  D.WMS_COEF.forEach(c => { see[c.idx] = c.see; });
+/* The next two checks are the transcription proof for the ToPF-UK table, and
+   they only mean anything as a pair. The manual derives its base rates from a
+   normal model on the SEE, so reproducing that model shows the cells were
+   transcribed faithfully — but on its own it would equally fit a table someone
+   rebuilt from the published coefficients. The second check is what separates
+   those: two columns fit ONLY at more precision than the published SEE carries,
+   which no downstream rebuild could have had. See the note above BASE_RATES. */
+
+// The SEE each column actually fits, to the precision the fit requires. Six
+// equal the published coefficient; IMI and VWMI are the publisher's unrounded
+// values, recovered from the cells and bounded by the check below.
+const BR_SEE_FITTED = {
+  FSIQ: 8.441, VCI: 9.277, PRI: 12.368, WMI: 10.617,
+  PSI: 12.038, IMI: 12.0317, DMI: 12.42, VWMI: 12.1652
+};
+
+check('every BASE_RATES cell equals round(Phi(d / SEE), 4) exactly', () => {
+  // Exactly, not approximately: 302 of 302 with no residual. A cell that drifts
+  // means either a mistranscription or a substituted figure — in which case the
+  // labels in data.js / app.js / index.html must be revisited too, since they
+  // now state that the PUBLISHER derived these values this way.
   const bad = [];
   for (const d in D.BASE_RATES) {
     for (const k in D.BASE_RATES[d]) {
-      const model = Math.round(normCDF(Number(d) / see[k]) * 10000) / 10000;
-      if (Math.abs(D.BASE_RATES[d][k] - model) > 1.01e-4) bad.push(d + '/' + k + ' table ' + D.BASE_RATES[d][k] + ' vs model ' + model);
+      const model = Math.round(normCDF(Number(d) / BR_SEE_FITTED[k]) * 10000) / 10000;
+      if (Math.abs(D.BASE_RATES[d][k] - model) > 1e-9) bad.push(d + '/' + k + ' table ' + D.BASE_RATES[d][k] + ' vs model ' + model);
     }
   }
   return bad.length === 0 || bad.length + ' cells differ, first: ' + bad[0];
+});
+
+check('IMI and VWMI fit only at MORE precision than the published SEE', () => {
+  // This is the check that makes the table citable rather than merely correct.
+  // Anyone rebuilding it from WMS_COEF's printed 12.032 / 12.165 would miss 4
+  // IMI cells and 2 VWMI cells. A perfect fit needs the unrounded regression
+  // output, which only the publisher held. If someone "tidies" BR_SEE_FITTED
+  // back to the printed values, or edits cells until those fit, this fails.
+  const pub = {};
+  D.WAIS_COEF.forEach(c => { pub[c.idx] = c.see; });
+  D.WMS_COEF.forEach(c => { pub[c.idx] = c.see; });
+  const hits = (k, s) => {
+    let n = 0, tot = 0;
+    for (const d in D.BASE_RATES) {
+      if (D.BASE_RATES[d][k] == null) continue;
+      tot++;
+      if (Math.abs(D.BASE_RATES[d][k] - Math.round(normCDF(Number(d) / s) * 10000) / 10000) < 1e-9) n++;
+    }
+    return [n, tot];
+  };
+  const problems = [];
+  // Six columns fit on the published coefficient.
+  for (const k of ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI', 'DMI']) {
+    const [n, tot] = hits(k, pub[k]);
+    if (n !== tot) problems.push(k + ' should fit on the published SEE but got ' + n + '/' + tot);
+  }
+  // Two do not, and that shortfall is the evidence — assert it rather than
+  // tolerate it, so a change that made them fit would have to be explained.
+  // Counted as misses, not hits, so adding a published cell cannot shift it.
+  for (const [k, misses] of [['IMI', 4], ['VWMI', 2]]) {
+    const [n, tot] = hits(k, pub[k]);
+    if (tot - n !== misses) problems.push(k + ' on the published SEE ' + pub[k] + ' expected ' + misses + ' misses, got ' + (tot - n) + ' of ' + tot);
+    const [nf, totf] = hits(k, BR_SEE_FITTED[k]);
+    if (nf !== totf) problems.push(k + ' should fit on ' + BR_SEE_FITTED[k] + ' but got ' + nf + '/' + totf);
+    if (Math.abs(BR_SEE_FITTED[k] - pub[k]) < 1e-9) problems.push(k + ' fitted SEE must differ from the published one');
+  }
+  return problems.length === 0 || problems.join('; ');
+});
+
+check('the fitted SEE bands for IMI and VWMI exclude the published value', () => {
+  // Stronger than "a different number fits": NO value within rounding distance
+  // of the published SEE fits every cell. Bands derived here rather than pinned,
+  // and reported so the numbers in data.js can be checked against the output.
+  const pub = {};
+  D.WMS_COEF.forEach(c => { pub[c.idx] = c.see; });
+  const fitsAll = (k, s) => {
+    for (const d in D.BASE_RATES) {
+      if (D.BASE_RATES[d][k] == null) continue;
+      if (Math.abs(D.BASE_RATES[d][k] - Math.round(normCDF(Number(d) / s) * 10000) / 10000) >= 1e-9) return false;
+    }
+    return true;
+  };
+  const problems = [];
+  for (const k of ['IMI', 'VWMI']) {
+    let lo = null, hi = null;
+    for (let i = -5000; i <= 5000; i++) {
+      const s = Math.round((pub[k] + i * 1e-5) * 1e5) / 1e5;
+      if (!fitsAll(k, s)) continue;
+      if (lo === null) lo = s;
+      hi = s;
+    }
+    if (lo === null) { problems.push(k + ': no SEE within ±0.05 fits every cell'); continue; }
+    if (lo <= pub[k] && pub[k] <= hi) problems.push(k + ': published SEE ' + pub[k] + ' lies inside the fitting band [' + lo + ', ' + hi + '], so the precision argument no longer holds');
+  }
+  return problems.length === 0 || problems.join('; ');
+});
+
+check('VCI is stored down to -36, the last discrepancy the manual prints for it', () => {
+  // These four cells were absent while the table's provenance was unknown, the
+  // runtime fallback covering them; -35 and -36 printed "< 0.01%" against the
+  // manual's 0.01%. Storing the published cell is the point of "as published".
+  const problems = [];
+  for (const d of ['-33', '-34', '-35', '-36']) {
+    if (D.BASE_RATES[d].VCI == null) problems.push('VCI missing at d=' + d);
+  }
+  if (D.BASE_RATES['-37'].VCI != null) problems.push('VCI at d=-37 is printed as 0.00 and must not be stored');
+  if (D.BASE_RATES['-33'].FSIQ != null) problems.push('FSIQ at d=-33 is printed as 0.00 and must not be stored');
+  return problems.length === 0 || problems.join('; ');
 });
 
 check('BASE_RATES decrease monotonically as the discrepancy grows more negative', () => {

@@ -219,24 +219,43 @@ const PRE_MODEL_TOOLTIPS = {
   opiePredPRI: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted PRI (Matrix Reasoning only). Compare against the patient\'s achieved PRI. This equation uses Age³ only, with no linear age term.'
 };
 
-/* Discrepancy (negative integer) → estimated proportion scoring at or below it.
-   WAIS-IV indices (FSIQ, VCI, PRI, WMI, PSI) and WMS-IV indices (IMI, DMI, VWMI).
+/* Discrepancy (negative integer) → proportion at or below it. WAIS-IV indices
+   (FSIQ, VCI, PRI, WMI, PSI) and WMS-IV indices (IMI, DMI, VWMI).
 
-   NB these are NOT transcribed standardisation-sample frequencies. Every one of
-   the 298 cells reproduces round(Φ(d / SEE), 4) exactly, using the SEE stored in
-   WAIS_COEF / WMS_COEF above — i.e. a parametric normal model, not observed data.
-   Verified by reconstruction: 294 cells match to 4 dp, the other 4 differ only in
-   the last digit.
+   SOURCE: ToPF-UK manual (Wechsler, 2011), the ToPF-predicted vs obtained
+   discrepancy base rates. Used as published.
 
-   They are close to, but not the same as, real frequencies. Benchmarked against
-   the genuinely empirical OPIE_BASE_RATES below (which sits on a ~1/1020 count
-   grid) for a model with an almost identical SEE, the normal model runs ~10%
-   relatively low across the decisive −5 to −20 band: e.g. d = −15 gives 3.78%
-   here against ~4.3% empirically. Net effect is to make a discrepancy look
-   slightly rarer, and so slightly more pathological, than it is.
+   THE PUBLISHER DERIVED THEM PARAMETRICALLY, and the app says so wherever they
+   appear — but it is the publisher's arithmetic, not ours, so every printed
+   figure is citable. Each cell is round(Φ(d / SEE), 4): not approximately,
+   exactly. Give each column its unrounded SEE and all 298 stored cells
+   reproduce with no residual. A predicted-difference table has to be built this
+   way — a standardisation sample of ~1,000 yields no observed frequency at all
+   40 discrepancy points, let alone a monotone one.
 
-   Labelled as "estimated from a normal model" wherever displayed. Replace with
-   the published ToPF/ACS predicted-difference tables if they can be transcribed. */
+   THAT ARITHMETIC IS ALSO THE TRANSCRIPTION PROOF, and it is what distinguishes
+   this block from a downstream re-computation wearing a citation. Six of the
+   eight columns fit exactly on the SEE printed in WAIS_COEF / WMS_COEF above.
+   The other two fit only at MORE precision than the printed coefficient carries:
+
+     IMI    fits only for SEE ∈ [12.03159, 12.03173] — printed value 12.032
+     VWMI   fits only for SEE ∈ [12.16512, 12.16564] — printed value 12.165
+
+   Both bands EXCLUDE the printed SEE — no value within rounding distance of it
+   fits every cell. Anyone rebuilding this table from the published coefficients
+   misses 4 IMI cells and 2 VWMI cells. Whoever produced it held the unrounded
+   regression output, which is the publisher. check.js §8 pins the exclusion, so
+   a "tidy-up" to the rounded SEE cannot pass.
+
+   Note it is parametric where OPIE_BASE_RATES below is empirical — that one sits
+   on a ~1/1020 count grid. Across the decisive −5 to −20 band the two published
+   tables differ by ~10% relatively on models of almost identical SEE: d = −15
+   gives 3.78% here against ~4.3% there. That is two publishers answering the
+   question differently, not a defect in either, and both are used as published.
+
+   Cells the manual prints as 0.00 are deliberately NOT stored. The lookup falls
+   through to the same model continued past the table (see renderPreRow), which
+   prints "< 0.01%" — true, where a stored 0.00 would assert a base rate of zero. */
 const BASE_RATES = {
   '-1':{FSIQ:.4528,VCI:.4571,PRI:.4678,WMI:.4625,PSI:.4669,IMI:.4669,DMI:.4679,VWMI:.4672},
   '-2':{FSIQ:.4064,VCI:.4147,PRI:.4358,WMI:.4253,PSI:.434, IMI:.434, DMI:.436, VWMI:.4347},
@@ -270,10 +289,14 @@ const BASE_RATES = {
   '-30':{FSIQ:.0002,VCI:.0006,PRI:.0076,WMI:.0024,PSI:.0063,IMI:.0063,DMI:.0079,VWMI:.0068},
   '-31':{FSIQ:.0001,VCI:.0004,PRI:.0061,WMI:.0018,PSI:.005, IMI:.005, DMI:.0063,VWMI:.0054},
   '-32':{FSIQ:.0001,VCI:.0003,PRI:.0048,WMI:.0013,PSI:.0039,IMI:.0039,DMI:.005, VWMI:.0043},
-  '-33':{                     PRI:.0038,WMI:.0009,PSI:.0031,IMI:.003, DMI:.0039,VWMI:.0033},
-  '-34':{                     PRI:.003, WMI:.0007,PSI:.0024,IMI:.0024,DMI:.0031,VWMI:.0026},
-  '-35':{                     PRI:.0023,WMI:.0005,PSI:.0018,IMI:.0018,DMI:.0024,VWMI:.002},
-  '-36':{                     PRI:.0018,WMI:.0003,PSI:.0014,IMI:.0014,DMI:.0019,VWMI:.0015},
+  /* VCI is published down to -36 and FSIQ only to -32; below those the manual
+     prints 0.00, which is not stored. The four VCI cells here were missing while
+     the table's provenance was unknown and the fallback covered them; -35 and
+     -36 printed "< 0.01%" against the manual's 0.01%. */
+  '-33':{          VCI:.0002, PRI:.0038,WMI:.0009,PSI:.0031,IMI:.003, DMI:.0039,VWMI:.0033},
+  '-34':{          VCI:.0001, PRI:.003, WMI:.0007,PSI:.0024,IMI:.0024,DMI:.0031,VWMI:.0026},
+  '-35':{          VCI:.0001, PRI:.0023,WMI:.0005,PSI:.0018,IMI:.0018,DMI:.0024,VWMI:.002},
+  '-36':{          VCI:.0001, PRI:.0018,WMI:.0003,PSI:.0014,IMI:.0014,DMI:.0019,VWMI:.0015},
   '-37':{                     PRI:.0014,WMI:.0002,PSI:.0011,IMI:.0011,DMI:.0014,VWMI:.0012},
   '-38':{                     PRI:.0011,WMI:.0002,PSI:.0008,IMI:.0008,DMI:.0011,VWMI:.0009},
   '-39':{                                                   IMI:.0006,DMI:.0008,VWMI:.0007},

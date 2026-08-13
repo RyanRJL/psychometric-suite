@@ -1990,7 +1990,7 @@
 
     <!-- Tab B: ToPF vs WAIS-IV -->
     <div class="pre-tab-content" id="pre-predict">
-      <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter the patient's actual WAIS-IV / WMS-IV index scores in the Achieved column to compute ToPF-predicted vs actual discrepancies. Base rates are shown only for negative discrepancies (achieved &lt; predicted), and are estimated from a normal model with SD = SEE rather than transcribed from observed standardisation-sample frequencies.</p>
+      <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter the patient's actual WAIS-IV / WMS-IV index scores in the Achieved column to compute ToPF-predicted vs actual discrepancies. Base rates are the published figures from the ToPF-UK manual and are shown only for negative discrepancies (achieved &lt; predicted). The manual derives them from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.</p>
 
       <table class="pre-results-table pre-predict-table" id="pre-predict-table">
         <thead>
@@ -2339,7 +2339,7 @@
       <strong>OPIE-4 is provided for illustration only in a UK context and its output should not be quoted as a concrete premorbid estimate.</strong> The regression terms reproduce Holdnack et al. (2013), Table eA5.8, but the published equations also carry US education, ethnicity and region terms that are not applied here, which fixes every prediction at the US reference category (12th-grade high-school graduate, not African-American, not resident in the western US). Those terms are omitted rather than mapped because the education dummies encode how unusual a given attainment level is <em>within the US population the model was fitted on</em>, not years of schooling, and that does not transfer: the US reference category corresponds to A-levels if matched by years but to GCSE/O-level if matched by population position, and UK school-leaving age was raised to 16 only in 1972, so leaving school without qualifications was normative for older cohorts in a way it was not in the US sample. Expect estimates to run high for patients who left school early and low for graduates, by an amount this tool cannot quantify. For a UK demographic estimate, use the Crawford &amp; Allan (2001) model.
     </p>
     <p class="section-body-text">
-      <strong>Base rates.</strong> The ToPF predicted-difference base rates are <strong>estimated from a normal model</strong> with SD equal to the model's standard error of estimate, not transcribed from observed standardisation-sample frequencies; they are labelled as such wherever they appear. The published ToPF/ACS predicted-difference tables have not been transcribed, so the model has instead been benchmarked against the one genuinely empirical table available for a model of almost identical standard error of estimate — the OPIE-4 discrepancy base rates of ACS Table eA5.12. Against that table the parametric values run roughly 10% relatively low across the decisive −5 to −20 band: a discrepancy of −15 gives 3.78% here against about 4.3% empirically. The net effect is to show a given discrepancy as marginally rarer, and so marginally more pathological, than observed data suggest. The OPIE-4 discrepancy base rates are themselves empirical and are used as published.
+      <strong>Base rates.</strong> The ToPF predicted-difference base rates are the <strong>published figures from the ToPF-UK manual</strong> (Wechsler, 2011) and are used as published. The manual <strong>derives them from a normal model</strong> with SD equal to the model's standard error of estimate, rather than tabulating observed standardisation-sample frequencies, and they are labelled as such wherever they appear: every published cell equals the normal-curve proportion below that discrepancy, exactly, at the printed precision. A predicted-difference table is necessarily built this way, a standardisation sample of about a thousand cases yielding no observed frequency at every discrepancy point. The OPIE-4 discrepancy base rates of ACS Table eA5.12, by contrast, <strong>are</strong> empirical, sitting on a count grid, and are likewise used as published. The two published tables therefore answer the same question by different methods, and differ by roughly 10% relatively across the decisive −5 to −20 band on models of almost identical standard error of estimate: a discrepancy of −15 gives 3.78% on the ToPF table against about 4.3% on the OPIE-4 one. That difference is a property of the two sources, not an adjustment made here; neither table is modified.
     </p>
 
       </div>
@@ -2357,7 +2357,7 @@
       <p>Wechsler, D. (2010). <i>Wechsler Adult Intelligence Scale – Fourth UK Edition (WAIS–IV<sup>UK</sup>): Administration and scoring manual.</i> London: Pearson Assessment. [Longest-span base rates: Tables C.4 and C.5.]</p>
       <p>Wechsler, D. (2010). <i>Wechsler Adult Intelligence Scale – Fourth UK Edition (WAIS–IV<sup>UK</sup>): Technical and interpretive manual.</i> London: Pearson Assessment. [Reliability coefficients: Table 4.1. Standard errors of measurement: Table 4.3. Test–retest stability parameters: Table 4.5.]</p>
       <p>Wechsler, D. (2010). <i>Wechsler Memory Scale – Fourth UK Edition (WMS–IV<sup>UK</sup>): Technical and interpretive manual.</i> London: Pearson Assessment. [Reliability coefficients: Table 3.1. Standard errors of measurement: Table 3.3.]</p>
-      <p>Wechsler, D. (2011). <i>Test of Premorbid Functioning (ToPF-UK): Manual.</i> London: Pearson Assessment.</p>
+      <p>Wechsler, D. (2011). <i>Test of Premorbid Functioning (ToPF-UK): Manual.</i> London: Pearson Assessment. [ToPF-predicted vs obtained discrepancy base rates for the WAIS-IV and WMS-IV indices, derived by the publisher from a normal model on the standard error of estimate.]</p>
       <p>Wechsler, D. (2014). <i>Wechsler Intelligence Scale for Children – Fifth Edition (WISC-V): Technical and interpretive manual.</i> Bloomington, MN: NCS Pearson. [Reliability coefficients: Table 4.1. Standard errors of measurement: Table 4.4. Test–retest stability: Table 4.7.]</p>
 
       <div class="references-group">Statistical and methodological sources</div>
@@ -2406,8 +2406,8 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260801c"></script>
-<script src="app.js?v=20260801aa"></script>
+<script src="data.js?v=20260813a"></script>
+<script src="app.js?v=20260813a"></script>
 <script src="design-system.js?v=20260801x" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
 <script src="app-viz-page.js?v=20260730m"></script>

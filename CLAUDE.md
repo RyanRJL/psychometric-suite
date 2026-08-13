@@ -1279,23 +1279,48 @@ the dummies encode how unusual an attainment level is within the US population, 
 of schooling, so they cannot be mapped across. See the long comment above
 `OPIE_PRORATED_FSIQ` in `data.js` before touching anything OPIE-related.
 
-**`BASE_RATES` is a parametric normal model, not observed frequencies.** Every one of its
-298 cells equals `round(Φ(d / SEE), 4)`. It is labelled as such everywhere it appears.
-`OPIE_BASE_RATES`, by contrast, *is* empirical — its values sit on a count grid. If you
-ever replace `BASE_RATES` with real published frequencies, update the labels in `app.js`,
-`index.html` and `data.js` too.
+**`BASE_RATES` is the ToPF-UK manual's published table, and the publisher derived it
+parametrically.** Both halves matter, and they are not in tension. Every one of its 302
+cells equals `round(Φ(d / SEE), 4)` — exactly, no residual — which for a long time was
+read here as proof the numbers were an in-house approximation, and the labels said so.
+They are not: they are Wechsler (2011), used as published.
+
+**The precision is what settles authorship, and it is the only thing that can.** Six of
+the eight columns fit on the SEE printed in `WAIS_COEF`/`WMS_COEF`. Two fit *only* at more
+precision than the printed coefficient carries — IMI on `[12.03159, 12.03173]` against a
+printed 12.032, VWMI on `[12.16512, 12.16564]` against 12.165 — and **both bands exclude
+the printed value**. Anyone rebuilding the table from the published coefficients misses 4
+IMI cells and 2 VWMI cells. Only the publisher held the unrounded regression output. That
+argument is pinned in `check.js` §8, which asserts the *shortfall* on the published SEE as
+well as the fit on the unrounded one, so a "tidy-up" to the rounded value cannot pass.
+
+Two consequences worth knowing before re-opening this:
+
+- **A predicted-difference table has to be built this way.** A standardisation sample of
+  ~1,000 yields no observed frequency at every one of 40 discrepancy points, let alone a
+  monotone one. Finding a parametric fit is therefore not evidence of a home-made table —
+  it is what the published article looks like.
+- **`OPIE_BASE_RATES` is empirical**, sitting on a ~1/1020 count grid, and is also used as
+  published. The two tables differ by ~10% relatively across the −5 to −20 band on models
+  of near-identical SEE. That is two publishers answering the same question differently,
+  not a defect in either, and neither is adjusted here.
+
+Cells the manual prints as `0.00` are deliberately **not** stored: the lookup falls through
+to the same model continued past the table (`renderPreRow`), printing `< 0.01%`, which is
+true where a stored `0.00` would assert a base rate of zero. VCI is stored down to −36 and
+FSIQ only to −32, which is exactly what the manual prints for each.
 
 ---
 
 ## Verifying calculations
 
-`node tools/check.js` runs 302 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 305 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
 pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate
-reconstruction and monotonicity, percentile-tail clamping, the effect-size calculator,
+provenance and monotonicity, percentile-tail clamping, the effect-size calculator,
 Score Tables confidence intervals, documentation contracts, wiring (§16–17), the
 raw-score metric (§18), the Norms Database view (§32), age-band filtering of the
 family dropdowns (§33), consent gating on the Change Analysis methods (§34) and the
