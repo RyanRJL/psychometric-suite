@@ -3048,7 +3048,7 @@ const APA_NOTES = {
   'pre-predict': () => [
     'WAIS-IV indices are predicted from ToPF, education and sex; WMS-IV indices from ToPF and age.',
     'Difference = Achieved − Predicted.',
-    'Base rate = estimated % at or below this discrepancy, from a normal model with SD = SEE (negative discrepancies only). These are parametric estimates, not observed standardisation-sample frequencies, and run slightly low against published empirical figures.'
+    'Base rate = published % at or below this discrepancy (ToPF-UK manual, negative discrepancies only). The manual derives these from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.'
   ],
   'pre-opiepredict': ctx => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',

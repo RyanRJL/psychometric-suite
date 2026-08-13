@@ -16380,7 +16380,7 @@ input[type="number"].ds-age-pop-input{
 
     <!-- Tab B: ToPF vs WAIS-IV -->
     <div class="pre-tab-content" id="pre-predict">
-      <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter the patient's actual WAIS-IV / WMS-IV index scores in the Achieved column to compute ToPF-predicted vs actual discrepancies. Base rates are shown only for negative discrepancies (achieved &lt; predicted), and are estimated from a normal model with SD = SEE rather than transcribed from observed standardisation-sample frequencies.</p>
+      <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter the patient's actual WAIS-IV / WMS-IV index scores in the Achieved column to compute ToPF-predicted vs actual discrepancies. Base rates are the published figures from the ToPF-UK manual and are shown only for negative discrepancies (achieved &lt; predicted). The manual derives them from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.</p>
 
       <table class="pre-results-table pre-predict-table" id="pre-predict-table">
         <thead>
@@ -16729,7 +16729,7 @@ input[type="number"].ds-age-pop-input{
       <strong>OPIE-4 is provided for illustration only in a UK context and its output should not be quoted as a concrete premorbid estimate.</strong> The regression terms reproduce Holdnack et al. (2013), Table eA5.8, but the published equations also carry US education, ethnicity and region terms that are not applied here, which fixes every prediction at the US reference category (12th-grade high-school graduate, not African-American, not resident in the western US). Those terms are omitted rather than mapped because the education dummies encode how unusual a given attainment level is <em>within the US population the model was fitted on</em>, not years of schooling, and that does not transfer: the US reference category corresponds to A-levels if matched by years but to GCSE/O-level if matched by population position, and UK school-leaving age was raised to 16 only in 1972, so leaving school without qualifications was normative for older cohorts in a way it was not in the US sample. Expect estimates to run high for patients who left school early and low for graduates, by an amount this tool cannot quantify. For a UK demographic estimate, use the Crawford &amp; Allan (2001) model.
     </p>
     <p class="section-body-text">
-      <strong>Base rates.</strong> The ToPF predicted-difference base rates are <strong>estimated from a normal model</strong> with SD equal to the model's standard error of estimate, not transcribed from observed standardisation-sample frequencies; they are labelled as such wherever they appear. The published ToPF/ACS predicted-difference tables have not been transcribed, so the model has instead been benchmarked against the one genuinely empirical table available for a model of almost identical standard error of estimate — the OPIE-4 discrepancy base rates of ACS Table eA5.12. Against that table the parametric values run roughly 10% relatively low across the decisive −5 to −20 band: a discrepancy of −15 gives 3.78% here against about 4.3% empirically. The net effect is to show a given discrepancy as marginally rarer, and so marginally more pathological, than observed data suggest. The OPIE-4 discrepancy base rates are themselves empirical and are used as published.
+      <strong>Base rates.</strong> The ToPF predicted-difference base rates are the <strong>published figures from the ToPF-UK manual</strong> (Wechsler, 2011) and are used as published. The manual <strong>derives them from a normal model</strong> with SD equal to the model's standard error of estimate, rather than tabulating observed standardisation-sample frequencies, and they are labelled as such wherever they appear: every published cell equals the normal-curve proportion below that discrepancy, exactly, at the printed precision. A predicted-difference table is necessarily built this way, a standardisation sample of about a thousand cases yielding no observed frequency at every discrepancy point. The OPIE-4 discrepancy base rates of ACS Table eA5.12, by contrast, <strong>are</strong> empirical, sitting on a count grid, and are likewise used as published. The two published tables therefore answer the same question by different methods, and differ by roughly 10% relatively across the decisive −5 to −20 band on models of almost identical standard error of estimate: a discrepancy of −15 gives 3.78% on the ToPF table against about 4.3% on the OPIE-4 one. That difference is a property of the two sources, not an adjustment made here; neither table is modified.
     </p>
 
       </div>
@@ -16747,7 +16747,7 @@ input[type="number"].ds-age-pop-input{
       <p>Wechsler, D. (2010). <i>Wechsler Adult Intelligence Scale – Fourth UK Edition (WAIS–IV<sup>UK</sup>): Administration and scoring manual.</i> London: Pearson Assessment. [Longest-span base rates: Tables C.4 and C.5.]</p>
       <p>Wechsler, D. (2010). <i>Wechsler Adult Intelligence Scale – Fourth UK Edition (WAIS–IV<sup>UK</sup>): Technical and interpretive manual.</i> London: Pearson Assessment. [Reliability coefficients: Table 4.1. Standard errors of measurement: Table 4.3. Test–retest stability parameters: Table 4.5.]</p>
       <p>Wechsler, D. (2010). <i>Wechsler Memory Scale – Fourth UK Edition (WMS–IV<sup>UK</sup>): Technical and interpretive manual.</i> London: Pearson Assessment. [Reliability coefficients: Table 3.1. Standard errors of measurement: Table 3.3.]</p>
-      <p>Wechsler, D. (2011). <i>Test of Premorbid Functioning (ToPF-UK): Manual.</i> London: Pearson Assessment.</p>
+      <p>Wechsler, D. (2011). <i>Test of Premorbid Functioning (ToPF-UK): Manual.</i> London: Pearson Assessment. [ToPF-predicted vs obtained discrepancy base rates for the WAIS-IV and WMS-IV indices, derived by the publisher from a normal model on the standard error of estimate.]</p>
       <p>Wechsler, D. (2014). <i>Wechsler Intelligence Scale for Children – Fifth Edition (WISC-V): Technical and interpretive manual.</i> Bloomington, MN: NCS Pearson. [Reliability coefficients: Table 4.1. Standard errors of measurement: Table 4.4. Test–retest stability: Table 4.7.]</p>
 
       <div class="references-group">Statistical and methodological sources</div>
@@ -17018,24 +17018,43 @@ const PRE_MODEL_TOOLTIPS = {
   opiePredPRI: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted PRI (Matrix Reasoning only). Compare against the patient\'s achieved PRI. This equation uses Age³ only, with no linear age term.'
 };
 
-/* Discrepancy (negative integer) → estimated proportion scoring at or below it.
-   WAIS-IV indices (FSIQ, VCI, PRI, WMI, PSI) and WMS-IV indices (IMI, DMI, VWMI).
+/* Discrepancy (negative integer) → proportion at or below it. WAIS-IV indices
+   (FSIQ, VCI, PRI, WMI, PSI) and WMS-IV indices (IMI, DMI, VWMI).
 
-   NB these are NOT transcribed standardisation-sample frequencies. Every one of
-   the 298 cells reproduces round(Φ(d / SEE), 4) exactly, using the SEE stored in
-   WAIS_COEF / WMS_COEF above — i.e. a parametric normal model, not observed data.
-   Verified by reconstruction: 294 cells match to 4 dp, the other 4 differ only in
-   the last digit.
+   SOURCE: ToPF-UK manual (Wechsler, 2011), the ToPF-predicted vs obtained
+   discrepancy base rates. Used as published.
 
-   They are close to, but not the same as, real frequencies. Benchmarked against
-   the genuinely empirical OPIE_BASE_RATES below (which sits on a ~1/1020 count
-   grid) for a model with an almost identical SEE, the normal model runs ~10%
-   relatively low across the decisive −5 to −20 band: e.g. d = −15 gives 3.78%
-   here against ~4.3% empirically. Net effect is to make a discrepancy look
-   slightly rarer, and so slightly more pathological, than it is.
+   THE PUBLISHER DERIVED THEM PARAMETRICALLY, and the app says so wherever they
+   appear — but it is the publisher's arithmetic, not ours, so every printed
+   figure is citable. Each cell is round(Φ(d / SEE), 4): not approximately,
+   exactly. Give each column its unrounded SEE and all 298 stored cells
+   reproduce with no residual. A predicted-difference table has to be built this
+   way — a standardisation sample of ~1,000 yields no observed frequency at all
+   40 discrepancy points, let alone a monotone one.
 
-   Labelled as "estimated from a normal model" wherever displayed. Replace with
-   the published ToPF/ACS predicted-difference tables if they can be transcribed. */
+   THAT ARITHMETIC IS ALSO THE TRANSCRIPTION PROOF, and it is what distinguishes
+   this block from a downstream re-computation wearing a citation. Six of the
+   eight columns fit exactly on the SEE printed in WAIS_COEF / WMS_COEF above.
+   The other two fit only at MORE precision than the printed coefficient carries:
+
+     IMI    fits only for SEE ∈ [12.03159, 12.03173] — printed value 12.032
+     VWMI   fits only for SEE ∈ [12.16512, 12.16564] — printed value 12.165
+
+   Both bands EXCLUDE the printed SEE — no value within rounding distance of it
+   fits every cell. Anyone rebuilding this table from the published coefficients
+   misses 4 IMI cells and 2 VWMI cells. Whoever produced it held the unrounded
+   regression output, which is the publisher. check.js §8 pins the exclusion, so
+   a "tidy-up" to the rounded SEE cannot pass.
+
+   Note it is parametric where OPIE_BASE_RATES below is empirical — that one sits
+   on a ~1/1020 count grid. Across the decisive −5 to −20 band the two published
+   tables differ by ~10% relatively on models of almost identical SEE: d = −15
+   gives 3.78% here against ~4.3% there. That is two publishers answering the
+   question differently, not a defect in either, and both are used as published.
+
+   Cells the manual prints as 0.00 are deliberately NOT stored. The lookup falls
+   through to the same model continued past the table (see renderPreRow), which
+   prints "< 0.01%" — true, where a stored 0.00 would assert a base rate of zero. */
 const BASE_RATES = {
   '-1':{FSIQ:.4528,VCI:.4571,PRI:.4678,WMI:.4625,PSI:.4669,IMI:.4669,DMI:.4679,VWMI:.4672},
   '-2':{FSIQ:.4064,VCI:.4147,PRI:.4358,WMI:.4253,PSI:.434, IMI:.434, DMI:.436, VWMI:.4347},
@@ -17069,10 +17088,14 @@ const BASE_RATES = {
   '-30':{FSIQ:.0002,VCI:.0006,PRI:.0076,WMI:.0024,PSI:.0063,IMI:.0063,DMI:.0079,VWMI:.0068},
   '-31':{FSIQ:.0001,VCI:.0004,PRI:.0061,WMI:.0018,PSI:.005, IMI:.005, DMI:.0063,VWMI:.0054},
   '-32':{FSIQ:.0001,VCI:.0003,PRI:.0048,WMI:.0013,PSI:.0039,IMI:.0039,DMI:.005, VWMI:.0043},
-  '-33':{                     PRI:.0038,WMI:.0009,PSI:.0031,IMI:.003, DMI:.0039,VWMI:.0033},
-  '-34':{                     PRI:.003, WMI:.0007,PSI:.0024,IMI:.0024,DMI:.0031,VWMI:.0026},
-  '-35':{                     PRI:.0023,WMI:.0005,PSI:.0018,IMI:.0018,DMI:.0024,VWMI:.002},
-  '-36':{                     PRI:.0018,WMI:.0003,PSI:.0014,IMI:.0014,DMI:.0019,VWMI:.0015},
+  /* VCI is published down to -36 and FSIQ only to -32; below those the manual
+     prints 0.00, which is not stored. The four VCI cells here were missing while
+     the table's provenance was unknown and the fallback covered them; -35 and
+     -36 printed "< 0.01%" against the manual's 0.01%. */
+  '-33':{          VCI:.0002, PRI:.0038,WMI:.0009,PSI:.0031,IMI:.003, DMI:.0039,VWMI:.0033},
+  '-34':{          VCI:.0001, PRI:.003, WMI:.0007,PSI:.0024,IMI:.0024,DMI:.0031,VWMI:.0026},
+  '-35':{          VCI:.0001, PRI:.0023,WMI:.0005,PSI:.0018,IMI:.0018,DMI:.0024,VWMI:.002},
+  '-36':{          VCI:.0001, PRI:.0018,WMI:.0003,PSI:.0014,IMI:.0014,DMI:.0019,VWMI:.0015},
   '-37':{                     PRI:.0014,WMI:.0002,PSI:.0011,IMI:.0011,DMI:.0014,VWMI:.0012},
   '-38':{                     PRI:.0011,WMI:.0002,PSI:.0008,IMI:.0008,DMI:.0011,VWMI:.0009},
   '-39':{                                                   IMI:.0006,DMI:.0008,VWMI:.0007},
@@ -21683,7 +21706,7 @@ const APA_NOTES = {
   'pre-predict': () => [
     'WAIS-IV indices are predicted from ToPF, education and sex; WMS-IV indices from ToPF and age.',
     'Difference = Achieved − Predicted.',
-    'Base rate = estimated % at or below this discrepancy, from a normal model with SD = SEE (negative discrepancies only). These are parametric estimates, not observed standardisation-sample frequencies, and run slightly low against published empirical figures.'
+    'Base rate = published % at or below this discrepancy (ToPF-UK manual, negative discrepancies only). The manual derives these from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.'
   ],
   'pre-opiepredict': ctx => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
