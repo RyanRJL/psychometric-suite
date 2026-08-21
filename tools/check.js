@@ -1514,18 +1514,7 @@ check('every adjustment column on the Change Analysis overview explains itself',
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the OPIE UK caveat is exported once and shown on screen once', () => {
-  /* The OPIE tab used to carry the same warning twice: the .caution-box at the
-     top of the tab, and again in the info-box mirroring the APA note directly
-     below the table. Two statements of one caveat read as two caveats, and the
-     second one is skimmed.
-
-     Which copy goes is not arbitrary. The exported note is the only one that
-     leaves the app, so it keeps the caveat whatever else happens; the mirror
-     drops it because the page around it already says it, at greater length.
-     Three things therefore have to hold together, and each fails silently on
-     its own: the export keeps it, the mirror does not repeat it, and the
-     caution-box that justifies the mirror's silence is still in the markup. */
+check('the OPIE UK caveat appears in the APA note (single note, no separate caution box)', () => {
   const c = {};
   vm.createContext(c);
   vm.runInContext(APP_SRC.match(/const APA_NOTES = \{[\s\S]*?\n\};/)[0] + ';globalThis.__N = APA_NOTES;', c);
@@ -1535,19 +1524,10 @@ check('the OPIE UK caveat is exported once and shown on screen once', () => {
   const bad = [];
 
   if (!CAVEAT.test(exported)) bad.push('the exported note has lost the UK caveat');
-  if (CAVEAT.test(onScreen)) bad.push('the on-screen mirror still repeats the caution box');
-  if (!/<div class="caution-box"[^>]*>\s*<strong>Illustrative only/.test(HTML_SRC)) {
-    bad.push('the caution-box is gone from the OPIE tab, so nothing on screen carries the caveat');
-  }
-  /* The flag has to reach the note, or the split above is inert and the
-     mirror silently reverts to printing the caveat twice. */
-  if (!/onScreen:\s*true/.test(extractFn(APP_SRC, 'renderStaticApaNotes'))) {
-    bad.push('renderStaticApaNotes no longer marks its render as on-screen');
-  }
-  /* The mirror may drop a sentence the page already states; it may not say
-     anything the export does not. */
-  const extra = onScreen.split(/(?<=\.)\s+/).filter(s => s && !exported.includes(s));
-  if (extra.length) bad.push('the mirror says something the export does not: ' + extra.join(' | '));
+  if (!CAVEAT.test(onScreen)) bad.push('the on-screen note has lost the UK caveat');
+  if (exported !== onScreen) bad.push('the export and on-screen notes differ — they should be identical now');
+  if (!/estimates to run high/i.test(exported)) bad.push('the note should mention the direction of bias');
+  if (!/Crawford/i.test(exported)) bad.push('the note should point to Crawford & Allan as the UK alternative');
 
   return bad.length === 0 || bad.join('; ');
 });
