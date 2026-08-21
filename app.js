@@ -3052,14 +3052,7 @@ const APA_NOTES = {
   ],
   'pre-opiepredict': ctx => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
-    /* The UK caveat MUST travel with the exported table — pasted into a report
-       it is the only thing standing between these numbers and a reader who
-       takes them as premorbid estimates. On screen it is redundant: the
-       .caution-box at the top of this tab already states it at greater length,
-       so the mirrored note (ctx.onScreen) drops it rather than warning twice on
-       one page. Do not delete it outright; check.js §15 pins both halves. */
-    ctx.onScreen ? '' :
-      'Illustrative only in a UK context; these values should not be quoted as concrete premorbid estimates. The published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Those categories have no valid UK equivalent.',
+    'Illustrative only in a UK context: the published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Expect these estimates to run high for patients who left school early and low for graduates. For a UK demographic estimate, use the Crawford & Allan (2001) row on the Estimates tab.',
     'The three FSIQ rows predict three different prorated criteria, as do the three GAI rows; they are not interchangeable and are not expected to agree.',
     'Difference = Achieved − Predicted.',
     'Base rate = % of the US standardisation sample at or below this discrepancy (ACS Table eA5.12).'
