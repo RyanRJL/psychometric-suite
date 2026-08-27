@@ -3484,11 +3484,17 @@ check('the "in use" pip is driven by what actually reads the age', () => {
   const bad = [];
   if (!fn) return 'patientAgeIsInUse is gone — the pip has no definition';
   /* The Score Tables half now lives in batteryAgeBandRowCount, which the
-     missing-age prompt shares. Read them together so this assertion follows
-     the indirection instead of quietly passing on an empty function. */
-  const scoreTables = fn + '\n' + extractFn(APP_SRC, 'batteryAgeBandRowCount');
+     missing-age prompt shares — itself split into a CI-gated reliability half
+     and a CI-independent base-rate half (base-rate rows read the age to score
+     at all, whatever the interval setting). Read all of them together so this
+     assertion follows the indirection instead of quietly passing on an empty
+     function. */
+  const scoreTables = fn + '\n' + extractFn(APP_SRC, 'batteryAgeBandRowCount')
+    + '\n' + extractFn(APP_SRC, 'batteryCiAgeBandRowCount')
+    + '\n' + extractFn(APP_SRC, 'batteryBaseRateRowCount');
   if (!/batteryRowUsesAgeBand/.test(scoreTables)) bad.push('Score Tables does not test whether any row reads an age band');
   if (!/bat-ci-level/.test(scoreTables)) bad.push('Score Tables ignores the CI level, so the pip lights when no interval is shown');
+  if (!/batteryBaseRateEntry/.test(scoreTables)) bad.push('Score Tables no longer counts base-rate rows, whose scoring reads the age');
   if (!/OPIE_AGE_MIN/.test(fn) || !/TOPF_AGE_MAX/.test(fn)) {
     bad.push('Premorbid does not bound the age by its two consumers');
   }
@@ -3577,16 +3583,28 @@ check('the missing-age prompt and the topbar pip share one predicate', () => {
      neither. Routing both through batteryAgeBandRowCount() makes that
      unrepresentable rather than merely unlikely. */
   const bad = [];
+  /* The predicate is a sum of two halves. The reliability half must stay
+     CI-gated (a by-age coefficient changes nothing printed while the interval
+     is off); the base-rate half must NOT be (those rows read the age to score
+     at all). Both must exclude seeded example rows. */
   const count = extractFn(APP_SRC, 'batteryAgeBandRowCount');
+  const ciHalf = extractFn(APP_SRC, 'batteryCiAgeBandRowCount');
+  const brHalf = extractFn(APP_SRC, 'batteryBaseRateRowCount');
   const inUse = extractFn(APP_SRC, 'patientAgeIsInUse');
   const prompt = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
-  if (!/batteryRowUsesAgeBand/.test(count)) bad.push('the predicate does not test which rows read an age band');
-  if (!/bat-ci-level/.test(count)) bad.push('the predicate ignores the CI level, so it speaks when no interval is printed');
+  if (!/batteryRowUsesAgeBand/.test(ciHalf)) bad.push('the reliability half does not test which rows read an age band');
+  if (!/bat-ci-level/.test(ciHalf)) bad.push('the reliability half ignores the CI level, so it speaks when no interval is printed');
+  if (!/batteryBaseRateEntry/.test(brHalf)) bad.push('the base-rate half does not test which rows are base-rate scored');
+  if (/bat-ci-level/.test(brHalf)) bad.push('the base-rate half is CI-gated — but those rows read the age whatever the interval setting');
+  if (!/batteryCiAgeBandRowCount\(\)/.test(count) || !/batteryBaseRateRowCount\(\)/.test(count)) {
+    bad.push('the shared predicate no longer sums its two halves');
+  }
   if (!/batteryAgeBandRowCount\(\)/.test(inUse)) bad.push('the pip no longer routes through the shared predicate');
   if (!/batteryAgeBandRowCount\(\)/.test(prompt)) bad.push('the prompt no longer routes through the shared predicate');
   /* Seeded example rows are not the clinician's data and must not be counted
      into a claim about "measures in this table". */
-  if (!/isExample/.test(count)) bad.push('example rows are counted as real measures');
+  if (!/isExample/.test(ciHalf)) bad.push('example rows are counted as real measures (reliability half)');
+  if (!/isExample/.test(brHalf)) bad.push('example rows are counted as real measures (base-rate half)');
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -6663,6 +6681,81 @@ check('no user-facing string still dates Crawford & Allan to 2001', () => {
     const hits = [...src.matchAll(/Crawford *&(?:amp;)? *Allan[,]? *\((\d{4})\)/g)].filter(m => m[1] !== '1997');
     if (hits.length) bad.push(name + ' carries ' + hits.length + ' Crawford & Allan date(s) other than 1997');
   }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ==========================================================================
+   37. Patient data is session-only; base-rate rows are raw-entry and age-gated
+   Three decisions from 2026-08, each with a silent failure mode if it drifts:
+
+   a) The Working Report's items and consent are PATIENT DATA. They live in
+      sessionStorage — a reload keeps them, closing the tab/window/browser
+      clears them — and load() purges any legacy localStorage copy so patient
+      data from before the change does not sit on disk indefinitely. Only view
+      preferences persist, under their own key.
+
+   b) A base-rate measure (WAIS-IV Longest Span) is entered as a RAW span in
+      the Raw column; its Score box is disabled because no metric score
+      exists. The raw column is force-visible while such rows are present, or
+      the row's only entry box would be hidden by the Show Raw toggle.
+
+   c) A base-rate row does not score until the patient age is entered AND
+      falls inside the band its group was added from (Tables C.4–C.5 differ by
+      band: Longest Digit Span Backward, span 4 — 22nd percentile at 20-24,
+      59th at 85-90). The withheld cell shows a screen-only hint; the APA
+      export reads .text, which stays empty, so advice text can never land in
+      an exported table.
+   ========================================================================== */
+heading('37. Session-only storage; base-rate raw entry and age gating');
+
+check('report items live in sessionStorage and the legacy localStorage copy is purged', () => {
+  const load = extractFn(APP_SRC, 'load');
+  const save = extractFn(APP_SRC, 'save');
+  const bad = [];
+  if (!/sessionStorage\.getItem\(STORAGE_KEY\)/.test(load)) bad.push('load() no longer reads the session blob');
+  if (!/localStorage\.removeItem\(STORAGE_KEY\)/.test(load)) bad.push('load() no longer purges the legacy localStorage bundle — old patient data stays on disk');
+  if (!/sessionStorage\.setItem\(STORAGE_KEY/.test(save)) bad.push('save() no longer writes the session blob');
+  if (/localStorage\.setItem\(STORAGE_KEY/.test(save)) bad.push('save() writes patient data back into localStorage');
+  /* Prefs may persist — but only the three view fields, never items/consent. */
+  const prefs = save.match(/localStorage\.setItem\(PREFS_KEY[\s\S]*?\)\);/);
+  if (!prefs) bad.push('view preferences are no longer persisted at all');
+  else if (/items|consent/.test(prefs[0])) bad.push('the persisted prefs blob carries patient data');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a base-rate row is entered in the raw column, with the score box disabled', () => {
+  const bad = [];
+  const val = extractFn(APP_SRC, 'batteryBaseRateValue');
+  if (!/r\.raw/.test(val) || /r\.score/.test(val)) bad.push('batteryBaseRateValue no longer reads the raw field alone');
+  for (const fn of ['batteryRowPctCell', 'batteryRowPercentile', 'batteryClassificationDetails']){
+    const src = extractFn(APP_SRC, fn);
+    if (!/batteryBaseRateValue\(r\)/.test(src)) bad.push(fn + ' does not read the entry through batteryBaseRateValue');
+  }
+  const render = extractFn(APP_SRC, 'renderBattery');
+  if (!/r\.raw = r\.score; r\.score = '';/.test(render)) bad.push('the legacy score-column entry is no longer migrated into the raw field');
+  if (!/bat-score-na/.test(render)) bad.push('the score box on a base-rate row is no longer disabled');
+  if (!/raw-forced/.test(render)) bad.push('the raw column is no longer forced visible while base-rate rows exist');
+  /* The override must beat design-system.css's raw-hidden rule for BOTH the
+     cells and the header, or the column renders ragged or headerless. */
+  if (!/#bat-table\.raw-hidden\.raw-forced \.bat-raw-cell\{display:table-cell\}/.test(CSS_SRC)) bad.push('the raw-cell force-visible override is gone from styles.css');
+  if (!/#bat-table\.raw-hidden\.raw-forced \.bat-raw-head\{display:table-cell\}/.test(CSS_SRC)) bad.push('the raw-header force-visible override is gone from styles.css');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a base-rate row is withheld until the age is entered and inside its band', () => {
+  const bad = [];
+  const state = extractFn(APP_SRC, 'batteryBaseRateAgeState');
+  if (!/'no-age'/.test(state) || !/'out-of-band'/.test(state)) bad.push('batteryBaseRateAgeState no longer distinguishes its two refusals');
+  if (!/ageBandRange\(r\.group\)/.test(state)) bad.push('the gate no longer reads the band off the row\'s own group');
+  if (!/batteryPatientAge\(\)/.test(state)) bad.push('the gate does not read the shared patient age');
+  const cell = extractFn(APP_SRC, 'batteryRowPctCell');
+  /* Screen-only hint: the refused cell's .text must stay empty, because the
+     APA export prints .text and advice must never reach an exported table. */
+  if (!/text: '', kind: 'baseRate', hint: ageState/.test(cell)) bad.push('the refused cell no longer keeps its export text empty');
+  const cls = extractFn(APP_SRC, 'batteryClassificationDetails');
+  if (!/batteryBaseRateAgeState\(r\) !== 'ok'/.test(cls)) bad.push('a withheld row still classifies');
+  const wanted = extractFn(APP_SRC, 'batteryAgeWanted');
+  if (!/batteryBaseRateRowCount\(\) > 0/.test(wanted)) bad.push('the missing-age popover no longer opens for base-rate rows');
   return bad.length === 0 || bad.join('; ');
 });
 

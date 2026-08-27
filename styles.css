@@ -9508,3 +9508,27 @@ body.rb-docked-active{padding-right:0}
    Deliberately a true red rather than var(--warn): the sentence is a
    do-not-rely-on-these-numbers statement, not a soft caution. */
 .uk-caution-red{color:#C0271D;font-weight:600}
+
+/* Base-rate rows (WAIS-IV Longest Span): the raw span is the entry, so the
+   Score box is disabled and greyed. Standalone classes per CLAUDE.md. */
+.bat-score-na-cell{background:rgba(20,15,5,0.03)}
+.bat-score-na{
+  background:rgba(20,15,5,0.05) !important;
+  border-color:rgba(20,15,5,0.08) !important;
+  cursor:not-allowed;
+}
+/* The pct cell's screen-only hint while the age gate withholds a base-rate
+   score (batteryBaseRateAgeState). Muted, not warning-coloured: it is an
+   instruction, not an error. */
+.bat-age-hint{
+  font-family:var(--sans);font-size:11.5px;font-style:italic;
+  color:var(--faint);white-space:nowrap;
+}
+/* While the table holds base-rate rows their entry column must be visible
+   whatever the Show Raw toggle says. Deliberately a compound with .raw-hidden
+   rather than a standalone class: it exists to outrank design-system.css's
+   `#bat-table.raw-hidden .bat-raw-cell{display:none}` (1-2-0) by specificity
+   (1-3-0). The whole column is shown, not just the base-rate rows' cells —
+   per-row cell display would shift every other row's columns left. */
+#bat-table.raw-hidden.raw-forced .bat-raw-cell{display:table-cell}
+#bat-table.raw-hidden.raw-forced .bat-raw-head{display:table-cell}
