@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260821b">
-<link rel="stylesheet" href="design-system.css?v=20260821b">
+<link rel="stylesheet" href="styles.css?v=20260827a">
+<link rel="stylesheet" href="design-system.css?v=20260827a">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1948,7 +1948,7 @@
       <td class="psy">0.81</td>
       <td class="psy">8.44</td>
     </tr><tr>
-      <td class="model">Crawford &amp; Allan (2001) Demographic</td>
+      <td class="model">Crawford &amp; Allan (1997) Demographic</td>
       <td class="fsiq">-</td>
       <td class="num">-</td>
       <td class="num">-</td>
@@ -2086,6 +2086,8 @@
     <div class="pre-tab-content" id="pre-opiepredict">
       <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter age (16–90), sex, plus Vocabulary and/or Matrix Reasoning raw scores in the Inputs panel above. Rows appear automatically for each model whose required inputs are present. Enter the patient's actual FSIQ / GAI in the Achieved column - the prorated index is calculated per ACS manual procedures, excluding the subtest(s) used as predictors. The three FSIQ rows predict three different prorated criteria and are not expected to agree with each other.</p>
 
+      <div class="info-box" style="margin-bottom:14px" data-apa-note="pre-opiepredict"></div>
+
       <table class="pre-results-table pre-predict-table" id="pre-opiepredict-table">
         <thead>
           <tr>
@@ -2102,8 +2104,6 @@
           <tr><td colspan="7" style="color:var(--faint);font-style:italic;text-align:center;padding:18px">Enter age plus Vocabulary and/or Matrix Reasoning to populate the table.</td></tr>
         </tbody>
       </table>
-
-      <div class="info-box" style="margin-top:18px" data-apa-note="pre-opiepredict"></div>
 
       <div class="apa-wrap">
         <div class="apa-toolbar">
@@ -2315,7 +2315,7 @@
       Premorbid estimates combine ToPF-based and demographic equations with OPIE-4 prorated models, and produce predicted-versus-achieved discrepancy output with confidence intervals, base-rate lookups and APA-formatted export tables. Predicted-versus-achieved significance flagging uses a three-tier scheme at <i>z</i> = 1.645 (*), 1.960 (**) and 2.576 (***); this is separate from the 90%/95% confidence-interval selector.
     </p>
     <p class="section-body-text">
-      <strong>OPIE-4 is provided for illustration only in a UK context and its output should not be quoted as a concrete premorbid estimate.</strong> The regression terms reproduce Holdnack et al. (2013), Table eA5.8, but the published equations also carry US education, ethnicity and region terms that are not applied here, which fixes every prediction at the US reference category (12th-grade high-school graduate, not African-American, not resident in the western US). Those terms are omitted rather than mapped because the education dummies encode how unusual a given attainment level is <em>within the US population the model was fitted on</em>, not years of schooling, and that does not transfer: the US reference category corresponds to A-levels if matched by years but to GCSE/O-level if matched by population position, and UK school-leaving age was raised to 16 only in 1972, so leaving school without qualifications was normative for older cohorts in a way it was not in the US sample. Expect estimates to run high for patients who left school early and low for graduates, by an amount this tool cannot quantify. For a UK demographic estimate, use the Crawford &amp; Allan (2001) model.
+      <strong>OPIE-4 is provided for illustration only in a UK context and its output should not be quoted as a concrete premorbid estimate.</strong> The regression terms reproduce Holdnack et al. (2013), Table eA5.8, but the published equations also carry US education, ethnicity and region terms that are not applied here, which fixes every prediction at the US reference category (12th-grade high-school graduate, not African-American, not resident in the western US). Those terms are omitted rather than mapped because the education dummies encode how unusual a given attainment level is <em>within the US population the model was fitted on</em>, not years of schooling, and that does not transfer: the US reference category corresponds to A-levels if matched by years but to GCSE/O-level if matched by population position, and UK school-leaving age was raised to 16 only in 1972, so leaving school without qualifications was normative for older cohorts in a way it was not in the US sample. Expect estimates to run high for patients who left school early and low for graduates, by an amount this tool cannot quantify. For a UK demographic estimate, use the Crawford &amp; Allan (1997) model.
     </p>
     <p class="section-body-text">
       <strong>Base rates.</strong> The ToPF predicted-difference base rates are the <strong>published figures from the ToPF-UK manual</strong> (Wechsler, 2011) and are used as published. The manual <strong>derives them from a normal model</strong> with SD equal to the model's standard error of estimate, rather than tabulating observed standardisation-sample frequencies, and they are labelled as such wherever they appear: every published cell equals the normal-curve proportion below that discrepancy, exactly, at the printed precision. A predicted-difference table is necessarily built this way, a standardisation sample of about a thousand cases yielding no observed frequency at every discrepancy point. The OPIE-4 discrepancy base rates of ACS Table eA5.12, by contrast, <strong>are</strong> empirical, sitting on a count grid, and are likewise used as published. The two published tables therefore answer the same question by different methods, and differ by roughly 10% relatively across the decisive −5 to −20 band on models of almost identical standard error of estimate: a discrepancy of −15 gives 3.78% on the ToPF table against about 4.3% on the OPIE-4 one. That difference is a property of the two sources, not an adjustment made here; neither table is modified.
@@ -2342,7 +2342,7 @@
       <div class="references-group">Statistical and methodological sources</div>
       <p>Allen, M. J., &amp; Yen, W. M. (1979). <i>Introduction to measurement theory.</i> Monterey, CA: Brooks/Cole. [Correction of a reliability coefficient for range restriction in the sample it was observed in.]</p>
       <p>Cohen, J. (1988). <i>Statistical power analysis for the behavioral sciences</i> (2nd ed.). Hillsdale, NJ: Lawrence Erlbaum.</p>
-      <p>Crawford, J. R., &amp; Allan, K. M. (2001). Estimating premorbid WAIS–R IQ with demographic variables: Regression equations derived from a UK sample. <i>The Clinical Neuropsychologist, 11</i>(2), 192–197.</p>
+      <p>Crawford, J. R., &amp; Allan, K. M. (1997). Estimating premorbid WAIS–R IQ with demographic variables: Regression equations derived from a UK sample. <i>The Clinical Neuropsychologist, 11</i>(2), 192–197.</p>
       <p>Crawford, J. R., &amp; Garthwaite, P. H. (2007). Using regression equations built from summary data in the neuropsychological assessment of the individual case. <i>Neuropsychology, 21</i>(5), 611–620.</p>
       <p>Crawford, J. R., Millar, J., &amp; Milne, A. B. (2001). Estimating premorbid IQ from demographic variables: A comparison of a regression equation vs. clinical judgement. <i>British Journal of Clinical Psychology, 40</i>(1), 97–105.</p>
       <p>Guilmette, T. J., Sweet, J. J., Hebben, N., Koltai, D., Mahone, E. M., Spiegler, B. J., Stucky, K., Westerveld, M., &amp; Conference Participants. (2020). American Academy of Clinical Neuropsychology consensus conference statement on uniform labeling of performance test scores. <i>The Clinical Neuropsychologist, 34</i>(3), 437–453.</p>
@@ -2385,11 +2385,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260821b"></script>
-<script src="app.js?v=20260821b"></script>
-<script src="design-system.js?v=20260821b" defer></script>
-<script src="app-effectsize-page.js?v=20260821b"></script>
-<script src="app-viz-page.js?v=20260821b"></script>
+<script src="data.js?v=20260827a"></script>
+<script src="app.js?v=20260827a"></script>
+<script src="design-system.js?v=20260827a" defer></script>
+<script src="app-effectsize-page.js?v=20260827a"></script>
+<script src="app-viz-page.js?v=20260827a"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
