@@ -1735,11 +1735,39 @@ function baseRatePercentile(entry, value){
   const pGt = baseRateAtOrAbove(entry, v + 1);
   return (100 - pGe) + 0.5 * (pGe - pGt);
 }
+/* A BASE-RATE ROW IS ENTERED IN THE RAW COLUMN, and only there. A longest
+   span of 6 is a raw count — it has no scaled/standard equivalent to put in
+   the Score column, so that box is disabled for these rows and the value is
+   typed under Raw Score. (It used to be entered in the Score column, which
+   implied a metric score existed; renderBattery migrates any such legacy
+   value into the raw field.) */
+function batteryBaseRateValue(r){ return r ? r.raw : ''; }
+
+/* THE AGE IS REQUIRED BEFORE A BASE-RATE ROW SCORES. The published lookup is
+   per normative age band (Tables C.4–C.5 differ hugely by band — Longest Digit
+   Span Backward at a span of 4 is the 22nd percentile at 20-24 and the 59th at
+   85-90), and the band lives in the group the row was added from. Requiring
+   the patient age (a) stops a table being scored with no age on record, and
+   (b) catches the entered age contradicting the band the row was picked from —
+   scoring an 85-year-old on the 20-24 table silently would be a misstatement
+   on a printed report. Returns 'ok' | 'no-age' | 'out-of-band'. */
+function batteryBaseRateAgeState(r){
+  if (!batteryBaseRateEntry(r)) return 'ok';
+  const band = ageBandRange(r.group);
+  if (!band) return 'ok';               // un-banded base-rate group: nothing to hold the age against
+  const age = batteryPatientAge();
+  if (age == null) return 'no-age';
+  return (age >= band.lo && age <= band.hi) ? 'ok' : 'out-of-band';
+}
+
 /* One answer for "what percentile is this row", used by the table, the in-place
    update and the APA export so the three cannot drift. */
 function batteryRowPercentile(r){
   const entry = batteryBaseRateEntry(r);
-  if (entry) return baseRatePercentile(entry, r.score);
+  if (entry){
+    if (batteryBaseRateAgeState(r) !== 'ok') return null;
+    return baseRatePercentile(entry, batteryBaseRateValue(r));
+  }
   const z = toZ(r.score, rowScoreType(r));
   return z == null ? null : normCDF(z) * 100;
 }
@@ -1777,13 +1805,25 @@ function fmtBaseRate(v){
 function batteryRowPctCell(r){
   const entry = batteryBaseRateEntry(r);
   if (entry){
-    const v = parseFloat(r.score);
+    const v = parseFloat(batteryBaseRateValue(r));
     if (!Number.isFinite(v) || !Number.isInteger(v)) return null;
+    /* A value is entered but the age gate refuses. `hint` is a SCREEN-ONLY
+       affordance: the APA export reads .text, which stays empty, so a blocked
+       row exports as blank rather than as advice to the reader. */
+    const ageState = batteryBaseRateAgeState(r);
+    if (ageState !== 'ok') return { value: null, text: '', kind: 'baseRate', hint: ageState };
     const br = baseRateAtOrAbove(entry, v);
     return { value: br, text: fmtBaseRate(br), kind: 'baseRate' };
   }
   const p = batteryRowPercentile(r);
   return p == null ? null : { value: p, text: fmtPct(p), kind: 'percentile' };
+}
+/* The screen text for a gated cell. Short, factual, and pointing at the fix:
+   the master age field is in the top bar. */
+function batteryAgeHintHtml(state){
+  return state === 'out-of-band'
+    ? '<span class="bat-age-hint">age outside this band</span>'
+    : '<span class="bat-age-hint">add patient age ↑</span>';
 }
 function batteryClassificationDetails(r, cls){
   /* A base-rate measure has a real percentile but no metric, so its z comes
@@ -1793,7 +1833,11 @@ function batteryClassificationDetails(r, cls){
   const brEntry = batteryBaseRateEntry(r);
   let z;
   if (brEntry){
-    const pct = baseRatePercentile(brEntry, r.score);
+    /* Blank while the age gate refuses: the pct cell carries the hint, and a
+       classification derived from an unverified band would be the very number
+       the gate exists to withhold. */
+    if (batteryBaseRateAgeState(r) !== 'ok') return { text:'', html:'', className:'' };
+    const pct = baseRatePercentile(brEntry, batteryBaseRateValue(r));
     if (pct == null) return { text:'', html:'', className:'' };
     // clamp inside the open interval: normInv is undefined at 0 and 100, and
     // the table legitimately reaches both ends.
@@ -2108,14 +2152,24 @@ function batteryPatientAge(){ return patientAge(); }
    If these were computed separately, a table could show the prompt and the pip
    at once, or neither. One predicate makes that unrepresentable.
 
-   The CI level is part of the question, not a caller's concern: with the
-   interval switched off, the age changes nothing PRINTED on this page, so
-   there is nothing to light and nothing to ask for. */
-function batteryAgeBandRowCount(){
+   The CI level is part of the question for the reliability half only: with
+   the interval switched off, an age-band COEFFICIENT changes nothing printed.
+   Base-rate rows are the other half, and they are CI-independent — their
+   scoring itself is gated on the age (batteryBaseRateAgeState), whatever the
+   interval setting. */
+function batteryCiAgeBandRowCount(){
   const ci = document.getElementById('bat-ci-level');
   if (!ci || ci.value === 'off') return 0;
   if (!Array.isArray(batteryRows)) return 0;
   return batteryRows.filter(r => r && r.name && !r.isExample && batteryRowUsesAgeBand(r)).length;
+}
+/* Rows whose SCORING requires the age: the published base-rate lookups. */
+function batteryBaseRateRowCount(){
+  if (!Array.isArray(batteryRows)) return 0;
+  return batteryRows.filter(r => r && r.name && !r.isExample && batteryBaseRateEntry(r)).length;
+}
+function batteryAgeBandRowCount(){
+  return batteryCiAgeBandRowCount() + batteryBaseRateRowCount();
 }
 
 function patientAgeIsInUse(){
@@ -2191,7 +2245,13 @@ let batAgePopLastWanted = false; // previous edge state
    arriving by a different route. */
 function batteryAgeWanted(){
   const ci = document.getElementById('bat-ci-level');
-  return !!ci && ci.value !== 'off' && patientAge() === null;
+  const ciOn = !!ci && ci.value !== 'off';
+  /* The OR-branch BROADENS the ask, it never narrows it: the CI trigger above
+     stays exactly as pinned. Base-rate rows join because for them the age is
+     not an offer of a sharper interval — their scoring is withheld until an
+     age is entered (batteryBaseRateAgeState), so the popover is also the
+     fastest way to unblock the table. */
+  return (ciOn || batteryBaseRateRowCount() > 0) && patientAge() === null;
 }
 
 /* Anchored with position:fixed against the CI toggle's own rect, rather than
@@ -2254,26 +2314,47 @@ function positionBatteryAgePop(){
    every other one broken. */
 let batAgePopJustOpened = false;
 
-function openBatteryAgePop(n){
+function openBatteryAgePop(counts){
   const pop = document.getElementById('bat-age-pop');
   const body = document.getElementById('bat-age-pop-body');
   if (!pop || !body) return;
   batAgePopJustOpened = true;
   setTimeout(() => { batAgePopJustOpened = false; }, 0);
-  /* Three branches, because the popover now opens whenever the interval is on
-     and no age is stored — so the table may hold NO age-band measures at all,
-     and a count sentence would read "0 measures ... publish their reliability".
+  const n  = counts && Number.isFinite(counts.bands) ? counts.bands : 0;
+  const br = counts && Number.isFinite(counts.baseRate) ? counts.baseRate : 0;
+  const ci = document.getElementById('bat-ci-level');
+  const ciOn = !!ci && ci.value !== 'off';
+  /* Three branches for the reliability half, because the popover opens
+     whenever the interval is on and no age is stored — so the table may hold
+     NO age-band measures at all, and a count sentence would read "0 measures
+     ... publish their reliability".
 
      Every clause agrees with its count: subject, verb and pronoun. Written out
      per branch rather than assembled from shared fragments, because "1 measure
      publish their reliability" is exactly what fragment-assembly produced on
-     the first pass, and this is text a clinician reads while deciding. */
-  body.innerHTML =
-    n === 0
-      ? 'Some measures publish their reliability by age band, and an age narrows those intervals. Without one they use the published all-ages coefficient, which is equally citable.'
-    : n === 1
-      ? '<strong>1 measure</strong> in this table publishes its reliability by age band. An age narrows its interval; left blank, it uses the published all-ages coefficient.'
-      : '<strong>' + n + ' measures</strong> in this table publish their reliability by age band. An age narrows their intervals; left blank, they use the published all-ages coefficient.';
+     the first pass, and this is text a clinician reads while deciding.
+
+     The base-rate sentence is a separate, harder claim and comes FIRST when it
+     applies: those rows are not offered a sharper interval, they are unscored
+     until an age is entered (batteryBaseRateAgeState). The reliability
+     sentences render only while the interval is on — with CI off they would
+     promise a narrowing the page is not currently printing. */
+  const parts = [];
+  if (br === 1){
+    parts.push('<strong>1 measure</strong> in this table is scored from an age-banded base-rate table, so it stays unscored until an age is entered.');
+  } else if (br > 1){
+    parts.push('<strong>' + br + ' measures</strong> in this table are scored from age-banded base-rate tables, so they stay unscored until an age is entered.');
+  }
+  if (ciOn){
+    parts.push(
+      n === 0
+        ? 'Some measures publish their reliability by age band, and an age narrows those intervals. Without one they use the published all-ages coefficient, which is equally citable.'
+      : n === 1
+        ? '<strong>1 measure</strong> in this table publishes its reliability by age band. An age narrows its interval; left blank, it uses the published all-ages coefficient.'
+        : '<strong>' + n + ' measures</strong> in this table publish their reliability by age band. An age narrows their intervals; left blank, they use the published all-ages coefficient.'
+    );
+  }
+  body.innerHTML = parts.join(' ');
   const input = document.getElementById('bat-age-pop-input');
   if (input) input.value = '';
   pop.classList.add('is-open');
@@ -2323,11 +2404,12 @@ function refreshBatteryAgePrompt(){
   const wanted = batteryAgeWanted();
 
   /* THE RESIDUAL IS A DIFFERENT CLAIM, and keeps its own, narrower condition.
-     The popover asks "you have intervals on and no age — want to add one?";
-     the dashed field says "an age would actually sharpen something here". The
-     second is only true where a measure publishes reliability by age band, so
-     it stays on batteryAgeBandRowCount(). They were one predicate while the
-     popover made the same claim; they no longer do, and collapsing them would
+     The popover asks "no age — want to add one?"; the dashed field says "an
+     age would actually change something here". The second is only true where
+     a measure publishes reliability by age band OR is scored from an
+     age-banded base-rate table (both counted by batteryAgeBandRowCount).
+     They were one predicate while the popover made the same claim; they no
+     longer do, and collapsing them would
      make the field assert something untrue on a CVLT-3 table. */
   const field = document.getElementById('patient-age-field');
   if (field) field.classList.toggle('is-wanted', batteryAgeBandRowCount() > 0 && patientAge() === null);
@@ -2335,7 +2417,7 @@ function refreshBatteryAgePrompt(){
   /* No arming flag: the edge itself gives "once per switch-on". It re-opens
      only when the condition drops and returns — CI off then on, or an age
      entered then cleared. */
-  if (wanted && !batAgePopLastWanted) openBatteryAgePop(batteryAgeBandRowCount());
+  if (wanted && !batAgePopLastWanted) openBatteryAgePop({ bands: batteryCiAgeBandRowCount(), baseRate: batteryBaseRateRowCount() });
   if (!wanted) closeBatteryAgePop();
   batAgePopLastWanted = wanted;
 }
@@ -2668,6 +2750,23 @@ function renderBattery(){
   if (ciHead) ciHead.textContent = ciLevel === 'off' ? 'CI' : `${ciLevel}% CI`;
   const repeatBtn = document.getElementById('bat-add-repeat');
   if (repeatBtn && batteryRows.length === 0) repeatBtn.hidden = true;
+  /* Base-rate rows are entered in the RAW column (see batteryBaseRateValue).
+     Two consequences handled here, before the rows render:
+     - a value typed in the Score column while that was the entry route (or
+       restored from an older session) is migrated into the raw field, once,
+       so nothing already entered stops scoring;
+     - the raw column must be VISIBLE while such rows exist, whatever the
+       Show Raw toggle says — a hidden entry column is an unusable row. The
+       .raw-forced class outranks .raw-hidden in styles.css by specificity. */
+  let hasBaseRateRows = false;
+  batteryRows.forEach(r => {
+    if (!batteryBaseRateEntry(r)) return;
+    hasBaseRateRows = true;
+    if ((r.raw === '' || r.raw == null) && r.score !== '' && r.score != null){
+      r.raw = r.score; r.score = '';
+    }
+  });
+  document.getElementById('bat-table').classList.toggle('raw-forced', hasBaseRateRows);
   let lastGroup = null;
   batteryRows.forEach((r, i) => {
     // Inject a group header when the group changes
@@ -2678,7 +2777,12 @@ function renderBattery(){
       // A group can hold mixed score types (e.g. scaled subtests + standard indices).
       // Show the shared label when uniform, otherwise "Mixed" (each row shows its own tag).
       const groupTypes = new Set(batteryRows.filter(x => batteryGroupKeyOf(x) === gKey).map(x => rowScoreType(x)));
-      const stLabel = groupTypes.size > 1 ? 'Mixed' : scoreTypeLabel([...groupTypes][0] || r.scoreType || inferScoreType(r.group));
+      /* A base-rate group is entered as raw spans and scored by lookup — its
+         entries' means sit near the scaled range, so the inferred metric would
+         badge it "Scaled Score", over a section whose Score boxes are disabled.
+         Name what is actually entered instead. */
+      const stLabel = batteryGroupIsBaseRate(gKey) ? 'Raw score'
+        : groupTypes.size > 1 ? 'Mixed' : scoreTypeLabel([...groupTypes][0] || r.scoreType || inferScoreType(r.group));
       // Custom tests get an editable name; database families keep their fixed one.
       const nameHtml = r.groupKey
         ? `<input class="group-name-input" data-group-rename="${escapeAttr(gKey)}" value="${escapeAttr(r.group)}" placeholder="Name this test" aria-label="Test name" autocomplete="off">`
@@ -2708,19 +2812,28 @@ function renderBattery(){
     const rowType = rowScoreType(r);
     const z = toZ(r.score, rowType);
     const pctCellVal = batteryRowPctCell(r);
-    const pct = pctCellVal ? pctCellVal.text : '';
+    const pct = pctCellVal ? (pctCellVal.hint ? batteryAgeHintHtml(pctCellVal.hint) : pctCellVal.text) : '';
     const details = batteryClassificationDetails(r, cls);
     const ss = parseFloat(r.score);
     const ciHtml = ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : '';
     const tr = document.createElement('tr');
     if (gKey) tr.className = 'in-group';
-    const abbr = scoreTypeAbbr(rowType);
+    /* A base-rate row has no metric score — the raw span IS the entry — so its
+       Score box is disabled rather than left inviting a number that has no
+       meaning here. Disabled, not removed: the cell keeps the column aligned.
+       Its inferred-metric tag is suppressed for the same reason: "(Scaled)"
+       beside a disabled Score box would claim a metric the row does not have. */
+    const isBr = !!batteryBaseRateEntry(r);
+    const abbr = isBr ? '' : scoreTypeAbbr(rowType);
     const typeTag = abbr ? `<span class="bat-row-type-tag">(${abbr})</span>` : '';
+    const scoreCell = isBr
+      ? `<td class="bat-score-na-cell"><input type="number" disabled class="bat-score-na" title="Raw-score measure: enter the span in the Raw Score column — the base rate is read from the published table." aria-label="Not applicable — raw-score measure"></td>`
+      : `<td><input type="number" step="any" data-r="${i}" data-f="score" value="${escapeAttr(r.score)}"></td>`;
     tr.innerHTML = `
       <td class="row-num">${i+1}${typeTag}</td>
       <td><input type="text" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Subtest name"></td>
       <td class="bat-raw-cell"><input type="number" step="any" data-r="${i}" data-f="raw" value="${escapeAttr(r.raw)}"></td>
-      <td><input type="number" step="any" data-r="${i}" data-f="score" value="${escapeAttr(r.score)}"></td>
+      ${scoreCell}
       <td class="computed bat-ci-cell">${ciHtml}</td>
       <td class="computed">${pct}</td>
       <td class="computed ${details.className}">${details.html}</td>
@@ -2762,7 +2875,8 @@ function renderBattery(){
          table, so only the edited row needs rewriting — no cross-row refresh,
          and no heading to keep in step. */
       const cellVal = batteryRowPctCell(batteryRows[i]);
-      pctCell.textContent = cellVal ? cellVal.text : '';
+      if (cellVal && cellVal.hint) pctCell.innerHTML = batteryAgeHintHtml(cellVal.hint);
+      else pctCell.textContent = cellVal ? cellVal.text : '';
       const details = batteryClassificationDetails(batteryRows[i], cls);
       clsCell.className = `computed ${details.className}`.trim();
       clsCell.innerHTML = details.html;
@@ -3102,7 +3216,10 @@ function renderBatteryApa(){
   const columns = [
     { key:'subtest',        label:'Subtest',        num:false, render:r => escapeHtml(r.name) },
     { key:'raw',            label:'Raw Score',       group:'Scores', num:true,  defaultVisible:!rawHidden, render:r => escapeHtml(r.raw || '-') },
-    { key:'score',          label:headerLabel,       group:'Scores', num:true,  render:r => escapeHtml(r.score || '') },
+    /* A base-rate row's entered value lives in the raw field; the export's
+       Score column carries it so the span is printed whether or not the Raw
+       column is toggled on. */
+    { key:'score',          label:headerLabel,       group:'Scores', num:true,  render:r => escapeHtml(batteryBaseRateEntry(r) ? (r.raw || '') : (r.score || '')) },
     { key:'ci',             label:ciLabel,           group:'Scores', num:true,  defaultVisible:ciLevel !== 'off', render:r => { const ss = parseFloat(r.score); return ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : ''; }},
     { key:'percentile',     label:BAT_PCT_LABEL,     group:'Scores', num:true,
       /* Sections whose rows report a base rate relabel this column for
@@ -3125,7 +3242,7 @@ function renderBatteryApa(){
       classification: cls,
       mixedTypes: types.size > 1,
       hasRaw: valid.some(r => rowScoreType(r) === 'raw' && !batteryBaseRateEntry(r)),
-      hasBaseRates: valid.some(r => batteryBaseRateEntry(r) && r.score !== '' && !isNaN(r.score)),
+      hasBaseRates: valid.some(r => batteryBaseRateEntry(r) && r.raw !== '' && !isNaN(r.raw)),
       hasHigherIsWorse: valid.some(r => r.higherIsWorse && r.score !== '' && !isNaN(r.score)),
       ciLevel,
       /* Reported ONLY when it actually changed a coefficient. A single field
@@ -6780,7 +6897,9 @@ refreshAll();
    - Dedupes by sourceId - re-Add refreshes the existing entry
    - Drag-to-reorder items
    - Toggle layout: floating popover ↔ docked side panel
-   - Persists across reloads via localStorage
+   - Report items are SESSION-ONLY (sessionStorage): a reload keeps them, but
+     closing the tab, window or browser clears them — they are patient data.
+     Only view preferences persist across sessions, in localStorage.
    ================================================================ */
 const ReportBundle = (function(){
   const STORAGE_KEY = 'workingReport_v1';
@@ -6963,10 +7082,43 @@ const ReportBundle = (function(){
     });
   }
 
-  /* ---------- persistence ---------- */
+  /* ---------- persistence ----------
+
+     PATIENT DATA IS SESSION-ONLY. The report items (and the consent map that
+     belongs to them) are patient data, and closing the tab, window or browser
+     must clear them — so they live in sessionStorage, which survives a reload
+     of the same tab and nothing else. Only the non-patient VIEW PREFERENCES
+     (drawer minimised, drawer width, onboarding seen) persist in localStorage,
+     under their own key, so the drawer does not re-onboard a clinician every
+     morning.
+
+     The bundle used to keep everything — items included — in
+     localStorage[STORAGE_KEY]. Existing installs therefore have patient data
+     sitting on disk, which is exactly what this change exists to stop: load()
+     migrates a legacy blob into the session once, then DELETES the
+     localStorage copy unconditionally. Merely switching the writes to
+     sessionStorage would have left every previously saved report on disk
+     indefinitely.
+
+     sessionStorage is per-tab, so two tabs now hold two independent reports
+     where localStorage shared one. That is the correct reading of "session":
+     each tab is its own patient session. */
+  const PREFS_KEY = 'workingReportPrefs_v1';
   function load(){
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const rawPrefs = localStorage.getItem(PREFS_KEY);
+      if (rawPrefs){
+        const p = JSON.parse(rawPrefs);
+        const w = Number(p.drawerWidth);
+        state.minimized = p.minimized !== false;
+        state.drawerWidth = (Number.isFinite(w) && w >= 320) ? w : null;
+        state.onboardingSeen = p.onboardingSeen === true;
+      }
+    } catch(e){}
+    try {
+      /* The session blob first; a legacy localStorage bundle only when the
+         session holds nothing (first load after the change, or an old tab). */
+      const raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY);
       if (raw){
         const parsed = JSON.parse(raw);
         const w = Number(parsed.drawerWidth);
@@ -6980,6 +7132,9 @@ const ReportBundle = (function(){
         };
       }
     } catch(e){ state = { items:[], minimized:true, drawerWidth:null, onboardingSeen:false, maximised:false, consent:{} }; }
+    /* Purge the legacy on-disk copy whether or not it parsed: patient data
+       must not persist past this load, and a corrupt blob is still a blob. */
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
     /* A bundle saved before consent existed carries collected RCI tables and no
        consent map. Those tables were accepted by the act of collecting them, so
        grant it — otherwise a report in progress would silently stop updating. */
@@ -6987,9 +7142,17 @@ const ReportBundle = (function(){
       const parent = consentParent(i.sourceId);
       if (CONSENT_SOURCES.has(parent)) state.consent[parent] = true;
     });
+    save();   // re-home whatever was loaded: session data to sessionStorage, prefs to localStorage
   }
   function save(){
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({
+        minimized: state.minimized,
+        drawerWidth: state.drawerWidth,
+        onboardingSeen: state.onboardingSeen
+      }));
+    } catch(e){}
   }
 
   /* ---------- helpers ---------- */
@@ -8189,7 +8352,7 @@ ${buildReportHtmlBody()}
           <div class="rb-onboarding-body">
             <p>Every APA-formatted table you generate across the suite is <strong>auto-saved into one place</strong> as you work.</p>
             <p>Open the panel to <strong>reorder, hide columns, edit titles, and export</strong> the whole bundle to Word, Excel, or your clipboard - paste straight into your report.</p>
-            <p>Everything lives in your browser. <strong>Nothing is uploaded, nothing leaves your device.</strong></p>
+            <p>Everything lives in your browser. <strong>Nothing is uploaded, nothing leaves your device</strong> — and the report clears itself when you close the tab.</p>
           </div>
           <div class="rb-onboarding-cta">Click the button below to open it ↓</div>
           <button class="rb-onboarding-dismiss" data-rb-action="dismiss-onboarding" type="button" aria-label="Dismiss">
