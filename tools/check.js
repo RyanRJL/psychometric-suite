@@ -1543,6 +1543,18 @@ check('the OPIE UK caveat appears in the APA note (single note, no separate caut
   if (mirrorAt < 0 || tableAt < 0) bad.push('mirror or table missing from index.html');
   else if (mirrorAt > tableAt) bad.push('the note mirror has moved back below the predictions table');
 
+  /* Same decision on the Estimates tab: its static note (the one carrying the
+     Holdnack citation) sits at the top of the tab, above the results, with
+     the illustrative-only sentence in the same red emphasis class. */
+  const estNoteAt  = HTML_SRC.indexOf('Holdnack et al., 2013), adapted for UK use');
+  const estTableAt = HTML_SRC.indexOf('id="pre-results-table"');
+  if (estNoteAt < 0 || estTableAt < 0) bad.push('the Estimates tab note or table is missing from index.html');
+  else {
+    if (estNoteAt > estTableAt) bad.push('the Estimates tab note has moved back below its results');
+    const estNote = HTML_SRC.slice(estNoteAt, estNoteAt + 400);
+    if (!/uk-caution-red/.test(estNote)) bad.push('the Estimates tab illustrative-only sentence has lost its red emphasis class');
+  }
+
   return bad.length === 0 || bad.join('; ');
 });
 
