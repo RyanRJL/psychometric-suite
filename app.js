@@ -3050,12 +3050,9 @@ const APA_NOTES = {
     'Difference = Achieved − Predicted.',
     'Base rate = published % at or below this discrepancy (ToPF-UK manual, negative discrepancies only). The manual derives these from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.'
   ],
-  'pre-opiepredict': ctx => [
+  'pre-opiepredict': () => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
-    'Illustrative only in a UK context: the published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Expect these estimates to run high for patients who left school early and low for graduates. For a UK demographic estimate, use the Crawford & Allan (2001) row on the Estimates tab.',
-    'The three FSIQ rows predict three different prorated criteria, as do the three GAI rows; they are not interchangeable and are not expected to agree.',
-    'Difference = Achieved − Predicted.',
-    'Base rate = % of the US standardisation sample at or below this discrepancy (ACS Table eA5.12).'
+    '<span class="uk-caution-red">Illustrative only in a UK context as this is derived from US regression equations. The numbers should not be considered to be accurate in a UK context.</span> The published equations also use US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). These estimates would likely run high for patients who left school early and low for graduates.'
   ]
 };
 /* Render a registered note as its APA block. Returns '' when every sentence
@@ -5170,7 +5167,7 @@ document.getElementById('ct-import').addEventListener('change', e => {
 /* ============================================================
    08 · PREMORBID ESTIMATE
    Ports the user's reference implementation. All formulas/data
-   from WAIS-IV/WMS-IV manuals + Crawford & Allan (2001) + OPIE-4.
+   from WAIS-IV/WMS-IV manuals + Crawford & Allan (1997) + OPIE-4.
    ============================================================ */
 
 function preModelCell(label, tipKey){
@@ -5386,12 +5383,23 @@ function calcPremorbid(){
   }
   rows.push({ name:'Demographic Adjusted ToPF', val:v2, see:8.441, r:0.81, tipKey:'topfDemo' });
 
-  // 3. Crawford & Allan (2001)
+  /* 3. Crawford & Allan (1997) — The Clinical Neuropsychologist, 11(2), 192-197
+     (the paper is 1997; a 2001 date circulated here previously was a citation
+     error — vol. 11 of that journal is 1997, and the authors' 2001 paper is the
+     Crawford, Millar & Milne clinical-judgement comparison in BJCP 40).
+     Derived from 200 healthy adults representative of the adult UK population;
+     the same lab sample is described in the authors' companion WAIS-R papers as
+     ages 16-83. Gate the FLOOR only: #pre-age accepts from 5, and an adult
+     WAIS-R equation must not return an estimate for a child. No ceiling is
+     enforced — the age term is linear and shallow (0.18/yr), unlike OPIE's
+     cubic, and the sample maximum is attested via the companion papers rather
+     than printed in the 1997 brief report itself. */
   let v3 = null;
-  if (occC != null && edu != null && age != null){
+  const caAgeOk = age != null && age >= CRAWFORD_ALLAN_AGE_MIN;
+  if (occC != null && edu != null && caAgeOk){
     v3 = 87.14 - 5.21*occC + 1.78*edu + 0.18*age;
   }
-  rows.push({ name:'Crawford & Allan (2001) Demographic', val:v3, see:9.11, r:0.73, tipKey:'crawfordAllan' });
+  rows.push({ name:'Crawford & Allan (1997) Demographic', val:v3, see:9.11, r:0.73, tipKey:'crawfordAllan' });
 
   // 4. OPIE-4 - prorated FSIQ, uses OPIE sex coding F=0, M=1
   // Label, R and SEE update as soon as subtest inputs are present (branch alone).
@@ -5427,17 +5435,29 @@ function calcPremorbid(){
   }
   rows.push({ name:name4, val:v4, see:s4 ? s4.see : null, r:s4 ? s4.r : null, tipKey:tipKey4 });
 
-  /* Say WHY the OPIE-4 row is empty when the age is simply outside its norms.
+  /* Say WHY rows are empty when the age is simply outside a model's norms.
      Only when an age is actually present and out of range — a blank age means
-     "not entered yet", which is a different thing and needs no explanation. */
+     "not entered yet", which is a different thing and needs no explanation.
+     Two branches, because a paediatric age blanks BOTH age-gated models while
+     an over-90 age blanks OPIE-4 alone. The old single message called every
+     non-OPIE model age-free, which was false: the Crawford & Allan (1997)
+     equation carries +0.18 × age. Only the two ToPF models on this tab are
+     truly age-free. */
   const rangeNote = document.getElementById('pre-age-range-note');
   if (rangeNote){
-    const outOfRange = age != null && (age < OPIE_AGE_MIN || age > OPIE_AGE_MAX);
-    rangeNote.hidden = !outOfRange;
-    if (outOfRange){
+    const belowAdult = age != null && age < CRAWFORD_ALLAN_AGE_MIN;
+    const aboveOpie  = age != null && age > OPIE_AGE_MAX;
+    rangeNote.hidden = !(belowAdult || aboveOpie);
+    if (belowAdult){
+      rangeNote.innerHTML = `<strong>OPIE-4 and the Crawford &amp; Allan model do not apply at age ${escapeHtml(String(age))}.</strong> `
+        + `OPIE-4 is fitted for ages ${OPIE_AGE_MIN}–${OPIE_AGE_MAX}, and the Crawford &amp; Allan (1997) equation `
+        + `was derived from an adult sample, so neither produces an estimate. `
+        + `The two ToPF models carry no age term and are unaffected.`;
+    } else if (aboveOpie){
       rangeNote.innerHTML = `<strong>OPIE-4 does not apply at age ${escapeHtml(String(age))}.</strong> `
         + `Its equations are fitted for ages ${OPIE_AGE_MIN}–${OPIE_AGE_MAX}, so no estimate is produced. `
-        + `The ToPF and demographic models carry no age term and are unaffected.`;
+        + `The two ToPF models carry no age term and are unaffected. The Crawford &amp; Allan estimate is still `
+        + `produced, but note an age this far above its adult derivation sample extrapolates its linear age term.`;
     }
   }
 

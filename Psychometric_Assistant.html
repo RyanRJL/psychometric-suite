@@ -9532,6 +9532,15 @@ body.rb-docked-active{padding-right:0}
   /* Alignment deliberately unset — see .apa-group-col-label above. */
 }
 
+/* Red emphasis for the OPIE-4 UK-accuracy caveat inside its APA note. A NEW
+   STANDALONE CLASS per CLAUDE.md: .info-box and the APA note markup are both
+   restyled by design-system.css and page-scoped blocks, so a modifier on
+   either would enter that fight. Nothing else targets this name, so plain
+   0-1-0 specificity wins over inherited colour with no !important needed.
+   Deliberately a true red rather than var(--warn): the sentence is a
+   do-not-rely-on-these-numbers statement, not a soft caution. */
+.uk-caution-red{color:#C0271D;font-weight:600}
+
 </style>
 <style data-inlined-from="design-system.css">
 /* =============================================================================
@@ -16290,6 +16299,10 @@ input[type="number"].ds-age-pop-input{
 
     <!-- Tab 2: Premorbid Estimates -->
     <div class="pre-tab-content" id="pre-estimates">
+      <div class="info-box" style="margin-bottom:14px">
+        <strong>Note.</strong> ToPF and Crawford &amp; Allan equations use UK data. OPIE-4 uses the prorated WAIS-IV US coefficients (Holdnack et al., 2013), adapted for UK use by omitting the education, region and ethnicity terms; prorated equations avoid part-whole correlation inflation. <span class="uk-caution-red">OPIE-4 point estimates are illustrative only in UK contexts and should not be applied formally.</span>
+      </div>
+
       <!-- Forest plot: JAMA-style figure block.
            HTML provides the responsive figure label and caption (so they
            wrap on narrow screens); SVG renders the tabular figure with
@@ -16338,7 +16351,7 @@ input[type="number"].ds-age-pop-input{
       <td class="psy">0.81</td>
       <td class="psy">8.44</td>
     </tr><tr>
-      <td class="model">Crawford &amp; Allan (2001) Demographic</td>
+      <td class="model">Crawford &amp; Allan (1997) Demographic</td>
       <td class="fsiq">-</td>
       <td class="num">-</td>
       <td class="num">-</td>
@@ -16353,10 +16366,6 @@ input[type="number"].ds-age-pop-input{
       <td class="psy">-</td>
     </tr></tbody>
         </table>
-      </div>
-
-      <div class="info-box" style="margin-top:18px">
-        <strong>Note.</strong> ToPF and Crawford &amp; Allan equations use UK data. OPIE-4 uses the prorated WAIS-IV US coefficients (Holdnack et al., 2013), adapted for UK use by omitting the education, region and ethnicity terms; prorated equations avoid part-whole correlation inflation. OPIE-4 point estimates are illustrative only in UK contexts and should not be applied formally.
       </div>
 
       <div class="apa-wrap">
@@ -16476,6 +16485,8 @@ input[type="number"].ds-age-pop-input{
     <div class="pre-tab-content" id="pre-opiepredict">
       <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter age (16–90), sex, plus Vocabulary and/or Matrix Reasoning raw scores in the Inputs panel above. Rows appear automatically for each model whose required inputs are present. Enter the patient's actual FSIQ / GAI in the Achieved column - the prorated index is calculated per ACS manual procedures, excluding the subtest(s) used as predictors. The three FSIQ rows predict three different prorated criteria and are not expected to agree with each other.</p>
 
+      <div class="info-box" style="margin-bottom:14px" data-apa-note="pre-opiepredict"></div>
+
       <table class="pre-results-table pre-predict-table" id="pre-opiepredict-table">
         <thead>
           <tr>
@@ -16492,8 +16503,6 @@ input[type="number"].ds-age-pop-input{
           <tr><td colspan="7" style="color:var(--faint);font-style:italic;text-align:center;padding:18px">Enter age plus Vocabulary and/or Matrix Reasoning to populate the table.</td></tr>
         </tbody>
       </table>
-
-      <div class="info-box" style="margin-top:18px" data-apa-note="pre-opiepredict"></div>
 
       <div class="apa-wrap">
         <div class="apa-toolbar">
@@ -16705,7 +16714,7 @@ input[type="number"].ds-age-pop-input{
       Premorbid estimates combine ToPF-based and demographic equations with OPIE-4 prorated models, and produce predicted-versus-achieved discrepancy output with confidence intervals, base-rate lookups and APA-formatted export tables. Predicted-versus-achieved significance flagging uses a three-tier scheme at <i>z</i> = 1.645 (*), 1.960 (**) and 2.576 (***); this is separate from the 90%/95% confidence-interval selector.
     </p>
     <p class="section-body-text">
-      <strong>OPIE-4 is provided for illustration only in a UK context and its output should not be quoted as a concrete premorbid estimate.</strong> The regression terms reproduce Holdnack et al. (2013), Table eA5.8, but the published equations also carry US education, ethnicity and region terms that are not applied here, which fixes every prediction at the US reference category (12th-grade high-school graduate, not African-American, not resident in the western US). Those terms are omitted rather than mapped because the education dummies encode how unusual a given attainment level is <em>within the US population the model was fitted on</em>, not years of schooling, and that does not transfer: the US reference category corresponds to A-levels if matched by years but to GCSE/O-level if matched by population position, and UK school-leaving age was raised to 16 only in 1972, so leaving school without qualifications was normative for older cohorts in a way it was not in the US sample. Expect estimates to run high for patients who left school early and low for graduates, by an amount this tool cannot quantify. For a UK demographic estimate, use the Crawford &amp; Allan (2001) model.
+      <strong>OPIE-4 is provided for illustration only in a UK context and its output should not be quoted as a concrete premorbid estimate.</strong> The regression terms reproduce Holdnack et al. (2013), Table eA5.8, but the published equations also carry US education, ethnicity and region terms that are not applied here, which fixes every prediction at the US reference category (12th-grade high-school graduate, not African-American, not resident in the western US). Those terms are omitted rather than mapped because the education dummies encode how unusual a given attainment level is <em>within the US population the model was fitted on</em>, not years of schooling, and that does not transfer: the US reference category corresponds to A-levels if matched by years but to GCSE/O-level if matched by population position, and UK school-leaving age was raised to 16 only in 1972, so leaving school without qualifications was normative for older cohorts in a way it was not in the US sample. Expect estimates to run high for patients who left school early and low for graduates, by an amount this tool cannot quantify. For a UK demographic estimate, use the Crawford &amp; Allan (1997) model.
     </p>
     <p class="section-body-text">
       <strong>Base rates.</strong> The ToPF predicted-difference base rates are the <strong>published figures from the ToPF-UK manual</strong> (Wechsler, 2011) and are used as published. The manual <strong>derives them from a normal model</strong> with SD equal to the model's standard error of estimate, rather than tabulating observed standardisation-sample frequencies, and they are labelled as such wherever they appear: every published cell equals the normal-curve proportion below that discrepancy, exactly, at the printed precision. A predicted-difference table is necessarily built this way, a standardisation sample of about a thousand cases yielding no observed frequency at every discrepancy point. The OPIE-4 discrepancy base rates of ACS Table eA5.12, by contrast, <strong>are</strong> empirical, sitting on a count grid, and are likewise used as published. The two published tables therefore answer the same question by different methods, and differ by roughly 10% relatively across the decisive −5 to −20 band on models of almost identical standard error of estimate: a discrepancy of −15 gives 3.78% on the ToPF table against about 4.3% on the OPIE-4 one. That difference is a property of the two sources, not an adjustment made here; neither table is modified.
@@ -16732,7 +16741,7 @@ input[type="number"].ds-age-pop-input{
       <div class="references-group">Statistical and methodological sources</div>
       <p>Allen, M. J., &amp; Yen, W. M. (1979). <i>Introduction to measurement theory.</i> Monterey, CA: Brooks/Cole. [Correction of a reliability coefficient for range restriction in the sample it was observed in.]</p>
       <p>Cohen, J. (1988). <i>Statistical power analysis for the behavioral sciences</i> (2nd ed.). Hillsdale, NJ: Lawrence Erlbaum.</p>
-      <p>Crawford, J. R., &amp; Allan, K. M. (2001). Estimating premorbid WAIS–R IQ with demographic variables: Regression equations derived from a UK sample. <i>The Clinical Neuropsychologist, 11</i>(2), 192–197.</p>
+      <p>Crawford, J. R., &amp; Allan, K. M. (1997). Estimating premorbid WAIS–R IQ with demographic variables: Regression equations derived from a UK sample. <i>The Clinical Neuropsychologist, 11</i>(2), 192–197.</p>
       <p>Crawford, J. R., &amp; Garthwaite, P. H. (2007). Using regression equations built from summary data in the neuropsychological assessment of the individual case. <i>Neuropsychology, 21</i>(5), 611–620.</p>
       <p>Crawford, J. R., Millar, J., &amp; Milne, A. B. (2001). Estimating premorbid IQ from demographic variables: A comparison of a regression equation vs. clinical judgement. <i>British Journal of Clinical Psychology, 40</i>(1), 97–105.</p>
       <p>Guilmette, T. J., Sweet, J. J., Hebben, N., Koltai, D., Mahone, E. M., Spiegler, B. J., Stucky, K., Westerveld, M., &amp; Conference Participants. (2020). American Academy of Clinical Neuropsychology consensus conference statement on uniform labeling of performance test scores. <i>The Clinical Neuropsychologist, 34</i>(3), 437–453.</p>
@@ -16917,7 +16926,7 @@ const WMS_COEF = [
    qualification distribution against the US 2008 distribution — a novel
    adaptation that would need validating before it informed a report.
 
-   For the UK demographic angle use Crawford & Allan (2001), already in this
+   For the UK demographic angle use Crawford & Allan (1997), already in this
    file's model set and UK-normed. Treat OPIE-4 as a subtest-based estimate.
 
    Sex coding: Female = 0, Male = 1 (per the source table). Because Female is
@@ -16943,6 +16952,19 @@ const OPIE_AGE_MAX = 90;
    paediatric or very elderly case ever needs to be defended in a report. */
 const TOPF_AGE_MIN = 16;
 const TOPF_AGE_MAX = 90;
+
+/* Floor for the Crawford & Allan (1997) demographic equation — The Clinical
+   Neuropsychologist, 11(2), 192-197 (long miscited here as 2001; vol. 11 is
+   1997). Derived from 200 healthy adults representative of the adult UK
+   population; the same lab sample is described in the authors' companion
+   WAIS-R papers as ages 16-83. A floor only, and again a SEPARATE constant:
+   the number matches OPIE_AGE_MIN today, but the provenance is a different
+   publication and the two must be able to move independently. No ceiling
+   constant exists on purpose — the equation's age term is linear and shallow
+   (0.18/yr), and the sample maximum comes from companion papers rather than
+   the 1997 brief report itself, so the app warns above the sample rather than
+   refusing (see the range note in calcPremorbid). */
+const CRAWFORD_ALLAN_AGE_MIN = 16;
 
 // OPIE-4 prorated FSIQ regression coefficients (Table eA5.8). Verified against
 // source. See the block above before using these numbers in a UK context.
@@ -16980,7 +17002,7 @@ const OCC_CODE = { 'Professional':1, 'Intermediate':2, 'Skilled':3, 'Semi Skille
 const PRE_MODEL_TOOLTIPS = {
   topfRaw: 'Assumes the ToPF word-reading raw score is a resistant estimate of premorbid ability. Input required: ToPF raw score only. The FSIQ estimate is returned from the ToPF raw-score look-up table; CI uses the model SEE.',
   topfDemo: 'Assumes premorbid FSIQ is best estimated by combining ToPF performance with demographic predictors. Inputs required: ToPF raw score, years of education, and sex. Uses the cubic ToPF + education + sex regression equation; CI uses the model SEE.',
-  crawfordAllan: 'Demographic-only estimate from Crawford & Allan (2001), intended for UK-normed demographic prediction. Inputs required: occupation class, years of education, and age. Does not use the ToPF score.',
+  crawfordAllan: 'Demographic-only estimate from Crawford & Allan (1997), intended for UK-normed demographic prediction. Inputs required: occupation class, years of education, and age (16+, the equation being derived from an adult UK sample). Does not use the ToPF score.',
   opieDefault: 'ILLUSTRATIVE ONLY in a UK context - do not quote as a concrete premorbid estimate. OPIE-4 estimate of prorated FSIQ. Inputs required: age (16-90), sex, plus Vocabulary raw and/or Matrix Reasoning raw. The equation switches automatically to the matching single- or two-subtest model. The published equation also carries US education, ethnicity and region terms which are NOT applied, so every patient is scored as a US 12th-grade high-school graduate, not African-American, not resident in the US West. Those US categories have no valid UK equivalent, so no substitute adjustment is made. Expect the estimate to run high for patients who left school early and low for graduates. CI uses the branch-specific SEE.',
   opieVCMR: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4 two-subtest estimate of prorated FSIQ (Holdnack et al., 2013; Table eA5.8). Inputs required: Vocabulary raw, Matrix Reasoning raw, age (16-90) and sex. Predicts a prorated FSIQ that excludes Vocabulary and Matrix Reasoning, removing part-whole correlation inflation present in the standard-FSIQ equations. US education, ethnicity and region terms are not applied - see the Vocab and/or Matrix model note.',
   opieVC: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4 single-subtest estimate of prorated FSIQ (Vocabulary branch). Inputs required: Vocabulary raw, age (16-90) and sex. US education, ethnicity and region terms are not applied; the omitted education block spans -6.68 to +5.50 points on this branch. CI uses the Vocabulary-branch SEE.',
@@ -21687,12 +21709,9 @@ const APA_NOTES = {
     'Difference = Achieved − Predicted.',
     'Base rate = published % at or below this discrepancy (ToPF-UK manual, negative discrepancies only). The manual derives these from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.'
   ],
-  'pre-opiepredict': ctx => [
+  'pre-opiepredict': () => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
-    'Illustrative only in a UK context: the published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Expect these estimates to run high for patients who left school early and low for graduates. For a UK demographic estimate, use the Crawford & Allan (2001) row on the Estimates tab.',
-    'The three FSIQ rows predict three different prorated criteria, as do the three GAI rows; they are not interchangeable and are not expected to agree.',
-    'Difference = Achieved − Predicted.',
-    'Base rate = % of the US standardisation sample at or below this discrepancy (ACS Table eA5.12).'
+    '<span class="uk-caution-red">Illustrative only in a UK context as this is derived from US regression equations. The numbers should not be considered to be accurate in a UK context.</span> The published equations also use US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). These estimates would likely run high for patients who left school early and low for graduates.'
   ]
 };
 /* Render a registered note as its APA block. Returns '' when every sentence
@@ -23807,7 +23826,7 @@ document.getElementById('ct-import').addEventListener('change', e => {
 /* ============================================================
    08 · PREMORBID ESTIMATE
    Ports the user's reference implementation. All formulas/data
-   from WAIS-IV/WMS-IV manuals + Crawford & Allan (2001) + OPIE-4.
+   from WAIS-IV/WMS-IV manuals + Crawford & Allan (1997) + OPIE-4.
    ============================================================ */
 
 function preModelCell(label, tipKey){
@@ -24023,12 +24042,23 @@ function calcPremorbid(){
   }
   rows.push({ name:'Demographic Adjusted ToPF', val:v2, see:8.441, r:0.81, tipKey:'topfDemo' });
 
-  // 3. Crawford & Allan (2001)
+  /* 3. Crawford & Allan (1997) — The Clinical Neuropsychologist, 11(2), 192-197
+     (the paper is 1997; a 2001 date circulated here previously was a citation
+     error — vol. 11 of that journal is 1997, and the authors' 2001 paper is the
+     Crawford, Millar & Milne clinical-judgement comparison in BJCP 40).
+     Derived from 200 healthy adults representative of the adult UK population;
+     the same lab sample is described in the authors' companion WAIS-R papers as
+     ages 16-83. Gate the FLOOR only: #pre-age accepts from 5, and an adult
+     WAIS-R equation must not return an estimate for a child. No ceiling is
+     enforced — the age term is linear and shallow (0.18/yr), unlike OPIE's
+     cubic, and the sample maximum is attested via the companion papers rather
+     than printed in the 1997 brief report itself. */
   let v3 = null;
-  if (occC != null && edu != null && age != null){
+  const caAgeOk = age != null && age >= CRAWFORD_ALLAN_AGE_MIN;
+  if (occC != null && edu != null && caAgeOk){
     v3 = 87.14 - 5.21*occC + 1.78*edu + 0.18*age;
   }
-  rows.push({ name:'Crawford & Allan (2001) Demographic', val:v3, see:9.11, r:0.73, tipKey:'crawfordAllan' });
+  rows.push({ name:'Crawford & Allan (1997) Demographic', val:v3, see:9.11, r:0.73, tipKey:'crawfordAllan' });
 
   // 4. OPIE-4 - prorated FSIQ, uses OPIE sex coding F=0, M=1
   // Label, R and SEE update as soon as subtest inputs are present (branch alone).
@@ -24064,17 +24094,29 @@ function calcPremorbid(){
   }
   rows.push({ name:name4, val:v4, see:s4 ? s4.see : null, r:s4 ? s4.r : null, tipKey:tipKey4 });
 
-  /* Say WHY the OPIE-4 row is empty when the age is simply outside its norms.
+  /* Say WHY rows are empty when the age is simply outside a model's norms.
      Only when an age is actually present and out of range — a blank age means
-     "not entered yet", which is a different thing and needs no explanation. */
+     "not entered yet", which is a different thing and needs no explanation.
+     Two branches, because a paediatric age blanks BOTH age-gated models while
+     an over-90 age blanks OPIE-4 alone. The old single message called every
+     non-OPIE model age-free, which was false: the Crawford & Allan (1997)
+     equation carries +0.18 × age. Only the two ToPF models on this tab are
+     truly age-free. */
   const rangeNote = document.getElementById('pre-age-range-note');
   if (rangeNote){
-    const outOfRange = age != null && (age < OPIE_AGE_MIN || age > OPIE_AGE_MAX);
-    rangeNote.hidden = !outOfRange;
-    if (outOfRange){
+    const belowAdult = age != null && age < CRAWFORD_ALLAN_AGE_MIN;
+    const aboveOpie  = age != null && age > OPIE_AGE_MAX;
+    rangeNote.hidden = !(belowAdult || aboveOpie);
+    if (belowAdult){
+      rangeNote.innerHTML = `<strong>OPIE-4 and the Crawford &amp; Allan model do not apply at age ${escapeHtml(String(age))}.</strong> `
+        + `OPIE-4 is fitted for ages ${OPIE_AGE_MIN}–${OPIE_AGE_MAX}, and the Crawford &amp; Allan (1997) equation `
+        + `was derived from an adult sample, so neither produces an estimate. `
+        + `The two ToPF models carry no age term and are unaffected.`;
+    } else if (aboveOpie){
       rangeNote.innerHTML = `<strong>OPIE-4 does not apply at age ${escapeHtml(String(age))}.</strong> `
         + `Its equations are fitted for ages ${OPIE_AGE_MIN}–${OPIE_AGE_MAX}, so no estimate is produced. `
-        + `The ToPF and demographic models carry no age term and are unaffected.`;
+        + `The two ToPF models carry no age term and are unaffected. The Crawford &amp; Allan estimate is still `
+        + `produced, but note an age this far above its adult derivation sample extrapolates its linear age term.`;
     }
   }
 

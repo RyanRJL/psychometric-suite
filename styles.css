@@ -9499,3 +9499,12 @@ body.rb-docked-active{padding-right:0}
   font-family:var(--serif);font-size:0.9em;font-style:italic;color:#333;
   /* Alignment deliberately unset — see .apa-group-col-label above. */
 }
+
+/* Red emphasis for the OPIE-4 UK-accuracy caveat inside its APA note. A NEW
+   STANDALONE CLASS per CLAUDE.md: .info-box and the APA note markup are both
+   restyled by design-system.css and page-scoped blocks, so a modifier on
+   either would enter that fight. Nothing else targets this name, so plain
+   0-1-0 specificity wins over inherited colour with no !important needed.
+   Deliberately a true red rather than var(--warn): the sentence is a
+   do-not-rely-on-these-numbers statement, not a soft caution. */
+.uk-caution-red{color:#C0271D;font-weight:600}

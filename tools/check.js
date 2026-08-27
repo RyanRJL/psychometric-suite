@@ -46,7 +46,7 @@ vm.runInContext(
     ';globalThis.__EXPORTS = { TOPF_TO_FSIQ, WAIS_COEF, WMS_COEF,' +
     ' OPIE_PRORATED_FSIQ, OPIE_PRORATED_GAI, OPIE_PRORATED_INDEX,' +
     ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB,' +
-    ' OPIE_AGE_MIN, OPIE_AGE_MAX, PRE_MODEL_TOOLTIPS };',
+    ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
 const D = sandbox.__EXPORTS;
@@ -1027,8 +1027,11 @@ check('WAIS_COEF and WMS_COEF carry the expected indices and finite SEEs', () =>
   return bad.length === 0 || 'bad see on ' + bad.map(c => c.idx).join(',');
 });
 
-check('Crawford & Allan (2001) returns a plausible value for a mid-range case', () => {
+check('Crawford & Allan (1997) returns a plausible value for a mid-range case', () => {
   // 87.14 - 5.21*occ + 1.78*edu + 0.18*age  (app.js calcPremorbid, row 3).
+  // The paper is Crawford & Allan (1997), The Clinical Neuropsychologist,
+  // 11(2), 192-197 — a 2001 date circulated here previously was a citation
+  // error (vol. 11 of that journal is 1997).
   // Occupation class 3 (Skilled), 12 years education, age 45:
   //   87.14 - 15.63 + 21.36 + 8.10 = 100.97
   // Arithmetic shown so the expected value is auditable rather than asserted.
@@ -1526,8 +1529,31 @@ check('the OPIE UK caveat appears in the APA note (single note, no separate caut
   if (!CAVEAT.test(exported)) bad.push('the exported note has lost the UK caveat');
   if (!CAVEAT.test(onScreen)) bad.push('the on-screen note has lost the UK caveat');
   if (exported !== onScreen) bad.push('the export and on-screen notes differ — they should be identical now');
-  if (!/estimates to run high/i.test(exported)) bad.push('the note should mention the direction of bias');
-  if (!/Crawford/i.test(exported)) bad.push('the note should point to Crawford & Allan as the UK alternative');
+  if (!/run high/i.test(exported)) bad.push('the note should mention the direction of bias');
+  /* The do-not-rely sentence and its red emphasis (2026-08: the note was
+     shortened to the caveat alone and moved above the table; the Crawford
+     pointer, criteria and base-rate sentences were removed deliberately). */
+  if (!/not be considered to be accurate in a UK context/i.test(exported)) bad.push('the note has lost the accuracy disclaimer');
+  if (!/uk-caution-red/.test(exported)) bad.push('the accuracy disclaimer has lost its red emphasis class');
+
+  /* The on-screen mirror sits ABOVE the predictions table, so the caveat is
+     read before the numbers rather than after them. */
+  const mirrorAt = HTML_SRC.indexOf('data-apa-note="pre-opiepredict"');
+  const tableAt  = HTML_SRC.indexOf('id="pre-opiepredict-table"');
+  if (mirrorAt < 0 || tableAt < 0) bad.push('mirror or table missing from index.html');
+  else if (mirrorAt > tableAt) bad.push('the note mirror has moved back below the predictions table');
+
+  /* Same decision on the Estimates tab: its static note (the one carrying the
+     Holdnack citation) sits at the top of the tab, above the results, with
+     the illustrative-only sentence in the same red emphasis class. */
+  const estNoteAt  = HTML_SRC.indexOf('Holdnack et al., 2013), adapted for UK use');
+  const estTableAt = HTML_SRC.indexOf('id="pre-results-table"');
+  if (estNoteAt < 0 || estTableAt < 0) bad.push('the Estimates tab note or table is missing from index.html');
+  else {
+    if (estNoteAt > estTableAt) bad.push('the Estimates tab note has moved back below its results');
+    const estNote = HTML_SRC.slice(estNoteAt, estNoteAt + 400);
+    if (!/uk-caution-red/.test(estNote)) bad.push('the Estimates tab illustrative-only sentence has lost its red emphasis class');
+  }
 
   return bad.length === 0 || bad.join('; ');
 });
@@ -3822,7 +3848,10 @@ check('an out-of-range age is explained rather than left blank', () => {
   const src = extractFn(APP_SRC, 'calcPremorbid');
   const bad = [];
   if (!/pre-age-range-note/.test(src)) bad.push('calcPremorbid never touches the explanation box');
-  if (!/OPIE_AGE_MIN\s*\|\|\s*age\s*>\s*OPIE_AGE_MAX/.test(src)) bad.push('the box is not driven by the OPIE range');
+  /* Two branches since the Crawford & Allan floor landed: below-16 blanks both
+     age-gated models (§36 pins the floor equalling OPIE_AGE_MIN, so OPIE's own
+     floor is covered by the same branch), above-90 blanks OPIE-4 alone. */
+  if (!/age\s*<\s*CRAWFORD_ALLAN_AGE_MIN/.test(src) || !/age\s*>\s*OPIE_AGE_MAX/.test(src)) bad.push('the box is not driven by the model age ranges');
   if (!/<div class="caution-box" id="pre-age-range-note"/.test(HTML_SRC)) bad.push('the box is missing from the markup');
   return bad.length === 0 || bad.join('; ');
 });
@@ -6584,6 +6613,57 @@ check('the top-bar age still recalculates OPIE-4 from every page, which is why t
     return '#patient-age is no longer in the topbar, so it is not on every page';
   }
   return true;
+});
+
+/* ==========================================================================
+   36. Crawford & Allan (1997) — adult age floor and honest range notes
+   The demographic equation (87.14 − 5.21·occ + 1.78·edu + 0.18·age) was
+   derived from 200 healthy ADULTS (Crawford & Allan, 1997, The Clinical
+   Neuropsychologist, 11(2), 192-197). #pre-age accepts ages from 5, so
+   without a floor a paediatric age was fed straight into an adult equation —
+   the same hazard the WMS branch was re-gated for. The floor is 16; no
+   ceiling is enforced (linear, shallow age term; sample maximum attested via
+   companion papers rather than printed in the brief report), so the range
+   note warns instead. The paper's year was also miscited as 2001 across the
+   UI; vol. 11 of that journal is 1997.
+   ========================================================================== */
+heading('36. Crawford & Allan (1997) age gating');
+
+check('the demographic equation is gated at the adult floor', () => {
+  const fn = extractFn(APP_SRC, 'calcPremorbid');
+  const bad = [];
+  if (!/age >= CRAWFORD_ALLAN_AGE_MIN/.test(fn)) bad.push('calcPremorbid no longer gates the Crawford & Allan row on CRAWFORD_ALLAN_AGE_MIN');
+  if (D.CRAWFORD_ALLAN_AGE_MIN !== 16) bad.push('the floor moved: got ' + D.CRAWFORD_ALLAN_AGE_MIN);
+  /* The paediatric branch of the range note says ONE floor blanks both
+     age-gated models. If these constants ever diverge, that text lies —
+     re-word the branches before changing either constant. */
+  if (D.CRAWFORD_ALLAN_AGE_MIN !== D.OPIE_AGE_MIN) bad.push('CRAWFORD_ALLAN_AGE_MIN no longer equals OPIE_AGE_MIN — re-word the range note branches');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the range note tells the truth about which models carry an age term', () => {
+  const fn = extractFn(APP_SRC, 'calcPremorbid');
+  const bad = [];
+  /* The old single-branch message claimed "the ToPF and demographic models
+     carry no age term" while the Crawford & Allan row computes +0.18 × age.
+     Only the two ToPF models on that tab are age-free. */
+  if (/ToPF and demographic models carry no age term/.test(fn)) bad.push('the false "demographic models carry no age term" sentence is back');
+  if (!/Crawford &amp; Allan model do not apply/.test(fn)) bad.push('the paediatric branch no longer names Crawford & Allan');
+  if (!/extrapolates its linear age term/.test(fn)) bad.push('the over-90 branch no longer warns that the Crawford & Allan estimate extrapolates');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the red caveat class exists in styles.css, so the OPIE note span is not inert', () => {
+  return /\.uk-caution-red\{/.test(CSS_SRC) || '.uk-caution-red is not defined in styles.css';
+});
+
+check('no user-facing string still dates Crawford & Allan to 2001', () => {
+  const bad = [];
+  for (const [name, src] of [['app.js', APP_SRC], ['data.js', DATA_SRC], ['index.html', HTML_SRC]]){
+    const hits = [...src.matchAll(/Crawford *&(?:amp;)? *Allan[,]? *\((\d{4})\)/g)].filter(m => m[1] !== '1997');
+    if (hits.length) bad.push(name + ' carries ' + hits.length + ' Crawford & Allan date(s) other than 1997');
+  }
+  return bad.length === 0 || bad.join('; ');
 });
 
 // ---------------------------------------------------------------------------

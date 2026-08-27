@@ -139,7 +139,7 @@ const WMS_COEF = [
    qualification distribution against the US 2008 distribution — a novel
    adaptation that would need validating before it informed a report.
 
-   For the UK demographic angle use Crawford & Allan (2001), already in this
+   For the UK demographic angle use Crawford & Allan (1997), already in this
    file's model set and UK-normed. Treat OPIE-4 as a subtest-based estimate.
 
    Sex coding: Female = 0, Male = 1 (per the source table). Because Female is
@@ -165,6 +165,19 @@ const OPIE_AGE_MAX = 90;
    paediatric or very elderly case ever needs to be defended in a report. */
 const TOPF_AGE_MIN = 16;
 const TOPF_AGE_MAX = 90;
+
+/* Floor for the Crawford & Allan (1997) demographic equation — The Clinical
+   Neuropsychologist, 11(2), 192-197 (long miscited here as 2001; vol. 11 is
+   1997). Derived from 200 healthy adults representative of the adult UK
+   population; the same lab sample is described in the authors' companion
+   WAIS-R papers as ages 16-83. A floor only, and again a SEPARATE constant:
+   the number matches OPIE_AGE_MIN today, but the provenance is a different
+   publication and the two must be able to move independently. No ceiling
+   constant exists on purpose — the equation's age term is linear and shallow
+   (0.18/yr), and the sample maximum comes from companion papers rather than
+   the 1997 brief report itself, so the app warns above the sample rather than
+   refusing (see the range note in calcPremorbid). */
+const CRAWFORD_ALLAN_AGE_MIN = 16;
 
 // OPIE-4 prorated FSIQ regression coefficients (Table eA5.8). Verified against
 // source. See the block above before using these numbers in a UK context.
@@ -202,7 +215,7 @@ const OCC_CODE = { 'Professional':1, 'Intermediate':2, 'Skilled':3, 'Semi Skille
 const PRE_MODEL_TOOLTIPS = {
   topfRaw: 'Assumes the ToPF word-reading raw score is a resistant estimate of premorbid ability. Input required: ToPF raw score only. The FSIQ estimate is returned from the ToPF raw-score look-up table; CI uses the model SEE.',
   topfDemo: 'Assumes premorbid FSIQ is best estimated by combining ToPF performance with demographic predictors. Inputs required: ToPF raw score, years of education, and sex. Uses the cubic ToPF + education + sex regression equation; CI uses the model SEE.',
-  crawfordAllan: 'Demographic-only estimate from Crawford & Allan (2001), intended for UK-normed demographic prediction. Inputs required: occupation class, years of education, and age. Does not use the ToPF score.',
+  crawfordAllan: 'Demographic-only estimate from Crawford & Allan (1997), intended for UK-normed demographic prediction. Inputs required: occupation class, years of education, and age (16+, the equation being derived from an adult UK sample). Does not use the ToPF score.',
   opieDefault: 'ILLUSTRATIVE ONLY in a UK context - do not quote as a concrete premorbid estimate. OPIE-4 estimate of prorated FSIQ. Inputs required: age (16-90), sex, plus Vocabulary raw and/or Matrix Reasoning raw. The equation switches automatically to the matching single- or two-subtest model. The published equation also carries US education, ethnicity and region terms which are NOT applied, so every patient is scored as a US 12th-grade high-school graduate, not African-American, not resident in the US West. Those US categories have no valid UK equivalent, so no substitute adjustment is made. Expect the estimate to run high for patients who left school early and low for graduates. CI uses the branch-specific SEE.',
   opieVCMR: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4 two-subtest estimate of prorated FSIQ (Holdnack et al., 2013; Table eA5.8). Inputs required: Vocabulary raw, Matrix Reasoning raw, age (16-90) and sex. Predicts a prorated FSIQ that excludes Vocabulary and Matrix Reasoning, removing part-whole correlation inflation present in the standard-FSIQ equations. US education, ethnicity and region terms are not applied - see the Vocab and/or Matrix model note.',
   opieVC: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4 single-subtest estimate of prorated FSIQ (Vocabulary branch). Inputs required: Vocabulary raw, age (16-90) and sex. US education, ethnicity and region terms are not applied; the omitted education block spans -6.68 to +5.50 points on this branch. CI uses the Vocabulary-branch SEE.',
