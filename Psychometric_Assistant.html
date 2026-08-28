@@ -14897,6 +14897,13 @@ input[type="number"].ds-age-pop-input{
   .change-table-scroll .input-table{
     margin:0;
   }
+  /* The four method tables carry explicit pixel colgroups (see the comment on
+     #rci-basic-table). Below the sum of those widths the fixed-layout table
+     cannot shrink further, so the wrapper scrolls instead of clipping cells. */
+  @media (max-width:1240px){
+    .change-table-scroll{overflow-x:auto}
+    .change-table-scroll .input-table{min-width:1120px}
+  }
   #change-analysis .input-table th{
     padding:7px 5px;
     font-size:10px;
@@ -15914,17 +15921,35 @@ input[type="number"].ds-age-pop-input{
 
     <h2 class="block-title">Test data &amp; patient scores</h2>
     <table class="input-table" id="rci-basic-table">
+      <!-- Explicit colgroup: the Change Analysis wrapper sets table-layout:fixed,
+           and the injected colspan group row (Norms/Scores/Results) is the first
+           thead row, so per-th widths are ignored and each tab's columns used to
+           be negotiated independently. Shared columns (dates, RCI, p, Outcome)
+           carry the same widths on every method tab so they do not jump when
+           switching tabs; the flexible column absorbs each method's difference. -->
+      <colgroup>
+        <col style="width:30px">
+        <col><!-- Subtest flexes on this tab: fewest columns, longest names -->
+        <col style="width:100px">
+        <col style="width:90px">
+        <col style="width:95px">
+        <col style="width:95px">
+        <col style="width:80px">
+        <col style="width:70px">
+        <col style="width:170px">
+        <col style="width:40px">
+      </colgroup>
       <thead>
         <tr>
           <th class="row-num">#</th>
-          <th style="min-width:180px">Subtest</th>
-          <th style="width:80px">SD</th>
-          <th style="width:80px">r</th>
-          <th style="width:90px" class="d1-head">Date 1</th>
-          <th style="width:90px" class="d2-head">Date 2</th>
-          <th style="width:80px;text-align:right">RCI (z)</th>
-          <th style="width:80px;text-align:right"><i>p</i></th>
-          <th style="width:160px">Outcome</th>
+          <th>Subtest</th>
+          <th>SD</th>
+          <th>r</th>
+          <th class="d1-head">Date 1</th>
+          <th class="d2-head">Date 2</th>
+          <th style="text-align:right">RCI (z)</th>
+          <th style="text-align:right"><i>p</i></th>
+          <th>Outcome</th>
           <th class="row-actions"></th>
         </tr>
       </thead>
@@ -15996,20 +16021,40 @@ input[type="number"].ds-age-pop-input{
 
     <h2 class="block-title">Test data &amp; patient scores</h2>
     <table class="input-table" id="rci-practice-table">
+      <!-- Colgroup shared with McSweeney and Crawford: identical widths for the
+           identically-headed columns (#, Subtest, M/SD, r, dates, RCI, p), so
+           those columns sit at the same x-position on all three tabs. Outcome
+           has no width and absorbs each method's extra columns. See the note
+           on #rci-basic-table. -->
+      <colgroup>
+        <col style="width:30px">
+        <col style="width:240px">
+        <col style="width:76px">
+        <col style="width:76px">
+        <col style="width:76px">
+        <col style="width:76px">
+        <col style="width:70px">
+        <col style="width:95px">
+        <col style="width:95px">
+        <col style="width:80px">
+        <col style="width:70px">
+        <col><!-- Outcome flexes -->
+        <col style="width:40px">
+      </colgroup>
       <thead>
         <tr>
           <th class="row-num">#</th>
-          <th style="min-width:180px">Subtest</th>
-          <th style="width:70px">M₁</th>
-          <th style="width:70px">SD₁</th>
-          <th style="width:70px">M₂</th>
-          <th style="width:70px">SD₂</th>
-          <th style="width:65px">r</th>
-          <th style="width:80px" class="d1-head">Date 1</th>
-          <th style="width:80px" class="d2-head">Date 2</th>
-          <th style="width:75px;text-align:right">RCI (z)</th>
-          <th style="width:75px;text-align:right"><i>p</i></th>
-          <th style="width:150px">Outcome</th>
+          <th>Subtest</th>
+          <th>M₁</th>
+          <th>SD₁</th>
+          <th>M₂</th>
+          <th>SD₂</th>
+          <th>r</th>
+          <th class="d1-head">Date 1</th>
+          <th class="d2-head">Date 2</th>
+          <th style="text-align:right">RCI (z)</th>
+          <th style="text-align:right"><i>p</i></th>
+          <th>Outcome</th>
           <th class="row-actions"></th>
         </tr>
       </thead>
@@ -16084,21 +16129,39 @@ input[type="number"].ds-age-pop-input{
 
     <h2 class="block-title">Test data &amp; patient scores</h2>
     <table class="input-table" id="rci-srb-table">
+      <!-- Same widths as #rci-practice-table for every shared column; the extra
+           Ŷ₂ column comes out of the flexible Outcome column. -->
+      <colgroup>
+        <col style="width:30px">
+        <col style="width:240px">
+        <col style="width:76px">
+        <col style="width:76px">
+        <col style="width:76px">
+        <col style="width:76px">
+        <col style="width:70px">
+        <col style="width:95px">
+        <col style="width:95px">
+        <col style="width:80px">
+        <col style="width:80px">
+        <col style="width:70px">
+        <col><!-- Outcome flexes -->
+        <col style="width:40px">
+      </colgroup>
       <thead>
         <tr>
           <th class="row-num">#</th>
-          <th style="min-width:180px">Subtest</th>
-          <th style="width:70px">M₁</th>
-          <th style="width:70px">SD₁</th>
-          <th style="width:70px">M₂</th>
-          <th style="width:70px">SD₂</th>
-          <th style="width:65px">r</th>
-          <th style="width:80px" class="d1-head">Date 1</th>
-          <th style="width:80px" class="d2-head">Date 2</th>
-          <th style="width:75px;text-align:right">Ŷ₂</th>
-          <th style="width:75px;text-align:right">RCI (z)</th>
-          <th style="width:75px;text-align:right"><i>p</i></th>
-          <th style="width:140px">Outcome</th>
+          <th>Subtest</th>
+          <th>M₁</th>
+          <th>SD₁</th>
+          <th>M₂</th>
+          <th>SD₂</th>
+          <th>r</th>
+          <th class="d1-head">Date 1</th>
+          <th class="d2-head">Date 2</th>
+          <th style="text-align:right">Ŷ₂</th>
+          <th style="text-align:right">RCI (z)</th>
+          <th style="text-align:right"><i>p</i></th>
+          <th>Outcome</th>
           <th class="row-actions"></th>
         </tr>
       </thead>
@@ -16180,22 +16243,41 @@ input[type="number"].ds-age-pop-input{
 
     <h2 class="block-title">Test data &amp; patient scores</h2>
     <table class="input-table" id="rci-crawford-table">
+      <!-- Same widths as #rci-practice-table for every shared column; the extra
+           N and Ŷ₂ columns come out of the flexible Outcome column. -->
+      <colgroup>
+        <col style="width:30px">
+        <col style="width:240px">
+        <col style="width:76px">
+        <col style="width:76px">
+        <col style="width:76px">
+        <col style="width:76px">
+        <col style="width:70px">
+        <col style="width:70px">
+        <col style="width:95px">
+        <col style="width:95px">
+        <col style="width:80px">
+        <col style="width:80px">
+        <col style="width:70px">
+        <col><!-- Outcome flexes -->
+        <col style="width:40px">
+      </colgroup>
       <thead>
         <tr>
           <th class="row-num">#</th>
-          <th style="min-width:180px">Subtest</th>
-          <th style="width:65px">M₁</th>
-          <th style="width:65px">SD₁</th>
-          <th style="width:65px">M₂</th>
-          <th style="width:65px">SD₂</th>
-          <th style="width:60px">r</th>
-          <th style="width:60px">N</th>
-          <th style="width:75px" class="d1-head">Date 1</th>
-          <th style="width:75px" class="d2-head">Date 2</th>
-          <th style="width:75px;text-align:right">Ŷ₂</th>
-          <th style="width:75px;text-align:right"><i>t</i>(RB)</th>
-          <th style="width:75px;text-align:right"><i>p</i></th>
-          <th style="width:140px">Outcome</th>
+          <th>Subtest</th>
+          <th>M₁</th>
+          <th>SD₁</th>
+          <th>M₂</th>
+          <th>SD₂</th>
+          <th>r</th>
+          <th>N</th>
+          <th class="d1-head">Date 1</th>
+          <th class="d2-head">Date 2</th>
+          <th style="text-align:right">Ŷ₂</th>
+          <th style="text-align:right"><i>t</i>(RB)</th>
+          <th style="text-align:right"><i>p</i></th>
+          <th>Outcome</th>
           <th class="row-actions"></th>
         </tr>
       </thead>
