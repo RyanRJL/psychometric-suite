@@ -601,7 +601,26 @@ Whenever the list has been narrowed it says so and offers **"Show all bands"**
 (`familyListShowAllBands`), because a silently shorter dropdown is indistinguishable from
 missing data. That note must **not** carry `.combo-item`: `filterFamilyListEl` hides those
 by search text, so it would vanish the moment anyone typed — exactly when a shortened list
-is most confusing. §33 pins that too.
+is most confusing. §33 pins that too. Under "Show all bands" (and only there — with the
+filter active every visible band already matches), the band containing the age is tagged
+"· matches age 45" so it can be picked out of the full list.
+
+#### The band-mismatch flag — the deliberate opposite of auto-rebanding
+
+On Change Analysis and the SD Index the band selects the **retest sample the `r` was
+measured in** — a clinical choice, not an age lookup — so a loaded band that excludes the
+patient age is **flagged, never auto-rebanded and never gated** (`groupAgeMismatchHtml`,
+on both pages' group headers). Swapping `m1`/`sd1`/`m2`/`sd2`/`r` under already-typed
+scores would silently change every printed result, and keeping a neighbouring band or All
+Ages can be deliberate. The flag names the band and the age ("Ages 12-19 band — does not
+include the current patient age (45)") and appears whether the mismatch arose by loading
+before the age was typed or by the age changing later — `refreshBandMismatchViews`,
+called from both age inputs, re-renders any loaded tables, guarded on the parsed value
+and **without** `rciMarkMethodUsed`, so an age change can never accept a method into the
+report (§34). On SDI the header strips the band from the group name (`stripAgeRange`),
+which makes the flag the only thing on screen saying which band the rows are on when it
+contradicts the age. §38 pins all of it, including that the four calc functions and
+`sdiComputeChange` never consult the age.
 
 Three constraints, all in `check.js` §25:
 
