@@ -6643,6 +6643,24 @@ function getPvtDs(){
     s.diff = vocab - acss;
     s.diffFail = s.diff >= PVT_DS.vocabDiffCutoff;
   }
+  const lsf = pvtInt(document.getElementById('pvt-ds-lsf')?.value, 0, 9);
+  const lsb = pvtInt(document.getElementById('pvt-ds-lsb')?.value, 0, 8);
+  if (lsf === null || lsb === null) return { invalid: true };
+  if (lsf !== undefined){
+    s.lsf = lsf;
+    /* Iverson & Tulsky limit the forward-span index to under-55s (its base
+       rate climbs to 11% in the oldest band). Without an age it is
+       WITHHELD, never guessed — the same posture as the base-rate rows on
+       Score Tables. */
+    const age = (typeof patientAge === 'function') ? patientAge() : null;
+    if (age === null) s.lsfState = 'no-age';
+    else if (age >= PVT_DS.lsfAgeBelow) s.lsfState = 'over-age';
+    else { s.lsfState = 'ok'; s.lsfFail = lsf <= PVT_DS.lsfCutoff; }
+  }
+  if (lsb !== undefined){
+    s.lsb = lsb;
+    s.lsbFail = lsb <= PVT_DS.lsbCutoff;
+  }
   return s;
 }
 
@@ -6768,12 +6786,26 @@ function renderPvtDs(){
   let detail = '';
   if (s.diff !== undefined){
     head += `<br>Vocabulary − Digit Span = ${s.diff} — <strong>${s.diffFail ? 'Flagged' : 'Not flagged'}</strong> at ≥ ${PVT_DS.vocabDiffCutoff}`;
-    detail = s.diffFail
-      ? `A difference this large occurs in ${PVT_DS_VOCABDIFF_BASERATES.standardization} of the standardisation sample and ${PVT_DS_VOCABDIFF_BASERATES.clinical} of the combined clinical sample (Iverson & Tulsky, 2003).`
-      : '';
+    if (s.diffFail) detail = `A Vocabulary − Digit Span difference this large occurs in ${PVT_DS_VOCABDIFF_BASERATES.standardization} of the standardisation sample and ${PVT_DS_VOCABDIFF_BASERATES.clinical} of the combined clinical sample.`;
   }
+  if (s.lsf !== undefined){
+    if (s.lsfState === 'no-age'){
+      head += `<br>Longest span forward = ${s.lsf} — <strong>not evaluated</strong> (enter the patient age in the top bar; the index applies under age ${PVT_DS.lsfAgeBelow})`;
+    } else if (s.lsfState === 'over-age'){
+      head += `<br>Longest span forward = ${s.lsf} — <strong>not applicable</strong> at age ${PVT_DS.lsfAgeBelow}+ (Iverson & Tulsky limit this index to under-55s)`;
+    } else {
+      head += `<br>Longest span forward = ${s.lsf} — <strong>${s.lsfFail ? 'Flagged' : 'Not flagged'}</strong> at ≤ ${PVT_DS.lsfCutoff}`;
+      if (s.lsfFail) detail += ` A forward span this short occurs in ${PVT_DS_SPAN_BASERATES.lsf.standardization} of the under-55 standardisation bands and ${PVT_DS_SPAN_BASERATES.lsf.clinical} of the combined clinical sample.`;
+    }
+  }
+  if (s.lsb !== undefined){
+    head += `<br>Longest span backward = ${s.lsb} — <strong>${s.lsbFail ? 'Flagged' : 'Not flagged'}</strong> at ≤ ${PVT_DS.lsbCutoff}`;
+    if (s.lsbFail) detail += ` A backward span this short occurs in ${PVT_DS_SPAN_BASERATES.lsb.standardization} of the standardisation bands and ${PVT_DS_SPAN_BASERATES.lsb.clinical} of the combined clinical sample.`;
+  }
+  detail = detail.trim();
   if (s.fail && !detail) detail = 'Corroborate with an independent, preferably forced-choice, measure.';
-  out.innerHTML = pvtResultHtml((s.fail || s.diffFail) ? 'fail' : 'pass', head, detail);
+  const anyFail = s.fail || s.diffFail || s.lsfFail || s.lsbFail;
+  out.innerHTML = pvtResultHtml(anyFail ? 'fail' : 'pass', head, detail);
 }
 
 function renderPvtRey(){
@@ -6880,6 +6912,20 @@ function getPvtSummaryRows(){
       score: String(ds.diff), cutoff: `≥ ${PVT_DS.vocabDiffCutoff}`,
       sens: '—', spec: '—',
       result: ds.diffFail ? 'Flagged' : 'Not flagged', fail: ds.diffFail
+    });
+    /* A withheld forward-span index (no age, or 55+) exports NO row — an
+       unevaluated index in a report table would be a false claim. */
+    if (ds.lsf !== undefined && ds.lsfState === 'ok') rows.push({
+      id: 'ds-lsf', group: 'rds', measure: 'Longest span forward',
+      score: String(ds.lsf), cutoff: `≤ ${PVT_DS.lsfCutoff} (age < ${PVT_DS.lsfAgeBelow})`,
+      sens: '—', spec: '—',
+      result: ds.lsfFail ? 'Flagged' : 'Not flagged', fail: ds.lsfFail
+    });
+    if (ds.lsb !== undefined) rows.push({
+      id: 'ds-lsb', group: 'rds', measure: 'Longest span backward',
+      score: String(ds.lsb), cutoff: `≤ ${PVT_DS.lsbCutoff}`,
+      sens: '—', spec: '—',
+      result: ds.lsbFail ? 'Flagged' : 'Not flagged', fail: ds.lsbFail
     });
   }
   /* Stand-alone: shares no subtest with anything above, so its own group. */
@@ -6996,7 +7042,7 @@ function renderPvtNav(){
     rds.rds !== undefined ? (rds.fail ? 'fail' : 'pass') : null);
   const dsS = getPvtDs();
   const dsAny = dsS.acss !== undefined;
-  const dsFail = dsAny && (dsS.fail || dsS.diffFail);
+  const dsFail = dsAny && (dsS.fail || dsS.diffFail || dsS.lsfFail || dsS.lsbFail);
   pvtChip(document.getElementById('pvt-status-ds'),
     dsAny ? (dsFail ? 'Fail' : 'Pass') : '—',
     dsAny ? (dsFail ? 'fail' : 'pass') : null);
@@ -7065,7 +7111,7 @@ function switchPvtTab(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -7090,7 +7136,14 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', renderPvtAll);
+  });
+  /* The forward-span index reads the shared top-bar age, so an age typed
+     anywhere must re-evaluate it. Safe against the §35 hazard: the APA
+     container only ever holds a table once a score is entered here, so an
+     age keystroke alone cannot conjure one. */
+  ['patient-age','pre-age'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {

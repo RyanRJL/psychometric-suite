@@ -2000,7 +2000,27 @@ const PVT_ES_ACCURACY = { auc: '.91' };
      sample score >= 5 (Tables 3/6).
    DS ACSS and RDS come from the SAME subtest: the summary counts them as
    one indicator (the digit-span group), exactly as EI/ES share theirs. */
-const PVT_DS = { cutoffConservative: 5, cutoffSensitive: 7, vocabDiffCutoff: 5 };
+/* The remaining two Iverson & Tulsky suspicion indices are span-based and
+   interpreted against base rates, like the Vocabulary difference:
+   - Longest span forward <= 4, FOR PERSONS UNDER AGE 55 ONLY (their
+     guideline (b)) - Table 2 base rates run 2.5-5.5% across the under-55
+     bands and climb steeply with age (11.0% at 85-89), which is why the
+     index is age-limited; combined clinical 3.4% (Table 5). The app reads
+     the shared top-bar patient age and WITHHOLDS this index without one,
+     or at 55+.
+   - Longest span backward <= 2 (guideline (c), no age qualifier): Table 2
+     base rates 2.0-6.0% across all bands; combined clinical 3.4%.
+   NOTE the definition: these are the longest span passed on EITHER trial,
+   as tabulated from the standardization data - NOT the RDS both-trials
+   span entered on the RDS tab. */
+const PVT_DS = {
+  cutoffConservative: 5, cutoffSensitive: 7, vocabDiffCutoff: 5,
+  lsfCutoff: 4, lsfAgeBelow: 55, lsbCutoff: 2
+};
+const PVT_DS_SPAN_BASERATES = {
+  lsf: { standardization: '2.5–5.5%', clinical: '3.4%' },   // under-55 bands
+  lsb: { standardization: '2.0–6.0%', clinical: '3.4%' }
+};
 const PVT_DS_ACCURACY = {
   conservative: { sens: '.36', spec: '.97' },
   sensitive:    { sens: '.75', spec: '.69–.77' }

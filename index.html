@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260828p">
-<link rel="stylesheet" href="design-system.css?v=20260828p">
+<link rel="stylesheet" href="styles.css?v=20260828q">
+<link rel="stylesheet" href="design-system.css?v=20260828q">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1356,8 +1356,8 @@
       <button type="button" class="pvt-method-tab" data-pvt-tab="ds" role="tab">
         <span class="pvt-method-num">04</span>
         <span class="pvt-method-main">
-          <span class="pvt-method-label">Digit Span ACSS</span>
-          <span class="pvt-method-meta">WAIS embedded · scaled score</span>
+          <span class="pvt-method-label">Digit Span</span>
+          <span class="pvt-method-meta">WAIS embedded · Iverson indices</span>
         </span>
         <span class="pvt-status" id="pvt-status-ds">—</span>
       </button>
@@ -1549,8 +1549,16 @@
               <label>Vocabulary scaled score <span class="hint">(optional, 1–19)</span></label>
               <input type="number" min="1" max="19" step="1" id="pvt-ds-vocab" placeholder="e.g. 11">
             </div>
+            <div class="field">
+              <label>Longest span forward <span class="hint">(optional; either trial, not the RDS span)</span></label>
+              <input type="number" min="0" max="9" step="1" id="pvt-ds-lsf" placeholder="e.g. 6">
+            </div>
+            <div class="field">
+              <label>Longest span backward <span class="hint">(optional; either trial)</span></label>
+              <input type="number" min="0" max="8" step="1" id="pvt-ds-lsb" placeholder="e.g. 4">
+            </div>
             <div class="field pvt-field-wide">
-              <label>Cut-off</label>
+              <label>ACSS cut-off</label>
               <select id="pvt-ds-cutoff">
                 <option value="conservative" selected>ACSS ≤ 5 · conservative (base rate &lt; 4%)</option>
                 <option value="sensitive">ACSS ≤ 7 · sensitive (Axelrod optimum)</option>
@@ -1564,7 +1572,7 @@
           <details class="formula-disclosure">
             <summary>Indices &amp; base rates</summary>
             <div class="formula-body">
-              <p>The Digit Span age-corrected scaled score is entered as scored on the record form — the age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease — Iverson &amp; Tulsky's suspicion guideline. Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from moderate/severe TBI (sens. .75, spec. .69; .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Where a Vocabulary scaled score is entered, the Vocabulary − Digit Span difference is evaluated against Iverson &amp; Tulsky's second index: a difference ≥ 5 occurs in 7.1% of the standardisation sample and 2.8% of the combined clinical sample. Both papers derive from the WAIS-III — document the edition administered.</p>
+              <p>The Digit Span age-corrected scaled score is entered as scored on the record form — the age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease — Iverson &amp; Tulsky's suspicion guideline. Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from moderate/severe TBI (sens. .75, spec. .69; .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Iverson &amp; Tulsky give three further suspicion indices, each evaluated against base rates: a Vocabulary − Digit Span difference ≥ 5 (7.1% of the standardisation sample, 2.8% of the combined clinical sample); a longest span forward ≤ 4, applicable only under age 55 (base rates 2.5–5.5% in the under-55 bands, climbing to 11% at 85–89, which is why the index is age-limited — the app reads the top-bar patient age and withholds it without one); and a longest span backward ≤ 2 (2.0–6.0% across all bands, 3.4% clinical). The longest spans here are the longest passed on <em>either</em> trial, as the standardisation data tabulate them — not the RDS both-trials span. Both papers derive from the WAIS-III — document the edition administered.</p>
             </div>
           </details>
         </div>
@@ -2837,11 +2845,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260828p"></script>
-<script src="app.js?v=20260828p"></script>
-<script src="design-system.js?v=20260828p" defer></script>
-<script src="app-effectsize-page.js?v=20260828p"></script>
-<script src="app-viz-page.js?v=20260828p"></script>
+<script src="data.js?v=20260828q"></script>
+<script src="app.js?v=20260828q"></script>
+<script src="design-system.js?v=20260828q" defer></script>
+<script src="app-effectsize-page.js?v=20260828q"></script>
+<script src="app-viz-page.js?v=20260828q"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

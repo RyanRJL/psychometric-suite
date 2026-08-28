@@ -49,7 +49,7 @@ vm.runInContext(
     ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
-    ' PVT_REY15, PVT_REY15_ACCURACY,' +
+    ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -7081,6 +7081,62 @@ check('Rey 15-Item: cut-offs, accuracy and independence (Boone et al., 2002)', (
     bad.push('a Rey 15-Item stimulus image appears in the page - publishing PVT stimuli beside their cut-offs is a test-security hazard');
   }
   if (!HTML_SRC.includes('Boone, K. B., Salazar, X., Lu, P.')) bad.push('references lost Boone et al. (2002)');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('Digit Span span indices: cut-offs, the under-55 age gate, and the withheld export', () => {
+  /* PINNED: Iverson & Tulsky guidelines (b) and (c) — longest span forward
+     <= 4 "for persons under age 55" (Table 2 base rates 2.5-5.5% in the
+     under-55 bands, 11.0% at 85-89 — the reason for the age limit; Table 5
+     combined clinical 3.4%) and longest span backward <= 2 (Table 2
+     2.0-6.0% across bands; Table 5 clinical 3.4%). These are longest-span-
+     on-EITHER-trial values, not the RDS both-trials span. */
+  const bad = [];
+  if (D.PVT_DS.lsfCutoff !== 4)     bad.push('forward-span index is not <= 4');
+  if (D.PVT_DS.lsfAgeBelow !== 55)  bad.push('forward-span age limit is not under 55');
+  if (D.PVT_DS.lsbCutoff !== 2)     bad.push('backward-span index is not <= 2');
+  if (D.PVT_DS_SPAN_BASERATES.lsf.standardization !== '2.5–5.5%' || D.PVT_DS_SPAN_BASERATES.lsf.clinical !== '3.4%'){
+    bad.push('forward-span base rates drifted from Tables 2/5');
+  }
+  if (D.PVT_DS_SPAN_BASERATES.lsb.standardization !== '2.0–6.0%' || D.PVT_DS_SPAN_BASERATES.lsb.clinical !== '3.4%'){
+    bad.push('backward-span base rates drifted from Tables 2/5');
+  }
+  /* Drive the shipped calculator with the shared age stubbed. */
+  const run = (acss, lsf, lsb, age) => {
+    const vals = { 'pvt-ds-acss': acss, 'pvt-ds-vocab': '', 'pvt-ds-lsf': lsf, 'pvt-ds-lsb': lsb };
+    const c = {
+      PVT_DS: D.PVT_DS,
+      patientAge: () => age,
+      document: { getElementById: id => (id in vals ? { value: vals[id] } : null) }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtDs')
+      + ';globalThis.__R = getPvtDs();', c);
+    return c.__R;
+  };
+  let r = run('8', '4', '', null);
+  if (r.lsfState !== 'no-age' || r.lsfFail !== undefined) bad.push('a blank age should WITHHOLD the forward-span index, not evaluate it');
+  r = run('8', '4', '', 60);
+  if (r.lsfState !== 'over-age' || r.lsfFail !== undefined) bad.push('age 60 should mark the forward-span index not applicable');
+  r = run('8', '4', '', 40);
+  if (r.lsfState !== 'ok' || !r.lsfFail) bad.push('forward span 4 at age 40 should be flagged at <= 4');
+  r = run('8', '5', '', 40);
+  if (r.lsfFail) bad.push('forward span 5 should not be flagged');
+  r = run('8', '', '2', null);
+  if (!r.lsbFail) bad.push('backward span 2 should be flagged at <= 2 (no age gate)');
+  r = run('8', '', '3', null);
+  if (r.lsbFail) bad.push('backward span 3 should not be flagged');
+  /* A withheld index must never export: the row is emitted only when the
+     state is ok, so an unevaluated index cannot become a report claim. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  if (!/ds\.lsfState === 'ok'/.test(rowsFn)) bad.push("a withheld forward-span index would still export — the row must require lsfState === 'ok'");
+  /* The span rows stay in the digit-span group. */
+  const dsBlock = rowsFn.split('getPvtDs()')[1].split('getPvtRey()')[0];
+  if ((dsBlock.match(/group: 'rds'/g) || []).length !== 4) bad.push('the four Digit Span rows are no longer all in the digit-span group');
+  /* An age typed anywhere must re-evaluate the index. */
+  const setup = extractFn(APP_SRC, 'setupPvtPage');
+  if (!/'patient-age','pre-age'/.test(setup)) bad.push('the shared-age listener is gone — the forward-span index would not refresh when the age changes');
   return bad.length === 0 || bad.join('; ');
 });
 
