@@ -3068,13 +3068,19 @@ const APA_NOTES = {
        on-page references state every measure and citation in full. The
        exported note keeps it — the licensed onScreen difference. */
     ctx.onScreen ? '' :
-    'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
+    'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); Digit Span scaled score cut-offs per Iverson & Tulsky (2003) and Axelrod et al. (2006); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
     '"Fail" = score beyond the published cut-off — a cut-off comparison, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
     ctx.hasEsRow || ctx.esGated
       ? 'Sensitivity and specificity are the published values for the applied cut-off (ranges span the source\'s samples or statistical methods); the Effort Scale publishes no such pair — its discrimination is ROC AUC = .91 (Novitski et al., 2012).'
       : 'Sensitivity and specificity are the published values for the applied cut-off; ranges span the source\'s samples or statistical methods.',
     ctx.bothRbans
       ? 'The Effort Index and Effort Scale share their RBANS subtests and constitute one indicator, not two.'
+      : '',
+    ctx.bothDigitSpan
+      ? 'Reliable Digit Span and the Digit Span scaled score derive from the same subtest and constitute one indicator, not two.'
+      : '',
+    ctx.hasDs
+      ? 'Digit Span scaled-score cut-offs and the Vocabulary − Digit Span index derive from WAIS-III data (Iverson & Tulsky, 2003; Axelrod et al., 2006).'
       : '',
     ctx.esGated
       ? 'The Effort Scale is not computed because its screening gate (Digit Span < 9, List Recognition < 19, or their sum < 28) was not met (Novitski et al., 2012).'
@@ -6622,6 +6628,24 @@ function getPvtRds(){
   return { f, b, rds, floored, conservative, cut, fail: rds <= cut };
 }
 
+/* ---------- WAIS Digit Span ACSS (Iverson & Tulsky, 2003; Axelrod et al., 2006) ---------- */
+function getPvtDs(){
+  const acss  = pvtInt(document.getElementById('pvt-ds-acss')?.value, 1, 19);
+  const vocab = pvtInt(document.getElementById('pvt-ds-vocab')?.value, 1, 19);
+  if (acss === undefined && vocab === undefined) return { empty: true };
+  if (acss === null || vocab === null) return { invalid: true };
+  if (acss === undefined) return { partial: true };   // vocab alone computes nothing
+  const conservative = document.getElementById('pvt-ds-cutoff')?.value !== 'sensitive';
+  const cut = conservative ? PVT_DS.cutoffConservative : PVT_DS.cutoffSensitive;
+  const s = { acss, conservative, cut, fail: acss <= cut };
+  if (vocab !== undefined){
+    s.vocab = vocab;
+    s.diff = vocab - acss;
+    s.diffFail = s.diff >= PVT_DS.vocabDiffCutoff;
+  }
+  return s;
+}
+
 /* ---------- TOMM (Martin et al., 2020) ---------- */
 function pvtPPP(sens, spec, br){ return (sens * br) / (sens * br + (1 - spec) * (1 - br)); }
 function pvtNPP(sens, spec, br){ return (spec * (1 - br)) / (spec * (1 - br) + (1 - sens) * br); }
@@ -6711,6 +6735,26 @@ function renderPvtRds(){
       : ''}`);
 }
 
+function renderPvtDs(){
+  const out = document.getElementById('pvt-ds-result');
+  if (!out) return;
+  const s = getPvtDs();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score — Vocabulary alone computes nothing.'); return; }
+  const cutLabel = `ACSS ≤ ${s.cut}${s.conservative ? ' (conservative)' : ''}`;
+  let head = `Digit Span ACSS = ${s.acss} — ${pvtStatusWord(s.fail)} at ${cutLabel}`;
+  let detail = '';
+  if (s.diff !== undefined){
+    head += `<br>Vocabulary − Digit Span = ${s.diff} — <strong>${s.diffFail ? 'Flagged' : 'Not flagged'}</strong> at ≥ ${PVT_DS.vocabDiffCutoff}`;
+    detail = s.diffFail
+      ? `A difference this large occurs in ${PVT_DS_VOCABDIFF_BASERATES.standardization} of the standardisation sample and ${PVT_DS_VOCABDIFF_BASERATES.clinical} of the combined clinical sample (Iverson & Tulsky, 2003).`
+      : '';
+  }
+  if (s.fail && !detail) detail = 'Corroborate with an independent, preferably forced-choice, measure.';
+  out.innerHTML = pvtResultHtml((s.fail || s.diffFail) ? 'fail' : 'pass', head, detail);
+}
+
 function renderPvtTomm(){
   const out = document.getElementById('pvt-tomm-result');
   const power = document.getElementById('pvt-tomm-power');
@@ -6779,6 +6823,24 @@ function getPvtSummaryRows(){
       result: pvtStatusWord(rds.fail), fail: rds.fail
     });
   }
+  /* Same subtest as RDS, so the SAME group — one indicator between them,
+     exactly as EI/ES share the RBANS group. */
+  const ds = getPvtDs();
+  if (ds.acss !== undefined){
+    const acc = PVT_DS_ACCURACY[ds.conservative ? 'conservative' : 'sensitive'];
+    rows.push({
+      id: 'ds', group: 'rds', measure: 'Digit Span scaled score',
+      score: String(ds.acss), cutoff: `≤ ${ds.cut}${ds.conservative ? ' (conservative)' : ''}`,
+      sens: acc.sens, spec: acc.spec,
+      result: pvtStatusWord(ds.fail), fail: ds.fail
+    });
+    if (ds.diff !== undefined) rows.push({
+      id: 'ds-vocab', group: 'rds', measure: 'Vocabulary − Digit Span',
+      score: String(ds.diff), cutoff: `≥ ${PVT_DS.vocabDiffCutoff}`,
+      sens: '—', spec: '—',
+      result: ds.diffFail ? 'Flagged' : 'Not flagged', fail: ds.diffFail
+    });
+  }
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
@@ -6807,7 +6869,7 @@ function renderPvtSummary(){
   const countStat = c.total === 0 ? '' :
     `<div class="pvt-count">
       <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
-      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
+      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the digit-span indices as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
     </div>`;
   host.innerHTML = `
     <div class="pvt-card">
@@ -6845,6 +6907,8 @@ function renderPvtApa(){
       hasEs: es.es !== undefined,
       esGated: !!es.gated,
       bothRbans: ei.ei !== undefined && es.es !== undefined,
+      bothDigitSpan: rows.some(r => r.id === 'rds') && rows.some(r => r.id === 'ds'),
+      hasDs: rows.some(r => r.id === 'ds'),
       hasEsRow: rows.some(r => r.id === 'es'),
       hasTomm: rows.some(r => r.group === 'tomm')
     })}
@@ -6873,6 +6937,12 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-rds'),
     rds.rds !== undefined ? (rds.fail ? 'Fail' : 'Pass') : '—',
     rds.rds !== undefined ? (rds.fail ? 'fail' : 'pass') : null);
+  const dsS = getPvtDs();
+  const dsAny = dsS.acss !== undefined;
+  const dsFail = dsAny && (dsS.fail || dsS.diffFail);
+  pvtChip(document.getElementById('pvt-status-ds'),
+    dsAny ? (dsFail ? 'Fail' : 'Pass') : '—',
+    dsAny ? (dsFail ? 'fail' : 'pass') : null);
   const tomm = getPvtTomm();
   const tommHas = !!(tomm.rows && tomm.rows.length);
   pvtChip(document.getElementById('pvt-status-tomm'),
@@ -6892,6 +6962,13 @@ function renderPvtAccuracy(){
     const key = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
     eiEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_EI_ACCURACY[key].sens} · spec. ${PVT_EI_ACCURACY[key].spec} (Silverberg et al., 2007)`;
   }
+  const dsEl = document.getElementById('pvt-ds-accuracy');
+  if (dsEl){
+    const key = document.getElementById('pvt-ds-cutoff')?.value === 'sensitive' ? 'sensitive' : 'conservative';
+    dsEl.textContent = key === 'conservative'
+      ? `Published accuracy at this cut-off: sens. ${PVT_DS_ACCURACY.conservative.sens} · spec. ${PVT_DS_ACCURACY.conservative.spec} (Axelrod et al., 2006); base rate 3.8% standardisation / 3.4% clinical (Iverson & Tulsky, 2003)`
+      : `Published accuracy at this cut-off: sens. ${PVT_DS_ACCURACY.sensitive.sens} · spec. ${PVT_DS_ACCURACY.sensitive.spec} (Axelrod et al., 2006)`;
+  }
   const rdsEl = document.getElementById('pvt-rds-accuracy');
   if (rdsEl){
     const key = document.getElementById('pvt-rds-cutoff')?.value === 'traditional' ? 'traditional' : 'conservative';
@@ -6903,6 +6980,7 @@ function renderPvtAll(){
   renderPvtEi();
   renderPvtEs();
   renderPvtRds();
+  renderPvtDs();
   renderPvtTomm();
   renderPvtAccuracy();
   renderPvtNav();
@@ -6923,7 +7001,7 @@ function switchPvtTab(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -6948,10 +7026,10 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
-  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
   renderPvtAll();

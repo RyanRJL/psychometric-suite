@@ -9621,7 +9621,7 @@ body.rb-docked-active{padding-right:0}
 /* ---- Tab strip: white rounded-top sheet ---- */
 .pvt-method-tabs{
   display:grid;
-  grid-template-columns:repeat(5,minmax(150px,1fr));
+  grid-template-columns:repeat(6,minmax(140px,1fr));
   gap:0;
   background:#FFFFFF;
   border:1px solid rgba(20,15,5,0.08);
@@ -16084,6 +16084,14 @@ input[type="number"].ds-age-pop-input{
         </span>
         <span class="pvt-status" id="pvt-status-rds">—</span>
       </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="ds" role="tab">
+        <span class="pvt-method-num">04</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Digit Span ACSS</span>
+          <span class="pvt-method-meta">WAIS embedded · scaled score</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-ds">—</span>
+      </button>
       <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
         <span class="pvt-method-num">04</span>
         <span class="pvt-method-main">
@@ -16250,6 +16258,49 @@ input[type="number"].ds-age-pop-input{
       </div>
     </div>
 
+    <!-- ===== Digit Span ACSS ===== -->
+    <div class="pvt-tab-content" id="pvt-ds">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Digit Span scaled score <span class="hint">(age-corrected, 1–19)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-ds-acss" placeholder="e.g. 8">
+            </div>
+            <div class="field">
+              <label>Vocabulary scaled score <span class="hint">(optional, 1–19)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-ds-vocab" placeholder="e.g. 11">
+            </div>
+            <div class="field pvt-field-wide">
+              <label>Cut-off</label>
+              <select id="pvt-ds-cutoff">
+                <option value="conservative" selected>ACSS ≤ 5 · conservative (base rate &lt; 4%)</option>
+                <option value="sensitive">ACSS ≤ 7 · sensitive (Axelrod optimum)</option>
+              </select>
+            </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Base rates &amp; suspicion indices: Iverson &amp; Tulsky (2003), <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9. Classification accuracy: Axelrod, Fichtenberg, Millis &amp; Wertheimer (2006), <i>The Clinical Neuropsychologist, 20</i>(3), 513–523. Both WAIS-III.</span>
+            <span class="pvt-source-accuracy" id="pvt-ds-accuracy"></span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>Indices &amp; base rates</summary>
+            <div class="formula-body">
+              <p>The Digit Span age-corrected scaled score is entered as scored on the record form. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease — Iverson &amp; Tulsky's suspicion guideline. Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from moderate/severe TBI (sens. .75, spec. .69; .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Where a Vocabulary scaled score is entered, the Vocabulary − Digit Span difference is evaluated against Iverson &amp; Tulsky's second index: a difference ≥ 5 occurs in 7.1% of the standardisation sample and 2.8% of the combined clinical sample. Both papers derive from the WAIS-III — document the edition administered.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-ds-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> Not a stand-alone measure, and it shares its subtest with RDS — the summary counts them as one indicator.</summary>
+            <div class="pvt-caution-body">Axelrod et al. explicitly recommend against using the Digit Span scaled score as a stand-alone validity measure — it accounted for a modest share of variance (AUC .77). Genuine impairment can suppress the score: apply the conservative cut-off where real deficits are plausible. Both sources are WAIS-III; the WAIS-IV subtest adds Sequencing to the composite, so an ACSS from a WAIS-IV record is not on the identical metric these cut-offs were derived on.</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== TOMM ===== -->
     <div class="pvt-tab-content" id="pvt-tomm">
       <div class="pvt-workspace">
@@ -16359,8 +16410,10 @@ input[type="number"].ds-age-pop-input{
     <details class="pvt-refs">
       <summary>References — Performance Validity</summary>
       <div class="references" id="pvt-references">
+        <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
         <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
+        <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
         <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
         <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
@@ -17419,8 +17472,10 @@ input[type="number"].ds-age-pop-input{
       <p>Sawilowsky, S. S. (2009). New effect size rules of thumb. <i>Journal of Modern Applied Statistical Methods, 8</i>(2), 597–599.</p>
 
       <div class="references-group">Performance validity sources</div>
+      <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
       <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
       <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224. [Reliable Digit Span: scoring, floor rule and traditional cut-off.]</p>
+      <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
       <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373. [Aggregation of multiple PVTs; classification accuracy by number of failures.]</p>
       <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. [TOMM cut-offs and the sensitivity/specificity values behind the predictive-power display, Tables 16–17.]</p>
       <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
@@ -19445,6 +19500,33 @@ const PVT_RDS_ACCURACY = {
   traditional:  { sens: '.48–.58', spec: '.82–.85' }
 };
 const PVT_ES_ACCURACY = { auc: '.91' };
+
+/* WAIS Digit Span Age-Corrected Scaled Score (Iverson & Tulsky, 2003;
+   Axelrod, Fichtenberg, Millis & Wertheimer, 2006). BOTH SOURCES ARE
+   WAIS-III: Iverson & Tulsky tabulate base rates in the WAIS-III
+   standardization sample (N = 2,450) and six clinical groups; Axelrod et al.
+   give diagnostic efficiency per cut-off (Table 3) against probable
+   malingerers vs moderate/severe TBI, cross-validated on non-litigating
+   mild TBI. The page says so and tells the clinician to document the
+   edition administered.
+   - ACSS <= 5 (conservative, default): standardization base rate 3.8%,
+     combined clinical 3.4% (Iverson & Tulsky Tables 1/4 — their suspicion
+     guideline is "scaled score of 5, 4, or less"); Axelrod Table 3 at
+     <= 5: sensitivity .36, specificity .97.
+   - ACSS <= 7 (Axelrod's optimum): sensitivity .75, specificity .69 (TBI),
+     .77 on the mild-TBI cross-validation.
+   - Vocabulary - Digit Span difference >= 5: a second Iverson & Tulsky
+     suspicion index, interpreted against BASE RATES, not sens/spec —
+     7.1% of the standardization sample and 2.8% of the combined clinical
+     sample score >= 5 (Tables 3/6).
+   DS ACSS and RDS come from the SAME subtest: the summary counts them as
+   one indicator (the digit-span group), exactly as EI/ES share theirs. */
+const PVT_DS = { cutoffConservative: 5, cutoffSensitive: 7, vocabDiffCutoff: 5 };
+const PVT_DS_ACCURACY = {
+  conservative: { sens: '.36', spec: '.97' },
+  sensitive:    { sens: '.75', spec: '.69–.77' }
+};
+const PVT_DS_VOCABDIFF_BASERATES = { standardization: '7.1%', clinical: '2.8%' };
 
 /* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
@@ -22526,13 +22608,19 @@ const APA_NOTES = {
        on-page references state every measure and citation in full. The
        exported note keeps it — the licensed onScreen difference. */
     ctx.onScreen ? '' :
-    'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
+    'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); Digit Span scaled score cut-offs per Iverson & Tulsky (2003) and Axelrod et al. (2006); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
     '"Fail" = score beyond the published cut-off — a cut-off comparison, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
     ctx.hasEsRow || ctx.esGated
       ? 'Sensitivity and specificity are the published values for the applied cut-off (ranges span the source\'s samples or statistical methods); the Effort Scale publishes no such pair — its discrimination is ROC AUC = .91 (Novitski et al., 2012).'
       : 'Sensitivity and specificity are the published values for the applied cut-off; ranges span the source\'s samples or statistical methods.',
     ctx.bothRbans
       ? 'The Effort Index and Effort Scale share their RBANS subtests and constitute one indicator, not two.'
+      : '',
+    ctx.bothDigitSpan
+      ? 'Reliable Digit Span and the Digit Span scaled score derive from the same subtest and constitute one indicator, not two.'
+      : '',
+    ctx.hasDs
+      ? 'Digit Span scaled-score cut-offs and the Vocabulary − Digit Span index derive from WAIS-III data (Iverson & Tulsky, 2003; Axelrod et al., 2006).'
       : '',
     ctx.esGated
       ? 'The Effort Scale is not computed because its screening gate (Digit Span < 9, List Recognition < 19, or their sum < 28) was not met (Novitski et al., 2012).'
@@ -26080,6 +26168,24 @@ function getPvtRds(){
   return { f, b, rds, floored, conservative, cut, fail: rds <= cut };
 }
 
+/* ---------- WAIS Digit Span ACSS (Iverson & Tulsky, 2003; Axelrod et al., 2006) ---------- */
+function getPvtDs(){
+  const acss  = pvtInt(document.getElementById('pvt-ds-acss')?.value, 1, 19);
+  const vocab = pvtInt(document.getElementById('pvt-ds-vocab')?.value, 1, 19);
+  if (acss === undefined && vocab === undefined) return { empty: true };
+  if (acss === null || vocab === null) return { invalid: true };
+  if (acss === undefined) return { partial: true };   // vocab alone computes nothing
+  const conservative = document.getElementById('pvt-ds-cutoff')?.value !== 'sensitive';
+  const cut = conservative ? PVT_DS.cutoffConservative : PVT_DS.cutoffSensitive;
+  const s = { acss, conservative, cut, fail: acss <= cut };
+  if (vocab !== undefined){
+    s.vocab = vocab;
+    s.diff = vocab - acss;
+    s.diffFail = s.diff >= PVT_DS.vocabDiffCutoff;
+  }
+  return s;
+}
+
 /* ---------- TOMM (Martin et al., 2020) ---------- */
 function pvtPPP(sens, spec, br){ return (sens * br) / (sens * br + (1 - spec) * (1 - br)); }
 function pvtNPP(sens, spec, br){ return (spec * (1 - br)) / (spec * (1 - br) + (1 - sens) * br); }
@@ -26169,6 +26275,26 @@ function renderPvtRds(){
       : ''}`);
 }
 
+function renderPvtDs(){
+  const out = document.getElementById('pvt-ds-result');
+  if (!out) return;
+  const s = getPvtDs();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score — Vocabulary alone computes nothing.'); return; }
+  const cutLabel = `ACSS ≤ ${s.cut}${s.conservative ? ' (conservative)' : ''}`;
+  let head = `Digit Span ACSS = ${s.acss} — ${pvtStatusWord(s.fail)} at ${cutLabel}`;
+  let detail = '';
+  if (s.diff !== undefined){
+    head += `<br>Vocabulary − Digit Span = ${s.diff} — <strong>${s.diffFail ? 'Flagged' : 'Not flagged'}</strong> at ≥ ${PVT_DS.vocabDiffCutoff}`;
+    detail = s.diffFail
+      ? `A difference this large occurs in ${PVT_DS_VOCABDIFF_BASERATES.standardization} of the standardisation sample and ${PVT_DS_VOCABDIFF_BASERATES.clinical} of the combined clinical sample (Iverson & Tulsky, 2003).`
+      : '';
+  }
+  if (s.fail && !detail) detail = 'Corroborate with an independent, preferably forced-choice, measure.';
+  out.innerHTML = pvtResultHtml((s.fail || s.diffFail) ? 'fail' : 'pass', head, detail);
+}
+
 function renderPvtTomm(){
   const out = document.getElementById('pvt-tomm-result');
   const power = document.getElementById('pvt-tomm-power');
@@ -26237,6 +26363,24 @@ function getPvtSummaryRows(){
       result: pvtStatusWord(rds.fail), fail: rds.fail
     });
   }
+  /* Same subtest as RDS, so the SAME group — one indicator between them,
+     exactly as EI/ES share the RBANS group. */
+  const ds = getPvtDs();
+  if (ds.acss !== undefined){
+    const acc = PVT_DS_ACCURACY[ds.conservative ? 'conservative' : 'sensitive'];
+    rows.push({
+      id: 'ds', group: 'rds', measure: 'Digit Span scaled score',
+      score: String(ds.acss), cutoff: `≤ ${ds.cut}${ds.conservative ? ' (conservative)' : ''}`,
+      sens: acc.sens, spec: acc.spec,
+      result: pvtStatusWord(ds.fail), fail: ds.fail
+    });
+    if (ds.diff !== undefined) rows.push({
+      id: 'ds-vocab', group: 'rds', measure: 'Vocabulary − Digit Span',
+      score: String(ds.diff), cutoff: `≥ ${PVT_DS.vocabDiffCutoff}`,
+      sens: '—', spec: '—',
+      result: ds.diffFail ? 'Flagged' : 'Not flagged', fail: ds.diffFail
+    });
+  }
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
@@ -26265,7 +26409,7 @@ function renderPvtSummary(){
   const countStat = c.total === 0 ? '' :
     `<div class="pvt-count">
       <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
-      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
+      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the digit-span indices as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
     </div>`;
   host.innerHTML = `
     <div class="pvt-card">
@@ -26303,6 +26447,8 @@ function renderPvtApa(){
       hasEs: es.es !== undefined,
       esGated: !!es.gated,
       bothRbans: ei.ei !== undefined && es.es !== undefined,
+      bothDigitSpan: rows.some(r => r.id === 'rds') && rows.some(r => r.id === 'ds'),
+      hasDs: rows.some(r => r.id === 'ds'),
       hasEsRow: rows.some(r => r.id === 'es'),
       hasTomm: rows.some(r => r.group === 'tomm')
     })}
@@ -26331,6 +26477,12 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-rds'),
     rds.rds !== undefined ? (rds.fail ? 'Fail' : 'Pass') : '—',
     rds.rds !== undefined ? (rds.fail ? 'fail' : 'pass') : null);
+  const dsS = getPvtDs();
+  const dsAny = dsS.acss !== undefined;
+  const dsFail = dsAny && (dsS.fail || dsS.diffFail);
+  pvtChip(document.getElementById('pvt-status-ds'),
+    dsAny ? (dsFail ? 'Fail' : 'Pass') : '—',
+    dsAny ? (dsFail ? 'fail' : 'pass') : null);
   const tomm = getPvtTomm();
   const tommHas = !!(tomm.rows && tomm.rows.length);
   pvtChip(document.getElementById('pvt-status-tomm'),
@@ -26350,6 +26502,13 @@ function renderPvtAccuracy(){
     const key = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
     eiEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_EI_ACCURACY[key].sens} · spec. ${PVT_EI_ACCURACY[key].spec} (Silverberg et al., 2007)`;
   }
+  const dsEl = document.getElementById('pvt-ds-accuracy');
+  if (dsEl){
+    const key = document.getElementById('pvt-ds-cutoff')?.value === 'sensitive' ? 'sensitive' : 'conservative';
+    dsEl.textContent = key === 'conservative'
+      ? `Published accuracy at this cut-off: sens. ${PVT_DS_ACCURACY.conservative.sens} · spec. ${PVT_DS_ACCURACY.conservative.spec} (Axelrod et al., 2006); base rate 3.8% standardisation / 3.4% clinical (Iverson & Tulsky, 2003)`
+      : `Published accuracy at this cut-off: sens. ${PVT_DS_ACCURACY.sensitive.sens} · spec. ${PVT_DS_ACCURACY.sensitive.spec} (Axelrod et al., 2006)`;
+  }
   const rdsEl = document.getElementById('pvt-rds-accuracy');
   if (rdsEl){
     const key = document.getElementById('pvt-rds-cutoff')?.value === 'traditional' ? 'traditional' : 'conservative';
@@ -26361,6 +26520,7 @@ function renderPvtAll(){
   renderPvtEi();
   renderPvtEs();
   renderPvtRds();
+  renderPvtDs();
   renderPvtTomm();
   renderPvtAccuracy();
   renderPvtNav();
@@ -26381,7 +26541,7 @@ function switchPvtTab(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -26406,10 +26566,10 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
-  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
   renderPvtAll();

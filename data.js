@@ -1980,6 +1980,33 @@ const PVT_RDS_ACCURACY = {
 };
 const PVT_ES_ACCURACY = { auc: '.91' };
 
+/* WAIS Digit Span Age-Corrected Scaled Score (Iverson & Tulsky, 2003;
+   Axelrod, Fichtenberg, Millis & Wertheimer, 2006). BOTH SOURCES ARE
+   WAIS-III: Iverson & Tulsky tabulate base rates in the WAIS-III
+   standardization sample (N = 2,450) and six clinical groups; Axelrod et al.
+   give diagnostic efficiency per cut-off (Table 3) against probable
+   malingerers vs moderate/severe TBI, cross-validated on non-litigating
+   mild TBI. The page says so and tells the clinician to document the
+   edition administered.
+   - ACSS <= 5 (conservative, default): standardization base rate 3.8%,
+     combined clinical 3.4% (Iverson & Tulsky Tables 1/4 — their suspicion
+     guideline is "scaled score of 5, 4, or less"); Axelrod Table 3 at
+     <= 5: sensitivity .36, specificity .97.
+   - ACSS <= 7 (Axelrod's optimum): sensitivity .75, specificity .69 (TBI),
+     .77 on the mild-TBI cross-validation.
+   - Vocabulary - Digit Span difference >= 5: a second Iverson & Tulsky
+     suspicion index, interpreted against BASE RATES, not sens/spec —
+     7.1% of the standardization sample and 2.8% of the combined clinical
+     sample score >= 5 (Tables 3/6).
+   DS ACSS and RDS come from the SAME subtest: the summary counts them as
+   one indicator (the digit-span group), exactly as EI/ES share theirs. */
+const PVT_DS = { cutoffConservative: 5, cutoffSensitive: 7, vocabDiffCutoff: 5 };
+const PVT_DS_ACCURACY = {
+  conservative: { sens: '.36', spec: '.97' },
+  sensitive:    { sens: '.75', spec: '.69–.77' }
+};
+const PVT_DS_VOCABDIFF_BASERATES = { standardization: '7.1%', clinical: '2.8%' };
+
 /* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
 const PVT_AGGREGATION = [

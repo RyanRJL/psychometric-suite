@@ -48,7 +48,7 @@ vm.runInContext(
     ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB,' +
     ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
-    ' PVT_ES_ACCURACY,' +
+    ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -6964,6 +6964,65 @@ check('published accuracy strings match their sources, and reach screen and expo
    'Greiffenstein, Baker &amp; Gola (1994)', 'Martin et al. (2020)'].forEach(name => {
     if (!new RegExp('pvt-source-cite">[^<]*' + name.replace(/[()&;]/g, m => '\\' + m).replace(/\\&amp\;/g, '&amp;')).test(HTML_SRC)
         && !HTML_SRC.includes(name)) bad.push('the on-tab source line lost ' + name);
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('Digit Span ACSS: cut-offs, accuracy and non-independence (Iverson & Tulsky, 2003; Axelrod et al., 2006)', () => {
+  /* PINNED: Iverson & Tulsky Table 1 — ACSS <= 5 in 3.8% of the WAIS-III
+     standardization sample (Table 4: 3.4% combined clinical); their
+     suspicion guideline (a) is "scaled score of 5, 4, or less" and (d) a
+     Vocabulary - Digit Span difference of 5+ (Table 3: 7.1% at >= 5;
+     Table 6: 2.8% clinical). Axelrod et al. Table 3 — at <= 5 sensitivity
+     36.1% / specificity 96.6%; at <= 7 sensitivity 75.0% / specificity
+     69.0%, with 77% specificity on the mild-TBI cross-validation. */
+  const bad = [];
+  if (D.PVT_DS.cutoffConservative !== 5) bad.push('conservative cut-off is not <= 5');
+  if (D.PVT_DS.cutoffSensitive !== 7)    bad.push('sensitive cut-off is not <= 7');
+  if (D.PVT_DS.vocabDiffCutoff !== 5)    bad.push('Vocabulary - Digit Span index is not >= 5');
+  if (D.PVT_DS_ACCURACY.conservative.sens !== '.36' || D.PVT_DS_ACCURACY.conservative.spec !== '.97'){
+    bad.push('<= 5 accuracy drifted from Axelrod Table 3 (36.1 / 96.6)');
+  }
+  if (D.PVT_DS_ACCURACY.sensitive.sens !== '.75' || D.PVT_DS_ACCURACY.sensitive.spec !== '.69–.77'){
+    bad.push('<= 7 accuracy drifted from Axelrod Table 3 / mild-TBI cross-validation');
+  }
+  if (D.PVT_DS_VOCABDIFF_BASERATES.standardization !== '7.1%' || D.PVT_DS_VOCABDIFF_BASERATES.clinical !== '2.8%'){
+    bad.push('Vocabulary - Digit Span base rates drifted from Tables 3/6');
+  }
+  /* Same subtest as RDS => same summary group, or the failure count would
+     double-count one subtest — the whole point of the independence rule. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  const dsBlock = rowsFn.split('getPvtDs()')[1] || '';
+  if (!/group: 'rds'/.test(dsBlock)) bad.push('the DS rows left the digit-span group — the summary would count the same subtest twice');
+  if (!rowsFn.includes('PVT_DS_ACCURACY')) bad.push('getPvtSummaryRows no longer reads PVT_DS_ACCURACY');
+  /* Drive the shipped calculator: ACSS 5 fails at the default <= 5; 6
+     passes; Vocabulary 11 with ACSS 5 gives diff 6, flagged at >= 5. */
+  const run = (acss, vocab) => {
+    const c = {
+      PVT_DS: D.PVT_DS,
+      document: { getElementById: id =>
+        id === 'pvt-ds-acss' ? { value: acss } : id === 'pvt-ds-vocab' ? { value: vocab } : null }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtDs')
+      + ';globalThis.__R = getPvtDs();', c);
+    return c.__R;
+  };
+  let r = run('5', '');
+  if (!r.fail || r.cut !== 5) bad.push('ACSS 5 should Fail at the default <= 5');
+  r = run('6', '');
+  if (r.fail) bad.push('ACSS 6 should Pass at the default <= 5');
+  r = run('5', '11');
+  if (r.diff !== 6 || !r.diffFail) bad.push('Vocabulary 11 - ACSS 5 should flag at >= 5');
+  r = run('', '11');
+  if (!r.partial) bad.push('Vocabulary alone should compute nothing');
+  /* The WAIS-III provenance must reach the exported note. */
+  if (!/derive from WAIS-III data \(Iverson & Tulsky, 2003; Axelrod et al\., 2006\)/.test(APP_SRC)){
+    bad.push('the note lost the WAIS-III provenance sentence');
+  }
+  ['Iverson &amp; Tulsky (2003)', 'Axelrod, B. N., Fichtenberg, N. L., Millis, S. R.'].forEach(n => {
+    if (!HTML_SRC.includes(n)) bad.push('references lost ' + n);
   });
   return bad.length === 0 || bad.join('; ');
 });

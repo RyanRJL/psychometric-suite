@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260828n">
-<link rel="stylesheet" href="design-system.css?v=20260828n">
+<link rel="stylesheet" href="styles.css?v=20260828o">
+<link rel="stylesheet" href="design-system.css?v=20260828o">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1353,6 +1353,14 @@
         </span>
         <span class="pvt-status" id="pvt-status-rds">—</span>
       </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="ds" role="tab">
+        <span class="pvt-method-num">04</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Digit Span ACSS</span>
+          <span class="pvt-method-meta">WAIS embedded · scaled score</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-ds">—</span>
+      </button>
       <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
         <span class="pvt-method-num">04</span>
         <span class="pvt-method-main">
@@ -1519,6 +1527,49 @@
       </div>
     </div>
 
+    <!-- ===== Digit Span ACSS ===== -->
+    <div class="pvt-tab-content" id="pvt-ds">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Digit Span scaled score <span class="hint">(age-corrected, 1–19)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-ds-acss" placeholder="e.g. 8">
+            </div>
+            <div class="field">
+              <label>Vocabulary scaled score <span class="hint">(optional, 1–19)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-ds-vocab" placeholder="e.g. 11">
+            </div>
+            <div class="field pvt-field-wide">
+              <label>Cut-off</label>
+              <select id="pvt-ds-cutoff">
+                <option value="conservative" selected>ACSS ≤ 5 · conservative (base rate &lt; 4%)</option>
+                <option value="sensitive">ACSS ≤ 7 · sensitive (Axelrod optimum)</option>
+              </select>
+            </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Base rates &amp; suspicion indices: Iverson &amp; Tulsky (2003), <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9. Classification accuracy: Axelrod, Fichtenberg, Millis &amp; Wertheimer (2006), <i>The Clinical Neuropsychologist, 20</i>(3), 513–523. Both WAIS-III.</span>
+            <span class="pvt-source-accuracy" id="pvt-ds-accuracy"></span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>Indices &amp; base rates</summary>
+            <div class="formula-body">
+              <p>The Digit Span age-corrected scaled score is entered as scored on the record form. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease — Iverson &amp; Tulsky's suspicion guideline. Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from moderate/severe TBI (sens. .75, spec. .69; .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Where a Vocabulary scaled score is entered, the Vocabulary − Digit Span difference is evaluated against Iverson &amp; Tulsky's second index: a difference ≥ 5 occurs in 7.1% of the standardisation sample and 2.8% of the combined clinical sample. Both papers derive from the WAIS-III — document the edition administered.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-ds-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> Not a stand-alone measure, and it shares its subtest with RDS — the summary counts them as one indicator.</summary>
+            <div class="pvt-caution-body">Axelrod et al. explicitly recommend against using the Digit Span scaled score as a stand-alone validity measure — it accounted for a modest share of variance (AUC .77). Genuine impairment can suppress the score: apply the conservative cut-off where real deficits are plausible. Both sources are WAIS-III; the WAIS-IV subtest adds Sequencing to the composite, so an ACSS from a WAIS-IV record is not on the identical metric these cut-offs were derived on.</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== TOMM ===== -->
     <div class="pvt-tab-content" id="pvt-tomm">
       <div class="pvt-workspace">
@@ -1628,8 +1679,10 @@
     <details class="pvt-refs">
       <summary>References — Performance Validity</summary>
       <div class="references" id="pvt-references">
+        <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
         <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
+        <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
         <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
         <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
@@ -2688,8 +2741,10 @@
       <p>Sawilowsky, S. S. (2009). New effect size rules of thumb. <i>Journal of Modern Applied Statistical Methods, 8</i>(2), 597–599.</p>
 
       <div class="references-group">Performance validity sources</div>
+      <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
       <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
       <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224. [Reliable Digit Span: scoring, floor rule and traditional cut-off.]</p>
+      <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
       <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373. [Aggregation of multiple PVTs; classification accuracy by number of failures.]</p>
       <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. [TOMM cut-offs and the sensitivity/specificity values behind the predictive-power display, Tables 16–17.]</p>
       <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
@@ -2732,11 +2787,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260828n"></script>
-<script src="app.js?v=20260828n"></script>
-<script src="design-system.js?v=20260828n" defer></script>
-<script src="app-effectsize-page.js?v=20260828n"></script>
-<script src="app-viz-page.js?v=20260828n"></script>
+<script src="data.js?v=20260828o"></script>
+<script src="app.js?v=20260828o"></script>
+<script src="design-system.js?v=20260828o" defer></script>
+<script src="app-effectsize-page.js?v=20260828o"></script>
+<script src="app-viz-page.js?v=20260828o"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
