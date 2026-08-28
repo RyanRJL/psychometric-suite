@@ -3064,6 +3064,10 @@ const APA_NOTES = {
      the load-bearing claims of the whole page. Conditional sentences ADD
      context in the export; the on-screen mirror shows the base sentences. */
   'pvt': ctx => [
+    /* The mirror drops this definitional sentence: the tab strip and the
+       on-page references state every measure and citation in full. The
+       exported note keeps it — the licensed onScreen difference. */
+    ctx.onScreen ? '' :
     'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
     '"Fail" denotes a score beyond the published cut-off for that measure; it is a cut-off comparison, not a determination of invalidity. No single indicator is a verdict: probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
     ctx.bothRbans
@@ -6664,9 +6668,9 @@ function renderPvtEi(){
   const cutLabel = `EI &gt; ${s.cut}${s.cutKey === 'sensitive' ? ' (screening)' : ''}`;
   out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
     `Effort Index = ${s.ei} — ${pvtStatusWord(s.fail)} at ${cutLabel}`,
-    `Digit Span ${s.ds} → weight ${s.wDs}; List Recognition ${s.lr} → weight ${s.wLr}. ${s.fail
-      ? 'The index exceeds the published cut-off, which is conventionally reported as a PVT failure — corroborate with an independent, preferably forced-choice, measure before drawing any conclusion.'
-      : 'The index does not exceed the published cut-off.'}`);
+    `Digit Span ${s.ds} → weight ${s.wDs}; List Recognition ${s.lr} → weight ${s.wLr}.${s.fail
+      ? ' Corroborate with an independent, preferably forced-choice, measure.'
+      : ''}`);
 }
 
 function renderPvtEs(){
@@ -6679,14 +6683,14 @@ function renderPvtEs(){
   if (s.gated){
     out.innerHTML = pvtResultHtml('na',
       'Effort Scale not computed — screening gate not met',
-      `Digit Span ${s.ds} (gate &lt; 9), List Recognition ${s.lr} (gate &lt; 19), sum ${s.ds + s.lr} (gate &lt; 28). On a profile this strong the ES is not interpretable: free recall normally exceeds the ceiling-limited recognition score in intact examinees, so computing it here would over-flag (Novitski et al., 2012).`);
+      `Digit Span ${s.ds}, List Recognition ${s.lr}, sum ${s.ds + s.lr} — no gate clause met (&lt; 9 / &lt; 19 / &lt; 28). On a profile this strong the ES over-flags, so no score is reported (Novitski et al., 2012).`);
     return;
   }
   out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
     `Effort Scale = ${s.es} — ${pvtStatusWord(s.fail)} at ES &lt; ${PVT_ES.cutoff}`,
-    `(${s.lr} − [${s.list} + ${s.stor} + ${s.fig}]) + ${s.ds} = ${s.es}. Gate met, so the score is interpretable. ${s.fail
-      ? 'The score falls below the published cut-off, which is conventionally reported as a PVT failure — confirm with a stand-alone forced-choice measure.'
-      : 'The score does not fall below the published cut-off.'}`);
+    `(${s.lr} − [${s.list} + ${s.stor} + ${s.fig}]) + ${s.ds} = ${s.es}. Gate met.${s.fail
+      ? ' Confirm with a stand-alone forced-choice measure.'
+      : ''}`);
 }
 
 function renderPvtRds(){
@@ -6699,9 +6703,9 @@ function renderPvtRds(){
   const cutLabel = `RDS ≤ ${s.cut}${s.conservative ? ' (conservative)' : ' (traditional)'}`;
   out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
     `RDS = ${s.rds} — ${pvtStatusWord(s.fail)} at ${cutLabel}`,
-    `${s.f} forward + ${s.b} backward${s.floored ? ` = ${s.f + s.b}; the floor rule records any RDS below 3 as 3 (Greiffenstein et al., 1994)` : ''}. ${s.fail
-      ? 'The score is at or below the published cut-off, which is conventionally reported as a PVT failure — weigh genuine attentional impairment, anxiety and aphasia before drawing any conclusion.'
-      : 'The score is above the published cut-off.'}`);
+    `${s.f} forward + ${s.b} backward${s.floored ? ` = ${s.f + s.b}; the floor rule records any RDS below 3 as 3` : ''}.${s.fail
+      ? ' Weigh genuine attentional impairment, anxiety and aphasia before concluding.'
+      : ''}`);
 }
 
 function renderPvtTomm(){
@@ -6715,8 +6719,8 @@ function renderPvtTomm(){
     `${r.label} = ${r.score} — <strong>${pvtStatusWord(r.fail)}</strong> at ${r.cutoff.label.replace('<', '&lt;')}`).join('<br>');
   out.innerHTML = pvtResultHtml(s.anyFail ? 'fail' : 'pass', lines,
     s.anyFail
-      ? 'At least one trial falls below its selected cut-off, which is conventionally reported as a PVT failure. Interpret against the predictive-power table below — at low base rates a single failure has modest positive predictive power.'
-      : 'No entered trial falls below its selected cut-off.');
+      ? 'At low base rates a single failure has modest positive predictive power — see the table below.'
+      : '');
   const brPct = Math.round(s.br * 100);
   power.innerHTML = `
     <div class="pvt-card">
@@ -6731,7 +6735,7 @@ function renderPvtTomm(){
           <td>${r.npp.toFixed(2).replace(/^0/, '')}</td></tr>`).join('')}
         </tbody>
       </table>
-      <p class="pvt-agg-copy" style="margin-top:10px;margin-bottom:0">PPP = probability a failure is a true positive; NPP = probability a pass is a true negative. Derived by Bayes' theorem from the meta-analytic weighted-mean sensitivity/specificity for neurocognitive/psychiatric samples and the selected base rate, as in Martin et al. (2020), Tables 16–17. PPP uses the point sensitivity/specificity even where a range is shown.</p>
+      <p class="pvt-agg-copy" style="margin-top:10px;margin-bottom:0">PPP = probability a failure is a true positive; NPP = probability a pass is a true negative — Bayes on the meta-analytic sens/spec and the selected base rate (Martin et al., 2020, Tables 16–17).</p>
     </div>`;
 }
 
@@ -6789,7 +6793,7 @@ function renderPvtSummary(){
   const countStat = c.total === 0 ? '' :
     `<div class="pvt-count">
       <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
-      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} with data ${c.failed === 1 ? 'falls' : 'fall'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — counting the two RBANS indices as one indicator and the TOMM trials as one. Failing ≥ 2 independent PVTs supports probable invalidity; a single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).</span>
+      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
     </div>`;
   host.innerHTML = `
     <div class="pvt-card">

@@ -9730,3 +9730,35 @@ body.rb-docked-active{padding-right:0}
 .pvt-refs summary::before{content:'+ '}
 .pvt-refs[open] summary::before{content:'\2212\00a0 '}
 .pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
+
+/* One-line expandable cautions - the headline stays on screen, the full
+   text one click away. Caution tint matches .caution-box without touching
+   that class (it belongs to other pages). */
+.pvt-caution{
+  border:1px solid rgba(156,61,42,0.25);
+  border-left:4px solid #9c3d2a;
+  border-radius:6px;
+  background:rgba(156,61,42,0.04);
+  padding:10px 14px;
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.5;
+}
+.pvt-caution summary{
+  cursor:pointer;
+  list-style:none;
+  color:var(--ink-2);
+}
+.pvt-caution summary::-webkit-details-marker{display:none}
+.pvt-caution summary::after{
+  content:'more';
+  margin-left:8px;
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--faint);
+}
+.pvt-caution[open] summary::after{content:'less'}
+.pvt-caution summary strong{color:#9c3d2a}
+.pvt-caution-body{margin-top:8px}
