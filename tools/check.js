@@ -7019,8 +7019,8 @@ check('Digit Span ACSS: cut-offs, accuracy and non-independence (Iverson & Tulsk
   r = run('', '11');
   if (!r.partial) bad.push('Vocabulary alone should compute nothing');
   /* The WAIS-III provenance must reach the exported note. */
-  if (!/derive from WAIS-III data \(Iverson & Tulsky, 2003; Axelrod et al\., 2006\)/.test(APP_SRC)){
-    bad.push('the note lost the WAIS-III provenance sentence');
+  if (!/Iverson & Tulsky, 2003; Axelrod et al\., 2006 — WAIS-III/.test(APP_SRC)){
+    bad.push('the note lost the WAIS-III provenance of the Digit Span cut-offs');
   }
   ['Iverson &amp; Tulsky (2003)', 'Axelrod, B. N., Fichtenberg, N. L., Millis, S. R.'].forEach(n => {
     if (!HTML_SRC.includes(n)) bad.push('references lost ' + n);
@@ -7176,19 +7176,24 @@ check('the readout gives every index its OWN state, and states never rest on col
   ['pass', 'fail', 'flag', 'na'].forEach(k => {
     if (!(k in PVT_STATE_WORD_OBJ)) bad.push('PVT_STATE_WORD lost the ' + k + ' state');
   });
-  /* The meter boundary is exact for integer scales: half-integer between
-     the last passing and first failing score, per comparison operator. */
-  const b = extractFn(APP_SRC, 'pvtFailBoundary');
-  const c = {}; vm.createContext(c);
-  vm.runInContext(b + ';globalThis.__B = pvtFailBoundary;', c);
-  const B = c.__B;
-  if (B('lt', 9)   !== 8.5) bad.push('"< 9" should fail from 8.5 down');
-  if (B('lte', 6)  !== 6.5) bad.push('"<= 6" should fail from 6.5 down');
-  if (B('gt', 3)   !== 3.5) bad.push('"> 3" should fail from 3.5 up');
-  if (B('gte', 5)  !== 4.5) bad.push('">= 5" should fail from 4.5 up');
-  /* A withheld index draws no meter — plotting a score against a cut-off
-     that was not applied would assert an evaluation that did not happen. */
-  if (!/o\.state === 'na' \? '' : pvtMeterHtml/.test(rowFn)) bad.push('a withheld index would still draw a meter against a cut-off it was not evaluated on');
+  /* Three-way encoding: glyph + word + colour. The glyph rides inside the
+     chip, so shape and text both survive greyscale and colour-blindness. */
+  if (!/PVT_STATE_ICON\[/.test(rowFn)) bad.push('the chip lost its state glyph');
+  if (!/\$\{icon\}\$\{word\}/.test(rowFn)) bad.push('the glyph and word are no longer rendered together in the chip');
+  ['flag', 'pass', 'na'].forEach(k => {
+    if (!new RegExp("^\\s+" + k + ":\\s*'<svg", 'm').test(APP_SRC)) bad.push('PVT_STATE_ICON lost its ' + k + ' glyph');
+  });
+  /* Score-against-cut-off plotting was removed deliberately: the cut-off
+     and whether the score crossed it are the actionable facts, and a
+     distance from the cut-off carries no published meaning. */
+  if (/pvtMeterHtml|pvtFailBoundary|class="pvt-meter/.test(APP_SRC) || /\.pvt-meter/.test(CSS_SRC)){
+    bad.push('the cut-off meter is back — a plotted distance from the cut-off asserts a precision the sources do not publish');
+  }
+  /* Every row must still print its cut-off in text, which is what the
+     meter's removal makes load-bearing. */
+  ['renderPvtEi', 'renderPvtRds', 'renderPvtDs', 'renderPvtRey', 'renderPvtTomm'].forEach(fn => {
+    if (!/Cut-off/.test(extractFn(APP_SRC, fn))) bad.push(fn + ' no longer prints the cut-off on the row');
+  });
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -7201,8 +7206,15 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
   if (!/'pvt':\s*ctx\s*=>/.test(APP_SRC)) bad.push('APA_NOTES has no pvt entry');
   /* The load-bearing sentences of the note. */
   if (!/not a determination of invalidity/.test(APP_SRC)) bad.push('the note no longer defines Fail as a cut-off comparison');
-  if (!/at least two independent validity indicators \(Larrabee, 2014\)/.test(APP_SRC)) bad.push('the note lost the aggregation rule');
-  if (!/should not be interpreted in suspected or confirmed dementia/.test(APP_SRC)) bad.push('the note lost the dementia caveat');
+  if (!/at least two independent indicators \(Larrabee, 2014\)/.test(APP_SRC)) bad.push('the note lost the aggregation rule');
+  if (!/Specificity falls in dementia and severe impairment/.test(APP_SRC)) bad.push('the note lost the dementia caveat');
+  /* Every clause is conditional on what the table holds, so a one-measure
+     export does not carry six citations. */
+  const note = APP_SRC.slice(APP_SRC.indexOf("  'pvt': ctx => {"), APP_SRC.indexOf("  'pre-opiepredict'"));
+  ['hasEi', 'hasEs', 'hasRds', 'hasDs', 'hasRey', 'hasTomm'].forEach(f => {
+    if (!note.includes('ctx.' + f)) bad.push('the note cites unconditionally — ' + f + ' no longer gates its source');
+  });
+  if (/EI = RBANS Effort Index/.test(APP_SRC)) bad.push('the abbreviation roster is back, expanding abbreviations the table never uses');
   /* Empty-state guard — §35's contract: no data, no .apa-table offered. */
   const apa = extractFn(APP_SRC, 'renderPvtApa');
   if (!/rows\.length === 0/.test(apa) || !(/return;/.test(apa.split('rows.length === 0')[1] || ''))) {
