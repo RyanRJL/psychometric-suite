@@ -15892,7 +15892,7 @@ input[type="number"].ds-age-pop-input{
       <details class="formula-disclosure">
         <summary>Formula</summary>
         <div class="formula-body">
-          <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. Only ~15–17% of the normal standardisation sample fall below the combined &lt; 28 screen.</p>
+          <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. Only 17% of the normal standardisation sample fall below the combined &lt; 28 screen, and 15.1% meet it while also scoring ES &lt; 12 (Novitski et al., 2012).</p>
         </div>
       </details>
     </div>
@@ -15951,7 +15951,7 @@ input[type="number"].ds-age-pop-input{
             <label>Trial 1 cut-off</label>
             <select id="pvt-tomm-t1cut">
               <option value="t1-42" selected>&lt; 42 · meta-analytic optimum</option>
-              <option value="t1-41">&lt; 41 · conservative (Denning, 2012)</option>
+              <option value="t1-41">&lt; 41 · conservative</option>
             </select>
           </div>
           <div class="field">
@@ -15979,7 +15979,7 @@ input[type="number"].ds-age-pop-input{
       <details class="formula-disclosure">
         <summary>Cut-offs &amp; classification accuracy</summary>
         <div class="formula-body">
-          <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45 — spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49 — spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42 — spec. .91, sens. .67–.69; Trial 1 &lt; 41 — spec. .93, sens. .66 (Denning, 2012). Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17. Failure on Trial 1 is unrelated to age, education, or gender.</p>
+          <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45 — spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49 — spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42 — spec. .91, sens. .67–.69; Trial 1 &lt; 41 — spec. .93, sens. .66. All are Martin et al.'s weighted-mean values for neurocognitive/psychiatric samples; an earlier aggregation of Trial 1 (Denning, 2012) reported .92/.77 averaged across cut-offs 34–44, which is why the meta-analysis examined each cut-off individually. Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17.</p>
         </div>
       </details>
     </div>
@@ -19068,7 +19068,7 @@ const PVT_RDS = { floor: 3, cutoffTraditional: 7, cutoffConservative: 6 };
    specRange/sensRange, where present, are the ranges quoted for the cut-off
    summary table. Trial 1 < 41 row: Denning (2012). */
 const PVT_TOMM_CUTOFFS = [
-  { id: 't1-41',  trial: 'trial1',    label: 'Trial 1 < 41',   cut: 41, sens: 0.66, spec: 0.93, note: 'Conservative abbreviated/screening cut-off (Denning, 2012).' },
+  { id: 't1-41',  trial: 'trial1',    label: 'Trial 1 < 41',   cut: 41, sens: 0.66, spec: 0.93, note: 'More conservative Trial 1 cut-off; meta-analytic weighted-mean values at < 41 (cf. Denning, 2012).' },
   { id: 't1-42',  trial: 'trial1',    label: 'Trial 1 < 42',   cut: 42, sens: 0.69, spec: 0.91, note: 'Meta-analytic optimum for abbreviated/screening use.' },
   { id: 't2-45',  trial: 'trial2',    label: 'Trial 2 < 45',   cut: 45, sens: 0.45, spec: 0.97, specRange: '.96–.98', sensRange: '.45–.55', note: 'Traditional cut-off; very high specificity across settings.' },
   { id: 't2-49',  trial: 'trial2',    label: 'Trial 2 < 49',   cut: 49, sens: 0.63, spec: 0.95, specRange: '.91–.97', sensRange: '.59–.70', note: 'Liberal; only where significant impairment is not expected.' },

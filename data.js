@@ -1943,7 +1943,7 @@ const PVT_RDS = { floor: 3, cutoffTraditional: 7, cutoffConservative: 6 };
    specRange/sensRange, where present, are the ranges quoted for the cut-off
    summary table. Trial 1 < 41 row: Denning (2012). */
 const PVT_TOMM_CUTOFFS = [
-  { id: 't1-41',  trial: 'trial1',    label: 'Trial 1 < 41',   cut: 41, sens: 0.66, spec: 0.93, note: 'Conservative abbreviated/screening cut-off (Denning, 2012).' },
+  { id: 't1-41',  trial: 'trial1',    label: 'Trial 1 < 41',   cut: 41, sens: 0.66, spec: 0.93, note: 'More conservative Trial 1 cut-off; meta-analytic weighted-mean values at < 41 (cf. Denning, 2012).' },
   { id: 't1-42',  trial: 'trial1',    label: 'Trial 1 < 42',   cut: 42, sens: 0.69, spec: 0.91, note: 'Meta-analytic optimum for abbreviated/screening use.' },
   { id: 't2-45',  trial: 'trial2',    label: 'Trial 2 < 45',   cut: 45, sens: 0.45, spec: 0.97, specRange: '.96–.98', sensRange: '.45–.55', note: 'Traditional cut-off; very high specificity across settings.' },
   { id: 't2-49',  trial: 'trial2',    label: 'Trial 2 < 49',   cut: 49, sens: 0.63, spec: 0.95, specRange: '.91–.97', sensRange: '.59–.70', note: 'Liberal; only where significant impairment is not expected.' },
