@@ -14421,6 +14421,70 @@ input[type="number"].ds-age-pop-input{
 .ds-inline-bar-cibasis[hidden]{ display: none !important; }
 
 /* =====================================================================
+   THE LONG-FORM TOAST
+
+   Only the once-ever first-export notice uses this. The ordinary toast is
+   `white-space:nowrap` and sized for "Table copied"; a full sentence in that
+   box runs off a narrow screen.
+
+   A compound rather than a standalone class is deliberate and checked: the
+   only `white-space:nowrap` on .toast is the 0-1-0 rule in styles.css, so
+   0-2-0 wins it outright without !important. The two design-system.css .toast
+   rules set colour and radius and do not touch layout, so nothing here is in
+   contention with them.
+   ===================================================================== */
+.toast.is-longform{
+  white-space: normal;
+  max-width: min(560px, calc(100vw - 32px));
+  text-align: left;
+  line-height: 1.45;
+}
+
+/* =====================================================================
+   THE STANDING PRIVACY LINE
+
+   A standalone class, not a modifier of anything in the footer. `.site-footer`
+   and `.site-footer-links` are each declared in both stylesheets, and this
+   needs no part of that argument.
+
+   Quiet on purpose: it is a reassurance a clinician looks for once, not a
+   banner. It sits in the footer's right-hand grid column and reads as a
+   statement of fact rather than a notice to be dismissed.
+   ===================================================================== */
+.site-footer-privacy{
+  margin: 0;
+  justify-self: end;
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  line-height: 1.4;
+  color: var(--ds-text-subtle);
+  text-align: right;
+}
+/* The footer's three columns are sized for a wide window. Left as a 3-up grid
+   on a narrow one, this sentence gets a 47px column and stacks into a column
+   of single words. Below 900px the footer goes single-column instead.
+
+   Collapsing grid-template-columns is not enough on its own. The version stamp
+   carries `grid-column: 2` to centre it in the wide layout, and an explicit
+   placement into column 2 creates an IMPLICIT second column no matter how few
+   explicit tracks are declared: the row stayed two-up and only got narrower.
+   The placement has to be released as well, which is what the second rule
+   does. Verified on the rendered page, since the computed value is the only
+   thing that shows it. */
+@media (max-width:900px){
+  .site-footer-inner{
+    grid-template-columns: minmax(0,1fr);
+    justify-items: start;
+    gap: var(--ds-space-3);
+  }
+  .site-footer-inner .ds-version-stamp{
+    grid-column: auto;
+    justify-self: start;
+  }
+  .site-footer-privacy{ justify-self: start; text-align: left; }
+}
+
+/* =====================================================================
    NARROW-VIEWPORT CONTAINMENT
 
    Not a mobile layout, and it does not claim to be one. The scores tables
@@ -16864,6 +16928,73 @@ input[type="number"].ds-age-pop-input{
     </div>
   </section>
 
+  <!-- ========== PRIVACY AND USE ==========================================
+       Deliberately a permanent, linked page rather than a first-open gate.
+       A blocking splash trains dismissal, and two things already compete for
+       that moment: the auth overlay and the Working Report onboarding bubble.
+       The pointer to here is a one-time toast on first export instead, which
+       fires once and so cannot be trained away.
+
+       The responsibility text lives HERE and not in APA_NOTES. Those notes are
+       read precisely because every sentence in them is specific to the table
+       above; a clause repeated on all of them would turn the note into
+       something to skim. The exported note already carries what a reader needs
+       beside the number: the method, the coefficient basis in force, and the
+       age where one was used.
+       ================================================================== -->
+  <section class="section" id="privacy-use">
+    <div class="eyebrow">Settings &middot; Privacy &amp; use</div>
+    <h1 class="section-title">Privacy &amp; <em>use</em></h1>
+    <p class="section-desc">What happens to the data you enter, and what you are agreeing to when you use these calculators.</p>
+
+    <h2 class="block-title">Where your data goes</h2>
+
+    <h3 class="methods-h3">Nothing you enter is uploaded</h3>
+    <p class="section-body-text">
+      Scores, tables, patient age and everything in the Working Report stay in this browser. The application makes <strong>no network requests of its own</strong>: it contains no analytics, no tracking, no error reporting and no server to send anything to. Every calculation runs on this device, and the whole suite works with no network connection at all.
+    </p>
+    <p class="section-body-text">
+      The one external request is to Google Fonts, which loads the two typefaces the interface is set in. It carries no patient data. Beyond that, the only thing stored anywhere is stored here, on this computer.
+    </p>
+
+    <h3 class="methods-h3">It stays until you clear it</h3>
+    <p class="section-body-text">
+      Entered scores and the saved Working Report persist in this browser's storage between sessions, which is what lets a report survive a reload. That also means <strong>anyone who can open this browser profile can see them</strong>. Use <strong>New patient</strong> in the top bar between patients: it clears every table and the age together, which is why it is one control rather than two.
+    </p>
+
+    <h3 class="methods-h3">The sign-in does not protect anything</h3>
+    <p class="section-body-text">
+      The login screen is a <strong>prototype and is not real authentication</strong>. Any correctly formatted email address and any password will sign in, and Demo mode needs neither. Your name and email are kept in this browser so the app can greet you; the password is discarded immediately and is never stored. Do not treat signing in as a safeguard on patient data, and do not rely on it to keep one clinician's entries from another's. Device-level security is what protects this data.
+    </p>
+
+    <h2 class="block-title">Responsibility for use</h2>
+
+    <h3 class="methods-h3">This is a calculator, not a clinical judgement</h3>
+    <p class="section-body-text">
+      The suite computes and formats. It does not decide anything, and it cannot tell whether the method you have chosen suits the question you are asking. Clinical interpretation rests entirely with you.
+    </p>
+
+    <h3 class="methods-h3">You are responsible for the inputs and the method</h3>
+    <p class="section-body-text">
+      Every result is only as sound as the norms, reliabilities and scores entered to produce it. Verify imported parameters against the current published manual before interpreting them, and satisfy yourself that the method is the right one for the case. Where a figure is a compromise the app says so rather than hiding it: the reliability basis is named in the note under every exported table, and the Data page labels each coefficient with what it actually rests on.
+    </p>
+
+    <h3 class="methods-h3">You are responsible for being qualified to use it</h3>
+    <p class="section-body-text">
+      These instruments are restricted measures. By using this tool you confirm that you hold the training, registration and professional competence required to administer, score and interpret them, and that you are working within your scope of practice and your local service standards. The tool does not check this and cannot.
+    </p>
+
+    <h3 class="methods-h3">Read the note that travels with the table</h3>
+    <p class="section-body-text">
+      Every exported table carries an APA note stating the method used, the reliability basis in force and the age band applied. That note is the record of how the numbers were produced, and it is written to be read by whoever receives the report. Specific cautions are flagged where they apply: OPIE-4 is labelled illustrative-only for UK use because the published equations carry US education, ethnicity and region terms that are not applied here, and the discrepancy base rates on the premorbid page are a parametric normal model rather than observed frequencies.
+    </p>
+
+    <h3 class="methods-h3">Reports produced here are your responsibility</h3>
+    <p class="section-body-text">
+      Output from this tool may end up in clinical records and in medico-legal reports that are scrutinised. Check the numbers before they leave. No warranty is given that any calculation is fit for a particular purpose, and responsibility for anything written on the basis of them is yours.
+    </p>
+  </section>
+
 </main>
 
 <!-- ========== SITE FOOTER (redesign) - secondary navigation ========== -->
@@ -16872,11 +17003,24 @@ input[type="number"].ds-age-pop-input{
     <div class="site-footer-links">
       <button type="button" class="site-footer-link nav-item" data-target="custom-tests">Data</button>
       <button type="button" class="site-footer-link nav-item" data-target="about">Methods &amp; References</button>
+      <button type="button" class="site-footer-link nav-item" data-target="privacy-use">Privacy &amp; use</button>
     </div>
     <div class="ds-version-stamp" title="Build version and last update">
       <span class="ds-version-dot" aria-hidden="true"></span>
       <span id="app-version">v0.2.0 &middot; updated July 2026</span>
     </div>
+    <!-- The standing privacy claim. A clinician about to type a real patient's
+         scores into a website has exactly this question, and until now the only
+         place it was answered was a <meta description> nobody reads. Verified:
+         the app contains no fetch, XHR, sendBeacon, WebSocket or analytics call
+         of its own. Do not soften this to "we do not share your data", which is
+         a weaker and different claim.
+
+         THIRD child on purpose. design-system.css lays the footer out as a
+         `1fr auto 1fr` grid with the version stamp centred, so this has to
+         follow the stamp to land in the right-hand column. Put it before, and
+         it takes the centre slot and pushes the version off-centre. -->
+    <p class="site-footer-privacy">Scores stay in this browser. Nothing is uploaded.</p>
   </div>
 </footer>
 
@@ -19252,12 +19396,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* ---------- TOAST ---------- */
 let toastTimer;
-function showToast(msg, isError){
+function showToast(msg, isError, ms){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show' + (isError ? ' error' : '');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.className = 'toast', 2200);
+  toastTimer = setTimeout(() => t.className = 'toast', ms || 2200);
+}
+
+/* ---------- FIRST-EXPORT NOTICE ----------------------------------------
+   Copy is the boundary where a number crosses from this app into a
+   medico-legal document, which makes it the right moment to say that there
+   are terms. It is NOT the right moment to state them: at the instant of
+   copying, "make sure you are qualified" is un-actionable, the clinician
+   having already chosen the method and entered the scores.
+
+   So this fires ONCE, ever, and then never again. A per-copy notice on the
+   app's core output path would be dismissed reflexively within a week, and
+   a notice everyone dismisses is worth little to the user and probably
+   little as evidence that anyone was informed. Once is also why it can be
+   non-blocking: it never gates an export.
+
+   Every copy path routes through here rather than calling showToast
+   directly, so a new export route cannot silently miss it. */
+const EXPORT_NOTICE_KEY = 'paExportNoticeSeen';
+function exportToast(msg){
+  let first = false;
+  try { first = localStorage.getItem(EXPORT_NOTICE_KEY) !== 'true'; }
+  catch(e){ first = false; }   // private mode: confirm the copy, skip the notice
+  if (!first){ showToast(msg); return; }
+  try { localStorage.setItem(EXPORT_NOTICE_KEY, 'true'); } catch(e){}
+  showToast(msg + '  Interpretation and verification rest with you - see Privacy & use in the footer.', false, 9000);
+  /* The toast is white-space:nowrap, sized for "Table copied". This one is a
+     sentence, and on a narrow window a nowrap toast that long runs off the
+     screen. Added after showToast, which assigns className wholesale — which
+     is also what clears it again on the next ordinary toast. */
+  const t = document.getElementById('toast');
+  if (t) t.classList.add('is-longform');
 }
 
 /* ---------- COPY TO CLIPBOARD (rich HTML) ---------- */
@@ -19291,7 +19466,7 @@ async function copyApaTable(containerId){
     } else {
       await navigator.clipboard.writeText(plain);
     }
-    showToast('✓ Table copied - ready to paste into your report');
+    exportToast('✓ Table copied - ready to paste into your report');
     flashCopiedButton(document.querySelector(`[data-copy="${containerId}"]`));
     if (typeof ReportBundle !== 'undefined' && ReportBundle.showKofiPrompt) ReportBundle.showKofiPrompt();
   } catch(e){
@@ -26777,7 +26952,7 @@ const ReportBundle = (function(){
       } else {
         await navigator.clipboard.writeText(plain);
       }
-      if (typeof showToast === 'function') showToast(`✓ ${blocks.length} table${blocks.length===1?'':'s'} copied`);
+      if (typeof exportToast === 'function') exportToast(`✓ ${blocks.length} table${blocks.length===1?'':'s'} copied`);
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector('[data-rb-action="copy"]'));
       maybeShowKofiToast();
     } catch(e){
@@ -27579,7 +27754,7 @@ ${buildReportHtmlBody()}
       } else {
         await navigator.clipboard.writeText(plain);
       }
-      if (typeof showToast === 'function') showToast('✓ Table copied to clipboard');
+      if (typeof exportToast === 'function') exportToast('✓ Table copied to clipboard');
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector(`[data-rb-item-copy="${id}"]`));
       maybeShowKofiToast();
     } catch(e){
@@ -27666,7 +27841,7 @@ ${buildReportHtmlBody()}
       } else {
         await navigator.clipboard.writeText(plain);
       }
-      if (typeof showToast === 'function') showToast('✓ Merged table copied to clipboard');
+      if (typeof exportToast === 'function') exportToast('✓ Merged table copied to clipboard');
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector(`[data-rb-group-copy="${idKey}"]`));
       maybeShowKofiToast();
     } catch(e){
@@ -27971,7 +28146,8 @@ if (document.readyState === 'loading'){
     'rci-crawford':   'Crawford Regression-Based',
     'premorbid':      'Premorbid Estimation',
     'about':          'Methods & References',
-    'custom-tests':   'Data'
+    'custom-tests':   'Data',
+    'privacy-use':    'Privacy & use'
   };
 
   function setTitleForTarget(target){
@@ -30301,7 +30477,7 @@ if (document.readyState === 'loading'){
         throw new Error('no-clipboard-api');
       }
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      if (typeof showToast === 'function') showToast('✓ Chart copied to clipboard');
+      if (typeof exportToast === 'function') exportToast('✓ Chart copied to clipboard');
     } catch (e){
       if (typeof showToast === 'function'){
         showToast(e && e.message === 'no-clipboard-api'

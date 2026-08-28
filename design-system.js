@@ -30,7 +30,8 @@
     'rci-crawford':   'Crawford Regression-Based',
     'premorbid':      'Premorbid Estimation',
     'about':          'Methods & References',
-    'custom-tests':   'Data'
+    'custom-tests':   'Data',
+    'privacy-use':    'Privacy & use'
   };
 
   function setTitleForTarget(target){

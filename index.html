@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
 <link rel="stylesheet" href="styles.css?v=20260801l">
-<link rel="stylesheet" href="design-system.css?v=20260801v">
+<link rel="stylesheet" href="design-system.css?v=20260801z">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -2389,6 +2389,73 @@
     </div>
   </section>
 
+  <!-- ========== PRIVACY AND USE ==========================================
+       Deliberately a permanent, linked page rather than a first-open gate.
+       A blocking splash trains dismissal, and two things already compete for
+       that moment: the auth overlay and the Working Report onboarding bubble.
+       The pointer to here is a one-time toast on first export instead, which
+       fires once and so cannot be trained away.
+
+       The responsibility text lives HERE and not in APA_NOTES. Those notes are
+       read precisely because every sentence in them is specific to the table
+       above; a clause repeated on all of them would turn the note into
+       something to skim. The exported note already carries what a reader needs
+       beside the number: the method, the coefficient basis in force, and the
+       age where one was used.
+       ================================================================== -->
+  <section class="section" id="privacy-use">
+    <div class="eyebrow">Settings &middot; Privacy &amp; use</div>
+    <h1 class="section-title">Privacy &amp; <em>use</em></h1>
+    <p class="section-desc">What happens to the data you enter, and what you are agreeing to when you use these calculators.</p>
+
+    <h2 class="block-title">Where your data goes</h2>
+
+    <h3 class="methods-h3">Nothing you enter is uploaded</h3>
+    <p class="section-body-text">
+      Scores, tables, patient age and everything in the Working Report stay in this browser. The application makes <strong>no network requests of its own</strong>: it contains no analytics, no tracking, no error reporting and no server to send anything to. Every calculation runs on this device, and the whole suite works with no network connection at all.
+    </p>
+    <p class="section-body-text">
+      The one external request is to Google Fonts, which loads the two typefaces the interface is set in. It carries no patient data. Beyond that, the only thing stored anywhere is stored here, on this computer.
+    </p>
+
+    <h3 class="methods-h3">It stays until you clear it</h3>
+    <p class="section-body-text">
+      Entered scores and the saved Working Report persist in this browser's storage between sessions, which is what lets a report survive a reload. That also means <strong>anyone who can open this browser profile can see them</strong>. Use <strong>New patient</strong> in the top bar between patients: it clears every table and the age together, which is why it is one control rather than two.
+    </p>
+
+    <h3 class="methods-h3">The sign-in does not protect anything</h3>
+    <p class="section-body-text">
+      The login screen is a <strong>prototype and is not real authentication</strong>. Any correctly formatted email address and any password will sign in, and Demo mode needs neither. Your name and email are kept in this browser so the app can greet you; the password is discarded immediately and is never stored. Do not treat signing in as a safeguard on patient data, and do not rely on it to keep one clinician's entries from another's. Device-level security is what protects this data.
+    </p>
+
+    <h2 class="block-title">Responsibility for use</h2>
+
+    <h3 class="methods-h3">This is a calculator, not a clinical judgement</h3>
+    <p class="section-body-text">
+      The suite computes and formats. It does not decide anything, and it cannot tell whether the method you have chosen suits the question you are asking. Clinical interpretation rests entirely with you.
+    </p>
+
+    <h3 class="methods-h3">You are responsible for the inputs and the method</h3>
+    <p class="section-body-text">
+      Every result is only as sound as the norms, reliabilities and scores entered to produce it. Verify imported parameters against the current published manual before interpreting them, and satisfy yourself that the method is the right one for the case. Where a figure is a compromise the app says so rather than hiding it: the reliability basis is named in the note under every exported table, and the Data page labels each coefficient with what it actually rests on.
+    </p>
+
+    <h3 class="methods-h3">You are responsible for being qualified to use it</h3>
+    <p class="section-body-text">
+      These instruments are restricted measures. By using this tool you confirm that you hold the training, registration and professional competence required to administer, score and interpret them, and that you are working within your scope of practice and your local service standards. The tool does not check this and cannot.
+    </p>
+
+    <h3 class="methods-h3">Read the note that travels with the table</h3>
+    <p class="section-body-text">
+      Every exported table carries an APA note stating the method used, the reliability basis in force and the age band applied. That note is the record of how the numbers were produced, and it is written to be read by whoever receives the report. Specific cautions are flagged where they apply: OPIE-4 is labelled illustrative-only for UK use because the published equations carry US education, ethnicity and region terms that are not applied here, and the discrepancy base rates on the premorbid page are a parametric normal model rather than observed frequencies.
+    </p>
+
+    <h3 class="methods-h3">Reports produced here are your responsibility</h3>
+    <p class="section-body-text">
+      Output from this tool may end up in clinical records and in medico-legal reports that are scrutinised. Check the numbers before they leave. No warranty is given that any calculation is fit for a particular purpose, and responsibility for anything written on the basis of them is yours.
+    </p>
+  </section>
+
 </main>
 
 <!-- ========== SITE FOOTER (redesign) - secondary navigation ========== -->
@@ -2397,20 +2464,33 @@
     <div class="site-footer-links">
       <button type="button" class="site-footer-link nav-item" data-target="custom-tests">Data</button>
       <button type="button" class="site-footer-link nav-item" data-target="about">Methods &amp; References</button>
+      <button type="button" class="site-footer-link nav-item" data-target="privacy-use">Privacy &amp; use</button>
     </div>
     <div class="ds-version-stamp" title="Build version and last update">
       <span class="ds-version-dot" aria-hidden="true"></span>
       <span id="app-version">v0.2.0 &middot; updated July 2026</span>
     </div>
+    <!-- The standing privacy claim. A clinician about to type a real patient's
+         scores into a website has exactly this question, and until now the only
+         place it was answered was a <meta description> nobody reads. Verified:
+         the app contains no fetch, XHR, sendBeacon, WebSocket or analytics call
+         of its own. Do not soften this to "we do not share your data", which is
+         a weaker and different claim.
+
+         THIRD child on purpose. design-system.css lays the footer out as a
+         `1fr auto 1fr` grid with the version stamp centred, so this has to
+         follow the stamp to land in the right-hand column. Put it before, and
+         it takes the centre slot and pushes the version off-centre. -->
+    <p class="site-footer-privacy">Scores stay in this browser. Nothing is uploaded.</p>
   </div>
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260801c"></script>
-<script src="app.js?v=20260801aa"></script>
-<script src="design-system.js?v=20260801x" defer></script>
+<script src="app.js?v=20260801ac"></script>
+<script src="design-system.js?v=20260801y" defer></script>
 <script src="app-effectsize-page.js?v=20260726b"></script>
-<script src="app-viz-page.js?v=20260730m"></script>
+<script src="app-viz-page.js?v=20260730n"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

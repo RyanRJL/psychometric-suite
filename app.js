@@ -532,12 +532,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* ---------- TOAST ---------- */
 let toastTimer;
-function showToast(msg, isError){
+function showToast(msg, isError, ms){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show' + (isError ? ' error' : '');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.className = 'toast', 2200);
+  toastTimer = setTimeout(() => t.className = 'toast', ms || 2200);
+}
+
+/* ---------- FIRST-EXPORT NOTICE ----------------------------------------
+   Copy is the boundary where a number crosses from this app into a
+   medico-legal document, which makes it the right moment to say that there
+   are terms. It is NOT the right moment to state them: at the instant of
+   copying, "make sure you are qualified" is un-actionable, the clinician
+   having already chosen the method and entered the scores.
+
+   So this fires ONCE, ever, and then never again. A per-copy notice on the
+   app's core output path would be dismissed reflexively within a week, and
+   a notice everyone dismisses is worth little to the user and probably
+   little as evidence that anyone was informed. Once is also why it can be
+   non-blocking: it never gates an export.
+
+   Every copy path routes through here rather than calling showToast
+   directly, so a new export route cannot silently miss it. */
+const EXPORT_NOTICE_KEY = 'paExportNoticeSeen';
+function exportToast(msg){
+  let first = false;
+  try { first = localStorage.getItem(EXPORT_NOTICE_KEY) !== 'true'; }
+  catch(e){ first = false; }   // private mode: confirm the copy, skip the notice
+  if (!first){ showToast(msg); return; }
+  try { localStorage.setItem(EXPORT_NOTICE_KEY, 'true'); } catch(e){}
+  showToast(msg + '  Interpretation and verification rest with you - see Privacy & use in the footer.', false, 9000);
+  /* The toast is white-space:nowrap, sized for "Table copied". This one is a
+     sentence, and on a narrow window a nowrap toast that long runs off the
+     screen. Added after showToast, which assigns className wholesale — which
+     is also what clears it again on the next ordinary toast. */
+  const t = document.getElementById('toast');
+  if (t) t.classList.add('is-longform');
 }
 
 /* ---------- COPY TO CLIPBOARD (rich HTML) ---------- */
@@ -571,7 +602,7 @@ async function copyApaTable(containerId){
     } else {
       await navigator.clipboard.writeText(plain);
     }
-    showToast('✓ Table copied - ready to paste into your report');
+    exportToast('✓ Table copied - ready to paste into your report');
     flashCopiedButton(document.querySelector(`[data-copy="${containerId}"]`));
     if (typeof ReportBundle !== 'undefined' && ReportBundle.showKofiPrompt) ReportBundle.showKofiPrompt();
   } catch(e){
@@ -8057,7 +8088,7 @@ const ReportBundle = (function(){
       } else {
         await navigator.clipboard.writeText(plain);
       }
-      if (typeof showToast === 'function') showToast(`✓ ${blocks.length} table${blocks.length===1?'':'s'} copied`);
+      if (typeof exportToast === 'function') exportToast(`✓ ${blocks.length} table${blocks.length===1?'':'s'} copied`);
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector('[data-rb-action="copy"]'));
       maybeShowKofiToast();
     } catch(e){
@@ -8859,7 +8890,7 @@ ${buildReportHtmlBody()}
       } else {
         await navigator.clipboard.writeText(plain);
       }
-      if (typeof showToast === 'function') showToast('✓ Table copied to clipboard');
+      if (typeof exportToast === 'function') exportToast('✓ Table copied to clipboard');
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector(`[data-rb-item-copy="${id}"]`));
       maybeShowKofiToast();
     } catch(e){
@@ -8946,7 +8977,7 @@ ${buildReportHtmlBody()}
       } else {
         await navigator.clipboard.writeText(plain);
       }
-      if (typeof showToast === 'function') showToast('✓ Merged table copied to clipboard');
+      if (typeof exportToast === 'function') exportToast('✓ Merged table copied to clipboard');
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector(`[data-rb-group-copy="${idKey}"]`));
       maybeShowKofiToast();
     } catch(e){

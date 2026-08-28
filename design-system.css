@@ -4885,6 +4885,70 @@ input[type="number"].ds-age-pop-input{
 .ds-inline-bar-cibasis[hidden]{ display: none !important; }
 
 /* =====================================================================
+   THE LONG-FORM TOAST
+
+   Only the once-ever first-export notice uses this. The ordinary toast is
+   `white-space:nowrap` and sized for "Table copied"; a full sentence in that
+   box runs off a narrow screen.
+
+   A compound rather than a standalone class is deliberate and checked: the
+   only `white-space:nowrap` on .toast is the 0-1-0 rule in styles.css, so
+   0-2-0 wins it outright without !important. The two design-system.css .toast
+   rules set colour and radius and do not touch layout, so nothing here is in
+   contention with them.
+   ===================================================================== */
+.toast.is-longform{
+  white-space: normal;
+  max-width: min(560px, calc(100vw - 32px));
+  text-align: left;
+  line-height: 1.45;
+}
+
+/* =====================================================================
+   THE STANDING PRIVACY LINE
+
+   A standalone class, not a modifier of anything in the footer. `.site-footer`
+   and `.site-footer-links` are each declared in both stylesheets, and this
+   needs no part of that argument.
+
+   Quiet on purpose: it is a reassurance a clinician looks for once, not a
+   banner. It sits in the footer's right-hand grid column and reads as a
+   statement of fact rather than a notice to be dismissed.
+   ===================================================================== */
+.site-footer-privacy{
+  margin: 0;
+  justify-self: end;
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  line-height: 1.4;
+  color: var(--ds-text-subtle);
+  text-align: right;
+}
+/* The footer's three columns are sized for a wide window. Left as a 3-up grid
+   on a narrow one, this sentence gets a 47px column and stacks into a column
+   of single words. Below 900px the footer goes single-column instead.
+
+   Collapsing grid-template-columns is not enough on its own. The version stamp
+   carries `grid-column: 2` to centre it in the wide layout, and an explicit
+   placement into column 2 creates an IMPLICIT second column no matter how few
+   explicit tracks are declared: the row stayed two-up and only got narrower.
+   The placement has to be released as well, which is what the second rule
+   does. Verified on the rendered page, since the computed value is the only
+   thing that shows it. */
+@media (max-width:900px){
+  .site-footer-inner{
+    grid-template-columns: minmax(0,1fr);
+    justify-items: start;
+    gap: var(--ds-space-3);
+  }
+  .site-footer-inner .ds-version-stamp{
+    grid-column: auto;
+    justify-self: start;
+  }
+  .site-footer-privacy{ justify-self: start; text-align: left; }
+}
+
+/* =====================================================================
    NARROW-VIEWPORT CONTAINMENT
 
    Not a mobile layout, and it does not claim to be one. The scores tables
