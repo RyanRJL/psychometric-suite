@@ -15188,11 +15188,14 @@ input[type="number"].ds-age-pop-input{
       symptom is not an error but a strip that simply keeps overflowing.
       Verified by driving the page, not by reading the markup.
 
-   2. Do NOT put overflow on `.bat-table-block`. It contains the
-      missing-age popover (`.ds-age-pop`, position:fixed), and
-      `staggerSectionContent` transforms panel children on page entry — a
-      transformed ancestor makes a fixed child clippable, so the popover
-      would vanish. The overflow goes on the TABLE, never on the block.
+   2. Put the overflow on the TABLE, never on a panel or block that wraps it.
+      A panel can hold a position:fixed popover, and `staggerSectionContent`
+      transforms panel children on page entry: a transformed ancestor makes a
+      fixed child clippable, so an overflow container around it would make the
+      popover vanish rather than scroll. `.bat-table-block` was the specific
+      case when this was written, holding the missing-age popover; that
+      popover has since been replaced by a required inline bar, but the rule
+      is about the shape, not that one element.
    ===================================================================== */
 @media (max-width:900px){
 
@@ -15205,6 +15208,7 @@ input[type="number"].ds-age-pop-input{
   #bat-table,#sdi-table,#rci-basic-table,#rci-practice-table,
   #rci-srb-table,#rci-crawford-table,#pre-predict-table,
   #pre-opiepredict-table,#change-analysis .change-overview-table,
+  #validity .pvt-table,
   .db-table,.methods-table,.es-examples-table{
     display:block !important;
     width:100% !important;
@@ -15216,16 +15220,19 @@ input[type="number"].ds-age-pop-input{
   /* Scrolling, not wrapping: --topbar-h must stay constant, because the
      toast and both popovers position against it. */
   .topnav,
-  #change-analysis .change-method-tabs{
+  #change-analysis .change-method-tabs,
+  #validity .pvt-method-tabs{
     overflow-x:auto !important;
     overflow-y:hidden !important;
     scrollbar-width:none;
     -ms-overflow-style:none;
   }
   .topnav::-webkit-scrollbar,
-  #change-analysis .change-method-tabs::-webkit-scrollbar{display:none}
+  #change-analysis .change-method-tabs::-webkit-scrollbar,
+  #validity .pvt-method-tabs::-webkit-scrollbar{display:none}
   .topnav-item,
-  #change-analysis .change-method-tab{flex-shrink:0 !important}
+  #change-analysis .change-method-tab,
+  #validity .pvt-method-tab{flex-shrink:0 !important}
 
   /* --- Segmented control bars wrap --------------------------------- */
   #battery .ds-prem-card,
@@ -18104,14 +18111,15 @@ input[type="number"].ds-age-pop-input{
       The one external request is to Google Fonts, which loads the two typefaces the interface is set in. It carries no patient data. Beyond that, the only thing stored anywhere is stored here, on this computer.
     </p>
 
-    <h3 class="methods-h3">It stays until you clear it</h3>
+    <h3 class="methods-h3">Patient data lasts only as long as the tab</h3>
     <p class="section-body-text">
-      Entered scores and the saved Working Report persist in this browser's storage between sessions, which is what lets a report survive a reload. That also means <strong>anyone who can open this browser profile can see them</strong>. Use <strong>New patient</strong> in the top bar between patients: it clears every table and the age together, which is why it is one control rather than two.
+      Entered scores and the Working Report are held in <strong>session storage</strong>, which survives a reload of the same tab and nothing else. Closing the tab, the window or the browser clears them. Nothing patient-identifiable is written to disk, and an older version of this app that did keep reports on disk has its leftovers deleted the first time this version loads.
     </p>
-
-    <h3 class="methods-h3">The sign-in does not protect anything</h3>
     <p class="section-body-text">
-      The login screen is a <strong>prototype and is not real authentication</strong>. Any correctly formatted email address and any password will sign in, and Demo mode needs neither. Your name and email are kept in this browser so the app can greet you; the password is discarded immediately and is never stored. Do not treat signing in as a safeguard on patient data, and do not rely on it to keep one clinician's entries from another's. Device-level security is what protects this data.
+      Session storage is per-tab, so two tabs are two independent patient sessions rather than one shared report. Within a tab, use <strong>New patient</strong> in the top bar between patients: it clears every table and the age together, which is why it is one control rather than two.
+    </p>
+    <p class="section-body-text">
+      Two things do persist here deliberately, and neither is patient data: your view preferences, such as drawer width and whether the report drawer starts minimised, and any custom test norms you add on the Data page, which would be worth little if they vanished with the tab.
     </p>
 
     <h2 class="block-title">Responsibility for use</h2>

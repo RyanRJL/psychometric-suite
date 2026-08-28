@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
 <link rel="stylesheet" href="styles.css?v=20260828aa">
-<link rel="stylesheet" href="design-system.css?v=20260828aa">
+<link rel="stylesheet" href="design-system.css?v=20260828ac">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -2866,14 +2866,15 @@
       The one external request is to Google Fonts, which loads the two typefaces the interface is set in. It carries no patient data. Beyond that, the only thing stored anywhere is stored here, on this computer.
     </p>
 
-    <h3 class="methods-h3">It stays until you clear it</h3>
+    <h3 class="methods-h3">Patient data lasts only as long as the tab</h3>
     <p class="section-body-text">
-      Entered scores and the saved Working Report persist in this browser's storage between sessions, which is what lets a report survive a reload. That also means <strong>anyone who can open this browser profile can see them</strong>. Use <strong>New patient</strong> in the top bar between patients: it clears every table and the age together, which is why it is one control rather than two.
+      Entered scores and the Working Report are held in <strong>session storage</strong>, which survives a reload of the same tab and nothing else. Closing the tab, the window or the browser clears them. Nothing patient-identifiable is written to disk, and an older version of this app that did keep reports on disk has its leftovers deleted the first time this version loads.
     </p>
-
-    <h3 class="methods-h3">The sign-in does not protect anything</h3>
     <p class="section-body-text">
-      The login screen is a <strong>prototype and is not real authentication</strong>. Any correctly formatted email address and any password will sign in, and Demo mode needs neither. Your name and email are kept in this browser so the app can greet you; the password is discarded immediately and is never stored. Do not treat signing in as a safeguard on patient data, and do not rely on it to keep one clinician's entries from another's. Device-level security is what protects this data.
+      Session storage is per-tab, so two tabs are two independent patient sessions rather than one shared report. Within a tab, use <strong>New patient</strong> in the top bar between patients: it clears every table and the age together, which is why it is one control rather than two.
+    </p>
+    <p class="section-body-text">
+      Two things do persist here deliberately, and neither is patient data: your view preferences, such as drawer width and whether the report drawer starts minimised, and any custom test norms you add on the Data page, which would be worth little if they vanished with the tab.
     </p>
 
     <h2 class="block-title">Responsibility for use</h2>

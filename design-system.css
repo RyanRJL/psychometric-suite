@@ -4970,11 +4970,14 @@ input[type="number"].ds-age-pop-input{
       symptom is not an error but a strip that simply keeps overflowing.
       Verified by driving the page, not by reading the markup.
 
-   2. Do NOT put overflow on `.bat-table-block`. It contains the
-      missing-age popover (`.ds-age-pop`, position:fixed), and
-      `staggerSectionContent` transforms panel children on page entry — a
-      transformed ancestor makes a fixed child clippable, so the popover
-      would vanish. The overflow goes on the TABLE, never on the block.
+   2. Put the overflow on the TABLE, never on a panel or block that wraps it.
+      A panel can hold a position:fixed popover, and `staggerSectionContent`
+      transforms panel children on page entry: a transformed ancestor makes a
+      fixed child clippable, so an overflow container around it would make the
+      popover vanish rather than scroll. `.bat-table-block` was the specific
+      case when this was written, holding the missing-age popover; that
+      popover has since been replaced by a required inline bar, but the rule
+      is about the shape, not that one element.
    ===================================================================== */
 @media (max-width:900px){
 
@@ -4987,6 +4990,7 @@ input[type="number"].ds-age-pop-input{
   #bat-table,#sdi-table,#rci-basic-table,#rci-practice-table,
   #rci-srb-table,#rci-crawford-table,#pre-predict-table,
   #pre-opiepredict-table,#change-analysis .change-overview-table,
+  #validity .pvt-table,
   .db-table,.methods-table,.es-examples-table{
     display:block !important;
     width:100% !important;
@@ -4998,16 +5002,19 @@ input[type="number"].ds-age-pop-input{
   /* Scrolling, not wrapping: --topbar-h must stay constant, because the
      toast and both popovers position against it. */
   .topnav,
-  #change-analysis .change-method-tabs{
+  #change-analysis .change-method-tabs,
+  #validity .pvt-method-tabs{
     overflow-x:auto !important;
     overflow-y:hidden !important;
     scrollbar-width:none;
     -ms-overflow-style:none;
   }
   .topnav::-webkit-scrollbar,
-  #change-analysis .change-method-tabs::-webkit-scrollbar{display:none}
+  #change-analysis .change-method-tabs::-webkit-scrollbar,
+  #validity .pvt-method-tabs::-webkit-scrollbar{display:none}
   .topnav-item,
-  #change-analysis .change-method-tab{flex-shrink:0 !important}
+  #change-analysis .change-method-tab,
+  #validity .pvt-method-tab{flex-shrink:0 !important}
 
   /* --- Segmented control bars wrap --------------------------------- */
   #battery .ds-prem-card,
