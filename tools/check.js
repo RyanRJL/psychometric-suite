@@ -47,7 +47,8 @@ vm.runInContext(
     ' OPIE_PRORATED_FSIQ, OPIE_PRORATED_GAI, OPIE_PRORATED_INDEX,' +
     ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB,' +
     ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
-    ' PVT_BASE_RATES, PVT_AGGREGATION,' +
+    ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
+    ' PVT_ES_ACCURACY,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -6918,6 +6919,52 @@ check('shipped TOMM evaluation: default cut-offs, failure direction, Bayes wirin
   if (Math.abs(r.rows[0].ppp - expected) > 1e-9) bad.push('T1 PPP is not Bayes on the pinned sens/spec at BR .10');
   r = run({ 'pvt-tomm-ret': '49' });
   if (r.rows.length !== 1 || r.rows[0].fail) bad.push('Retention 49 alone should give one Passing row at < 45');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('published accuracy strings match their sources, and reach screen and export', () => {
+  /* PINNED: Silverberg et al. (2007) Tables 1 & 3 — at > 3 specificity .94
+     (derivation) to 1.00 (mTBI/controls), sensitivity .464-.708 across the
+     three malingering groups; at > 1 specificity .75-.964, sensitivity
+     .667-.917. Schroeder et al. (2012) Tables 2 & 4 — global weighted/
+     Bayesian rates. The ES deliberately has NO pair: its published
+     discrimination is ROC AUC .908 (vs .608 for the EI). */
+  const bad = [];
+  const eq = (got, want, name) => { if (got !== want) bad.push(name + ' drifted: ' + got); };
+  eq(D.PVT_EI_ACCURACY.standard.sens,  '.46–.71',  'EI > 3 sensitivity');
+  eq(D.PVT_EI_ACCURACY.standard.spec,  '.94–1.00', 'EI > 3 specificity');
+  eq(D.PVT_EI_ACCURACY.sensitive.sens, '.67–.92',  'EI > 1 sensitivity');
+  eq(D.PVT_EI_ACCURACY.sensitive.spec, '.75–.96',  'EI > 1 specificity');
+  eq(D.PVT_RDS_ACCURACY.conservative.sens, '.30–.35', 'RDS <= 6 sensitivity');
+  eq(D.PVT_RDS_ACCURACY.conservative.spec, '.96–.97', 'RDS <= 6 specificity');
+  eq(D.PVT_RDS_ACCURACY.traditional.sens,  '.48–.58', 'RDS <= 7 sensitivity');
+  eq(D.PVT_RDS_ACCURACY.traditional.spec,  '.82–.85', 'RDS <= 7 specificity');
+  eq(D.PVT_ES_ACCURACY.auc, '.91', 'ES ROC AUC');
+  if ('sens' in D.PVT_ES_ACCURACY || 'spec' in D.PVT_ES_ACCURACY){
+    bad.push('the ES gained a sens/spec pair — Novitski et al. publish none; that number would be invented');
+  }
+  /* The same strings must reach the summary rows, the APA columns, and the
+     live accuracy lines — one source, three surfaces. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  ['PVT_EI_ACCURACY', 'PVT_RDS_ACCURACY'].forEach(c => {
+    if (!rowsFn.includes(c)) bad.push('getPvtSummaryRows no longer reads ' + c);
+  });
+  const apa = extractFn(APP_SRC, 'renderPvtApa');
+  if (!/Sens\./.test(apa) || !/Spec\./.test(apa)) bad.push('the APA table lost its Sens./Spec. columns');
+  if (!/r\.sens/.test(apa) || !/r\.spec/.test(apa)) bad.push('the APA table no longer prints the row accuracy');
+  const acc = extractFn(APP_SRC, 'renderPvtAccuracy');
+  ['pvt-ei-accuracy', 'pvt-rds-accuracy', 'PVT_EI_ACCURACY', 'PVT_RDS_ACCURACY'].forEach(s => {
+    if (!acc.includes(s)) bad.push('renderPvtAccuracy no longer fills ' + s);
+  });
+  const all = extractFn(APP_SRC, 'renderPvtAll');
+  if (!/renderPvtAccuracy\(\);/.test(all)) bad.push('renderPvtAll no longer refreshes the accuracy lines');
+  /* Every measure tab carries a visible source line naming its papers. */
+  ['Silverberg, Wertheimer &amp; Fichtenberg (2007)', 'Novitski, Steele, Karantzoulis &amp; Randolph (2012)',
+   'Greiffenstein, Baker &amp; Gola (1994)', 'Martin et al. (2020)'].forEach(name => {
+    if (!new RegExp('pvt-source-cite">[^<]*' + name.replace(/[()&;]/g, m => '\\' + m).replace(/\\&amp\;/g, '&amp;')).test(HTML_SRC)
+        && !HTML_SRC.includes(name)) bad.push('the on-tab source line lost ' + name);
+  });
   return bad.length === 0 || bad.join('; ');
 });
 

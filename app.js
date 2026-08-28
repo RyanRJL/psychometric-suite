@@ -3069,14 +3069,17 @@ const APA_NOTES = {
        exported note keeps it — the licensed onScreen difference. */
     ctx.onScreen ? '' :
     'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
-    '"Fail" denotes a score beyond the published cut-off for that measure; it is a cut-off comparison, not a determination of invalidity. No single indicator is a verdict: probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
+    '"Fail" = score beyond the published cut-off — a cut-off comparison, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
+    ctx.hasEsRow || ctx.esGated
+      ? 'Sensitivity and specificity are the published values for the applied cut-off (ranges span the source\'s samples or statistical methods); the Effort Scale publishes no such pair — its discrimination is ROC AUC = .91 (Novitski et al., 2012).'
+      : 'Sensitivity and specificity are the published values for the applied cut-off; ranges span the source\'s samples or statistical methods.',
     ctx.bothRbans
-      ? 'The Effort Index and Effort Scale are computed from the same RBANS subtests and constitute one indicator, not two.'
+      ? 'The Effort Index and Effort Scale share their RBANS subtests and constitute one indicator, not two.'
       : '',
     ctx.esGated
-      ? 'The Effort Scale is reported as not computed because its screening gate (Digit Span < 9, List Recognition < 19, or their sum < 28) was not met; on such a profile the scale is not interpretable (Novitski et al., 2012).'
+      ? 'The Effort Scale is not computed because its screening gate (Digit Span < 9, List Recognition < 19, or their sum < 28) was not met (Novitski et al., 2012).'
       : '',
-    'Cut-offs assume the validation populations of the cited studies; specificity falls substantially in dementia and severe cognitive impairment, and traditional TOMM cut-offs should not be interpreted in suspected or confirmed dementia.'
+    'Specificity falls in dementia and severe impairment; traditional TOMM cut-offs should not be interpreted in suspected or confirmed dementia.'
   ],
   'pre-opiepredict': () => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
@@ -6750,27 +6753,38 @@ function getPvtSummaryRows(){
   if (ei.ei !== undefined) rows.push({
     id: 'ei', group: 'rbans', measure: 'RBANS Effort Index',
     score: String(ei.ei), cutoff: `> ${ei.cut}${ei.cutKey === 'sensitive' ? ' (screening)' : ''}`,
+    sens: PVT_EI_ACCURACY[ei.cutKey].sens, spec: PVT_EI_ACCURACY[ei.cutKey].spec,
     result: pvtStatusWord(ei.fail), fail: ei.fail
   });
   const es = getPvtEs();
+  /* The ES publishes no sensitivity/specificity pair (its discrimination is
+     ROC AUC = .91) — the columns print dashes and the note explains. */
   if (es.gated) rows.push({
     id: 'es', group: 'rbans', measure: 'RBANS Effort Scale',
-    score: '—', cutoff: `< ${PVT_ES.cutoff}`, result: 'Not computed (gate not met)', fail: false, gated: true
+    score: '—', cutoff: `< ${PVT_ES.cutoff}`, sens: '—', spec: '—',
+    result: 'Not computed (gate not met)', fail: false, gated: true
   });
   else if (es.es !== undefined) rows.push({
     id: 'es', group: 'rbans', measure: 'RBANS Effort Scale',
-    score: String(es.es), cutoff: `< ${PVT_ES.cutoff}`, result: pvtStatusWord(es.fail), fail: es.fail
+    score: String(es.es), cutoff: `< ${PVT_ES.cutoff}`, sens: '—', spec: '—',
+    result: pvtStatusWord(es.fail), fail: es.fail
   });
   const rds = getPvtRds();
-  if (rds.rds !== undefined) rows.push({
-    id: 'rds', group: 'rds', measure: 'Reliable Digit Span',
-    score: String(rds.rds), cutoff: `≤ ${rds.cut}${rds.conservative ? ' (conservative)' : ''}`,
-    result: pvtStatusWord(rds.fail), fail: rds.fail
-  });
+  if (rds.rds !== undefined){
+    const acc = PVT_RDS_ACCURACY[rds.conservative ? 'conservative' : 'traditional'];
+    rows.push({
+      id: 'rds', group: 'rds', measure: 'Reliable Digit Span',
+      score: String(rds.rds), cutoff: `≤ ${rds.cut}${rds.conservative ? ' (conservative)' : ''}`,
+      sens: acc.sens, spec: acc.spec,
+      result: pvtStatusWord(rds.fail), fail: rds.fail
+    });
+  }
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
-    score: String(r.score), cutoff: r.cutoff.label.replace(/^.* </, '< '),
+    score: String(r.score), cutoff: `< ${r.cutoff.cut}`,
+    sens: r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, ''),
+    spec: r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, ''),
     result: pvtStatusWord(r.fail), fail: r.fail
   }));
   return rows;
@@ -6800,8 +6814,8 @@ function renderPvtSummary(){
       <div class="pvt-card-kicker">Indicators scored this session</div>
       ${countStat}
       <table class="pvt-table">
-        <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Result</th></tr></thead>
-        <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Sens.</th><th>Spec.</th><th>Result</th></tr></thead>
+        <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td>${r.sens}</td><td>${r.spec}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
       </table>
     </div>`;
 }
@@ -6823,14 +6837,15 @@ function renderPvtApa(){
     <div class="apa-table-num">Table 1</div>
     <div class="apa-table-title">Performance validity indicators</div>
     <table class="apa-table">
-      <thead><tr><th>Measure</th><th class="num">Score</th><th>Cut-off</th><th>Result</th></tr></thead>
-      <tbody>${rows.map(r => `<tr><td>${escapeHtml(r.measure)}</td><td class="num">${escapeHtml(r.score)}</td><td>${escapeHtml(r.cutoff)}</td><td>${escapeHtml(r.result)}</td></tr>`).join('')}</tbody>
+      <thead><tr><th>Measure</th><th class="num">Score</th><th>Cut-off</th><th class="num">Sens.</th><th class="num">Spec.</th><th>Result</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${escapeHtml(r.measure)}</td><td class="num">${escapeHtml(r.score)}</td><td>${escapeHtml(r.cutoff)}</td><td class="num">${escapeHtml(r.sens)}</td><td class="num">${escapeHtml(r.spec)}</td><td>${escapeHtml(r.result)}</td></tr>`).join('')}</tbody>
     </table>
     ${apaNoteHtml('pvt', {
       hasEi: ei.ei !== undefined,
       hasEs: es.es !== undefined,
       esGated: !!es.gated,
       bothRbans: ei.ei !== undefined && es.es !== undefined,
+      hasEsRow: rows.some(r => r.id === 'es'),
       hasTomm: rows.some(r => r.group === 'tomm')
     })}
   `;
@@ -6869,11 +6884,27 @@ function renderPvtNav(){
     c.total > 0 ? (c.failed > 0 ? 'fail' : 'pass') : null);
 }
 
+/* The published-accuracy line beside each cut-off select — same strings the
+   summary table and APA export print, so screen and export cannot differ. */
+function renderPvtAccuracy(){
+  const eiEl = document.getElementById('pvt-ei-accuracy');
+  if (eiEl){
+    const key = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
+    eiEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_EI_ACCURACY[key].sens} · spec. ${PVT_EI_ACCURACY[key].spec} (Silverberg et al., 2007)`;
+  }
+  const rdsEl = document.getElementById('pvt-rds-accuracy');
+  if (rdsEl){
+    const key = document.getElementById('pvt-rds-cutoff')?.value === 'traditional' ? 'traditional' : 'conservative';
+    rdsEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_RDS_ACCURACY[key].sens} · spec. ${PVT_RDS_ACCURACY[key].spec} (Schroeder et al., 2012)`;
+  }
+}
+
 function renderPvtAll(){
   renderPvtEi();
   renderPvtEs();
   renderPvtRds();
   renderPvtTomm();
+  renderPvtAccuracy();
   renderPvtNav();
   renderPvtSummary();
   renderPvtApa();

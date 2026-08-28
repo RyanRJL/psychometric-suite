@@ -1953,6 +1953,33 @@ const PVT_TOMM_CUTOFFS = [
 /* Base-rate options for the PPP/NPP display, as in Martin et al. Tables 16-17. */
 const PVT_BASE_RATES = [0.10, 0.20, 0.30, 0.40, 0.50];
 
+/* Published classification accuracy for the selectable cut-offs, shown on
+   screen and in the APA export. Strings, not numbers, because the sources
+   publish RANGES (across samples or statistical methods) and the app renders
+   what the source prints:
+   - EI (Silverberg et al., 2007): at > 3, specificity .94 in the mixed
+     clinical derivation sample rising to 1.00 in mild TBI and controls
+     (Tables 1 and 3); sensitivity .46-.71 across the clinical, simulated-
+     naive and simulated-coached malingering groups (Table 3). At > 1,
+     specificity .75 (derivation) to .96 (controls); sensitivity .67-.92.
+   - RDS (Schroeder et al., 2012): global rates by weighted average and
+     Bayesian method — at <= 6, sensitivity .30/.35 and specificity .96/.97;
+     at <= 7, sensitivity .48/.58 and specificity .82/.85.
+   - ES (Novitski et al., 2012): NO published sensitivity/specificity pair
+     exists; discrimination is published as ROC AUC = .91 against amnestic
+     patients (vs .61 for the EI in the same comparison). Do not invent a
+     pair — the APA table prints dashes and the note explains.
+   TOMM accuracy lives on PVT_TOMM_CUTOFFS above. Pinned by check.js §38. */
+const PVT_EI_ACCURACY = {
+  standard:  { sens: '.46–.71', spec: '.94–1.00' },
+  sensitive: { sens: '.67–.92', spec: '.75–.96' }
+};
+const PVT_RDS_ACCURACY = {
+  conservative: { sens: '.30–.35', spec: '.96–.97' },
+  traditional:  { sens: '.48–.58', spec: '.82–.85' }
+};
+const PVT_ES_ACCURACY = { auc: '.91' };
+
 /* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
 const PVT_AGGREGATION = [

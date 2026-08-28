@@ -9829,6 +9829,27 @@ body.rb-docked-active{padding-right:0}
 .pvt-refs[open] summary::before{content:'\2212\00a0 '}
 .pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
 
+/* Per-measure source line - the citation the cut-offs come from, plus the
+   published accuracy at the currently selected cut-off (filled by
+   renderPvtAccuracy from the same strings the APA export prints). */
+.pvt-source{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  margin:2px 0 12px;
+  padding:9px 12px;
+  background:rgba(244,240,232,0.55);
+  border:1px solid rgba(20,15,5,0.05);
+  border-radius:var(--r-md);
+  font-family:var(--sans);
+  font-size:10.5px;
+  line-height:1.45;
+  color:#7A766E;
+}
+.pvt-source-cite i{font-style:italic}
+.pvt-source-accuracy{color:#5A5A5A;font-weight:500}
+.pvt-source-accuracy:empty{display:none}
+
 </style>
 <style data-inlined-from="design-system.css">
 /* =============================================================================
@@ -16080,6 +16101,10 @@ input[type="number"].ds-age-pop-input{
               </select>
             </div>
           </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Cut-offs: Silverberg, Wertheimer &amp; Fichtenberg (2007), <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</span>
+            <span class="pvt-source-accuracy" id="pvt-ei-accuracy"></span>
+          </div>
           <details class="formula-disclosure">
             <summary>Formula &amp; weighting table</summary>
             <div class="formula-body">
@@ -16137,6 +16162,10 @@ input[type="number"].ds-age-pop-input{
             </div>
           </div>
           <div class="info-box pvt-note"><strong>Mandatory gate.</strong> Computed only where Digit Span &lt; 9, List Recognition &lt; 19, or their sum &lt; 28 (Novitski et al., 2012).</div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Formula, gate &amp; cut-off: Novitski, Steele, Karantzoulis &amp; Randolph (2012), <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</span>
+            <span class="pvt-source-accuracy">No published sensitivity/specificity pair — discrimination is ROC AUC = .91 vs amnestic patients (vs .61 for the EI).</span>
+          </div>
           <details class="formula-disclosure">
             <summary>Formula</summary>
             <div class="formula-body">
@@ -16177,6 +16206,10 @@ input[type="number"].ds-age-pop-input{
             </div>
           </div>
           <div class="info-box pvt-note"><strong>Classic variant.</strong> Forward + Backward only; the WAIS-IV Sequencing variants use different cut-offs and are not scored here.</div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Scoring: Greiffenstein, Baker &amp; Gola (1994), <i>Psychological Assessment, 6</i>(3), 218–224. Cut-off accuracy: Schroeder et al. (2012), <i>Assessment, 19</i>(1), 21–30.</span>
+            <span class="pvt-source-accuracy" id="pvt-rds-accuracy"></span>
+          </div>
           <details class="formula-disclosure">
             <summary>Scoring &amp; worked example</summary>
             <div class="formula-body">
@@ -16236,6 +16269,9 @@ input[type="number"].ds-age-pop-input{
                 <option value="0.5">50%</option>
               </select>
             </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Test: Tombaugh (1996). Cut-offs &amp; accuracy: Martin et al. (2020), <i>The Clinical Neuropsychologist, 34</i>(1), 88–119 — meta-analytic weighted means, shown per trial in the predictive-power table.</span>
           </div>
           <details class="formula-disclosure">
             <summary>Cut-offs &amp; classification accuracy</summary>
@@ -19360,6 +19396,33 @@ const PVT_TOMM_CUTOFFS = [
 /* Base-rate options for the PPP/NPP display, as in Martin et al. Tables 16-17. */
 const PVT_BASE_RATES = [0.10, 0.20, 0.30, 0.40, 0.50];
 
+/* Published classification accuracy for the selectable cut-offs, shown on
+   screen and in the APA export. Strings, not numbers, because the sources
+   publish RANGES (across samples or statistical methods) and the app renders
+   what the source prints:
+   - EI (Silverberg et al., 2007): at > 3, specificity .94 in the mixed
+     clinical derivation sample rising to 1.00 in mild TBI and controls
+     (Tables 1 and 3); sensitivity .46-.71 across the clinical, simulated-
+     naive and simulated-coached malingering groups (Table 3). At > 1,
+     specificity .75 (derivation) to .96 (controls); sensitivity .67-.92.
+   - RDS (Schroeder et al., 2012): global rates by weighted average and
+     Bayesian method — at <= 6, sensitivity .30/.35 and specificity .96/.97;
+     at <= 7, sensitivity .48/.58 and specificity .82/.85.
+   - ES (Novitski et al., 2012): NO published sensitivity/specificity pair
+     exists; discrimination is published as ROC AUC = .91 against amnestic
+     patients (vs .61 for the EI in the same comparison). Do not invent a
+     pair — the APA table prints dashes and the note explains.
+   TOMM accuracy lives on PVT_TOMM_CUTOFFS above. Pinned by check.js §38. */
+const PVT_EI_ACCURACY = {
+  standard:  { sens: '.46–.71', spec: '.94–1.00' },
+  sensitive: { sens: '.67–.92', spec: '.75–.96' }
+};
+const PVT_RDS_ACCURACY = {
+  conservative: { sens: '.30–.35', spec: '.96–.97' },
+  traditional:  { sens: '.48–.58', spec: '.82–.85' }
+};
+const PVT_ES_ACCURACY = { auc: '.91' };
+
 /* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
 const PVT_AGGREGATION = [
@@ -22441,14 +22504,17 @@ const APA_NOTES = {
        exported note keeps it — the licensed onScreen difference. */
     ctx.onScreen ? '' :
     'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
-    '"Fail" denotes a score beyond the published cut-off for that measure; it is a cut-off comparison, not a determination of invalidity. No single indicator is a verdict: probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
+    '"Fail" = score beyond the published cut-off — a cut-off comparison, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
+    ctx.hasEsRow || ctx.esGated
+      ? 'Sensitivity and specificity are the published values for the applied cut-off (ranges span the source\'s samples or statistical methods); the Effort Scale publishes no such pair — its discrimination is ROC AUC = .91 (Novitski et al., 2012).'
+      : 'Sensitivity and specificity are the published values for the applied cut-off; ranges span the source\'s samples or statistical methods.',
     ctx.bothRbans
-      ? 'The Effort Index and Effort Scale are computed from the same RBANS subtests and constitute one indicator, not two.'
+      ? 'The Effort Index and Effort Scale share their RBANS subtests and constitute one indicator, not two.'
       : '',
     ctx.esGated
-      ? 'The Effort Scale is reported as not computed because its screening gate (Digit Span < 9, List Recognition < 19, or their sum < 28) was not met; on such a profile the scale is not interpretable (Novitski et al., 2012).'
+      ? 'The Effort Scale is not computed because its screening gate (Digit Span < 9, List Recognition < 19, or their sum < 28) was not met (Novitski et al., 2012).'
       : '',
-    'Cut-offs assume the validation populations of the cited studies; specificity falls substantially in dementia and severe cognitive impairment, and traditional TOMM cut-offs should not be interpreted in suspected or confirmed dementia.'
+    'Specificity falls in dementia and severe impairment; traditional TOMM cut-offs should not be interpreted in suspected or confirmed dementia.'
   ],
   'pre-opiepredict': () => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
@@ -26122,27 +26188,38 @@ function getPvtSummaryRows(){
   if (ei.ei !== undefined) rows.push({
     id: 'ei', group: 'rbans', measure: 'RBANS Effort Index',
     score: String(ei.ei), cutoff: `> ${ei.cut}${ei.cutKey === 'sensitive' ? ' (screening)' : ''}`,
+    sens: PVT_EI_ACCURACY[ei.cutKey].sens, spec: PVT_EI_ACCURACY[ei.cutKey].spec,
     result: pvtStatusWord(ei.fail), fail: ei.fail
   });
   const es = getPvtEs();
+  /* The ES publishes no sensitivity/specificity pair (its discrimination is
+     ROC AUC = .91) — the columns print dashes and the note explains. */
   if (es.gated) rows.push({
     id: 'es', group: 'rbans', measure: 'RBANS Effort Scale',
-    score: '—', cutoff: `< ${PVT_ES.cutoff}`, result: 'Not computed (gate not met)', fail: false, gated: true
+    score: '—', cutoff: `< ${PVT_ES.cutoff}`, sens: '—', spec: '—',
+    result: 'Not computed (gate not met)', fail: false, gated: true
   });
   else if (es.es !== undefined) rows.push({
     id: 'es', group: 'rbans', measure: 'RBANS Effort Scale',
-    score: String(es.es), cutoff: `< ${PVT_ES.cutoff}`, result: pvtStatusWord(es.fail), fail: es.fail
+    score: String(es.es), cutoff: `< ${PVT_ES.cutoff}`, sens: '—', spec: '—',
+    result: pvtStatusWord(es.fail), fail: es.fail
   });
   const rds = getPvtRds();
-  if (rds.rds !== undefined) rows.push({
-    id: 'rds', group: 'rds', measure: 'Reliable Digit Span',
-    score: String(rds.rds), cutoff: `≤ ${rds.cut}${rds.conservative ? ' (conservative)' : ''}`,
-    result: pvtStatusWord(rds.fail), fail: rds.fail
-  });
+  if (rds.rds !== undefined){
+    const acc = PVT_RDS_ACCURACY[rds.conservative ? 'conservative' : 'traditional'];
+    rows.push({
+      id: 'rds', group: 'rds', measure: 'Reliable Digit Span',
+      score: String(rds.rds), cutoff: `≤ ${rds.cut}${rds.conservative ? ' (conservative)' : ''}`,
+      sens: acc.sens, spec: acc.spec,
+      result: pvtStatusWord(rds.fail), fail: rds.fail
+    });
+  }
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
-    score: String(r.score), cutoff: r.cutoff.label.replace(/^.* </, '< '),
+    score: String(r.score), cutoff: `< ${r.cutoff.cut}`,
+    sens: r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, ''),
+    spec: r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, ''),
     result: pvtStatusWord(r.fail), fail: r.fail
   }));
   return rows;
@@ -26172,8 +26249,8 @@ function renderPvtSummary(){
       <div class="pvt-card-kicker">Indicators scored this session</div>
       ${countStat}
       <table class="pvt-table">
-        <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Result</th></tr></thead>
-        <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Sens.</th><th>Spec.</th><th>Result</th></tr></thead>
+        <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td>${r.sens}</td><td>${r.spec}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
       </table>
     </div>`;
 }
@@ -26195,14 +26272,15 @@ function renderPvtApa(){
     <div class="apa-table-num">Table 1</div>
     <div class="apa-table-title">Performance validity indicators</div>
     <table class="apa-table">
-      <thead><tr><th>Measure</th><th class="num">Score</th><th>Cut-off</th><th>Result</th></tr></thead>
-      <tbody>${rows.map(r => `<tr><td>${escapeHtml(r.measure)}</td><td class="num">${escapeHtml(r.score)}</td><td>${escapeHtml(r.cutoff)}</td><td>${escapeHtml(r.result)}</td></tr>`).join('')}</tbody>
+      <thead><tr><th>Measure</th><th class="num">Score</th><th>Cut-off</th><th class="num">Sens.</th><th class="num">Spec.</th><th>Result</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${escapeHtml(r.measure)}</td><td class="num">${escapeHtml(r.score)}</td><td>${escapeHtml(r.cutoff)}</td><td class="num">${escapeHtml(r.sens)}</td><td class="num">${escapeHtml(r.spec)}</td><td>${escapeHtml(r.result)}</td></tr>`).join('')}</tbody>
     </table>
     ${apaNoteHtml('pvt', {
       hasEi: ei.ei !== undefined,
       hasEs: es.es !== undefined,
       esGated: !!es.gated,
       bothRbans: ei.ei !== undefined && es.es !== undefined,
+      hasEsRow: rows.some(r => r.id === 'es'),
       hasTomm: rows.some(r => r.group === 'tomm')
     })}
   `;
@@ -26241,11 +26319,27 @@ function renderPvtNav(){
     c.total > 0 ? (c.failed > 0 ? 'fail' : 'pass') : null);
 }
 
+/* The published-accuracy line beside each cut-off select — same strings the
+   summary table and APA export print, so screen and export cannot differ. */
+function renderPvtAccuracy(){
+  const eiEl = document.getElementById('pvt-ei-accuracy');
+  if (eiEl){
+    const key = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
+    eiEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_EI_ACCURACY[key].sens} · spec. ${PVT_EI_ACCURACY[key].spec} (Silverberg et al., 2007)`;
+  }
+  const rdsEl = document.getElementById('pvt-rds-accuracy');
+  if (rdsEl){
+    const key = document.getElementById('pvt-rds-cutoff')?.value === 'traditional' ? 'traditional' : 'conservative';
+    rdsEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_RDS_ACCURACY[key].sens} · spec. ${PVT_RDS_ACCURACY[key].spec} (Schroeder et al., 2012)`;
+  }
+}
+
 function renderPvtAll(){
   renderPvtEi();
   renderPvtEs();
   renderPvtRds();
   renderPvtTomm();
+  renderPvtAccuracy();
   renderPvtNav();
   renderPvtSummary();
   renderPvtApa();

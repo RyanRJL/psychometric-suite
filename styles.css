@@ -9796,3 +9796,24 @@ body.rb-docked-active{padding-right:0}
 .pvt-refs summary::before{content:'+ '}
 .pvt-refs[open] summary::before{content:'\2212\00a0 '}
 .pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
+
+/* Per-measure source line - the citation the cut-offs come from, plus the
+   published accuracy at the currently selected cut-off (filled by
+   renderPvtAccuracy from the same strings the APA export prints). */
+.pvt-source{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  margin:2px 0 12px;
+  padding:9px 12px;
+  background:rgba(244,240,232,0.55);
+  border:1px solid rgba(20,15,5,0.05);
+  border-radius:var(--r-md);
+  font-family:var(--sans);
+  font-size:10.5px;
+  line-height:1.45;
+  color:#7A766E;
+}
+.pvt-source-cite i{font-style:italic}
+.pvt-source-accuracy{color:#5A5A5A;font-weight:500}
+.pvt-source-accuracy:empty{display:none}
