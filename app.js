@@ -7197,6 +7197,53 @@ function renderPvtAccuracy(){
   }
 }
 
+/* ---------- the running rail ----------
+   A single element beside every method panel, so the aggregate picture is
+   in view while the clinician is still entering scores rather than one
+   tab away. It reads the SAME getPvtSummaryRows/pvtIndicatorCounts the
+   Summary tab and the APA export read — three surfaces, one derivation,
+   which is why a measure can never appear scored here and unscored there. */
+const PVT_RAIL_MEASURES = [
+  { tab: 'ei',    group: 'rbans', label: 'RBANS Effort Index',  ids: ['ei'] },
+  { tab: 'es',    group: 'rbans', label: 'RBANS Effort Scale',  ids: ['es'] },
+  { tab: 'rds',   group: 'rds',   label: 'Reliable Digit Span', ids: ['rds'] },
+  { tab: 'ds',    group: 'rds',   label: 'Digit Span indices',  ids: ['ds', 'ds-vocab', 'ds-lsf', 'ds-lsb'] },
+  { tab: 'rey15', group: 'rey15', label: 'Rey 15-Item',         ids: ['rey-recall', 'rey-combo'] },
+  { tab: 'tomm',  group: 'tomm',  label: 'TOMM',                ids: ['tomm'] }
+];
+function renderPvtRail(){
+  const rail = document.getElementById('pvt-rail');
+  if (!rail) return;
+  const rows = getPvtSummaryRows();
+  const c = pvtIndicatorCounts(rows);
+  const current = document.querySelector('#validity .pvt-method-tab.active')?.dataset.pvtTab;
+  const items = PVT_RAIL_MEASURES.map(m => {
+    const mine = rows.filter(r => m.ids.includes(r.id));
+    const scored = mine.length > 0;
+    const flagged = mine.filter(r => r.fail).length;
+    const gated = mine.some(r => r.gated);
+    let val = '—';
+    if (gated) val = 'gated';
+    else if (scored) val = flagged ? `${flagged} flag${flagged === 1 ? '' : 's'}` : 'clear';
+    return `<div class="pvt-rail-item${scored ? '' : ' is-unscored'}${m.tab === current ? ' is-current' : ''}">
+      <span class="pvt-rail-name">${m.label}</span>
+      <span class="pvt-rail-val">${val}</span>
+    </div>`;
+  }).join('');
+  const head = c.total === 0
+    ? '<p class="pvt-rail-empty">Nothing scored yet. Each measure you complete appears here, with a running count of independent indicators.</p>'
+    : `<div class="pvt-rail-count">
+        <span class="pvt-rail-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
+        <span class="pvt-rail-num-sub">independent<br>indicator${c.total === 1 ? '' : 's'}</span>
+      </div>
+      <p class="pvt-rail-note">${c.failed >= 2
+        ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
+        : c.failed === 1
+          ? 'A single failure is a hypothesis to corroborate, not a conclusion.'
+          : 'No indicator beyond its cut-off so far.'}</p>`;
+  rail.innerHTML = `<div class="pvt-rail-kicker">Running summary</div>${head}<div class="pvt-rail-list">${items}</div>`;
+}
+
 function renderPvtAll(){
   renderPvtEi();
   renderPvtEs();
@@ -7206,6 +7253,7 @@ function renderPvtAll(){
   renderPvtTomm();
   renderPvtAccuracy();
   renderPvtNav();
+  renderPvtRail();
   renderPvtSummary();
   renderPvtApa();
 }
@@ -7218,6 +7266,9 @@ function switchPvtTab(name){
   });
   document.querySelectorAll('#validity .pvt-tab-content').forEach(c =>
     c.classList.toggle('active', c.id === 'pvt-' + name));
+  /* The rail would restate the Summary tab's own table beside it. */
+  document.querySelector('#validity .pvt-sheet')?.classList.toggle('is-summary', name === 'summary');
+  renderPvtRail();
 }
 
 function clearPvt(){
