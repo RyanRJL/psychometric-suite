@@ -2007,6 +2007,25 @@ const PVT_DS_ACCURACY = {
 };
 const PVT_DS_VOCABDIFF_BASERATES = { standardization: '7.1%', clinical: '2.8%' };
 
+/* Rey 15-Item Memorization Test with recognition trial (Boone, Salazar, Lu,
+   Warner-Chacon & Razani, 2002, JCEN 24(5), 561-573). Two indices, both
+   from Table 6 (suspect-effort group vs clinic patients / learning-disabled
+   students / controls):
+   - Free recall < 9 (the classic cut-off): sensitivity 46.9%, specificity
+     97.2% / 100% / 98.3% across the three comparison groups.
+   - Combination score = recall + (recognition correct - false positives),
+     cut-off < 20: sensitivity 71.4%, specificity 91.7% / 93.9% / 91.7%.
+   A stand-alone measure sharing no subtest with anything else on the page,
+   so it carries its own summary group and adds a genuine independent
+   indicator. The stimulus page is deliberately NOT reproduced in the app -
+   publishing PVT stimuli alongside their cut-offs is a test-security
+   hazard; the administration script alone is carried in the disclosure. */
+const PVT_REY15 = { recallCutoff: 9, comboCutoff: 20 };
+const PVT_REY15_ACCURACY = {
+  recall: { sens: '.47', spec: '.97–1.00' },
+  combo:  { sens: '.71', spec: '.92–.94' }
+};
+
 /* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
 const PVT_AGGREGATION = [

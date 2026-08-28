@@ -3068,7 +3068,7 @@ const APA_NOTES = {
        on-page references state every measure and citation in full. The
        exported note keeps it — the licensed onScreen difference. */
     ctx.onScreen ? '' :
-    'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); Digit Span scaled score cut-offs per Iverson & Tulsky (2003) and Axelrod et al. (2006); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
+    'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); Digit Span scaled score cut-offs per Iverson & Tulsky (2003) and Axelrod et al. (2006); Rey 15-Item Memorization Test with recognition trial (Boone et al., 2002); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
     '"Fail" = score beyond the published cut-off — a cut-off comparison, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
     ctx.hasEsRow || ctx.esGated
       ? 'Sensitivity and specificity are the published values for the applied cut-off (ranges span the source\'s samples or statistical methods); the Effort Scale publishes no such pair — its discrimination is ROC AUC = .91 (Novitski et al., 2012).'
@@ -6646,6 +6646,27 @@ function getPvtDs(){
   return s;
 }
 
+/* ---------- Rey 15-Item + recognition (Boone et al., 2002) ---------- */
+function getPvtRey(){
+  const recall = pvtInt(document.getElementById('pvt-rey-recall')?.value, 0, 15);
+  const recog  = pvtInt(document.getElementById('pvt-rey-recog')?.value, 0, 15);
+  const fp     = pvtInt(document.getElementById('pvt-rey-fp')?.value, 0, 15);
+  if (recall === undefined && recog === undefined && fp === undefined) return { empty: true };
+  if (recall === null || recog === null || fp === null) return { invalid: true };
+  if (recall === undefined) return { partial: true };   // recognition alone computes nothing
+  const s = { recall, recallFail: recall < PVT_REY15.recallCutoff };
+  /* The combination needs BOTH recognition numbers — a recognition trial
+     with an unrecorded false-positive count is half a score. */
+  if (recog !== undefined && fp !== undefined){
+    s.recog = recog; s.fp = fp;
+    s.combo = recall + (recog - fp);
+    s.comboFail = s.combo < PVT_REY15.comboCutoff;
+  } else if (recog !== undefined || fp !== undefined){
+    s.comboPartial = true;
+  }
+  return s;
+}
+
 /* ---------- TOMM (Martin et al., 2020) ---------- */
 function pvtPPP(sens, spec, br){ return (sens * br) / (sens * br + (1 - spec) * (1 - br)); }
 function pvtNPP(sens, spec, br){ return (spec * (1 - br)) / (spec * (1 - br) + (1 - sens) * br); }
@@ -6755,6 +6776,26 @@ function renderPvtDs(){
   out.innerHTML = pvtResultHtml((s.fail || s.diffFail) ? 'fail' : 'pass', head, detail);
 }
 
+function renderPvtRey(){
+  const out = document.getElementById('pvt-rey15-result');
+  if (!out) return;
+  const s = getPvtRey();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score — the recognition trial alone computes nothing.'); return; }
+  let head = `Free recall = ${s.recall} — ${pvtStatusWord(s.recallFail)} at &lt; ${PVT_REY15.recallCutoff}`;
+  let detail = '';
+  if (s.combo !== undefined){
+    head += `<br>Combination = ${s.combo} — ${pvtStatusWord(s.comboFail)} at &lt; ${PVT_REY15.comboCutoff}`;
+    detail = `${s.recall} + (${s.recog} − ${s.fp}) = ${s.combo}. The combination score is the more sensitive index (.71 vs .47) at comparable specificity (Boone et al., 2002).`;
+  } else if (s.comboPartial){
+    detail = 'Enter both recognition correct and false positives to compute the combination score.';
+  }
+  const anyFail = s.recallFail || !!s.comboFail;
+  if (anyFail && s.combo === undefined) detail = 'Corroborate with an independent, preferably forced-choice, measure.';
+  out.innerHTML = pvtResultHtml(anyFail ? 'fail' : 'pass', head, detail);
+}
+
 function renderPvtTomm(){
   const out = document.getElementById('pvt-tomm-result');
   const power = document.getElementById('pvt-tomm-power');
@@ -6839,6 +6880,22 @@ function getPvtSummaryRows(){
       score: String(ds.diff), cutoff: `≥ ${PVT_DS.vocabDiffCutoff}`,
       sens: '—', spec: '—',
       result: ds.diffFail ? 'Flagged' : 'Not flagged', fail: ds.diffFail
+    });
+  }
+  /* Stand-alone: shares no subtest with anything above, so its own group. */
+  const rey = getPvtRey();
+  if (rey.recall !== undefined){
+    rows.push({
+      id: 'rey-recall', group: 'rey15', measure: 'Rey 15-Item free recall',
+      score: String(rey.recall), cutoff: `< ${PVT_REY15.recallCutoff}`,
+      sens: PVT_REY15_ACCURACY.recall.sens, spec: PVT_REY15_ACCURACY.recall.spec,
+      result: pvtStatusWord(rey.recallFail), fail: rey.recallFail
+    });
+    if (rey.combo !== undefined) rows.push({
+      id: 'rey-combo', group: 'rey15', measure: 'Rey 15-Item combination',
+      score: String(rey.combo), cutoff: `< ${PVT_REY15.comboCutoff}`,
+      sens: PVT_REY15_ACCURACY.combo.sens, spec: PVT_REY15_ACCURACY.combo.spec,
+      result: pvtStatusWord(rey.comboFail), fail: rey.comboFail
     });
   }
   const tomm = getPvtTomm();
@@ -6943,6 +7000,12 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-ds'),
     dsAny ? (dsFail ? 'Fail' : 'Pass') : '—',
     dsAny ? (dsFail ? 'fail' : 'pass') : null);
+  const reyS = getPvtRey();
+  const reyAny = reyS.recall !== undefined;
+  const reyFail = reyAny && (reyS.recallFail || !!reyS.comboFail);
+  pvtChip(document.getElementById('pvt-status-rey15'),
+    reyAny ? (reyFail ? 'Fail' : 'Pass') : '—',
+    reyAny ? (reyFail ? 'fail' : 'pass') : null);
   const tomm = getPvtTomm();
   const tommHas = !!(tomm.rows && tomm.rows.length);
   pvtChip(document.getElementById('pvt-status-tomm'),
@@ -6981,6 +7044,7 @@ function renderPvtAll(){
   renderPvtEs();
   renderPvtRds();
   renderPvtDs();
+  renderPvtRey();
   renderPvtTomm();
   renderPvtAccuracy();
   renderPvtNav();
@@ -7001,7 +7065,7 @@ function switchPvtTab(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -7026,7 +7090,7 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {

@@ -9621,7 +9621,7 @@ body.rb-docked-active{padding-right:0}
 /* ---- Tab strip: white rounded-top sheet ---- */
 .pvt-method-tabs{
   display:grid;
-  grid-template-columns:repeat(6,minmax(140px,1fr));
+  grid-template-columns:repeat(7,minmax(120px,1fr));
   gap:0;
   background:#FFFFFF;
   border:1px solid rgba(20,15,5,0.08);
@@ -16057,7 +16057,7 @@ input[type="number"].ds-age-pop-input{
   <section class="section" id="validity">
     <div class="eyebrow">Performance Validity · Embedded &amp; Stand-Alone PVTs</div>
     <h1 class="section-title">Performance <span class="ink">Validity</span></h1>
-    <p class="section-desc">Score four validity indicators against their published cut-offs, then weigh them together. No single index is a verdict — results are cut-off comparisons only.</p>
+    <p class="section-desc">Score embedded and stand-alone validity indicators against their published cut-offs, then weigh them together. No single index is a verdict — results are cut-off comparisons only.</p>
 
     <div class="pvt-method-tabs" role="tablist" aria-label="Performance validity measures">
       <button type="button" class="pvt-method-tab active" data-pvt-tab="ei" role="tab" aria-selected="true">
@@ -16092,8 +16092,16 @@ input[type="number"].ds-age-pop-input{
         </span>
         <span class="pvt-status" id="pvt-status-ds">—</span>
       </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="rey15" role="tab">
+        <span class="pvt-method-num">05</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Rey 15-Item</span>
+          <span class="pvt-method-meta">Stand-alone · recall + recognition</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-rey15">—</span>
+      </button>
       <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
-        <span class="pvt-method-num">04</span>
+        <span class="pvt-method-num">06</span>
         <span class="pvt-method-main">
           <span class="pvt-method-label">TOMM</span>
           <span class="pvt-method-meta">Stand-alone · forced choice</span>
@@ -16287,7 +16295,7 @@ input[type="number"].ds-age-pop-input{
           <details class="formula-disclosure">
             <summary>Indices &amp; base rates</summary>
             <div class="formula-body">
-              <p>The Digit Span age-corrected scaled score is entered as scored on the record form. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease — Iverson &amp; Tulsky's suspicion guideline. Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from moderate/severe TBI (sens. .75, spec. .69; .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Where a Vocabulary scaled score is entered, the Vocabulary − Digit Span difference is evaluated against Iverson &amp; Tulsky's second index: a difference ≥ 5 occurs in 7.1% of the standardisation sample and 2.8% of the combined clinical sample. Both papers derive from the WAIS-III — document the edition administered.</p>
+              <p>The Digit Span age-corrected scaled score is entered as scored on the record form — the age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease — Iverson &amp; Tulsky's suspicion guideline. Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from moderate/severe TBI (sens. .75, spec. .69; .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Where a Vocabulary scaled score is entered, the Vocabulary − Digit Span difference is evaluated against Iverson &amp; Tulsky's second index: a difference ≥ 5 occurs in 7.1% of the standardisation sample and 2.8% of the combined clinical sample. Both papers derive from the WAIS-III — document the edition administered.</p>
             </div>
           </details>
         </div>
@@ -16296,6 +16304,46 @@ input[type="number"].ds-age-pop-input{
           <details class="pvt-caution">
             <summary><strong>Caution.</strong> Not a stand-alone measure, and it shares its subtest with RDS — the summary counts them as one indicator.</summary>
             <div class="pvt-caution-body">Axelrod et al. explicitly recommend against using the Digit Span scaled score as a stand-alone validity measure — it accounted for a modest share of variance (AUC .77). Genuine impairment can suppress the score: apply the conservative cut-off where real deficits are plausible. Both sources are WAIS-III; the WAIS-IV subtest adds Sequencing to the composite, so an ACSS from a WAIS-IV record is not on the identical metric these cut-offs were derived on.</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Rey 15-Item ===== -->
+    <div class="pvt-tab-content" id="pvt-rey15">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Free recall correct <span class="hint">(0–15)</span></label>
+              <input type="number" min="0" max="15" step="1" id="pvt-rey-recall" placeholder="e.g. 11">
+            </div>
+            <div class="field">
+              <label>Recognition correct <span class="hint">(0–15, optional)</span></label>
+              <input type="number" min="0" max="15" step="1" id="pvt-rey-recog" placeholder="e.g. 13">
+            </div>
+            <div class="field">
+              <label>Recognition false positives <span class="hint">(0–15, optional)</span></label>
+              <input type="number" min="0" max="15" step="1" id="pvt-rey-fp" placeholder="e.g. 1">
+            </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Recognition trial, combination score &amp; accuracy: Boone, Salazar, Lu, Warner-Chacon &amp; Razani (2002), <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</span>
+            <span class="pvt-source-accuracy">Recall &lt; 9: sens. .47 · spec. .97–1.00. Combination &lt; 20: sens. .71 · spec. .92–.94.</span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>Scoring &amp; administration</summary>
+            <div class="formula-body">
+              <p>Combination score = free recall + (recognition correct − false positives), cut-off &lt; 20; the classic free-recall cut-off is &lt; 9 (Boone et al., 2002, Table 6 — the combination raises sensitivity from .47 to .71 at comparable specificity). Administration: expose the stimulus page for 10 seconds ("there are 15 different things so you will have to learn them very quickly"), remove it and have the examinee draw what they remember; then present the recognition page ("on this page are the 15 things I showed you as well as 15 items that were not on the page — circle the things you remember"). The stimulus and recognition pages are deliberately not reproduced here.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-rey15-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> Specificity falls in dementia and intellectual disability — corroborate before concluding.</summary>
+            <div class="pvt-caution-body">The minority of studies reporting low specificity for the &lt; 9 cut-off generally included patients with intellectual disability or dementia, so avoid these cut-offs there. Certain false-positive recognition errors (circling "f", "5", "6" or a pentagon) occurred only in the suspect-effort group and may serve as virtual pathognomonic signs when present, though they are infrequent (Boone et al., 2002).</div>
           </details>
         </div>
       </div>
@@ -16411,6 +16459,7 @@ input[type="number"].ds-age-pop-input{
       <summary>References — Performance Validity</summary>
       <div class="references" id="pvt-references">
         <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
+        <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
         <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
@@ -17473,6 +17522,7 @@ input[type="number"].ds-age-pop-input{
 
       <div class="references-group">Performance validity sources</div>
       <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
+      <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
       <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
       <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224. [Reliable Digit Span: scoring, floor rule and traditional cut-off.]</p>
       <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
@@ -19527,6 +19577,25 @@ const PVT_DS_ACCURACY = {
   sensitive:    { sens: '.75', spec: '.69–.77' }
 };
 const PVT_DS_VOCABDIFF_BASERATES = { standardization: '7.1%', clinical: '2.8%' };
+
+/* Rey 15-Item Memorization Test with recognition trial (Boone, Salazar, Lu,
+   Warner-Chacon & Razani, 2002, JCEN 24(5), 561-573). Two indices, both
+   from Table 6 (suspect-effort group vs clinic patients / learning-disabled
+   students / controls):
+   - Free recall < 9 (the classic cut-off): sensitivity 46.9%, specificity
+     97.2% / 100% / 98.3% across the three comparison groups.
+   - Combination score = recall + (recognition correct - false positives),
+     cut-off < 20: sensitivity 71.4%, specificity 91.7% / 93.9% / 91.7%.
+   A stand-alone measure sharing no subtest with anything else on the page,
+   so it carries its own summary group and adds a genuine independent
+   indicator. The stimulus page is deliberately NOT reproduced in the app -
+   publishing PVT stimuli alongside their cut-offs is a test-security
+   hazard; the administration script alone is carried in the disclosure. */
+const PVT_REY15 = { recallCutoff: 9, comboCutoff: 20 };
+const PVT_REY15_ACCURACY = {
+  recall: { sens: '.47', spec: '.97–1.00' },
+  combo:  { sens: '.71', spec: '.92–.94' }
+};
 
 /* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
@@ -22608,7 +22677,7 @@ const APA_NOTES = {
        on-page references state every measure and citation in full. The
        exported note keeps it — the licensed onScreen difference. */
     ctx.onScreen ? '' :
-    'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); Digit Span scaled score cut-offs per Iverson & Tulsky (2003) and Axelrod et al. (2006); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
+    'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); Digit Span scaled score cut-offs per Iverson & Tulsky (2003) and Axelrod et al. (2006); Rey 15-Item Memorization Test with recognition trial (Boone et al., 2002); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
     '"Fail" = score beyond the published cut-off — a cut-off comparison, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
     ctx.hasEsRow || ctx.esGated
       ? 'Sensitivity and specificity are the published values for the applied cut-off (ranges span the source\'s samples or statistical methods); the Effort Scale publishes no such pair — its discrimination is ROC AUC = .91 (Novitski et al., 2012).'
@@ -26186,6 +26255,27 @@ function getPvtDs(){
   return s;
 }
 
+/* ---------- Rey 15-Item + recognition (Boone et al., 2002) ---------- */
+function getPvtRey(){
+  const recall = pvtInt(document.getElementById('pvt-rey-recall')?.value, 0, 15);
+  const recog  = pvtInt(document.getElementById('pvt-rey-recog')?.value, 0, 15);
+  const fp     = pvtInt(document.getElementById('pvt-rey-fp')?.value, 0, 15);
+  if (recall === undefined && recog === undefined && fp === undefined) return { empty: true };
+  if (recall === null || recog === null || fp === null) return { invalid: true };
+  if (recall === undefined) return { partial: true };   // recognition alone computes nothing
+  const s = { recall, recallFail: recall < PVT_REY15.recallCutoff };
+  /* The combination needs BOTH recognition numbers — a recognition trial
+     with an unrecorded false-positive count is half a score. */
+  if (recog !== undefined && fp !== undefined){
+    s.recog = recog; s.fp = fp;
+    s.combo = recall + (recog - fp);
+    s.comboFail = s.combo < PVT_REY15.comboCutoff;
+  } else if (recog !== undefined || fp !== undefined){
+    s.comboPartial = true;
+  }
+  return s;
+}
+
 /* ---------- TOMM (Martin et al., 2020) ---------- */
 function pvtPPP(sens, spec, br){ return (sens * br) / (sens * br + (1 - spec) * (1 - br)); }
 function pvtNPP(sens, spec, br){ return (spec * (1 - br)) / (spec * (1 - br) + (1 - sens) * br); }
@@ -26295,6 +26385,26 @@ function renderPvtDs(){
   out.innerHTML = pvtResultHtml((s.fail || s.diffFail) ? 'fail' : 'pass', head, detail);
 }
 
+function renderPvtRey(){
+  const out = document.getElementById('pvt-rey15-result');
+  if (!out) return;
+  const s = getPvtRey();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score — the recognition trial alone computes nothing.'); return; }
+  let head = `Free recall = ${s.recall} — ${pvtStatusWord(s.recallFail)} at &lt; ${PVT_REY15.recallCutoff}`;
+  let detail = '';
+  if (s.combo !== undefined){
+    head += `<br>Combination = ${s.combo} — ${pvtStatusWord(s.comboFail)} at &lt; ${PVT_REY15.comboCutoff}`;
+    detail = `${s.recall} + (${s.recog} − ${s.fp}) = ${s.combo}. The combination score is the more sensitive index (.71 vs .47) at comparable specificity (Boone et al., 2002).`;
+  } else if (s.comboPartial){
+    detail = 'Enter both recognition correct and false positives to compute the combination score.';
+  }
+  const anyFail = s.recallFail || !!s.comboFail;
+  if (anyFail && s.combo === undefined) detail = 'Corroborate with an independent, preferably forced-choice, measure.';
+  out.innerHTML = pvtResultHtml(anyFail ? 'fail' : 'pass', head, detail);
+}
+
 function renderPvtTomm(){
   const out = document.getElementById('pvt-tomm-result');
   const power = document.getElementById('pvt-tomm-power');
@@ -26379,6 +26489,22 @@ function getPvtSummaryRows(){
       score: String(ds.diff), cutoff: `≥ ${PVT_DS.vocabDiffCutoff}`,
       sens: '—', spec: '—',
       result: ds.diffFail ? 'Flagged' : 'Not flagged', fail: ds.diffFail
+    });
+  }
+  /* Stand-alone: shares no subtest with anything above, so its own group. */
+  const rey = getPvtRey();
+  if (rey.recall !== undefined){
+    rows.push({
+      id: 'rey-recall', group: 'rey15', measure: 'Rey 15-Item free recall',
+      score: String(rey.recall), cutoff: `< ${PVT_REY15.recallCutoff}`,
+      sens: PVT_REY15_ACCURACY.recall.sens, spec: PVT_REY15_ACCURACY.recall.spec,
+      result: pvtStatusWord(rey.recallFail), fail: rey.recallFail
+    });
+    if (rey.combo !== undefined) rows.push({
+      id: 'rey-combo', group: 'rey15', measure: 'Rey 15-Item combination',
+      score: String(rey.combo), cutoff: `< ${PVT_REY15.comboCutoff}`,
+      sens: PVT_REY15_ACCURACY.combo.sens, spec: PVT_REY15_ACCURACY.combo.spec,
+      result: pvtStatusWord(rey.comboFail), fail: rey.comboFail
     });
   }
   const tomm = getPvtTomm();
@@ -26483,6 +26609,12 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-ds'),
     dsAny ? (dsFail ? 'Fail' : 'Pass') : '—',
     dsAny ? (dsFail ? 'fail' : 'pass') : null);
+  const reyS = getPvtRey();
+  const reyAny = reyS.recall !== undefined;
+  const reyFail = reyAny && (reyS.recallFail || !!reyS.comboFail);
+  pvtChip(document.getElementById('pvt-status-rey15'),
+    reyAny ? (reyFail ? 'Fail' : 'Pass') : '—',
+    reyAny ? (reyFail ? 'fail' : 'pass') : null);
   const tomm = getPvtTomm();
   const tommHas = !!(tomm.rows && tomm.rows.length);
   pvtChip(document.getElementById('pvt-status-tomm'),
@@ -26521,6 +26653,7 @@ function renderPvtAll(){
   renderPvtEs();
   renderPvtRds();
   renderPvtDs();
+  renderPvtRey();
   renderPvtTomm();
   renderPvtAccuracy();
   renderPvtNav();
@@ -26541,7 +26674,7 @@ function switchPvtTab(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -26566,7 +26699,7 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {

@@ -49,6 +49,7 @@ vm.runInContext(
     ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
+    ' PVT_REY15, PVT_REY15_ACCURACY,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -7024,6 +7025,62 @@ check('Digit Span ACSS: cut-offs, accuracy and non-independence (Iverson & Tulsk
   ['Iverson &amp; Tulsky (2003)', 'Axelrod, B. N., Fichtenberg, N. L., Millis, S. R.'].forEach(n => {
     if (!HTML_SRC.includes(n)) bad.push('references lost ' + n);
   });
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('Rey 15-Item: cut-offs, accuracy and independence (Boone et al., 2002)', () => {
+  /* PINNED: Boone et al. (2002) Table 6 — free recall < 9: sensitivity
+     46.9%, specificity 97.2 / 100 / 98.3 across clinic patients, learning-
+     disabled students and controls; combination score
+     recall + (recognition - false positives) < 20: sensitivity 71.4%,
+     specificity 91.7 / 93.9 / 91.7. */
+  const bad = [];
+  if (D.PVT_REY15.recallCutoff !== 9)  bad.push('recall cut-off is not < 9');
+  if (D.PVT_REY15.comboCutoff !== 20)  bad.push('combination cut-off is not < 20');
+  if (D.PVT_REY15_ACCURACY.recall.sens !== '.47' || D.PVT_REY15_ACCURACY.recall.spec !== '.97–1.00'){
+    bad.push('recall accuracy drifted from Table 6');
+  }
+  if (D.PVT_REY15_ACCURACY.combo.sens !== '.71' || D.PVT_REY15_ACCURACY.combo.spec !== '.92–.94'){
+    bad.push('combination accuracy drifted from Table 6');
+  }
+  /* Drive the shipped calculator. */
+  const run = (recall, recog, fp) => {
+    const vals = { 'pvt-rey-recall': recall, 'pvt-rey-recog': recog, 'pvt-rey-fp': fp };
+    const c = {
+      PVT_REY15: D.PVT_REY15,
+      document: { getElementById: id => (id in vals ? { value: vals[id] } : null) }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtRey')
+      + ';globalThis.__R = getPvtRey();', c);
+    return c.__R;
+  };
+  let r = run('8', '', '');
+  if (!r.recallFail) bad.push('recall 8 should Fail at < 9');
+  r = run('9', '13', '1');
+  if (r.recallFail) bad.push('recall 9 should Pass at < 9');
+  if (r.combo !== 21) bad.push('9 + (13 - 1) should give a combination of 21, got ' + r.combo);
+  /* 21 >= 20 - should PASS at < 20. */
+  if (r.comboFail) bad.push('combination 21 should Pass at < 20');
+  r = run('9', '8', '2');
+  if (r.combo !== 15 || !r.comboFail) bad.push('9 + (8 - 2) = 15 should Fail at < 20');
+  r = run('', '13', '1');
+  if (!r.partial) bad.push('recognition alone should compute nothing');
+  r = run('9', '13', '');
+  if (!r.comboPartial || r.combo !== undefined) bad.push('recognition without a false-positive count should not compute a combination');
+  /* Stand-alone: its rows must carry their OWN group, adding a genuine
+     independent indicator - the inverse of the DS/RDS constraint. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  const reyBlock = rowsFn.split('getPvtRey()')[1] || '';
+  if (!/group: 'rey15'/.test(reyBlock) || /group: 'rds'/.test(reyBlock.split('getPvtTomm')[0])){
+    bad.push('the Rey rows are not in their own group - a stand-alone measure must add an independent indicator');
+  }
+  /* The stimulus must stay out of the shipped page - test security. */
+  if (/pvt-rey[^"]*stimulus|rey15[^"]*\.(png|svg|jpg)/i.test(HTML_SRC)){
+    bad.push('a Rey 15-Item stimulus image appears in the page - publishing PVT stimuli beside their cut-offs is a test-security hazard');
+  }
+  if (!HTML_SRC.includes('Boone, K. B., Salazar, X., Lu, P.')) bad.push('references lost Boone et al. (2002)');
   return bad.length === 0 || bad.join('; ');
 });
 

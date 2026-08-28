@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260828o">
-<link rel="stylesheet" href="design-system.css?v=20260828o">
+<link rel="stylesheet" href="styles.css?v=20260828p">
+<link rel="stylesheet" href="design-system.css?v=20260828p">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1326,7 +1326,7 @@
   <section class="section" id="validity">
     <div class="eyebrow">Performance Validity · Embedded &amp; Stand-Alone PVTs</div>
     <h1 class="section-title">Performance <span class="ink">Validity</span></h1>
-    <p class="section-desc">Score four validity indicators against their published cut-offs, then weigh them together. No single index is a verdict — results are cut-off comparisons only.</p>
+    <p class="section-desc">Score embedded and stand-alone validity indicators against their published cut-offs, then weigh them together. No single index is a verdict — results are cut-off comparisons only.</p>
 
     <div class="pvt-method-tabs" role="tablist" aria-label="Performance validity measures">
       <button type="button" class="pvt-method-tab active" data-pvt-tab="ei" role="tab" aria-selected="true">
@@ -1361,8 +1361,16 @@
         </span>
         <span class="pvt-status" id="pvt-status-ds">—</span>
       </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="rey15" role="tab">
+        <span class="pvt-method-num">05</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Rey 15-Item</span>
+          <span class="pvt-method-meta">Stand-alone · recall + recognition</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-rey15">—</span>
+      </button>
       <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
-        <span class="pvt-method-num">04</span>
+        <span class="pvt-method-num">06</span>
         <span class="pvt-method-main">
           <span class="pvt-method-label">TOMM</span>
           <span class="pvt-method-meta">Stand-alone · forced choice</span>
@@ -1556,7 +1564,7 @@
           <details class="formula-disclosure">
             <summary>Indices &amp; base rates</summary>
             <div class="formula-body">
-              <p>The Digit Span age-corrected scaled score is entered as scored on the record form. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease — Iverson &amp; Tulsky's suspicion guideline. Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from moderate/severe TBI (sens. .75, spec. .69; .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Where a Vocabulary scaled score is entered, the Vocabulary − Digit Span difference is evaluated against Iverson &amp; Tulsky's second index: a difference ≥ 5 occurs in 7.1% of the standardisation sample and 2.8% of the combined clinical sample. Both papers derive from the WAIS-III — document the edition administered.</p>
+              <p>The Digit Span age-corrected scaled score is entered as scored on the record form — the age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease — Iverson &amp; Tulsky's suspicion guideline. Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from moderate/severe TBI (sens. .75, spec. .69; .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Where a Vocabulary scaled score is entered, the Vocabulary − Digit Span difference is evaluated against Iverson &amp; Tulsky's second index: a difference ≥ 5 occurs in 7.1% of the standardisation sample and 2.8% of the combined clinical sample. Both papers derive from the WAIS-III — document the edition administered.</p>
             </div>
           </details>
         </div>
@@ -1565,6 +1573,46 @@
           <details class="pvt-caution">
             <summary><strong>Caution.</strong> Not a stand-alone measure, and it shares its subtest with RDS — the summary counts them as one indicator.</summary>
             <div class="pvt-caution-body">Axelrod et al. explicitly recommend against using the Digit Span scaled score as a stand-alone validity measure — it accounted for a modest share of variance (AUC .77). Genuine impairment can suppress the score: apply the conservative cut-off where real deficits are plausible. Both sources are WAIS-III; the WAIS-IV subtest adds Sequencing to the composite, so an ACSS from a WAIS-IV record is not on the identical metric these cut-offs were derived on.</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Rey 15-Item ===== -->
+    <div class="pvt-tab-content" id="pvt-rey15">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Free recall correct <span class="hint">(0–15)</span></label>
+              <input type="number" min="0" max="15" step="1" id="pvt-rey-recall" placeholder="e.g. 11">
+            </div>
+            <div class="field">
+              <label>Recognition correct <span class="hint">(0–15, optional)</span></label>
+              <input type="number" min="0" max="15" step="1" id="pvt-rey-recog" placeholder="e.g. 13">
+            </div>
+            <div class="field">
+              <label>Recognition false positives <span class="hint">(0–15, optional)</span></label>
+              <input type="number" min="0" max="15" step="1" id="pvt-rey-fp" placeholder="e.g. 1">
+            </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Recognition trial, combination score &amp; accuracy: Boone, Salazar, Lu, Warner-Chacon &amp; Razani (2002), <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</span>
+            <span class="pvt-source-accuracy">Recall &lt; 9: sens. .47 · spec. .97–1.00. Combination &lt; 20: sens. .71 · spec. .92–.94.</span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>Scoring &amp; administration</summary>
+            <div class="formula-body">
+              <p>Combination score = free recall + (recognition correct − false positives), cut-off &lt; 20; the classic free-recall cut-off is &lt; 9 (Boone et al., 2002, Table 6 — the combination raises sensitivity from .47 to .71 at comparable specificity). Administration: expose the stimulus page for 10 seconds ("there are 15 different things so you will have to learn them very quickly"), remove it and have the examinee draw what they remember; then present the recognition page ("on this page are the 15 things I showed you as well as 15 items that were not on the page — circle the things you remember"). The stimulus and recognition pages are deliberately not reproduced here.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-rey15-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> Specificity falls in dementia and intellectual disability — corroborate before concluding.</summary>
+            <div class="pvt-caution-body">The minority of studies reporting low specificity for the &lt; 9 cut-off generally included patients with intellectual disability or dementia, so avoid these cut-offs there. Certain false-positive recognition errors (circling "f", "5", "6" or a pentagon) occurred only in the suspect-effort group and may serve as virtual pathognomonic signs when present, though they are infrequent (Boone et al., 2002).</div>
           </details>
         </div>
       </div>
@@ -1680,6 +1728,7 @@
       <summary>References — Performance Validity</summary>
       <div class="references" id="pvt-references">
         <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
+        <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
         <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
@@ -2742,6 +2791,7 @@
 
       <div class="references-group">Performance validity sources</div>
       <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
+      <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
       <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
       <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224. [Reliable Digit Span: scoring, floor rule and traditional cut-off.]</p>
       <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
@@ -2787,11 +2837,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260828o"></script>
-<script src="app.js?v=20260828o"></script>
-<script src="design-system.js?v=20260828o" defer></script>
-<script src="app-effectsize-page.js?v=20260828o"></script>
-<script src="app-viz-page.js?v=20260828o"></script>
+<script src="data.js?v=20260828p"></script>
+<script src="app.js?v=20260828p"></script>
+<script src="design-system.js?v=20260828p" defer></script>
+<script src="app-effectsize-page.js?v=20260828p"></script>
+<script src="app-viz-page.js?v=20260828p"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
