@@ -9708,92 +9708,132 @@ body.rb-docked-active{padding-right:0}
 }
 
 /* ---- running summary rail ----
-   A white card on the sheet, matching the method cards beside it, sticky
-   so it stays in view while the panel scrolls. */
+   A docked progress panel: hairline-divided sections, small-caps kickers,
+   and a label on the left against its value on the right. Colour marks a
+   flag; it never carries the meaning on its own. Sticky, so it stays in
+   view while a long method panel scrolls. */
 .pvt-rail{min-width:0}
 .pvt-rail-card{
   position:sticky;
   top:16px;
-  border:1px solid rgba(20,15,5,0.06);
+  border:1px solid rgba(20,15,5,0.07);
   border-radius:var(--r-md);
   background:#FFFFFF;
-  padding:16px 16px 14px;
+  overflow:hidden;
+}
+.pvt-rail-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:12px 14px;
+  border-bottom:1px solid rgba(20,15,5,0.07);
+}
+.pvt-rail-title{
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.11em;
+  text-transform:uppercase;
+  color:var(--ink);
+}
+.pvt-rail-toggle{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  padding:0;
+  border:0;
+  border-radius:5px;
+  background:transparent;
+  color:#9E9A93;
+  cursor:pointer;
+  transition:background 120ms ease, color 120ms ease, transform 160ms ease;
+}
+.pvt-rail-toggle svg{width:13px;height:13px}
+.pvt-rail-toggle:hover{background:rgba(20,15,5,0.04);color:var(--ink)}
+.pvt-rail-toggle:focus{outline:none}
+.pvt-rail-toggle:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.25)}
+/* Chevron points down when open, right when collapsed. */
+.pvt-rail-card .pvt-rail-toggle{transform:rotate(90deg)}
+.pvt-rail-card.is-collapsed .pvt-rail-toggle{transform:rotate(0deg)}
+.pvt-rail-card.is-collapsed .pvt-rail-body{display:none}
+.pvt-rail-card.is-collapsed .pvt-rail-head{border-bottom:none}
+
+.pvt-rail-section{
+  padding:12px 14px 13px;
+  border-bottom:1px solid rgba(20,15,5,0.07);
 }
 .pvt-rail-kicker{
   font-family:var(--sans);
-  font-size:10px;
+  font-size:9px;
   font-weight:600;
-  letter-spacing:0.12em;
+  letter-spacing:0.13em;
   text-transform:uppercase;
-  color:#7A766E;
-  margin-bottom:12px;
+  color:#A29D95;
+  margin-bottom:8px;
 }
-/* The headline count, toned by the published decision rule: clear, one
-   (a hypothesis), two or more (probable invalidity). */
 .pvt-rail-stat{
   display:flex;
   align-items:baseline;
-  gap:9px;
-  padding:10px 12px;
-  border-radius:var(--r-md);
-  background:rgba(244,240,232,0.7);
-  border-left:3px solid var(--border);
+  justify-content:space-between;
+  gap:10px;
+  padding:3px 0;
 }
-.pvt-rail-stat.is-pass{border-left-color:#2e7d4f;background:rgba(46,125,79,0.05)}
-.pvt-rail-stat.is-warn{border-left-color:#8a7a2c;background:rgba(138,122,44,0.05)}
-.pvt-rail-stat.is-fail{border-left-color:#9c3d2a;background:rgba(156,61,42,0.05)}
-.pvt-rail-num{
+.pvt-rail-stat-label{font-family:var(--sans);font-size:11.5px;color:var(--ink);line-height:1.3}
+.pvt-rail-stat-value{
   font-family:var(--mono);
-  font-size:23px;
+  font-size:12.5px;
   font-weight:600;
   color:var(--ink);
-  line-height:1;
   font-variant-numeric:tabular-nums;
+  white-space:nowrap;
 }
-.pvt-rail-stat.is-fail .pvt-rail-num{color:#9c3d2a}
-.pvt-rail-stat.is-pass .pvt-rail-num{color:#2e7d4f}
-.pvt-rail-sep{color:var(--faint);margin:0 1px}
-.pvt-rail-stat-label{font-family:var(--sans);font-size:10px;color:var(--muted);line-height:1.35}
-.pvt-rail-note{font-family:var(--sans);font-size:11px;color:var(--muted);line-height:1.5;margin:10px 0 0}
-.pvt-rail-empty{font-family:var(--sans);font-size:11.5px;color:var(--muted);line-height:1.55;font-style:italic;margin:0}
+.pvt-rail-stat.is-flagged .pvt-rail-stat-value{color:#9c3d2a}
+.pvt-rail-sep{color:var(--faint);margin:0 1px;font-weight:400}
+.pvt-rail-hint{
+  font-family:var(--sans);
+  font-size:10.5px;
+  color:#918C84;
+  line-height:1.5;
+  margin:7px 0 0;
+}
 
-/* Grouped by independent indicator; a two-measure group is bracketed and
-   labelled, so "counts as one" is visible rather than only stated. */
-.pvt-rail-groups{margin-top:14px;display:flex;flex-direction:column;gap:12px}
-.pvt-rail-group.is-shared{
-  border-left:2px solid rgba(20,15,5,0.09);
-  padding-left:9px;
-  margin-left:1px;
-}
+/* Grouped by independent indicator; a two-measure group is labelled, so
+   "counts as one" is visible rather than only stated in the note. */
+.pvt-rail-group{margin-bottom:9px}
+.pvt-rail-group:last-child{margin-bottom:0}
 .pvt-rail-group-head{
   display:flex;
   align-items:baseline;
   justify-content:space-between;
   gap:6px;
-  margin-bottom:3px;
+  margin-bottom:1px;
 }
 .pvt-rail-group-name{
   font-family:var(--sans);
-  font-size:9.5px;
+  font-size:9px;
   font-weight:600;
   letter-spacing:0.1em;
   text-transform:uppercase;
-  color:#9E9A93;
+  color:#A29D95;
 }
 .pvt-rail-group-tag{
   font-family:var(--sans);
   font-size:8.5px;
-  letter-spacing:0.06em;
+  letter-spacing:0.05em;
   text-transform:uppercase;
-  color:#B0AAA1;
+  color:#BCB6AD;
 }
 .pvt-rail-row{
   display:flex;
-  align-items:flex-start;
-  gap:8px;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
   width:100%;
-  padding:6px 8px;
-  margin:0 -8px;
+  padding:4px 6px;
+  margin:0 -6px;
   border:0;
   border-radius:5px;
   background:transparent;
@@ -9805,27 +9845,44 @@ body.rb-docked-active{padding-right:0}
 .pvt-rail-row:focus{outline:none}
 .pvt-rail-row:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
 .pvt-rail-row.is-current{background:rgba(156,61,42,0.06)}
-.pvt-rail-icon{display:flex;align-items:center;height:15px;flex:0 0 auto;color:#B0AAA1}
-.pvt-rail-row.is-flag .pvt-rail-icon{color:#9c3d2a}
-.pvt-rail-row.is-pass .pvt-rail-icon{color:#2e7d4f}
-.pvt-rail-row.is-gated .pvt-rail-icon{color:#8a7a2c}
-.pvt-rail-text{display:flex;flex-direction:column;gap:1px;min-width:0}
-.pvt-rail-name{font-family:var(--sans);font-size:11.5px;color:var(--ink);line-height:1.25}
-.pvt-rail-row.is-idle .pvt-rail-name{color:#A8A29A}
-.pvt-rail-detail{font-family:var(--sans);font-size:9.5px;color:#9E9A93;line-height:1.3}
-.pvt-rail-row.is-flag .pvt-rail-detail{color:#9c3d2a}
-
-.pvt-rail-progress{margin-top:14px;padding-top:11px;border-top:1px solid rgba(20,15,5,0.06)}
-.pvt-rail-bar{
-  display:block;
-  height:3px;
-  border-radius:2px;
-  background:rgba(20,15,5,0.07);
-  overflow:hidden;
-  margin-bottom:6px;
+.pvt-rail-label{
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:var(--ink);
+  line-height:1.35;
+  min-width:0;
 }
-.pvt-rail-bar > span{display:block;height:100%;background:#9C3D2A;border-radius:2px;transition:width 200ms ease}
-.pvt-rail-progress-text{font-family:var(--sans);font-size:9.5px;color:#9E9A93;letter-spacing:0.02em}
+.pvt-rail-row.is-idle .pvt-rail-label{color:#A8A29A}
+.pvt-rail-value{
+  font-family:var(--sans);
+  font-size:10.5px;
+  color:#918C84;
+  line-height:1.4;
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+.pvt-rail-row.is-flag .pvt-rail-value{color:#9c3d2a;font-weight:600}
+.pvt-rail-row.is-pass .pvt-rail-value{color:#2e7d4f}
+.pvt-rail-row.is-gated .pvt-rail-value{color:#8a7a2c}
+
+.pvt-rail-cta{
+  display:block;
+  width:100%;
+  padding:11px 14px;
+  border:0;
+  background:transparent;
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.02em;
+  color:#9C3D2A;
+  text-align:left;
+  cursor:pointer;
+  transition:background 120ms ease;
+}
+.pvt-rail-cta:hover{background:rgba(156,61,42,0.05)}
+.pvt-rail-cta:focus{outline:none}
+.pvt-rail-cta:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
 @keyframes pvt-panel-in{
   from{ opacity:0; transform:translateY(-4px); }
   to  { opacity:1; transform:translateY(0); }

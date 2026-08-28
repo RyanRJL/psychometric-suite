@@ -7421,59 +7421,68 @@ function renderPvtRail(){
   const c = pvtIndicatorCounts(rows);
   const current = document.querySelector('#validity .pvt-method-tab.active')?.dataset.pvtTab;
 
-  let scoredMeasures = 0, totalMeasures = 0;
-  const groupsHtml = PVT_RAIL_GROUPS.map(g => {
-    const membersHtml = g.members.map(m => {
-      totalMeasures++;
+  /* Status reads as words in a right-hand column, the way a progress panel
+     states a value against its label — colour marks a flag rather than
+     carrying the meaning on its own. */
+  let scored = 0, total = 0;
+  const groups = PVT_RAIL_GROUPS.map(g => {
+    const members = g.members.map(m => {
+      total++;
       const mine = rows.filter(r => m.ids.includes(r.id));
       const gated = mine.some(r => r.gated);
-      const scored = mine.length > 0 && !gated;
-      if (mine.length) scoredMeasures++;
+      if (mine.length) scored++;
       const flagged = mine.filter(r => r.fail).length;
-      const state = gated ? 'gated' : !scored ? 'idle' : flagged ? 'flag' : 'pass';
-      const detail = gated ? 'gate not met'
-        : !scored ? 'not scored'
-        : flagged ? `${flagged} beyond cut-off`
+      const state = gated ? 'gated' : !mine.length ? 'idle' : flagged ? 'flag' : 'pass';
+      const value = gated ? 'gate not met'
+        : !mine.length ? 'not scored'
+        : flagged ? `${flagged} flagged`
         : 'within cut-offs';
       return `<button type="button" class="pvt-rail-row is-${state}${m.tab === current ? ' is-current' : ''}" data-rail-tab="${m.tab}">
-        <span class="pvt-rail-icon">${PVT_RAIL_ICON[state]}</span>
-        <span class="pvt-rail-text">
-          <span class="pvt-rail-name">${m.label}</span>
-          <span class="pvt-rail-detail">${detail}</span>
-        </span>
+        <span class="pvt-rail-label">${m.label}</span>
+        <span class="pvt-rail-value">${value}</span>
       </button>`;
     }).join('');
-    const shared = g.members.length > 1;
-    return `<div class="pvt-rail-group${shared ? ' is-shared' : ''}">
+    return `<div class="pvt-rail-group">
       <div class="pvt-rail-group-head">
         <span class="pvt-rail-group-name">${g.label}</span>
-        ${shared ? '<span class="pvt-rail-group-tag">counts as one</span>' : ''}
-      </div>
-      ${membersHtml}
-    </div>`;
+        ${g.members.length > 1 ? '<span class="pvt-rail-group-tag">counts as one</span>' : ''}
+      </div>${members}</div>`;
   }).join('');
 
-  const tone = c.failed >= 2 ? 'is-fail' : c.failed === 1 ? 'is-warn' : c.total ? 'is-pass' : '';
-  const stat = c.total === 0
-    ? '<p class="pvt-rail-empty">Score a measure and its indicator appears here, with a running count.</p>'
-    : `<div class="pvt-rail-stat ${tone}">
-        <span class="pvt-rail-num">${c.failed}<span class="pvt-rail-sep">/</span>${c.total}</span>
-        <span class="pvt-rail-stat-label">independent indicator${c.total === 1 ? '' : 's'}<br>beyond cut-off</span>
-      </div>
-      <p class="pvt-rail-note">${c.failed >= 2
-        ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
-        : c.failed === 1
-          ? 'A single failure is a hypothesis to corroborate, not a conclusion.'
-          : 'Nothing beyond its cut-off so far.'}</p>`;
-  const pct = totalMeasures ? Math.round((scoredMeasures / totalMeasures) * 100) : 0;
+  const hint = c.total === 0
+    ? 'Score a measure to start the count.'
+    : c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
+    : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion.'
+    : 'Nothing beyond its cut-off so far.';
 
-  rail.innerHTML = `<div class="pvt-rail-card">
-    <div class="pvt-rail-kicker">Running summary</div>
-    ${stat}
-    <div class="pvt-rail-groups">${groupsHtml}</div>
-    <div class="pvt-rail-progress">
-      <span class="pvt-rail-bar"><span style="width:${pct}%"></span></span>
-      <span class="pvt-rail-progress-text">${scoredMeasures} of ${totalMeasures} measures scored</span>
+  /* The collapse state lives on the rail, which survives this re-render;
+     the card is rebuilt from it so screen and ARIA cannot drift. */
+  const collapsed = rail.classList.contains('is-collapsed');
+  rail.innerHTML = `<div class="pvt-rail-card${collapsed ? ' is-collapsed' : ''}">
+    <div class="pvt-rail-head">
+      <span class="pvt-rail-title">Progress</span>
+      <button type="button" class="pvt-rail-toggle" data-rail-toggle aria-label="${collapsed ? 'Expand' : 'Collapse'} summary" aria-expanded="${collapsed ? 'false' : 'true'}">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg>
+      </button>
+    </div>
+    <div class="pvt-rail-body">
+      <div class="pvt-rail-section">
+        <div class="pvt-rail-kicker">Indicators</div>
+        <div class="pvt-rail-stat${c.failed ? ' is-flagged' : ''}">
+          <span class="pvt-rail-stat-label">Flagged</span>
+          <span class="pvt-rail-stat-value">${c.failed}<span class="pvt-rail-sep">/</span>${c.total}</span>
+        </div>
+        <div class="pvt-rail-stat">
+          <span class="pvt-rail-stat-label">Measures scored</span>
+          <span class="pvt-rail-stat-value">${scored}<span class="pvt-rail-sep">/</span>${total}</span>
+        </div>
+        <p class="pvt-rail-hint">${hint}</p>
+      </div>
+      <div class="pvt-rail-section">
+        <div class="pvt-rail-kicker">By indicator</div>
+        ${groups}
+      </div>
+      <button type="button" class="pvt-rail-cta" data-rail-tab="summary">Full summary &amp; APA table →</button>
     </div>
   </div>`;
 }
@@ -7547,6 +7556,17 @@ function setupPvtPage(){
   /* The rail doubles as navigation — delegated, because it re-renders on
      every keystroke and bound handlers would not survive. */
   document.getElementById('pvt-rail')?.addEventListener('click', e => {
+    if (e.target.closest('[data-rail-toggle]')){
+      const card = document.querySelector('#pvt-rail .pvt-rail-card');
+      const btn = e.target.closest('[data-rail-toggle]');
+      const collapsed = card?.classList.toggle('is-collapsed');
+      btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      btn.setAttribute('aria-label', collapsed ? 'Expand summary' : 'Collapse summary');
+      /* The state must survive the next re-render, which happens on every
+         keystroke — so it lives on the rail, not only on the card. */
+      document.getElementById('pvt-rail')?.classList.toggle('is-collapsed', !!collapsed);
+      return;
+    }
     const row = e.target.closest('[data-rail-tab]');
     if (row) switchPvtTab(row.dataset.railTab);
   });
