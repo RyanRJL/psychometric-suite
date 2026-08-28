@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260827b">
-<link rel="stylesheet" href="design-system.css?v=20260827b">
+<link rel="stylesheet" href="styles.css?v=20260828a">
+<link rel="stylesheet" href="design-system.css?v=20260828a">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1010,18 +1010,13 @@
 
            Declared here rather than built by design-system.js so app.js can
            wire it at init — same reason #bat-ci-level is declared here. -->
-      <div class="ds-age-pop" id="bat-age-pop" role="dialog"
-           aria-label="Add the patient's age to sharpen these intervals">
-        <span class="ds-age-pop-arrow" aria-hidden="true"></span>
-        <div class="ds-age-pop-title">Add the patient’s age?</div>
-        <div class="ds-age-pop-body" id="bat-age-pop-body"></div>
-        <div class="ds-age-pop-row">
-          <input type="number" id="bat-age-pop-input" class="ds-age-pop-input"
-                 min="5" max="90" step="1" placeholder="e.g. 72" aria-label="Patient age">
-          <button type="button" class="ds-age-pop-add" id="bat-age-pop-add">Add</button>
-        </div>
-        <button type="button" class="ds-age-pop-skip" id="bat-age-pop-skip">Skip — use all-ages</button>
-      </div>
+      <!-- Required-age bar: shown by refreshBatteryAgePrompt whenever a row in
+           the table reads the patient age and none is entered. Inline and
+           non-dismissable on purpose — it replaced a skippable popover that
+           was anchored to the CI toggle (and so pointed its arrow at the 90%
+           button) and proved too easy to ignore. Standalone classes per the
+           CSS cascade note in CLAUDE.md. -->
+      <div class="bat-age-required-bar" id="bat-age-required" hidden></div>
 
       <table class="input-table raw-hidden" id="bat-table">
       <thead>
@@ -2385,11 +2380,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260827b"></script>
-<script src="app.js?v=20260827b"></script>
-<script src="design-system.js?v=20260827b" defer></script>
-<script src="app-effectsize-page.js?v=20260827b"></script>
-<script src="app-viz-page.js?v=20260827b"></script>
+<script src="data.js?v=20260828a"></script>
+<script src="app.js?v=20260828a"></script>
+<script src="design-system.js?v=20260828a" defer></script>
+<script src="app-effectsize-page.js?v=20260828a"></script>
+<script src="app-viz-page.js?v=20260828a"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

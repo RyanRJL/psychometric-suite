@@ -3576,22 +3576,18 @@ check('the premorbid Age box says it is a mirror', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the missing-age prompt and the topbar pip share one predicate', () => {
-  /* They are opposite halves of the same question — "does anything here read an
-     age?" — asked once with an age set and once without. Computed separately,
-     a table could show the prompt and light the pip at the same time, or show
-     neither. Routing both through batteryAgeBandRowCount() makes that
-     unrepresentable rather than merely unlikely. */
+check('the required-age bar and the topbar pip share one predicate', () => {
+  /* Bar (age blank) and pip (age set) are opposite halves of "does anything
+     here read an age?". Both route through batteryAgeBandRowCount() — the bar
+     via batteryAgeWanted() — so a table cannot demand an age while the topbar
+     implies nothing reads one, or vice versa. */
   const bad = [];
-  /* The predicate is a sum of two halves. The reliability half must stay
-     CI-gated (a by-age coefficient changes nothing printed while the interval
-     is off); the base-rate half must NOT be (those rows read the age to score
-     at all). Both must exclude seeded example rows. */
   const count = extractFn(APP_SRC, 'batteryAgeBandRowCount');
   const ciHalf = extractFn(APP_SRC, 'batteryCiAgeBandRowCount');
   const brHalf = extractFn(APP_SRC, 'batteryBaseRateRowCount');
   const inUse = extractFn(APP_SRC, 'patientAgeIsInUse');
   const prompt = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+  const wanted = extractFn(APP_SRC, 'batteryAgeWanted');
   if (!/batteryRowUsesAgeBand/.test(ciHalf)) bad.push('the reliability half does not test which rows read an age band');
   if (!/bat-ci-level/.test(ciHalf)) bad.push('the reliability half ignores the CI level, so it speaks when no interval is printed');
   if (!/batteryBaseRateEntry/.test(brHalf)) bad.push('the base-rate half does not test which rows are base-rate scored');
@@ -3599,147 +3595,78 @@ check('the missing-age prompt and the topbar pip share one predicate', () => {
   if (!/batteryCiAgeBandRowCount\(\)/.test(count) || !/batteryBaseRateRowCount\(\)/.test(count)) {
     bad.push('the shared predicate no longer sums its two halves');
   }
+  if (!/batteryAgeBandRowCount\(\) > 0/.test(wanted)) bad.push('the bar condition no longer routes through the shared predicate');
+  if (!/patientAge\(\) === null/.test(wanted)) bad.push('the bar condition no longer requires the age to be absent');
+  if (!/batteryAgeWanted\(\)/.test(prompt)) bad.push('the refresh does not use the shared condition');
   if (!/batteryAgeBandRowCount\(\)/.test(inUse)) bad.push('the pip no longer routes through the shared predicate');
-  if (!/batteryAgeBandRowCount\(\)/.test(prompt)) bad.push('the prompt no longer routes through the shared predicate');
-  /* Seeded example rows are not the clinician's data and must not be counted
+  /* Seeded example rows are not the clinician\'s data and must not be counted
      into a claim about "measures in this table". */
   if (!/isExample/.test(ciHalf)) bad.push('example rows are counted as real measures (reliability half)');
   if (!/isExample/.test(brHalf)) bad.push('example rows are counted as real measures (base-rate half)');
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the missing-age popover is edge-triggered, not state-triggered', () => {
-  /* renderBattery() runs on EVERY keystroke in the table. Opening whenever the
-     condition holds would re-open the popover continuously while a clinician
-     types scores, which is the difference between a prompt and a fault. It
-     must fire on the transition into the condition instead. */
-  const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+check('the required-age bar is inline, state-driven, and cannot be dismissed', () => {
+  /* THE BAR REPLACED A POPOVER, deliberately (owner decision, 2026-08). The
+     popover was an OFFER — skippable, edge-triggered, anchored to the Score
+     CI toggle — and that stopped being right twice over: base-rate rows made
+     the age load-bearing for scoring, and the CI-toggle anchor drew its
+     arrow at the 90% button while the message talked about scoring. The
+     replacement is an inline element above the table: REQUIRED in
+     presentation (no skip, no outside-click dismissal, it stays until an age
+     is entered) and state-driven (an inline element cannot re-open
+     annoyingly, so the whole edge/arming machinery died with the popover).
+
+     Note this REVERSES the old "the gate must not ask about the table\'s
+     contents" rule. That rule belonged to the offer, whose generic branch
+     kept a CI-only ask from feeling arbitrary; a REQUIREMENT shown on a
+     table where nothing reads the age would be a false claim, so the bar is
+     gated on actual readers (batteryAgeBandRowCount() > 0). */
   const bad = [];
-  if (!/batAgePopLastWanted/.test(fn)) bad.push('nothing records the previous state, so this cannot be edge-triggered');
-  if (!/!batAgePopLastWanted/.test(fn)) bad.push('the open is not gated on the condition having just become true');
-  if (!/batAgePopLastWanted = wanted/.test(fn)) bad.push('the previous state is never updated, so it fires once and never again');
-  /* NO ARMING FLAG. The edge itself gives "once per switch-on", and it re-opens
-     whenever the condition drops and returns — CI off then on, or an age
-     entered then cleared. An earlier version limited it to once per patient and
-     needed a flag re-armed by the reset controls; that flag was the source of
-     the "it never re-shows" complaint, because only one of the two reset
-     buttons re-armed it. Removing the concept removed the whole bug class. */
-  if (/batAgePopArmed/.test(APP_SRC)) {
-    bad.push('the once-per-patient arming flag is back; the edge trigger alone is the rule now');
-  }
-  if (!/if \(wanted && !batAgePopLastWanted\) openBatteryAgePop/.test(fn)) {
-    bad.push('the open is not driven by the bare edge');
+  const prompt = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+  if (!/bar\.hidden = !wanted/.test(prompt)) bad.push('the bar is not driven by the live condition');
+  if (/LastWanted|JustOpened|Armed/.test(prompt)) bad.push('edge/arming machinery is back — the bar is state-driven');
+  if (!/dataset\.sig/.test(prompt)) bad.push('the bar is rewritten on every keystroke, which clobbers a half-typed age in its own input');
+  if (!/id="bat-age-required"/.test(HTML_SRC)) bad.push('the bar is missing from index.html');
+  if (/bat-age-pop/.test(HTML_SRC)) bad.push('the old popover markup is back');
+  if (/Skip . use all-ages/.test(HTML_SRC)) bad.push('a skip control is back — the age is required now');
+  const barHtml = extractFn(APP_SRC, 'batteryAgeBarHtml');
+  if (/skip|dismiss|close/i.test(barHtml)) bad.push('the bar offers a dismissal control');
+  /* [hidden] + own display:flex is the cascade trap CLAUDE.md records — the
+     stylesheet must re-assert it. */
+  if (!/\.bat-age-required-bar\[hidden\]\{display:none\}/.test(CSS_SRC)) {
+    bad.push('the bar\'s own display outranks [hidden] — the exact trap CLAUDE.md records');
   }
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the click that opens the popover does not also dismiss it', () => {
-  /* IT SHIPPED BROKEN THIS WAY, and nothing here could see it. The popover
-     opens from inside renderBattery(), which usually runs DURING a click —
-     "Add selected tests", the CI toggle, a row edit. That same click keeps
-     bubbling to the document-level outside-click handler, which finds a
-     popover that is now open with a target outside it, and closes it. Net
-     result on the real UI: OPEN immediately followed by CLOSE, nothing on
-     screen, and no error.
-
-     Every check and every browser probe missed it because they called
-     renderBattery() directly, so no click was ever in flight. The lesson is in
-     the guard, not just the fix: the dismissal must ignore the opening click.
-
-     An earlier version special-cased the CI toggle by selector, which fixed one
-     route and left autofill — the commonest one — broken. The guard has to be
-     about WHEN, not about which element. */
-  const open = extractFn(APP_SRC, 'openBatteryAgePop');
+check('the required-age bar demands, with counts that agree in number', () => {
+  /* Every clause agrees with its count — subject, verb, pronoun — written out
+     per branch, never assembled from fragments ("1 measure ... publish their
+     reliability" is what fragment-assembly produced on the first pass of the
+     old popover). Both halves have singular and plural forms, and the base-
+     rate half states the consequence: unscored until the age is entered. */
+  const open = extractFn(APP_SRC, 'batteryAgeBarHtml');
   const bad = [];
-  if (!/batAgePopJustOpened = true/.test(open)) bad.push('opening does not mark itself, so the same click can dismiss it');
-  if (!/setTimeout\(\(\) => \{ batAgePopJustOpened = false; \}, 0\)/.test(open)) {
-    bad.push('the just-opened flag is never cleared, so outside-click dismissal dies entirely');
-  }
-  /* The document click handler must consult it. Grab the handler that mentions
-     the skip button, which is the popover's own click delegate. */
-  const i = APP_SRC.indexOf("bat-age-pop-skip'");
-  const handler = i < 0 ? '' : APP_SRC.slice(i, i + 1200);
-  if (!/if \(batAgePopJustOpened\) return;/.test(handler)) {
-    bad.push('the outside-click handler does not skip the opening click');
-  }
-  /* And it must not have regressed to naming a specific control. */
-  if (/Score confidence interval"\]'\)\) return;/.test(handler)) {
-    bad.push('the guard is back to exempting one selector, which leaves every other open route broken');
-  }
+  if (!/Patient age required/.test(open)) bad.push('the bar no longer states the requirement');
+  if (!/1 measure<\/strong> in this table is scored/.test(open)) bad.push('no singular base-rate clause');
+  if (!/measures<\/strong> in this table are scored/.test(open)) bad.push('no plural base-rate clause');
+  if (!/stays unscored until the age is entered/.test(open)) bad.push('the singular base-rate clause does not state the consequence');
+  if (!/stay unscored until the age is entered/.test(open)) bad.push('the plural base-rate clause does not state the consequence');
+  if (!/publishes its reliability/.test(open)) bad.push('no singular reliability clause');
+  if (!/publish their reliability/.test(open)) bad.push('no plural reliability clause');
+  if (!/bat-age-bar-input/.test(open) || !/bat-age-bar-add/.test(open)) bad.push('the bar has no age input of its own — the fastest way to answer the ask is gone');
+  /* Non-blocking even though required: no modal, no backdrop. */
+  if (/aria-modal|backdrop/i.test(open)) bad.push('the bar behaves as a modal');
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the missing-age popover opens whenever the interval is on with no age', () => {
-  /* THE RULE, and it is deliberately not conditioned on the table's contents:
-     a clinician who switches confidence intervals on has said they care about
-     interval width, and cannot be expected to know which instruments tabulate
-     reliability by age band. Requiring an age-band measure made the prompt feel
-     arbitrary and kept it silent in the case people actually hit. */
-  const wanted = extractFn(APP_SRC, 'batteryAgeWanted');
-  const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
-  const open = extractFn(APP_SRC, 'openBatteryAgePop');
-  const bad = [];
-  if (!/patientAge\(\) === null/.test(wanted)) bad.push('it does not require the age to be absent, so it can nag with one set');
-  if (!/bat-ci-level/.test(wanted) || !/!== 'off'/.test(wanted)) {
-    bad.push('it is not gated on the interval being switched on');
-  }
-  if (/batteryAgeBandRowCount/.test(wanted)) {
-    bad.push('the open is gated on age-band measures again, which is the rule that was replaced');
-  }
-  if (!/batteryAgeWanted\(\)/.test(fn)) bad.push('the refresh does not use the shared condition');
-  if (!/closeBatteryAgePop\(\)/.test(fn)) bad.push('it never closes itself when the condition stops holding');
-  /* Class, not [hidden]: the attribute lost this exact fight before, because
-     an element's own display outranked the browser default. */
-  if (!/classList\.add\('is-open'\)/.test(open)) bad.push('the popover is not opened by a class');
-  if (/\.hidden\s*=/.test(open)) bad.push('the popover is gated on [hidden] — the cascade trap CLAUDE.md records');
-  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
-  const css = DS_CSS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s*\{/g, '{');
-  if (!/\.ds-age-pop\{[^}]*display:\s*none/.test(css)) bad.push('.ds-age-pop is not display:none by default');
-  if (!/\.ds-age-pop\.is-open\{[^}]*display:\s*block/.test(css)) bad.push('.is-open never reveals the popover');
-  if (!/id="bat-age-pop"/.test(HTML_SRC)) bad.push('the popover is missing from index.html');
-  /* Rows and CI level change without the age being touched. */
-  if (!/refreshBatteryAgePrompt\(\)/.test(extractFn(APP_SRC, 'renderBattery'))) {
-    bad.push('renderBattery never refreshes it');
-  }
-  return bad.length === 0 || bad.join('; ');
-});
-
-check('the missing-age popover offers, and never scolds or blocks', () => {
-  /* A blank age is legitimate and citable — those measures fall back to the
-     publisher's own all-ages coefficient — so this must not read as a
-     validation failure OR as something that has to be answered before work can
-     continue. CLAUDE.md: never make the age required. */
-  const open = extractFn(APP_SRC, 'openBatteryAgePop');
-  const bad = [];
-  if (!/all-ages coefficient/.test(open)) bad.push('it does not say what happens if the age is left blank');
-  [/\brequired\b/i, /\bmust\b/i, /\berror\b/i, /\binvalid\b/i, /\bmissing\b/i, /\bplease\b/i].forEach((re) => {
-    if (re.test(open)) bad.push('the wording reads as a validation error (' + re.source + ')');
-  });
-  /* Every clause agrees with the count. The first version of this text read
-     "1 measure ... publish their reliability" — the failure fragment-assembly
-     produces. Both branches are written out and both are pinned. */
-  if (!/1 measure/.test(open)) bad.push('it does not name the number of measures');
-  if (!/publishes its reliability/.test(open)) bad.push('no singular clause — one measure will take a plural verb');
-  if (!/publish their reliability/.test(open)) bad.push('no plural clause');
-  if (!/it uses the published all-ages coefficient/.test(open)) bad.push('the singular fallback sentence disagrees in number');
-  if (!/they use the published all-ages coefficient/.test(open)) bad.push('the plural fallback sentence disagrees in number');
-  /* The skip must name the alternative, not merely dismiss. */
-  if (!/Skip . use all-ages/.test(HTML_SRC)) bad.push('the skip does not name the alternative it selects');
-  /* NON-BLOCKING. No backdrop, no warning colouring, no full-viewport cover. */
-  if (/backdrop-element|is-modal|aria-modal="true"/.test(open + HTML_SRC)) bad.push('the popover behaves as a modal');
-  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
-  const block = (DS_CSS.match(/\.ds-age-pop\{[\s\S]*?\n\}/) || [''])[0];
-  if (/--ds-warning|--ds-destructive/.test(block)) bad.push('the popover is styled as a warning');
-  if (/inset:\s*0/.test(block)) bad.push('the popover covers the viewport — that is a modal');
-  return bad.length === 0 || bad.join('; ');
-});
-
-check('committing from the popover pulses the field the value landed in', () => {
-  /* The popover sits over the table, so the field that ends up holding the age
+check('committing from the bar pulses the field the value landed in', () => {
+  /* The bar sits over the table, so the field that ends up holding the age
      is in the top bar, where the clinician was not looking. The pulse answers
-     "where did that go?". Only on commit FROM THE POPOVER — a field that
+     "where did that go?". Only on commit FROM THE BAR — a field that
      pulsed while you typed directly into it would read as an error. */
-  const commit = extractFn(APP_SRC, 'commitBatteryAgePop');
+  const commit = extractFn(APP_SRC, 'commitBatteryAgeBar');
   const pulse = extractFn(APP_SRC, 'pulsePatientAgeField');
   const bad = [];
   if (!/pulsePatientAgeField\(\)/.test(commit)) bad.push('committing an age does not pulse the field');
@@ -3753,7 +3680,7 @@ check('committing from the popover pulses the field the value landed in', () => 
     bad.push('the animation is not restarted, so a second commit does nothing');
   }
   if (!/clearTimeout/.test(pulse)) bad.push('overlapping pulses leave a stale timer that strips the class early');
-  /* The topbar input's own listener must NOT pulse — that is the direct-typing
+  /* The topbar input\'s own listener must NOT pulse — that is the direct-typing
      path, and pulsing on every keystroke would be constant motion. */
   const direct = APP_SRC.slice(APP_SRC.indexOf("getElementById('patient-age')?.addEventListener"), APP_SRC.indexOf("getElementById('patient-age')?.addEventListener") + 600);
   if (/pulsePatientAgeField/.test(direct)) bad.push('typing directly into the field pulses it on every keystroke');
@@ -3769,98 +3696,33 @@ check('committing from the popover pulses the field the value landed in', () => 
   return bad.length === 0 || bad.join('; ');
 });
 
-check('switching the interval off and on asks again', () => {
-  /* The popover is limited to once per SWITCH-ON, by the edge alone. So the
-     way to be asked again is to switch the interval off and back on, or to
-     clear the age — both drop the condition and let it rise again. There is no
-     arming flag to go stale, which is what the previous design got wrong: it
-     asked once per patient and only one of the two reset buttons re-enabled
-     it, so clearing the table and autofilling again got silence. */
-  const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+check('pageZoomFactor survives the popover it was written for', () => {
+  /* body{zoom:0.9} splits measurement into two coordinate spaces. The consent
+     card\'s pill stacking still divides by pageZoomFactor(), behind a typeof
+     guard — so if the definition vanished with the popover that first needed
+     it, the call site would silently fall back to 1 and reintroduce the exact
+     systematic-offset bug CLAUDE.md records. */
   const bad = [];
-  if (!/batAgePopLastWanted = wanted/.test(fn)) {
-    bad.push('the edge state is never updated from the live condition, so it fires once and never again');
-  }
-  if (!/if \(!wanted\) closeBatteryAgePop\(\)/.test(fn)) {
-    bad.push('it does not close when the condition drops, so the edge can never rise again');
-  }
-  /* Switching CI off must actually re-render, or the condition never drops and
-     the edge can never rise a second time. Both halves of that chain: the
-     buttons write to the hidden input and dispatch, and app.js re-renders on it. */
-  const DS_SRC = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
-  if (!/ciInput\.dispatchEvent\(new Event\('change'/.test(DS_SRC)) {
-    bad.push('the CI buttons do not dispatch change, so app.js never re-renders on a switch');
-  }
-  if (!/getElementById\('bat-ci-level'\)\.addEventListener\('change', renderBattery\)/.test(APP_SRC)) {
-    bad.push('nothing re-renders the table when the CI level changes');
+  if (!/function pageZoomFactor\(\)/.test(APP_SRC)) bad.push('pageZoomFactor is no longer defined');
+  if (!/pageZoomFactor === 'function' \? pageZoomFactor\(\)/.test(APP_SRC)) {
+    bad.push('nothing consumes pageZoomFactor any more — if that is deliberate, delete it and this check together');
   }
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the popover positions itself in one coordinate space, not two', () => {
-  /* styles.css sets body{zoom:0.9} — a deliberate global 10% downscale. That
-     splits measurement in two, and mixing the halves is silent:
-
-       getBoundingClientRect()  VISUAL px  (already scaled)
-       offsetWidth              LAYOUT px  (unscaled — 320 for a box occupying
-                                            282 visual px)
-       style.top / style.left   LAYOUT px  (the browser applies the zoom)
-
-     The first version read rects and offsetWidth together and wrote the result
-     back unscaled, putting the popover 19px ABOVE its anchor and 58px off
-     centre. Nothing threw and no check noticed; it was found by measuring the
-     rendered page. These assertions pin the fix. */
-  /* Comments stripped: this function's own prose names offsetWidth in order to
-     warn against it, and a bare match would flag the warning as the offence. */
-  const fn = extractFn(APP_SRC, 'positionBatteryAgePop')
-               .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-  const bad = [];
-  if (/offsetWidth/.test(fn)) bad.push('offsetWidth is layout px and is being mixed with visual-px rects');
-  if (!/pageZoomFactor\(\)/.test(fn)) bad.push('the page zoom is not accounted for when writing style.top/left');
-  if (!/\/ z\)/.test(fn)) bad.push('nothing divides by the zoom on the way out');
-  /* Read from the element, never hardcoded — changing the 0.9 in styles.css
-     must not silently break the anchoring. */
-  const zf = extractFn(APP_SRC, 'pageZoomFactor');
-  if (!/getComputedStyle\(document\.body\)\.zoom/.test(zf)) bad.push('the zoom factor is not read from the page');
-  if (/0\.9/.test(zf)) bad.push('the zoom factor is hardcoded');
-  if (!/\|\| 1|\? z :/.test(zf)) bad.push('no fallback where zoom is unsupported, so positioning would become NaN');
-  /* And the value it compensates for must still be there. */
-  const CSS = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
-  if (!/body\{[^}]*zoom:\s*0?\.9/.test(CSS)) {
-    bad.push('body zoom is gone from styles.css — re-derive this, the compensation may now be wrong');
-  }
-  return bad.length === 0 || bad.join('; ');
-});
-
-check('a skipped or missed popover still leaves a trace on the field', () => {
-  /* The popover is transient and fires once per patient. If it is skipped, or
-     fires while the clinician is looking at the table rather than the top bar,
-     the message is gone. The residual .is-wanted state is what stops that
-     being lost — state-driven, so it cannot go stale. */
+check('the residual trace on the field survives, driven by the same condition as the bar', () => {
+  /* The bar lives on one page; the dashed .is-wanted field in the topbar is
+     the trace that follows the clinician everywhere else. Both are driven by
+     batteryAgeWanted(), which requires actual readers AND a blank age — so
+     is-wanted and is-live (age set, being read) stay mutually exclusive by
+     construction. */
   const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
   const bad = [];
-  if (!/classList\.toggle\('is-wanted'/.test(fn)) bad.push('the field carries no residual state');
+  if (!/classList\.toggle\('is-wanted', wanted\)/.test(fn)) bad.push('the field carries no residual state, or it stopped sharing the bar\'s condition');
   const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
   if (!/\.ds-patient-field\.is-wanted\s*\{/.test(DS_CSS)) bad.push('.is-wanted has no styling, so the trace is invisible');
-  /* THE RESIDUAL IS A NARROWER CLAIM THAN THE POPOVER, and must stay so. The
-     popover asks "intervals are on and you have no age — want to add one?";
-     the dashed field asserts "an age would actually sharpen something here",
-     which is only true where a measure publishes reliability by age band. They
-     shared one predicate while they made the same claim; since the popover
-     stopped requiring age-band measures they must not, or the field would
-     assert something untrue on a CVLT-3 table. */
-  if (!/is-wanted', batteryAgeBandRowCount\(\) > 0/.test(fn)) {
-    bad.push('the residual no longer requires an age-band measure, so it claims an age helps where it does not');
-  }
-  /* is-wanted (age blank, would be read) and is-live (age set, being read) stay
-     mutually exclusive by construction — one needs an age, the other needs
-     none. If they ever overlap, the field claims both at once. */
-  if (!/patientAge\(\) === null/.test(fn.slice(fn.indexOf("is-wanted")))) {
-    bad.push('is-wanted no longer requires a blank age, so it can co-occur with is-live');
-  }
   return bad.length === 0 || bad.join('; ');
 });
-
 
 check('an out-of-range age is explained rather than left blank', () => {
   const src = extractFn(APP_SRC, 'calcPremorbid');
@@ -6754,8 +6616,53 @@ check('a base-rate row is withheld until the age is entered and inside its band'
   if (!/text: '', kind: 'baseRate', hint: ageState/.test(cell)) bad.push('the refused cell no longer keeps its export text empty');
   const cls = extractFn(APP_SRC, 'batteryClassificationDetails');
   if (!/batteryBaseRateAgeState\(r\) !== 'ok'/.test(cls)) bad.push('a withheld row still classifies');
+  /* The required-age bar covers base-rate rows through the shared predicate:
+     batteryAgeWanted routes through batteryAgeBandRowCount, whose sum
+     includes batteryBaseRateRowCount (both pinned in §26). */
   const wanted = extractFn(APP_SRC, 'batteryAgeWanted');
-  if (!/batteryBaseRateRowCount\(\) > 0/.test(wanted)) bad.push('the missing-age popover no longer opens for base-rate rows');
+  if (!/batteryAgeBandRowCount\(\) > 0/.test(wanted)) bad.push('the required-age bar no longer covers base-rate rows');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('one dropdown entry per base-rate family, and rows auto-reband to the age', () => {
+  /* The band of a base-rate family is a mechanical function of the (now
+     required) patient age, so the Score Tables dropdown offers ONE entry per
+     family instead of fourteen selectable bands, and renderBattery re-points
+     rows at the band containing the age when they disagree. WMS-IV must NOT
+     come this way: its groups are separate batteries, a clinical choice
+     (§30), and familyGroupIsBaseRate is false for them. */
+  const bad = [];
+  const build = extractFn(APP_SRC, 'buildFamilyListHtml');
+  if (!/familyGroupIsBaseRate/.test(build)) bad.push('the flat list no longer collapses base-rate families');
+  if (!/band set by age/.test(build)) bad.push('the no-age entry no longer says the band follows the age');
+  const isBr = extractFn(APP_SRC, 'familyGroupIsBaseRate');
+  if (!/baseRates/.test(isBr) || /separateBattery/.test(isBr)) bad.push('familyGroupIsBaseRate no longer separates base-rate from separate-battery (WMS-IV) families');
+  const render = extractFn(APP_SRC, 'renderBattery');
+  if (!/baseRateGroupForAge/.test(render)) bad.push('rows are no longer auto-rebanded when the age changes');
+  /* Drive the shipped finder over the shipped DB — the thing under test is
+     the interaction with normDB's actual shape, per the §33 principle. */
+  const c = { getMergedDB: () => D.normDB };
+  vm.createContext(c);
+  vm.runInContext(
+    extractFn(APP_SRC, 'familyBaseName') + ';' + extractFn(APP_SRC, 'hasAgeBandSuffix') + ';'
+    + extractFn(APP_SRC, 'ageBandRange') + ';' + extractFn(APP_SRC, 'baseRateGroupForAge')
+    + ';globalThis.__F = baseRateGroupForAge;', c);
+  const f = c.__F;
+  const G16 = 'WAIS-IV Longest Span (Process) · Ages 16-17';
+  if (f(G16, 'Longest Digit Span Backward', 85) !== 'WAIS-IV Longest Span (Process) · Ages 85-90'){
+    bad.push('an 85-year-old\'s digit span does not reband to the 85-90 table');
+  }
+  if (f(G16, 'Longest Digit Span Backward', 22) !== 'WAIS-IV Longest Span (Process) · Ages 20-24'){
+    bad.push('a 22-year-old\'s digit span does not reband to the 20-24 table');
+  }
+  /* Per MEASURE, not per family: LNS is published only to 65-69, so a
+     70-year-old has a band for the digit spans and none for LNS. */
+  if (f(G16, 'Longest Letter-Number Sequence', 70) !== null){
+    bad.push('LNS rebands past its published ceiling of 65-69 — the target must publish the measure');
+  }
+  if (f(G16, 'Longest Digit Span Backward', 12) !== null){
+    bad.push('a paediatric age found a WAIS-IV band — nothing below 16 is published');
+  }
   return bad.length === 0 || bad.join('; ');
 });
 

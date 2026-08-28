@@ -9532,3 +9532,33 @@ body.rb-docked-active{padding-right:0}
    per-row cell display would shift every other row's columns left. */
 #bat-table.raw-hidden.raw-forced .bat-raw-cell{display:table-cell}
 #bat-table.raw-hidden.raw-forced .bat-raw-head{display:table-cell}
+
+/* THE REQUIRED-AGE BAR (#bat-age-required) — replaced the anchored popover.
+   Standalone classes throughout. Two deliberate details:
+   - the bar is toggled with the [hidden] ATTRIBUTE, and its own display:flex
+     would outrank the browser's [hidden] default — the exact cascade trap
+     CLAUDE.md records — so [hidden] is re-asserted explicitly below;
+   - required tone: --warn accents, but no modal, no backdrop — it demands
+     without blocking the rest of the page. */
+.bat-age-required-bar{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  margin:0 0 14px;padding:12px 16px;
+  background:rgba(139,58,46,0.06);
+  border:1px solid rgba(139,58,46,0.28);
+  border-left:4px solid var(--warn);
+  border-radius:8px;
+}
+.bat-age-required-bar[hidden]{display:none}
+.bat-age-bar-main{flex:1 1 320px;min-width:260px}
+.bat-age-bar-title{font-family:var(--sans);font-weight:700;font-size:13.5px;color:var(--warn);margin-bottom:2px}
+.bat-age-bar-body{font-family:var(--sans);font-size:13px;color:var(--ink-2);line-height:1.5}
+.bat-age-bar-row{display:flex;gap:8px;align-items:center}
+.bat-age-bar-input{
+  width:96px;padding:7px 10px;font-size:14px;
+  border:1px solid rgba(20,15,5,0.25);border-radius:6px;background:#fff;
+}
+.bat-age-bar-add{
+  padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;
+  color:#fff;background:var(--warn);border:none;border-radius:6px;cursor:pointer;
+}
+.bat-age-bar-add:hover{filter:brightness(1.08)}

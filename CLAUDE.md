@@ -249,7 +249,7 @@ the **first-run onboarding bubble** (offering a table to someone who has not yet
 been told there is a report to put it in is the wrong order), and the **pills**,
 which stack above the card off its *measured* height. That measurement crosses
 the `body{zoom:0.9}` boundary — `getBoundingClientRect` is visual px, `style.bottom`
-is layout px — so it divides by `pageZoomFactor()`, same as `positionBatteryAgePop`.
+is layout px — so it divides by `pageZoomFactor()`.
 
 Only the method **on screen** offers, tested on the panel rather than the APA
 container (which is inside the hidden `.apa-wrap`, so testing it would find nothing
@@ -475,84 +475,74 @@ and from `navigateTo()` (the page changes with neither changing). The pip is tog
 **class**, never `[hidden]` — the element it replaced used the attribute and stayed on
 screen, because its own `display:flex` outranked the browser default.
 
-#### The missing-age popover
+#### The required-age bar
 
-`#bat-age-pop` is a glass popover anchored to the **Score CI toggle** — the control that
-creates the moment a blank age starts costing a sharper interval. It carries its own age
-input, so the ask is also the fastest way to answer it; the value is written through to
-`#patient-age`, which stays the master.
+`#bat-age-required` is an inline bar directly above the Score Tables table, shown
+whenever **any row actually reads the patient age and none is entered** —
+`batteryAgeWanted()`, which is `batteryAgeBandRowCount() > 0 && patientAge() === null`.
+The count sums two halves: CI-gated reliability-by-age rows
+(`batteryCiAgeBandRowCount`) and CI-independent base-rate rows
+(`batteryBaseRateRowCount`), whose *scoring* is withheld without an age. The bar
+carries its own age input, writing through to `#patient-age` (the master) and
+pulsing it on commit.
 
-**The rule is: the interval is on and no age is stored.** That is the whole condition —
-`batteryAgeWanted()`. It deliberately does **not** ask whether this table holds measures
-publishing reliability by age band. An earlier version did, and it was wrong in practice:
-a clinician who switches confidence intervals on has said they care about interval width,
-and cannot be expected to know which instruments tabulate by band. Requiring a qualifying
-measure made the prompt feel arbitrary and kept it silent in the case people actually hit.
-`check.js` §26 fails if that gate comes back.
+**It is required in presentation** — no skip, no outside-click dismissal, it stays
+until an age is entered — and **state-driven, not edge-triggered**: an inline
+element cannot re-open annoyingly, so no edge or arming flags exist. It is
+rewritten only when its message changes (`dataset.sig`), so a table keystroke
+re-render never clobbers a half-typed age in the bar's own input. Its clauses
+agree with their counts, singular and plural written out per branch. Because it is
+toggled with `[hidden]` while carrying its own `display:flex`, the stylesheet
+re-asserts `[hidden]{display:none}` — the cascade trap above.
 
-Because the table may now hold **no** age-band measures, the body text has a third branch:
-a generic sentence for `n === 0`, since a count sentence would read "0 measures … publish
-their reliability". All three branches agree in subject, verb and pronoun, and all three
-are pinned.
+**This replaced a dismissable popover (owner decision, 2026-08), and the history
+matters before anyone reintroduces one.** The popover was an *offer* — a blank age
+was legitimate because by-age reliability falls back to the published all-ages
+coefficient. Two things ended it: base-rate rows made the age load-bearing for
+scoring itself, not just interval width; and the popover was anchored to the Score
+CI toggle, so once it could open with the interval untouched it drew its arrow at
+the 90% button while talking about scoring. It was also simply too easy to ignore.
+The old rule "the gate must not ask about the table's contents" reversed with it:
+a *requirement* shown on a table where nothing reads the age would be a false
+claim, so the bar is gated on actual readers. The blank-age CI fallback itself is
+unchanged — with the bar unanswered, by-age reliability rows still print the
+published all-ages interval (both paths citable); only base-rate rows blank.
+`check.js` §26 pins all of it: the shared predicate and its two halves, the
+state-driven no-dismiss shape, the count agreement, the pulse, and the residual.
 
-**Edge-triggered, not state-triggered.** `renderBattery()` runs on every keystroke in the
-table, so opening whenever the condition holds would re-open it continuously while someone
-types scores. It fires on the *transition* into the condition, which gives **once per
-switch-on** for free and needs no arming flag. Being asked again means switching the
-interval off and on, or clearing the age — both drop the condition and let it rise.
+The transient popover needed a residual; the bar is persistent but page-local, so
+**`.ds-patient-field.is-wanted`** (the dashed topbar tint) survives as the trace
+that follows the clinician to other pages. It now shares the bar's exact
+predicate — one condition, so bar and residual cannot disagree, and `.is-wanted`
+and `.is-live` stay mutually exclusive by construction (one needs a blank age,
+the other a set one).
 
-**There used to be a `batAgePopArmed` flag limiting it to once per patient, and it was the
-source of the "it never re-shows" complaint**: it was re-armed only by the topbar "New
-patient", so clearing the table with `#bat-clear` and autofilling again got silence.
-Deleting the concept deleted the bug class — §26 fails if the flag reappears.
+Committing an age from the bar pulses the topbar field for ~2s
+(`.ds-patient-field.is-pulsing`, three 0.7s cycles) — the value lands somewhere
+the clinician was not looking, and the pulse answers "where did that go?".
+**Only on commit from the bar**: typing directly into the field must not pulse
+it. §26 pins both halves, the restart-on-reflow, and the reduced-motion fallback.
 
-**The opening click must not also dismiss it.** The popover opens from inside
-`renderBattery()`, which usually runs *during* a click — "Add selected tests", the CI
-toggle, a row edit. That same click keeps bubbling to the document-level outside-click
-handler, which finds a popover that is now open with a target outside it, and closes it:
-OPEN then CLOSE, nothing on screen, no error. `batAgePopJustOpened` is set on open and
-cleared on a `setTimeout(…, 0)`, so it survives exactly the synchronous dispatch of the
-opening click. An earlier version special-cased the CI toggle *by selector*, which fixed
-one route and left autofill — the commonest — broken; the guard has to be about **when**,
-not about which element.
+#### Base-rate rows: raw entry, one dropdown item, auto-rebanded
 
-**That bug was invisible to every check and every browser probe**, because they all called
-`renderBattery()` directly and no click was ever in flight. It only exists on the real UI
-path. When verifying anything that opens from a render, drive the actual controls —
-`.combo-add`, `#bat-clear`, `[data-bat-ci]` — not the functions behind them.
+Since 2026-08 the base-rate families (WAIS-IV Longest Span) are **entered as raw
+spans in the Raw column** — the Score box is disabled (no metric score exists),
+the raw column is force-visible while such rows are present
+(`.raw-forced` outranks `.raw-hidden` by specificity, header and cells), and the
+APA export's Score column carries the span. A row **does not score until the
+patient age is entered and falls inside its band** (`batteryBaseRateAgeState`);
+the withheld cell shows a screen-only hint while the export's `.text` stays
+empty, so advice never lands in an exported table.
 
-The pip and the popover are opposite halves of one question and both route through
-**`batteryAgeBandRowCount()`**, so a table lighting the pip while asking for an age is
-unrepresentable. That count excludes `isExample` rows: seeded rows are not the clinician's
-data and must not be counted into a claim about "measures in this table".
-
-**It offers, it never scolds, and it never blocks.** No backdrop, nothing dimmed, Escape
-and outside-click dismiss, and the skip reads *"Skip — use all-ages"* rather than
-"Dismiss" because that names the alternative actually being chosen. Primary tint, never
-`--ds-warning`. §26 pins all of it, including that every clause agrees with the count —
-the first version read "1 measure in this table **publish their** reliability", which is
-what assembling the sentence from shared fragments produces.
-
-Committing an age from the popover pulses the topbar field for ~2s
-(`.ds-patient-field.is-pulsing`, three 0.7s cycles). The popover sits over the table, so
-the field the value lands in is somewhere the clinician was not looking — the pulse
-answers "where did that go?". **Only on commit from the popover**: typing directly into
-the field must not pulse it, because a field that animates as you type in it reads as an
-error. §26 pins both halves, the restart-on-reflow, and the reduced-motion fallback —
-motion *is* the mechanism here, so suppressing it has to leave a held ring rather than
-nothing.
-
-A transient popover can be missed, so **`.ds-patient-field.is-wanted`** is the residual:
-a dashed tint on the topbar field whenever an age would be read and none is set. Purely
-state-driven, so it cannot go stale, and mutually exclusive with `.is-live` by
-construction. That trace is why a purely transient prompt was not enough.
-
-**The residual is a narrower claim than the popover, and must stay narrower.** The popover
-asks "intervals are on and you have no age — want to add one?"; the dashed field asserts
-"an age would actually sharpen something here", which is only true where a measure
-publishes reliability by age band. They shared one predicate while they made the same
-claim; since the popover stopped requiring age-band measures they no longer can, or the
-field would assert something untrue on a CVLT-3 table. §26 pins both conditions separately.
+Because the band is a mechanical function of the now-required age — unlike
+WMS-IV, whose groups are separate *batteries* and a clinical choice — the Score
+Tables dropdown offers **one entry per base-rate family** instead of fourteen
+bands, and `renderBattery` **auto-rebands** rows to the sibling group containing
+the age (`baseRateGroupForAge`, per *measure*: Longest Letter-Number Sequence is
+published only to 65-69 while its siblings run to 85-90). `familyGroupIsBaseRate`
+is the gate and is deliberately false for `separateBattery` groups. §37 pins the
+storage split, the raw entry, the age gate, the collapse and the reband, driving
+the finder over the shipped `normDB`.
 
 ##### `body{zoom:0.9}` splits measurement in two
 
@@ -565,13 +555,14 @@ element from a measured rect has to respect it, and mixing the halves is silent:
 | `offsetWidth` / `offsetHeight` | **layout** px — reports 320 for a box occupying 282 |
 | `style.top` / `style.left` | **layout** px — the browser applies the zoom |
 
-The first version of `positionBatteryAgePop` read rects and `offsetWidth` together and
-wrote the result straight back, putting the popover **19px above its anchor and 58px off
-centre**. Nothing threw, no check noticed, and re-positioning did not shift it — the error
+The first version of the age popover's positioner (since removed with the popover)
+read rects and `offsetWidth` together and wrote the result straight back, putting it
+**19px above its anchor and 58px off centre**. Nothing threw, no check noticed, and re-positioning did not shift it — the error
 is systematic, not a layout-timing race, which is the tell. It was found by measuring the
 rendered page. `pageZoomFactor()` reads the factor off the element rather than hardcoding
-`0.9`, and §26 fails if `offsetWidth` returns, if the divide disappears, or if that `0.9`
-leaves `styles.css` without this being re-derived.
+`0.9`; the consent card's pill stacking still divides by it, behind a typeof guard that
+would silently fall back to 1 — which is why §26 fails if the definition, or its last
+consumer, disappears without the other.
 
 The topbar button is **"New patient"**, not "Clear all tables": it clears every table
 *and* the age, because once age is a header-level property of the patient, two controls
