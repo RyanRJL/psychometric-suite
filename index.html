@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
 <link rel="stylesheet" href="styles.css?v=20260828aa">
-<link rel="stylesheet" href="design-system.css?v=20260828ag">
+<link rel="stylesheet" href="design-system.css?v=20260828ak">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -707,10 +707,6 @@
   <!-- ========== 00 HOME ========== -->
   <section class="section active" id="home">
 
-    <header class="home-db-header">
-      <h1 class="home-db-title">Psychometric <em>Assistant</em></h1>
-      <p class="home-db-sub">Neuropsychological calculators for clinical practice</p>
-    </header>
 
     <!-- ========== THE DIAL ==============================================
          Seven tools on a ring rather than in a grid. The grid orphaned its
@@ -742,6 +738,45 @@
 
         <div class="home-dial-ring" aria-hidden="true"></div>
 
+        <!-- Hub. FIRST on purpose, and it used to be last.
+
+             While the description reveal ran off `:hover ~`, a forward-only
+             sibling combinator, the hub had to follow every node. It is now
+             driven by `data-active` on the stage, which is a plain descendant
+             selector and does not care about order — so the hub can sit where
+             it belongs in the reading order instead.
+
+             That matters below 760px, where the ring becomes a list and the
+             hub becomes the heading above it: last in the DOM would have read
+             the page title out after all seven buttons, or needed an `order`
+             hack that leaves reading order and visual order disagreeing.
+
+             NOT aria-hidden: these paragraphs are the single copy of each
+             tool's description, and each node points at its own through
+             aria-describedby. That is also why the inactive ones are hidden
+             with opacity, never display:none, which would drop them out of
+             the accessibility tree and leave screen-reader users a bare label
+             where sighted users get a sentence. -->
+        <div class="home-dial-hub">
+          <!-- The page's H1 lives here, in the middle of the ring, and is the
+               rest state of the hub: it gives way to a tool's description
+               while one is active and comes back when nothing is.
+
+               NOT aria-hidden, unlike the placeholder it replaced. This is
+               the page heading now, and hiding it would leave the home page
+               with no H1 at all. Fading with opacity rather than
+               display:none keeps it in the accessibility tree throughout. -->
+          <div class="home-dial-hub-rest">
+            <h1 class="home-dial-hub-title">Psychometric <em>Assistant</em></h1>
+            <p class="home-dial-hub-hint">Neuropsychological calculators for clinical practice</p>
+          </div>
+          <p class="home-dial-desc" id="dial-desc-0" data-dial-desc="0">Score embedded and stand-alone PVTs against published cut-offs, with base-rate-aware interpretation.</p>
+          <p class="home-dial-desc" id="dial-desc-1" data-dial-desc="1">Estimate premorbid ability using ToPF and OPIE-4, compared against WAIS-IV and WMS-IV.</p>
+          <p class="home-dial-desc" id="dial-desc-2" data-dial-desc="2">Build APA-formatted report tables with confidence-interval columns and premorbid comparison.</p>
+          <p class="home-dial-desc" id="dial-desc-3" data-dial-desc="3">Evaluate test-retest change across five methods, from descriptive SDI to Crawford regression.</p>
+          <p class="home-dial-desc" id="dial-desc-4" data-dial-desc="4">Chart scores entered elsewhere in the suite against classification and reliable-change bands.</p>
+          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
+          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
         <button class="home-dial-node" data-dial="0" aria-describedby="dial-desc-0" style="--a:0deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
           <span class="home-dial-dot">
@@ -830,28 +865,6 @@
           <span class="home-dial-label">Score Converter</span>
         </button>
 
-        <!-- Hub. Last on purpose, see note above.
-
-             NOT aria-hidden: these paragraphs are the single copy of each
-             tool's description, and each node points at its own through
-             aria-describedby. That is also why the inactive ones are hidden
-             with opacity rather than display:none — display:none would drop
-             them out of the accessibility tree and take the description with
-             them, leaving screen-reader users with a bare label where sighted
-             users get a sentence. Only the rest-state block below is
-             decorative. -->
-        <div class="home-dial-hub">
-          <div class="home-dial-hub-rest" aria-hidden="true">
-            <span class="home-dial-hub-title">Seven tools</span>
-            <span class="home-dial-hub-hint">Point at one</span>
-          </div>
-          <p class="home-dial-desc" id="dial-desc-0" data-dial-desc="0">Score embedded and stand-alone PVTs against published cut-offs, with base-rate-aware interpretation.</p>
-          <p class="home-dial-desc" id="dial-desc-1" data-dial-desc="1">Estimate premorbid ability using ToPF and OPIE-4, compared against WAIS-IV and WMS-IV.</p>
-          <p class="home-dial-desc" id="dial-desc-2" data-dial-desc="2">Build APA-formatted report tables with confidence-interval columns and premorbid comparison.</p>
-          <p class="home-dial-desc" id="dial-desc-3" data-dial-desc="3">Evaluate test-retest change across five methods, from descriptive SDI to Crawford regression.</p>
-          <p class="home-dial-desc" id="dial-desc-4" data-dial-desc="4">Chart scores entered elsewhere in the suite against classification and reliable-change bands.</p>
-          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
-          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
         </div>
 
       </div>

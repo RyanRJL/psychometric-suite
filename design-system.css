@@ -4911,18 +4911,42 @@ input[type="number"].ds-age-pop-input{
       aria-describedby on each node.
 
    3. THE RING IS NOT A LAYOUT, SO IT DOES NOT REFLOW. Below 760px the whole
-      thing becomes a plain vertical list. That is a second layout for one
-      component, accepted deliberately here: a circle cannot narrow.
+      thing becomes a plain vertical list and the hub becomes an ordinary
+      heading above it. That is a second layout for one component, accepted
+      deliberately here: a circle cannot narrow.
    ===================================================================== */
 .home-dial{
   display: flex;
   justify-content: center;
-  padding: 8px 0 4px;
+  align-items: center;
+  /* The separate page header above the ring is gone, so the dial IS the home
+     page and has to be placed against the viewport rather than stacked under
+     something. Without this it sits hard against the top with a few hundred
+     pixels of dead space beneath it.
+
+     The subtraction is the top bar plus this section's own vertical padding.
+     Falls back to a plain block of air on any browser that cannot resolve the
+     calc, so the page is never worse than top-aligned. */
+  /* The /0.9 is the body zoom, and it is not optional. styles.css sets
+     body{zoom:0.9}, so 100vh resolves to visual pixels while min-height is
+     applied in layout pixels: the two spaces differ by exactly that factor,
+     and without the division the ring sits 178px high in a 980px viewport.
+     Same split that positionBatteryAgePop divides by pageZoomFactor() for.
+     If that 0.9 ever changes in styles.css, this changes with it. */
+  min-height: calc((100vh - var(--topbar-h, 108px)) / 0.9 - 64px);
+}
+
+/* The home section is a single centred object, so its padding has to be
+   symmetric or "centred" is centred in an asymmetric box. Every other page
+   scrolls and keeps the deep 80px footer gap. */
+#home.section{
+  padding-top: 32px;
+  padding-bottom: 32px;
 }
 .home-dial-stage{
   position: relative;
-  width: 620px;
-  height: 540px;
+  width: 640px;
+  height: 580px;
   flex-shrink: 0;
 }
 
@@ -4932,9 +4956,9 @@ input[type="number"].ds-age-pop-input{
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 392px;
-  height: 392px;
-  margin: -196px 0 0 -196px;
+  width: 428px;
+  height: 428px;
+  margin: -214px 0 0 -214px;
   border: 1px dashed rgba(156,61,42,0.22);
   border-radius: 50%;
   pointer-events: none;
@@ -4944,16 +4968,17 @@ input[type="number"].ds-age-pop-input{
   position: absolute;
   left: 50%;
   top: 50%;
-  /* 136 wide on a 196 radius. Adjacent centres are 170px apart along the
-     chord, so the hit areas clear each other by 34px. At the first sizing,
+  /* 136 wide on a 214 radius. Adjacent centres are 186px apart along the
+     chord, so the hit areas clear each other by 50px. At the first sizing,
      146 wide on a 178 radius, two pairs of boxes intersected and each node
-     was clickable over part of its neighbour. */
+     was clickable over part of its neighbour, which is why this is measured
+     rather than eyeballed. */
   width: 136px;
   /* rotate to the angle, walk out along the radius, rotate back upright,
      then centre the box on the point it landed on. */
   transform:
     rotate(var(--a))
-    translateY(-196px)
+    translateY(-214px)
     rotate(calc(-1 * var(--a)))
     translate(-50%, -50%);
   display: flex;
@@ -5020,9 +5045,9 @@ input[type="number"].ds-age-pop-input{
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 208px;
-  height: 208px;
-  margin: -104px 0 0 -104px;
+  width: 264px;
+  height: 264px;
+  margin: -132px 0 0 -132px;
   border-radius: 50%;
   background: var(--ds-surface);
   border: 1px solid var(--ds-border);
@@ -5030,14 +5055,14 @@ input[type="number"].ds-age-pop-input{
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 26px;
+  padding: 30px;
   pointer-events: none;
 }
 .home-dial-hub-rest,
 .home-dial-desc{
   position: absolute;
-  left: 26px;
-  right: 26px;
+  left: 30px;
+  right: 30px;
   margin: 0;
   text-align: center;
   transition: opacity 160ms ease;
@@ -5048,17 +5073,27 @@ input[type="number"].ds-age-pop-input{
   gap: 5px;
 }
 .home-dial-hub-title{
+  margin: 0;
   font-family: var(--serif);
-  font-size: 17px;
+  font-size: 25px;
   font-weight: 600;
+  letter-spacing: -0.015em;
   color: var(--ds-text);
-  line-height: 1.15;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.home-dial-hub-title em{
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ds-primary);
 }
 .home-dial-hub-hint{
+  margin: 0;
   font-family: var(--sans);
   font-size: 11px;
-  color: var(--ds-text-faint);
-  letter-spacing: 0.02em;
+  line-height: 1.45;
+  color: var(--ds-text-subtle);
+  letter-spacing: 0.01em;
 }
 .home-dial-desc{
   font-family: var(--sans);
@@ -5068,28 +5103,14 @@ input[type="number"].ds-age-pop-input{
   opacity: 0;              /* never display:none — see note 2 above */
 }
 
-/* Reveal the hovered or keyboard-focused node's description, and stand the
-   rest state down. General sibling combinator, which only reaches forwards:
-   this is why the hub is the last child of the stage. */
-.home-dial-node:hover ~ .home-dial-hub .home-dial-hub-rest,
-.home-dial-node:focus-visible ~ .home-dial-hub .home-dial-hub-rest{ opacity: 0 !important; }
+/* The description reveal is `data-active` only.
 
-.home-dial-node[data-dial="0"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="0"],
-.home-dial-node[data-dial="0"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="0"],
-.home-dial-node[data-dial="1"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="1"],
-.home-dial-node[data-dial="1"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="1"],
-.home-dial-node[data-dial="2"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="2"],
-.home-dial-node[data-dial="2"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="2"],
-.home-dial-node[data-dial="3"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="3"],
-.home-dial-node[data-dial="3"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="3"],
-.home-dial-node[data-dial="4"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="4"],
-.home-dial-node[data-dial="4"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="4"],
-.home-dial-node[data-dial="5"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="5"],
-.home-dial-node[data-dial="5"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="5"],
-.home-dial-node[data-dial="6"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="6"],
-.home-dial-node[data-dial="6"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="6"]{
-  opacity: 1 !important;
-}
+   It used to also exist as `:hover ~ .home-dial-hub`, a forward-only sibling
+   combinator, which is why the hub was once the last child of the stage. That
+   copy is gone: it forced the page heading to sit after all seven buttons in
+   the reading order, and it never carried the feature anyway. The dot and
+   label still take :hover directly, which is a descendant selector and
+   unaffected by where the hub sits. */
 
 /* The same reveal, driven by `data-active` on the stage instead of by a state
    pseudo-class. This is the path that actually carries the feature; the rules
@@ -5152,7 +5173,7 @@ input[type="number"].ds-age-pop-input{
    dropped, and the same seven buttons stack. The hub goes with it, since a
    hover-revealed description is no use on a touch screen. */
 @media (max-width:760px){
-  .home-dial{ display: block; }
+  .home-dial{ display: block; min-height: 0; }
   .home-dial-stage{
     position: static;
     width: auto;
@@ -5161,8 +5182,47 @@ input[type="number"].ds-age-pop-input{
     flex-direction: column;
     gap: 9px;
   }
-  .home-dial-ring,
-  .home-dial-hub{ display: none; }
+  .home-dial-ring{ display: none; }
+
+  /* The hub stops being a hub and becomes the page heading above the list.
+     It must NOT be display:none here: it holds the only H1 on the page, so
+     hiding it would leave the mobile home page with seven unlabelled buttons
+     and no title at all. */
+  .home-dial-hub{
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0 0 8px;
+    padding: 0;
+    display: block;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .home-dial-hub-rest{
+    position: static;
+    left: auto;
+    right: auto;
+    text-align: left;
+    gap: 7px;
+  }
+  .home-dial-hub-title{ font-size: 27px; }
+  .home-dial-hub-hint{ font-size: 12.5px; }
+
+  /* Descriptions have nowhere to go on a touch screen and no hover to reveal
+     them, but they are still each node's aria-describedby target, so they are
+     clipped rather than removed. display:none would take them out of the
+     accessibility tree along with the description. */
+  .home-dial-desc{
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    opacity: 1 !important;
+  }
   .home-dial-node{
     position: static;
     transform: none;
