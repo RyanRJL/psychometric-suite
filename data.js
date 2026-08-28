@@ -2160,6 +2160,34 @@ const PVT_ACS_BASERATES = {
     gai100114:[0,0,0,0,0], gai115:[0,0,0,0,0]
   }
 };
+/* The chapter's RAW-SCORE path — the one part computable without the ACS
+   score report. Two published pieces:
+   1. The Miller et al. (2011) five-subtest logistic regression, printed in
+      the chapter (p. 353) with its external validation on the WMS-IV
+      standardization TBI (n = 28) vs simulator (n = 49) groups:
+        L = 10.61 − 0.65·RDS − 0.23·WCT − 0.007·LMR + 0.24·VPAR − 0.95·VRR
+        p(invalid) = e^L / (1 + e^L)
+      AUC .95 in derivation, .87 in the chapter's external validation.
+      THE VPAR COEFFICIENT IS POSITIVE AS PRINTED — a suppressor effect in
+      the multivariable model, not a transcription error; the chapter
+      itself discusses the weights (LMR's 0.007 against VRR's 0.95). Do
+      not "correct" the sign. No probability classification cut-off is
+      published, so the app reports the probability as an estimate, never
+      as Pass/Fail. The WCT-only model's coefficients are NOT printed —
+      only its AUC — so it must never be implemented.
+   2. The Word Choice random-responding range: on the 50-item test the
+      probable range of random responding is 20–30, the 90% binomial CI
+      (p. 337). Below it = worse than guessing; within it = consistent
+      with guessing. The clinical cut-offs above that range are withheld
+      with the rest, so a score above 30 makes NO claim here. */
+const PVT_ACS_MODEL = {
+  intercept: 10.61,
+  coefs: { rds: -0.65, wct: -0.23, lmr: -0.007, vpar: 0.24, vrr: -0.95 },
+  aucDerivation: 0.95,
+  aucValidation: 0.87
+};
+const PVT_ACS_WCT_RANDOM_RANGE = [20, 30];
+
 /* The chapter's interpretive criteria, applied a priori:
    - "unusual": >= 2 scores at the 15% or 10% cut-off, or >= 3 at 25%.
    - the worked criterion: 1 at or below 15% = "possible", >= 2 at or

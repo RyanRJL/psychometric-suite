@@ -50,7 +50,8 @@ vm.runInContext(
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
     ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
-    ' PVT_ACS_GROUPS, PVT_ACS_BASERATES, PVT_ACS_RULES,' +
+    ' PVT_ACS_GROUPS, PVT_ACS_BASERATES, PVT_ACS_RULES, PVT_ACS_MODEL,' +
+    ' PVT_ACS_WCT_RANDOM_RANGE,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -7298,6 +7299,70 @@ check('ACS multivariate base rates: pinned cells, both monotonicity invariants, 
   if (r.groupRate !== null || r.unusual) bad.push('a count of 0 has no base-rate column and cannot be unusual');
   r = run('3', 25, 'clinical');
   if (!r.unusual) bad.push('3 at the 25% cut-off should be unusual per the chapter');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('the Miller et al. (2011) model ships as printed, and the raw path claims only what the chapter publishes', () => {
+  /* PINNED: Holdnack et al. (2013), p. 353 — L = 10.61 − 0.65·RDS −
+     0.23·WCT − 0.007·LMR + 0.24·VPAR − 0.95·VRR, p = e^L/(1 + e^L);
+     AUC .95 in derivation (Miller et al., 2011), .87 in the chapter's
+     external validation. THE VPAR COEFFICIENT IS POSITIVE AS PRINTED — a
+     suppressor in the multivariable model. Someone reading the signs will
+     want to "fix" it; this check is where that impulse dies. */
+  const bad = [];
+  const M = D.PVT_ACS_MODEL;
+  if (M.intercept !== 10.61) bad.push('intercept drifted');
+  if (M.coefs.rds !== -0.65 || M.coefs.wct !== -0.23 || M.coefs.lmr !== -0.007 || M.coefs.vrr !== -0.95){
+    bad.push('a model coefficient drifted from p. 353');
+  }
+  if (M.coefs.vpar !== 0.24) bad.push('the VPAR coefficient is no longer +0.24 — it is a suppressor, printed positive; do not correct the sign');
+  if (M.aucDerivation !== 0.95 || M.aucValidation !== 0.87) bad.push('the AUCs drifted');
+  if (JSON.stringify(D.PVT_ACS_WCT_RANDOM_RANGE) !== '[20,30]') bad.push('the Word Choice random-responding range is no longer the printed 20–30');
+  /* Drive the shipped calculator and verify against an INDEPENDENT
+     computation of the same printed formula (the §23 duplication
+     principle — if they disagree, one has drifted). */
+  const run = vals => {
+    const c = {
+      PVT_ACS_MODEL: D.PVT_ACS_MODEL, PVT_ACS_WCT_RANDOM_RANGE: D.PVT_ACS_WCT_RANDOM_RANGE,
+      Math,
+      document: { getElementById: id => (id in vals ? { value: vals[id] } : null) }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtAcsModel')
+      + ';globalThis.__R = getPvtAcsModel();', c);
+    return c.__R;
+  };
+  const expectP = (rds, wct, lmr, vpar, vrr) => {
+    const L = 10.61 - 0.65 * rds - 0.23 * wct - 0.007 * lmr + 0.24 * vpar - 0.95 * vrr;
+    return Math.exp(L) / (1 + Math.exp(L));
+  };
+  let r = run({ 'pvt-acs-rds': '8', 'pvt-acs-wct': '45', 'pvt-acs-lmr': '24', 'pvt-acs-vpar': '30', 'pvt-acs-vrr': '5' });
+  if (Math.abs(r.probability - expectP(8, 45, 24, 30, 5)) > 1e-12) bad.push('the shipped model disagrees with an independent computation of the printed formula (credible-TBI case)');
+  if (!(r.probability < 0.10)) bad.push('a strong profile (RDS 8, WCT 45, LMR 24, VPAR 30, VRR 5) should give a LOW probability of invalid performance');
+  r = run({ 'pvt-acs-rds': '5', 'pvt-acs-wct': '30', 'pvt-acs-lmr': '15', 'pvt-acs-vpar': '20', 'pvt-acs-vrr': '2' });
+  if (Math.abs(r.probability - expectP(5, 30, 15, 20, 2)) > 1e-12) bad.push('the shipped model disagrees with the independent computation (suppressed profile)');
+  if (!(r.probability > 0.90)) bad.push('a suppressed profile should give a HIGH probability');
+  if (r.wctState !== 'within') bad.push('WCT 30 should read within the random-responding range (20–30 inclusive)');
+  r = run({ 'pvt-acs-wct': '19' });
+  if (r.wctState !== 'below' || r.probability !== undefined) bad.push('WCT 19 alone should read below the random range with no model probability');
+  r = run({ 'pvt-acs-wct': '31' });
+  if (r.wctState !== 'above') bad.push('WCT 31 should read above the range — and make no clinical claim');
+  r = run({ 'pvt-acs-rds': '8' });
+  if (!r.partialModel) bad.push('one raw score should mark the model incomplete, not compute it');
+  /* No published cut-off exists for the probability: the model must never
+     Pass/Fail. Its readout row and summary row are estimates. */
+  const renderer = extractFn(APP_SRC, 'renderPvtAcs');
+  if (!/word: 'Estimate'/.test(renderer)) bad.push('the model row no longer renders as an Estimate — a probability with no published cut-off must not Pass/Fail');
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  const modelRow = rowsFn.split("id: 'acs-model'")[1] || '';
+  if (!/result: 'Estimate', fail: false/.test(modelRow)) bad.push('the summary model row can now fail — it has no published cut-off');
+  if (!/countExempt: true/.test(modelRow)) bad.push('the model row joined the independent count');
+  /* The WCT-only model's coefficients are unpublished — only its AUC is
+     printed — so no second model may exist. */
+  if (/wctOnly|WCT_MODEL|wctModel/i.test(APP_SRC) || /wctOnly|WCT_MODEL/i.test(DATA_SRC)){
+    bad.push('a WCT-only model appeared — its coefficients are not published, only its AUC');
+  }
   return bad.length === 0 || bad.join('; ');
 });
 

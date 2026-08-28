@@ -3095,7 +3095,10 @@ const APA_NOTES = {
         : 'Sensitivity and specificity are the published values at the applied cut-off.',
       shared.length ? `Indices sharing a subtest count as one indicator: ${shared.join(' and ')}.` : '',
       ctx.hasAcs
-        ? 'The ACS pattern aggregates five indicators including Reliable Digit Span and is not counted as an additional independent indicator.'
+        ? 'The ACS indicators aggregate five measures including Reliable Digit Span and are not counted as additional independent indicators.'
+        : '',
+      ctx.hasAcsModel
+        ? 'The five-subtest model probability (Miller et al., 2011; external validation AUC .87) estimates resemblance to simulators versus moderate–severe TBI and has no published classification cut-off.'
         : '',
       ctx.esGated
         ? 'The Effort Scale is not computed because its screening gate was not met (Novitski et al., 2012).'
@@ -6994,17 +6997,76 @@ function getPvtAcs(){
   return s;
 }
 
+/* The raw-score path: the Miller et al. (2011) five-subtest model and the
+   Word Choice random-responding range. Probability needs all five raws;
+   the WCT range check needs only WCT. */
+function getPvtAcsModel(){
+  const rds  = pvtInt(document.getElementById('pvt-acs-rds')?.value, 0, 17);
+  const wct  = pvtInt(document.getElementById('pvt-acs-wct')?.value, 0, 50);
+  const lmr  = pvtInt(document.getElementById('pvt-acs-lmr')?.value, 0, 50);
+  const vpar = pvtInt(document.getElementById('pvt-acs-vpar')?.value, 0, 60);
+  const vrr  = pvtInt(document.getElementById('pvt-acs-vrr')?.value, 0, 10);
+  const vals = [rds, wct, lmr, vpar, vrr];
+  if (vals.every(v => v === undefined)) return { empty: true };
+  if (vals.some(v => v === null)) return { invalid: true };
+  const s = {};
+  if (wct !== undefined){
+    s.wct = wct;
+    const [lo, hi] = PVT_ACS_WCT_RANDOM_RANGE;
+    s.wctState = wct < lo ? 'below' : wct <= hi ? 'within' : 'above';
+  }
+  if (vals.every(v => v !== undefined)){
+    const c = PVT_ACS_MODEL.coefs;
+    const L = PVT_ACS_MODEL.intercept
+      + c.rds * rds + c.wct * wct + c.lmr * lmr + c.vpar * vpar + c.vrr * vrr;
+    s.probability = Math.exp(L) / (1 + Math.exp(L));
+  } else if (vals.some(v => v !== undefined)){
+    s.partialModel = true;
+  }
+  return s;
+}
+
 function renderPvtAcs(){
   const out = document.getElementById('pvt-acs-result');
   const rates = document.getElementById('pvt-acs-rates');
   if (!out || !rates) return;
   const s = getPvtAcs();
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); rates.innerHTML = ''; return; }
   if (s.empty){
-    out.innerHTML = pvtResultHtml('empty', 'Enter the number of low ACS PVT scores from the score report.');
+    /* No score-report count — the raw-score path can still carry the tab. */
+    const m0 = getPvtAcsModel();
+    if (m0.empty){
+      out.innerHTML = pvtResultHtml('empty', 'Enter the number of low ACS PVT scores from the score report, or the five raw scores below.');
+      rates.innerHTML = '';
+      return;
+    }
+    if (m0.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); rates.innerHTML = ''; return; }
+    const rows0 = [];
+    if (m0.wctState === 'below') rows0.push({
+      label: 'Word Choice', value: m0.wct, state: 'flag', word: 'Flag',
+      meta: 'Below the published random-responding range (20–30, 90% binomial CI) — worse than guessing'
+    });
+    else if (m0.wctState === 'within') rows0.push({
+      label: 'Word Choice', value: m0.wct, state: 'na', word: 'Guess range',
+      meta: 'Within the published random-responding range (20–30) — consistent with random responding'
+    });
+    else if (m0.wctState === 'above') rows0.push({
+      label: 'Word Choice', value: m0.wct, state: 'na', word: 'See report',
+      meta: 'Above the random-responding range; the clinical cut-offs are in the ACS score report'
+    });
+    if (m0.probability !== undefined) rows0.push({
+      label: 'Five-subtest model', value: m0.probability.toFixed(2).replace(/^0/, ''),
+      state: 'na', word: 'Estimate',
+      meta: `p(resembles simulators vs moderate–severe TBI), Miller et al. (2011) · AUC ${PVT_ACS_MODEL.aucDerivation.toFixed(2).replace(/^0/, '')} derivation / ${PVT_ACS_MODEL.aucValidation.toFixed(2).replace(/^0/, '')} external validation · no published classification cut-off`
+    });
+    else if (m0.partialModel) rows0.push({
+      label: 'Five-subtest model', value: null, state: 'na', word: 'Incomplete',
+      meta: 'Enter all five raw scores to compute the model probability'
+    });
+    out.innerHTML = rows0.length ? pvtReadoutHtml(rows0, '') : pvtResultHtml('empty', 'Enter the number of low ACS PVT scores from the score report, or the five raw scores below.');
     rates.innerHTML = '';
     return;
   }
-  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); rates.innerHTML = ''; return; }
   const patternLabel = s.count === 0 ? 'No scores at or below the cut-off' : `${s.count}+ of 5 scores at or below the ${s.cutoff}% cut-off`;
   const state = s.count === 0 ? 'pass' : s.unusual ? 'flag' : 'na';
   const word = s.count === 0 ? 'Pass' : s.unusual ? 'Flag' : 'Review';
@@ -7012,11 +7074,34 @@ function renderPvtAcs(){
   if (s.probable) readings.push('the chapter\'s worked criterion reads two or more at the 10% cut-off as <em>probable</em> invalid performance');
   else if (s.possible) readings.push('the chapter\'s worked criterion reads one or more at the 15% cut-off as <em>possible</em> invalid performance');
   if (s.unusual && !s.probable) readings.push('this pattern is unusual for most clinical groups, mild intellectual disability excepted');
-  out.innerHTML = pvtReadoutHtml([{
+  const rows = [{
     label: 'ACS multivariate pattern', value: s.count === 0 ? '0' : `${s.count}+`,
     state, word,
     meta: `${patternLabel} · criterion chosen a priori (Holdnack et al., 2013)`
-  }], readings.length ? readings.join('; ') + '.' : '');
+  }];
+  const m = getPvtAcsModel();
+  if (m.wctState === 'below') rows.push({
+    label: 'Word Choice', value: m.wct, state: 'flag', word: 'Flag',
+    meta: 'Below the published random-responding range (20–30, 90% binomial CI) — worse than guessing'
+  });
+  else if (m.wctState === 'within') rows.push({
+    label: 'Word Choice', value: m.wct, state: 'na', word: 'Guess range',
+    meta: 'Within the published random-responding range (20–30) — consistent with random responding'
+  });
+  else if (m.wctState === 'above') rows.push({
+    label: 'Word Choice', value: m.wct, state: 'na', word: 'See report',
+    meta: 'Above the random-responding range; the clinical cut-offs are in the ACS score report'
+  });
+  if (m.probability !== undefined) rows.push({
+    label: 'Five-subtest model', value: m.probability.toFixed(2).replace(/^0/, ''),
+    state: 'na', word: 'Estimate',
+    meta: `p(resembles simulators vs moderate–severe TBI), Miller et al. (2011) · AUC ${PVT_ACS_MODEL.aucDerivation.toFixed(2).replace(/^0/, '')} derivation / ${PVT_ACS_MODEL.aucValidation.toFixed(2).replace(/^0/, '')} external validation · no published classification cut-off`
+  });
+  else if (m.partialModel) rows.push({
+    label: 'Five-subtest model', value: null, state: 'na', word: 'Incomplete',
+    meta: 'Enter all five raw scores to compute the model probability'
+  });
+  out.innerHTML = pvtReadoutHtml(rows, readings.length ? readings.join('; ') + '.' : '');
   if (s.count === 0){ rates.innerHTML = ''; return; }
   const fmtRate = v => v === null ? '—' : `${v}%`;
   rates.innerHTML = `
@@ -7131,6 +7216,17 @@ function getPvtSummaryRows(){
     result: acs.count === 0 ? 'Pass' : acs.unusual ? 'Flagged' : 'See base rates',
     fail: acs.unusual
   });
+  const acsM = getPvtAcsModel();
+  if (acsM.wctState === 'below') rows.push({
+    id: 'acs-wct', group: 'acs', countExempt: true, measure: 'ACS Word Choice',
+    score: String(acsM.wct), cutoff: '< 20 (random-responding range)',
+    sens: '—', spec: '—', result: 'Flagged', fail: true
+  });
+  if (acsM.probability !== undefined) rows.push({
+    id: 'acs-model', group: 'acs', countExempt: true, measure: 'ACS five-subtest model (Miller et al., 2011)',
+    score: `p = ${acsM.probability.toFixed(2).replace(/^0/, '')}`, cutoff: '—',
+    sens: '—', spec: '—', result: 'Estimate', fail: false
+  });
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
@@ -7200,7 +7296,8 @@ function renderPvtApa(){
       hasDs:   rows.some(r => r.id.startsWith('ds')),
       hasRey:  rows.some(r => r.id.startsWith('rey')),
       hasTomm: rows.some(r => r.group === 'tomm'),
-      hasAcs:  rows.some(r => r.id === 'acs'),
+      hasAcs:  rows.some(r => r.group === 'acs'),
+      hasAcsModel: rows.some(r => r.id === 'acs-model'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
       bothDigitSpan: rows.some(r => r.id === 'rds') && rows.some(r => r.id.startsWith('ds')),
@@ -7252,10 +7349,13 @@ function renderPvtNav(){
     tommHas ? (tomm.anyFail ? 'Fail' : 'Pass') : '—',
     tommHas ? (tomm.anyFail ? 'fail' : 'pass') : null);
   const acsS = getPvtAcs();
-  const acsAny = !acsS.empty && !acsS.invalid;
+  const acsM = getPvtAcsModel();
+  const acsAny = (!acsS.empty && !acsS.invalid) || acsM.wct !== undefined || acsM.probability !== undefined;
+  const acsFlag = (!acsS.empty && acsS.unusual) || acsM.wctState === 'below';
+  const acsPass = !acsS.empty && !acsS.invalid && acsS.count === 0 && acsM.wctState !== 'within';
   pvtChip(document.getElementById('pvt-status-acs'),
-    acsAny ? (acsS.unusual ? 'Flag' : acsS.count === 0 ? 'Pass' : 'Review') : '—',
-    acsAny ? (acsS.unusual ? 'fail' : acsS.count === 0 ? 'pass' : 'na') : null);
+    acsAny ? (acsFlag ? 'Flag' : acsPass ? 'Pass' : 'Review') : '—',
+    acsAny ? (acsFlag ? 'fail' : acsPass ? 'pass' : 'na') : null);
   const c = pvtIndicatorCounts(getPvtSummaryRows());
   pvtChip(document.getElementById('pvt-status-summary'),
     c.total > 0 ? `${c.failed}/${c.total}` : '—',
@@ -7311,7 +7411,7 @@ function switchPvtTab(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-acs-count','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-acs-count','pvt-acs-rds','pvt-acs-wct','pvt-acs-lmr','pvt-acs-vpar','pvt-acs-vrr','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -7348,7 +7448,7 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-acs-count','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-acs-count','pvt-acs-rds','pvt-acs-wct','pvt-acs-lmr','pvt-acs-vpar','pvt-acs-vrr','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   /* The forward-span index reads the shared top-bar age, so an age typed

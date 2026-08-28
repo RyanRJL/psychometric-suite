@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260828t">
-<link rel="stylesheet" href="design-system.css?v=20260828t">
+<link rel="stylesheet" href="styles.css?v=20260828u">
+<link rel="stylesheet" href="design-system.css?v=20260828u">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1723,14 +1723,37 @@
               <select id="pvt-acs-group"></select>
             </div>
           </div>
+          <div class="pvt-card-kicker" style="margin-top:6px">Raw scores — optional, computes the five-subtest model</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Reliable Digit Span <span class="hint">(as on the RDS tab)</span></label>
+              <input type="number" min="0" max="17" step="1" id="pvt-acs-rds" placeholder="e.g. 8">
+            </div>
+            <div class="field">
+              <label>Word Choice <span class="hint">(raw, /50)</span></label>
+              <input type="number" min="0" max="50" step="1" id="pvt-acs-wct" placeholder="e.g. 45">
+            </div>
+            <div class="field">
+              <label>LM II Recognition <span class="hint">(raw)</span></label>
+              <input type="number" min="0" max="50" step="1" id="pvt-acs-lmr" placeholder="e.g. 22">
+            </div>
+            <div class="field">
+              <label>VPA II Recognition <span class="hint">(raw)</span></label>
+              <input type="number" min="0" max="60" step="1" id="pvt-acs-vpar" placeholder="e.g. 32">
+            </div>
+            <div class="field">
+              <label>VR II Recognition <span class="hint">(raw)</span></label>
+              <input type="number" min="0" max="10" step="1" id="pvt-acs-vrr" placeholder="e.g. 5">
+            </div>
+          </div>
           <div class="pvt-source">
-            <span class="pvt-source-cite">Multivariate base rates: Holdnack, Millis, Larrabee &amp; Iverson (2013), ch. 7 of <i>WAIS-IV, WMS-IV, and ACS: Advanced Clinical Interpretation</i>, Tables 7.1–7.5 (© 2009 Pearson).</span>
+            <span class="pvt-source-cite">Multivariate base rates: Holdnack, Millis, Larrabee &amp; Iverson (2013), ch. 7 of <i>WAIS-IV, WMS-IV, and ACS: Advanced Clinical Interpretation</i>, Tables 7.1–7.5 (© 2009 Pearson). Five-subtest model: Miller et al. (2011), coefficients and external validation as printed in the same chapter.</span>
             <span class="pvt-source-accuracy">Interpreted against published base rates — the raw ACS cut-off scores are withheld by the source for test security and are not stored here.</span>
           </div>
           <details class="formula-disclosure">
             <summary>How to use this tab</summary>
             <div class="formula-body">
-              <p>The five ACS performance validity measures are Word Choice, WAIS-IV Reliable Digit Span, and the WMS-IV Logical Memory II, Verbal Paired Associates II and Visual Reproduction II recognition scores. The ACS score report states how many of the five fell at or below each base-rate cut-off of the overall clinical sample (n = 371); enter that count here and this tab reports how often that pattern occurs in a comparable clinical group, the WMS-IV normative sample, and simulators. Select the cut-off criterion <em>before</em> the evaluation — the chapter records a case where a clinician shopped between cut-offs after seeing the scores and calls it "clearly, an inappropriate use of the base rates". Its worked criterion treats one score at or below the 15% cut-off as <em>possible</em>, and two or more at or below the 10% cut-off as <em>probable</em>, invalid performance; two or more at 15% or 10%, or three or more at 25%, is unusual for most clinical groups.</p>
+              <p>The five ACS performance validity measures are Word Choice, WAIS-IV Reliable Digit Span, and the WMS-IV Logical Memory II, Verbal Paired Associates II and Visual Reproduction II recognition scores. The ACS score report states how many of the five fell at or below each base-rate cut-off of the overall clinical sample (n = 371); enter that count here and this tab reports how often that pattern occurs in a comparable clinical group, the WMS-IV normative sample, and simulators. Select the cut-off criterion <em>before</em> the evaluation — the chapter records a case where a clinician shopped between cut-offs after seeing the scores and calls it "clearly, an inappropriate use of the base rates". Its worked criterion treats one score at or below the 15% cut-off as <em>possible</em>, and two or more at or below the 10% cut-off as <em>probable</em>, invalid performance; two or more at 15% or 10%, or three or more at 25%, is unusual for most clinical groups. Where the five raw scores are entered, the Miller et al. (2011) logistic regression — L = 10.61 − 0.65·RDS − 0.23·WCT − 0.007·LMR + 0.24·VPAR − 0.95·VRR, p = e<sup>L</sup>/(1 + e<sup>L</sup>) — estimates resemblance to coached simulators versus moderate–severe TBI (AUC .95 in derivation, .87 in the chapter's external validation); no classification cut-off is published for the probability, and the VPA II coefficient is positive as printed. A Word Choice raw score below 20 falls below the published random-responding range (20–30, the 90% binomial CI); the clinical cut-offs above that range are in the ACS score report only.</p>
             </div>
           </details>
         </div>
@@ -2902,11 +2925,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260828t"></script>
-<script src="app.js?v=20260828t"></script>
-<script src="design-system.js?v=20260828t" defer></script>
-<script src="app-effectsize-page.js?v=20260828t"></script>
-<script src="app-viz-page.js?v=20260828t"></script>
+<script src="data.js?v=20260828u"></script>
+<script src="app.js?v=20260828u"></script>
+<script src="design-system.js?v=20260828u" defer></script>
+<script src="app-effectsize-page.js?v=20260828u"></script>
+<script src="app-viz-page.js?v=20260828u"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
