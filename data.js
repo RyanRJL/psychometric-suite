@@ -139,7 +139,7 @@ const WMS_COEF = [
    qualification distribution against the US 2008 distribution — a novel
    adaptation that would need validating before it informed a report.
 
-   For the UK demographic angle use Crawford & Allan (2001), already in this
+   For the UK demographic angle use Crawford & Allan (1997), already in this
    file's model set and UK-normed. Treat OPIE-4 as a subtest-based estimate.
 
    Sex coding: Female = 0, Male = 1 (per the source table). Because Female is
@@ -165,6 +165,19 @@ const OPIE_AGE_MAX = 90;
    paediatric or very elderly case ever needs to be defended in a report. */
 const TOPF_AGE_MIN = 16;
 const TOPF_AGE_MAX = 90;
+
+/* Floor for the Crawford & Allan (1997) demographic equation — The Clinical
+   Neuropsychologist, 11(2), 192-197 (long miscited here as 2001; vol. 11 is
+   1997). Derived from 200 healthy adults representative of the adult UK
+   population; the same lab sample is described in the authors' companion
+   WAIS-R papers as ages 16-83. A floor only, and again a SEPARATE constant:
+   the number matches OPIE_AGE_MIN today, but the provenance is a different
+   publication and the two must be able to move independently. No ceiling
+   constant exists on purpose — the equation's age term is linear and shallow
+   (0.18/yr), and the sample maximum comes from companion papers rather than
+   the 1997 brief report itself, so the app warns above the sample rather than
+   refusing (see the range note in calcPremorbid). */
+const CRAWFORD_ALLAN_AGE_MIN = 16;
 
 // OPIE-4 prorated FSIQ regression coefficients (Table eA5.8). Verified against
 // source. See the block above before using these numbers in a UK context.
@@ -202,7 +215,7 @@ const OCC_CODE = { 'Professional':1, 'Intermediate':2, 'Skilled':3, 'Semi Skille
 const PRE_MODEL_TOOLTIPS = {
   topfRaw: 'Assumes the ToPF word-reading raw score is a resistant estimate of premorbid ability. Input required: ToPF raw score only. The FSIQ estimate is returned from the ToPF raw-score look-up table; CI uses the model SEE.',
   topfDemo: 'Assumes premorbid FSIQ is best estimated by combining ToPF performance with demographic predictors. Inputs required: ToPF raw score, years of education, and sex. Uses the cubic ToPF + education + sex regression equation; CI uses the model SEE.',
-  crawfordAllan: 'Demographic-only estimate from Crawford & Allan (2001), intended for UK-normed demographic prediction. Inputs required: occupation class, years of education, and age. Does not use the ToPF score.',
+  crawfordAllan: 'Demographic-only estimate from Crawford & Allan (1997), intended for UK-normed demographic prediction. Inputs required: occupation class, years of education, and age (16+, the equation being derived from an adult UK sample). Does not use the ToPF score.',
   opieDefault: 'ILLUSTRATIVE ONLY in a UK context - do not quote as a concrete premorbid estimate. OPIE-4 estimate of prorated FSIQ. Inputs required: age (16-90), sex, plus Vocabulary raw and/or Matrix Reasoning raw. The equation switches automatically to the matching single- or two-subtest model. The published equation also carries US education, ethnicity and region terms which are NOT applied, so every patient is scored as a US 12th-grade high-school graduate, not African-American, not resident in the US West. Those US categories have no valid UK equivalent, so no substitute adjustment is made. Expect the estimate to run high for patients who left school early and low for graduates. CI uses the branch-specific SEE.',
   opieVCMR: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4 two-subtest estimate of prorated FSIQ (Holdnack et al., 2013; Table eA5.8). Inputs required: Vocabulary raw, Matrix Reasoning raw, age (16-90) and sex. Predicts a prorated FSIQ that excludes Vocabulary and Matrix Reasoning, removing part-whole correlation inflation present in the standard-FSIQ equations. US education, ethnicity and region terms are not applied - see the Vocab and/or Matrix model note.',
   opieVC: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4 single-subtest estimate of prorated FSIQ (Vocabulary branch). Inputs required: Vocabulary raw, age (16-90) and sex. US education, ethnicity and region terms are not applied; the omitted education block spans -6.68 to +5.50 points on this branch. CI uses the Vocabulary-branch SEE.',
@@ -219,24 +232,43 @@ const PRE_MODEL_TOOLTIPS = {
   opiePredPRI: 'ILLUSTRATIVE ONLY in a UK context. OPIE-4-predicted PRI (Matrix Reasoning only). Compare against the patient\'s achieved PRI. This equation uses Age³ only, with no linear age term.'
 };
 
-/* Discrepancy (negative integer) → estimated proportion scoring at or below it.
-   WAIS-IV indices (FSIQ, VCI, PRI, WMI, PSI) and WMS-IV indices (IMI, DMI, VWMI).
+/* Discrepancy (negative integer) → proportion at or below it. WAIS-IV indices
+   (FSIQ, VCI, PRI, WMI, PSI) and WMS-IV indices (IMI, DMI, VWMI).
 
-   NB these are NOT transcribed standardisation-sample frequencies. Every one of
-   the 298 cells reproduces round(Φ(d / SEE), 4) exactly, using the SEE stored in
-   WAIS_COEF / WMS_COEF above — i.e. a parametric normal model, not observed data.
-   Verified by reconstruction: 294 cells match to 4 dp, the other 4 differ only in
-   the last digit.
+   SOURCE: ToPF-UK manual (Wechsler, 2011), the ToPF-predicted vs obtained
+   discrepancy base rates. Used as published.
 
-   They are close to, but not the same as, real frequencies. Benchmarked against
-   the genuinely empirical OPIE_BASE_RATES below (which sits on a ~1/1020 count
-   grid) for a model with an almost identical SEE, the normal model runs ~10%
-   relatively low across the decisive −5 to −20 band: e.g. d = −15 gives 3.78%
-   here against ~4.3% empirically. Net effect is to make a discrepancy look
-   slightly rarer, and so slightly more pathological, than it is.
+   THE PUBLISHER DERIVED THEM PARAMETRICALLY, and the app says so wherever they
+   appear — but it is the publisher's arithmetic, not ours, so every printed
+   figure is citable. Each cell is round(Φ(d / SEE), 4): not approximately,
+   exactly. Give each column its unrounded SEE and all 298 stored cells
+   reproduce with no residual. A predicted-difference table has to be built this
+   way — a standardisation sample of ~1,000 yields no observed frequency at all
+   40 discrepancy points, let alone a monotone one.
 
-   Labelled as "estimated from a normal model" wherever displayed. Replace with
-   the published ToPF/ACS predicted-difference tables if they can be transcribed. */
+   THAT ARITHMETIC IS ALSO THE TRANSCRIPTION PROOF, and it is what distinguishes
+   this block from a downstream re-computation wearing a citation. Six of the
+   eight columns fit exactly on the SEE printed in WAIS_COEF / WMS_COEF above.
+   The other two fit only at MORE precision than the printed coefficient carries:
+
+     IMI    fits only for SEE ∈ [12.03159, 12.03173] — printed value 12.032
+     VWMI   fits only for SEE ∈ [12.16512, 12.16564] — printed value 12.165
+
+   Both bands EXCLUDE the printed SEE — no value within rounding distance of it
+   fits every cell. Anyone rebuilding this table from the published coefficients
+   misses 4 IMI cells and 2 VWMI cells. Whoever produced it held the unrounded
+   regression output, which is the publisher. check.js §8 pins the exclusion, so
+   a "tidy-up" to the rounded SEE cannot pass.
+
+   Note it is parametric where OPIE_BASE_RATES below is empirical — that one sits
+   on a ~1/1020 count grid. Across the decisive −5 to −20 band the two published
+   tables differ by ~10% relatively on models of almost identical SEE: d = −15
+   gives 3.78% here against ~4.3% there. That is two publishers answering the
+   question differently, not a defect in either, and both are used as published.
+
+   Cells the manual prints as 0.00 are deliberately NOT stored. The lookup falls
+   through to the same model continued past the table (see renderPreRow), which
+   prints "< 0.01%" — true, where a stored 0.00 would assert a base rate of zero. */
 const BASE_RATES = {
   '-1':{FSIQ:.4528,VCI:.4571,PRI:.4678,WMI:.4625,PSI:.4669,IMI:.4669,DMI:.4679,VWMI:.4672},
   '-2':{FSIQ:.4064,VCI:.4147,PRI:.4358,WMI:.4253,PSI:.434, IMI:.434, DMI:.436, VWMI:.4347},
@@ -270,10 +302,14 @@ const BASE_RATES = {
   '-30':{FSIQ:.0002,VCI:.0006,PRI:.0076,WMI:.0024,PSI:.0063,IMI:.0063,DMI:.0079,VWMI:.0068},
   '-31':{FSIQ:.0001,VCI:.0004,PRI:.0061,WMI:.0018,PSI:.005, IMI:.005, DMI:.0063,VWMI:.0054},
   '-32':{FSIQ:.0001,VCI:.0003,PRI:.0048,WMI:.0013,PSI:.0039,IMI:.0039,DMI:.005, VWMI:.0043},
-  '-33':{                     PRI:.0038,WMI:.0009,PSI:.0031,IMI:.003, DMI:.0039,VWMI:.0033},
-  '-34':{                     PRI:.003, WMI:.0007,PSI:.0024,IMI:.0024,DMI:.0031,VWMI:.0026},
-  '-35':{                     PRI:.0023,WMI:.0005,PSI:.0018,IMI:.0018,DMI:.0024,VWMI:.002},
-  '-36':{                     PRI:.0018,WMI:.0003,PSI:.0014,IMI:.0014,DMI:.0019,VWMI:.0015},
+  /* VCI is published down to -36 and FSIQ only to -32; below those the manual
+     prints 0.00, which is not stored. The four VCI cells here were missing while
+     the table's provenance was unknown and the fallback covered them; -35 and
+     -36 printed "< 0.01%" against the manual's 0.01%. */
+  '-33':{          VCI:.0002, PRI:.0038,WMI:.0009,PSI:.0031,IMI:.003, DMI:.0039,VWMI:.0033},
+  '-34':{          VCI:.0001, PRI:.003, WMI:.0007,PSI:.0024,IMI:.0024,DMI:.0031,VWMI:.0026},
+  '-35':{          VCI:.0001, PRI:.0023,WMI:.0005,PSI:.0018,IMI:.0018,DMI:.0024,VWMI:.002},
+  '-36':{          VCI:.0001, PRI:.0018,WMI:.0003,PSI:.0014,IMI:.0014,DMI:.0019,VWMI:.0015},
   '-37':{                     PRI:.0014,WMI:.0002,PSI:.0011,IMI:.0011,DMI:.0014,VWMI:.0012},
   '-38':{                     PRI:.0011,WMI:.0002,PSI:.0008,IMI:.0008,DMI:.0011,VWMI:.0009},
   '-39':{                                                   IMI:.0006,DMI:.0008,VWMI:.0007},
@@ -1831,3 +1867,229 @@ const OPIE_BASE_RATES = {
     "Symbol Span": { m1:10.1, sd1:2.8, m2:10.7, sd2:3, r:0.69, rCorrected:0.73, n:69, separateBattery:true, rInternal:0.84, rInternalAgeMax:90, rInternalByAge:{65:0.88, 70:0.87, 75:0.81, 80:0.84, 85:0.76} }
   }
 };
+
+/* ============================================================================
+   PERFORMANCE VALIDITY (PVT) REFERENCE DATA
+
+   Sources (primary; the on-screen references list carries full citations):
+   - RBANS Effort Index:  Silverberg, Wertheimer & Fichtenberg (2007), TCN 21(5), 841-854.
+   - RBANS Effort Scale:  Novitski, Steele, Karantzoulis & Randolph (2012), ACN 27(2), 190-195.
+   - Reliable Digit Span: Greiffenstein, Baker & Gola (1994), Psych. Assessment 6(3), 218-224;
+                          Meyers & Volbrecht (1998); Schroeder et al. (2012).
+   - TOMM:                Martin, Schroeder, Olsen, Maloy, Boettcher, Ernst & Okut (2020),
+                          TCN 34(1), 88-119 (meta-analysis); Tombaugh (1996).
+   - Aggregation:         Larrabee (2014), ACN 29(4), 364-373.
+
+   These pages take RAW scores directly and never read normDB. Cut-offs and
+   weights are stored verbatim from the cited papers; every table below is
+   pinned in tools/check.js §38. PVT results are reported as cut-off
+   comparisons, never as verdicts — no output may label an examinee
+   "malingering" or the profile "invalid" from a single indicator.
+   ========================================================================= */
+
+/* Silverberg et al. (2007) Table 2 — raw-to-weighted conversion for the two
+   Effort Index components. Bands are [min, max] inclusive on the raw score;
+   note the deliberate gaps (Digit Span never yields a weight of 1 or 4).
+   EI = weighted Digit Span + weighted List Recognition, range 0-12. */
+const PVT_EI_WEIGHTS = {
+  digitSpan: [            // RBANS Digit Span raw, 0-16
+    { min: 8, max: 16, w: 0 },
+    { min: 7, max: 7,  w: 2 },
+    { min: 6, max: 6,  w: 3 },
+    { min: 5, max: 5,  w: 5 },
+    { min: 0, max: 4,  w: 6 }
+  ],
+  listRecognition: [      // RBANS List Recognition raw, 0-20
+    { min: 18, max: 20, w: 0 },
+    { min: 17, max: 17, w: 1 },
+    { min: 15, max: 16, w: 2 },
+    { min: 13, max: 14, w: 3 },
+    { min: 11, max: 12, w: 4 },
+    { min: 10, max: 10, w: 5 },
+    { min: 0,  max: 9,  w: 6 }
+  ]
+};
+/* EI > 3: standard threshold (~94% specificity in the derivation sample);
+   EI > 1: the authors' optimal screening cut-off for post-acute mild TBI. */
+const PVT_EI_CUTOFFS = { standard: 3, sensitive: 1 };
+
+/* Novitski et al. (2012). ES = (List Recognition - [List Recall + Story
+   Recall + Figure Recall]) + Digit Span, all raw. LOWER is more suspicious.
+   The gate is mandatory: computed only where Digit Span < 9 OR List
+   Recognition < 19 OR their sum < 28 — in intact examinees free recall
+   normally far exceeds ceiling-limited recognition, so an ungated ES
+   over-flags. Cut-off: ES < 12 once the gate is met. */
+const PVT_ES = {
+  gate: { digitSpanBelow: 9, listRecognitionBelow: 19, combinedBelow: 28 },
+  cutoff: 12
+};
+
+/* Greiffenstein et al. (1994); Meyers & Volbrecht (1998). RDS = longest
+   forward string passed on BOTH trials + longest backward string passed on
+   BOTH trials (classic variant: Forward + Backward only, no WAIS-IV
+   Sequencing). Floor rule: failing at least one trial each of 3 forward and
+   2 backward is recorded as RDS = 3.
+   <= 7: traditional cut-off. <= 6: conservative — Schroeder et al. (2012)
+   found <= 7 had inadequate specificity across clinical groups while <= 6
+   held specificity > .90; prefer <= 6 in genuinely impaired populations. */
+const PVT_RDS = { floor: 3, cutoffTraditional: 7, cutoffConservative: 6 };
+
+/* Martin et al. (2020) meta-analytic TOMM cut-offs — weighted-mean
+   specificity/sensitivity for neurocognitive/psychiatric samples (the most
+   clinically generalisable subgroup). Scores are correct responses out of 50;
+   "cut" means scores BELOW it fail. sens/spec are the point values the
+   meta-analysis uses for its predictive-power tables (Tables 16-17), from
+   which the app derives PPP/NPP by Bayes at the chosen base rate.
+   specRange/sensRange, where present, are the ranges quoted for the cut-off
+   summary table. Trial 1 < 41 row: Denning (2012). */
+const PVT_TOMM_CUTOFFS = [
+  { id: 't1-41',  trial: 'trial1',    label: 'Trial 1 < 41',   cut: 41, sens: 0.66, spec: 0.93, note: 'More conservative Trial 1 cut-off; meta-analytic weighted-mean values at < 41 (cf. Denning, 2012).' },
+  { id: 't1-42',  trial: 'trial1',    label: 'Trial 1 < 42',   cut: 42, sens: 0.69, spec: 0.91, note: 'Meta-analytic optimum for abbreviated/screening use.' },
+  { id: 't2-45',  trial: 'trial2',    label: 'Trial 2 < 45',   cut: 45, sens: 0.45, spec: 0.97, specRange: '.96–.98', sensRange: '.45–.55', note: 'Traditional cut-off; very high specificity across settings.' },
+  { id: 't2-49',  trial: 'trial2',    label: 'Trial 2 < 49',   cut: 49, sens: 0.63, spec: 0.95, specRange: '.91–.97', sensRange: '.59–.70', note: 'Liberal; only where significant impairment is not expected.' },
+  { id: 'ret-45', trial: 'retention', label: 'Retention < 45', cut: 45, sens: 0.55, spec: 0.98, note: 'Traditional cut-off; very high specificity across settings.' },
+  { id: 'ret-49', trial: 'retention', label: 'Retention < 49', cut: 49, sens: 0.70, spec: 0.93, note: 'Liberal; only where significant impairment is not expected.' }
+];
+/* Base-rate options for the PPP/NPP display, as in Martin et al. Tables 16-17. */
+const PVT_BASE_RATES = [0.10, 0.20, 0.30, 0.40, 0.50];
+
+/* Published classification accuracy for the selectable cut-offs, shown on
+   screen and in the APA export. Strings, not numbers, because the sources
+   publish RANGES (across samples or statistical methods) and the app renders
+   what the source prints:
+   - EI (Silverberg et al., 2007): at > 3, specificity .94 in the mixed
+     clinical derivation sample rising to 1.00 in mild TBI and controls
+     (Tables 1 and 3); sensitivity .46-.71 across the clinical, simulated-
+     naive and simulated-coached malingering groups (Table 3). At > 1,
+     specificity .75 (derivation) to .96 (controls); sensitivity .67-.92.
+   - RDS (Schroeder et al., 2012): global rates by weighted average and
+     Bayesian method — at <= 6, sensitivity .30/.35 and specificity .96/.97;
+     at <= 7, sensitivity .48/.58 and specificity .82/.85.
+   - ES (Novitski et al., 2012): NO published sensitivity/specificity pair
+     exists; discrimination is published as ROC AUC = .91 against amnestic
+     patients (vs .61 for the EI in the same comparison). Do not invent a
+     pair — the APA table prints dashes and the note explains.
+   TOMM accuracy lives on PVT_TOMM_CUTOFFS above. Pinned by check.js §38. */
+const PVT_EI_ACCURACY = {
+  standard:  { sens: '.46–.71', spec: '.94–1.00' },
+  sensitive: { sens: '.67–.92', spec: '.75–.96' }
+};
+const PVT_RDS_ACCURACY = {
+  conservative: { sens: '.30–.35', spec: '.96–.97' },
+  traditional:  { sens: '.48–.58', spec: '.82–.85' }
+};
+const PVT_ES_ACCURACY = { auc: '.91' };
+
+/* WAIS Digit Span Age-Corrected Scaled Score (Iverson & Tulsky, 2003;
+   Axelrod, Fichtenberg, Millis & Wertheimer, 2006). BOTH SOURCES ARE
+   WAIS-III: Iverson & Tulsky tabulate base rates in the WAIS-III
+   standardization sample (N = 2,450) and six clinical groups; Axelrod et al.
+   give diagnostic efficiency per cut-off (Table 3) against probable
+   malingerers vs moderate/severe TBI, cross-validated on non-litigating
+   mild TBI. The page says so and tells the clinician to document the
+   edition administered.
+   - ACSS <= 5 (conservative, default): standardization base rate 3.8%,
+     combined clinical 3.4% (Iverson & Tulsky Tables 1/4 — their suspicion
+     guideline is "scaled score of 5, 4, or less"); Axelrod Table 3 at
+     <= 5: sensitivity .36, specificity .97.
+   - ACSS <= 7 (Axelrod's optimum): sensitivity .75, specificity .69 (TBI),
+     .77 on the mild-TBI cross-validation.
+   - Vocabulary - Digit Span difference >= 5: a second Iverson & Tulsky
+     suspicion index, interpreted against BASE RATES, not sens/spec —
+     7.1% of the standardization sample and 2.8% of the combined clinical
+     sample score >= 5 (Tables 3/6).
+   DS ACSS and RDS come from the SAME subtest: the summary counts them as
+   one indicator (the digit-span group), exactly as EI/ES share theirs. */
+/* The remaining two Iverson & Tulsky suspicion indices are span-based and
+   interpreted against base rates, like the Vocabulary difference:
+   - Longest span forward <= 4, FOR PERSONS UNDER AGE 55 ONLY (their
+     guideline (b)) - Table 2 base rates run 2.5-5.5% across the under-55
+     bands and climb steeply with age (11.0% at 85-89), which is why the
+     index is age-limited; combined clinical 3.4% (Table 5). The app reads
+     the shared top-bar patient age and WITHHOLDS this index without one,
+     or at 55+.
+   - Longest span backward <= 2 (guideline (c), no age qualifier): Table 2
+     base rates 2.0-6.0% across all bands; combined clinical 3.4%.
+   NOTE the definition: these are the longest span passed on EITHER trial,
+   as tabulated from the standardization data - NOT the RDS both-trials
+   span entered on the RDS tab. */
+const PVT_DS = {
+  cutoffConservative: 5, cutoffSensitive: 7, vocabDiffCutoff: 5,
+  lsfCutoff: 4, lsfAgeBelow: 55, lsbCutoff: 2
+};
+const PVT_DS_SPAN_BASERATES = {
+  lsf: { standardization: '2.5–5.5%', clinical: '3.4%' },   // under-55 bands
+  lsb: { standardization: '2.0–6.0%', clinical: '3.4%' }
+};
+const PVT_DS_ACCURACY = {
+  conservative: { sens: '.36', spec: '.97' },
+  sensitive:    { sens: '.75', spec: '.69–.77' }
+};
+const PVT_DS_VOCABDIFF_BASERATES = { standardization: '7.1%', clinical: '2.8%' };
+
+/* Rey 15-Item Memorization Test with recognition trial (Boone, Salazar, Lu,
+   Warner-Chacon & Razani, 2002, JCEN 24(5), 561-573). Two indices, both
+   from Table 6 (suspect-effort group vs clinic patients / learning-disabled
+   students / controls):
+   - Free recall < 9 (the classic cut-off): sensitivity 46.9%, specificity
+     97.2% / 100% / 98.3% across the three comparison groups.
+   - Combination score = recall + (recognition correct - false positives),
+     cut-off < 20: sensitivity 71.4%, specificity 91.7% / 93.9% / 91.7%.
+   A stand-alone measure sharing no subtest with anything else on the page,
+   so it carries its own summary group and adds a genuine independent
+   indicator. The stimulus page is deliberately NOT reproduced in the app -
+   publishing PVT stimuli alongside their cut-offs is a test-security
+   hazard; the administration script alone is carried in the disclosure. */
+const PVT_REY15 = { recallCutoff: 9, comboCutoff: 20 };
+const PVT_REY15_ACCURACY = {
+  recall: { sens: '.47', spec: '.97–1.00' },
+  combo:  { sens: '.71', spec: '.92–.94' }
+};
+
+/* Rey 15-Item stimulus layouts, for in-app administration.
+   Sources: the recall page is the classic 5x3 array (Rey, 1964; Lezak);
+   the recognition page is Boone et al. (2002) Figure 1, "Rey 15-Item
+   Recognition Stimulus Page", transcribed item by item from the figure
+   in reading order — 5 rows of 6.
+
+   The 15 TARGETS are not asserted here: `target` is derived in
+   check.js §38 by testing each recognition item's id against the recall
+   set, and the check fails unless exactly 15 match and the matching set
+   IS the recall set. That is the invariant that makes the foils
+   trustworthy — a mis-transcribed foil would either break the count or
+   claim a target that never appeared on the recall page.
+
+   The foils mirror each target series one step on (D E F / 4 5 6 /
+   d e f / diamond, pentagon, parallelogram / one, two and three
+   horizontal rules against I, II, III), which is the design that makes
+   the recognition trial discriminating. Boone's pathognomonic
+   false-positive errors — f, 5, 6 and the pentagon — are all here.
+
+   TEST SECURITY: these are rendered ONLY inside the administration
+   overlay, which requires an explicit start in-session; they never
+   appear in the page's static markup, in an exported table, or behind a
+   deep link. §38 asserts all four. */
+const REY15_RECALL_ROWS = [
+  ['A', 'B', 'C'],
+  ['1', '2', '3'],
+  ['a', 'b', 'c'],
+  ['circle', 'square', 'triangle'],
+  ['I', 'II', 'III']
+];
+const REY15_RECOGNITION_ROWS = [
+  ['d', 'diamond', 'II', 'B', '5', 'c'],
+  ['A', 'III', 'e', 'pentagon', '2', 'rule1'],
+  ['rule3', 'square', '6', '1', 'F', 'a'],
+  ['parallelogram', '4', 'C', 'b', 'triangle', 'D'],
+  ['I', 'E', 'f', 'rule2', 'circle', '3']
+];
+/* How each id draws: a glyph is set in type, a shape is stroked. */
+const REY15_SHAPES = ['circle', 'square', 'triangle', 'diamond', 'pentagon', 'parallelogram', 'rule1', 'rule2', 'rule3'];
+
+/* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
+   accuracy by number of failures. Percentages as published. */
+const PVT_AGGREGATION = [
+  { threshold: '≥ 2 of 7 failures', spec: 88.9, sens: 97.6, correct: 92.6 },
+  { threshold: '≥ 3 of 7 failures', spec: 96.3, sens: 87.8, correct: 92.6 },
+  { threshold: '≥ 4 of 7 failures', spec: 100,  sens: 63.4, correct: 84.2 }
+];

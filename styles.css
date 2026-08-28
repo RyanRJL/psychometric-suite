@@ -9499,3 +9499,685 @@ body.rb-docked-active{padding-right:0}
   font-family:var(--serif);font-size:0.9em;font-style:italic;color:#333;
   /* Alignment deliberately unset — see .apa-group-col-label above. */
 }
+
+/* Red emphasis for the OPIE-4 UK-accuracy caveat inside its APA note. A NEW
+   STANDALONE CLASS per CLAUDE.md: .info-box and the APA note markup are both
+   restyled by design-system.css and page-scoped blocks, so a modifier on
+   either would enter that fight. Nothing else targets this name, so plain
+   0-1-0 specificity wins over inherited colour with no !important needed.
+   Deliberately a true red rather than var(--warn): the sentence is a
+   do-not-rely-on-these-numbers statement, not a soft caution. */
+.uk-caution-red{color:#C0271D;font-weight:600}
+
+/* Base-rate rows (WAIS-IV Longest Span): the raw span is the entry, so the
+   Score box is disabled and greyed. Standalone classes per CLAUDE.md. */
+.bat-score-na-cell{background:rgba(20,15,5,0.03)}
+.bat-score-na{
+  background:rgba(20,15,5,0.05) !important;
+  border-color:rgba(20,15,5,0.08) !important;
+  cursor:not-allowed;
+}
+/* The pct cell's screen-only hint while the age gate withholds a base-rate
+   score (batteryBaseRateAgeState). Muted, not warning-coloured: it is an
+   instruction, not an error. */
+.bat-age-hint{
+  font-family:var(--sans);font-size:11.5px;font-style:italic;
+  color:var(--faint);white-space:nowrap;
+}
+/* While the table holds base-rate rows their entry column must be visible
+   whatever the Show Raw toggle says. Deliberately a compound with .raw-hidden
+   rather than a standalone class: it exists to outrank design-system.css's
+   `#bat-table.raw-hidden .bat-raw-cell{display:none}` (1-2-0) by specificity
+   (1-3-0). The whole column is shown, not just the base-rate rows' cells —
+   per-row cell display would shift every other row's columns left. */
+#bat-table.raw-hidden.raw-forced .bat-raw-cell{display:table-cell}
+#bat-table.raw-hidden.raw-forced .bat-raw-head{display:table-cell}
+
+/* THE REQUIRED-AGE BAR (#bat-age-required) — replaced the anchored popover.
+   Standalone classes throughout. Two deliberate details:
+   - the bar is toggled with the [hidden] ATTRIBUTE, and its own display:flex
+     would outrank the browser's [hidden] default — the exact cascade trap
+     CLAUDE.md records — so [hidden] is re-asserted explicitly below;
+   - required tone: --warn accents, but no modal, no backdrop — it demands
+     without blocking the rest of the page. */
+.bat-age-required-bar{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  margin:0 0 14px;padding:12px 16px;
+  background:rgba(139,58,46,0.06);
+  border:1px solid rgba(139,58,46,0.28);
+  border-left:4px solid var(--warn);
+  border-radius:8px;
+}
+.bat-age-required-bar[hidden]{display:none}
+.bat-age-bar-main{flex:1 1 320px;min-width:260px}
+.bat-age-bar-title{font-family:var(--sans);font-weight:700;font-size:13.5px;color:var(--warn);margin-bottom:2px}
+.bat-age-bar-body{font-family:var(--sans);font-size:13px;color:var(--ink-2);line-height:1.5}
+.bat-age-bar-row{display:flex;gap:8px;align-items:center}
+.bat-age-bar-input{
+  width:96px;padding:7px 10px;font-size:14px;
+  border:1px solid rgba(20,15,5,0.25);border-radius:6px;background:#fff;
+}
+.bat-age-bar-add{
+  padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;
+  color:#fff;background:var(--warn);border:none;border-radius:6px;cursor:pointer;
+}
+.bat-age-bar-add:hover{filter:brightness(1.08)}
+
+/* =============================================================
+   PERFORMANCE VALIDITY PAGE
+   Standalone pvt-* classes throughout, per the cascade rule — but the
+   VISUAL SYSTEM is copied from the modern Change Analysis treatment
+   (styles.css "BOLDER TAB-TO-PANEL CONNECTION" + overview layers):
+   hidden hero (the topbar names the page), a white rounded tab strip
+   with centred labels, an active tab in the warm cream (#F0E8D6)
+   joined to the panel by a 3px accent rail, and the panel itself as a
+   cream-to-white gradient sheet holding white rounded cards. If that
+   treatment changes there, change it here to match.
+   ============================================================= */
+#validity.section{max-width:none;width:100%;padding:24px 40px 80px}
+#validity > .eyebrow,
+#validity > .section-title{display:none!important}
+#validity > .section-desc{
+  max-width:none!important;
+  margin:0 0 14px!important;
+  font-family:var(--sans)!important;
+  font-size:13px!important;
+  line-height:1.55!important;
+  color:#5A5A5A!important;
+}
+
+/* ---- Tab strip: white rounded-top sheet ---- */
+.pvt-method-tabs{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(120px,1fr));
+  gap:0;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-bottom:none;
+  border-radius:var(--r-lg) var(--r-lg) 0 0;
+  box-shadow:0 1px 2px rgba(20,15,5,0.04);
+  overflow:visible;
+}
+.pvt-method-tab{
+  width:100%;
+  border:none;
+  border-right:1px solid rgba(20,15,5,0.04);
+  background:#FFFFFF;
+  font-family:var(--sans);
+  padding:16px 14px 14px;
+  cursor:pointer;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  position:relative;
+  box-shadow:inset 0 -1px 0 rgba(20,15,5,0.08);
+  transition:background 240ms var(--ease,ease), color 240ms var(--ease,ease);
+}
+.pvt-method-tab:first-child{border-radius:var(--r-lg) 0 0 0}
+.pvt-method-tab:last-child{border-right:none;border-radius:0 var(--r-lg) 0 0}
+.pvt-method-tab:focus{outline:none}
+.pvt-method-tab:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.22)}
+.pvt-method-tab:hover:not(.active){background:#F8F5ED}
+.pvt-method-tab.active{
+  background:#F0E8D6;
+  position:relative;
+  z-index:2;
+}
+.pvt-method-tab.active::after{
+  /* 3px accent rail along the bottom edge, extending 1px below the strip
+     so tab and panel read as one shared coloured seam — same device as
+     the Change Analysis tabs. */
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:-1px;
+  height:3px;
+  background:#9C3D2A;
+  z-index:3;
+}
+.pvt-method-num{display:none}
+.pvt-method-main{display:flex;flex-direction:column;gap:1px;min-width:0}
+.pvt-method-label{
+  font-family:var(--sans);
+  font-size:13px;
+  font-weight:500;
+  color:#3F3F3F;
+  line-height:1.25;
+}
+.pvt-method-tab.active .pvt-method-label{color:#1A1A1A;font-weight:600}
+.pvt-method-meta{
+  font-family:var(--sans);
+  font-size:11px;
+  color:#5A5A5A;
+  line-height:1.3;
+}
+
+/* Live status chip - state colours match the result card's bands. */
+.pvt-status{
+  display:inline-flex;
+  align-items:center;
+  height:17px;
+  padding:0 8px;
+  border:1px solid rgba(20,15,5,0.12);
+  border-radius:9px;
+  background:#FFFFFF;
+  color:#9E9A93;
+  font-family:var(--mono);
+  font-size:8.5px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  line-height:1;
+  white-space:nowrap;
+  transition:background 140ms ease,color 140ms ease,border-color 140ms ease;
+}
+.pvt-status.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.4);background:rgba(46,125,79,0.07)}
+.pvt-status.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.4);background:rgba(156,61,42,0.07)}
+.pvt-status.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.4);background:rgba(138,122,44,0.07)}
+
+/* ---- Content panel: the cream-to-white gradient sheet ---- */
+/* The sheet holds every method panel AND the running rail, so the rail is
+   ONE element that persists across tab switches rather than a copy per
+   panel — a running total that re-rendered per tab would be four copies
+   of one truth. */
+.pvt-sheet{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 260px;
+  gap:22px;
+  background:linear-gradient(180deg, #F0E8D6 0%, #F7F2E6 80px, #FFFFFF 100%);
+  border:1px solid rgba(20,15,5,0.08);
+  border-top:none;
+  border-radius:0 0 var(--r-lg) var(--r-lg);
+  box-shadow:0 6px 18px rgba(20,15,5,0.05);
+  padding:24px;
+}
+/* On the Summary tab the rail would restate the table beside it. */
+.pvt-sheet.is-summary{grid-template-columns:minmax(0,1fr)}
+.pvt-sheet.is-summary .pvt-rail{display:none}
+.pvt-sheet-main{min-width:0}
+@media (max-width:1180px){
+  .pvt-sheet{grid-template-columns:minmax(0,1fr)}
+  .pvt-rail{display:none}
+}
+
+.pvt-tab-content{display:none}
+.pvt-tab-content.active{
+  display:block;
+  animation:pvt-panel-in 180ms var(--ease,ease) both;
+}
+
+/* ---- running summary rail ----
+   A docked progress panel: hairline-divided sections, small-caps kickers,
+   and a label on the left against its value on the right. Colour marks a
+   flag; it never carries the meaning on its own. Sticky, so it stays in
+   view while a long method panel scrolls. */
+.pvt-rail{min-width:0}
+.pvt-rail-card{
+  position:sticky;
+  top:16px;
+  border:1px solid rgba(20,15,5,0.07);
+  border-radius:var(--r-md);
+  background:#FFFFFF;
+  overflow:hidden;
+}
+.pvt-rail-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:12px 14px;
+  border-bottom:1px solid rgba(20,15,5,0.07);
+}
+.pvt-rail-title{
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.11em;
+  text-transform:uppercase;
+  color:var(--ink);
+}
+.pvt-rail-toggle{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  padding:0;
+  border:0;
+  border-radius:5px;
+  background:transparent;
+  color:#9E9A93;
+  cursor:pointer;
+  transition:background 120ms ease, color 120ms ease, transform 160ms ease;
+}
+.pvt-rail-toggle svg{width:13px;height:13px}
+.pvt-rail-toggle:hover{background:rgba(20,15,5,0.04);color:var(--ink)}
+.pvt-rail-toggle:focus{outline:none}
+.pvt-rail-toggle:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.25)}
+/* Chevron points down when open, right when collapsed. */
+.pvt-rail-card .pvt-rail-toggle{transform:rotate(90deg)}
+.pvt-rail-card.is-collapsed .pvt-rail-toggle{transform:rotate(0deg)}
+.pvt-rail-card.is-collapsed .pvt-rail-body{display:none}
+.pvt-rail-card.is-collapsed .pvt-rail-head{border-bottom:none}
+
+.pvt-rail-section{
+  padding:12px 14px 13px;
+  border-bottom:1px solid rgba(20,15,5,0.07);
+}
+.pvt-rail-kicker{
+  font-family:var(--sans);
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:0.13em;
+  text-transform:uppercase;
+  color:#A29D95;
+  margin-bottom:8px;
+}
+.pvt-rail-stat{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  padding:3px 0;
+}
+.pvt-rail-stat-label{font-family:var(--sans);font-size:11.5px;color:var(--ink);line-height:1.3}
+.pvt-rail-stat-value{
+  font-family:var(--mono);
+  font-size:12.5px;
+  font-weight:600;
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.pvt-rail-stat.is-flagged .pvt-rail-stat-value{color:#9c3d2a}
+.pvt-rail-sep{color:var(--faint);margin:0 1px;font-weight:400}
+.pvt-rail-hint{
+  font-family:var(--sans);
+  font-size:10.5px;
+  color:#918C84;
+  line-height:1.5;
+  margin:7px 0 0;
+}
+
+/* Grouped by independent indicator; a two-measure group is labelled, so
+   "counts as one" is visible rather than only stated in the note. */
+.pvt-rail-group{margin-bottom:9px}
+.pvt-rail-group:last-child{margin-bottom:0}
+.pvt-rail-group-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:6px;
+  margin-bottom:1px;
+}
+.pvt-rail-group-name{
+  font-family:var(--sans);
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#A29D95;
+}
+.pvt-rail-group-tag{
+  font-family:var(--sans);
+  font-size:8.5px;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  color:#BCB6AD;
+}
+.pvt-rail-row{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  width:100%;
+  padding:4px 6px;
+  margin:0 -6px;
+  border:0;
+  border-radius:5px;
+  background:transparent;
+  text-align:left;
+  cursor:pointer;
+  transition:background 120ms ease;
+}
+.pvt-rail-row:hover{background:rgba(20,15,5,0.035)}
+.pvt-rail-row:focus{outline:none}
+.pvt-rail-row:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+.pvt-rail-row.is-current{background:rgba(156,61,42,0.06)}
+.pvt-rail-label{
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:var(--ink);
+  line-height:1.35;
+  min-width:0;
+}
+.pvt-rail-row.is-idle .pvt-rail-label{color:#A8A29A}
+.pvt-rail-value{
+  font-family:var(--sans);
+  font-size:10.5px;
+  color:#918C84;
+  line-height:1.4;
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+.pvt-rail-row.is-flag .pvt-rail-value{color:#9c3d2a;font-weight:600}
+.pvt-rail-row.is-pass .pvt-rail-value{color:#2e7d4f}
+.pvt-rail-row.is-gated .pvt-rail-value{color:#8a7a2c}
+
+.pvt-rail-cta{
+  display:block;
+  width:100%;
+  padding:11px 14px;
+  border:0;
+  background:transparent;
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.02em;
+  color:#9C3D2A;
+  text-align:left;
+  cursor:pointer;
+  transition:background 120ms ease;
+}
+.pvt-rail-cta:hover{background:rgba(156,61,42,0.05)}
+.pvt-rail-cta:focus{outline:none}
+.pvt-rail-cta:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+@keyframes pvt-panel-in{
+  from{ opacity:0; transform:translateY(-4px); }
+  to  { opacity:1; transform:translateY(0); }
+}
+
+.pvt-workspace{
+  display:grid;
+  grid-template-columns:minmax(380px,0.9fr) minmax(430px,1.1fr);
+  gap:16px;
+  align-items:start;
+}
+@media (max-width:1100px){ .pvt-workspace{grid-template-columns:1fr} }
+
+/* ---- White cards on the sheet ---- */
+.pvt-card{
+  border:1px solid rgba(20,15,5,0.06);
+  background:#FFFFFF;
+  border-radius:var(--r-md);
+  padding:16px 18px;
+}
+.pvt-card-kicker{
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:#7A766E;
+  margin-bottom:12px;
+}
+.pvt-field-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0 14px;
+}
+.pvt-field-grid .field{margin-bottom:14px}
+.pvt-card .field label{
+  font-size:10.5px!important;
+  letter-spacing:0.08em!important;
+  color:#5A5A5A!important;
+}
+.pvt-card .field input,
+.pvt-card .field select{
+  font-family:var(--sans)!important;
+  font-size:13.5px!important;
+}
+.pvt-field-wide{grid-column:1 / -1}
+.pvt-note{margin-bottom:0;font-size:12.5px;background:#FFFFFF;border-radius:var(--r-md)}
+.pvt-card .formula-disclosure{margin-top:4px}
+
+.pvt-outcome{display:flex;flex-direction:column;gap:14px;min-width:0}
+.pvt-outcome .panel{margin-bottom:0}
+.pvt-summary-left{min-width:0}
+
+.pvt-result{margin:0}
+/* The message card - empty, invalid and partial states only. A SCORED
+   measure never renders through this: it renders as .pvt-readout below,
+   one row per index. */
+.pvt-result-inner{display:block;border:1px solid rgba(20,15,5,0.08);border-radius:var(--r-md);padding:14px 16px;background:#FFFFFF}
+.pvt-result-inner.is-empty{color:var(--faint);font-style:italic;font-size:13.5px}
+.pvt-result-headline{display:block;font-size:13px;color:var(--muted)}
+.pvt-result-detail{display:block;margin-top:4px;font-size:12.5px;color:var(--muted,#555);line-height:1.55}
+
+/* ---------- per-index readout ----------
+   Values and labels stay in INK; the chip beside them carries the state.
+   A card-level colour cannot express four indices in four states, which
+   is exactly what it got wrong before. Every chip carries its word, so
+   state never rests on colour alone. */
+.pvt-readout{
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
+  background:#FFFFFF;
+  padding:4px 16px;
+}
+.pvt-readout-head{
+  padding:11px 0 9px;
+  border-bottom:1px solid rgba(20,15,5,0.06);
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:var(--muted);
+}
+.pvt-readout-head strong{color:var(--ink);font-weight:600}
+.pvt-index{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:start;
+  gap:14px;
+  padding:12px 0;
+  border-bottom:1px solid rgba(20,15,5,0.06);
+}
+.pvt-index:last-child{border-bottom:0}
+.pvt-index-main{min-width:0}
+.pvt-index-top{display:flex;align-items:baseline;gap:10px;margin-bottom:7px}
+.pvt-index-label{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.2}
+.pvt-index-value{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+.pvt-index-value.is-none{color:var(--faint)}
+.pvt-index-meta{margin-top:7px;font-family:var(--sans);font-size:10.5px;color:#7A766E;line-height:1.45}
+
+
+/* Status chip: glyph + word + colour, so the state is carried three ways
+   and never rests on colour alone. */
+.pvt-flag{
+  align-self:center;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  height:21px;
+  padding:0 9px;
+  border:1px solid rgba(20,15,5,0.12);
+  border-radius:10px;
+  background:#FFFFFF;
+  color:var(--muted);
+  font-family:var(--sans);
+  font-size:9.5px;
+  font-weight:600;
+  letter-spacing:0.07em;
+  text-transform:uppercase;
+  line-height:1;
+  white-space:nowrap;
+}
+.pvt-flag.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.38);background:rgba(46,125,79,0.06)}
+.pvt-flag.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.38);background:rgba(156,61,42,0.06)}
+.pvt-flag.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.38);background:rgba(138,122,44,0.06)}
+.pvt-flag-icon{width:11px;height:11px;flex:0 0 11px;display:block}
+.pvt-readout-note{
+  padding:10px 0 12px;
+  border-top:1px solid rgba(20,15,5,0.06);
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:var(--muted);
+  line-height:1.5;
+}
+.pvt-index + .pvt-readout-note{border-top:0;padding-top:0}
+
+.pvt-table{width:100%;border-collapse:collapse;font-size:12px}
+.pvt-table th{
+  text-align:left;
+  font-family:var(--sans);
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:#4D4840;
+  padding:8px 12px;
+  border-bottom:2px solid var(--border);
+  white-space:nowrap;
+}
+.pvt-table td{padding:6px 12px;border-bottom:1px solid rgba(20,15,5,0.06)}
+.pvt-table tr:last-child td{border-bottom:0}
+.pvt-cell-fail{color:#9c3d2a;font-weight:600}
+.pvt-agg-copy{font-size:12.5px;color:var(--muted,#555);line-height:1.55;margin:0 0 12px}
+
+/* The headline count on the Summary tab. */
+.pvt-count{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
+.pvt-count-num{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--ink);line-height:1}
+.pvt-count-num.is-fail{color:#9c3d2a}
+.pvt-count-label{font-size:12px;color:var(--muted);line-height:1.4;max-width:520px}
+
+/* One-line expandable cautions - headline on screen, full text one click
+   away. White card like everything else on the sheet, caution rail. */
+.pvt-caution{
+  border:1px solid rgba(156,61,42,0.25);
+  border-left:4px solid #9c3d2a;
+  border-radius:var(--r-md);
+  background:#FFFFFF;
+  padding:10px 14px;
+  font-size:12.5px;
+  color:#4D4840;
+  line-height:1.55;
+}
+.pvt-caution summary{cursor:pointer;list-style:none;color:var(--ink-2)}
+.pvt-caution summary::-webkit-details-marker{display:none}
+.pvt-caution summary::after{
+  content:'more';
+  margin-left:8px;
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--faint);
+}
+.pvt-caution[open] summary::after{content:'less'}
+.pvt-caution summary strong{color:#9c3d2a}
+.pvt-caution-body{margin-top:8px}
+
+/* Collapsed footer references - outside the sheet, quiet. */
+.pvt-refs{margin-top:22px;padding-top:10px}
+.pvt-refs summary{
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--faint);
+  list-style:none;
+}
+.pvt-refs summary::-webkit-details-marker{display:none}
+.pvt-refs summary::before{content:'+ '}
+.pvt-refs[open] summary::before{content:'\2212\00a0 '}
+.pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
+
+/* Per-measure source line - the citation the cut-offs come from, plus the
+   published accuracy at the currently selected cut-off (filled by
+   renderPvtAccuracy from the same strings the APA export prints). */
+.pvt-source{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  margin:2px 0 12px;
+  padding:9px 12px;
+  background:rgba(244,240,232,0.55);
+  border:1px solid rgba(20,15,5,0.05);
+  border-radius:var(--r-md);
+  font-family:var(--sans);
+  font-size:10.5px;
+  line-height:1.45;
+  color:#7A766E;
+}
+.pvt-source-cite i{font-style:italic}
+.pvt-source-accuracy{color:#5A5A5A;font-weight:500}
+.pvt-source-accuracy:empty{display:none}
+
+/* ---------- Rey 15-Item administration overlay ----------
+   Mounted on <body> (position:fixed against a transformed ancestor is the
+   trap that moved the old age popover), full-viewport, above the drawer. */
+.rey-admin-row{display:flex;align-items:center;gap:12px;margin:2px 0 12px;flex-wrap:wrap}
+.rey-admin-hint{font-family:var(--sans);font-size:10.5px;color:#7A766E;line-height:1.45;flex:1;min-width:200px}
+.rey-admin{
+  position:fixed;
+  inset:0;
+  z-index:9000;
+  background:#FFFFFF;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px;
+}
+.rey-close{
+  position:absolute;top:18px;right:22px;
+  width:34px;height:34px;
+  border:1px solid rgba(20,15,5,0.12);
+  border-radius:50%;
+  background:#FFFFFF;
+  color:var(--muted);
+  font-size:20px;line-height:1;
+  cursor:pointer;
+}
+.rey-close:hover{color:var(--ink);border-color:rgba(20,15,5,0.28)}
+.rey-panel{max-width:620px;text-align:left}
+.rey-kicker{
+  font-family:var(--sans);font-size:10px;font-weight:600;
+  letter-spacing:0.12em;text-transform:uppercase;color:#7A766E;margin-bottom:10px;
+}
+.rey-title{font-family:var(--serif,Georgia,serif);font-size:26px;color:var(--ink);margin:0 0 12px;line-height:1.2}
+.rey-copy{font-family:var(--sans);font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 12px}
+.rey-script{
+  padding:12px 14px;
+  border-left:3px solid rgba(156,61,42,0.35);
+  background:rgba(244,240,232,0.6);
+  border-radius:0 var(--r-md) var(--r-md) 0;
+  color:#4D4840;
+}
+.rey-actions{display:flex;gap:10px;margin-top:18px}
+
+/* The stimulus stage: big, centred, nothing else on screen. */
+.rey-stage{display:flex;flex-direction:column;align-items:center;gap:26px;width:100%}
+.rey-grid{display:grid;gap:26px 54px;justify-items:center;align-items:center}
+.rey-grid-3{grid-template-columns:repeat(3,minmax(0,110px))}
+.rey-grid-6{grid-template-columns:repeat(6,minmax(0,96px));gap:18px 26px}
+.rey-cell{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;min-height:78px;color:#111;
+}
+.rey-glyph-text{font-family:'Helvetica Neue',Arial,sans-serif;font-size:56px;font-weight:400;line-height:1}
+.rey-grid-6 .rey-glyph-text{font-size:44px}
+svg.rey-glyph{width:56px;height:56px}
+.rey-grid-6 svg.rey-glyph{width:46px;height:46px}
+/* Selecting an item stands in for circling it on the paper form. */
+.rey-pick{
+  border:2px solid transparent;
+  border-radius:12px;
+  background:transparent;
+  cursor:pointer;
+  padding:6px;
+  transition:border-color 120ms ease,background 120ms ease;
+}
+.rey-pick:hover{border-color:rgba(20,15,5,0.14)}
+.rey-pick:focus-visible{outline:none;border-color:rgba(156,61,42,0.5)}
+.rey-pick.is-picked{border-color:#9C3D2A;background:rgba(156,61,42,0.07)}
+.rey-stage-foot{display:flex;align-items:center;gap:18px;margin-top:6px}
+.rey-picked{font-family:var(--sans);font-size:12px;color:var(--muted)}
+.rey-countdown{
+  font-family:var(--mono);font-size:15px;color:var(--muted);
+  border:1px solid rgba(20,15,5,0.12);border-radius:999px;padding:5px 16px;
+}
+@media (max-width:760px){
+  .rey-grid-6{grid-template-columns:repeat(3,minmax(0,90px))}
+  .rey-glyph-text{font-size:42px}
+}

@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260801l">
-<link rel="stylesheet" href="design-system.css?v=20260802a">
+<link rel="stylesheet" href="styles.css?v=20260828aa">
+<link rel="stylesheet" href="design-system.css?v=20260828aa">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -634,6 +634,13 @@
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
+        <button type="button" class="topnav-item nav-item" data-target="validity" data-bucket="validity">
+          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 2.5 L16.5 5 v4.5 c0 4-2.8 6.8-6.5 8 c-3.7-1.2-6.5-4-6.5-8 V5 Z"/>
+            <polyline points="7,10 9.2,12.2 13.5,7.5"/>
+          </svg>
+          <span>Validity</span>
+        </button>
         <button type="button" class="topnav-item nav-item" data-target="converter" data-bucket="converter">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3,7 14,7 11.5,4.5"/>
@@ -680,11 +687,12 @@
     <div class="nav-item" data-target="premorbid"><span class="nav-item-num">01</span>Premorbid Estimate</div>
     <div class="nav-item" data-target="battery"><span class="nav-item-num">02</span>Score Tables</div>
     <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">03</span>Change Analysis</div>
-    <div class="nav-item" data-target="charts"><span class="nav-item-num">04</span>Score Charts</div>
-    <div class="nav-item" data-target="converter"><span class="nav-item-num">05</span>Score Converter</div>
-    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">06</span>Effect Size Tools</div>
-    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Data</div>
-    <div class="nav-item" data-target="about"><span class="nav-item-num">08</span>Methods &amp; References</div>
+    <div class="nav-item" data-target="validity"><span class="nav-item-num">04</span>Performance Validity</div>
+    <div class="nav-item" data-target="charts"><span class="nav-item-num">05</span>Score Charts</div>
+    <div class="nav-item" data-target="converter"><span class="nav-item-num">06</span>Score Converter</div>
+    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">07</span>Effect Size Tools</div>
+    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">08</span>Data</div>
+    <div class="nav-item" data-target="about"><span class="nav-item-num">09</span>Methods &amp; References</div>
   </nav>
 
   <div class="sidebar-foot">
@@ -701,7 +709,7 @@
 
     <header class="home-db-header">
       <h1 class="home-db-title">Psychometric <em>Assistant</em></h1>
-      <p class="home-db-sub">Neuropsychological calculators for clinical practice, with APA-formatted output</p>
+      <p class="home-db-sub">Neuropsychological calculators for clinical practice</p>
     </header>
 
     <div class="home-db-grid">
@@ -759,6 +767,19 @@
         <div class="home-db-card-desc">Estimate premorbid ability using ToPF and OPIE-4 models with WAIS-IV/WMS-IV comparison</div>
         <div class="home-db-card-arrow">→</div>
       </button>
+
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
+        <div class="home-db-card-icon">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 2.5 L18 5.2 v4.8 c0 4.4-3 7.5-7 8.9 c-4-1.4-7-4.5-7-8.9 V5.2 Z"/>
+            <polyline points="7.8,11 10.2,13.4 14.8,8.2"/>
+          </svg>
+        </div>
+        <div class="home-db-card-name">Performance Validity</div>
+        <div class="home-db-card-desc">Score embedded and stand-alone PVTs against published cut-offs with base-rate-aware interpretation</div>
+        <div class="home-db-card-arrow">→</div>
+      </button>
+
 
       <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
         <div class="home-db-card-icon">
@@ -1010,18 +1031,13 @@
 
            Declared here rather than built by design-system.js so app.js can
            wire it at init — same reason #bat-ci-level is declared here. -->
-      <div class="ds-age-pop" id="bat-age-pop" role="dialog"
-           aria-label="Add the patient's age to sharpen these intervals">
-        <span class="ds-age-pop-arrow" aria-hidden="true"></span>
-        <div class="ds-age-pop-title">Add the patient’s age?</div>
-        <div class="ds-age-pop-body" id="bat-age-pop-body"></div>
-        <div class="ds-age-pop-row">
-          <input type="number" id="bat-age-pop-input" class="ds-age-pop-input"
-                 min="5" max="90" step="1" placeholder="e.g. 72" aria-label="Patient age">
-          <button type="button" class="ds-age-pop-add" id="bat-age-pop-add">Add</button>
-        </div>
-        <button type="button" class="ds-age-pop-skip" id="bat-age-pop-skip">Skip — use all-ages</button>
-      </div>
+      <!-- Required-age bar: shown by refreshBatteryAgePrompt whenever a row in
+           the table reads the patient age and none is entered. Inline and
+           non-dismissable on purpose — it replaced a skippable popover that
+           was anchored to the CI toggle (and so pointed its arrow at the 90%
+           button) and proved too easy to ignore. Standalone classes per the
+           CSS cascade note in CLAUDE.md. -->
+      <div class="bat-age-required-bar" id="bat-age-required" hidden></div>
 
       <table class="input-table raw-hidden" id="bat-table">
       <thead>
@@ -1306,6 +1322,445 @@
 
   </section>
 
+  <!-- ========== PERFORMANCE VALIDITY ========== -->
+  <section class="section" id="validity">
+    <div class="eyebrow">Performance Validity · Embedded &amp; Stand-Alone PVTs</div>
+    <h1 class="section-title">Performance <span class="ink">Validity</span></h1>
+    <p class="section-desc">Score embedded and stand-alone validity indicators against their published cut-offs, then weigh them together. No single index is a verdict — results are cut-off comparisons only.</p>
+
+    <div class="pvt-method-tabs" role="tablist" aria-label="Performance validity measures">
+      <button type="button" class="pvt-method-tab active" data-pvt-tab="ei" role="tab" aria-selected="true">
+        <span class="pvt-method-num">01</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Effort Index</span>
+          <span class="pvt-method-meta">RBANS embedded · weighted sum</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-ei">—</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="es" role="tab">
+        <span class="pvt-method-num">02</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Effort Scale</span>
+          <span class="pvt-method-meta">RBANS embedded · gated</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-es">—</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="rds" role="tab">
+        <span class="pvt-method-num">03</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Reliable Digit Span</span>
+          <span class="pvt-method-meta">WAIS Digit Span · both trials</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-rds">—</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="ds" role="tab">
+        <span class="pvt-method-num">04</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Digit Span</span>
+          <span class="pvt-method-meta">WAIS embedded · Iverson indices</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-ds">—</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="rey15" role="tab">
+        <span class="pvt-method-num">05</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Rey 15-Item</span>
+          <span class="pvt-method-meta">Stand-alone · recall + recognition</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-rey15">—</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
+        <span class="pvt-method-num">06</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">TOMM</span>
+          <span class="pvt-method-meta">Stand-alone · forced choice</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-tomm">—</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="summary" role="tab">
+        <span class="pvt-method-num">07</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Summary</span>
+          <span class="pvt-method-meta">Aggregation · Larrabee (2014)</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-summary">—</span>
+      </button>
+    </div>
+
+    <div class="pvt-sheet">
+      <div class="pvt-sheet-main">
+    <!-- ===== Effort Index ===== -->
+    <div class="pvt-tab-content active" id="pvt-ei">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>RBANS Digit Span <span class="hint">(raw, 0–16)</span></label>
+              <input type="number" min="0" max="16" step="1" data-pvt-field="ds" id="pvt-ei-ds" placeholder="e.g. 9">
+            </div>
+            <div class="field">
+              <label>RBANS List Recognition <span class="hint">(raw, 0–20)</span></label>
+              <input type="number" min="0" max="20" step="1" data-pvt-field="lrec" id="pvt-ei-lrec" placeholder="e.g. 19">
+            </div>
+            <div class="field pvt-field-wide">
+              <label>Cut-off</label>
+              <select id="pvt-ei-cutoff">
+                <option value="standard" selected>EI &gt; 3 · standard (~94% specificity)</option>
+                <option value="sensitive">EI &gt; 1 · screening (more sensitive)</option>
+              </select>
+            </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Cut-offs: Silverberg, Wertheimer &amp; Fichtenberg (2007), <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</span>
+            <span class="pvt-source-accuracy" id="pvt-ei-accuracy"></span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>Formula &amp; weighting table</summary>
+            <div class="formula-body">
+              <p>Each raw score converts to a weighted score (Silverberg, Wertheimer &amp; Fichtenberg, 2007, Table 2); EI = weighted Digit Span + weighted List Recognition (range 0–12). Higher EI = less credible performance. Some weights are unreachable for a given subtest (Digit Span never yields 1 or 4).</p>
+              <table class="pvt-table">
+                <thead><tr><th>Digit Span (raw)</th><th>List Recognition (raw)</th><th>Weighted score</th></tr></thead>
+                <tbody>
+                  <tr><td>8–16</td><td>18–20</td><td>0</td></tr>
+                  <tr><td>—</td><td>17</td><td>1</td></tr>
+                  <tr><td>7</td><td>15–16</td><td>2</td></tr>
+                  <tr><td>6</td><td>13–14</td><td>3</td></tr>
+                  <tr><td>—</td><td>11–12</td><td>4</td></tr>
+                  <tr><td>5</td><td>10</td><td>5</td></tr>
+                  <tr><td>0–4</td><td>0–9</td><td>6</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-ei-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> Over-flags in dementia (~48%) and severe impairment — corroborate before concluding.</summary>
+            <div class="pvt-caution-body">Both subtests load on attention/working memory and verbal recognition, so aphasia or significant memory disorder can inflate the EI without poor effort; severely impaired geriatric samples show ~31–37% failure rates. Do not apply single-subtest cut-offs in place of the combined EI, and do not declare a whole RBANS protocol invalid on the EI alone — use it to generate hypotheses and trigger further validity testing (Silverberg et al., 2007).</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Effort Scale ===== -->
+    <div class="pvt-tab-content" id="pvt-es">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>RBANS Digit Span <span class="hint">(raw, 0–16)</span></label>
+              <input type="number" min="0" max="16" step="1" data-pvt-field="ds" id="pvt-es-ds" placeholder="e.g. 9">
+            </div>
+            <div class="field">
+              <label>RBANS List Recognition <span class="hint">(raw, 0–20)</span></label>
+              <input type="number" min="0" max="20" step="1" data-pvt-field="lrec" id="pvt-es-lrec" placeholder="e.g. 19">
+            </div>
+            <div class="field">
+              <label>List Recall <span class="hint">(raw)</span></label>
+              <input type="number" min="0" max="10" step="1" data-pvt-field="listRecall" id="pvt-es-listrecall" placeholder="e.g. 4">
+            </div>
+            <div class="field">
+              <label>Story Recall <span class="hint">(raw)</span></label>
+              <input type="number" min="0" max="12" step="1" data-pvt-field="storyRecall" id="pvt-es-storyrecall" placeholder="e.g. 5">
+            </div>
+            <div class="field">
+              <label>Figure Recall <span class="hint">(raw)</span></label>
+              <input type="number" min="0" max="20" step="1" data-pvt-field="figRecall" id="pvt-es-figrecall" placeholder="e.g. 8">
+            </div>
+          </div>
+          <div class="info-box pvt-note"><strong>Mandatory gate.</strong> Computed only where Digit Span &lt; 9, List Recognition &lt; 19, or their sum &lt; 28 (Novitski et al., 2012).</div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Formula, gate &amp; cut-off: Novitski, Steele, Karantzoulis &amp; Randolph (2012), <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</span>
+            <span class="pvt-source-accuracy">No published sensitivity/specificity pair — discrimination is ROC AUC = .91 vs amnestic patients (vs .61 for the EI).</span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>Formula</summary>
+            <div class="formula-body">
+              <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. The gate exists because in cognitively intact examinees free recall normally far exceeds the ceiling-limited recognition score, so an ungated ES over-flags; only 17% of the normal standardisation sample fall below the combined &lt; 28 screen, and 15.1% meet it while also scoring ES &lt; 12.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-es-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> Unstable outside Alzheimer-type amnesia — confirm with a stand-alone PVT.</summary>
+            <div class="pvt-caution-body">Built around the Alzheimer's recall/recognition dissociation, so mixed or atypical memory profiles may not match the pattern: later work shows ~4% failure in AD but ~31% in non-AD dementia and &gt;60% suboptimal rates in Parkinson's disease. The amnestic validation sample had no independent effort testing (Novitski et al., 2012).</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Reliable Digit Span ===== -->
+    <div class="pvt-tab-content" id="pvt-rds">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Longest forward span passed on <em>both</em> trials</label>
+              <input type="number" min="0" max="9" step="1" id="pvt-rds-f" placeholder="e.g. 6">
+            </div>
+            <div class="field">
+              <label>Longest backward span passed on <em>both</em> trials</label>
+              <input type="number" min="0" max="8" step="1" id="pvt-rds-b" placeholder="e.g. 4">
+            </div>
+            <div class="field pvt-field-wide">
+              <label>Cut-off</label>
+              <select id="pvt-rds-cutoff">
+                <option value="conservative" selected>RDS ≤ 6 · conservative (specificity &gt; .90)</option>
+                <option value="traditional">RDS ≤ 7 · traditional</option>
+              </select>
+            </div>
+          </div>
+          <div class="info-box pvt-note"><strong>Classic variant.</strong> Forward + Backward only; the WAIS-IV Sequencing variants use different cut-offs and are not scored here.</div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Scoring: Greiffenstein, Baker &amp; Gola (1994), <i>Psychological Assessment, 6</i>(3), 218–224. Cut-off accuracy: Schroeder et al. (2012), <i>Assessment, 19</i>(1), 21–30.</span>
+            <span class="pvt-source-accuracy" id="pvt-rds-accuracy"></span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>Scoring &amp; worked example</summary>
+            <div class="formula-body">
+              <p>RDS = (longest forward span passed on both trials) + (longest backward span passed on both trials) (Greiffenstein, Baker &amp; Gola, 1994; cross-validated by Meyers &amp; Volbrecht, 1998). The classic Forward + Backward variant is what the validation literature uses — document which variant you administered. Floor rule: failing at least one trial each of 3 forward and 2 backward is recorded as RDS = 3. Worked example from the original paper: passes both trials of 3 forward but fails one 4-forward trial → forward = 3; passes both trials of 2 backward but fails one 3-backward trial → backward = 2; RDS = 3 + 2 = 5. Reference values: mean RDS ~8.8 in non-malingering TBI vs ~6.7 in probable malingerers.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-rds-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> Prefer ≤ 6 in genuine impairment — and even ≤ 6 over-flags in some groups.</summary>
+            <div class="pvt-caution-body">RDS loads on attention/working memory: low scores occur legitimately in genuine attentional impairment, anxiety, and especially conduction aphasia. Schroeder et al. (2012) found ≤ 7 held only 82–85% specificity across clinical groups, against 96–97% for ≤ 6 — and even at ≤ 6, specificity remains inadequate in cerebrovascular accident, severe memory disorders, intellectual disability or borderline intellectual functioning, and English-as-a-second-language examinees. Validation samples were predominantly mild-TBI/litigating.</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Digit Span ACSS ===== -->
+    <div class="pvt-tab-content" id="pvt-ds">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Digit Span scaled score <span class="hint">(age-corrected, 1–19)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-ds-acss" placeholder="e.g. 8">
+            </div>
+            <div class="field">
+              <label>Vocabulary scaled score <span class="hint">(optional, 1–19)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-ds-vocab" placeholder="e.g. 11">
+            </div>
+            <div class="field">
+              <label>Longest span forward <span class="hint">(optional; either trial, not the RDS span)</span></label>
+              <input type="number" min="0" max="9" step="1" id="pvt-ds-lsf" placeholder="e.g. 6">
+            </div>
+            <div class="field">
+              <label>Longest span backward <span class="hint">(optional; either trial)</span></label>
+              <input type="number" min="0" max="8" step="1" id="pvt-ds-lsb" placeholder="e.g. 4">
+            </div>
+            <div class="field pvt-field-wide">
+              <label>ACSS cut-off</label>
+              <select id="pvt-ds-cutoff">
+                <option value="conservative" selected>ACSS ≤ 5 · conservative (base rate &lt; 4%)</option>
+                <option value="sensitive">ACSS ≤ 7 · sensitive (Axelrod optimum)</option>
+              </select>
+            </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Base rates &amp; suspicion indices: Iverson &amp; Tulsky (2003), <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9. Classification accuracy: Axelrod, Fichtenberg, Millis &amp; Wertheimer (2006), <i>The Clinical Neuropsychologist, 20</i>(3), 513–523. Both WAIS-III.</span>
+            <span class="pvt-source-accuracy" id="pvt-ds-accuracy"></span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>Indices &amp; base rates</summary>
+            <div class="formula-body">
+              <p>The Digit Span age-corrected scaled score is entered as scored on the record form — the age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease — Iverson &amp; Tulsky's suspicion guideline. Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from moderate/severe TBI (sens. .75, spec. .69; .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Iverson &amp; Tulsky give three further suspicion indices, each evaluated against base rates: a Vocabulary − Digit Span difference ≥ 5 (7.1% of the standardisation sample, 2.8% of the combined clinical sample); a longest span forward ≤ 4, applicable only under age 55 (base rates 2.5–5.5% in the under-55 bands, climbing to 11% at 85–89, which is why the index is age-limited — the app reads the top-bar patient age and withholds it without one); and a longest span backward ≤ 2 (2.0–6.0% across all bands, 3.4% clinical). The longest spans here are the longest passed on <em>either</em> trial, as the standardisation data tabulate them — not the RDS both-trials span. Both papers derive from the WAIS-III — document the edition administered.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-ds-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> Not a stand-alone measure, and it shares its subtest with RDS — the summary counts them as one indicator.</summary>
+            <div class="pvt-caution-body">Axelrod et al. explicitly recommend against using the Digit Span scaled score as a stand-alone validity measure — it accounted for a modest share of variance (AUC .77). Genuine impairment can suppress the score: apply the conservative cut-off where real deficits are plausible. Both sources are WAIS-III; the WAIS-IV subtest adds Sequencing to the composite, so an ACSS from a WAIS-IV record is not on the identical metric these cut-offs were derived on.</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Rey 15-Item ===== -->
+    <div class="pvt-tab-content" id="pvt-rey15">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Free recall correct <span class="hint">(0–15)</span></label>
+              <input type="number" min="0" max="15" step="1" id="pvt-rey-recall" placeholder="e.g. 11">
+            </div>
+            <div class="field">
+              <label>Recognition correct <span class="hint">(0–15, optional)</span></label>
+              <input type="number" min="0" max="15" step="1" id="pvt-rey-recog" placeholder="e.g. 13">
+            </div>
+            <div class="field">
+              <label>Recognition false positives <span class="hint">(0–15, optional)</span></label>
+              <input type="number" min="0" max="15" step="1" id="pvt-rey-fp" placeholder="e.g. 1">
+            </div>
+          </div>
+          <div class="rey-admin-row">
+            <button type="button" class="btn" id="pvt-rey-administer">Administer on screen</button>
+            <span class="rey-admin-hint">Times the 10-second exposure and scores the recognition trial. Displays test stimuli — start only with the examinee present.</span>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Recognition trial, combination score &amp; accuracy: Boone, Salazar, Lu, Warner-Chacon &amp; Razani (2002), <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</span>
+            <span class="pvt-source-accuracy">Recall &lt; 9: sens. .47 · spec. .97–1.00. Combination &lt; 20: sens. .71 · spec. .92–.94.</span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>Scoring &amp; administration</summary>
+            <div class="formula-body">
+              <p>Combination score = free recall + (recognition correct − false positives), cut-off &lt; 20; the classic free-recall cut-off is &lt; 9 (Boone et al., 2002, Table 6 — the combination raises sensitivity from .47 to .71 at comparable specificity). Administration: expose the stimulus page for 10 seconds ("there are 15 different things so you will have to learn them very quickly"), remove it and have the examinee draw what they remember; then present the recognition page ("on this page are the 15 things I showed you as well as 15 items that were not on the page — circle the things you remember"). The stimulus and recognition pages are deliberately not reproduced here.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-rey15-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> Specificity falls in dementia and intellectual disability — corroborate before concluding.</summary>
+            <div class="pvt-caution-body">The minority of studies reporting low specificity for the &lt; 9 cut-off generally included patients with intellectual disability or dementia, so avoid these cut-offs there. Certain false-positive recognition errors (circling "f", "5", "6" or a pentagon) occurred only in the suspect-effort group and may serve as virtual pathognomonic signs when present, though they are infrequent (Boone et al., 2002).</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TOMM ===== -->
+    <div class="pvt-tab-content" id="pvt-tomm">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Trial 1 <span class="hint">(/50)</span></label>
+              <input type="number" min="0" max="50" step="1" id="pvt-tomm-t1" placeholder="e.g. 44">
+            </div>
+            <div class="field">
+              <label>Trial 2 <span class="hint">(/50)</span></label>
+              <input type="number" min="0" max="50" step="1" id="pvt-tomm-t2" placeholder="e.g. 48">
+            </div>
+            <div class="field">
+              <label>Retention <span class="hint">(/50, optional)</span></label>
+              <input type="number" min="0" max="50" step="1" id="pvt-tomm-ret" placeholder="e.g. 49">
+            </div>
+            <div class="field">
+              <label>Trial 1 cut-off</label>
+              <select id="pvt-tomm-t1cut">
+                <option value="t1-42" selected>&lt; 42 · meta-analytic optimum</option>
+                <option value="t1-41">&lt; 41 · conservative</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Trial 2 / Retention cut-off</label>
+              <select id="pvt-tomm-t2cut">
+                <option value="45" selected>&lt; 45 · traditional (all settings)</option>
+                <option value="49">&lt; 49 · liberal (no severe impairment expected)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Base rate of invalidity <span class="hint">(your setting)</span></label>
+              <select id="pvt-tomm-br">
+                <option value="0.1" selected>10% · typical clinical</option>
+                <option value="0.2">20%</option>
+                <option value="0.3">30%</option>
+                <option value="0.4">40% · forensic</option>
+                <option value="0.5">50%</option>
+              </select>
+            </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Test: Tombaugh (1996). Cut-offs &amp; accuracy: Martin et al. (2020), <i>The Clinical Neuropsychologist, 34</i>(1), 88–119 — meta-analytic weighted means, shown per trial in the predictive-power table.</span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>Cut-offs &amp; classification accuracy</summary>
+            <div class="formula-body">
+              <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45 — spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49 — spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42 — spec. .91, sens. .67–.69; Trial 1 &lt; 41 — spec. .93, sens. .66. All are Martin et al.'s weighted-mean values for neurocognitive/psychiatric samples; an earlier aggregation of Trial 1 (Denning, 2012) reported .92/.77 averaged across cut-offs 34–44, which is why the meta-analysis examined each cut-off individually. Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-tomm-result"></div>
+          <div id="pvt-tomm-power"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> Do not interpret traditional cut-offs in suspected or confirmed dementia.</summary>
+            <div class="pvt-caution-body">Across dementia samples, weighted-mean specificity was ≤ .70 at traditional cut-offs, with no study achieving a false-positive rate under 10%. Specificity for the liberal &lt; 49 cut-off also dipped below 90% in moderate/severe TBI and severe depression, and simulator studies overestimate sensitivity relative to real known-groups patients (Martin et al., 2020).</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Summary & Aggregation ===== -->
+    <div class="pvt-tab-content" id="pvt-summary">
+      <div class="pvt-workspace">
+        <div class="pvt-summary-left">
+          <div id="pvt-summary-body"></div>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-card">
+            <div class="pvt-card-kicker">Aggregating multiple PVTs (Larrabee, 2014)</div>
+            <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity. Classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT):</p>
+            <table class="pvt-table">
+              <thead><tr><th>Threshold</th><th>Specificity</th><th>Sensitivity</th><th>Total correct</th></tr></thead>
+              <tbody>
+                <tr><td>≥ 2 of 7 failures</td><td>88.9%</td><td>97.6%</td><td>92.6%</td></tr>
+                <tr><td>≥ 3 of 7 failures</td><td>96.3%</td><td>87.8%</td><td>92.6%</td></tr>
+                <tr><td>≥ 4 of 7 failures</td><td>100%</td><td>63.4%</td><td>84.2%</td></tr>
+              </tbody>
+            </table>
+            <details class="formula-disclosure">
+              <summary>Why ≥ 2, and when to demand more</summary>
+              <div class="formula-body">
+                <p>Monte Carlo warnings that false positives climb steeply with more tests overestimate the problem: genuine patients' PVT scores are skewed and at-ceiling rather than multivariate-normal, so real failures cluster differently than random normal data predict. Two practical rules follow. <em>Independence is required</em> — indices sharing subtests are correlated, so failing one raises the odds of failing another: the Effort Index and Effort Scale here are computed from the same RBANS subtests and count as <strong>one</strong> indicator, and RDS also loads on digit span. <em>Examinee characteristics shift the threshold</em> — lower education alone can move the failure count needed to keep false positives &lt; 10% from 2-of-5 up to 4-of-5, so demand more failures, or rely on high-specificity forced-choice measures, in lower-education, older, or genuinely impaired examinees (Larrabee, 2014).</p>
+              </div>
+            </details>
+          </div>
+          <div class="info-box pvt-note" data-apa-note="pvt"></div>
+        </div>
+      </div>
+
+      <div class="apa-wrap">
+        <div class="apa-toolbar">
+          <div class="apa-toolbar-left"><span class="apa-toolbar-label">APA-formatted output</span></div>
+          <div></div>
+          <button class="btn" data-copy="pvt-apa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+            Copy table
+          </button>
+        </div>
+        <div class="apa-table-container" id="pvt-apa"><div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least one validity measure to preview.</div></div>
+      </div>
+    </div>
+      </div>
+      <aside class="pvt-rail" id="pvt-rail" aria-label="Running validity summary"></aside>
+    </div>
+
+    <details class="pvt-refs">
+      <summary>References — Performance Validity</summary>
+      <div class="references" id="pvt-references">
+        <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
+        <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
+        <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
+        <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
+        <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
+        <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
+        <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
+        <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
+        <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</p>
+        <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30.</p>
+        <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
+        <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
+      </div>
+    </details>
+  </section>
+
+
   <!-- ========== 04 SCORE CHARTS ========== -->
   <section class="section" id="charts">
     <!-- No eyebrow / title / description block here, deliberately. The top bar
@@ -1321,17 +1776,11 @@
     <details class="formula-disclosure">
       <summary>How these charts are drawn</summary>
       <div class="info-box">
-        <p>The page covers four sources — Score Tables, the premorbid predictions, Change Analysis and the SD Index — each as a pane of its own, so the page does not grow into a long scroll. Every trial and subtest becomes a row of its test's chart, showing the score against classification bands, or the change against the reliable-change interval. The charts read the same data and settings as those tables, so the two cannot disagree.</p>
-        <p>Each test from Score Tables gets one chart, and each of its trials or subtests is a row of that chart, drawn in the test's <b>native metric</b> (standard, T, scaled or z) — no score is converted for display, and a test that mixes metrics gets one panel per metric, never two metrics on one axis. The shaded bands behind each row are the classification ranges of the scheme selected on Score Tables (Wechsler or Guilmette et&nbsp;al., 2020), with band boundaries at standard scores 70, 80, 90, 110, 120 and 130 converted onto the panel's scale. The dot marks the obtained score; the whisker is the same confidence interval printed in the table's CI column (SEM = SD·√(1−r), at the CI level selected on Score Tables, with the table's rounding).</p>
-        <p><b>Base-rate measures</b> (WAIS-IV Longest Span) are charted from the published cumulative table (WAIS-IV Administration and Scoring Manual, Tables C.4–C.5): each row's step line is the percentage of the normative sample obtaining each span or higher, and the dot marks the patient's span on that line. A high base rate means a common, and therefore lower, score.</p>
-        <p><b>Error measures</b> (perseverations, intrusions, false positives; marked ↓) follow the Score Tables convention: the percentile is reported as obtained, while the classification — and therefore the band shading — describes performance, so those rows' bands run reversed.</p>
-        <p><b>Raw-score measures</b> are listed, not plotted: a raw score has no position on a standardised axis, so no percentile or classification is derived. The obtained score and its raw-unit confidence interval are still shown.</p>
-        <p><b>Change Analysis</b> charts plot each trial's two testings in score units — open circle at the first, filled dot at the second — against the shaded <b>reliable-change interval</b> for the selected method: the region where |obtained − expected| falls below the method's critical value × standard error, i.e. exactly where that method's table prints "No reliable change". The expected value is the first score (Jacobson &amp; Truax), the first score plus the normative practice effect (Iverson), or the regression-predicted score (McSweeney, Crawford &amp; Garthwaite), and the interval uses the confidence level set on that method's page. The method buttons only choose which method to draw; they change nothing on the Change Analysis pages. As in the tables, outcomes state <b>significance only</b> and never a direction — the signed statistic is shown alongside so the direction of movement stays visible without the app interpreting it.</p>
-        <p><b>SD Index</b> charts plot each trial's change in standard-deviation units against the ±1.96 (or ±1.645) band for the significance level set on that page, using the same per-row divisor the SD Index table applies.</p>
-        <p><b>Premorbid</b> charts answer the question the ToPF and OPIE-4 tabs ask: each index shows the predicted score (open circle) with its prediction interval shaded, the achieved score (filled dot) where one has been entered, and the difference with its base rate. A thin line marks the population mean of 100. The predicted values, intervals, differences and base rates are read from the cells those tables print, not recomputed — both tabs round the estimate and the margin separately so the bounds stay symmetric, and re-deriving them here would create a third place to keep in step. The Estimates tab keeps its own model-comparison forest plot; this block does not duplicate it.</p>
-        <p><b>Getting around.</b> Each source — Score Tables, Premorbid, Change Analysis, SD Index — is its own pane, with a Back/Next bar beneath, so the page does not grow into one long scroll as more tests are entered. Only sources that hold data appear. Within a pane, <i>All charts</i> shows the whole set together, which is how the profile across a battery is read; <i>One at a time</i> gives a single chart the full width for a close look or a clean export, with the left and right arrow keys paging through it.</p>
-        <p><b>Showing the scores a different way.</b> The Score Tables block offers four axes. <i>Native metric</i> (the default) converts nothing. <i>Percentile</i> and <i>Standard score</i> put every measure of a test on one axis, which is what makes a whole battery comparable — the score column still shows the value as entered, only the axis position is converted, and where a test mixes metrics each row carries its own metric tag. A percentile axis is deliberately non-linear: it compresses the tails, so two clearly different low scores can sit close together, and symmetric confidence intervals become asymmetric. <i>Raw scores</i> simply shows the raw scores as entered, so their spread is visible directly; nothing is derived from them — no norms, no classification bands, no percentile. Its axis spans the values entered for that test rather than each measure's possible range, because the app holds no raw maximum for any measure, so where a test's measures are counted on different scales their positions are not comparable with each other. A value that falls outside any chart's axis is drawn at the edge, dimmed and marked with a caret, with its actual figure alongside.</p>
-        <p>Premorbid-comparison asterisks, when enabled on Score Tables, carry the same meaning here as in the table's classification column.</p>
+        <p>Charts read the same data and settings as their source tables, so the two cannot disagree. Each source — Score Tables, Premorbid, Change Analysis, SD Index — is its own pane; only sources with data appear.</p>
+        <p><b>Score Tables</b> charts draw each subtest in its native metric with classification bands and confidence intervals matching the table. Base-rate measures show a cumulative step line; error measures (marked ↓) reverse the bands to describe performance; raw-score measures are listed with their confidence interval but not plotted.</p>
+        <p><b>Change Analysis</b> charts plot both testings against the reliable-change interval for the selected method. Outcomes state significance only, never a direction.</p>
+        <p><b>SD Index</b> charts plot change in SD units against the significance band. <b>Premorbid</b> charts show predicted vs achieved scores with prediction intervals and base rates, read directly from the tables.</p>
+        <p>The Score Tables pane offers four axis modes: <i>Native metric</i>, <i>Percentile</i>, <i>Standard score</i> and <i>Raw scores</i>. Use <i>All charts</i> to see the full profile, or <i>One at a time</i> for a closer look with arrow-key paging.</p>
       </div>
     </details>
   </section>
@@ -1906,6 +2355,10 @@
 
     <!-- Tab 2: Premorbid Estimates -->
     <div class="pre-tab-content" id="pre-estimates">
+      <div class="info-box" style="margin-bottom:14px">
+        <strong>Note.</strong> ToPF and Crawford &amp; Allan equations use UK data. OPIE-4 uses the prorated WAIS-IV US coefficients (Holdnack et al., 2013), adapted for UK use by omitting the education, region and ethnicity terms; prorated equations avoid part-whole correlation inflation. <span class="uk-caution-red">OPIE-4 point estimates are illustrative only in UK contexts and should not be applied formally.</span>
+      </div>
+
       <!-- Forest plot: JAMA-style figure block.
            HTML provides the responsive figure label and caption (so they
            wrap on narrow screens); SVG renders the tabular figure with
@@ -1954,7 +2407,7 @@
       <td class="psy">0.81</td>
       <td class="psy">8.44</td>
     </tr><tr>
-      <td class="model">Crawford &amp; Allan (2001) Demographic</td>
+      <td class="model">Crawford &amp; Allan (1997) Demographic</td>
       <td class="fsiq">-</td>
       <td class="num">-</td>
       <td class="num">-</td>
@@ -1969,10 +2422,6 @@
       <td class="psy">-</td>
     </tr></tbody>
         </table>
-      </div>
-
-      <div class="info-box" style="margin-top:18px">
-        <strong>Note.</strong> ToPF and Crawford &amp; Allan equations use UK data. OPIE-4 uses the prorated WAIS-IV US coefficients (Holdnack et al., 2013), adapted for UK use by omitting the education, region and ethnicity terms; prorated equations avoid part-whole correlation inflation. Hover the <strong>?</strong> beside a model for its required inputs.
       </div>
 
       <div class="apa-wrap">
@@ -1990,7 +2439,7 @@
 
     <!-- Tab B: ToPF vs WAIS-IV -->
     <div class="pre-tab-content" id="pre-predict">
-      <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter the patient's actual WAIS-IV / WMS-IV index scores in the Achieved column to compute ToPF-predicted vs actual discrepancies. Base rates are shown only for negative discrepancies (achieved &lt; predicted), and are estimated from a normal model with SD = SEE rather than transcribed from observed standardisation-sample frequencies.</p>
+      <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter the patient's actual WAIS-IV / WMS-IV index scores in the Achieved column to compute ToPF-predicted vs actual discrepancies. Base rates are the published figures from the ToPF-UK manual and are shown only for negative discrepancies (achieved &lt; predicted). The manual derives them from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.</p>
 
       <table class="pre-results-table pre-predict-table" id="pre-predict-table">
         <thead>
@@ -2090,22 +2539,9 @@
 
     <!-- Tab C: OPIE-4 vs WAIS-IV -->
     <div class="pre-tab-content" id="pre-opiepredict">
-      <div class="caution-box" style="margin-top:0;margin-bottom:14px">
-        <strong>Illustrative only: do not quote these numbers in a UK report.</strong>
-        The coefficients here reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the
-        published equations also include terms for US <em>education</em>, <em>ethnicity</em>
-        and <em>region</em>, and this tool does not apply them. Every patient is therefore
-        scored as though they were the US reference case:
-        <em>a 12th-grade high-school graduate, not African-American, and not living in the
-        US West</em>. Those categories have no UK equivalent. The US education terms do not
-        count years of schooling; they capture how unusual a given level of attainment is
-        within the US population, so there is nothing here to map them onto.
-        Expect these estimates to run <strong>high</strong> for patients who left school
-        early and <strong>low</strong> for graduates, by an amount this tool cannot quantify.
-        If you want a UK demographic estimate, use the Crawford &amp; Allan (2001) row on the
-        Estimates tab.
-      </div>
       <p style="color:var(--ink-2);font-size:13.5px;margin-bottom:14px">Enter age (16–90), sex, plus Vocabulary and/or Matrix Reasoning raw scores in the Inputs panel above. Rows appear automatically for each model whose required inputs are present. Enter the patient's actual FSIQ / GAI in the Achieved column - the prorated index is calculated per ACS manual procedures, excluding the subtest(s) used as predictors. The three FSIQ rows predict three different prorated criteria and are not expected to agree with each other.</p>
+
+      <div class="info-box" style="margin-bottom:14px" data-apa-note="pre-opiepredict"></div>
 
       <table class="pre-results-table pre-predict-table" id="pre-opiepredict-table">
         <thead>
@@ -2123,8 +2559,6 @@
           <tr><td colspan="7" style="color:var(--faint);font-style:italic;text-align:center;padding:18px">Enter age plus Vocabulary and/or Matrix Reasoning to populate the table.</td></tr>
         </tbody>
       </table>
-
-      <div class="info-box" style="margin-top:18px" data-apa-note="pre-opiepredict"></div>
 
       <div class="apa-wrap">
         <div class="apa-toolbar">
@@ -2336,10 +2770,10 @@
       Premorbid estimates combine ToPF-based and demographic equations with OPIE-4 prorated models, and produce predicted-versus-achieved discrepancy output with confidence intervals, base-rate lookups and APA-formatted export tables. Predicted-versus-achieved significance flagging uses a three-tier scheme at <i>z</i> = 1.645 (*), 1.960 (**) and 2.576 (***); this is separate from the 90%/95% confidence-interval selector.
     </p>
     <p class="section-body-text">
-      <strong>OPIE-4 is provided for illustration only in a UK context and its output should not be quoted as a concrete premorbid estimate.</strong> The regression terms reproduce Holdnack et al. (2013), Table eA5.8, but the published equations also carry US education, ethnicity and region terms that are not applied here, which fixes every prediction at the US reference category (12th-grade high-school graduate, not African-American, not resident in the western US). Those terms are omitted rather than mapped because the education dummies encode how unusual a given attainment level is <em>within the US population the model was fitted on</em>, not years of schooling, and that does not transfer: the US reference category corresponds to A-levels if matched by years but to GCSE/O-level if matched by population position, and UK school-leaving age was raised to 16 only in 1972, so leaving school without qualifications was normative for older cohorts in a way it was not in the US sample. Expect estimates to run high for patients who left school early and low for graduates, by an amount this tool cannot quantify. For a UK demographic estimate, use the Crawford &amp; Allan (2001) model.
+      <strong>OPIE-4 is provided for illustration only in a UK context and its output should not be quoted as a concrete premorbid estimate.</strong> The regression terms reproduce Holdnack et al. (2013), Table eA5.8, but the published equations also carry US education, ethnicity and region terms that are not applied here, which fixes every prediction at the US reference category (12th-grade high-school graduate, not African-American, not resident in the western US). Those terms are omitted rather than mapped because the education dummies encode how unusual a given attainment level is <em>within the US population the model was fitted on</em>, not years of schooling, and that does not transfer: the US reference category corresponds to A-levels if matched by years but to GCSE/O-level if matched by population position, and UK school-leaving age was raised to 16 only in 1972, so leaving school without qualifications was normative for older cohorts in a way it was not in the US sample. Expect estimates to run high for patients who left school early and low for graduates, by an amount this tool cannot quantify. For a UK demographic estimate, use the Crawford &amp; Allan (1997) model.
     </p>
     <p class="section-body-text">
-      <strong>Base rates.</strong> The ToPF predicted-difference base rates are <strong>estimated from a normal model</strong> with SD equal to the model's standard error of estimate, not transcribed from observed standardisation-sample frequencies; they are labelled as such wherever they appear. The published ToPF/ACS predicted-difference tables have not been transcribed, so the model has instead been benchmarked against the one genuinely empirical table available for a model of almost identical standard error of estimate — the OPIE-4 discrepancy base rates of ACS Table eA5.12. Against that table the parametric values run roughly 10% relatively low across the decisive −5 to −20 band: a discrepancy of −15 gives 3.78% here against about 4.3% empirically. The net effect is to show a given discrepancy as marginally rarer, and so marginally more pathological, than observed data suggest. The OPIE-4 discrepancy base rates are themselves empirical and are used as published.
+      <strong>Base rates.</strong> The ToPF predicted-difference base rates are the <strong>published figures from the ToPF-UK manual</strong> (Wechsler, 2011) and are used as published. The manual <strong>derives them from a normal model</strong> with SD equal to the model's standard error of estimate, rather than tabulating observed standardisation-sample frequencies, and they are labelled as such wherever they appear: every published cell equals the normal-curve proportion below that discrepancy, exactly, at the printed precision. A predicted-difference table is necessarily built this way, a standardisation sample of about a thousand cases yielding no observed frequency at every discrepancy point. The OPIE-4 discrepancy base rates of ACS Table eA5.12, by contrast, <strong>are</strong> empirical, sitting on a count grid, and are likewise used as published. The two published tables therefore answer the same question by different methods, and differ by roughly 10% relatively across the decisive −5 to −20 band on models of almost identical standard error of estimate: a discrepancy of −15 gives 3.78% on the ToPF table against about 4.3% on the OPIE-4 one. That difference is a property of the two sources, not an adjustment made here; neither table is modified.
     </p>
 
       </div>
@@ -2357,13 +2791,13 @@
       <p>Wechsler, D. (2010). <i>Wechsler Adult Intelligence Scale – Fourth UK Edition (WAIS–IV<sup>UK</sup>): Administration and scoring manual.</i> London: Pearson Assessment. [Longest-span base rates: Tables C.4 and C.5.]</p>
       <p>Wechsler, D. (2010). <i>Wechsler Adult Intelligence Scale – Fourth UK Edition (WAIS–IV<sup>UK</sup>): Technical and interpretive manual.</i> London: Pearson Assessment. [Reliability coefficients: Table 4.1. Standard errors of measurement: Table 4.3. Test–retest stability parameters: Table 4.5.]</p>
       <p>Wechsler, D. (2010). <i>Wechsler Memory Scale – Fourth UK Edition (WMS–IV<sup>UK</sup>): Technical and interpretive manual.</i> London: Pearson Assessment. [Reliability coefficients: Table 3.1. Standard errors of measurement: Table 3.3.]</p>
-      <p>Wechsler, D. (2011). <i>Test of Premorbid Functioning (ToPF-UK): Manual.</i> London: Pearson Assessment.</p>
+      <p>Wechsler, D. (2011). <i>Test of Premorbid Functioning (ToPF-UK): Manual.</i> London: Pearson Assessment. [ToPF-predicted vs obtained discrepancy base rates for the WAIS-IV and WMS-IV indices, derived by the publisher from a normal model on the standard error of estimate.]</p>
       <p>Wechsler, D. (2014). <i>Wechsler Intelligence Scale for Children – Fifth Edition (WISC-V): Technical and interpretive manual.</i> Bloomington, MN: NCS Pearson. [Reliability coefficients: Table 4.1. Standard errors of measurement: Table 4.4. Test–retest stability: Table 4.7.]</p>
 
       <div class="references-group">Statistical and methodological sources</div>
       <p>Allen, M. J., &amp; Yen, W. M. (1979). <i>Introduction to measurement theory.</i> Monterey, CA: Brooks/Cole. [Correction of a reliability coefficient for range restriction in the sample it was observed in.]</p>
       <p>Cohen, J. (1988). <i>Statistical power analysis for the behavioral sciences</i> (2nd ed.). Hillsdale, NJ: Lawrence Erlbaum.</p>
-      <p>Crawford, J. R., &amp; Allan, K. M. (2001). Estimating premorbid WAIS–R IQ with demographic variables: Regression equations derived from a UK sample. <i>The Clinical Neuropsychologist, 11</i>(2), 192–197.</p>
+      <p>Crawford, J. R., &amp; Allan, K. M. (1997). Estimating premorbid WAIS–R IQ with demographic variables: Regression equations derived from a UK sample. <i>The Clinical Neuropsychologist, 11</i>(2), 192–197.</p>
       <p>Crawford, J. R., &amp; Garthwaite, P. H. (2007). Using regression equations built from summary data in the neuropsychological assessment of the individual case. <i>Neuropsychology, 21</i>(5), 611–620.</p>
       <p>Crawford, J. R., Millar, J., &amp; Milne, A. B. (2001). Estimating premorbid IQ from demographic variables: A comparison of a regression equation vs. clinical judgement. <i>British Journal of Clinical Psychology, 40</i>(1), 97–105.</p>
       <p>Guilmette, T. J., Sweet, J. J., Hebben, N., Koltai, D., Mahone, E. M., Spiegler, B. J., Stucky, K., Westerveld, M., &amp; Conference Participants. (2020). American Academy of Clinical Neuropsychology consensus conference statement on uniform labeling of performance test scores. <i>The Clinical Neuropsychologist, 34</i>(3), 437–453.</p>
@@ -2371,6 +2805,20 @@
       <p>Jacobson, N. S., &amp; Truax, P. (1991). Clinical significance: A statistical approach to defining meaningful change in psychotherapy research. <i>Journal of Consulting and Clinical Psychology, 59</i>(1), 12–19.</p>
       <p>McSweeney, A. J., Naugle, R. I., Chelune, G. J., &amp; Lüders, H. (1993). "T scores for change": An illustration of a regression approach to depicting change in clinical neuropsychology. <i>The Clinical Neuropsychologist, 7</i>(3), 300–312.</p>
       <p>Sawilowsky, S. S. (2009). New effect size rules of thumb. <i>Journal of Modern Applied Statistical Methods, 8</i>(2), 597–599.</p>
+
+      <div class="references-group">Performance validity sources</div>
+      <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
+      <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
+      <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
+      <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224. [Reliable Digit Span: scoring, floor rule and traditional cut-off.]</p>
+      <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
+      <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373. [Aggregation of multiple PVTs; classification accuracy by number of failures.]</p>
+      <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. [TOMM cut-offs and the sensitivity/specificity values behind the predictive-power display, Tables 16–17.]</p>
+      <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
+      <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195. [Effort Scale formula, screening gate and cut-off.]</p>
+      <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30. [Basis for preferring the conservative RDS ≤ 6 cut-off.]</p>
+      <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. [Effort Index weighting table and cut-offs.]</p>
+      <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
 
       <div class="references-group">Effect-size benchmarks</div>
       <p>Cipriani, A., Furukawa, T. A., Salanti, G., Chaimani, A., Atkinson, L. Z., Ogawa, Y., Leucht, S., Ruhe, H. G., Turner, E. H., Higgins, J. P. T., Egger, M., Takeshima, N., Hayasaka, Y., Imai, H., Shinohara, K., Tajika, A., Ioannidis, J. P. A., &amp; Geddes, J. R. (2018). Comparative efficacy and acceptability of 21 antidepressant drugs for the acute treatment of adults with major depressive disorder: A systematic review and network meta-analysis. <i>The Lancet, 391</i>(10128), 1357–1366.</p>
@@ -2486,11 +2934,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260801c"></script>
-<script src="app.js?v=20260801ac"></script>
-<script src="design-system.js?v=20260801y" defer></script>
-<script src="app-effectsize-page.js?v=20260726b"></script>
-<script src="app-viz-page.js?v=20260730n"></script>
+<script src="data.js?v=20260828aa"></script>
+<script src="app.js?v=20260828aa"></script>
+<script src="design-system.js?v=20260828aa" defer></script>
+<script src="app-effectsize-page.js?v=20260828aa"></script>
+<script src="app-viz-page.js?v=20260828aa"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

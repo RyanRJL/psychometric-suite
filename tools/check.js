@@ -46,7 +46,12 @@ vm.runInContext(
     ';globalThis.__EXPORTS = { TOPF_TO_FSIQ, WAIS_COEF, WMS_COEF,' +
     ' OPIE_PRORATED_FSIQ, OPIE_PRORATED_GAI, OPIE_PRORATED_INDEX,' +
     ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB,' +
-    ' OPIE_AGE_MIN, OPIE_AGE_MAX, PRE_MODEL_TOOLTIPS };',
+    ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
+    ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
+    ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
+    ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
+    ' REY15_RECALL_ROWS, REY15_RECOGNITION_ROWS, REY15_SHAPES,' +
+    ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
 const D = sandbox.__EXPORTS;
@@ -769,8 +774,14 @@ check('the dead per-method formula blocks are gone from the Change Analysis page
   // so their text could drift from the code unseen — and did, on Crawford.
   // The Score Charts disclosure is live and must stay.
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  const all = [...html.matchAll(/<details class="formula-disclosure"/g)].length;
-  if (all !== 1) return html.match(/View formula/) ? 'a per-method "View formula" block is back' : 'expected exactly the Score Charts disclosure, found ' + all;
+  /* The Performance Validity page's disclosures are LIVE (its tabs are
+     plain show/hide panels, not a consolidation that strands them), so they
+     are not the hazard this check exists for. Count outside that section. */
+  const vStart = html.indexOf('<section class="section" id="validity">');
+  const vEnd = vStart === -1 ? -1 : html.indexOf('</section>', vStart);
+  const outside = vStart === -1 ? html : html.slice(0, vStart) + html.slice(vEnd);
+  const all = [...outside.matchAll(/<details class="formula-disclosure"/g)].length;
+  if (all !== 1) return outside.match(/View formula/) ? 'a per-method "View formula" block is back' : 'expected exactly the Score Charts disclosure outside #validity, found ' + all;
   if (!/#charts[\s\S]{0,80}|id="charts"/.test(html)) return 'Score Charts section not found';
   if (/#change-analysis \.formula-disclosure/.test(html)) return 'the page-scoped CSS for the deleted blocks is back';
   return true;
@@ -781,29 +792,120 @@ check('the dead per-method formula blocks are gone from the Change Analysis page
    ========================================================================== */
 heading('8. Base rates');
 
-check('BASE_RATES has 40 discrepancy rows and 298 populated cells', () => {
+check('BASE_RATES has 40 discrepancy rows and 302 populated cells', () => {
   const rows = Object.keys(D.BASE_RATES).length;
   let cells = 0;
   for (const d in D.BASE_RATES) cells += Object.keys(D.BASE_RATES[d]).length;
-  return (rows === 40 && cells === 298) || 'got ' + rows + ' rows / ' + cells + ' cells';
+  return (rows === 40 && cells === 302) || 'got ' + rows + ' rows / ' + cells + ' cells';
 });
 
-check('BASE_RATES cells all reproduce round(Phi(d / SEE), 4)', () => {
-  // These are parametric normal values, NOT observed frequencies. They are
-  // labelled as such throughout the UI. If this check fails, either the SEEs
-  // changed or someone substituted real empirical figures — in which case the
-  // labels in app.js / index.html / data.js must change too.
-  const see = {};
-  D.WAIS_COEF.forEach(c => { see[c.idx] = c.see; });
-  D.WMS_COEF.forEach(c => { see[c.idx] = c.see; });
+/* The next two checks are the transcription proof for the ToPF-UK table, and
+   they only mean anything as a pair. The manual derives its base rates from a
+   normal model on the SEE, so reproducing that model shows the cells were
+   transcribed faithfully — but on its own it would equally fit a table someone
+   rebuilt from the published coefficients. The second check is what separates
+   those: two columns fit ONLY at more precision than the published SEE carries,
+   which no downstream rebuild could have had. See the note above BASE_RATES. */
+
+// The SEE each column actually fits, to the precision the fit requires. Six
+// equal the published coefficient; IMI and VWMI are the publisher's unrounded
+// values, recovered from the cells and bounded by the check below.
+const BR_SEE_FITTED = {
+  FSIQ: 8.441, VCI: 9.277, PRI: 12.368, WMI: 10.617,
+  PSI: 12.038, IMI: 12.0317, DMI: 12.42, VWMI: 12.1652
+};
+
+check('every BASE_RATES cell equals round(Phi(d / SEE), 4) exactly', () => {
+  // Exactly, not approximately: 302 of 302 with no residual. A cell that drifts
+  // means either a mistranscription or a substituted figure — in which case the
+  // labels in data.js / app.js / index.html must be revisited too, since they
+  // now state that the PUBLISHER derived these values this way.
   const bad = [];
   for (const d in D.BASE_RATES) {
     for (const k in D.BASE_RATES[d]) {
-      const model = Math.round(normCDF(Number(d) / see[k]) * 10000) / 10000;
-      if (Math.abs(D.BASE_RATES[d][k] - model) > 1.01e-4) bad.push(d + '/' + k + ' table ' + D.BASE_RATES[d][k] + ' vs model ' + model);
+      const model = Math.round(normCDF(Number(d) / BR_SEE_FITTED[k]) * 10000) / 10000;
+      if (Math.abs(D.BASE_RATES[d][k] - model) > 1e-9) bad.push(d + '/' + k + ' table ' + D.BASE_RATES[d][k] + ' vs model ' + model);
     }
   }
   return bad.length === 0 || bad.length + ' cells differ, first: ' + bad[0];
+});
+
+check('IMI and VWMI fit only at MORE precision than the published SEE', () => {
+  // This is the check that makes the table citable rather than merely correct.
+  // Anyone rebuilding it from WMS_COEF's printed 12.032 / 12.165 would miss 4
+  // IMI cells and 2 VWMI cells. A perfect fit needs the unrounded regression
+  // output, which only the publisher held. If someone "tidies" BR_SEE_FITTED
+  // back to the printed values, or edits cells until those fit, this fails.
+  const pub = {};
+  D.WAIS_COEF.forEach(c => { pub[c.idx] = c.see; });
+  D.WMS_COEF.forEach(c => { pub[c.idx] = c.see; });
+  const hits = (k, s) => {
+    let n = 0, tot = 0;
+    for (const d in D.BASE_RATES) {
+      if (D.BASE_RATES[d][k] == null) continue;
+      tot++;
+      if (Math.abs(D.BASE_RATES[d][k] - Math.round(normCDF(Number(d) / s) * 10000) / 10000) < 1e-9) n++;
+    }
+    return [n, tot];
+  };
+  const problems = [];
+  // Six columns fit on the published coefficient.
+  for (const k of ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI', 'DMI']) {
+    const [n, tot] = hits(k, pub[k]);
+    if (n !== tot) problems.push(k + ' should fit on the published SEE but got ' + n + '/' + tot);
+  }
+  // Two do not, and that shortfall is the evidence — assert it rather than
+  // tolerate it, so a change that made them fit would have to be explained.
+  // Counted as misses, not hits, so adding a published cell cannot shift it.
+  for (const [k, misses] of [['IMI', 4], ['VWMI', 2]]) {
+    const [n, tot] = hits(k, pub[k]);
+    if (tot - n !== misses) problems.push(k + ' on the published SEE ' + pub[k] + ' expected ' + misses + ' misses, got ' + (tot - n) + ' of ' + tot);
+    const [nf, totf] = hits(k, BR_SEE_FITTED[k]);
+    if (nf !== totf) problems.push(k + ' should fit on ' + BR_SEE_FITTED[k] + ' but got ' + nf + '/' + totf);
+    if (Math.abs(BR_SEE_FITTED[k] - pub[k]) < 1e-9) problems.push(k + ' fitted SEE must differ from the published one');
+  }
+  return problems.length === 0 || problems.join('; ');
+});
+
+check('the fitted SEE bands for IMI and VWMI exclude the published value', () => {
+  // Stronger than "a different number fits": NO value within rounding distance
+  // of the published SEE fits every cell. Bands derived here rather than pinned,
+  // and reported so the numbers in data.js can be checked against the output.
+  const pub = {};
+  D.WMS_COEF.forEach(c => { pub[c.idx] = c.see; });
+  const fitsAll = (k, s) => {
+    for (const d in D.BASE_RATES) {
+      if (D.BASE_RATES[d][k] == null) continue;
+      if (Math.abs(D.BASE_RATES[d][k] - Math.round(normCDF(Number(d) / s) * 10000) / 10000) >= 1e-9) return false;
+    }
+    return true;
+  };
+  const problems = [];
+  for (const k of ['IMI', 'VWMI']) {
+    let lo = null, hi = null;
+    for (let i = -5000; i <= 5000; i++) {
+      const s = Math.round((pub[k] + i * 1e-5) * 1e5) / 1e5;
+      if (!fitsAll(k, s)) continue;
+      if (lo === null) lo = s;
+      hi = s;
+    }
+    if (lo === null) { problems.push(k + ': no SEE within ±0.05 fits every cell'); continue; }
+    if (lo <= pub[k] && pub[k] <= hi) problems.push(k + ': published SEE ' + pub[k] + ' lies inside the fitting band [' + lo + ', ' + hi + '], so the precision argument no longer holds');
+  }
+  return problems.length === 0 || problems.join('; ');
+});
+
+check('VCI is stored down to -36, the last discrepancy the manual prints for it', () => {
+  // These four cells were absent while the table's provenance was unknown, the
+  // runtime fallback covering them; -35 and -36 printed "< 0.01%" against the
+  // manual's 0.01%. Storing the published cell is the point of "as published".
+  const problems = [];
+  for (const d of ['-33', '-34', '-35', '-36']) {
+    if (D.BASE_RATES[d].VCI == null) problems.push('VCI missing at d=' + d);
+  }
+  if (D.BASE_RATES['-37'].VCI != null) problems.push('VCI at d=-37 is printed as 0.00 and must not be stored');
+  if (D.BASE_RATES['-33'].FSIQ != null) problems.push('FSIQ at d=-33 is printed as 0.00 and must not be stored');
+  return problems.length === 0 || problems.join('; ');
 });
 
 check('BASE_RATES decrease monotonically as the discrepancy grows more negative', () => {
@@ -936,8 +1038,11 @@ check('WAIS_COEF and WMS_COEF carry the expected indices and finite SEEs', () =>
   return bad.length === 0 || 'bad see on ' + bad.map(c => c.idx).join(',');
 });
 
-check('Crawford & Allan (2001) returns a plausible value for a mid-range case', () => {
+check('Crawford & Allan (1997) returns a plausible value for a mid-range case', () => {
   // 87.14 - 5.21*occ + 1.78*edu + 0.18*age  (app.js calcPremorbid, row 3).
+  // The paper is Crawford & Allan (1997), The Clinical Neuropsychologist,
+  // 11(2), 192-197 — a 2001 date circulated here previously was a citation
+  // error (vol. 11 of that journal is 1997).
   // Occupation class 3 (Skilled), 12 years education, age 45:
   //   87.14 - 15.63 + 21.36 + 8.10 = 100.97
   // Arithmetic shown so the expected value is auditable rather than asserted.
@@ -1423,18 +1528,7 @@ check('every adjustment column on the Change Analysis overview explains itself',
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the OPIE UK caveat is exported once and shown on screen once', () => {
-  /* The OPIE tab used to carry the same warning twice: the .caution-box at the
-     top of the tab, and again in the info-box mirroring the APA note directly
-     below the table. Two statements of one caveat read as two caveats, and the
-     second one is skimmed.
-
-     Which copy goes is not arbitrary. The exported note is the only one that
-     leaves the app, so it keeps the caveat whatever else happens; the mirror
-     drops it because the page around it already says it, at greater length.
-     Three things therefore have to hold together, and each fails silently on
-     its own: the export keeps it, the mirror does not repeat it, and the
-     caution-box that justifies the mirror's silence is still in the markup. */
+check('the OPIE UK caveat appears in the APA note (single note, no separate caution box)', () => {
   const c = {};
   vm.createContext(c);
   vm.runInContext(APP_SRC.match(/const APA_NOTES = \{[\s\S]*?\n\};/)[0] + ';globalThis.__N = APA_NOTES;', c);
@@ -1444,19 +1538,33 @@ check('the OPIE UK caveat is exported once and shown on screen once', () => {
   const bad = [];
 
   if (!CAVEAT.test(exported)) bad.push('the exported note has lost the UK caveat');
-  if (CAVEAT.test(onScreen)) bad.push('the on-screen mirror still repeats the caution box');
-  if (!/<div class="caution-box"[^>]*>\s*<strong>Illustrative only/.test(HTML_SRC)) {
-    bad.push('the caution-box is gone from the OPIE tab, so nothing on screen carries the caveat');
+  if (!CAVEAT.test(onScreen)) bad.push('the on-screen note has lost the UK caveat');
+  if (exported !== onScreen) bad.push('the export and on-screen notes differ — they should be identical now');
+  if (!/run high/i.test(exported)) bad.push('the note should mention the direction of bias');
+  /* The do-not-rely sentence and its red emphasis (2026-08: the note was
+     shortened to the caveat alone and moved above the table; the Crawford
+     pointer, criteria and base-rate sentences were removed deliberately). */
+  if (!/not be considered to be accurate in a UK context/i.test(exported)) bad.push('the note has lost the accuracy disclaimer');
+  if (!/uk-caution-red/.test(exported)) bad.push('the accuracy disclaimer has lost its red emphasis class');
+
+  /* The on-screen mirror sits ABOVE the predictions table, so the caveat is
+     read before the numbers rather than after them. */
+  const mirrorAt = HTML_SRC.indexOf('data-apa-note="pre-opiepredict"');
+  const tableAt  = HTML_SRC.indexOf('id="pre-opiepredict-table"');
+  if (mirrorAt < 0 || tableAt < 0) bad.push('mirror or table missing from index.html');
+  else if (mirrorAt > tableAt) bad.push('the note mirror has moved back below the predictions table');
+
+  /* Same decision on the Estimates tab: its static note (the one carrying the
+     Holdnack citation) sits at the top of the tab, above the results, with
+     the illustrative-only sentence in the same red emphasis class. */
+  const estNoteAt  = HTML_SRC.indexOf('Holdnack et al., 2013), adapted for UK use');
+  const estTableAt = HTML_SRC.indexOf('id="pre-results-table"');
+  if (estNoteAt < 0 || estTableAt < 0) bad.push('the Estimates tab note or table is missing from index.html');
+  else {
+    if (estNoteAt > estTableAt) bad.push('the Estimates tab note has moved back below its results');
+    const estNote = HTML_SRC.slice(estNoteAt, estNoteAt + 400);
+    if (!/uk-caution-red/.test(estNote)) bad.push('the Estimates tab illustrative-only sentence has lost its red emphasis class');
   }
-  /* The flag has to reach the note, or the split above is inert and the
-     mirror silently reverts to printing the caveat twice. */
-  if (!/onScreen:\s*true/.test(extractFn(APP_SRC, 'renderStaticApaNotes'))) {
-    bad.push('renderStaticApaNotes no longer marks its render as on-screen');
-  }
-  /* The mirror may drop a sentence the page already states; it may not say
-     anything the export does not. */
-  const extra = onScreen.split(/(?<=\.)\s+/).filter(s => s && !exported.includes(s));
-  if (extra.length) bad.push('the mirror says something the export does not: ' + extra.join(' | '));
 
   return bad.length === 0 || bad.join('; ');
 });
@@ -1540,7 +1648,8 @@ const INIT_CALLS = [
   'enhanceCalculatorWorkflow', 'enhanceApaToolbars', 'buildDescCarousels',
   'renderConverter', 'setupPreTabs', 'buildPredictTable',
   'setupPremorbidListeners', 'calcPremorbid', 'calcPredict',
-  'calcOpiePredict', 'wireBatteryAutofill', 'wireSdiAutofill', 'refreshAll'
+  'calcOpiePredict', 'wireBatteryAutofill', 'wireSdiAutofill',
+  'setupPvtPage', 'refreshAll'
 ];
 
 check('every init function app.js defines is also invoked at top level', () => {
@@ -3387,11 +3496,17 @@ check('the "in use" pip is driven by what actually reads the age', () => {
   const bad = [];
   if (!fn) return 'patientAgeIsInUse is gone — the pip has no definition';
   /* The Score Tables half now lives in batteryAgeBandRowCount, which the
-     missing-age prompt shares. Read them together so this assertion follows
-     the indirection instead of quietly passing on an empty function. */
-  const scoreTables = fn + '\n' + extractFn(APP_SRC, 'batteryAgeBandRowCount');
+     missing-age prompt shares — itself split into a CI-gated reliability half
+     and a CI-independent base-rate half (base-rate rows read the age to score
+     at all, whatever the interval setting). Read all of them together so this
+     assertion follows the indirection instead of quietly passing on an empty
+     function. */
+  const scoreTables = fn + '\n' + extractFn(APP_SRC, 'batteryAgeBandRowCount')
+    + '\n' + extractFn(APP_SRC, 'batteryCiAgeBandRowCount')
+    + '\n' + extractFn(APP_SRC, 'batteryBaseRateRowCount');
   if (!/batteryRowUsesAgeBand/.test(scoreTables)) bad.push('Score Tables does not test whether any row reads an age band');
   if (!/bat-ci-level/.test(scoreTables)) bad.push('Score Tables ignores the CI level, so the pip lights when no interval is shown');
+  if (!/batteryBaseRateEntry/.test(scoreTables)) bad.push('Score Tables no longer counts base-rate rows, whose scoring reads the age');
   if (!/OPIE_AGE_MIN/.test(fn) || !/TOPF_AGE_MAX/.test(fn)) {
     bad.push('Premorbid does not bound the age by its two consumers');
   }
@@ -3473,158 +3588,97 @@ check('the premorbid Age box says it is a mirror', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the missing-age prompt and the topbar pip share one predicate', () => {
-  /* They are opposite halves of the same question — "does anything here read an
-     age?" — asked once with an age set and once without. Computed separately,
-     a table could show the prompt and light the pip at the same time, or show
-     neither. Routing both through batteryAgeBandRowCount() makes that
-     unrepresentable rather than merely unlikely. */
+check('the required-age bar and the topbar pip share one predicate', () => {
+  /* Bar (age blank) and pip (age set) are opposite halves of "does anything
+     here read an age?". Both route through batteryAgeBandRowCount() — the bar
+     via batteryAgeWanted() — so a table cannot demand an age while the topbar
+     implies nothing reads one, or vice versa. */
   const bad = [];
   const count = extractFn(APP_SRC, 'batteryAgeBandRowCount');
+  const ciHalf = extractFn(APP_SRC, 'batteryCiAgeBandRowCount');
+  const brHalf = extractFn(APP_SRC, 'batteryBaseRateRowCount');
   const inUse = extractFn(APP_SRC, 'patientAgeIsInUse');
   const prompt = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
-  if (!/batteryRowUsesAgeBand/.test(count)) bad.push('the predicate does not test which rows read an age band');
-  if (!/bat-ci-level/.test(count)) bad.push('the predicate ignores the CI level, so it speaks when no interval is printed');
-  if (!/batteryAgeBandRowCount\(\)/.test(inUse)) bad.push('the pip no longer routes through the shared predicate');
-  if (!/batteryAgeBandRowCount\(\)/.test(prompt)) bad.push('the prompt no longer routes through the shared predicate');
-  /* Seeded example rows are not the clinician's data and must not be counted
-     into a claim about "measures in this table". */
-  if (!/isExample/.test(count)) bad.push('example rows are counted as real measures');
-  return bad.length === 0 || bad.join('; ');
-});
-
-check('the missing-age popover is edge-triggered, not state-triggered', () => {
-  /* renderBattery() runs on EVERY keystroke in the table. Opening whenever the
-     condition holds would re-open the popover continuously while a clinician
-     types scores, which is the difference between a prompt and a fault. It
-     must fire on the transition into the condition instead. */
-  const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
-  const bad = [];
-  if (!/batAgePopLastWanted/.test(fn)) bad.push('nothing records the previous state, so this cannot be edge-triggered');
-  if (!/!batAgePopLastWanted/.test(fn)) bad.push('the open is not gated on the condition having just become true');
-  if (!/batAgePopLastWanted = wanted/.test(fn)) bad.push('the previous state is never updated, so it fires once and never again');
-  /* NO ARMING FLAG. The edge itself gives "once per switch-on", and it re-opens
-     whenever the condition drops and returns — CI off then on, or an age
-     entered then cleared. An earlier version limited it to once per patient and
-     needed a flag re-armed by the reset controls; that flag was the source of
-     the "it never re-shows" complaint, because only one of the two reset
-     buttons re-armed it. Removing the concept removed the whole bug class. */
-  if (/batAgePopArmed/.test(APP_SRC)) {
-    bad.push('the once-per-patient arming flag is back; the edge trigger alone is the rule now');
-  }
-  if (!/if \(wanted && !batAgePopLastWanted\) openBatteryAgePop/.test(fn)) {
-    bad.push('the open is not driven by the bare edge');
-  }
-  return bad.length === 0 || bad.join('; ');
-});
-
-check('the click that opens the popover does not also dismiss it', () => {
-  /* IT SHIPPED BROKEN THIS WAY, and nothing here could see it. The popover
-     opens from inside renderBattery(), which usually runs DURING a click —
-     "Add selected tests", the CI toggle, a row edit. That same click keeps
-     bubbling to the document-level outside-click handler, which finds a
-     popover that is now open with a target outside it, and closes it. Net
-     result on the real UI: OPEN immediately followed by CLOSE, nothing on
-     screen, and no error.
-
-     Every check and every browser probe missed it because they called
-     renderBattery() directly, so no click was ever in flight. The lesson is in
-     the guard, not just the fix: the dismissal must ignore the opening click.
-
-     An earlier version special-cased the CI toggle by selector, which fixed one
-     route and left autofill — the commonest one — broken. The guard has to be
-     about WHEN, not about which element. */
-  const open = extractFn(APP_SRC, 'openBatteryAgePop');
-  const bad = [];
-  if (!/batAgePopJustOpened = true/.test(open)) bad.push('opening does not mark itself, so the same click can dismiss it');
-  if (!/setTimeout\(\(\) => \{ batAgePopJustOpened = false; \}, 0\)/.test(open)) {
-    bad.push('the just-opened flag is never cleared, so outside-click dismissal dies entirely');
-  }
-  /* The document click handler must consult it. Grab the handler that mentions
-     the skip button, which is the popover's own click delegate. */
-  const i = APP_SRC.indexOf("bat-age-pop-skip'");
-  const handler = i < 0 ? '' : APP_SRC.slice(i, i + 1200);
-  if (!/if \(batAgePopJustOpened\) return;/.test(handler)) {
-    bad.push('the outside-click handler does not skip the opening click');
-  }
-  /* And it must not have regressed to naming a specific control. */
-  if (/Score confidence interval"\]'\)\) return;/.test(handler)) {
-    bad.push('the guard is back to exempting one selector, which leaves every other open route broken');
-  }
-  return bad.length === 0 || bad.join('; ');
-});
-
-check('the missing-age popover opens whenever the interval is on with no age', () => {
-  /* THE RULE, and it is deliberately not conditioned on the table's contents:
-     a clinician who switches confidence intervals on has said they care about
-     interval width, and cannot be expected to know which instruments tabulate
-     reliability by age band. Requiring an age-band measure made the prompt feel
-     arbitrary and kept it silent in the case people actually hit. */
   const wanted = extractFn(APP_SRC, 'batteryAgeWanted');
-  const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
-  const open = extractFn(APP_SRC, 'openBatteryAgePop');
+  if (!/batteryRowUsesAgeBand/.test(ciHalf)) bad.push('the reliability half does not test which rows read an age band');
+  if (!/bat-ci-level/.test(ciHalf)) bad.push('the reliability half ignores the CI level, so it speaks when no interval is printed');
+  if (!/batteryBaseRateEntry/.test(brHalf)) bad.push('the base-rate half does not test which rows are base-rate scored');
+  if (/bat-ci-level/.test(brHalf)) bad.push('the base-rate half is CI-gated — but those rows read the age whatever the interval setting');
+  if (!/batteryCiAgeBandRowCount\(\)/.test(count) || !/batteryBaseRateRowCount\(\)/.test(count)) {
+    bad.push('the shared predicate no longer sums its two halves');
+  }
+  if (!/batteryAgeBandRowCount\(\) > 0/.test(wanted)) bad.push('the bar condition no longer routes through the shared predicate');
+  if (!/patientAge\(\) === null/.test(wanted)) bad.push('the bar condition no longer requires the age to be absent');
+  if (!/batteryAgeWanted\(\)/.test(prompt)) bad.push('the refresh does not use the shared condition');
+  if (!/batteryAgeBandRowCount\(\)/.test(inUse)) bad.push('the pip no longer routes through the shared predicate');
+  /* Seeded example rows are not the clinician\'s data and must not be counted
+     into a claim about "measures in this table". */
+  if (!/isExample/.test(ciHalf)) bad.push('example rows are counted as real measures (reliability half)');
+  if (!/isExample/.test(brHalf)) bad.push('example rows are counted as real measures (base-rate half)');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the required-age bar is inline, state-driven, and cannot be dismissed', () => {
+  /* THE BAR REPLACED A POPOVER, deliberately (owner decision, 2026-08). The
+     popover was an OFFER — skippable, edge-triggered, anchored to the Score
+     CI toggle — and that stopped being right twice over: base-rate rows made
+     the age load-bearing for scoring, and the CI-toggle anchor drew its
+     arrow at the 90% button while the message talked about scoring. The
+     replacement is an inline element above the table: REQUIRED in
+     presentation (no skip, no outside-click dismissal, it stays until an age
+     is entered) and state-driven (an inline element cannot re-open
+     annoyingly, so the whole edge/arming machinery died with the popover).
+
+     Note this REVERSES the old "the gate must not ask about the table\'s
+     contents" rule. That rule belonged to the offer, whose generic branch
+     kept a CI-only ask from feeling arbitrary; a REQUIREMENT shown on a
+     table where nothing reads the age would be a false claim, so the bar is
+     gated on actual readers (batteryAgeBandRowCount() > 0). */
   const bad = [];
-  if (!/patientAge\(\) === null/.test(wanted)) bad.push('it does not require the age to be absent, so it can nag with one set');
-  if (!/bat-ci-level/.test(wanted) || !/!== 'off'/.test(wanted)) {
-    bad.push('it is not gated on the interval being switched on');
-  }
-  if (/batteryAgeBandRowCount/.test(wanted)) {
-    bad.push('the open is gated on age-band measures again, which is the rule that was replaced');
-  }
-  if (!/batteryAgeWanted\(\)/.test(fn)) bad.push('the refresh does not use the shared condition');
-  if (!/closeBatteryAgePop\(\)/.test(fn)) bad.push('it never closes itself when the condition stops holding');
-  /* Class, not [hidden]: the attribute lost this exact fight before, because
-     an element's own display outranked the browser default. */
-  if (!/classList\.add\('is-open'\)/.test(open)) bad.push('the popover is not opened by a class');
-  if (/\.hidden\s*=/.test(open)) bad.push('the popover is gated on [hidden] — the cascade trap CLAUDE.md records');
-  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
-  const css = DS_CSS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s*\{/g, '{');
-  if (!/\.ds-age-pop\{[^}]*display:\s*none/.test(css)) bad.push('.ds-age-pop is not display:none by default');
-  if (!/\.ds-age-pop\.is-open\{[^}]*display:\s*block/.test(css)) bad.push('.is-open never reveals the popover');
-  if (!/id="bat-age-pop"/.test(HTML_SRC)) bad.push('the popover is missing from index.html');
-  /* Rows and CI level change without the age being touched. */
-  if (!/refreshBatteryAgePrompt\(\)/.test(extractFn(APP_SRC, 'renderBattery'))) {
-    bad.push('renderBattery never refreshes it');
+  const prompt = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+  if (!/bar\.hidden = !wanted/.test(prompt)) bad.push('the bar is not driven by the live condition');
+  if (/LastWanted|JustOpened|Armed/.test(prompt)) bad.push('edge/arming machinery is back — the bar is state-driven');
+  if (!/dataset\.sig/.test(prompt)) bad.push('the bar is rewritten on every keystroke, which clobbers a half-typed age in its own input');
+  if (!/id="bat-age-required"/.test(HTML_SRC)) bad.push('the bar is missing from index.html');
+  if (/bat-age-pop/.test(HTML_SRC)) bad.push('the old popover markup is back');
+  if (/Skip . use all-ages/.test(HTML_SRC)) bad.push('a skip control is back — the age is required now');
+  const barHtml = extractFn(APP_SRC, 'batteryAgeBarHtml');
+  if (/skip|dismiss|close/i.test(barHtml)) bad.push('the bar offers a dismissal control');
+  /* [hidden] + own display:flex is the cascade trap CLAUDE.md records — the
+     stylesheet must re-assert it. */
+  if (!/\.bat-age-required-bar\[hidden\]\{display:none\}/.test(CSS_SRC)) {
+    bad.push('the bar\'s own display outranks [hidden] — the exact trap CLAUDE.md records');
   }
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the missing-age popover offers, and never scolds or blocks', () => {
-  /* A blank age is legitimate and citable — those measures fall back to the
-     publisher's own all-ages coefficient — so this must not read as a
-     validation failure OR as something that has to be answered before work can
-     continue. CLAUDE.md: never make the age required. */
-  const open = extractFn(APP_SRC, 'openBatteryAgePop');
+check('the required-age bar demands, with counts that agree in number', () => {
+  /* Every clause agrees with its count — subject, verb, pronoun — written out
+     per branch, never assembled from fragments ("1 measure ... publish their
+     reliability" is what fragment-assembly produced on the first pass of the
+     old popover). Both halves have singular and plural forms, and the base-
+     rate half states the consequence: unscored until the age is entered. */
+  const open = extractFn(APP_SRC, 'batteryAgeBarHtml');
   const bad = [];
-  if (!/all-ages coefficient/.test(open)) bad.push('it does not say what happens if the age is left blank');
-  [/\brequired\b/i, /\bmust\b/i, /\berror\b/i, /\binvalid\b/i, /\bmissing\b/i, /\bplease\b/i].forEach((re) => {
-    if (re.test(open)) bad.push('the wording reads as a validation error (' + re.source + ')');
-  });
-  /* Every clause agrees with the count. The first version of this text read
-     "1 measure ... publish their reliability" — the failure fragment-assembly
-     produces. Both branches are written out and both are pinned. */
-  if (!/1 measure/.test(open)) bad.push('it does not name the number of measures');
-  if (!/publishes its reliability/.test(open)) bad.push('no singular clause — one measure will take a plural verb');
-  if (!/publish their reliability/.test(open)) bad.push('no plural clause');
-  if (!/it uses the published all-ages coefficient/.test(open)) bad.push('the singular fallback sentence disagrees in number');
-  if (!/they use the published all-ages coefficient/.test(open)) bad.push('the plural fallback sentence disagrees in number');
-  /* The skip must name the alternative, not merely dismiss. */
-  if (!/Skip . use all-ages/.test(HTML_SRC)) bad.push('the skip does not name the alternative it selects');
-  /* NON-BLOCKING. No backdrop, no warning colouring, no full-viewport cover. */
-  if (/backdrop-element|is-modal|aria-modal="true"/.test(open + HTML_SRC)) bad.push('the popover behaves as a modal');
-  const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
-  const block = (DS_CSS.match(/\.ds-age-pop\{[\s\S]*?\n\}/) || [''])[0];
-  if (/--ds-warning|--ds-destructive/.test(block)) bad.push('the popover is styled as a warning');
-  if (/inset:\s*0/.test(block)) bad.push('the popover covers the viewport — that is a modal');
+  if (!/Patient age required/.test(open)) bad.push('the bar no longer states the requirement');
+  if (!/1 measure<\/strong> in this table is scored/.test(open)) bad.push('no singular base-rate clause');
+  if (!/measures<\/strong> in this table are scored/.test(open)) bad.push('no plural base-rate clause');
+  if (!/stays unscored until the age is entered/.test(open)) bad.push('the singular base-rate clause does not state the consequence');
+  if (!/stay unscored until the age is entered/.test(open)) bad.push('the plural base-rate clause does not state the consequence');
+  if (!/publishes its reliability/.test(open)) bad.push('no singular reliability clause');
+  if (!/publish their reliability/.test(open)) bad.push('no plural reliability clause');
+  if (!/bat-age-bar-input/.test(open) || !/bat-age-bar-add/.test(open)) bad.push('the bar has no age input of its own — the fastest way to answer the ask is gone');
+  /* Non-blocking even though required: no modal, no backdrop. */
+  if (/aria-modal|backdrop/i.test(open)) bad.push('the bar behaves as a modal');
   return bad.length === 0 || bad.join('; ');
 });
 
-check('committing from the popover pulses the field the value landed in', () => {
-  /* The popover sits over the table, so the field that ends up holding the age
+check('committing from the bar pulses the field the value landed in', () => {
+  /* The bar sits over the table, so the field that ends up holding the age
      is in the top bar, where the clinician was not looking. The pulse answers
-     "where did that go?". Only on commit FROM THE POPOVER — a field that
+     "where did that go?". Only on commit FROM THE BAR — a field that
      pulsed while you typed directly into it would read as an error. */
-  const commit = extractFn(APP_SRC, 'commitBatteryAgePop');
+  const commit = extractFn(APP_SRC, 'commitBatteryAgeBar');
   const pulse = extractFn(APP_SRC, 'pulsePatientAgeField');
   const bad = [];
   if (!/pulsePatientAgeField\(\)/.test(commit)) bad.push('committing an age does not pulse the field');
@@ -3638,7 +3692,7 @@ check('committing from the popover pulses the field the value landed in', () => 
     bad.push('the animation is not restarted, so a second commit does nothing');
   }
   if (!/clearTimeout/.test(pulse)) bad.push('overlapping pulses leave a stale timer that strips the class early');
-  /* The topbar input's own listener must NOT pulse — that is the direct-typing
+  /* The topbar input\'s own listener must NOT pulse — that is the direct-typing
      path, and pulsing on every keystroke would be constant motion. */
   const direct = APP_SRC.slice(APP_SRC.indexOf("getElementById('patient-age')?.addEventListener"), APP_SRC.indexOf("getElementById('patient-age')?.addEventListener") + 600);
   if (/pulsePatientAgeField/.test(direct)) bad.push('typing directly into the field pulses it on every keystroke');
@@ -3654,104 +3708,42 @@ check('committing from the popover pulses the field the value landed in', () => 
   return bad.length === 0 || bad.join('; ');
 });
 
-check('switching the interval off and on asks again', () => {
-  /* The popover is limited to once per SWITCH-ON, by the edge alone. So the
-     way to be asked again is to switch the interval off and back on, or to
-     clear the age — both drop the condition and let it rise again. There is no
-     arming flag to go stale, which is what the previous design got wrong: it
-     asked once per patient and only one of the two reset buttons re-enabled
-     it, so clearing the table and autofilling again got silence. */
-  const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
+check('pageZoomFactor survives the popover it was written for', () => {
+  /* body{zoom:0.9} splits measurement into two coordinate spaces. The consent
+     card\'s pill stacking still divides by pageZoomFactor(), behind a typeof
+     guard — so if the definition vanished with the popover that first needed
+     it, the call site would silently fall back to 1 and reintroduce the exact
+     systematic-offset bug CLAUDE.md records. */
   const bad = [];
-  if (!/batAgePopLastWanted = wanted/.test(fn)) {
-    bad.push('the edge state is never updated from the live condition, so it fires once and never again');
-  }
-  if (!/if \(!wanted\) closeBatteryAgePop\(\)/.test(fn)) {
-    bad.push('it does not close when the condition drops, so the edge can never rise again');
-  }
-  /* Switching CI off must actually re-render, or the condition never drops and
-     the edge can never rise a second time. Both halves of that chain: the
-     buttons write to the hidden input and dispatch, and app.js re-renders on it. */
-  const DS_SRC = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
-  if (!/ciInput\.dispatchEvent\(new Event\('change'/.test(DS_SRC)) {
-    bad.push('the CI buttons do not dispatch change, so app.js never re-renders on a switch');
-  }
-  if (!/getElementById\('bat-ci-level'\)\.addEventListener\('change', renderBattery\)/.test(APP_SRC)) {
-    bad.push('nothing re-renders the table when the CI level changes');
+  if (!/function pageZoomFactor\(\)/.test(APP_SRC)) bad.push('pageZoomFactor is no longer defined');
+  if (!/pageZoomFactor === 'function' \? pageZoomFactor\(\)/.test(APP_SRC)) {
+    bad.push('nothing consumes pageZoomFactor any more — if that is deliberate, delete it and this check together');
   }
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the popover positions itself in one coordinate space, not two', () => {
-  /* styles.css sets body{zoom:0.9} — a deliberate global 10% downscale. That
-     splits measurement in two, and mixing the halves is silent:
-
-       getBoundingClientRect()  VISUAL px  (already scaled)
-       offsetWidth              LAYOUT px  (unscaled — 320 for a box occupying
-                                            282 visual px)
-       style.top / style.left   LAYOUT px  (the browser applies the zoom)
-
-     The first version read rects and offsetWidth together and wrote the result
-     back unscaled, putting the popover 19px ABOVE its anchor and 58px off
-     centre. Nothing threw and no check noticed; it was found by measuring the
-     rendered page. These assertions pin the fix. */
-  /* Comments stripped: this function's own prose names offsetWidth in order to
-     warn against it, and a bare match would flag the warning as the offence. */
-  const fn = extractFn(APP_SRC, 'positionBatteryAgePop')
-               .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-  const bad = [];
-  if (/offsetWidth/.test(fn)) bad.push('offsetWidth is layout px and is being mixed with visual-px rects');
-  if (!/pageZoomFactor\(\)/.test(fn)) bad.push('the page zoom is not accounted for when writing style.top/left');
-  if (!/\/ z\)/.test(fn)) bad.push('nothing divides by the zoom on the way out');
-  /* Read from the element, never hardcoded — changing the 0.9 in styles.css
-     must not silently break the anchoring. */
-  const zf = extractFn(APP_SRC, 'pageZoomFactor');
-  if (!/getComputedStyle\(document\.body\)\.zoom/.test(zf)) bad.push('the zoom factor is not read from the page');
-  if (/0\.9/.test(zf)) bad.push('the zoom factor is hardcoded');
-  if (!/\|\| 1|\? z :/.test(zf)) bad.push('no fallback where zoom is unsupported, so positioning would become NaN');
-  /* And the value it compensates for must still be there. */
-  const CSS = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
-  if (!/body\{[^}]*zoom:\s*0?\.9/.test(CSS)) {
-    bad.push('body zoom is gone from styles.css — re-derive this, the compensation may now be wrong');
-  }
-  return bad.length === 0 || bad.join('; ');
-});
-
-check('a skipped or missed popover still leaves a trace on the field', () => {
-  /* The popover is transient and fires once per patient. If it is skipped, or
-     fires while the clinician is looking at the table rather than the top bar,
-     the message is gone. The residual .is-wanted state is what stops that
-     being lost — state-driven, so it cannot go stale. */
+check('the residual trace on the field survives, driven by the same condition as the bar', () => {
+  /* The bar lives on one page; the dashed .is-wanted field in the topbar is
+     the trace that follows the clinician everywhere else. Both are driven by
+     batteryAgeWanted(), which requires actual readers AND a blank age — so
+     is-wanted and is-live (age set, being read) stay mutually exclusive by
+     construction. */
   const fn = extractFn(APP_SRC, 'refreshBatteryAgePrompt');
   const bad = [];
-  if (!/classList\.toggle\('is-wanted'/.test(fn)) bad.push('the field carries no residual state');
+  if (!/classList\.toggle\('is-wanted', wanted\)/.test(fn)) bad.push('the field carries no residual state, or it stopped sharing the bar\'s condition');
   const DS_CSS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
   if (!/\.ds-patient-field\.is-wanted\s*\{/.test(DS_CSS)) bad.push('.is-wanted has no styling, so the trace is invisible');
-  /* THE RESIDUAL IS A NARROWER CLAIM THAN THE POPOVER, and must stay so. The
-     popover asks "intervals are on and you have no age — want to add one?";
-     the dashed field asserts "an age would actually sharpen something here",
-     which is only true where a measure publishes reliability by age band. They
-     shared one predicate while they made the same claim; since the popover
-     stopped requiring age-band measures they must not, or the field would
-     assert something untrue on a CVLT-3 table. */
-  if (!/is-wanted', batteryAgeBandRowCount\(\) > 0/.test(fn)) {
-    bad.push('the residual no longer requires an age-band measure, so it claims an age helps where it does not');
-  }
-  /* is-wanted (age blank, would be read) and is-live (age set, being read) stay
-     mutually exclusive by construction — one needs an age, the other needs
-     none. If they ever overlap, the field claims both at once. */
-  if (!/patientAge\(\) === null/.test(fn.slice(fn.indexOf("is-wanted")))) {
-    bad.push('is-wanted no longer requires a blank age, so it can co-occur with is-live');
-  }
   return bad.length === 0 || bad.join('; ');
 });
-
 
 check('an out-of-range age is explained rather than left blank', () => {
   const src = extractFn(APP_SRC, 'calcPremorbid');
   const bad = [];
   if (!/pre-age-range-note/.test(src)) bad.push('calcPremorbid never touches the explanation box');
-  if (!/OPIE_AGE_MIN\s*\|\|\s*age\s*>\s*OPIE_AGE_MAX/.test(src)) bad.push('the box is not driven by the OPIE range');
+  /* Two branches since the Crawford & Allan floor landed: below-16 blanks both
+     age-gated models (§36 pins the floor equalling OPIE_AGE_MIN, so OPIE's own
+     floor is covered by the same branch), above-90 blanks OPIE-4 alone. */
+  if (!/age\s*<\s*CRAWFORD_ALLAN_AGE_MIN/.test(src) || !/age\s*>\s*OPIE_AGE_MAX/.test(src)) bad.push('the box is not driven by the model age ranges');
   if (!/<div class="caution-box" id="pre-age-range-note"/.test(HTML_SRC)) bad.push('the box is missing from the markup');
   return bad.length === 0 || bad.join('; ');
 });
@@ -6514,6 +6506,821 @@ check('the top-bar age still recalculates OPIE-4 from every page, which is why t
   }
   return true;
 });
+
+/* ==========================================================================
+   36. Crawford & Allan (1997) — adult age floor and honest range notes
+   The demographic equation (87.14 − 5.21·occ + 1.78·edu + 0.18·age) was
+   derived from 200 healthy ADULTS (Crawford & Allan, 1997, The Clinical
+   Neuropsychologist, 11(2), 192-197). #pre-age accepts ages from 5, so
+   without a floor a paediatric age was fed straight into an adult equation —
+   the same hazard the WMS branch was re-gated for. The floor is 16; no
+   ceiling is enforced (linear, shallow age term; sample maximum attested via
+   companion papers rather than printed in the brief report), so the range
+   note warns instead. The paper's year was also miscited as 2001 across the
+   UI; vol. 11 of that journal is 1997.
+   ========================================================================== */
+heading('36. Crawford & Allan (1997) age gating');
+
+check('the demographic equation is gated at the adult floor', () => {
+  const fn = extractFn(APP_SRC, 'calcPremorbid');
+  const bad = [];
+  if (!/age >= CRAWFORD_ALLAN_AGE_MIN/.test(fn)) bad.push('calcPremorbid no longer gates the Crawford & Allan row on CRAWFORD_ALLAN_AGE_MIN');
+  if (D.CRAWFORD_ALLAN_AGE_MIN !== 16) bad.push('the floor moved: got ' + D.CRAWFORD_ALLAN_AGE_MIN);
+  /* The paediatric branch of the range note says ONE floor blanks both
+     age-gated models. If these constants ever diverge, that text lies —
+     re-word the branches before changing either constant. */
+  if (D.CRAWFORD_ALLAN_AGE_MIN !== D.OPIE_AGE_MIN) bad.push('CRAWFORD_ALLAN_AGE_MIN no longer equals OPIE_AGE_MIN — re-word the range note branches');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the range note tells the truth about which models carry an age term', () => {
+  const fn = extractFn(APP_SRC, 'calcPremorbid');
+  const bad = [];
+  /* The old single-branch message claimed "the ToPF and demographic models
+     carry no age term" while the Crawford & Allan row computes +0.18 × age.
+     Only the two ToPF models on that tab are age-free. */
+  if (/ToPF and demographic models carry no age term/.test(fn)) bad.push('the false "demographic models carry no age term" sentence is back');
+  if (!/Crawford &amp; Allan model do not apply/.test(fn)) bad.push('the paediatric branch no longer names Crawford & Allan');
+  if (!/extrapolates its linear age term/.test(fn)) bad.push('the over-90 branch no longer warns that the Crawford & Allan estimate extrapolates');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the red caveat class exists in styles.css, so the OPIE note span is not inert', () => {
+  return /\.uk-caution-red\{/.test(CSS_SRC) || '.uk-caution-red is not defined in styles.css';
+});
+
+check('no user-facing string still dates Crawford & Allan to 2001', () => {
+  const bad = [];
+  for (const [name, src] of [['app.js', APP_SRC], ['data.js', DATA_SRC], ['index.html', HTML_SRC]]){
+    const hits = [...src.matchAll(/Crawford *&(?:amp;)? *Allan[,]? *\((\d{4})\)/g)].filter(m => m[1] !== '1997');
+    if (hits.length) bad.push(name + ' carries ' + hits.length + ' Crawford & Allan date(s) other than 1997');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ==========================================================================
+   37. Patient data is session-only; base-rate rows are raw-entry and age-gated
+   Three decisions from 2026-08, each with a silent failure mode if it drifts:
+
+   a) The Working Report's items and consent are PATIENT DATA. They live in
+      sessionStorage — a reload keeps them, closing the tab/window/browser
+      clears them — and load() purges any legacy localStorage copy so patient
+      data from before the change does not sit on disk indefinitely. Only view
+      preferences persist, under their own key.
+
+   b) A base-rate measure (WAIS-IV Longest Span) is entered as a RAW span in
+      the Raw column; its Score box is disabled because no metric score
+      exists. The raw column is force-visible while such rows are present, or
+      the row's only entry box would be hidden by the Show Raw toggle.
+
+   c) A base-rate row does not score until the patient age is entered AND
+      falls inside the band its group was added from (Tables C.4–C.5 differ by
+      band: Longest Digit Span Backward, span 4 — 22nd percentile at 20-24,
+      59th at 85-90). The withheld cell shows a screen-only hint; the APA
+      export reads .text, which stays empty, so advice text can never land in
+      an exported table.
+   ========================================================================== */
+heading('37. Session-only storage; base-rate raw entry and age gating');
+
+check('report items live in sessionStorage and the legacy localStorage copy is purged', () => {
+  const load = extractFn(APP_SRC, 'load');
+  const save = extractFn(APP_SRC, 'save');
+  const bad = [];
+  if (!/sessionStorage\.getItem\(STORAGE_KEY\)/.test(load)) bad.push('load() no longer reads the session blob');
+  if (!/localStorage\.removeItem\(STORAGE_KEY\)/.test(load)) bad.push('load() no longer purges the legacy localStorage bundle — old patient data stays on disk');
+  if (!/sessionStorage\.setItem\(STORAGE_KEY/.test(save)) bad.push('save() no longer writes the session blob');
+  if (/localStorage\.setItem\(STORAGE_KEY/.test(save)) bad.push('save() writes patient data back into localStorage');
+  /* Prefs may persist — but only the three view fields, never items/consent. */
+  const prefs = save.match(/localStorage\.setItem\(PREFS_KEY[\s\S]*?\)\);/);
+  if (!prefs) bad.push('view preferences are no longer persisted at all');
+  else if (/items|consent/.test(prefs[0])) bad.push('the persisted prefs blob carries patient data');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a base-rate row is entered in the raw column, with the score box disabled', () => {
+  const bad = [];
+  const val = extractFn(APP_SRC, 'batteryBaseRateValue');
+  if (!/r\.raw/.test(val) || /r\.score/.test(val)) bad.push('batteryBaseRateValue no longer reads the raw field alone');
+  for (const fn of ['batteryRowPctCell', 'batteryRowPercentile', 'batteryClassificationDetails']){
+    const src = extractFn(APP_SRC, fn);
+    if (!/batteryBaseRateValue\(r\)/.test(src)) bad.push(fn + ' does not read the entry through batteryBaseRateValue');
+  }
+  const render = extractFn(APP_SRC, 'renderBattery');
+  if (!/r\.raw = r\.score; r\.score = '';/.test(render)) bad.push('the legacy score-column entry is no longer migrated into the raw field');
+  if (!/bat-score-na/.test(render)) bad.push('the score box on a base-rate row is no longer disabled');
+  if (!/raw-forced/.test(render)) bad.push('the raw column is no longer forced visible while base-rate rows exist');
+  /* The override must beat design-system.css's raw-hidden rule for BOTH the
+     cells and the header, or the column renders ragged or headerless. */
+  if (!/#bat-table\.raw-hidden\.raw-forced \.bat-raw-cell\{display:table-cell\}/.test(CSS_SRC)) bad.push('the raw-cell force-visible override is gone from styles.css');
+  if (!/#bat-table\.raw-hidden\.raw-forced \.bat-raw-head\{display:table-cell\}/.test(CSS_SRC)) bad.push('the raw-header force-visible override is gone from styles.css');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a base-rate row is withheld until the age is entered and inside its band', () => {
+  const bad = [];
+  const state = extractFn(APP_SRC, 'batteryBaseRateAgeState');
+  if (!/'no-age'/.test(state) || !/'out-of-band'/.test(state)) bad.push('batteryBaseRateAgeState no longer distinguishes its two refusals');
+  if (!/ageBandRange\(r\.group\)/.test(state)) bad.push('the gate no longer reads the band off the row\'s own group');
+  if (!/batteryPatientAge\(\)/.test(state)) bad.push('the gate does not read the shared patient age');
+  const cell = extractFn(APP_SRC, 'batteryRowPctCell');
+  /* Screen-only hint: the refused cell's .text must stay empty, because the
+     APA export prints .text and advice must never reach an exported table. */
+  if (!/text: '', kind: 'baseRate', hint: ageState/.test(cell)) bad.push('the refused cell no longer keeps its export text empty');
+  const cls = extractFn(APP_SRC, 'batteryClassificationDetails');
+  if (!/batteryBaseRateAgeState\(r\) !== 'ok'/.test(cls)) bad.push('a withheld row still classifies');
+  /* The required-age bar covers base-rate rows through the shared predicate:
+     batteryAgeWanted routes through batteryAgeBandRowCount, whose sum
+     includes batteryBaseRateRowCount (both pinned in §26). */
+  const wanted = extractFn(APP_SRC, 'batteryAgeWanted');
+  if (!/batteryAgeBandRowCount\(\) > 0/.test(wanted)) bad.push('the required-age bar no longer covers base-rate rows');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('one dropdown entry per base-rate family, and rows auto-reband to the age', () => {
+  /* The band of a base-rate family is a mechanical function of the (now
+     required) patient age, so the Score Tables dropdown offers ONE entry per
+     family instead of fourteen selectable bands, and renderBattery re-points
+     rows at the band containing the age when they disagree. WMS-IV must NOT
+     come this way: its groups are separate batteries, a clinical choice
+     (§30), and familyGroupIsBaseRate is false for them. */
+  const bad = [];
+  const build = extractFn(APP_SRC, 'buildFamilyListHtml');
+  if (!/familyGroupIsBaseRate/.test(build)) bad.push('the flat list no longer collapses base-rate families');
+  if (!/band set by age/.test(build)) bad.push('the no-age entry no longer says the band follows the age');
+  const isBr = extractFn(APP_SRC, 'familyGroupIsBaseRate');
+  if (!/baseRates/.test(isBr) || /separateBattery/.test(isBr)) bad.push('familyGroupIsBaseRate no longer separates base-rate from separate-battery (WMS-IV) families');
+  const render = extractFn(APP_SRC, 'renderBattery');
+  if (!/baseRateGroupForAge/.test(render)) bad.push('rows are no longer auto-rebanded when the age changes');
+  /* Drive the shipped finder over the shipped DB — the thing under test is
+     the interaction with normDB's actual shape, per the §33 principle. */
+  const c = { getMergedDB: () => D.normDB };
+  vm.createContext(c);
+  vm.runInContext(
+    extractFn(APP_SRC, 'familyBaseName') + ';' + extractFn(APP_SRC, 'hasAgeBandSuffix') + ';'
+    + extractFn(APP_SRC, 'ageBandRange') + ';' + extractFn(APP_SRC, 'baseRateGroupForAge')
+    + ';globalThis.__F = baseRateGroupForAge;', c);
+  const f = c.__F;
+  const G16 = 'WAIS-IV Longest Span (Process) · Ages 16-17';
+  if (f(G16, 'Longest Digit Span Backward', 85) !== 'WAIS-IV Longest Span (Process) · Ages 85-90'){
+    bad.push('an 85-year-old\'s digit span does not reband to the 85-90 table');
+  }
+  if (f(G16, 'Longest Digit Span Backward', 22) !== 'WAIS-IV Longest Span (Process) · Ages 20-24'){
+    bad.push('a 22-year-old\'s digit span does not reband to the 20-24 table');
+  }
+  /* Per MEASURE, not per family: LNS is published only to 65-69, so a
+     70-year-old has a band for the digit spans and none for LNS. */
+  if (f(G16, 'Longest Letter-Number Sequence', 70) !== null){
+    bad.push('LNS rebands past its published ceiling of 65-69 — the target must publish the measure');
+  }
+  if (f(G16, 'Longest Digit Span Backward', 12) !== null){
+    bad.push('a paediatric age found a WAIS-IV band — nothing below 16 is published');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ==========================================================================
+   38. Performance Validity page — cut-offs, formulas and wiring
+
+   PINNED SOURCES: Silverberg, Wertheimer & Fichtenberg (2007), TCN 21(5),
+   Table 2 (EI weights) and cut-offs; Novitski et al. (2012), ACN 27(2)
+   (ES formula, gate, cut-off); Greiffenstein, Baker & Gola (1994),
+   Psych. Assessment 6(3) (RDS scoring, worked example, floor);
+   Schroeder et al. (2012) (RDS <= 6); Martin et al. (2020), TCN 34(1),
+   Tables 16-17 (TOMM sens/spec and predictive power); Denning (2012)
+   (Trial 1 < 41); Larrabee (2014), ACN 29(4) (aggregation).
+
+   The shipped calculator functions are extracted and DRIVEN here (they are
+   pure once document/pvtState are stubbed), and the formulas are also
+   restated independently — the §23 principle.
+   ========================================================================== */
+heading('38. Performance Validity page');
+
+check('EI weight bands cover every raw score exactly once, with the published gaps', () => {
+  const bad = [];
+  const cover = (bands, max, name) => {
+    for (let v = 0; v <= max; v++){
+      const hits = bands.filter(b => v >= b.min && v <= b.max);
+      if (hits.length !== 1) bad.push(`${name} raw ${v} matched ${hits.length} bands`);
+    }
+  };
+  cover(D.PVT_EI_WEIGHTS.digitSpan, 16, 'Digit Span');
+  cover(D.PVT_EI_WEIGHTS.listRecognition, 20, 'List Recognition');
+  /* Silverberg et al. (2007) Table 2: Digit Span never yields 1 or 4;
+     List Recognition yields every weight 0-6. */
+  const dsW = new Set(D.PVT_EI_WEIGHTS.digitSpan.map(b => b.w));
+  const lrW = new Set(D.PVT_EI_WEIGHTS.listRecognition.map(b => b.w));
+  if (dsW.has(1) || dsW.has(4)) bad.push('Digit Span bands yield a weight of 1 or 4, which Table 2 does not contain');
+  if ([0,2,3,5,6].some(w => !dsW.has(w))) bad.push('Digit Span bands lost a published weight');
+  if ([0,1,2,3,4,5,6].some(w => !lrW.has(w))) bad.push('List Recognition bands lost a published weight');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('EI weight table matches Silverberg et al. (2007) Table 2 cell for cell', () => {
+  // Restated independently from the source, not read back from data.js.
+  const expectDs = { 8:0, 16:0, 7:2, 6:3, 5:5, 0:6, 4:6 };
+  const expectLr = { 18:0, 20:0, 17:1, 15:2, 16:2, 13:3, 14:3, 11:4, 12:4, 10:5, 0:6, 9:6 };
+  const w = (bands, v) => bands.find(b => v >= b.min && v <= b.max).w;
+  const bad = [];
+  Object.entries(expectDs).forEach(([v, e]) => {
+    if (w(D.PVT_EI_WEIGHTS.digitSpan, +v) !== e) bad.push(`DS ${v} -> expected ${e}`);
+  });
+  Object.entries(expectLr).forEach(([v, e]) => {
+    if (w(D.PVT_EI_WEIGHTS.listRecognition, +v) !== e) bad.push(`LR ${v} -> expected ${e}`);
+  });
+  if (D.PVT_EI_CUTOFFS.standard !== 3) bad.push('standard cut-off is not EI > 3');
+  if (D.PVT_EI_CUTOFFS.sensitive !== 1) bad.push('screening cut-off is not EI > 1');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('ES gate, formula and cut-off match Novitski et al. (2012)', () => {
+  const bad = [];
+  const g = D.PVT_ES.gate;
+  if (g.digitSpanBelow !== 9)        bad.push('gate is not Digit Span < 9');
+  if (g.listRecognitionBelow !== 19) bad.push('gate is not List Recognition < 19');
+  if (g.combinedBelow !== 28)        bad.push('gate is not combined < 28');
+  if (D.PVT_ES.cutoff !== 12)        bad.push('cut-off is not ES < 12');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('RDS floor and cut-offs match Greiffenstein (1994) / Schroeder (2012)', () => {
+  const bad = [];
+  if (D.PVT_RDS.floor !== 3)               bad.push('floor is not RDS = 3');
+  if (D.PVT_RDS.cutoffTraditional !== 7)   bad.push('traditional cut-off is not <= 7');
+  if (D.PVT_RDS.cutoffConservative !== 6)  bad.push('conservative cut-off is not <= 6');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('TOMM cut-off rows carry the meta-analytic sens/spec (Martin et al., 2020; Denning, 2012)', () => {
+  // id -> [cut, sens, spec], restated from the source tables.
+  const expect = {
+    't1-41':  [41, 0.66, 0.93],
+    't1-42':  [42, 0.69, 0.91],
+    't2-45':  [45, 0.45, 0.97],
+    't2-49':  [49, 0.63, 0.95],
+    'ret-45': [45, 0.55, 0.98],
+    'ret-49': [49, 0.70, 0.93]
+  };
+  const bad = [];
+  Object.entries(expect).forEach(([id, [cut, sens, spec]]) => {
+    const row = D.PVT_TOMM_CUTOFFS.find(c => c.id === id);
+    if (!row){ bad.push(id + ' missing'); return; }
+    if (row.cut !== cut || Math.abs(row.sens - sens) > 1e-9 || Math.abs(row.spec - spec) > 1e-9){
+      bad.push(id + ' drifted');
+    }
+  });
+  if (D.PVT_TOMM_CUTOFFS.length !== 6) bad.push('cut-off roster is no longer exactly six rows');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('Bayes-derived PPP/NPP reproduce Martin et al. Tables 16-17, with the known exceptions', () => {
+  /* The app DERIVES predictive power from the pinned sens/spec rather than
+     storing the published tables. This check proves the derivation
+     reproduces the published cells at 2 dp — 57 of 60 — and pins the three
+     that do not: two are 0.005 rounding knife-edges (derived .865 / .805
+     printed .87 / .81), and Retention < 45 NPP at a 30% base rate derives
+     to .84 against a printed .87, which does not reconcile with that row's
+     own sens/spec and is read here as a misprint. If a corrected printing
+     ever makes it agree, this FAILS — the signal to re-read the source,
+     exactly as with Twenty Questions in §27. */
+  const pub = {
+    't1-41':  { ppp: [.51,.70,.80,.86,.90], npp: [.96,.92,.87,.80,.73] },
+    't1-42':  { ppp: [.46,.66,.77,.84,.88], npp: [.96,.92,.87,.81,.75] },
+    't2-45':  { ppp: [.63,.79,.87,.91,.94], npp: [.94,.88,.81,.73,.64] },
+    't2-49':  { ppp: [.58,.76,.84,.89,.93], npp: [.96,.91,.86,.79,.72] },
+    'ret-45': { ppp: [.75,.87,.92,.95,.97], npp: [.95,.90,.87,.77,.69] },
+    'ret-49': { ppp: [.53,.71,.81,.87,.91], npp: [.97,.93,.88,.82,.76] }
+  };
+  const ppp = (se, sp, br) => se * br / (se * br + (1 - sp) * (1 - br));
+  const npp = (se, sp, br) => sp * (1 - br) / (sp * (1 - br) + (1 - se) * br);
+  const mismatches = [];
+  D.PVT_TOMM_CUTOFFS.forEach(row => {
+    D.PVT_BASE_RATES.forEach((br, i) => {
+      const dP = ppp(row.sens, row.spec, br), dN = npp(row.sens, row.spec, br);
+      const p = pub[row.id];
+      if (Math.abs(dP - p.ppp[i]) > 0.0051) mismatches.push(`${row.id} PPP @${br}`);
+      if (Math.abs(dN - p.npp[i]) > 0.0051) mismatches.push(`${row.id} NPP @${br}`);
+    });
+  });
+  const expected = ['t1-41 NPP @0.3', 't2-45 NPP @0.3', 'ret-45 NPP @0.3'];
+  return JSON.stringify(mismatches.sort()) === JSON.stringify(expected.sort())
+    || 'mismatch set changed: [' + mismatches.join(', ') + '] — expected exactly [' + expected.join(', ') + ']';
+});
+
+check('base-rate options and Larrabee aggregation table are as published', () => {
+  const bad = [];
+  if (JSON.stringify(D.PVT_BASE_RATES) !== JSON.stringify([0.10,0.20,0.30,0.40,0.50])){
+    bad.push('base-rate columns are no longer 10-50% (Martin et al. Tables 16-17)');
+  }
+  const agg = [[88.9,97.6,92.6],[96.3,87.8,92.6],[100,63.4,84.2]];
+  agg.forEach((e, i) => {
+    const row = D.PVT_AGGREGATION[i];
+    if (!row || row.spec !== e[0] || row.sens !== e[1] || row.correct !== e[2]){
+      bad.push('Larrabee (2014) row ' + (i + 2) + '-of-7 drifted');
+    }
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ---- drive the shipped calculators (document / pvtState stubbed) ---- */
+function pvtContext(state){
+  const c = {
+    PVT_EI_WEIGHTS: D.PVT_EI_WEIGHTS, PVT_EI_CUTOFFS: D.PVT_EI_CUTOFFS,
+    PVT_ES: D.PVT_ES, PVT_RDS: D.PVT_RDS, PVT_TOMM_CUTOFFS: D.PVT_TOMM_CUTOFFS,
+    pvtState: state,
+    document: { getElementById: () => null }   // selects fall back to defaults
+  };
+  vm.createContext(c);
+  vm.runInContext(
+    extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'pvtEiWeight') + ';'
+    + extractFn(APP_SRC, 'getPvtEi') + ';' + extractFn(APP_SRC, 'getPvtEs') + ';'
+    + ';globalThis.__EI = getPvtEi; globalThis.__ES = getPvtEs;', c);
+  return c;
+}
+
+check('shipped EI calculator: weights sum, cut-off applies, defaults to the standard cut-off', () => {
+  const bad = [];
+  let c = pvtContext({ ds: '7', lrec: '10' });     // weights 2 + 5 = 7
+  let r = c.__EI();
+  if (r.ei !== 7 || r.wDs !== 2 || r.wLr !== 5) bad.push('DS 7 / LR 10 should give EI 2+5=7, got ' + JSON.stringify(r));
+  if (r.cut !== 3 || !r.fail) bad.push('EI 7 should Fail at the default cut-off > 3');
+  c = pvtContext({ ds: '9', lrec: '19' });          // weights 0 + 0
+  r = c.__EI();
+  if (r.ei !== 0 || r.fail) bad.push('DS 9 / LR 19 should give EI 0, Pass');
+  c = pvtContext({ ds: '17', lrec: '19' });         // out of range
+  if (!c.__EI().invalid) bad.push('DS 17 should be refused as out of range');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('shipped ES calculator: gate is mandatory and the formula is as published', () => {
+  const bad = [];
+  /* Intact profile — DS 12, LR 20: no gate clause met, so NO NUMBER may
+     come back, however extreme the recall scores. */
+  let c = pvtContext({ ds: '12', lrec: '20', listRecall: '0', storyRecall: '0', figRecall: '0' });
+  let r = c.__ES();
+  if (!r.gated || r.es !== undefined) bad.push('intact profile computed an ES — the gate is the whole design');
+  /* DS 8 opens the gate (8 < 9): ES = (20 - [4+5+8]) + 8 = 11, Fail at < 12. */
+  c = pvtContext({ ds: '8', lrec: '20', listRecall: '4', storyRecall: '5', figRecall: '8' });
+  r = c.__ES();
+  if (r.es !== 11) bad.push('ES should be (20-17)+8 = 11, got ' + r.es);
+  if (!r.fail) bad.push('ES 11 should Fail at < 12');
+  /* Combined clause: DS 9, LR 18 - neither alone gates, but 27 < 28 does. */
+  c = pvtContext({ ds: '9', lrec: '18', listRecall: '2', storyRecall: '3', figRecall: '4' });
+  r = c.__ES();
+  if (r.gated) bad.push('DS 9 + LR 18 = 27 < 28 should open the combined gate');
+  if (r.es !== (18 - 9) + 9) bad.push('ES formula drifted on the combined-gate case');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('shipped RDS calculator: worked example and floor rule (Greiffenstein et al., 1994)', () => {
+  const bad = [];
+  const run = (f, b) => {
+    const c = {
+      PVT_RDS: D.PVT_RDS,
+      document: { getElementById: id =>
+        id === 'pvt-rds-f' ? { value: f } : id === 'pvt-rds-b' ? { value: b } : null }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtRds')
+      + ';globalThis.__R = getPvtRds();', c);
+    return c.__R;
+  };
+  /* The paper's worked example: 3 forward + 2 backward = RDS 5. */
+  let r = run('3', '2');
+  if (r.rds !== 5) bad.push('worked example 3+2 should give RDS 5, got ' + r.rds);
+  if (!r.fail || r.cut !== 6) bad.push('RDS 5 should Fail at the default conservative <= 6');
+  /* Floor rule: sums below 3 are recorded as 3. */
+  r = run('1', '1');
+  if (r.rds !== 3 || !r.floored) bad.push('1+1 should floor to RDS 3');
+  /* Boundary: RDS 7 passes <= 6 but fails <= 7 — the default must be the
+     conservative cut-off, per Schroeder et al. (2012). */
+  r = run('4', '3');
+  if (r.rds !== 7 || r.fail) bad.push('RDS 7 should Pass at the default <= 6');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('shipped TOMM evaluation: default cut-offs, failure direction, Bayes wiring', () => {
+  const bad = [];
+  const run = vals => {
+    const c = {
+      PVT_TOMM_CUTOFFS: D.PVT_TOMM_CUTOFFS,
+      document: { getElementById: id => (id in vals ? { value: vals[id] } : null) }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'pvtPPP') + ';'
+      + extractFn(APP_SRC, 'pvtNPP') + ';' + extractFn(APP_SRC, 'pvtTommCutoffById') + ';'
+      + extractFn(APP_SRC, 'getPvtTomm') + ';globalThis.__T = getPvtTomm();', c);
+    return c.__T;
+  };
+  /* T1 41 passes < 42? No - 41 < 42 fails. 42 passes. T2 44 fails < 45; 45 passes. */
+  let r = run({ 'pvt-tomm-t1': '41', 'pvt-tomm-t2': '45' });
+  if (r.rows.length !== 2) bad.push('two entered trials should give two rows');
+  if (!r.rows[0].fail) bad.push('T1 = 41 should Fail at the default < 42');
+  if (r.rows[1].fail) bad.push('T2 = 45 should Pass at the default < 45');
+  /* PPP at the default 10% base rate for T1 < 42: .69x.1/(.69x.1+.09x.9) = .460 */
+  const expected = 0.69 * 0.1 / (0.69 * 0.1 + 0.09 * 0.9);
+  if (Math.abs(r.rows[0].ppp - expected) > 1e-9) bad.push('T1 PPP is not Bayes on the pinned sens/spec at BR .10');
+  r = run({ 'pvt-tomm-ret': '49' });
+  if (r.rows.length !== 1 || r.rows[0].fail) bad.push('Retention 49 alone should give one Passing row at < 45');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('published accuracy strings match their sources, and reach screen and export', () => {
+  /* PINNED: Silverberg et al. (2007) Tables 1 & 3 — at > 3 specificity .94
+     (derivation) to 1.00 (mTBI/controls), sensitivity .464-.708 across the
+     three malingering groups; at > 1 specificity .75-.964, sensitivity
+     .667-.917. Schroeder et al. (2012) Tables 2 & 4 — global weighted/
+     Bayesian rates. The ES deliberately has NO pair: its published
+     discrimination is ROC AUC .908 (vs .608 for the EI). */
+  const bad = [];
+  const eq = (got, want, name) => { if (got !== want) bad.push(name + ' drifted: ' + got); };
+  eq(D.PVT_EI_ACCURACY.standard.sens,  '.46–.71',  'EI > 3 sensitivity');
+  eq(D.PVT_EI_ACCURACY.standard.spec,  '.94–1.00', 'EI > 3 specificity');
+  eq(D.PVT_EI_ACCURACY.sensitive.sens, '.67–.92',  'EI > 1 sensitivity');
+  eq(D.PVT_EI_ACCURACY.sensitive.spec, '.75–.96',  'EI > 1 specificity');
+  eq(D.PVT_RDS_ACCURACY.conservative.sens, '.30–.35', 'RDS <= 6 sensitivity');
+  eq(D.PVT_RDS_ACCURACY.conservative.spec, '.96–.97', 'RDS <= 6 specificity');
+  eq(D.PVT_RDS_ACCURACY.traditional.sens,  '.48–.58', 'RDS <= 7 sensitivity');
+  eq(D.PVT_RDS_ACCURACY.traditional.spec,  '.82–.85', 'RDS <= 7 specificity');
+  eq(D.PVT_ES_ACCURACY.auc, '.91', 'ES ROC AUC');
+  if ('sens' in D.PVT_ES_ACCURACY || 'spec' in D.PVT_ES_ACCURACY){
+    bad.push('the ES gained a sens/spec pair — Novitski et al. publish none; that number would be invented');
+  }
+  /* The same strings must reach the summary rows, the APA columns, and the
+     live accuracy lines — one source, three surfaces. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  ['PVT_EI_ACCURACY', 'PVT_RDS_ACCURACY'].forEach(c => {
+    if (!rowsFn.includes(c)) bad.push('getPvtSummaryRows no longer reads ' + c);
+  });
+  const apa = extractFn(APP_SRC, 'renderPvtApa');
+  if (!/Sens\./.test(apa) || !/Spec\./.test(apa)) bad.push('the APA table lost its Sens./Spec. columns');
+  if (!/r\.sens/.test(apa) || !/r\.spec/.test(apa)) bad.push('the APA table no longer prints the row accuracy');
+  const acc = extractFn(APP_SRC, 'renderPvtAccuracy');
+  ['pvt-ei-accuracy', 'pvt-rds-accuracy', 'PVT_EI_ACCURACY', 'PVT_RDS_ACCURACY'].forEach(s => {
+    if (!acc.includes(s)) bad.push('renderPvtAccuracy no longer fills ' + s);
+  });
+  const all = extractFn(APP_SRC, 'renderPvtAll');
+  if (!/renderPvtAccuracy\(\);/.test(all)) bad.push('renderPvtAll no longer refreshes the accuracy lines');
+  /* Every measure tab carries a visible source line naming its papers. */
+  ['Silverberg, Wertheimer &amp; Fichtenberg (2007)', 'Novitski, Steele, Karantzoulis &amp; Randolph (2012)',
+   'Greiffenstein, Baker &amp; Gola (1994)', 'Martin et al. (2020)'].forEach(name => {
+    if (!new RegExp('pvt-source-cite">[^<]*' + name.replace(/[()&;]/g, m => '\\' + m).replace(/\\&amp\;/g, '&amp;')).test(HTML_SRC)
+        && !HTML_SRC.includes(name)) bad.push('the on-tab source line lost ' + name);
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('Digit Span ACSS: cut-offs, accuracy and non-independence (Iverson & Tulsky, 2003; Axelrod et al., 2006)', () => {
+  /* PINNED: Iverson & Tulsky Table 1 — ACSS <= 5 in 3.8% of the WAIS-III
+     standardization sample (Table 4: 3.4% combined clinical); their
+     suspicion guideline (a) is "scaled score of 5, 4, or less" and (d) a
+     Vocabulary - Digit Span difference of 5+ (Table 3: 7.1% at >= 5;
+     Table 6: 2.8% clinical). Axelrod et al. Table 3 — at <= 5 sensitivity
+     36.1% / specificity 96.6%; at <= 7 sensitivity 75.0% / specificity
+     69.0%, with 77% specificity on the mild-TBI cross-validation. */
+  const bad = [];
+  if (D.PVT_DS.cutoffConservative !== 5) bad.push('conservative cut-off is not <= 5');
+  if (D.PVT_DS.cutoffSensitive !== 7)    bad.push('sensitive cut-off is not <= 7');
+  if (D.PVT_DS.vocabDiffCutoff !== 5)    bad.push('Vocabulary - Digit Span index is not >= 5');
+  if (D.PVT_DS_ACCURACY.conservative.sens !== '.36' || D.PVT_DS_ACCURACY.conservative.spec !== '.97'){
+    bad.push('<= 5 accuracy drifted from Axelrod Table 3 (36.1 / 96.6)');
+  }
+  if (D.PVT_DS_ACCURACY.sensitive.sens !== '.75' || D.PVT_DS_ACCURACY.sensitive.spec !== '.69–.77'){
+    bad.push('<= 7 accuracy drifted from Axelrod Table 3 / mild-TBI cross-validation');
+  }
+  if (D.PVT_DS_VOCABDIFF_BASERATES.standardization !== '7.1%' || D.PVT_DS_VOCABDIFF_BASERATES.clinical !== '2.8%'){
+    bad.push('Vocabulary - Digit Span base rates drifted from Tables 3/6');
+  }
+  /* Same subtest as RDS => same summary group, or the failure count would
+     double-count one subtest — the whole point of the independence rule. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  const dsBlock = rowsFn.split('getPvtDs()')[1] || '';
+  if (!/group: 'rds'/.test(dsBlock)) bad.push('the DS rows left the digit-span group — the summary would count the same subtest twice');
+  if (!rowsFn.includes('PVT_DS_ACCURACY')) bad.push('getPvtSummaryRows no longer reads PVT_DS_ACCURACY');
+  /* Drive the shipped calculator: ACSS 5 fails at the default <= 5; 6
+     passes; Vocabulary 11 with ACSS 5 gives diff 6, flagged at >= 5. */
+  const run = (acss, vocab) => {
+    const c = {
+      PVT_DS: D.PVT_DS,
+      document: { getElementById: id =>
+        id === 'pvt-ds-acss' ? { value: acss } : id === 'pvt-ds-vocab' ? { value: vocab } : null }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtDs')
+      + ';globalThis.__R = getPvtDs();', c);
+    return c.__R;
+  };
+  let r = run('5', '');
+  if (!r.fail || r.cut !== 5) bad.push('ACSS 5 should Fail at the default <= 5');
+  r = run('6', '');
+  if (r.fail) bad.push('ACSS 6 should Pass at the default <= 5');
+  r = run('5', '11');
+  if (r.diff !== 6 || !r.diffFail) bad.push('Vocabulary 11 - ACSS 5 should flag at >= 5');
+  r = run('', '11');
+  if (!r.partial) bad.push('Vocabulary alone should compute nothing');
+  /* The WAIS-III provenance must reach the exported note. */
+  if (!/Iverson & Tulsky, 2003; Axelrod et al\., 2006 — WAIS-III/.test(APP_SRC)){
+    bad.push('the note lost the WAIS-III provenance of the Digit Span cut-offs');
+  }
+  ['Iverson &amp; Tulsky (2003)', 'Axelrod, B. N., Fichtenberg, N. L., Millis, S. R.'].forEach(n => {
+    if (!HTML_SRC.includes(n)) bad.push('references lost ' + n);
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('Rey 15-Item: cut-offs, accuracy and independence (Boone et al., 2002)', () => {
+  /* PINNED: Boone et al. (2002) Table 6 — free recall < 9: sensitivity
+     46.9%, specificity 97.2 / 100 / 98.3 across clinic patients, learning-
+     disabled students and controls; combination score
+     recall + (recognition - false positives) < 20: sensitivity 71.4%,
+     specificity 91.7 / 93.9 / 91.7. */
+  const bad = [];
+  if (D.PVT_REY15.recallCutoff !== 9)  bad.push('recall cut-off is not < 9');
+  if (D.PVT_REY15.comboCutoff !== 20)  bad.push('combination cut-off is not < 20');
+  if (D.PVT_REY15_ACCURACY.recall.sens !== '.47' || D.PVT_REY15_ACCURACY.recall.spec !== '.97–1.00'){
+    bad.push('recall accuracy drifted from Table 6');
+  }
+  if (D.PVT_REY15_ACCURACY.combo.sens !== '.71' || D.PVT_REY15_ACCURACY.combo.spec !== '.92–.94'){
+    bad.push('combination accuracy drifted from Table 6');
+  }
+  /* Drive the shipped calculator. */
+  const run = (recall, recog, fp) => {
+    const vals = { 'pvt-rey-recall': recall, 'pvt-rey-recog': recog, 'pvt-rey-fp': fp };
+    const c = {
+      PVT_REY15: D.PVT_REY15,
+      document: { getElementById: id => (id in vals ? { value: vals[id] } : null) }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtRey')
+      + ';globalThis.__R = getPvtRey();', c);
+    return c.__R;
+  };
+  let r = run('8', '', '');
+  if (!r.recallFail) bad.push('recall 8 should Fail at < 9');
+  r = run('9', '13', '1');
+  if (r.recallFail) bad.push('recall 9 should Pass at < 9');
+  if (r.combo !== 21) bad.push('9 + (13 - 1) should give a combination of 21, got ' + r.combo);
+  /* 21 >= 20 - should PASS at < 20. */
+  if (r.comboFail) bad.push('combination 21 should Pass at < 20');
+  r = run('9', '8', '2');
+  if (r.combo !== 15 || !r.comboFail) bad.push('9 + (8 - 2) = 15 should Fail at < 20');
+  r = run('', '13', '1');
+  if (!r.partial) bad.push('recognition alone should compute nothing');
+  r = run('9', '13', '');
+  if (!r.comboPartial || r.combo !== undefined) bad.push('recognition without a false-positive count should not compute a combination');
+  /* Stand-alone: its rows must carry their OWN group, adding a genuine
+     independent indicator - the inverse of the DS/RDS constraint. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  const reyBlock = rowsFn.split('getPvtRey()')[1] || '';
+  if (!/group: 'rey15'/.test(reyBlock) || /group: 'rds'/.test(reyBlock.split('getPvtTomm')[0])){
+    bad.push('the Rey rows are not in their own group - a stand-alone measure must add an independent indicator');
+  }
+  /* The stimulus contract moved: it is no longer "never present" but
+     "only inside the administration overlay", asserted four ways in the
+     administration check below. */
+  if (!HTML_SRC.includes('Boone, K. B., Salazar, X., Lu, P.')) bad.push('references lost Boone et al. (2002)');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('Digit Span span indices: cut-offs, the under-55 age gate, and the withheld export', () => {
+  /* PINNED: Iverson & Tulsky guidelines (b) and (c) — longest span forward
+     <= 4 "for persons under age 55" (Table 2 base rates 2.5-5.5% in the
+     under-55 bands, 11.0% at 85-89 — the reason for the age limit; Table 5
+     combined clinical 3.4%) and longest span backward <= 2 (Table 2
+     2.0-6.0% across bands; Table 5 clinical 3.4%). These are longest-span-
+     on-EITHER-trial values, not the RDS both-trials span. */
+  const bad = [];
+  if (D.PVT_DS.lsfCutoff !== 4)     bad.push('forward-span index is not <= 4');
+  if (D.PVT_DS.lsfAgeBelow !== 55)  bad.push('forward-span age limit is not under 55');
+  if (D.PVT_DS.lsbCutoff !== 2)     bad.push('backward-span index is not <= 2');
+  if (D.PVT_DS_SPAN_BASERATES.lsf.standardization !== '2.5–5.5%' || D.PVT_DS_SPAN_BASERATES.lsf.clinical !== '3.4%'){
+    bad.push('forward-span base rates drifted from Tables 2/5');
+  }
+  if (D.PVT_DS_SPAN_BASERATES.lsb.standardization !== '2.0–6.0%' || D.PVT_DS_SPAN_BASERATES.lsb.clinical !== '3.4%'){
+    bad.push('backward-span base rates drifted from Tables 2/5');
+  }
+  /* Drive the shipped calculator with the shared age stubbed. */
+  const run = (acss, lsf, lsb, age) => {
+    const vals = { 'pvt-ds-acss': acss, 'pvt-ds-vocab': '', 'pvt-ds-lsf': lsf, 'pvt-ds-lsb': lsb };
+    const c = {
+      PVT_DS: D.PVT_DS,
+      patientAge: () => age,
+      document: { getElementById: id => (id in vals ? { value: vals[id] } : null) }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtDs')
+      + ';globalThis.__R = getPvtDs();', c);
+    return c.__R;
+  };
+  let r = run('8', '4', '', null);
+  if (r.lsfState !== 'no-age' || r.lsfFail !== undefined) bad.push('a blank age should WITHHOLD the forward-span index, not evaluate it');
+  r = run('8', '4', '', 60);
+  if (r.lsfState !== 'over-age' || r.lsfFail !== undefined) bad.push('age 60 should mark the forward-span index not applicable');
+  r = run('8', '4', '', 40);
+  if (r.lsfState !== 'ok' || !r.lsfFail) bad.push('forward span 4 at age 40 should be flagged at <= 4');
+  r = run('8', '5', '', 40);
+  if (r.lsfFail) bad.push('forward span 5 should not be flagged');
+  r = run('8', '', '2', null);
+  if (!r.lsbFail) bad.push('backward span 2 should be flagged at <= 2 (no age gate)');
+  r = run('8', '', '3', null);
+  if (r.lsbFail) bad.push('backward span 3 should not be flagged');
+  /* A withheld index must never export: the row is emitted only when the
+     state is ok, so an unevaluated index cannot become a report claim. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  if (!/ds\.lsfState === 'ok'/.test(rowsFn)) bad.push("a withheld forward-span index would still export — the row must require lsfState === 'ok'");
+  /* The span rows stay in the digit-span group. */
+  const dsBlock = rowsFn.split('getPvtDs()')[1].split('getPvtRey()')[0];
+  if ((dsBlock.match(/group: 'rds'/g) || []).length !== 4) bad.push('the four Digit Span rows are no longer all in the digit-span group');
+  /* An age typed anywhere must re-evaluate the index. */
+  const setup = extractFn(APP_SRC, 'setupPvtPage');
+  if (!/'patient-age','pre-age'/.test(setup)) bad.push('the shared-age listener is gone — the forward-span index would not refresh when the age changes');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+/* PVT_STATE_WORD lives in app.js (it is render-layer, not data), so pull it
+   out of the shipped file rather than duplicating the roster here. */
+const PVT_STATE_WORD_OBJ = (() => {
+  const m = /const PVT_STATE_WORD = (\{[^}]*\});/.exec(APP_SRC);
+  if (!m) throw new Error('PVT_STATE_WORD not found in app.js');
+  const c = {}; vm.createContext(c);
+  vm.runInContext('globalThis.__O = ' + m[1] + ';', c);
+  return c.__O;
+})();
+
+check('the readout gives every index its OWN state, and states never rest on colour alone', () => {
+  /* THE BUG THIS PINS: the result card used to take one state for the whole
+     block, so `.pvt-result-inner.is-fail .pvt-result-headline` painted every
+     line red — a Digit Span card printed "ACSS = 8 — Pass" in failure red
+     because a span had flagged. Values and labels now stay in ink and a
+     chip beside each index carries its state. */
+  const bad = [];
+  /* No rule may colour headline text from a card-level state again. */
+  if (/\.pvt-result-inner\.is-(fail|pass|na)\s+\.pvt-result-headline/.test(CSS_SRC)){
+    bad.push('a card-level state colours the headline text again — one failing index would repaint every line');
+  }
+  /* Every scored renderer must go through the per-index readout. */
+  ['renderPvtEi', 'renderPvtEs', 'renderPvtRds', 'renderPvtDs', 'renderPvtRey', 'renderPvtTomm'].forEach(fn => {
+    const body = extractFn(APP_SRC, fn);
+    if (!/pvtReadoutHtml\(/.test(body)) bad.push(fn + ' no longer renders through the per-index readout');
+    /* pvtResultHtml survives ONLY for the empty/invalid/partial messages. */
+    const scoredResultCall = /pvtResultHtml\((?!'empty')/.test(body);
+    if (scoredResultCall) bad.push(fn + ' still renders a scored index through the single-state card');
+  });
+  /* Chips carry a word, so state survives greyscale and colour-blindness. */
+  const rowFn = extractFn(APP_SRC, 'pvtIndexRowHtml');
+  if (!/o\.word \|\| PVT_STATE_WORD/.test(rowFn)) bad.push('the chip no longer carries a word — state would rest on colour alone');
+  ['pass', 'fail', 'flag', 'na'].forEach(k => {
+    if (!(k in PVT_STATE_WORD_OBJ)) bad.push('PVT_STATE_WORD lost the ' + k + ' state');
+  });
+  /* Three-way encoding: glyph + word + colour. The glyph rides inside the
+     chip, so shape and text both survive greyscale and colour-blindness. */
+  if (!/PVT_STATE_ICON\[/.test(rowFn)) bad.push('the chip lost its state glyph');
+  if (!/\$\{icon\}\$\{word\}/.test(rowFn)) bad.push('the glyph and word are no longer rendered together in the chip');
+  ['flag', 'pass', 'na'].forEach(k => {
+    if (!new RegExp("^\\s+" + k + ":\\s*'<svg", 'm').test(APP_SRC)) bad.push('PVT_STATE_ICON lost its ' + k + ' glyph');
+  });
+  /* Score-against-cut-off plotting was removed deliberately: the cut-off
+     and whether the score crossed it are the actionable facts, and a
+     distance from the cut-off carries no published meaning. */
+  if (/pvtMeterHtml|pvtFailBoundary|class="pvt-meter/.test(APP_SRC) || /\.pvt-meter/.test(CSS_SRC)){
+    bad.push('the cut-off meter is back — a plotted distance from the cut-off asserts a precision the sources do not publish');
+  }
+  /* Every row must still print its cut-off in text, which is what the
+     meter's removal makes load-bearing. */
+  ['renderPvtEi', 'renderPvtRds', 'renderPvtDs', 'renderPvtRey', 'renderPvtTomm'].forEach(fn => {
+    if (!/Cut-off/.test(extractFn(APP_SRC, fn))) bad.push(fn + ' no longer prints the cut-off on the row');
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+
+check('Rey 15-Item administration: the layouts are the published pages, and the stimuli stay out of the page', () => {
+  /* PINNED: the recall page is the classic 5x3 array; the recognition page
+     is Boone et al. (2002) Figure 1, transcribed in reading order. The
+     TARGET SET IS DERIVED, NOT ASSERTED — each recognition item is tested
+     against the recall set, and exactly 15 must match. A mis-transcribed
+     foil either breaks that count or claims a target that never appeared
+     on the recall page, so this one check validates the whole figure. */
+  const bad = [];
+  const recall = D.REY15_RECALL_ROWS.flat();
+  const recog  = D.REY15_RECOGNITION_ROWS.flat();
+  if (D.REY15_RECALL_ROWS.length !== 5 || D.REY15_RECALL_ROWS.some(r => r.length !== 3)){
+    bad.push('the recall page is no longer 5 rows of 3');
+  }
+  if (D.REY15_RECOGNITION_ROWS.length !== 5 || D.REY15_RECOGNITION_ROWS.some(r => r.length !== 6)){
+    bad.push('the recognition page is no longer 5 rows of 6');
+  }
+  if (recall.length !== 15) bad.push('the recall page is not 15 items');
+  if (recog.length !== 30)  bad.push('the recognition page is not 30 items');
+  if (new Set(recog).size !== 30) bad.push('the recognition page repeats an item');
+  const targets = recog.filter(i => recall.includes(i));
+  if (targets.length !== 15) bad.push(`the recognition page holds ${targets.length} targets, not 15 — a transcription error`);
+  const missing = recall.filter(i => !recog.includes(i));
+  if (missing.length) bad.push('recall items absent from the recognition page: ' + missing.join(', '));
+  /* Boone's pathognomonic false-positive errors must all be FOILS. */
+  ['f', '5', '6', 'pentagon'].forEach(id => {
+    if (!recog.includes(id)) bad.push('the recognition page lost the ' + id + ' foil');
+    if (recall.includes(id)) bad.push(id + ' is a target — Boone lists it among the pathognomonic false-positive errors');
+  });
+  /* Every item must be drawable: a shape has SVG, anything else is a glyph. */
+  const svgBlock = APP_SRC.slice(APP_SRC.indexOf('const REY15_SHAPE_SVG'), APP_SRC.indexOf('function rey15ItemHtml'));
+  D.REY15_SHAPES.forEach(s => {
+    if (!new RegExp('\\b' + s + ':').test(svgBlock)) bad.push('no SVG for the ' + s + ' shape');
+  });
+  recog.concat(recall).forEach(id => {
+    if (D.REY15_SHAPES.includes(id) && !new RegExp('\\b' + id + ':').test(svgBlock)) bad.push(id + ' is a shape with no drawing');
+  });
+  /* The scorer must count targets, never trust a stored flag. */
+  const isT = extractFn(APP_SRC, 'rey15IsTarget');
+  if (!/REY15_RECALL_ROWS/.test(isT)) bad.push('rey15IsTarget no longer derives from the recall page');
+  /* TEST SECURITY, four ways. */
+  if (/data-rey-item|rey-grid|REY15_RECOGNITION/.test(HTML_SRC)){
+    bad.push('a stimulus item appears in the page markup — it must render only inside the administration overlay');
+  }
+  const open = extractFn(APP_SRC, 'reyAdminOpen');
+  if (!/document\.body\.appendChild/.test(open)){
+    bad.push('the overlay is not mounted on <body> — position:fixed would resolve against the animated panel');
+  }
+  const go = extractFn(APP_SRC, 'reyAdminGo');
+  if (!/step === 'intro'/.test(go)) bad.push('the overlay no longer opens on a confirmation step');
+  const setup = extractFn(APP_SRC, 'setupPvtPage');
+  if (!/pvt-rey-administer'\)\?\.addEventListener\('click', reyAdminOpen\)/.test(setup)){
+    bad.push('the overlay is reachable other than by an explicit click, or not at all');
+  }
+  const apa = extractFn(APP_SRC, 'renderPvtApa');
+  if (/rey15ItemHtml|REY15_/.test(apa)) bad.push('a stimulus reaches the APA export');
+  /* The 10-second exposure is protocol: it may not be shortened. */
+  const exp = extractFn(APP_SRC, 'reyAdminStartExposure');
+  if (!/let left = 10;/.test(exp) || !/setInterval\(tick, 1000\)/.test(exp)){
+    bad.push('the exposure is no longer the protocol\'s 10 seconds at one-second ticks');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('PVT page wiring: report source, APA note, empty-state guard, markup', () => {
+  const bad = [];
+  if (!/'pvt-apa':\s*'Performance Validity'/.test(APP_SRC)) bad.push('pvt-apa missing from SOURCE_LABELS — the report will never collect the table');
+  if (!/'pvt-apa':\s*'Performance Validity Indicators'/.test(APP_SRC)) bad.push('pvt-apa missing from SOURCE_METHOD_NAMES');
+  if (!/parentId\.startsWith\('pvt-'\)/.test(APP_SRC)) bad.push('validity tables no longer skip family detection — titles will misread as "…: RBANS"');
+  if (((APP_SRC.match(/parentId\.startsWith\('pvt-'\)/g)) || []).length < 2) bad.push('pillLabelFor no longer skips family detection for pvt- — the report pill reads "RBANS added"');
+  if (!/'pvt':\s*ctx\s*=>/.test(APP_SRC)) bad.push('APA_NOTES has no pvt entry');
+  /* The load-bearing sentences of the note. */
+  if (!/not a determination of invalidity/.test(APP_SRC)) bad.push('the note no longer defines Fail as a cut-off comparison');
+  if (!/at least two independent indicators \(Larrabee, 2014\)/.test(APP_SRC)) bad.push('the note lost the aggregation rule');
+  if (!/Specificity falls in dementia and severe impairment/.test(APP_SRC)) bad.push('the note lost the dementia caveat');
+  /* Every clause is conditional on what the table holds, so a one-measure
+     export does not carry six citations. */
+  const note = APP_SRC.slice(APP_SRC.indexOf("  'pvt': ctx => {"), APP_SRC.indexOf("  'pre-opiepredict'"));
+  ['hasEi', 'hasEs', 'hasRds', 'hasDs', 'hasRey', 'hasTomm'].forEach(f => {
+    if (!note.includes('ctx.' + f)) bad.push('the note cites unconditionally — ' + f + ' no longer gates its source');
+  });
+  if (/EI = RBANS Effort Index/.test(APP_SRC)) bad.push('the abbreviation roster is back, expanding abbreviations the table never uses');
+  /* Empty-state guard — §35's contract: no data, no .apa-table offered. */
+  const apa = extractFn(APP_SRC, 'renderPvtApa');
+  if (!/rows\.length === 0/.test(apa) || !(/return;/.test(apa.split('rows.length === 0')[1] || ''))) {
+    bad.push('renderPvtApa lost its empty-state guard — an empty table would be offered to the report');
+  }
+  /* Markup essentials. */
+  if (!/<section class="section" id="validity">/.test(HTML_SRC)) bad.push('#validity section missing from index.html');
+  if (!/data-apa-note="pvt"/.test(HTML_SRC)) bad.push('the on-screen note mirror is gone');
+  if (!/id="pvt-apa"/.test(HTML_SRC)) bad.push('the APA container is gone');
+  if (!/data-target="validity"/.test(HTML_SRC)) bad.push('no nav item points at the validity page');
+  /* Full citations on the page itself, not only in Methods & References —
+     every cut-off here is a published claim. One author-year per source. */
+  (() => {
+    const vStart = HTML_SRC.indexOf('<section class="section" id="validity">');
+    const vEnd = HTML_SRC.indexOf('</section>', vStart);
+    const vHtml = vStart === -1 ? '' : HTML_SRC.slice(vStart, vEnd);
+    if (!/id="pvt-references"/.test(vHtml)){ bad.push('the on-page references block is gone from #validity'); return; }
+    ['Silverberg, N. D.', 'Novitski, J.', 'Greiffenstein, M. F.', 'Meyers, J. E.',
+     'Schroeder, R. W., Twumasi-Ankrah', 'Martin, P. K.', 'Denning, J. H.',
+     'Larrabee, G. J.', 'Tombaugh, T. N.'].forEach(name => {
+      if (!vHtml.includes(name)) bad.push('#validity references lost ' + name);
+    });
+  })();
+  /* The live status chips restate the same getPvt* state the result cards
+     render; a chip updating without the card (or vice versa) would show two
+     different verdicts for one score. renderPvtAll is the single caller. */
+  const all = extractFn(APP_SRC, 'renderPvtAll');
+  if (!/renderPvtNav\(\);/.test(all)) bad.push('renderPvtAll no longer refreshes the tab-strip status chips');
+  const nav = extractFn(APP_SRC, 'renderPvtNav');
+  ['getPvtEi', 'getPvtEs', 'getPvtRds', 'getPvtTomm', 'pvtIndicatorCounts'].forEach(fn => {
+    if (!nav.includes(fn + '(')) bad.push('renderPvtNav no longer reads ' + fn + ' — a chip could disagree with its result card');
+  });
+  ['pvt-status-ei', 'pvt-status-es', 'pvt-status-rds', 'pvt-status-tomm', 'pvt-status-summary'].forEach(id => {
+    if (!HTML_SRC.includes('id="' + id + '"')) bad.push('the ' + id + ' chip is gone from the tab strip');
+  });
+  /* The ES gate must be enforced in code, not just described in copy. */
+  const es = extractFn(APP_SRC, 'getPvtEs');
+  if (!/gateMet/.test(es) || !/gated: true/.test(es)) bad.push('getPvtEs lost its gate');
+  return bad.length === 0 || bad.join('; ');
+});
+
 
 // ---------------------------------------------------------------------------
 // Summary

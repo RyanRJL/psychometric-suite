@@ -498,7 +498,6 @@ function navigateTo(target, opts){
     if (typeof refreshBatteryAgePrompt === 'function') refreshBatteryAgePrompt();
     /* The popover is anchored to a control on Score Tables, so it cannot
        survive a page change — its anchor goes with it. */
-    if (target !== 'battery' && typeof closeBatteryAgePop === 'function') closeBatteryAgePop();
   };
 
   // Re-selecting the page you're already on shouldn't flash it away and back.
@@ -1766,11 +1765,39 @@ function baseRatePercentile(entry, value){
   const pGt = baseRateAtOrAbove(entry, v + 1);
   return (100 - pGe) + 0.5 * (pGe - pGt);
 }
+/* A BASE-RATE ROW IS ENTERED IN THE RAW COLUMN, and only there. A longest
+   span of 6 is a raw count — it has no scaled/standard equivalent to put in
+   the Score column, so that box is disabled for these rows and the value is
+   typed under Raw Score. (It used to be entered in the Score column, which
+   implied a metric score existed; renderBattery migrates any such legacy
+   value into the raw field.) */
+function batteryBaseRateValue(r){ return r ? r.raw : ''; }
+
+/* THE AGE IS REQUIRED BEFORE A BASE-RATE ROW SCORES. The published lookup is
+   per normative age band (Tables C.4–C.5 differ hugely by band — Longest Digit
+   Span Backward at a span of 4 is the 22nd percentile at 20-24 and the 59th at
+   85-90), and the band lives in the group the row was added from. Requiring
+   the patient age (a) stops a table being scored with no age on record, and
+   (b) catches the entered age contradicting the band the row was picked from —
+   scoring an 85-year-old on the 20-24 table silently would be a misstatement
+   on a printed report. Returns 'ok' | 'no-age' | 'out-of-band'. */
+function batteryBaseRateAgeState(r){
+  if (!batteryBaseRateEntry(r)) return 'ok';
+  const band = ageBandRange(r.group);
+  if (!band) return 'ok';               // un-banded base-rate group: nothing to hold the age against
+  const age = batteryPatientAge();
+  if (age == null) return 'no-age';
+  return (age >= band.lo && age <= band.hi) ? 'ok' : 'out-of-band';
+}
+
 /* One answer for "what percentile is this row", used by the table, the in-place
    update and the APA export so the three cannot drift. */
 function batteryRowPercentile(r){
   const entry = batteryBaseRateEntry(r);
-  if (entry) return baseRatePercentile(entry, r.score);
+  if (entry){
+    if (batteryBaseRateAgeState(r) !== 'ok') return null;
+    return baseRatePercentile(entry, batteryBaseRateValue(r));
+  }
   const z = toZ(r.score, rowScoreType(r));
   return z == null ? null : normCDF(z) * 100;
 }
@@ -1808,13 +1835,25 @@ function fmtBaseRate(v){
 function batteryRowPctCell(r){
   const entry = batteryBaseRateEntry(r);
   if (entry){
-    const v = parseFloat(r.score);
+    const v = parseFloat(batteryBaseRateValue(r));
     if (!Number.isFinite(v) || !Number.isInteger(v)) return null;
+    /* A value is entered but the age gate refuses. `hint` is a SCREEN-ONLY
+       affordance: the APA export reads .text, which stays empty, so a blocked
+       row exports as blank rather than as advice to the reader. */
+    const ageState = batteryBaseRateAgeState(r);
+    if (ageState !== 'ok') return { value: null, text: '', kind: 'baseRate', hint: ageState };
     const br = baseRateAtOrAbove(entry, v);
     return { value: br, text: fmtBaseRate(br), kind: 'baseRate' };
   }
   const p = batteryRowPercentile(r);
   return p == null ? null : { value: p, text: fmtPct(p), kind: 'percentile' };
+}
+/* The screen text for a gated cell. Short, factual, and pointing at the fix:
+   the master age field is in the top bar. */
+function batteryAgeHintHtml(state){
+  return state === 'out-of-band'
+    ? '<span class="bat-age-hint">age outside this band</span>'
+    : '<span class="bat-age-hint">add patient age ↑</span>';
 }
 function batteryClassificationDetails(r, cls){
   /* A base-rate measure has a real percentile but no metric, so its z comes
@@ -1824,7 +1863,11 @@ function batteryClassificationDetails(r, cls){
   const brEntry = batteryBaseRateEntry(r);
   let z;
   if (brEntry){
-    const pct = baseRatePercentile(brEntry, r.score);
+    /* Blank while the age gate refuses: the pct cell carries the hint, and a
+       classification derived from an unverified band would be the very number
+       the gate exists to withhold. */
+    if (batteryBaseRateAgeState(r) !== 'ok') return { text:'', html:'', className:'' };
+    const pct = baseRatePercentile(brEntry, batteryBaseRateValue(r));
     if (pct == null) return { text:'', html:'', className:'' };
     // clamp inside the open interval: normInv is undefined at 0 and 100, and
     // the table legitimately reaches both ends.
@@ -2139,14 +2182,24 @@ function batteryPatientAge(){ return patientAge(); }
    If these were computed separately, a table could show the prompt and the pip
    at once, or neither. One predicate makes that unrepresentable.
 
-   The CI level is part of the question, not a caller's concern: with the
-   interval switched off, the age changes nothing PRINTED on this page, so
-   there is nothing to light and nothing to ask for. */
-function batteryAgeBandRowCount(){
+   The CI level is part of the question for the reliability half only: with
+   the interval switched off, an age-band COEFFICIENT changes nothing printed.
+   Base-rate rows are the other half, and they are CI-independent — their
+   scoring itself is gated on the age (batteryBaseRateAgeState), whatever the
+   interval setting. */
+function batteryCiAgeBandRowCount(){
   const ci = document.getElementById('bat-ci-level');
   if (!ci || ci.value === 'off') return 0;
   if (!Array.isArray(batteryRows)) return 0;
   return batteryRows.filter(r => r && r.name && !r.isExample && batteryRowUsesAgeBand(r)).length;
+}
+/* Rows whose SCORING requires the age: the published base-rate lookups. */
+function batteryBaseRateRowCount(){
+  if (!Array.isArray(batteryRows)) return 0;
+  return batteryRows.filter(r => r && r.name && !r.isExample && batteryBaseRateEntry(r)).length;
+}
+function batteryAgeBandRowCount(){
+  return batteryCiAgeBandRowCount() + batteryBaseRateRowCount();
 }
 
 function patientAgeIsInUse(){
@@ -2178,147 +2231,71 @@ function refreshPatientAgeIndicator(){
   field.classList.toggle('is-live', patientAgeIsInUse());
 }
 
-/* THE MISSING-AGE POPOVER.
+/* THE REQUIRED-AGE BAR.
 
-   Asks for the age at the moment a blank one starts costing a sharper
-   interval, anchored to the Score CI toggle — the control that creates that
-   moment.
+   The predecessor here was a dismissable POPOVER anchored to the Score CI
+   toggle: edge-triggered, with a skip button — an offer, because a blank age
+   only cost a sharper interval. Two things ended it (owner decision,
+   2026-08): base-rate rows made the age load-bearing for SCORING, not just
+   interval width, and the anchor stopped making sense once the ask could
+   arise with the interval untouched — it drew its arrow at the 90% CI button
+   while talking about scoring. It also simply was not effective: a floating
+   popover reads as ignorable, and the ask is not ignorable any more.
 
-   EDGE-TRIGGERED, NOT STATE-TRIGGERED. renderBattery() runs on every keystroke
-   in the table, so opening whenever the condition holds would re-open it
-   continuously while someone types scores. It opens on the TRANSITION into the
-   condition, which also fixes the ordering problem a click handler would have:
-   CI switched on with D-KEFS already loaded fires, and D-KEFS autofilled while
-   CI is already on fires too. A handler on the CI button would catch only the
-   first, and would fire on an RBANS table where the age changes nothing.
+   What replaced it is this inline bar directly above the table, shown
+   whenever any row actually reads the age (batteryAgeBandRowCount() > 0) and
+   none is stored. It is REQUIRED in presentation: no skip, no outside-click
+   dismissal, it stays until an age is entered. Note this reverses the old
+   "the gate must not ask about the table's contents" rule — that rule
+   belonged to the offer, whose n === 0 branch existed so a CI-only ask never
+   looked arbitrary; a REQUIREMENT shown on a table where nothing reads the
+   age would be a false claim, so the bar is gated on actual readers.
 
-   ONCE PER PATIENT. Re-armed only by "New patient", not by clearing the age —
-   a clinician who skipped, then cleared the age, has already answered. The
-   residual .is-wanted state on the topbar field is what carries the message
-   after that, so a skipped or missed popover still leaves a trace.
+   STATE-DRIVEN, NOT EDGE-TRIGGERED. An inline element cannot "re-open"
+   annoyingly the way a popover could, so the whole edge/arming machinery
+   (batAgePopLastWanted, batAgePopJustOpened, the opening-click guard, the
+   fixed-position zoom mathematics) went with the popover. The bar is
+   rewritten only when its message changes, so typing into its own age input
+   is never clobbered by a table-keystroke re-render.
 
-   IT IS AN OFFER, NOT A DEMAND. A blank age is legitimate and citable: those
-   measures fall back to the publisher's own all-ages coefficient. Hence no
-   backdrop, no dimming, a skip that names the real alternative, and no word
-   anywhere suggesting something is missing or wrong. If this ever starts
-   reading as a validation error, it is wrong — see the CI-column note in
-   CLAUDE.md. */
-let batAgePopLastWanted = false; // previous edge state
-
-/* THE RULE: the interval is switched on and no age is stored. That is all.
-
-   It deliberately does NOT ask whether this table holds measures that publish
-   reliability by age band. An earlier version did, and it was wrong in
-   practice: a clinician who turns on confidence intervals has said they care
-   about interval width, and they cannot be expected to know which instruments
-   tabulate reliability by band — that is the app's job, not theirs. Asking
-   only for the families that happen to qualify made the prompt feel arbitrary,
-   and it stayed silent in the case people actually hit.
-
-   Edge-triggered on this condition, which gives "once per switch-on" for free
-   and needs no arming flag: turning CI on with no age opens it, and it will
-   not re-open until the condition drops and returns. Clearing the age with CI
-   already on also opens it, which is right — that is the same situation
-   arriving by a different route. */
+   It shares its predicate with the topbar residual (.is-wanted): one
+   predicate, so bar and residual cannot disagree. */
 function batteryAgeWanted(){
-  const ci = document.getElementById('bat-ci-level');
-  return !!ci && ci.value !== 'off' && patientAge() === null;
+  return batteryAgeBandRowCount() > 0 && patientAge() === null;
 }
 
-/* Anchored with position:fixed against the CI toggle's own rect, rather than
-   nested inside the inline bar: that bar is rebuilt by design-system.js, and a
-   child would be destroyed with it. Clamped to the viewport so a narrow window
-   cannot push it off-screen.
-
-   MIND THE PAGE ZOOM. styles.css sets `body{zoom:0.9}` — a deliberate global
-   10% downscale. That splits measurement into two coordinate spaces and they
-   are easy to mix:
-
-     getBoundingClientRect()  VISUAL px   (already scaled by 0.9)
-     offsetWidth              LAYOUT px   (unscaled — reports 320 for a 320px
-                                          box that occupies 282 visual px)
-     style.top / style.left   LAYOUT px   (the browser multiplies by the zoom)
-
-   The first version read rects and offsetWidth together and wrote the result
-   straight back, which put the popover 19px ABOVE its anchor and 58px off
-   centre — a systematic error, not a layout-timing one, which is why
-   re-positioning did not shift it. Everything below is computed in visual px
-   and divided by the zoom on the way out. The factor is read from the element
-   rather than hardcoded, so changing that 0.9 cannot silently break this. */
+/* body{zoom:0.9} splits measurement into visual and layout px — anything
+   positioning from a measured rect divides by this. Survives the popover it
+   was written for: the consent card's pill stacking still reads it, and a
+   missing definition would fall through that call site's typeof guard to 1,
+   silently reintroducing the exact offset bug CLAUDE.md documents. */
 function pageZoomFactor(){
   const z = parseFloat(getComputedStyle(document.body).zoom);
   return Number.isFinite(z) && z > 0 ? z : 1;
 }
 
-function positionBatteryAgePop(){
-  const pop = document.getElementById('bat-age-pop');
-  if (!pop || !pop.classList.contains('is-open')) return;
-  const anchor = document.querySelector('#battery .ds-inline-bar-toggle[aria-label="Score confidence interval"]')
-              || document.querySelector('#battery .ds-inline-bar');
-  if (!anchor) return;
-  const z = pageZoomFactor();
-  const a = anchor.getBoundingClientRect();
-  const w = pop.getBoundingClientRect().width;   // visual px — NOT offsetWidth
-  const centre = a.left + a.width / 2;
-  const left = Math.max(12, Math.min(centre - w / 2, window.innerWidth - w - 12));
-  pop.style.top  = ((a.bottom + 10) / z) + 'px';
-  pop.style.left = (left / z) + 'px';
-  const arrow = pop.querySelector('.ds-age-pop-arrow');
-  if (arrow) arrow.style.left = (Math.max(14, Math.min(centre - left, w - 14)) / z) + 'px';
+/* Every clause agrees with its count — written out per branch, not assembled
+   from fragments; see the note on the old popover text in check.js §26. */
+function batteryAgeBarHtml(){
+  const br = batteryBaseRateRowCount();
+  const bands = batteryCiAgeBandRowCount();
+  const parts = [];
+  if (br === 1) parts.push('<strong>1 measure</strong> in this table is scored from an age-banded base-rate table and stays unscored until the age is entered.');
+  else if (br > 1) parts.push('<strong>' + br + ' measures</strong> in this table are scored from age-banded base-rate tables and stay unscored until the age is entered.');
+  if (bands === 1) parts.push('<strong>1 measure</strong> publishes its reliability by age band; the age selects the correct coefficient for its interval.');
+  else if (bands > 1) parts.push('<strong>' + bands + ' measures</strong> publish their reliability by age band; the age selects the correct coefficients for their intervals.');
+  return '<div class="bat-age-bar-main">'
+    + '<div class="bat-age-bar-title">Patient age required</div>'
+    + '<div class="bat-age-bar-body">' + parts.join(' ') + '</div>'
+    + '</div>'
+    + '<div class="bat-age-bar-row">'
+    + '<input type="number" id="bat-age-bar-input" class="bat-age-bar-input" min="5" max="110" step="1" placeholder="e.g. 72" aria-label="Patient age">'
+    + '<button type="button" class="bat-age-bar-add" id="bat-age-bar-add">Add age</button>'
+    + '</div>';
 }
 
-/* THE OPENING CLICK MUST NOT ALSO DISMISS IT.
-
-   The popover opens from inside renderBattery(), which usually runs during a
-   click — "Add selected tests", the CI toggle, a row edit. That same click then
-   continues bubbling to the document-level outside-click handler below, which
-   sees a popover that is now open, sees the target is not inside it, and closes
-   it. Net effect: OPEN immediately followed by CLOSE, and nothing on screen.
-
-   That is exactly how this shipped. It went unnoticed because the checks and my
-   browser probes called renderBattery() directly, so no click was ever in
-   flight and the dismissal never ran — the bug only exists on the real UI path.
-
-   The flag is cleared on a timeout so it survives the whole synchronous
-   dispatch of the opening click and no longer. It replaces an earlier
-   special-case exemption for the CI toggle, which fixed one route and left
-   every other one broken. */
-let batAgePopJustOpened = false;
-
-function openBatteryAgePop(n){
-  const pop = document.getElementById('bat-age-pop');
-  const body = document.getElementById('bat-age-pop-body');
-  if (!pop || !body) return;
-  batAgePopJustOpened = true;
-  setTimeout(() => { batAgePopJustOpened = false; }, 0);
-  /* Three branches, because the popover now opens whenever the interval is on
-     and no age is stored — so the table may hold NO age-band measures at all,
-     and a count sentence would read "0 measures ... publish their reliability".
-
-     Every clause agrees with its count: subject, verb and pronoun. Written out
-     per branch rather than assembled from shared fragments, because "1 measure
-     publish their reliability" is exactly what fragment-assembly produced on
-     the first pass, and this is text a clinician reads while deciding. */
-  body.innerHTML =
-    n === 0
-      ? 'Some measures publish their reliability by age band, and an age narrows those intervals. Without one they use the published all-ages coefficient, which is equally citable.'
-    : n === 1
-      ? '<strong>1 measure</strong> in this table publishes its reliability by age band. An age narrows its interval; left blank, it uses the published all-ages coefficient.'
-      : '<strong>' + n + ' measures</strong> in this table publish their reliability by age band. An age narrows their intervals; left blank, they use the published all-ages coefficient.';
-  const input = document.getElementById('bat-age-pop-input');
-  if (input) input.value = '';
-  pop.classList.add('is-open');
-  positionBatteryAgePop();
-}
-
-function closeBatteryAgePop(){
-  const pop = document.getElementById('bat-age-pop');
-  if (pop) pop.classList.remove('is-open');
-}
-
-/* The age was typed into the popover, which sits over the table — so the field
-   that now holds it, up in the top bar, is somewhere the clinician was not
-   looking. The pulse says "it landed here", and answers the question the
+/* The age was typed into the bar above the table — so the field that now
+   holds it, up in the top bar, is somewhere the clinician was not looking. The pulse says "it landed here", and answers the question the
    popover leaves behind: where did that value actually go?
 
    Restarted rather than re-added, so a second commit re-runs the animation
@@ -2336,15 +2313,16 @@ function pulsePatientAgeField(){
 
 /* Writes through to the master and lets its own listener do the rest — the
    sync, the re-render and the pip all hang off that one 'input' event. */
-function commitBatteryAgePop(){
-  const input = document.getElementById('bat-age-pop-input');
+/* Writes through to the master and lets its own listener do the rest — the
+   sync, the re-render and the pip all hang off that one 'input' event. */
+function commitBatteryAgeBar(){
+  const input = document.getElementById('bat-age-bar-input');
   const master = document.getElementById('patient-age');
   if (!input || !master) return;
   const v = parseFloat(input.value);
   if (!Number.isFinite(v)) { input.focus(); return; }
   master.value = String(v);
   master.dispatchEvent(new Event('input', { bubbles: true }));
-  closeBatteryAgePop();
   /* After the dispatch, so the pulse lands on a field already showing the new
      value and its .is-live pip rather than on a stale one. */
   pulsePatientAgeField();
@@ -2352,48 +2330,31 @@ function commitBatteryAgePop(){
 
 function refreshBatteryAgePrompt(){
   const wanted = batteryAgeWanted();
-
-  /* THE RESIDUAL IS A DIFFERENT CLAIM, and keeps its own, narrower condition.
-     The popover asks "you have intervals on and no age — want to add one?";
-     the dashed field says "an age would actually sharpen something here". The
-     second is only true where a measure publishes reliability by age band, so
-     it stays on batteryAgeBandRowCount(). They were one predicate while the
-     popover made the same claim; they no longer do, and collapsing them would
-     make the field assert something untrue on a CVLT-3 table. */
+  /* ONE predicate for the bar and the topbar residual, so the table cannot
+     demand an age while the field beside the age box implies nothing reads
+     one, or vice versa. */
   const field = document.getElementById('patient-age-field');
-  if (field) field.classList.toggle('is-wanted', batteryAgeBandRowCount() > 0 && patientAge() === null);
-
-  /* No arming flag: the edge itself gives "once per switch-on". It re-opens
-     only when the condition drops and returns — CI off then on, or an age
-     entered then cleared. */
-  if (wanted && !batAgePopLastWanted) openBatteryAgePop(batteryAgeBandRowCount());
-  if (!wanted) closeBatteryAgePop();
-  batAgePopLastWanted = wanted;
+  if (field) field.classList.toggle('is-wanted', wanted);
+  const bar = document.getElementById('bat-age-required');
+  if (!bar) return;
+  bar.hidden = !wanted;
+  if (wanted){
+    const html = batteryAgeBarHtml();
+    /* Rewrite only on change: renderBattery() runs on every keystroke in the
+       score cells, and clobbering the bar would clear its half-typed age. */
+    if (bar.dataset.sig !== html){ bar.dataset.sig = html; bar.innerHTML = html; }
+  }
 }
 
 document.addEventListener('click', e => {
-  if (e.target.closest('#bat-age-pop-add')){ commitBatteryAgePop(); return; }
-  if (e.target.closest('#bat-age-pop-skip')){ closeBatteryAgePop(); return; }
-  /* Outside click dismisses — but never the click that opened it. See the note
-     on batAgePopJustOpened: the open happens inside renderBattery(), mid-click,
-     so without this the same gesture that asks the question also answers it. */
-  const pop = document.getElementById('bat-age-pop');
-  if (!pop || !pop.classList.contains('is-open')) return;
-  if (batAgePopJustOpened) return;
-  if (e.target.closest('#bat-age-pop')) return;
-  closeBatteryAgePop();
+  if (e.target.closest('#bat-age-bar-add')) commitBatteryAgeBar();
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeBatteryAgePop();
-  else if (e.key === 'Enter' && e.target && e.target.id === 'bat-age-pop-input'){
+  if (e.key === 'Enter' && e.target && e.target.id === 'bat-age-bar-input'){
     e.preventDefault();
-    commitBatteryAgePop();
+    commitBatteryAgeBar();
   }
 });
-/* Fixed positioning does not follow the page, so it is recomputed rather than
-   left pointing at empty space. */
-window.addEventListener('scroll', positionBatteryAgePop, { passive: true });
-window.addEventListener('resize', positionBatteryAgePop);
 
 /* Pick the published coefficient for the patient's age band.
    rInternalByAge is keyed by the LOWER BOUND of each normative band, so the
@@ -2699,6 +2660,38 @@ function renderBattery(){
   if (ciHead) ciHead.textContent = ciLevel === 'off' ? 'CI' : `${ciLevel}% CI`;
   const repeatBtn = document.getElementById('bat-add-repeat');
   if (repeatBtn && batteryRows.length === 0) repeatBtn.hidden = true;
+  /* Base-rate rows are entered in the RAW column (see batteryBaseRateValue).
+     Two consequences handled here, before the rows render:
+     - a value typed in the Score column while that was the entry route (or
+       restored from an older session) is migrated into the raw field, once,
+       so nothing already entered stops scoring;
+     - the raw column must be VISIBLE while such rows exist, whatever the
+       Show Raw toggle says — a hidden entry column is an unusable row. The
+       .raw-forced class outranks .raw-hidden in styles.css by specificity. */
+  let hasBaseRateRows = false;
+  const rebandAge = batteryPatientAge();
+  batteryRows.forEach(r => {
+    if (!batteryBaseRateEntry(r)) return;
+    hasBaseRateRows = true;
+    if ((r.raw === '' || r.raw == null) && r.score !== '' && r.score != null){
+      r.raw = r.score; r.score = '';
+    }
+    /* AUTO-REBAND. The dropdown offers one entry per base-rate family and the
+       band is a mechanical function of the required age, so when the age and
+       the row's band disagree, the row is re-pointed at the sibling band
+       containing the age — silently correct beats a complaint the clinician
+       has to resolve by re-adding the row. Only where the target band
+       actually publishes the measure; otherwise the row keeps its group and
+       the out-of-band hint states the refusal. */
+    if (rebandAge != null){
+      const band = ageBandRange(r.group);
+      if (band && (rebandAge < band.lo || rebandAge > band.hi)){
+        const target = baseRateGroupForAge(r.group, r.name, rebandAge);
+        if (target) r.group = target;
+      }
+    }
+  });
+  document.getElementById('bat-table').classList.toggle('raw-forced', hasBaseRateRows);
   let lastGroup = null;
   batteryRows.forEach((r, i) => {
     // Inject a group header when the group changes
@@ -2709,7 +2702,12 @@ function renderBattery(){
       // A group can hold mixed score types (e.g. scaled subtests + standard indices).
       // Show the shared label when uniform, otherwise "Mixed" (each row shows its own tag).
       const groupTypes = new Set(batteryRows.filter(x => batteryGroupKeyOf(x) === gKey).map(x => rowScoreType(x)));
-      const stLabel = groupTypes.size > 1 ? 'Mixed' : scoreTypeLabel([...groupTypes][0] || r.scoreType || inferScoreType(r.group));
+      /* A base-rate group is entered as raw spans and scored by lookup — its
+         entries' means sit near the scaled range, so the inferred metric would
+         badge it "Scaled Score", over a section whose Score boxes are disabled.
+         Name what is actually entered instead. */
+      const stLabel = batteryGroupIsBaseRate(gKey) ? 'Raw score'
+        : groupTypes.size > 1 ? 'Mixed' : scoreTypeLabel([...groupTypes][0] || r.scoreType || inferScoreType(r.group));
       // Custom tests get an editable name; database families keep their fixed one.
       const nameHtml = r.groupKey
         ? `<input class="group-name-input" data-group-rename="${escapeAttr(gKey)}" value="${escapeAttr(r.group)}" placeholder="Name this test" aria-label="Test name" autocomplete="off">`
@@ -2739,19 +2737,28 @@ function renderBattery(){
     const rowType = rowScoreType(r);
     const z = toZ(r.score, rowType);
     const pctCellVal = batteryRowPctCell(r);
-    const pct = pctCellVal ? pctCellVal.text : '';
+    const pct = pctCellVal ? (pctCellVal.hint ? batteryAgeHintHtml(pctCellVal.hint) : pctCellVal.text) : '';
     const details = batteryClassificationDetails(r, cls);
     const ss = parseFloat(r.score);
     const ciHtml = ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : '';
     const tr = document.createElement('tr');
     if (gKey) tr.className = 'in-group';
-    const abbr = scoreTypeAbbr(rowType);
+    /* A base-rate row has no metric score — the raw span IS the entry — so its
+       Score box is disabled rather than left inviting a number that has no
+       meaning here. Disabled, not removed: the cell keeps the column aligned.
+       Its inferred-metric tag is suppressed for the same reason: "(Scaled)"
+       beside a disabled Score box would claim a metric the row does not have. */
+    const isBr = !!batteryBaseRateEntry(r);
+    const abbr = isBr ? '' : scoreTypeAbbr(rowType);
     const typeTag = abbr ? `<span class="bat-row-type-tag">(${abbr})</span>` : '';
+    const scoreCell = isBr
+      ? `<td class="bat-score-na-cell"><input type="number" disabled class="bat-score-na" title="Raw-score measure: enter the span in the Raw Score column — the base rate is read from the published table." aria-label="Not applicable — raw-score measure"></td>`
+      : `<td><input type="number" step="any" data-r="${i}" data-f="score" value="${escapeAttr(r.score)}"></td>`;
     tr.innerHTML = `
       <td class="row-num">${i+1}${typeTag}</td>
       <td><input type="text" data-r="${i}" data-f="name" value="${escapeAttr(r.name)}" placeholder="Subtest name"></td>
       <td class="bat-raw-cell"><input type="number" step="any" data-r="${i}" data-f="raw" value="${escapeAttr(r.raw)}"></td>
-      <td><input type="number" step="any" data-r="${i}" data-f="score" value="${escapeAttr(r.score)}"></td>
+      ${scoreCell}
       <td class="computed bat-ci-cell">${ciHtml}</td>
       <td class="computed">${pct}</td>
       <td class="computed ${details.className}">${details.html}</td>
@@ -2793,7 +2800,8 @@ function renderBattery(){
          table, so only the edited row needs rewriting — no cross-row refresh,
          and no heading to keep in step. */
       const cellVal = batteryRowPctCell(batteryRows[i]);
-      pctCell.textContent = cellVal ? cellVal.text : '';
+      if (cellVal && cellVal.hint) pctCell.innerHTML = batteryAgeHintHtml(cellVal.hint);
+      else pctCell.textContent = cellVal ? cellVal.text : '';
       const details = batteryClassificationDetails(batteryRows[i], cls);
       clsCell.className = `computed ${details.className}`.trim();
       clsCell.innerHTML = details.html;
@@ -3079,21 +3087,54 @@ const APA_NOTES = {
   'pre-predict': () => [
     'WAIS-IV indices are predicted from ToPF, education and sex; WMS-IV indices from ToPF and age.',
     'Difference = Achieved − Predicted.',
-    'Base rate = estimated % at or below this discrepancy, from a normal model with SD = SEE (negative discrepancies only). These are parametric estimates, not observed standardisation-sample frequencies, and run slightly low against published empirical figures.'
+    'Base rate = published % at or below this discrepancy (ToPF-UK manual, negative discrepancies only). The manual derives these from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.'
   ],
-  'pre-opiepredict': ctx => [
+  /* Performance Validity page — one note under the single combined table.
+
+     EVERY CLAUSE IS CONDITIONAL ON WHAT THE TABLE ACTUALLY HOLDS. The note
+     had grown a sentence per feature until it ran to a paragraph on a
+     table of one measure, citing five papers the reader could not see the
+     scores for. It now cites only the measures present, states the
+     independence rule once for whichever pairs are present rather than
+     once per pair, and explains the dashes in one clause covering both
+     reasons an accuracy pair can be absent (an index published as a base
+     rate, and the Effort Scale's AUC).
+
+     The measure names in the table are written out in full, so the note
+     carries no abbreviation roster — expanding "EI" for a table that
+     never says "EI" was pure length. */
+  'pvt': ctx => {
+    const sources = [];
+    if (ctx.hasEi)   sources.push('Effort Index (Silverberg et al., 2007)');
+    if (ctx.hasEs)   sources.push('Effort Scale (Novitski et al., 2012)');
+    if (ctx.hasRds)  sources.push('Reliable Digit Span (Greiffenstein et al., 1994)');
+    if (ctx.hasDs)   sources.push('Digit Span indices (Iverson & Tulsky, 2003; Axelrod et al., 2006 — WAIS-III)');
+    if (ctx.hasRey)  sources.push('Rey 15-Item (Boone et al., 2002)');
+    if (ctx.hasTomm) sources.push('TOMM (Tombaugh, 1996; cut-offs Martin et al., 2020)');
+    const shared = [];
+    if (ctx.bothRbans)     shared.push('the two RBANS indices');
+    if (ctx.bothDigitSpan) shared.push('the digit-span indices');
+    return [
+      /* The mirror drops the citations: the tab strip and the on-page
+         references state every measure and source in full. The exported
+         note keeps them — the licensed onScreen difference. */
+      (ctx.onScreen || !sources.length) ? '' : `Sources: ${sources.join('; ')}.`,
+      '"Fail" = score beyond the published cut-off, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent indicators (Larrabee, 2014).',
+      ctx.hasDashes
+        ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks an index published as a base rate or an AUC rather than as a pair.'
+        : 'Sensitivity and specificity are the published values at the applied cut-off.',
+      shared.length ? `Indices sharing a subtest count as one indicator: ${shared.join(' and ')}.` : '',
+      ctx.esGated
+        ? 'The Effort Scale is not computed because its screening gate was not met (Novitski et al., 2012).'
+        : '',
+      ctx.hasTomm
+        ? 'Specificity falls in dementia and severe impairment; traditional TOMM cut-offs should not be interpreted there.'
+        : 'Specificity falls in dementia and severe impairment.'
+    ];
+  },
+  'pre-opiepredict': () => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
-    /* The UK caveat MUST travel with the exported table — pasted into a report
-       it is the only thing standing between these numbers and a reader who
-       takes them as premorbid estimates. On screen it is redundant: the
-       .caution-box at the top of this tab already states it at greater length,
-       so the mirrored note (ctx.onScreen) drops it rather than warning twice on
-       one page. Do not delete it outright; check.js §15 pins both halves. */
-    ctx.onScreen ? '' :
-      'Illustrative only in a UK context; these values should not be quoted as concrete premorbid estimates. The published equations also carry US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). Those categories have no valid UK equivalent.',
-    'The three FSIQ rows predict three different prorated criteria, as do the three GAI rows; they are not interchangeable and are not expected to agree.',
-    'Difference = Achieved − Predicted.',
-    'Base rate = % of the US standardisation sample at or below this discrepancy (ACS Table eA5.12).'
+    '<span class="uk-caution-red">Illustrative only in a UK context as this is derived from US regression equations. The numbers should not be considered to be accurate in a UK context.</span> The published equations also use US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). These estimates would likely run high for patients who left school early and low for graduates.'
   ]
 };
 /* Render a registered note as its APA block. Returns '' when every sentence
@@ -3143,7 +3184,10 @@ function renderBatteryApa(){
   const columns = [
     { key:'subtest',        label:'Subtest',        num:false, render:r => escapeHtml(r.name) },
     { key:'raw',            label:'Raw Score',       group:'Scores', num:true,  defaultVisible:!rawHidden, render:r => escapeHtml(r.raw || '-') },
-    { key:'score',          label:headerLabel,       group:'Scores', num:true,  render:r => escapeHtml(r.score || '') },
+    /* A base-rate row's entered value lives in the raw field; the export's
+       Score column carries it so the span is printed whether or not the Raw
+       column is toggled on. */
+    { key:'score',          label:headerLabel,       group:'Scores', num:true,  render:r => escapeHtml(batteryBaseRateEntry(r) ? (r.raw || '') : (r.score || '')) },
     { key:'ci',             label:ciLabel,           group:'Scores', num:true,  defaultVisible:ciLevel !== 'off', render:r => { const ss = parseFloat(r.score); return ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : ''; }},
     { key:'percentile',     label:BAT_PCT_LABEL,     group:'Scores', num:true,
       /* Sections whose rows report a base rate relabel this column for
@@ -3166,7 +3210,7 @@ function renderBatteryApa(){
       classification: cls,
       mixedTypes: types.size > 1,
       hasRaw: valid.some(r => rowScoreType(r) === 'raw' && !batteryBaseRateEntry(r)),
-      hasBaseRates: valid.some(r => batteryBaseRateEntry(r) && r.score !== '' && !isNaN(r.score)),
+      hasBaseRates: valid.some(r => batteryBaseRateEntry(r) && r.raw !== '' && !isNaN(r.raw)),
       hasHigherIsWorse: valid.some(r => r.higherIsWorse && r.score !== '' && !isNaN(r.score)),
       ciLevel,
       /* Reported ONLY when it actually changed a coefficient. A single field
@@ -4524,6 +4568,35 @@ function familyScoredByAgeBand(name){
   return Object.values(fam).some(e => e && typeof e === 'object' && (e.baseRates || e.separateBattery));
 }
 
+/* Base-rate families ONLY: every entry scored by published lookup. Distinct
+   from familyScoredByAgeBand, which also matches separateBattery (WMS-IV) —
+   there the band is a CLINICAL choice of battery (§30) and must stay
+   selectable; here it is a mechanical function of the patient age. */
+function familyGroupIsBaseRate(name){
+  const fam = normDB[name];
+  if (!fam) return false;
+  const entries = Object.values(fam).filter(e => e && typeof e === 'object');
+  return entries.length > 0 && entries.every(e => e.baseRates);
+}
+
+/* The banded sibling group that contains this age AND publishes this measure.
+   Per MEASURE, not per family: Longest Letter-Number Sequence is published
+   only to 65-69 while its siblings run to 85-90, so a 70-year-old has a band
+   for the digit spans and none for LNS. */
+function baseRateGroupForAge(group, name, age){
+  if (age == null) return null;
+  const base = familyBaseName(group);
+  const db = getMergedDB();
+  for (const g of Object.keys(db)){
+    if (!hasAgeBandSuffix(g) || familyBaseName(g) !== base) continue;
+    const band = ageBandRange(g);
+    if (!band || age < band.lo || age > band.hi) continue;
+    const e = db[g] && db[g][name];
+    if (e && e.baseRates) return g;
+  }
+  return null;
+}
+
 /* ── AGE-BAND FILTERING OF THE FAMILY DROPDOWNS ──────────────────────────────
 
    With one patient age now on screen everywhere, the dropdowns can stop
@@ -4616,8 +4689,28 @@ function buildFamilyListHtml(families, opts){
   order.forEach(base => {
     const allMembers = groups[base];
     const members = familyMembersForAge(allMembers, age);
-    if (members.length < allMembers.length) narrowed = true;
     const groupKey = `grp:${base}`;
+    /* A base-rate family collapses to ONE entry on the flat (Score Tables)
+       list: its band is a mechanical function of the now-required patient
+       age, so fourteen selectable bands were fourteen chances to pick the
+       wrong one. The stored value is the band containing the age where one
+       is known — with no age yet, the first band stands in and renderBattery
+       auto-rebands the rows the moment the age arrives. Not marked as
+       "narrowed": nothing selectable was hidden, and the show-all-bands note
+       must not claim otherwise. WMS-IV does NOT come this way —
+       familyGroupIsBaseRate is false for separateBattery groups, whose band
+       choice is the clinician's (§30). */
+    if (flat && !allMembers.some(isCustom) && allMembers.length > 0
+        && hasAgeBandSuffix(allMembers[0]) && allMembers.every(familyGroupIsBaseRate)){
+      const inBand = age != null
+        ? allMembers.find(m => { const b = ageBandRange(m); return b && age >= b.lo && age <= b.hi; })
+        : null;
+      const bandText = inBand ? (inBand.match(/·\s*(.+)$/) || [,''])[1] : '';
+      html += comboCheckboxItemHtml(inBand || allMembers[0], false, false, groupKey, base,
+        inBand ? bandText : 'band set by age');
+      return;
+    }
+    if (members.length < allMembers.length) narrowed = true;
     if (members.length === 1 && !hasAgeBandSuffix(members[0])){
       html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false, groupKey);
     } else if (flat && !members.some(isCustom) && !members.some(familyScoredByAgeBand)){
@@ -5208,7 +5301,7 @@ document.getElementById('ct-import').addEventListener('change', e => {
 /* ============================================================
    08 · PREMORBID ESTIMATE
    Ports the user's reference implementation. All formulas/data
-   from WAIS-IV/WMS-IV manuals + Crawford & Allan (2001) + OPIE-4.
+   from WAIS-IV/WMS-IV manuals + Crawford & Allan (1997) + OPIE-4.
    ============================================================ */
 
 function preModelCell(label, tipKey){
@@ -5424,12 +5517,23 @@ function calcPremorbid(){
   }
   rows.push({ name:'Demographic Adjusted ToPF', val:v2, see:8.441, r:0.81, tipKey:'topfDemo' });
 
-  // 3. Crawford & Allan (2001)
+  /* 3. Crawford & Allan (1997) — The Clinical Neuropsychologist, 11(2), 192-197
+     (the paper is 1997; a 2001 date circulated here previously was a citation
+     error — vol. 11 of that journal is 1997, and the authors' 2001 paper is the
+     Crawford, Millar & Milne clinical-judgement comparison in BJCP 40).
+     Derived from 200 healthy adults representative of the adult UK population;
+     the same lab sample is described in the authors' companion WAIS-R papers as
+     ages 16-83. Gate the FLOOR only: #pre-age accepts from 5, and an adult
+     WAIS-R equation must not return an estimate for a child. No ceiling is
+     enforced — the age term is linear and shallow (0.18/yr), unlike OPIE's
+     cubic, and the sample maximum is attested via the companion papers rather
+     than printed in the 1997 brief report itself. */
   let v3 = null;
-  if (occC != null && edu != null && age != null){
+  const caAgeOk = age != null && age >= CRAWFORD_ALLAN_AGE_MIN;
+  if (occC != null && edu != null && caAgeOk){
     v3 = 87.14 - 5.21*occC + 1.78*edu + 0.18*age;
   }
-  rows.push({ name:'Crawford & Allan (2001) Demographic', val:v3, see:9.11, r:0.73, tipKey:'crawfordAllan' });
+  rows.push({ name:'Crawford & Allan (1997) Demographic', val:v3, see:9.11, r:0.73, tipKey:'crawfordAllan' });
 
   // 4. OPIE-4 - prorated FSIQ, uses OPIE sex coding F=0, M=1
   // Label, R and SEE update as soon as subtest inputs are present (branch alone).
@@ -5465,17 +5569,29 @@ function calcPremorbid(){
   }
   rows.push({ name:name4, val:v4, see:s4 ? s4.see : null, r:s4 ? s4.r : null, tipKey:tipKey4 });
 
-  /* Say WHY the OPIE-4 row is empty when the age is simply outside its norms.
+  /* Say WHY rows are empty when the age is simply outside a model's norms.
      Only when an age is actually present and out of range — a blank age means
-     "not entered yet", which is a different thing and needs no explanation. */
+     "not entered yet", which is a different thing and needs no explanation.
+     Two branches, because a paediatric age blanks BOTH age-gated models while
+     an over-90 age blanks OPIE-4 alone. The old single message called every
+     non-OPIE model age-free, which was false: the Crawford & Allan (1997)
+     equation carries +0.18 × age. Only the two ToPF models on this tab are
+     truly age-free. */
   const rangeNote = document.getElementById('pre-age-range-note');
   if (rangeNote){
-    const outOfRange = age != null && (age < OPIE_AGE_MIN || age > OPIE_AGE_MAX);
-    rangeNote.hidden = !outOfRange;
-    if (outOfRange){
+    const belowAdult = age != null && age < CRAWFORD_ALLAN_AGE_MIN;
+    const aboveOpie  = age != null && age > OPIE_AGE_MAX;
+    rangeNote.hidden = !(belowAdult || aboveOpie);
+    if (belowAdult){
+      rangeNote.innerHTML = `<strong>OPIE-4 and the Crawford &amp; Allan model do not apply at age ${escapeHtml(String(age))}.</strong> `
+        + `OPIE-4 is fitted for ages ${OPIE_AGE_MIN}–${OPIE_AGE_MAX}, and the Crawford &amp; Allan (1997) equation `
+        + `was derived from an adult sample, so neither produces an estimate. `
+        + `The two ToPF models carry no age term and are unaffected.`;
+    } else if (aboveOpie){
       rangeNote.innerHTML = `<strong>OPIE-4 does not apply at age ${escapeHtml(String(age))}.</strong> `
         + `Its equations are fitted for ages ${OPIE_AGE_MIN}–${OPIE_AGE_MAX}, so no estimate is produced. `
-        + `The ToPF and demographic models carry no age term and are unaffected.`;
+        + `The two ToPF models carry no age term and are unaffected. The Crawford &amp; Allan estimate is still `
+        + `produced, but note an age this far above its adult derivation sample extrapolates its linear age term.`;
     }
   }
 
@@ -6455,6 +6571,1043 @@ document.addEventListener('click', e => {
   else openPremorbidLinkPopover();
 });
 
+/* ================================================================
+   PERFORMANCE VALIDITY (PVT) PAGE
+
+   Scores four validity indicators against their published cut-offs
+   (constants in data.js, pinned by check.js §38):
+     - RBANS Effort Index      Silverberg et al. (2007)
+     - RBANS Effort Scale      Novitski et al. (2012) — GATED, see below
+     - Reliable Digit Span     Greiffenstein et al. (1994)
+     - TOMM                    Martin et al. (2020) meta-analysis
+
+   Design constraints, in order of importance:
+   1. Results are CUT-OFF COMPARISONS, never verdicts. "Fail" means the
+      score is beyond the published cut-off — the conventional PVT term —
+      and the APA note defines it as exactly that. No output may label an
+      examinee or a protocol invalid from a single indicator.
+   2. The ES gate is mandatory, not advisory: in intact examinees free
+      recall normally exceeds ceiling-limited recognition, so an ungated
+      ES over-flags. The gate unmet is rendered as "not computed", never
+      as a number.
+   3. TOMM PPP/NPP are DERIVED by Bayes from the pinned meta-analytic
+      sensitivity/specificity and the selected base rate, exactly as
+      Martin et al. built Tables 16-17 from the same values. 57 of the 60
+      published cells reproduce at 2 dp (§38); deriving rather than
+      storing avoids transcribing the one cell that does not.
+   4. One APA export for the whole page (pvt-apa, on the Summary tab):
+      the four indicators belong in one report table, and four
+      near-identical tables would recreate the Change Analysis bloat
+      that consent gating exists to fix.
+
+   The two RBANS inputs (Digit Span, List Recognition) appear on both the
+   EI and ES tabs; pvtState is the master and every [data-pvt-field] input
+   is a synced view of it, so a value entered on either tab carries to the
+   other. Raw entry only — this page never reads normDB.
+   ================================================================ */
+
+const pvtState = { ds:'', lrec:'', listRecall:'', storyRecall:'', figRecall:'' };
+
+/* Parse one raw-score field. Returns:  undefined = empty,  null = not a
+   whole number in [min, max],  number = usable. The two non-values stay
+   distinct so an out-of-range entry reads as "check the value" rather
+   than as still-waiting-for-input. */
+function pvtInt(v, min, max){
+  if (v === '' || v === null || v === undefined) return undefined;
+  const n = Number(v);
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < min || n > max) return null;
+  return n;
+}
+
+/* ---------- Effort Index (Silverberg et al., 2007) ---------- */
+function pvtEiWeight(bands, raw){
+  for (const b of bands) if (raw >= b.min && raw <= b.max) return b.w;
+  return null;
+}
+function getPvtEi(){
+  const ds = pvtInt(pvtState.ds, 0, 16);
+  const lr = pvtInt(pvtState.lrec, 0, 20);
+  if (ds === undefined && lr === undefined) return { empty: true };
+  if (ds === null || lr === null) return { invalid: true };
+  if (ds === undefined || lr === undefined) return { partial: true };
+  const wDs = pvtEiWeight(PVT_EI_WEIGHTS.digitSpan, ds);
+  const wLr = pvtEiWeight(PVT_EI_WEIGHTS.listRecognition, lr);
+  const cutKey = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
+  const cut = PVT_EI_CUTOFFS[cutKey];
+  const ei = wDs + wLr;
+  return { ds, lr, wDs, wLr, ei, cutKey, cut, fail: ei > cut };
+}
+
+/* ---------- Effort Scale (Novitski et al., 2012) ---------- */
+function getPvtEs(){
+  const ds   = pvtInt(pvtState.ds, 0, 16);
+  const lr   = pvtInt(pvtState.lrec, 0, 20);
+  const list = pvtInt(pvtState.listRecall, 0, 10);
+  const stor = pvtInt(pvtState.storyRecall, 0, 12);
+  const fig  = pvtInt(pvtState.figRecall, 0, 20);
+  const vals = [ds, lr, list, stor, fig];
+  if (vals.every(v => v === undefined)) return { empty: true };
+  if (vals.some(v => v === null)) return { invalid: true };
+  if (vals.some(v => v === undefined)) return { partial: true };
+  const g = PVT_ES.gate;
+  const gateMet = ds < g.digitSpanBelow || lr < g.listRecognitionBelow || (ds + lr) < g.combinedBelow;
+  if (!gateMet) return { ds, lr, gated: true };
+  const es = (lr - (list + stor + fig)) + ds;
+  return { ds, lr, list, stor, fig, es, fail: es < PVT_ES.cutoff };
+}
+
+/* ---------- Reliable Digit Span (Greiffenstein et al., 1994) ---------- */
+function getPvtRds(){
+  const f = pvtInt(document.getElementById('pvt-rds-f')?.value, 0, 9);
+  const b = pvtInt(document.getElementById('pvt-rds-b')?.value, 0, 8);
+  if (f === undefined && b === undefined) return { empty: true };
+  if (f === null || b === null) return { invalid: true };
+  if (f === undefined || b === undefined) return { partial: true };
+  const sum = f + b;
+  /* Floor rule: failing at least one trial each of the lowest items is
+     recorded as RDS = 3 — with two-number entry that is any sum below 3. */
+  const floored = sum < PVT_RDS.floor;
+  const rds = floored ? PVT_RDS.floor : sum;
+  const conservative = document.getElementById('pvt-rds-cutoff')?.value !== 'traditional';
+  const cut = conservative ? PVT_RDS.cutoffConservative : PVT_RDS.cutoffTraditional;
+  return { f, b, rds, floored, conservative, cut, fail: rds <= cut };
+}
+
+/* ---------- WAIS Digit Span ACSS (Iverson & Tulsky, 2003; Axelrod et al., 2006) ---------- */
+function getPvtDs(){
+  const acss  = pvtInt(document.getElementById('pvt-ds-acss')?.value, 1, 19);
+  const vocab = pvtInt(document.getElementById('pvt-ds-vocab')?.value, 1, 19);
+  if (acss === undefined && vocab === undefined) return { empty: true };
+  if (acss === null || vocab === null) return { invalid: true };
+  if (acss === undefined) return { partial: true };   // vocab alone computes nothing
+  const conservative = document.getElementById('pvt-ds-cutoff')?.value !== 'sensitive';
+  const cut = conservative ? PVT_DS.cutoffConservative : PVT_DS.cutoffSensitive;
+  const s = { acss, conservative, cut, fail: acss <= cut };
+  if (vocab !== undefined){
+    s.vocab = vocab;
+    s.diff = vocab - acss;
+    s.diffFail = s.diff >= PVT_DS.vocabDiffCutoff;
+  }
+  const lsf = pvtInt(document.getElementById('pvt-ds-lsf')?.value, 0, 9);
+  const lsb = pvtInt(document.getElementById('pvt-ds-lsb')?.value, 0, 8);
+  if (lsf === null || lsb === null) return { invalid: true };
+  if (lsf !== undefined){
+    s.lsf = lsf;
+    /* Iverson & Tulsky limit the forward-span index to under-55s (its base
+       rate climbs to 11% in the oldest band). Without an age it is
+       WITHHELD, never guessed — the same posture as the base-rate rows on
+       Score Tables. */
+    const age = (typeof patientAge === 'function') ? patientAge() : null;
+    if (age === null) s.lsfState = 'no-age';
+    else if (age >= PVT_DS.lsfAgeBelow) s.lsfState = 'over-age';
+    else { s.lsfState = 'ok'; s.lsfFail = lsf <= PVT_DS.lsfCutoff; }
+  }
+  if (lsb !== undefined){
+    s.lsb = lsb;
+    s.lsbFail = lsb <= PVT_DS.lsbCutoff;
+  }
+  return s;
+}
+
+/* ---------- Rey 15-Item + recognition (Boone et al., 2002) ---------- */
+function getPvtRey(){
+  const recall = pvtInt(document.getElementById('pvt-rey-recall')?.value, 0, 15);
+  const recog  = pvtInt(document.getElementById('pvt-rey-recog')?.value, 0, 15);
+  const fp     = pvtInt(document.getElementById('pvt-rey-fp')?.value, 0, 15);
+  if (recall === undefined && recog === undefined && fp === undefined) return { empty: true };
+  if (recall === null || recog === null || fp === null) return { invalid: true };
+  if (recall === undefined) return { partial: true };   // recognition alone computes nothing
+  const s = { recall, recallFail: recall < PVT_REY15.recallCutoff };
+  /* The combination needs BOTH recognition numbers — a recognition trial
+     with an unrecorded false-positive count is half a score. */
+  if (recog !== undefined && fp !== undefined){
+    s.recog = recog; s.fp = fp;
+    s.combo = recall + (recog - fp);
+    s.comboFail = s.combo < PVT_REY15.comboCutoff;
+  } else if (recog !== undefined || fp !== undefined){
+    s.comboPartial = true;
+  }
+  return s;
+}
+
+/* ---------- Rey 15-Item administration ----------
+   Displays the stimulus for the protocol's 10 seconds, then the
+   recognition page, and writes the two recognition scores back into the
+   tab so they cannot be mis-transcribed. Free recall stays a manual
+   entry: the examinee draws it on paper.
+
+   MOUNTED ON <body>, NEVER INSIDE THE SECTION. position:fixed resolves
+   against the nearest TRANSFORMED ancestor, and staggerSectionContent
+   animates panel children on every page entry — an overlay built inside
+   the panel would be positioned against a moving box. Same reason the
+   consent card lives on body.
+
+   TEST SECURITY: nothing here renders until the clinician clicks through
+   an explicit confirmation in-session. There is no deep link to it, it
+   is not in the page's static markup, and it never reaches an export. */
+const REY15_SHAPE_SVG = {
+  circle:        '<circle cx="26" cy="26" r="19"/>',
+  square:        '<rect x="7" y="7" width="38" height="38"/>',
+  triangle:      '<path d="M26 6 L46 45 L6 45 Z"/>',
+  diamond:       '<path d="M26 5 L45 26 L26 47 L7 26 Z"/>',
+  pentagon:      '<path d="M26 6 L45 20 L38 43 L14 43 L7 20 Z"/>',
+  parallelogram: '<path d="M17 12 L48 12 L35 40 L4 40 Z"/>',
+  rule1:         '<line x1="6" y1="26" x2="46" y2="26"/>',
+  rule2:         '<line x1="6" y1="19" x2="46" y2="19"/><line x1="6" y1="33" x2="46" y2="33"/>',
+  rule3:         '<line x1="6" y1="15" x2="46" y2="15"/><line x1="6" y1="26" x2="46" y2="26"/><line x1="6" y1="37" x2="46" y2="37"/>'
+};
+function rey15ItemHtml(id){
+  if (REY15_SHAPES.indexOf(id) !== -1){
+    return `<svg class="rey-glyph" viewBox="0 0 52 52" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" aria-hidden="true">${REY15_SHAPE_SVG[id]}</svg>`;
+  }
+  return `<span class="rey-glyph rey-glyph-text">${escapeHtml(id)}</span>`;
+}
+function rey15IsTarget(id){
+  return REY15_RECALL_ROWS.some(row => row.indexOf(id) !== -1);
+}
+
+const reyAdmin = { el: null, step: null, selected: null, timer: null };
+
+function reyAdminClose(){
+  if (reyAdmin.timer){ clearInterval(reyAdmin.timer); reyAdmin.timer = null; }
+  if (reyAdmin.el){ reyAdmin.el.remove(); reyAdmin.el = null; }
+  reyAdmin.step = null;
+  document.removeEventListener('keydown', reyAdminKey);
+  document.getElementById('pvt-rey-administer')?.focus();
+}
+function reyAdminKey(e){ if (e.key === 'Escape') reyAdminClose(); }
+
+function reyAdminOpen(){
+  reyAdminClose();
+  reyAdmin.selected = new Set();
+  const el = document.createElement('div');
+  el.className = 'rey-admin';
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'true');
+  el.setAttribute('aria-label', 'Rey 15-Item administration');
+  document.body.appendChild(el);
+  reyAdmin.el = el;
+  el.addEventListener('click', reyAdminClick);
+  document.addEventListener('keydown', reyAdminKey);
+  reyAdminGo('intro');
+}
+function reyAdminClick(e){
+  const btn = e.target.closest('[data-rey-action]');
+  if (btn){ reyAdminAction(btn.dataset.reyAction); return; }
+  const item = e.target.closest('[data-rey-item]');
+  if (item && reyAdmin.step === 'recognition'){
+    const id = item.dataset.reyItem;
+    if (reyAdmin.selected.has(id)) reyAdmin.selected.delete(id);
+    else reyAdmin.selected.add(id);
+    item.classList.toggle('is-picked', reyAdmin.selected.has(id));
+    item.setAttribute('aria-pressed', reyAdmin.selected.has(id) ? 'true' : 'false');
+    const n = reyAdmin.el.querySelector('[data-rey-picked]');
+    if (n) n.textContent = String(reyAdmin.selected.size);
+  }
+}
+function reyAdminAction(action){
+  if (action === 'close'){ reyAdminClose(); return; }
+  if (action === 'apply'){ reyAdminApply(); return; }
+  reyAdminGo(action);
+}
+
+/* The 10-second exposure is the protocol, not an animation: reduced
+   motion suppresses the countdown's transition, never its duration. */
+function reyAdminStartExposure(){
+  let left = 10;
+  const tick = () => {
+    const n = reyAdmin.el?.querySelector('[data-rey-count]');
+    if (n) n.textContent = String(left);
+    if (left <= 0){
+      clearInterval(reyAdmin.timer);
+      reyAdmin.timer = null;
+      reyAdminGo('draw');
+      return;
+    }
+    left--;
+  };
+  tick();
+  reyAdmin.timer = setInterval(tick, 1000);
+}
+
+function reyAdminGo(step){
+  if (!reyAdmin.el) return;
+  if (reyAdmin.timer){ clearInterval(reyAdmin.timer); reyAdmin.timer = null; }
+  reyAdmin.step = step;
+  const close = '<button type="button" class="rey-close" data-rey-action="close" aria-label="Close administration">×</button>';
+  if (step === 'intro'){
+    reyAdmin.el.innerHTML = `${close}<div class="rey-panel">
+      <div class="rey-kicker">Rey 15-Item · administration</div>
+      <h2 class="rey-title">Ready to begin?</h2>
+      <p class="rey-copy">This displays the test stimuli full screen. Start it only with the examinee present — and have paper and a pen ready for their drawing.</p>
+      <p class="rey-copy rey-script">Read: “I'm going to show you a page with 15 different things on it for just a short period of time, and I want you to learn as many of the things as you can. When I take away the page, I'll want you to draw as many of the things as you can remember. Keep in mind, there are <strong>15</strong> different things so you will have to learn them very quickly.”</p>
+      <div class="rey-actions">
+        <button type="button" class="btn" data-rey-action="close">Cancel</button>
+        <button type="button" class="btn btn-primary" data-rey-action="exposure">Show the stimulus (10 s)</button>
+      </div>
+    </div>`;
+    return;
+  }
+  if (step === 'exposure'){
+    reyAdmin.el.innerHTML = `<div class="rey-stage">
+      <div class="rey-grid rey-grid-3">${REY15_RECALL_ROWS.flat().map(id =>
+        `<div class="rey-cell">${rey15ItemHtml(id)}</div>`).join('')}</div>
+      <div class="rey-countdown"><span data-rey-count>10</span></div>
+    </div>`;
+    reyAdminStartExposure();
+    return;
+  }
+  if (step === 'draw'){
+    reyAdmin.el.innerHTML = `${close}<div class="rey-panel">
+      <div class="rey-kicker">Rey 15-Item · recall</div>
+      <h2 class="rey-title">Now draw what you can remember</h2>
+      <p class="rey-copy">The examinee draws on paper. Score the free recall yourself and enter it on the tab — this step is not scored on screen.</p>
+      <p class="rey-copy rey-script">Then read: “On this page are the 15 things I showed you as well as 15 items that were not on the page. I want you to circle the things you remember from the page I showed you.”</p>
+      <div class="rey-actions">
+        <button type="button" class="btn" data-rey-action="close">Stop here</button>
+        <button type="button" class="btn btn-primary" data-rey-action="recognition">Show the recognition page</button>
+      </div>
+    </div>`;
+    return;
+  }
+  if (step === 'recognition'){
+    reyAdmin.el.innerHTML = `<div class="rey-stage">
+      <div class="rey-grid rey-grid-6">${REY15_RECOGNITION_ROWS.flat().map(id =>
+        `<button type="button" class="rey-cell rey-pick" data-rey-item="${escapeAttr(id)}" aria-pressed="false">${rey15ItemHtml(id)}</button>`).join('')}</div>
+      <div class="rey-stage-foot">
+        <span class="rey-picked"><span data-rey-picked>0</span> selected</span>
+        <button type="button" class="btn btn-primary" data-rey-action="done">Finish recognition</button>
+      </div>
+    </div>`;
+    return;
+  }
+  if (step === 'done'){
+    const picked = [...reyAdmin.selected];
+    const correct = picked.filter(rey15IsTarget).length;
+    const fp = picked.length - correct;
+    reyAdmin.el.innerHTML = `${close}<div class="rey-panel">
+      <div class="rey-kicker">Rey 15-Item · recognition scored</div>
+      <h2 class="rey-title">${correct} correct · ${fp} false positive${fp === 1 ? '' : 's'}</h2>
+      <p class="rey-copy">Scored from the ${picked.length} item${picked.length === 1 ? '' : 's'} selected. Applying these fills the recognition fields on the tab; enter the free-recall score from the drawing yourself.</p>
+      <div class="rey-actions">
+        <button type="button" class="btn" data-rey-action="close">Discard</button>
+        <button type="button" class="btn btn-primary" data-rey-action="apply">Apply to the tab</button>
+      </div>
+    </div>`;
+  }
+}
+
+function reyAdminApply(){
+  const picked = [...reyAdmin.selected];
+  const correct = picked.filter(rey15IsTarget).length;
+  const fp = picked.length - correct;
+  const set = (id, v) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = String(v);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  set('pvt-rey-recog', correct);
+  set('pvt-rey-fp', fp);
+  reyAdminClose();
+  if (typeof showToast === 'function') showToast('Recognition scores applied');
+}
+
+/* ---------- TOMM (Martin et al., 2020) ---------- */
+function pvtPPP(sens, spec, br){ return (sens * br) / (sens * br + (1 - spec) * (1 - br)); }
+function pvtNPP(sens, spec, br){ return (spec * (1 - br)) / (spec * (1 - br) + (1 - sens) * br); }
+function pvtTommCutoffById(id){ return PVT_TOMM_CUTOFFS.find(c => c.id === id) || null; }
+function getPvtTomm(){
+  const t1  = pvtInt(document.getElementById('pvt-tomm-t1')?.value, 0, 50);
+  const t2  = pvtInt(document.getElementById('pvt-tomm-t2')?.value, 0, 50);
+  const ret = pvtInt(document.getElementById('pvt-tomm-ret')?.value, 0, 50);
+  if (t1 === undefined && t2 === undefined && ret === undefined) return { empty: true };
+  if (t1 === null || t2 === null || ret === null) return { invalid: true };
+  const t1CutId = document.getElementById('pvt-tomm-t1cut')?.value === 't1-41' ? 't1-41' : 't1-42';
+  const lateCut = document.getElementById('pvt-tomm-t2cut')?.value === '49' ? '49' : '45';
+  const br = parseFloat(document.getElementById('pvt-tomm-br')?.value) || 0.10;
+  const rows = [];
+  const addRow = (label, score, cutoff) => {
+    if (score === undefined || !cutoff) return;
+    rows.push({
+      label, score, cutoff,
+      fail: score < cutoff.cut,
+      ppp: pvtPPP(cutoff.sens, cutoff.spec, br),
+      npp: pvtNPP(cutoff.sens, cutoff.spec, br)
+    });
+  };
+  addRow('Trial 1',   t1,  pvtTommCutoffById(t1CutId));
+  addRow('Trial 2',   t2,  pvtTommCutoffById('t2-' + lateCut));
+  addRow('Retention', ret, pvtTommCutoffById('ret-' + lateCut));
+  return { rows, br, anyFail: rows.some(r => r.fail) };
+}
+
+/* ---------- result boxes ---------- */
+function pvtResultHtml(kind, headline, detail){
+  return `<div class="pvt-result-inner is-${kind}"><span class="pvt-result-headline">${headline}</span>${detail ? `<span class="pvt-result-detail">${detail}</span>` : ''}</div>`;
+}
+
+/* ---------- the per-index readout ----------
+   ONE ROW PER INDEX, each carrying its OWN state.
+
+   This replaces a single card-level state that coloured every line at once:
+   a Digit Span card holding four indices printed "ACSS = 8 — Pass" in
+   failure red because one span had flagged. The rule that fixes it is that
+   VALUES AND LABELS STAY IN INK and a coloured chip beside them carries the
+   state, so a card can hold four indices in four different states and each
+   reads correctly. Status colour never appears alone — every chip carries
+   its word ("Pass", "Flag", "Not evaluated"), so the state survives
+   greyscale, colour-blindness and print.
+
+   Each row also plots the score against its cut-off on a slim track. The
+   domain is never invented: it is the measure's own possible range (a
+   scaled-score metric, a trial out of 50, or the arithmetic minimum and
+   maximum of the raw inputs that feed a composite). The shaded zone is the
+   side of the boundary that fails, placed on the half-integer between the
+   last passing and first failing score, so it is exact for these
+   integer-valued scales rather than approximate. */
+const PVT_STATE_WORD = { pass: 'Pass', fail: 'Fail', flag: 'Flag', na: 'n/a' };
+
+/* The state glyph. A raised flag for anything beyond its cut-off, a tick
+   for a clear index, a dash where nothing was evaluated. The glyph rides
+   INSIDE the chip beside its word, so a state is carried three ways —
+   shape, word and colour — and reading it never depends on colour alone.
+
+   There is deliberately no score-against-cut-off plot here: what a
+   clinician acts on is the cut-off and whether the score crossed it, and
+   a track showing HOW FAR it fell asks them to read a distance that
+   carries no published meaning. The cut-off itself is printed on every
+   row. */
+const PVT_STATE_ICON = {
+  flag: '<svg class="pvt-flag-icon" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="1.5" x2="3" y2="10.5"/><path d="M3 2.2 L9.5 2.2 L8 4.6 L9.5 7 L3 7 Z" fill="currentColor" stroke="none"/></svg>',
+  pass: '<svg class="pvt-flag-icon" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5,6.4 4.9,8.8 9.5,3.2"/></svg>',
+  na:   '<svg class="pvt-flag-icon" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="2.8" y1="6" x2="9.2" y2="6"/></svg>'
+};
+
+/* state: 'pass' | 'fail' | 'flag' | 'na'. `word` overrides the default
+   chip text (a base-rate index reads "Flag", a withheld one "Not
+   evaluated"). */
+function pvtIndexRowHtml(o){
+  const word = o.word || PVT_STATE_WORD[o.state] || '';
+  const chipState = o.state === 'flag' ? 'fail' : o.state;
+  const icon = PVT_STATE_ICON[o.state === 'fail' ? 'flag' : o.state] || '';
+  const valueHtml = (o.value === undefined || o.value === null || o.value === '')
+    ? '<span class="pvt-index-value is-none">—</span>'
+    : `<span class="pvt-index-value">${escapeHtml(String(o.value))}</span>`;
+  return `<div class="pvt-index">
+    <div class="pvt-index-main">
+      <div class="pvt-index-top">
+        <span class="pvt-index-label">${o.label}</span>
+        ${valueHtml}
+      </div>
+      ${o.meta ? `<div class="pvt-index-meta">${o.meta}</div>` : ''}
+    </div>
+    <span class="pvt-flag is-${chipState}">${icon}${word}</span>
+  </div>`;
+}
+
+/* Wrap rows in the card. `note` carries any arithmetic or explanation that
+   belongs to the whole measure rather than to one index. */
+function pvtReadoutHtml(rows, note){
+  const flagged = rows.filter(r => r.state === 'fail' || r.state === 'flag').length;
+  const scored  = rows.filter(r => r.state !== 'na').length;
+  const head = (rows.length > 1 && scored > 0)
+    ? `<div class="pvt-readout-head"><strong>${flagged}</strong> of ${scored} scored ${scored === 1 ? 'index' : 'indices'} beyond ${flagged === 1 ? 'its' : 'their'} cut-off</div>`
+    : '';
+  return `<div class="pvt-readout">
+    ${head}
+    ${rows.map(pvtIndexRowHtml).join('')}
+    ${note ? `<div class="pvt-readout-note">${note}</div>` : ''}
+  </div>`;
+}
+const PVT_PROMPTS = {
+  partial: 'Enter the remaining score(s) to compute this index.',
+  invalid: 'Check the entered values — one is outside the possible raw-score range.'
+};
+function pvtStatusWord(fail){ return fail ? 'Fail' : 'Pass'; }
+
+function renderPvtEi(){
+  const out = document.getElementById('pvt-ei-result');
+  if (!out) return;
+  const s = getPvtEi();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
+  const acc = PVT_EI_ACCURACY[s.cutKey];
+  out.innerHTML = pvtReadoutHtml([{
+    label: 'Effort Index', value: s.ei, state: s.fail ? 'fail' : 'pass',
+    meta: `Cut-off &gt; ${s.cut}${s.cutKey === 'sensitive' ? ' (screening)' : ''} · sens. ${acc.sens} · spec. ${acc.spec} · higher = less credible`
+  }], `Digit Span ${s.ds} → weight ${s.wDs}; List Recognition ${s.lr} → weight ${s.wLr}; sum ${s.ei}.${
+    s.fail ? ' Corroborate with an independent, preferably forced-choice, measure.' : ''}`);
+}
+
+function renderPvtEs(){
+  const out = document.getElementById('pvt-es-result');
+  if (!out) return;
+  const s = getPvtEs();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
+  if (s.gated){
+    out.innerHTML = pvtReadoutHtml([{
+      label: 'Effort Scale', value: null, state: 'na', word: 'Not computed',
+      meta: `Gate not met — Digit Span ${s.ds} (&lt; 9), List Recognition ${s.lr} (&lt; 19), sum ${s.ds + s.lr} (&lt; 28)`
+    }], 'On a profile this strong the ES over-flags, so no score is reported (Novitski et al., 2012).');
+    return;
+  }
+  /* Domain is the arithmetic range of the inputs that feed the formula:
+     List Recognition 0-20 minus total recall 0-42, plus Digit Span 0-16. */
+  out.innerHTML = pvtReadoutHtml([{
+    label: 'Effort Scale', value: s.es, state: s.fail ? 'fail' : 'pass',
+    meta: `Cut-off &lt; ${PVT_ES.cutoff} · ROC AUC ${PVT_ES_ACCURACY.auc} (no published sens/spec) · lower = less credible`
+  }], `(${s.lr} − [${s.list} + ${s.stor} + ${s.fig}]) + ${s.ds} = ${s.es}. Gate met.${
+    s.fail ? ' Confirm with a stand-alone forced-choice measure.' : ''}`);
+}
+
+function renderPvtRds(){
+  const out = document.getElementById('pvt-rds-result');
+  if (!out) return;
+  const s = getPvtRds();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
+  const racc = PVT_RDS_ACCURACY[s.conservative ? 'conservative' : 'traditional'];
+  out.innerHTML = pvtReadoutHtml([{
+    label: 'Reliable Digit Span', value: s.rds, state: s.fail ? 'fail' : 'pass',
+    meta: `Cut-off ≤ ${s.cut} (${s.conservative ? 'conservative' : 'traditional'}) · sens. ${racc.sens} · spec. ${racc.spec} · lower = less credible`
+  }], `${s.f} forward + ${s.b} backward${s.floored ? ` = ${s.f + s.b}; the floor rule records any RDS below 3 as 3` : ` = ${s.rds}`}.${
+    s.fail ? ' Weigh genuine attentional impairment, anxiety and aphasia before concluding.' : ''}`);
+}
+
+function renderPvtDs(){
+  const out = document.getElementById('pvt-ds-result');
+  if (!out) return;
+  const s = getPvtDs();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score — Vocabulary alone computes nothing.'); return; }
+  const dacc = PVT_DS_ACCURACY[s.conservative ? 'conservative' : 'sensitive'];
+  const rows = [{
+    label: 'Digit Span ACSS', value: s.acss, state: s.fail ? 'fail' : 'pass',
+    meta: `Cut-off ≤ ${s.cut}${s.conservative ? ' (conservative)' : ''} · sens. ${dacc.sens} · spec. ${dacc.spec}`
+  }];
+  if (s.diff !== undefined) rows.push({
+    label: 'Vocabulary − Digit Span', value: s.diff,
+    state: s.diffFail ? 'flag' : 'pass', word: s.diffFail ? 'Flag' : 'Pass',
+    meta: `Cut-off ≥ ${PVT_DS.vocabDiffCutoff} · base rate ${PVT_DS_VOCABDIFF_BASERATES.standardization} standardisation / ${PVT_DS_VOCABDIFF_BASERATES.clinical} clinical`
+  });
+  if (s.lsf !== undefined){
+    if (s.lsfState === 'ok') rows.push({
+      label: 'Longest span forward', value: s.lsf,
+      state: s.lsfFail ? 'flag' : 'pass', word: s.lsfFail ? 'Flag' : 'Pass',
+      meta: `Cut-off ≤ ${PVT_DS.lsfCutoff} (age &lt; ${PVT_DS.lsfAgeBelow}) · base rate ${PVT_DS_SPAN_BASERATES.lsf.standardization} standardisation / ${PVT_DS_SPAN_BASERATES.lsf.clinical} clinical`
+    });
+    else rows.push({
+      label: 'Longest span forward', value: s.lsf, state: 'na',
+      word: s.lsfState === 'no-age' ? 'Needs age' : 'n/a',
+      meta: s.lsfState === 'no-age'
+        ? `Enter the patient age in the top bar — this index applies under age ${PVT_DS.lsfAgeBelow}`
+        : `Not applicable at age ${PVT_DS.lsfAgeBelow}+ — Iverson &amp; Tulsky limit this index to under-55s`
+    });
+  }
+  if (s.lsb !== undefined) rows.push({
+    label: 'Longest span backward', value: s.lsb,
+    state: s.lsbFail ? 'flag' : 'pass', word: s.lsbFail ? 'Flag' : 'Pass',
+    meta: `Cut-off ≤ ${PVT_DS.lsbCutoff} · base rate ${PVT_DS_SPAN_BASERATES.lsb.standardization} standardisation / ${PVT_DS_SPAN_BASERATES.lsb.clinical} clinical`
+  });
+  const anyFail = s.fail || s.diffFail || s.lsfFail || s.lsbFail;
+  out.innerHTML = pvtReadoutHtml(rows, anyFail
+    ? 'Base-rate indices state how often a score this extreme occurs in the standardisation and clinical samples; corroborate with an independent, preferably forced-choice, measure.'
+    : '');
+}
+
+function renderPvtRey(){
+  const out = document.getElementById('pvt-rey15-result');
+  if (!out) return;
+  const s = getPvtRey();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score — the recognition trial alone computes nothing.'); return; }
+  const rows = [{
+    label: 'Free recall', value: s.recall, state: s.recallFail ? 'fail' : 'pass',
+    meta: `Cut-off &lt; ${PVT_REY15.recallCutoff} · sens. ${PVT_REY15_ACCURACY.recall.sens} · spec. ${PVT_REY15_ACCURACY.recall.spec}`
+  }];
+  let note = '';
+  if (s.combo !== undefined){
+    rows.push({
+      label: 'Combination score', value: s.combo, state: s.comboFail ? 'fail' : 'pass',
+      meta: `Cut-off &lt; ${PVT_REY15.comboCutoff} · sens. ${PVT_REY15_ACCURACY.combo.sens} · spec. ${PVT_REY15_ACCURACY.combo.spec} · the more sensitive index`
+    });
+    note = `${s.recall} + (${s.recog} − ${s.fp}) = ${s.combo}. The combination raises sensitivity from ${PVT_REY15_ACCURACY.recall.sens} to ${PVT_REY15_ACCURACY.combo.sens} at comparable specificity (Boone et al., 2002).`;
+  } else if (s.comboPartial){
+    rows.push({
+      label: 'Combination score', value: null, state: 'na', word: 'Incomplete',
+      meta: 'Enter both recognition correct and false positives to compute this index'
+    });
+  }
+  if ((s.recallFail || s.comboFail) && !note) note = 'Corroborate with an independent, preferably forced-choice, measure.';
+  out.innerHTML = pvtReadoutHtml(rows, note);
+}
+
+function renderPvtTomm(){
+  const out = document.getElementById('pvt-tomm-result');
+  const power = document.getElementById('pvt-tomm-power');
+  if (!out || !power) return;
+  const s = getPvtTomm();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.'); power.innerHTML = ''; return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
+  out.innerHTML = pvtReadoutHtml(s.rows.map(r => ({
+    label: `TOMM ${r.label}`, value: r.score, state: r.fail ? 'fail' : 'pass',
+    meta: `Cut-off &lt; ${r.cutoff.cut} · sens. ${r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, '')} · spec. ${r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, '')} · PPP ${r.ppp.toFixed(2).replace(/^0/, '')} at this base rate`
+  })), s.anyFail
+    ? 'At low base rates a single failure has modest positive predictive power — see the table below.'
+    : '');
+  const brPct = Math.round(s.br * 100);
+  power.innerHTML = `
+    <div class="pvt-card">
+      <div class="pvt-card-kicker">Predictive power at a ${brPct}% base rate of invalidity</div>
+      <table class="pvt-table">
+        <thead><tr><th>Trial · cut-off</th><th>Sens.</th><th>Spec.</th><th>PPP</th><th>NPP</th></tr></thead>
+        <tbody>${s.rows.map(r => `
+          <tr><td>${r.cutoff.label.replace('<', '&lt;')}</td>
+          <td>${r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.ppp.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.npp.toFixed(2).replace(/^0/, '')}</td></tr>`).join('')}
+        </tbody>
+      </table>
+      <p class="pvt-agg-copy" style="margin-top:10px;margin-bottom:0">PPP = probability a failure is a true positive; NPP = probability a pass is a true negative — Bayes on the meta-analytic sens/spec and the selected base rate (Martin et al., 2020, Tables 16–17).</p>
+    </div>`;
+}
+
+/* ---------- summary + APA export ---------- */
+/* One row per reportable line. TOMM contributes one row per entered trial
+   but counts as ONE indicator; EI and ES share their RBANS subtests and
+   also count as one. The independence arithmetic is the point of the
+   summary — see Larrabee (2014). */
+function getPvtSummaryRows(){
+  const rows = [];
+  const ei = getPvtEi();
+  if (ei.ei !== undefined) rows.push({
+    id: 'ei', group: 'rbans', measure: 'RBANS Effort Index',
+    score: String(ei.ei), cutoff: `> ${ei.cut}${ei.cutKey === 'sensitive' ? ' (screening)' : ''}`,
+    sens: PVT_EI_ACCURACY[ei.cutKey].sens, spec: PVT_EI_ACCURACY[ei.cutKey].spec,
+    result: pvtStatusWord(ei.fail), fail: ei.fail
+  });
+  const es = getPvtEs();
+  /* The ES publishes no sensitivity/specificity pair (its discrimination is
+     ROC AUC = .91) — the columns print dashes and the note explains. */
+  if (es.gated) rows.push({
+    id: 'es', group: 'rbans', measure: 'RBANS Effort Scale',
+    score: '—', cutoff: `< ${PVT_ES.cutoff}`, sens: '—', spec: '—',
+    result: 'Not computed (gate not met)', fail: false, gated: true
+  });
+  else if (es.es !== undefined) rows.push({
+    id: 'es', group: 'rbans', measure: 'RBANS Effort Scale',
+    score: String(es.es), cutoff: `< ${PVT_ES.cutoff}`, sens: '—', spec: '—',
+    result: pvtStatusWord(es.fail), fail: es.fail
+  });
+  const rds = getPvtRds();
+  if (rds.rds !== undefined){
+    const acc = PVT_RDS_ACCURACY[rds.conservative ? 'conservative' : 'traditional'];
+    rows.push({
+      id: 'rds', group: 'rds', measure: 'Reliable Digit Span',
+      score: String(rds.rds), cutoff: `≤ ${rds.cut}${rds.conservative ? ' (conservative)' : ''}`,
+      sens: acc.sens, spec: acc.spec,
+      result: pvtStatusWord(rds.fail), fail: rds.fail
+    });
+  }
+  /* Same subtest as RDS, so the SAME group — one indicator between them,
+     exactly as EI/ES share the RBANS group. */
+  const ds = getPvtDs();
+  if (ds.acss !== undefined){
+    const acc = PVT_DS_ACCURACY[ds.conservative ? 'conservative' : 'sensitive'];
+    rows.push({
+      id: 'ds', group: 'rds', measure: 'Digit Span scaled score',
+      score: String(ds.acss), cutoff: `≤ ${ds.cut}${ds.conservative ? ' (conservative)' : ''}`,
+      sens: acc.sens, spec: acc.spec,
+      result: pvtStatusWord(ds.fail), fail: ds.fail
+    });
+    if (ds.diff !== undefined) rows.push({
+      id: 'ds-vocab', group: 'rds', measure: 'Vocabulary − Digit Span',
+      score: String(ds.diff), cutoff: `≥ ${PVT_DS.vocabDiffCutoff}`,
+      sens: '—', spec: '—',
+      result: ds.diffFail ? 'Flagged' : 'Not flagged', fail: ds.diffFail
+    });
+    /* A withheld forward-span index (no age, or 55+) exports NO row — an
+       unevaluated index in a report table would be a false claim. */
+    if (ds.lsf !== undefined && ds.lsfState === 'ok') rows.push({
+      id: 'ds-lsf', group: 'rds', measure: 'Longest span forward',
+      score: String(ds.lsf), cutoff: `≤ ${PVT_DS.lsfCutoff} (age < ${PVT_DS.lsfAgeBelow})`,
+      sens: '—', spec: '—',
+      result: ds.lsfFail ? 'Flagged' : 'Not flagged', fail: ds.lsfFail
+    });
+    if (ds.lsb !== undefined) rows.push({
+      id: 'ds-lsb', group: 'rds', measure: 'Longest span backward',
+      score: String(ds.lsb), cutoff: `≤ ${PVT_DS.lsbCutoff}`,
+      sens: '—', spec: '—',
+      result: ds.lsbFail ? 'Flagged' : 'Not flagged', fail: ds.lsbFail
+    });
+  }
+  /* Stand-alone: shares no subtest with anything above, so its own group. */
+  const rey = getPvtRey();
+  if (rey.recall !== undefined){
+    rows.push({
+      id: 'rey-recall', group: 'rey15', measure: 'Rey 15-Item free recall',
+      score: String(rey.recall), cutoff: `< ${PVT_REY15.recallCutoff}`,
+      sens: PVT_REY15_ACCURACY.recall.sens, spec: PVT_REY15_ACCURACY.recall.spec,
+      result: pvtStatusWord(rey.recallFail), fail: rey.recallFail
+    });
+    if (rey.combo !== undefined) rows.push({
+      id: 'rey-combo', group: 'rey15', measure: 'Rey 15-Item combination',
+      score: String(rey.combo), cutoff: `< ${PVT_REY15.comboCutoff}`,
+      sens: PVT_REY15_ACCURACY.combo.sens, spec: PVT_REY15_ACCURACY.combo.spec,
+      result: pvtStatusWord(rey.comboFail), fail: rey.comboFail
+    });
+  }
+  const tomm = getPvtTomm();
+  if (tomm.rows) tomm.rows.forEach(r => rows.push({
+    id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
+    score: String(r.score), cutoff: `< ${r.cutoff.cut}`,
+    sens: r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, ''),
+    spec: r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, ''),
+    result: pvtStatusWord(r.fail), fail: r.fail
+  }));
+  return rows;
+}
+function pvtIndicatorCounts(rows){
+  const groups = [...new Set(rows.filter(r => !r.gated).map(r => r.group))];
+  const failed = groups.filter(g => rows.some(r => r.group === g && r.fail));
+  return { total: groups.length, failed: failed.length };
+}
+
+function renderPvtSummary(){
+  const host = document.getElementById('pvt-summary-body');
+  if (!host) return;
+  const rows = getPvtSummaryRows();
+  if (rows.length === 0){
+    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet — score at least one measure on the other tabs and the summary builds itself. The tab strip above tracks each measure as you go.') + '</div>';
+    return;
+  }
+  const c = pvtIndicatorCounts(rows);
+  const countStat = c.total === 0 ? '' :
+    `<div class="pvt-count">
+      <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
+      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the digit-span indices as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
+    </div>`;
+  host.innerHTML = `
+    <div class="pvt-card">
+      <div class="pvt-card-kicker">Indicators scored this session</div>
+      ${countStat}
+      <table class="pvt-table">
+        <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Sens.</th><th>Spec.</th><th>Result</th></tr></thead>
+        <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td>${r.sens}</td><td>${r.spec}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+function renderPvtApa(){
+  const out = document.getElementById('pvt-apa');
+  if (!out) return;
+  const rows = getPvtSummaryRows();
+  /* EMPTY-STATE GUARD — same contract §35 enforces on the premorbid
+     renderers: the working-report observer's only test is the presence of
+     .apa-table, so a renderer that always writes one always offers an
+     empty table to the report. No data, no table. */
+  if (rows.length === 0){
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least one validity measure to preview.</div>';
+    return;
+  }
+  const ei = getPvtEi(), es = getPvtEs();
+  out.innerHTML = `
+    <div class="apa-table-num">Table 1</div>
+    <div class="apa-table-title">Performance validity indicators</div>
+    <table class="apa-table">
+      <thead><tr><th>Measure</th><th class="num">Score</th><th>Cut-off</th><th class="num">Sens.</th><th class="num">Spec.</th><th>Result</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${escapeHtml(r.measure)}</td><td class="num">${escapeHtml(r.score)}</td><td>${escapeHtml(r.cutoff)}</td><td class="num">${escapeHtml(r.sens)}</td><td class="num">${escapeHtml(r.spec)}</td><td>${escapeHtml(r.result)}</td></tr>`).join('')}</tbody>
+    </table>
+    ${apaNoteHtml('pvt', {
+      hasEi:   rows.some(r => r.id === 'ei'),
+      hasEs:   rows.some(r => r.id === 'es'),
+      hasRds:  rows.some(r => r.id === 'rds'),
+      hasDs:   rows.some(r => r.id.startsWith('ds')),
+      hasRey:  rows.some(r => r.id.startsWith('rey')),
+      hasTomm: rows.some(r => r.group === 'tomm'),
+      esGated: !!es.gated,
+      bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
+      bothDigitSpan: rows.some(r => r.id === 'rds') && rows.some(r => r.id.startsWith('ds')),
+      /* Any row whose accuracy columns print a dash — a base-rate index or
+         the Effort Scale — so the note explains the dashes only when some
+         are on the page. */
+      hasDashes: rows.some(r => r.sens === '—')
+    })}
+  `;
+}
+
+/* The tab strip's live status chips. One chip per measure, restated from
+   the same getPvt* state the result cards render, so strip and card cannot
+   disagree. The summary chip carries the independent-indicator count. */
+function pvtChip(el, text, kind){
+  if (!el) return;
+  el.textContent = text;
+  el.classList.remove('is-pass', 'is-fail', 'is-na');
+  if (kind) el.classList.add('is-' + kind);
+}
+function renderPvtNav(){
+  const ei = getPvtEi();
+  pvtChip(document.getElementById('pvt-status-ei'),
+    ei.ei !== undefined ? (ei.fail ? 'Fail' : 'Pass') : '—',
+    ei.ei !== undefined ? (ei.fail ? 'fail' : 'pass') : null);
+  const es = getPvtEs();
+  pvtChip(document.getElementById('pvt-status-es'),
+    es.gated ? 'Gated' : es.es !== undefined ? (es.fail ? 'Fail' : 'Pass') : '—',
+    es.gated ? 'na' : es.es !== undefined ? (es.fail ? 'fail' : 'pass') : null);
+  const rds = getPvtRds();
+  pvtChip(document.getElementById('pvt-status-rds'),
+    rds.rds !== undefined ? (rds.fail ? 'Fail' : 'Pass') : '—',
+    rds.rds !== undefined ? (rds.fail ? 'fail' : 'pass') : null);
+  const dsS = getPvtDs();
+  const dsAny = dsS.acss !== undefined;
+  const dsFail = dsAny && (dsS.fail || dsS.diffFail || dsS.lsfFail || dsS.lsbFail);
+  pvtChip(document.getElementById('pvt-status-ds'),
+    dsAny ? (dsFail ? 'Fail' : 'Pass') : '—',
+    dsAny ? (dsFail ? 'fail' : 'pass') : null);
+  const reyS = getPvtRey();
+  const reyAny = reyS.recall !== undefined;
+  const reyFail = reyAny && (reyS.recallFail || !!reyS.comboFail);
+  pvtChip(document.getElementById('pvt-status-rey15'),
+    reyAny ? (reyFail ? 'Fail' : 'Pass') : '—',
+    reyAny ? (reyFail ? 'fail' : 'pass') : null);
+  const tomm = getPvtTomm();
+  const tommHas = !!(tomm.rows && tomm.rows.length);
+  pvtChip(document.getElementById('pvt-status-tomm'),
+    tommHas ? (tomm.anyFail ? 'Fail' : 'Pass') : '—',
+    tommHas ? (tomm.anyFail ? 'fail' : 'pass') : null);
+  const c = pvtIndicatorCounts(getPvtSummaryRows());
+  pvtChip(document.getElementById('pvt-status-summary'),
+    c.total > 0 ? `${c.failed}/${c.total}` : '—',
+    c.total > 0 ? (c.failed > 0 ? 'fail' : 'pass') : null);
+}
+
+/* The published-accuracy line beside each cut-off select — same strings the
+   summary table and APA export print, so screen and export cannot differ. */
+function renderPvtAccuracy(){
+  const eiEl = document.getElementById('pvt-ei-accuracy');
+  if (eiEl){
+    const key = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
+    eiEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_EI_ACCURACY[key].sens} · spec. ${PVT_EI_ACCURACY[key].spec} (Silverberg et al., 2007)`;
+  }
+  const dsEl = document.getElementById('pvt-ds-accuracy');
+  if (dsEl){
+    const key = document.getElementById('pvt-ds-cutoff')?.value === 'sensitive' ? 'sensitive' : 'conservative';
+    dsEl.textContent = key === 'conservative'
+      ? `Published accuracy at this cut-off: sens. ${PVT_DS_ACCURACY.conservative.sens} · spec. ${PVT_DS_ACCURACY.conservative.spec} (Axelrod et al., 2006); base rate 3.8% standardisation / 3.4% clinical (Iverson & Tulsky, 2003)`
+      : `Published accuracy at this cut-off: sens. ${PVT_DS_ACCURACY.sensitive.sens} · spec. ${PVT_DS_ACCURACY.sensitive.spec} (Axelrod et al., 2006)`;
+  }
+  const rdsEl = document.getElementById('pvt-rds-accuracy');
+  if (rdsEl){
+    const key = document.getElementById('pvt-rds-cutoff')?.value === 'traditional' ? 'traditional' : 'conservative';
+    rdsEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_RDS_ACCURACY[key].sens} · spec. ${PVT_RDS_ACCURACY[key].spec} (Schroeder et al., 2012)`;
+  }
+}
+
+/* ---------- the running rail ----------
+   A single element beside every method panel, so the aggregate picture is
+   in view while the clinician is still entering scores rather than one
+   tab away. It reads the SAME getPvtSummaryRows/pvtIndicatorCounts the
+   Summary tab and the APA export read — three surfaces, one derivation,
+   which is why a measure can never appear scored here and unscored there. */
+/* The rail is grouped by INDEPENDENT INDICATOR, not by measure, because
+   the count above it is over indicators: the two RBANS indices are one,
+   and the two digit-span measures are one. Listing six flat rows beside a
+   "3 of 4" count invited exactly the arithmetic the page keeps warning
+   against, so the grouping now shows on screen what the note says in
+   words. Rows are buttons: the rail doubles as navigation. */
+const PVT_RAIL_GROUPS = [
+  { id: 'rbans', label: 'RBANS', members: [
+    { tab: 'ei',    label: 'Effort Index', ids: ['ei'] },
+    { tab: 'es',    label: 'Effort Scale', ids: ['es'] }
+  ]},
+  { id: 'rds', label: 'Digit span', members: [
+    { tab: 'rds',   label: 'Reliable Digit Span', ids: ['rds'] },
+    { tab: 'ds',    label: 'Digit Span indices',  ids: ['ds', 'ds-vocab', 'ds-lsf', 'ds-lsb'] }
+  ]},
+  { id: 'rey15', label: 'Rey 15-Item', members: [
+    { tab: 'rey15', label: 'Recall & recognition', ids: ['rey-recall', 'rey-combo'] }
+  ]},
+  { id: 'tomm', label: 'TOMM', members: [
+    { tab: 'tomm',  label: 'Forced choice', ids: ['tomm'] }
+  ]}
+];
+const PVT_RAIL_ICON = {
+  flag: PVT_STATE_ICON.flag,
+  pass: PVT_STATE_ICON.pass,
+  gated: PVT_STATE_ICON.na,
+  idle: '<svg class="pvt-flag-icon" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6" cy="6" r="3.4"/></svg>'
+};
+function renderPvtRail(){
+  const rail = document.getElementById('pvt-rail');
+  if (!rail) return;
+  const rows = getPvtSummaryRows();
+  const c = pvtIndicatorCounts(rows);
+  const current = document.querySelector('#validity .pvt-method-tab.active')?.dataset.pvtTab;
+
+  /* Status reads as words in a right-hand column, the way a progress panel
+     states a value against its label — colour marks a flag rather than
+     carrying the meaning on its own. */
+  let scored = 0, total = 0;
+  const groups = PVT_RAIL_GROUPS.map(g => {
+    const members = g.members.map(m => {
+      total++;
+      const mine = rows.filter(r => m.ids.includes(r.id));
+      const gated = mine.some(r => r.gated);
+      if (mine.length) scored++;
+      const flagged = mine.filter(r => r.fail).length;
+      const state = gated ? 'gated' : !mine.length ? 'idle' : flagged ? 'flag' : 'pass';
+      const value = gated ? 'gate not met'
+        : !mine.length ? 'not scored'
+        : flagged ? `${flagged} flagged`
+        : 'within cut-offs';
+      return `<button type="button" class="pvt-rail-row is-${state}${m.tab === current ? ' is-current' : ''}" data-rail-tab="${m.tab}">
+        <span class="pvt-rail-label">${m.label}</span>
+        <span class="pvt-rail-value">${value}</span>
+      </button>`;
+    }).join('');
+    return `<div class="pvt-rail-group">
+      <div class="pvt-rail-group-head">
+        <span class="pvt-rail-group-name">${g.label}</span>
+        ${g.members.length > 1 ? '<span class="pvt-rail-group-tag">counts as one</span>' : ''}
+      </div>${members}</div>`;
+  }).join('');
+
+  const hint = c.total === 0
+    ? 'Score a measure to start the count.'
+    : c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
+    : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion.'
+    : 'Nothing beyond its cut-off so far.';
+
+  /* The collapse state lives on the rail, which survives this re-render;
+     the card is rebuilt from it so screen and ARIA cannot drift. */
+  const collapsed = rail.classList.contains('is-collapsed');
+  rail.innerHTML = `<div class="pvt-rail-card${collapsed ? ' is-collapsed' : ''}">
+    <div class="pvt-rail-head">
+      <span class="pvt-rail-title">Progress</span>
+      <button type="button" class="pvt-rail-toggle" data-rail-toggle aria-label="${collapsed ? 'Expand' : 'Collapse'} summary" aria-expanded="${collapsed ? 'false' : 'true'}">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg>
+      </button>
+    </div>
+    <div class="pvt-rail-body">
+      <div class="pvt-rail-section">
+        <div class="pvt-rail-kicker">Indicators</div>
+        <div class="pvt-rail-stat${c.failed ? ' is-flagged' : ''}">
+          <span class="pvt-rail-stat-label">Flagged</span>
+          <span class="pvt-rail-stat-value">${c.failed}<span class="pvt-rail-sep">/</span>${c.total}</span>
+        </div>
+        <div class="pvt-rail-stat">
+          <span class="pvt-rail-stat-label">Measures scored</span>
+          <span class="pvt-rail-stat-value">${scored}<span class="pvt-rail-sep">/</span>${total}</span>
+        </div>
+        <p class="pvt-rail-hint">${hint}</p>
+      </div>
+      <div class="pvt-rail-section">
+        <div class="pvt-rail-kicker">By indicator</div>
+        ${groups}
+      </div>
+      <button type="button" class="pvt-rail-cta" data-rail-tab="summary">Full summary &amp; APA table →</button>
+    </div>
+  </div>`;
+}
+
+function renderPvtAll(){
+  renderPvtEi();
+  renderPvtEs();
+  renderPvtRds();
+  renderPvtDs();
+  renderPvtRey();
+  renderPvtTomm();
+  renderPvtAccuracy();
+  renderPvtNav();
+  renderPvtRail();
+  renderPvtSummary();
+  renderPvtApa();
+}
+
+function switchPvtTab(name){
+  document.querySelectorAll('#validity .pvt-method-tab').forEach(t => {
+    const on = t.dataset.pvtTab === name;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  document.querySelectorAll('#validity .pvt-tab-content').forEach(c =>
+    c.classList.toggle('active', c.id === 'pvt-' + name));
+  /* The rail would restate the Summary tab's own table beside it. */
+  document.querySelector('#validity .pvt-sheet')?.classList.toggle('is-summary', name === 'summary');
+  renderPvtRail();
+}
+
+function clearPvt(){
+  Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
+  document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderPvtAll();
+}
+
+function setupPvtPage(){
+  const root = document.getElementById('validity');
+  if (!root) return;
+  root.querySelectorAll('.pvt-method-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
+  });
+  /* The shared RBANS fields appear on both the EI and ES tabs; pvtState is
+     the master and every input with the same data-pvt-field mirrors it. */
+  root.querySelectorAll('[data-pvt-field]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const field = inp.dataset.pvtField;
+      pvtState[field] = inp.value;
+      root.querySelectorAll(`[data-pvt-field="${field}"]`).forEach(other => {
+        if (other !== inp && other.value !== inp.value) other.value = inp.value;
+      });
+      renderPvtAll();
+    });
+  });
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', renderPvtAll);
+  });
+  /* The forward-span index reads the shared top-bar age, so an age typed
+     anywhere must re-evaluate it. Safe against the §35 hazard: the APA
+     container only ever holds a table once a score is entered here, so an
+     age keystroke alone cannot conjure one. */
+  ['patient-age','pre-age'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', renderPvtAll);
+  });
+  document.getElementById('pvt-rey-administer')?.addEventListener('click', reyAdminOpen);
+  /* The rail doubles as navigation — delegated, because it re-renders on
+     every keystroke and bound handlers would not survive. */
+  document.getElementById('pvt-rail')?.addEventListener('click', e => {
+    if (e.target.closest('[data-rail-toggle]')){
+      const card = document.querySelector('#pvt-rail .pvt-rail-card');
+      const btn = e.target.closest('[data-rail-toggle]');
+      const collapsed = card?.classList.toggle('is-collapsed');
+      btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      btn.setAttribute('aria-label', collapsed ? 'Expand summary' : 'Collapse summary');
+      /* The state must survive the next re-render, which happens on every
+         keystroke — so it lives on the rail, not only on the card. */
+      document.getElementById('pvt-rail')?.classList.toggle('is-collapsed', !!collapsed);
+      return;
+    }
+    const row = e.target.closest('[data-rail-tab]');
+    if (row) switchPvtTab(row.dataset.railTab);
+  });
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', renderPvtAll);
+  });
+  renderPvtAll();
+}
+
+
 // Premorbid setup
 setupPreTabs();
 buildPredictTable();
@@ -6466,6 +7619,9 @@ calcOpiePredict();
 // Battery autofill input wiring (combobox listeners)
 wireBatteryAutofill();
 wireSdiAutofill();
+
+// Performance Validity page
+setupPvtPage();
 
 // Final initialization
 refreshAll();
@@ -6501,6 +7657,8 @@ refreshAll();
         if (typeof clearMethodRows === 'function') clearMethodRows(m);
       });
     } catch(e){}
+    // Performance Validity page
+    try { if (typeof clearPvt === 'function') clearPvt(); } catch(e){}
     /* Premorbid inputs (predictors + demographics), and the master patient age.
        #patient-age is listed explicitly rather than left to the #pre-age mirror:
        the mirror would in fact carry the blank across, but a patient identity
@@ -6718,6 +7876,7 @@ refreshAll();
     'rci-crawford': 'change',
     'change-analysis': 'change',
     charts: 'charts',
+    validity: 'validity',
     premorbid: 'premorbid'
     // Norms (custom-tests) and Reference (about) live in the footer, not the top nav
   };
@@ -6736,6 +7895,7 @@ refreshAll();
     'rci-crawford': 'Crawford Regression-Based',
     'change-analysis': 'Change Analysis',
     charts: 'Score Charts',
+    validity: 'Performance Validity',
     premorbid: 'Premorbid Estimation',
     'custom-tests': 'Data',
     about: 'Methods & References'
@@ -6798,7 +7958,9 @@ refreshAll();
    - Dedupes by sourceId - re-Add refreshes the existing entry
    - Drag-to-reorder items
    - Toggle layout: floating popover ↔ docked side panel
-   - Persists across reloads via localStorage
+   - Report items are SESSION-ONLY (sessionStorage): a reload keeps them, but
+     closing the tab, window or browser clears them — they are patient data.
+     Only view preferences persist across sessions, in localStorage.
    ================================================================ */
 const ReportBundle = (function(){
   const STORAGE_KEY = 'workingReport_v1';
@@ -6811,7 +7973,8 @@ const ReportBundle = (function(){
     'rci-crawford-apa':  'Crawford Regression-Based',
     'pre-estimates-apa':    'Premorbid · Estimates',
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
-    'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted'
+    'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted',
+    'pvt-apa':              'Performance Validity'
   };
   /* Method / tool names - combined with the detected test family to produce
      intelligent table titles like "Crawford Regression-Based Change: WAIS-IV". */
@@ -6824,7 +7987,8 @@ const ReportBundle = (function(){
     'rci-crawford-apa':     'Crawford Regression-Based Change',
     'pre-estimates-apa':    'Premorbid Cognitive Estimate',
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',
-    'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved'
+    'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved',
+    'pvt-apa':              'Performance Validity Indicators'
   };
   /* Backwards alias - SOURCE_TITLES still referenced in a couple of places */
   const SOURCE_TITLES = SOURCE_METHOD_NAMES;
@@ -6839,7 +8003,10 @@ const ReportBundle = (function(){
     // the predicted indices), but those aren't the "test family" - the test is
     // ToPF / OPIE, already named in the method. Skip family detection here so
     // we don't end up with "ToPF-Predicted vs Achieved: WAIS-IV".
-    if (parentId && parentId.startsWith('pre-')){
+    /* Validity tables mention RBANS / Digit Span / TOMM as the indicators'
+       host tests, not as a test family whose results these are — titling the
+       table "Performance Validity Indicators: RBANS" would misdescribe it. */
+    if (parentId && (parentId.startsWith('pre-') || parentId.startsWith('pvt-'))){
       return method || 'APA Table';
     }
 
@@ -6981,10 +8148,43 @@ const ReportBundle = (function(){
     });
   }
 
-  /* ---------- persistence ---------- */
+  /* ---------- persistence ----------
+
+     PATIENT DATA IS SESSION-ONLY. The report items (and the consent map that
+     belongs to them) are patient data, and closing the tab, window or browser
+     must clear them — so they live in sessionStorage, which survives a reload
+     of the same tab and nothing else. Only the non-patient VIEW PREFERENCES
+     (drawer minimised, drawer width, onboarding seen) persist in localStorage,
+     under their own key, so the drawer does not re-onboard a clinician every
+     morning.
+
+     The bundle used to keep everything — items included — in
+     localStorage[STORAGE_KEY]. Existing installs therefore have patient data
+     sitting on disk, which is exactly what this change exists to stop: load()
+     migrates a legacy blob into the session once, then DELETES the
+     localStorage copy unconditionally. Merely switching the writes to
+     sessionStorage would have left every previously saved report on disk
+     indefinitely.
+
+     sessionStorage is per-tab, so two tabs now hold two independent reports
+     where localStorage shared one. That is the correct reading of "session":
+     each tab is its own patient session. */
+  const PREFS_KEY = 'workingReportPrefs_v1';
   function load(){
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const rawPrefs = localStorage.getItem(PREFS_KEY);
+      if (rawPrefs){
+        const p = JSON.parse(rawPrefs);
+        const w = Number(p.drawerWidth);
+        state.minimized = p.minimized !== false;
+        state.drawerWidth = (Number.isFinite(w) && w >= 320) ? w : null;
+        state.onboardingSeen = p.onboardingSeen === true;
+      }
+    } catch(e){}
+    try {
+      /* The session blob first; a legacy localStorage bundle only when the
+         session holds nothing (first load after the change, or an old tab). */
+      const raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY);
       if (raw){
         const parsed = JSON.parse(raw);
         const w = Number(parsed.drawerWidth);
@@ -6998,6 +8198,9 @@ const ReportBundle = (function(){
         };
       }
     } catch(e){ state = { items:[], minimized:true, drawerWidth:null, onboardingSeen:false, maximised:false, consent:{} }; }
+    /* Purge the legacy on-disk copy whether or not it parsed: patient data
+       must not persist past this load, and a corrupt blob is still a blob. */
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
     /* A bundle saved before consent existed carries collected RCI tables and no
        consent map. Those tables were accepted by the act of collecting them, so
        grant it — otherwise a report in progress would silently stop updating. */
@@ -7005,9 +8208,17 @@ const ReportBundle = (function(){
       const parent = consentParent(i.sourceId);
       if (CONSENT_SOURCES.has(parent)) state.consent[parent] = true;
     });
+    save();   // re-home whatever was loaded: session data to sessionStorage, prefs to localStorage
   }
   function save(){
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({
+        minimized: state.minimized,
+        drawerWidth: state.drawerWidth,
+        onboardingSeen: state.onboardingSeen
+      }));
+    } catch(e){}
   }
 
   /* ---------- helpers ---------- */
@@ -7234,8 +8445,10 @@ const ReportBundle = (function(){
   function pillLabelFor(html, sourceId){
     const parentId = (sourceId || '').split('::')[0];
     // Premorbid sources: don't pattern-match WAIS-IV/WMS-IV from the table -
-    // those are predicted outcomes, not the test family.
-    if (parentId && parentId.startsWith('pre-')){
+    // those are predicted outcomes, not the test family. Validity sources:
+    // same shape - RBANS / Digit Span / TOMM name the indicators' host
+    // tests, so the pill would read "RBANS added to report".
+    if (parentId && (parentId.startsWith('pre-') || parentId.startsWith('pvt-'))){
       return SOURCE_LABELS[parentId] || null;
     }
     const family = detectTestFamily(html);
@@ -8207,7 +9420,7 @@ ${buildReportHtmlBody()}
           <div class="rb-onboarding-body">
             <p>Every APA-formatted table you generate across the suite is <strong>auto-saved into one place</strong> as you work.</p>
             <p>Open the panel to <strong>reorder, hide columns, edit titles, and export</strong> the whole bundle to Word, Excel, or your clipboard - paste straight into your report.</p>
-            <p>Everything lives in your browser. <strong>Nothing is uploaded, nothing leaves your device.</strong></p>
+            <p>Everything lives in your browser. <strong>Nothing is uploaded, nothing leaves your device</strong> — and the report clears itself when you close the tab.</p>
           </div>
           <div class="rb-onboarding-cta">Click the button below to open it ↓</div>
           <button class="rb-onboarding-dismiss" data-rb-action="dismiss-onboarding" type="button" aria-label="Dismiss">

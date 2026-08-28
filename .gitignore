@@ -3,5 +3,6 @@ fix_encoding*
 temp_opie_*
 *.ipynb
 *.ps1
+node_modules/
 # wrangler build/dry-run scratch dir
 .wrangler/
