@@ -14420,6 +14420,91 @@ input[type="number"].ds-age-pop-input{
    standalone class so no other bar section moves. */
 .ds-inline-bar-cibasis[hidden]{ display: none !important; }
 
+/* =====================================================================
+   NARROW-VIEWPORT CONTAINMENT
+
+   Not a mobile layout, and it does not claim to be one. The scores tables
+   are transcribed from a paper record form at a desk. What this block
+   buys is that a narrow window degrades HONESTLY: the page itself stops
+   sliding sideways, so the top bar and the nav stay put, and a wide table
+   scrolls inside its own box instead of dragging the whole document with
+   it.
+
+   Measured at a 375px viewport against a 417px content column, before:
+   913 layout px on Score Converter, 745 on Change Analysis, 658 on Score
+   Tables, 1050 on the top nav.
+
+   Two things to know before editing:
+
+   1. Every rule here needs BOTH section-id specificity and !important.
+      Plain class selectors lose to the page-scoped blocks in styles.css:
+      `.change-method-tabs{overflow-x:auto}` was beaten silently, and the
+      symptom is not an error but a strip that simply keeps overflowing.
+      Verified by driving the page, not by reading the markup.
+
+   2. Do NOT put overflow on `.bat-table-block`. It contains the
+      missing-age popover (`.ds-age-pop`, position:fixed), and
+      `staggerSectionContent` transforms panel children on page entry — a
+      transformed ancestor makes a fixed child clippable, so the popover
+      would vanish. The overflow goes on the TABLE, never on the block.
+   ===================================================================== */
+@media (max-width:900px){
+
+  /* --- Wide tables scroll inside themselves ------------------------- */
+  /* display:block turns the table into a scrollable box while the
+     internal thead/tbody/tr still form anonymous table boxes, so no
+     column can come adrift from its heading. That is the reason this is
+     not a reflow-to-cards layout: a header/cell mismatch on a scores
+     table is a misreported number, not a cosmetic fault. */
+  #bat-table,#sdi-table,#rci-basic-table,#rci-practice-table,
+  #rci-srb-table,#rci-crawford-table,#pre-predict-table,
+  #pre-opiepredict-table,#change-analysis .change-overview-table,
+  .db-table,.methods-table,.es-examples-table{
+    display:block !important;
+    width:100% !important;
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* --- Horizontal control strips scroll rather than overflow -------- */
+  /* Scrolling, not wrapping: --topbar-h must stay constant, because the
+     toast and both popovers position against it. */
+  .topnav,
+  #change-analysis .change-method-tabs{
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .topnav::-webkit-scrollbar,
+  #change-analysis .change-method-tabs::-webkit-scrollbar{display:none}
+  .topnav-item,
+  #change-analysis .change-method-tab{flex-shrink:0 !important}
+
+  /* --- Segmented control bars wrap --------------------------------- */
+  #battery .ds-prem-card,
+  #battery .ds-prem-mode-row,
+  #battery .ds-inline-bar-toggle{flex-wrap:wrap !important}
+  .ds-inline-bar-toggle-btn{min-width:0 !important;flex:1 1 auto}
+
+  /* --- Grid tracks may shrink below their content ------------------- */
+  /* `1fr` means `minmax(auto,1fr)`, so one long label sets a min-content
+     floor and the whole grid blows past the viewport. That is what put
+     Score Converter at 913px: a single 846px track inside a 337px panel. */
+  .field-row,.field-row-3,.field-row-4{grid-template-columns:minmax(0,1fr)}
+  #converter .conv-unified-panel,
+  #converter .conv-unified-panel > .field-row,
+  #effectsize .es-stat-row{grid-template-columns:minmax(0,1fr) !important}
+  #effectsize .es-mode-pane{min-width:0 !important}
+  .section,.panel,.field,.tabs .tab,
+  .field-row > *,.field-row input,.field-row select{min-width:0 !important}
+  .tabs .tab span{white-space:normal}
+
+  /* --- Tab strips wrap --------------------------------------------- */
+  #premorbid .pre-tabs{flex-wrap:wrap !important}
+  #premorbid .pre-tabs .tab{flex:1 1 auto !important;min-width:0 !important}
+}
+
 </style>
 
 <style>
