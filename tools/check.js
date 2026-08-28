@@ -46,6 +46,8 @@ vm.runInContext(
     ';globalThis.__EXPORTS = { TOPF_TO_FSIQ, WAIS_COEF, WMS_COEF,' +
     ' OPIE_PRORATED_FSIQ, OPIE_PRORATED_GAI, OPIE_PRORATED_INDEX,' +
     ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB,' +
+    ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
+    ' PVT_BASE_RATES, PVT_AGGREGATION,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -769,8 +771,14 @@ check('the dead per-method formula blocks are gone from the Change Analysis page
   // so their text could drift from the code unseen — and did, on Crawford.
   // The Score Charts disclosure is live and must stay.
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  const all = [...html.matchAll(/<details class="formula-disclosure"/g)].length;
-  if (all !== 1) return html.match(/View formula/) ? 'a per-method "View formula" block is back' : 'expected exactly the Score Charts disclosure, found ' + all;
+  /* The Performance Validity page's disclosures are LIVE (its tabs are
+     plain show/hide panels, not a consolidation that strands them), so they
+     are not the hazard this check exists for. Count outside that section. */
+  const vStart = html.indexOf('<section class="section" id="validity">');
+  const vEnd = vStart === -1 ? -1 : html.indexOf('</section>', vStart);
+  const outside = vStart === -1 ? html : html.slice(0, vStart) + html.slice(vEnd);
+  const all = [...outside.matchAll(/<details class="formula-disclosure"/g)].length;
+  if (all !== 1) return outside.match(/View formula/) ? 'a per-method "View formula" block is back' : 'expected exactly the Score Charts disclosure outside #validity, found ' + all;
   if (!/#charts[\s\S]{0,80}|id="charts"/.test(html)) return 'Score Charts section not found';
   if (/#change-analysis \.formula-disclosure/.test(html)) return 'the page-scoped CSS for the deleted blocks is back';
   return true;
@@ -1637,7 +1645,8 @@ const INIT_CALLS = [
   'enhanceCalculatorWorkflow', 'enhanceApaToolbars', 'buildDescCarousels',
   'renderConverter', 'setupPreTabs', 'buildPredictTable',
   'setupPremorbidListeners', 'calcPremorbid', 'calcPredict',
-  'calcOpiePredict', 'wireBatteryAutofill', 'wireSdiAutofill', 'refreshAll'
+  'calcOpiePredict', 'wireBatteryAutofill', 'wireSdiAutofill',
+  'setupPvtPage', 'refreshAll'
 ];
 
 check('every init function app.js defines is also invoked at top level', () => {
@@ -6665,6 +6674,280 @@ check('one dropdown entry per base-rate family, and rows auto-reband to the age'
   }
   return bad.length === 0 || bad.join('; ');
 });
+
+/* ==========================================================================
+   38. Performance Validity page — cut-offs, formulas and wiring
+
+   PINNED SOURCES: Silverberg, Wertheimer & Fichtenberg (2007), TCN 21(5),
+   Table 2 (EI weights) and cut-offs; Novitski et al. (2012), ACN 27(2)
+   (ES formula, gate, cut-off); Greiffenstein, Baker & Gola (1994),
+   Psych. Assessment 6(3) (RDS scoring, worked example, floor);
+   Schroeder et al. (2012) (RDS <= 6); Martin et al. (2020), TCN 34(1),
+   Tables 16-17 (TOMM sens/spec and predictive power); Denning (2012)
+   (Trial 1 < 41); Larrabee (2014), ACN 29(4) (aggregation).
+
+   The shipped calculator functions are extracted and DRIVEN here (they are
+   pure once document/pvtState are stubbed), and the formulas are also
+   restated independently — the §23 principle.
+   ========================================================================== */
+heading('38. Performance Validity page');
+
+check('EI weight bands cover every raw score exactly once, with the published gaps', () => {
+  const bad = [];
+  const cover = (bands, max, name) => {
+    for (let v = 0; v <= max; v++){
+      const hits = bands.filter(b => v >= b.min && v <= b.max);
+      if (hits.length !== 1) bad.push(`${name} raw ${v} matched ${hits.length} bands`);
+    }
+  };
+  cover(D.PVT_EI_WEIGHTS.digitSpan, 16, 'Digit Span');
+  cover(D.PVT_EI_WEIGHTS.listRecognition, 20, 'List Recognition');
+  /* Silverberg et al. (2007) Table 2: Digit Span never yields 1 or 4;
+     List Recognition yields every weight 0-6. */
+  const dsW = new Set(D.PVT_EI_WEIGHTS.digitSpan.map(b => b.w));
+  const lrW = new Set(D.PVT_EI_WEIGHTS.listRecognition.map(b => b.w));
+  if (dsW.has(1) || dsW.has(4)) bad.push('Digit Span bands yield a weight of 1 or 4, which Table 2 does not contain');
+  if ([0,2,3,5,6].some(w => !dsW.has(w))) bad.push('Digit Span bands lost a published weight');
+  if ([0,1,2,3,4,5,6].some(w => !lrW.has(w))) bad.push('List Recognition bands lost a published weight');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('EI weight table matches Silverberg et al. (2007) Table 2 cell for cell', () => {
+  // Restated independently from the source, not read back from data.js.
+  const expectDs = { 8:0, 16:0, 7:2, 6:3, 5:5, 0:6, 4:6 };
+  const expectLr = { 18:0, 20:0, 17:1, 15:2, 16:2, 13:3, 14:3, 11:4, 12:4, 10:5, 0:6, 9:6 };
+  const w = (bands, v) => bands.find(b => v >= b.min && v <= b.max).w;
+  const bad = [];
+  Object.entries(expectDs).forEach(([v, e]) => {
+    if (w(D.PVT_EI_WEIGHTS.digitSpan, +v) !== e) bad.push(`DS ${v} -> expected ${e}`);
+  });
+  Object.entries(expectLr).forEach(([v, e]) => {
+    if (w(D.PVT_EI_WEIGHTS.listRecognition, +v) !== e) bad.push(`LR ${v} -> expected ${e}`);
+  });
+  if (D.PVT_EI_CUTOFFS.standard !== 3) bad.push('standard cut-off is not EI > 3');
+  if (D.PVT_EI_CUTOFFS.sensitive !== 1) bad.push('screening cut-off is not EI > 1');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('ES gate, formula and cut-off match Novitski et al. (2012)', () => {
+  const bad = [];
+  const g = D.PVT_ES.gate;
+  if (g.digitSpanBelow !== 9)        bad.push('gate is not Digit Span < 9');
+  if (g.listRecognitionBelow !== 19) bad.push('gate is not List Recognition < 19');
+  if (g.combinedBelow !== 28)        bad.push('gate is not combined < 28');
+  if (D.PVT_ES.cutoff !== 12)        bad.push('cut-off is not ES < 12');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('RDS floor and cut-offs match Greiffenstein (1994) / Schroeder (2012)', () => {
+  const bad = [];
+  if (D.PVT_RDS.floor !== 3)               bad.push('floor is not RDS = 3');
+  if (D.PVT_RDS.cutoffTraditional !== 7)   bad.push('traditional cut-off is not <= 7');
+  if (D.PVT_RDS.cutoffConservative !== 6)  bad.push('conservative cut-off is not <= 6');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('TOMM cut-off rows carry the meta-analytic sens/spec (Martin et al., 2020; Denning, 2012)', () => {
+  // id -> [cut, sens, spec], restated from the source tables.
+  const expect = {
+    't1-41':  [41, 0.66, 0.93],
+    't1-42':  [42, 0.69, 0.91],
+    't2-45':  [45, 0.45, 0.97],
+    't2-49':  [49, 0.63, 0.95],
+    'ret-45': [45, 0.55, 0.98],
+    'ret-49': [49, 0.70, 0.93]
+  };
+  const bad = [];
+  Object.entries(expect).forEach(([id, [cut, sens, spec]]) => {
+    const row = D.PVT_TOMM_CUTOFFS.find(c => c.id === id);
+    if (!row){ bad.push(id + ' missing'); return; }
+    if (row.cut !== cut || Math.abs(row.sens - sens) > 1e-9 || Math.abs(row.spec - spec) > 1e-9){
+      bad.push(id + ' drifted');
+    }
+  });
+  if (D.PVT_TOMM_CUTOFFS.length !== 6) bad.push('cut-off roster is no longer exactly six rows');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('Bayes-derived PPP/NPP reproduce Martin et al. Tables 16-17, with the known exceptions', () => {
+  /* The app DERIVES predictive power from the pinned sens/spec rather than
+     storing the published tables. This check proves the derivation
+     reproduces the published cells at 2 dp — 57 of 60 — and pins the three
+     that do not: two are 0.005 rounding knife-edges (derived .865 / .805
+     printed .87 / .81), and Retention < 45 NPP at a 30% base rate derives
+     to .84 against a printed .87, which does not reconcile with that row's
+     own sens/spec and is read here as a misprint. If a corrected printing
+     ever makes it agree, this FAILS — the signal to re-read the source,
+     exactly as with Twenty Questions in §27. */
+  const pub = {
+    't1-41':  { ppp: [.51,.70,.80,.86,.90], npp: [.96,.92,.87,.80,.73] },
+    't1-42':  { ppp: [.46,.66,.77,.84,.88], npp: [.96,.92,.87,.81,.75] },
+    't2-45':  { ppp: [.63,.79,.87,.91,.94], npp: [.94,.88,.81,.73,.64] },
+    't2-49':  { ppp: [.58,.76,.84,.89,.93], npp: [.96,.91,.86,.79,.72] },
+    'ret-45': { ppp: [.75,.87,.92,.95,.97], npp: [.95,.90,.87,.77,.69] },
+    'ret-49': { ppp: [.53,.71,.81,.87,.91], npp: [.97,.93,.88,.82,.76] }
+  };
+  const ppp = (se, sp, br) => se * br / (se * br + (1 - sp) * (1 - br));
+  const npp = (se, sp, br) => sp * (1 - br) / (sp * (1 - br) + (1 - se) * br);
+  const mismatches = [];
+  D.PVT_TOMM_CUTOFFS.forEach(row => {
+    D.PVT_BASE_RATES.forEach((br, i) => {
+      const dP = ppp(row.sens, row.spec, br), dN = npp(row.sens, row.spec, br);
+      const p = pub[row.id];
+      if (Math.abs(dP - p.ppp[i]) > 0.0051) mismatches.push(`${row.id} PPP @${br}`);
+      if (Math.abs(dN - p.npp[i]) > 0.0051) mismatches.push(`${row.id} NPP @${br}`);
+    });
+  });
+  const expected = ['t1-41 NPP @0.3', 't2-45 NPP @0.3', 'ret-45 NPP @0.3'];
+  return JSON.stringify(mismatches.sort()) === JSON.stringify(expected.sort())
+    || 'mismatch set changed: [' + mismatches.join(', ') + '] — expected exactly [' + expected.join(', ') + ']';
+});
+
+check('base-rate options and Larrabee aggregation table are as published', () => {
+  const bad = [];
+  if (JSON.stringify(D.PVT_BASE_RATES) !== JSON.stringify([0.10,0.20,0.30,0.40,0.50])){
+    bad.push('base-rate columns are no longer 10-50% (Martin et al. Tables 16-17)');
+  }
+  const agg = [[88.9,97.6,92.6],[96.3,87.8,92.6],[100,63.4,84.2]];
+  agg.forEach((e, i) => {
+    const row = D.PVT_AGGREGATION[i];
+    if (!row || row.spec !== e[0] || row.sens !== e[1] || row.correct !== e[2]){
+      bad.push('Larrabee (2014) row ' + (i + 2) + '-of-7 drifted');
+    }
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ---- drive the shipped calculators (document / pvtState stubbed) ---- */
+function pvtContext(state){
+  const c = {
+    PVT_EI_WEIGHTS: D.PVT_EI_WEIGHTS, PVT_EI_CUTOFFS: D.PVT_EI_CUTOFFS,
+    PVT_ES: D.PVT_ES, PVT_RDS: D.PVT_RDS, PVT_TOMM_CUTOFFS: D.PVT_TOMM_CUTOFFS,
+    pvtState: state,
+    document: { getElementById: () => null }   // selects fall back to defaults
+  };
+  vm.createContext(c);
+  vm.runInContext(
+    extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'pvtEiWeight') + ';'
+    + extractFn(APP_SRC, 'getPvtEi') + ';' + extractFn(APP_SRC, 'getPvtEs') + ';'
+    + ';globalThis.__EI = getPvtEi; globalThis.__ES = getPvtEs;', c);
+  return c;
+}
+
+check('shipped EI calculator: weights sum, cut-off applies, defaults to the standard cut-off', () => {
+  const bad = [];
+  let c = pvtContext({ ds: '7', lrec: '10' });     // weights 2 + 5 = 7
+  let r = c.__EI();
+  if (r.ei !== 7 || r.wDs !== 2 || r.wLr !== 5) bad.push('DS 7 / LR 10 should give EI 2+5=7, got ' + JSON.stringify(r));
+  if (r.cut !== 3 || !r.fail) bad.push('EI 7 should Fail at the default cut-off > 3');
+  c = pvtContext({ ds: '9', lrec: '19' });          // weights 0 + 0
+  r = c.__EI();
+  if (r.ei !== 0 || r.fail) bad.push('DS 9 / LR 19 should give EI 0, Pass');
+  c = pvtContext({ ds: '17', lrec: '19' });         // out of range
+  if (!c.__EI().invalid) bad.push('DS 17 should be refused as out of range');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('shipped ES calculator: gate is mandatory and the formula is as published', () => {
+  const bad = [];
+  /* Intact profile — DS 12, LR 20: no gate clause met, so NO NUMBER may
+     come back, however extreme the recall scores. */
+  let c = pvtContext({ ds: '12', lrec: '20', listRecall: '0', storyRecall: '0', figRecall: '0' });
+  let r = c.__ES();
+  if (!r.gated || r.es !== undefined) bad.push('intact profile computed an ES — the gate is the whole design');
+  /* DS 8 opens the gate (8 < 9): ES = (20 - [4+5+8]) + 8 = 11, Fail at < 12. */
+  c = pvtContext({ ds: '8', lrec: '20', listRecall: '4', storyRecall: '5', figRecall: '8' });
+  r = c.__ES();
+  if (r.es !== 11) bad.push('ES should be (20-17)+8 = 11, got ' + r.es);
+  if (!r.fail) bad.push('ES 11 should Fail at < 12');
+  /* Combined clause: DS 9, LR 18 - neither alone gates, but 27 < 28 does. */
+  c = pvtContext({ ds: '9', lrec: '18', listRecall: '2', storyRecall: '3', figRecall: '4' });
+  r = c.__ES();
+  if (r.gated) bad.push('DS 9 + LR 18 = 27 < 28 should open the combined gate');
+  if (r.es !== (18 - 9) + 9) bad.push('ES formula drifted on the combined-gate case');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('shipped RDS calculator: worked example and floor rule (Greiffenstein et al., 1994)', () => {
+  const bad = [];
+  const run = (f, b) => {
+    const c = {
+      PVT_RDS: D.PVT_RDS,
+      document: { getElementById: id =>
+        id === 'pvt-rds-f' ? { value: f } : id === 'pvt-rds-b' ? { value: b } : null }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtRds')
+      + ';globalThis.__R = getPvtRds();', c);
+    return c.__R;
+  };
+  /* The paper's worked example: 3 forward + 2 backward = RDS 5. */
+  let r = run('3', '2');
+  if (r.rds !== 5) bad.push('worked example 3+2 should give RDS 5, got ' + r.rds);
+  if (!r.fail || r.cut !== 6) bad.push('RDS 5 should Fail at the default conservative <= 6');
+  /* Floor rule: sums below 3 are recorded as 3. */
+  r = run('1', '1');
+  if (r.rds !== 3 || !r.floored) bad.push('1+1 should floor to RDS 3');
+  /* Boundary: RDS 7 passes <= 6 but fails <= 7 — the default must be the
+     conservative cut-off, per Schroeder et al. (2012). */
+  r = run('4', '3');
+  if (r.rds !== 7 || r.fail) bad.push('RDS 7 should Pass at the default <= 6');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('shipped TOMM evaluation: default cut-offs, failure direction, Bayes wiring', () => {
+  const bad = [];
+  const run = vals => {
+    const c = {
+      PVT_TOMM_CUTOFFS: D.PVT_TOMM_CUTOFFS,
+      document: { getElementById: id => (id in vals ? { value: vals[id] } : null) }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'pvtPPP') + ';'
+      + extractFn(APP_SRC, 'pvtNPP') + ';' + extractFn(APP_SRC, 'pvtTommCutoffById') + ';'
+      + extractFn(APP_SRC, 'getPvtTomm') + ';globalThis.__T = getPvtTomm();', c);
+    return c.__T;
+  };
+  /* T1 41 passes < 42? No - 41 < 42 fails. 42 passes. T2 44 fails < 45; 45 passes. */
+  let r = run({ 'pvt-tomm-t1': '41', 'pvt-tomm-t2': '45' });
+  if (r.rows.length !== 2) bad.push('two entered trials should give two rows');
+  if (!r.rows[0].fail) bad.push('T1 = 41 should Fail at the default < 42');
+  if (r.rows[1].fail) bad.push('T2 = 45 should Pass at the default < 45');
+  /* PPP at the default 10% base rate for T1 < 42: .69x.1/(.69x.1+.09x.9) = .460 */
+  const expected = 0.69 * 0.1 / (0.69 * 0.1 + 0.09 * 0.9);
+  if (Math.abs(r.rows[0].ppp - expected) > 1e-9) bad.push('T1 PPP is not Bayes on the pinned sens/spec at BR .10');
+  r = run({ 'pvt-tomm-ret': '49' });
+  if (r.rows.length !== 1 || r.rows[0].fail) bad.push('Retention 49 alone should give one Passing row at < 45');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('PVT page wiring: report source, APA note, empty-state guard, markup', () => {
+  const bad = [];
+  if (!/'pvt-apa':\s*'Performance Validity'/.test(APP_SRC)) bad.push('pvt-apa missing from SOURCE_LABELS — the report will never collect the table');
+  if (!/'pvt-apa':\s*'Performance Validity Indicators'/.test(APP_SRC)) bad.push('pvt-apa missing from SOURCE_METHOD_NAMES');
+  if (!/parentId\.startsWith\('pvt-'\)/.test(APP_SRC)) bad.push('validity tables no longer skip family detection — titles will misread as "…: RBANS"');
+  if (((APP_SRC.match(/parentId\.startsWith\('pvt-'\)/g)) || []).length < 2) bad.push('pillLabelFor no longer skips family detection for pvt- — the report pill reads "RBANS added"');
+  if (!/'pvt':\s*ctx\s*=>/.test(APP_SRC)) bad.push('APA_NOTES has no pvt entry');
+  /* The load-bearing sentences of the note. */
+  if (!/not a determination of invalidity/.test(APP_SRC)) bad.push('the note no longer defines Fail as a cut-off comparison');
+  if (!/at least two independent validity indicators \(Larrabee, 2014\)/.test(APP_SRC)) bad.push('the note lost the aggregation rule');
+  if (!/should not be interpreted in suspected or confirmed dementia/.test(APP_SRC)) bad.push('the note lost the dementia caveat');
+  /* Empty-state guard — §35's contract: no data, no .apa-table offered. */
+  const apa = extractFn(APP_SRC, 'renderPvtApa');
+  if (!/rows\.length === 0/.test(apa) || !(/return;/.test(apa.split('rows.length === 0')[1] || ''))) {
+    bad.push('renderPvtApa lost its empty-state guard — an empty table would be offered to the report');
+  }
+  /* Markup essentials. */
+  if (!/<section class="section" id="validity">/.test(HTML_SRC)) bad.push('#validity section missing from index.html');
+  if (!/data-apa-note="pvt"/.test(HTML_SRC)) bad.push('the on-screen note mirror is gone');
+  if (!/id="pvt-apa"/.test(HTML_SRC)) bad.push('the APA container is gone');
+  if (!/data-target="validity"/.test(HTML_SRC)) bad.push('no nav item points at the validity page');
+  /* The ES gate must be enforced in code, not just described in copy. */
+  const es = extractFn(APP_SRC, 'getPvtEs');
+  if (!/gateMet/.test(es) || !/gated: true/.test(es)) bad.push('getPvtEs lost its gate');
+  return bad.length === 0 || bad.join('; ');
+});
+
 
 // ---------------------------------------------------------------------------
 // Summary

@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260828e">
-<link rel="stylesheet" href="design-system.css?v=20260828e">
+<link rel="stylesheet" href="styles.css?v=20260828f">
+<link rel="stylesheet" href="design-system.css?v=20260828f">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -634,6 +634,13 @@
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
+        <button type="button" class="topnav-item nav-item" data-target="validity" data-bucket="validity">
+          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 2.5 L16.5 5 v4.5 c0 4-2.8 6.8-6.5 8 c-3.7-1.2-6.5-4-6.5-8 V5 Z"/>
+            <polyline points="7,10 9.2,12.2 13.5,7.5"/>
+          </svg>
+          <span>Validity</span>
+        </button>
         <button type="button" class="topnav-item nav-item" data-target="converter" data-bucket="converter">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3,7 14,7 11.5,4.5"/>
@@ -680,11 +687,12 @@
     <div class="nav-item" data-target="premorbid"><span class="nav-item-num">01</span>Premorbid Estimate</div>
     <div class="nav-item" data-target="battery"><span class="nav-item-num">02</span>Score Tables</div>
     <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">03</span>Change Analysis</div>
-    <div class="nav-item" data-target="charts"><span class="nav-item-num">04</span>Score Charts</div>
-    <div class="nav-item" data-target="converter"><span class="nav-item-num">05</span>Score Converter</div>
-    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">06</span>Effect Size Tools</div>
-    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Data</div>
-    <div class="nav-item" data-target="about"><span class="nav-item-num">08</span>Methods &amp; References</div>
+    <div class="nav-item" data-target="validity"><span class="nav-item-num">04</span>Performance Validity</div>
+    <div class="nav-item" data-target="charts"><span class="nav-item-num">05</span>Score Charts</div>
+    <div class="nav-item" data-target="converter"><span class="nav-item-num">06</span>Score Converter</div>
+    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">07</span>Effect Size Tools</div>
+    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">08</span>Data</div>
+    <div class="nav-item" data-target="about"><span class="nav-item-num">09</span>Methods &amp; References</div>
   </nav>
 
   <div class="sidebar-foot">
@@ -759,6 +767,19 @@
         <div class="home-db-card-desc">Estimate premorbid ability using ToPF and OPIE-4 models with WAIS-IV/WMS-IV comparison</div>
         <div class="home-db-card-arrow">→</div>
       </button>
+
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
+        <div class="home-db-card-icon">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 2.5 L18 5.2 v4.8 c0 4.4-3 7.5-7 8.9 c-4-1.4-7-4.5-7-8.9 V5.2 Z"/>
+            <polyline points="7.8,11 10.2,13.4 14.8,8.2"/>
+          </svg>
+        </div>
+        <div class="home-db-card-name">Performance Validity</div>
+        <div class="home-db-card-desc">Score embedded and stand-alone PVTs against published cut-offs with base-rate-aware interpretation</div>
+        <div class="home-db-card-arrow">→</div>
+      </button>
+
 
       <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
         <div class="home-db-card-icon">
@@ -1299,6 +1320,221 @@
       </div>
     </div>
 
+  </section>
+
+  <!-- ========== PERFORMANCE VALIDITY ========== -->
+  <section class="section" id="validity">
+    <div class="eyebrow">Performance Validity · Embedded &amp; Stand-Alone PVTs</div>
+    <h1 class="section-title">Performance <span class="ink">Validity</span></h1>
+    <p class="section-desc">Score and interpret common performance validity indicators against their published cut-offs: the RBANS Effort Index and Effort Scale, Reliable Digit Span, and the TOMM — with base-rate-aware interpretation and guidance on aggregating multiple indicators. No single index is a verdict: results are reported as cut-off comparisons only.</p>
+
+    <div class="tabs pvt-tabs" role="tablist" aria-label="Performance validity measures">
+      <div class="tab active" data-pvt-tab="ei" role="tab" aria-selected="true"><span>RBANS Effort Index</span></div>
+      <div class="tab" data-pvt-tab="es" role="tab"><span>RBANS Effort Scale</span></div>
+      <div class="tab" data-pvt-tab="rds" role="tab"><span>Reliable Digit Span</span></div>
+      <div class="tab" data-pvt-tab="tomm" role="tab"><span>TOMM</span></div>
+      <div class="tab" data-pvt-tab="summary" role="tab"><span>Summary &amp; Aggregation</span></div>
+    </div>
+
+    <!-- ===== Effort Index ===== -->
+    <div class="pvt-tab-content active" id="pvt-ei">
+      <div class="panel">
+        <div class="field-row-4">
+          <div class="field">
+            <label>RBANS Digit Span <span class="hint">(raw, 0–16)</span></label>
+            <input type="number" min="0" max="16" step="1" data-pvt-field="ds" id="pvt-ei-ds" placeholder="e.g. 9">
+          </div>
+          <div class="field">
+            <label>RBANS List Recognition <span class="hint">(raw, 0–20)</span></label>
+            <input type="number" min="0" max="20" step="1" data-pvt-field="lrec" id="pvt-ei-lrec" placeholder="e.g. 19">
+          </div>
+          <div class="field">
+            <label>Cut-off</label>
+            <select id="pvt-ei-cutoff">
+              <option value="standard" selected>EI &gt; 3 · standard (~94% specificity)</option>
+              <option value="sensitive">EI &gt; 1 · screening (more sensitive)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="pvt-result" id="pvt-ei-result"></div>
+      <div class="caution-box"><strong>Cautions.</strong> False positives rise sharply with genuine impairment — later studies report failure rates near 48% in dementia and ~31–37% in severely impaired geriatric samples. Both subtests load on attention/working memory and verbal recognition, so aphasia or significant memory disorder can inflate the EI without poor effort. Do not apply single-subtest cut-offs in place of the combined EI, and do not declare a whole RBANS protocol invalid on the EI alone — use it to generate hypotheses and trigger further validity testing (Silverberg et al., 2007).</div>
+      <details class="formula-disclosure">
+        <summary>Formula &amp; weighting table</summary>
+        <div class="formula-body">
+          <p>Each raw score converts to a weighted score (Silverberg, Wertheimer &amp; Fichtenberg, 2007, Table 2); EI = weighted Digit Span + weighted List Recognition (range 0–12). Higher EI = less credible performance. Some weights are unreachable for a given subtest (Digit Span never yields 1 or 4).</p>
+          <table class="pvt-table">
+            <thead><tr><th>Digit Span (raw)</th><th>List Recognition (raw)</th><th>Weighted score</th></tr></thead>
+            <tbody>
+              <tr><td>8–16</td><td>18–20</td><td>0</td></tr>
+              <tr><td>—</td><td>17</td><td>1</td></tr>
+              <tr><td>7</td><td>15–16</td><td>2</td></tr>
+              <tr><td>6</td><td>13–14</td><td>3</td></tr>
+              <tr><td>—</td><td>11–12</td><td>4</td></tr>
+              <tr><td>5</td><td>10</td><td>5</td></tr>
+              <tr><td>0–4</td><td>0–9</td><td>6</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== Effort Scale ===== -->
+    <div class="pvt-tab-content" id="pvt-es">
+      <div class="panel">
+        <div class="field-row-4">
+          <div class="field">
+            <label>RBANS Digit Span <span class="hint">(raw, 0–16)</span></label>
+            <input type="number" min="0" max="16" step="1" data-pvt-field="ds" id="pvt-es-ds" placeholder="e.g. 9">
+          </div>
+          <div class="field">
+            <label>RBANS List Recognition <span class="hint">(raw, 0–20)</span></label>
+            <input type="number" min="0" max="20" step="1" data-pvt-field="lrec" id="pvt-es-lrec" placeholder="e.g. 19">
+          </div>
+          <div class="field">
+            <label>List Recall <span class="hint">(raw)</span></label>
+            <input type="number" min="0" max="10" step="1" data-pvt-field="listRecall" id="pvt-es-listrecall" placeholder="e.g. 4">
+          </div>
+        </div>
+        <div class="field-row-4">
+          <div class="field">
+            <label>Story Recall <span class="hint">(raw)</span></label>
+            <input type="number" min="0" max="12" step="1" data-pvt-field="storyRecall" id="pvt-es-storyrecall" placeholder="e.g. 5">
+          </div>
+          <div class="field">
+            <label>Figure Recall <span class="hint">(raw)</span></label>
+            <input type="number" min="0" max="20" step="1" data-pvt-field="figRecall" id="pvt-es-figrecall" placeholder="e.g. 8">
+          </div>
+        </div>
+        <div class="info-box" style="margin-bottom:0"><strong>Mandatory gate.</strong> The ES is computed only where there is already evidence of low performance: Digit Span &lt; 9, <em>or</em> List Recognition &lt; 19, <em>or</em> their sum &lt; 28. In cognitively intact examinees free recall normally far exceeds the ceiling-limited recognition score, so an ungated ES over-flags (Novitski et al., 2012).</div>
+      </div>
+      <div class="pvt-result" id="pvt-es-result"></div>
+      <div class="caution-box"><strong>Cautions.</strong> Built around the Alzheimer's recall/recognition dissociation — conditions producing mixed or atypical memory profiles may not match that pattern. Later work shows low failure rates (~4%) in AD but ~31% in non-AD dementia and &gt;60% suboptimal rates in Parkinson's disease. The amnestic validation sample had no independent effort testing; confirm with a stand-alone PVT (Novitski et al., 2012).</div>
+      <details class="formula-disclosure">
+        <summary>Formula</summary>
+        <div class="formula-body">
+          <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. Only ~15–17% of the normal standardisation sample fall below the combined &lt; 28 screen.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== Reliable Digit Span ===== -->
+    <div class="pvt-tab-content" id="pvt-rds">
+      <div class="panel">
+        <div class="field-row-4">
+          <div class="field">
+            <label>Longest forward span passed on <em>both</em> trials</label>
+            <input type="number" min="0" max="9" step="1" id="pvt-rds-f" placeholder="e.g. 6">
+          </div>
+          <div class="field">
+            <label>Longest backward span passed on <em>both</em> trials</label>
+            <input type="number" min="0" max="8" step="1" id="pvt-rds-b" placeholder="e.g. 4">
+          </div>
+          <div class="field">
+            <label>Cut-off</label>
+            <select id="pvt-rds-cutoff">
+              <option value="conservative" selected>RDS ≤ 6 · conservative (specificity &gt; .90)</option>
+              <option value="traditional">RDS ≤ 7 · traditional</option>
+            </select>
+          </div>
+        </div>
+        <div class="info-box" style="margin-bottom:0"><strong>Classic variant.</strong> RDS here is Forward + Backward only (WAIS-R/III), which is what the validation literature uses. The WAIS-IV Sequencing-inclusive variants use different cut-offs and are not scored here — document which variant you used. Floor rule: failing at least one trial each of 3 forward and 2 backward is recorded as RDS = 3 (Greiffenstein et al., 1994).</div>
+      </div>
+      <div class="pvt-result" id="pvt-rds-result"></div>
+      <div class="caution-box"><strong>Cautions.</strong> RDS loads on attention/working memory: low scores occur legitimately in genuine attentional impairment, anxiety, and especially conduction aphasia. Validation samples were predominantly mild-TBI/litigating; Schroeder et al. (2012) found the ≤ 7 cut-off had inadequate specificity across clinical groups — prefer ≤ 6 in genuinely impaired populations.</div>
+      <details class="formula-disclosure">
+        <summary>Scoring &amp; worked example</summary>
+        <div class="formula-body">
+          <p>RDS = (longest forward span passed on both trials) + (longest backward span passed on both trials) (Greiffenstein, Baker &amp; Gola, 1994; cross-validated by Meyers &amp; Volbrecht, 1998). Worked example from the original paper: passes both trials of 3 forward but fails one 4-forward trial → forward = 3; passes both trials of 2 backward but fails one 3-backward trial → backward = 2; RDS = 3 + 2 = 5. Reference values: mean RDS ~8.8 in non-malingering TBI vs ~6.7 in probable malingerers (Greiffenstein et al., 1994).</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== TOMM ===== -->
+    <div class="pvt-tab-content" id="pvt-tomm">
+      <div class="panel">
+        <div class="field-row-4">
+          <div class="field">
+            <label>Trial 1 <span class="hint">(/50)</span></label>
+            <input type="number" min="0" max="50" step="1" id="pvt-tomm-t1" placeholder="e.g. 44">
+          </div>
+          <div class="field">
+            <label>Trial 2 <span class="hint">(/50)</span></label>
+            <input type="number" min="0" max="50" step="1" id="pvt-tomm-t2" placeholder="e.g. 48">
+          </div>
+          <div class="field">
+            <label>Retention <span class="hint">(/50, optional)</span></label>
+            <input type="number" min="0" max="50" step="1" id="pvt-tomm-ret" placeholder="e.g. 49">
+          </div>
+        </div>
+        <div class="field-row-4">
+          <div class="field">
+            <label>Trial 1 cut-off</label>
+            <select id="pvt-tomm-t1cut">
+              <option value="t1-42" selected>&lt; 42 · meta-analytic optimum</option>
+              <option value="t1-41">&lt; 41 · conservative (Denning, 2012)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Trial 2 / Retention cut-off</label>
+            <select id="pvt-tomm-t2cut">
+              <option value="45" selected>&lt; 45 · traditional (all settings)</option>
+              <option value="49">&lt; 49 · liberal (no severe impairment expected)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Base rate of invalidity <span class="hint">(your setting)</span></label>
+            <select id="pvt-tomm-br">
+              <option value="0.1" selected>10% · typical clinical</option>
+              <option value="0.2">20%</option>
+              <option value="0.3">30%</option>
+              <option value="0.4">40% · forensic</option>
+              <option value="0.5">50%</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="pvt-result" id="pvt-tomm-result"></div>
+      <div id="pvt-tomm-power"></div>
+      <div class="caution-box"><strong>Cautions.</strong> Dementia is the key exception: across dementia samples, weighted-mean specificity was ≤ .70 at traditional cut-offs, with no study achieving a false-positive rate under 10% — traditional TOMM cut-offs should <em>not</em> be interpreted in suspected or confirmed dementia. Specificity for the liberal &lt; 49 cut-off also dipped below 90% in moderate/severe TBI and severe depression. Simulator studies overestimate sensitivity relative to real known-groups patients (Martin et al., 2020).</div>
+      <details class="formula-disclosure">
+        <summary>Cut-offs &amp; classification accuracy</summary>
+        <div class="formula-body">
+          <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45 — spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49 — spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42 — spec. .91, sens. .67–.69; Trial 1 &lt; 41 — spec. .93, sens. .66 (Denning, 2012). Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17. Failure on Trial 1 is unrelated to age, education, or gender.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== Summary & Aggregation ===== -->
+    <div class="pvt-tab-content" id="pvt-summary">
+      <div id="pvt-summary-body"></div>
+      <div class="panel">
+        <div class="block-title">Aggregating multiple PVTs (Larrabee, 2014)</div>
+        <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity in real clinical data — Monte Carlo warnings that false positives climb steeply with more tests overestimate the problem, because genuine patients' PVT scores are skewed and at-ceiling rather than multivariate-normal. Classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT):</p>
+        <table class="pvt-table">
+          <thead><tr><th>Threshold</th><th>Specificity</th><th>Sensitivity</th><th>Total correct</th></tr></thead>
+          <tbody>
+            <tr><td>≥ 2 of 7 failures</td><td>88.9%</td><td>97.6%</td><td>92.6%</td></tr>
+            <tr><td>≥ 3 of 7 failures</td><td>96.3%</td><td>87.8%</td><td>92.6%</td></tr>
+            <tr><td>≥ 4 of 7 failures</td><td>100%</td><td>63.4%</td><td>84.2%</td></tr>
+          </tbody>
+        </table>
+        <div class="info-box" style="margin-top:14px;margin-bottom:0"><strong>Two practical rules.</strong> <em>Independence is required</em>: indices sharing subtests are correlated, so failing one raises the odds of failing another — the Effort Index and Effort Scale here are computed from the same RBANS subtests and count as <strong>one</strong> indicator, and RDS also loads on digit span. <em>Examinee characteristics shift the threshold</em>: lower education alone can move the failure count needed to keep false positives &lt; 10% from 2-of-5 up to 4-of-5 — demand more failures, or rely on high-specificity forced-choice measures, in lower-education, older, or genuinely impaired examinees (Larrabee, 2014).</div>
+      </div>
+      <div class="info-box" data-apa-note="pvt"></div>
+
+      <div class="apa-wrap">
+        <div class="apa-toolbar">
+          <div class="apa-toolbar-left"><span class="apa-toolbar-label">APA-formatted output</span></div>
+          <div></div>
+          <button class="btn" data-copy="pvt-apa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+            Copy table
+          </button>
+        </div>
+        <div class="apa-table-container" id="pvt-apa"><div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least one validity measure to preview.</div></div>
+      </div>
+    </div>
   </section>
 
   <!-- ========== 04 SCORE CHARTS ========== -->
@@ -2346,6 +2582,17 @@
       <p>McSweeney, A. J., Naugle, R. I., Chelune, G. J., &amp; Lüders, H. (1993). "T scores for change": An illustration of a regression approach to depicting change in clinical neuropsychology. <i>The Clinical Neuropsychologist, 7</i>(3), 300–312.</p>
       <p>Sawilowsky, S. S. (2009). New effect size rules of thumb. <i>Journal of Modern Applied Statistical Methods, 8</i>(2), 597–599.</p>
 
+      <div class="references-group">Performance validity sources</div>
+      <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
+      <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224. [Reliable Digit Span: scoring, floor rule and traditional cut-off.]</p>
+      <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373. [Aggregation of multiple PVTs; classification accuracy by number of failures.]</p>
+      <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. [TOMM cut-offs and the sensitivity/specificity values behind the predictive-power display, Tables 16–17.]</p>
+      <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
+      <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195. [Effort Scale formula, screening gate and cut-off.]</p>
+      <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30. [Basis for preferring the conservative RDS ≤ 6 cut-off.]</p>
+      <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. [Effort Index weighting table and cut-offs.]</p>
+      <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
+
       <div class="references-group">Effect-size benchmarks</div>
       <p>Cipriani, A., Furukawa, T. A., Salanti, G., Chaimani, A., Atkinson, L. Z., Ogawa, Y., Leucht, S., Ruhe, H. G., Turner, E. H., Higgins, J. P. T., Egger, M., Takeshima, N., Hayasaka, Y., Imai, H., Shinohara, K., Tajika, A., Ioannidis, J. P. A., &amp; Geddes, J. R. (2018). Comparative efficacy and acceptability of 21 antidepressant drugs for the acute treatment of adults with major depressive disorder: A systematic review and network meta-analysis. <i>The Lancet, 391</i>(10128), 1357–1366.</p>
       <p>Cuijpers, P., Geraedts, A. S., van Oppen, P., Andersson, G., Markowitz, J. C., &amp; van Straten, A. (2011). Interpersonal psychotherapy for depression: A meta-analysis. <i>American Journal of Psychiatry, 168</i>(6), 581–592.</p>
@@ -2380,11 +2627,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260828e"></script>
-<script src="app.js?v=20260828e"></script>
-<script src="design-system.js?v=20260828e" defer></script>
-<script src="app-effectsize-page.js?v=20260828e"></script>
-<script src="app-viz-page.js?v=20260828e"></script>
+<script src="data.js?v=20260828f"></script>
+<script src="app.js?v=20260828f"></script>
+<script src="design-system.js?v=20260828f" defer></script>
+<script src="app-effectsize-page.js?v=20260828f"></script>
+<script src="app-viz-page.js?v=20260828f"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

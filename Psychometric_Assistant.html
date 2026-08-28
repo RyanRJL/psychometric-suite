@@ -9595,6 +9595,32 @@ body.rb-docked-active{padding-right:0}
 }
 .bat-age-bar-add:hover{filter:brightness(1.08)}
 
+/* =============================================================
+   PERFORMANCE VALIDITY PAGE
+   All standalone classes, per the cascade rule: nothing here
+   modifies a class design-system.css or a page-scoped block
+   already touches.
+   ============================================================= */
+.pvt-tab-content{display:none}
+.pvt-tab-content.active{display:block;animation:fadeIn 200ms ease}
+.pvt-result{margin:16px 0}
+.pvt-result-inner{display:block;border:1px solid var(--border);border-left-width:4px;border-radius:6px;padding:14px 16px;background:var(--panel,#fff)}
+.pvt-result-inner.is-empty{border-left-color:var(--border);color:var(--faint);font-style:italic;font-size:13.5px}
+.pvt-result-inner.is-pass{border-left-color:#2e7d4f}
+.pvt-result-inner.is-fail{border-left-color:#9c3d2a}
+.pvt-result-inner.is-na{border-left-color:#8a7a2c}
+.pvt-result-headline{display:block;font-weight:600;font-size:14.5px;margin-bottom:4px}
+.pvt-result-inner.is-fail .pvt-result-headline{color:#9c3d2a}
+.pvt-result-inner.is-pass .pvt-result-headline{color:#2e7d4f}
+.pvt-result-inner.is-na .pvt-result-headline{color:#8a7a2c}
+.pvt-result-detail{display:block;font-size:13px;color:var(--muted,#555);line-height:1.55}
+.pvt-table{width:100%;border-collapse:collapse;font-size:13px}
+.pvt-table th{text-align:left;font-weight:600;padding:7px 10px;border-bottom:2px solid var(--border);white-space:nowrap}
+.pvt-table td{padding:6px 10px;border-bottom:1px solid var(--border)}
+.pvt-table tr:last-child td{border-bottom:0}
+.pvt-cell-fail{color:#9c3d2a;font-weight:600}
+.pvt-agg-copy{font-size:13px;color:var(--muted,#555);line-height:1.6;margin:0 0 12px}
+
 </style>
 <style data-inlined-from="design-system.css">
 /* =============================================================================
@@ -15087,6 +15113,13 @@ input[type="number"].ds-age-pop-input{
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
           </div>
         </div>
+        <button type="button" class="topnav-item nav-item" data-target="validity" data-bucket="validity">
+          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 2.5 L16.5 5 v4.5 c0 4-2.8 6.8-6.5 8 c-3.7-1.2-6.5-4-6.5-8 V5 Z"/>
+            <polyline points="7,10 9.2,12.2 13.5,7.5"/>
+          </svg>
+          <span>Validity</span>
+        </button>
         <button type="button" class="topnav-item nav-item" data-target="converter" data-bucket="converter">
           <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3,7 14,7 11.5,4.5"/>
@@ -15133,11 +15166,12 @@ input[type="number"].ds-age-pop-input{
     <div class="nav-item" data-target="premorbid"><span class="nav-item-num">01</span>Premorbid Estimate</div>
     <div class="nav-item" data-target="battery"><span class="nav-item-num">02</span>Score Tables</div>
     <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">03</span>Change Analysis</div>
-    <div class="nav-item" data-target="charts"><span class="nav-item-num">04</span>Score Charts</div>
-    <div class="nav-item" data-target="converter"><span class="nav-item-num">05</span>Score Converter</div>
-    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">06</span>Effect Size Tools</div>
-    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">07</span>Data</div>
-    <div class="nav-item" data-target="about"><span class="nav-item-num">08</span>Methods &amp; References</div>
+    <div class="nav-item" data-target="validity"><span class="nav-item-num">04</span>Performance Validity</div>
+    <div class="nav-item" data-target="charts"><span class="nav-item-num">05</span>Score Charts</div>
+    <div class="nav-item" data-target="converter"><span class="nav-item-num">06</span>Score Converter</div>
+    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">07</span>Effect Size Tools</div>
+    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">08</span>Data</div>
+    <div class="nav-item" data-target="about"><span class="nav-item-num">09</span>Methods &amp; References</div>
   </nav>
 
   <div class="sidebar-foot">
@@ -15212,6 +15246,19 @@ input[type="number"].ds-age-pop-input{
         <div class="home-db-card-desc">Estimate premorbid ability using ToPF and OPIE-4 models with WAIS-IV/WMS-IV comparison</div>
         <div class="home-db-card-arrow">→</div>
       </button>
+
+      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
+        <div class="home-db-card-icon">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 2.5 L18 5.2 v4.8 c0 4.4-3 7.5-7 8.9 c-4-1.4-7-4.5-7-8.9 V5.2 Z"/>
+            <polyline points="7.8,11 10.2,13.4 14.8,8.2"/>
+          </svg>
+        </div>
+        <div class="home-db-card-name">Performance Validity</div>
+        <div class="home-db-card-desc">Score embedded and stand-alone PVTs against published cut-offs with base-rate-aware interpretation</div>
+        <div class="home-db-card-arrow">→</div>
+      </button>
+
 
       <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
         <div class="home-db-card-icon">
@@ -15752,6 +15799,221 @@ input[type="number"].ds-age-pop-input{
       </div>
     </div>
 
+  </section>
+
+  <!-- ========== PERFORMANCE VALIDITY ========== -->
+  <section class="section" id="validity">
+    <div class="eyebrow">Performance Validity · Embedded &amp; Stand-Alone PVTs</div>
+    <h1 class="section-title">Performance <span class="ink">Validity</span></h1>
+    <p class="section-desc">Score and interpret common performance validity indicators against their published cut-offs: the RBANS Effort Index and Effort Scale, Reliable Digit Span, and the TOMM — with base-rate-aware interpretation and guidance on aggregating multiple indicators. No single index is a verdict: results are reported as cut-off comparisons only.</p>
+
+    <div class="tabs pvt-tabs" role="tablist" aria-label="Performance validity measures">
+      <div class="tab active" data-pvt-tab="ei" role="tab" aria-selected="true"><span>RBANS Effort Index</span></div>
+      <div class="tab" data-pvt-tab="es" role="tab"><span>RBANS Effort Scale</span></div>
+      <div class="tab" data-pvt-tab="rds" role="tab"><span>Reliable Digit Span</span></div>
+      <div class="tab" data-pvt-tab="tomm" role="tab"><span>TOMM</span></div>
+      <div class="tab" data-pvt-tab="summary" role="tab"><span>Summary &amp; Aggregation</span></div>
+    </div>
+
+    <!-- ===== Effort Index ===== -->
+    <div class="pvt-tab-content active" id="pvt-ei">
+      <div class="panel">
+        <div class="field-row-4">
+          <div class="field">
+            <label>RBANS Digit Span <span class="hint">(raw, 0–16)</span></label>
+            <input type="number" min="0" max="16" step="1" data-pvt-field="ds" id="pvt-ei-ds" placeholder="e.g. 9">
+          </div>
+          <div class="field">
+            <label>RBANS List Recognition <span class="hint">(raw, 0–20)</span></label>
+            <input type="number" min="0" max="20" step="1" data-pvt-field="lrec" id="pvt-ei-lrec" placeholder="e.g. 19">
+          </div>
+          <div class="field">
+            <label>Cut-off</label>
+            <select id="pvt-ei-cutoff">
+              <option value="standard" selected>EI &gt; 3 · standard (~94% specificity)</option>
+              <option value="sensitive">EI &gt; 1 · screening (more sensitive)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="pvt-result" id="pvt-ei-result"></div>
+      <div class="caution-box"><strong>Cautions.</strong> False positives rise sharply with genuine impairment — later studies report failure rates near 48% in dementia and ~31–37% in severely impaired geriatric samples. Both subtests load on attention/working memory and verbal recognition, so aphasia or significant memory disorder can inflate the EI without poor effort. Do not apply single-subtest cut-offs in place of the combined EI, and do not declare a whole RBANS protocol invalid on the EI alone — use it to generate hypotheses and trigger further validity testing (Silverberg et al., 2007).</div>
+      <details class="formula-disclosure">
+        <summary>Formula &amp; weighting table</summary>
+        <div class="formula-body">
+          <p>Each raw score converts to a weighted score (Silverberg, Wertheimer &amp; Fichtenberg, 2007, Table 2); EI = weighted Digit Span + weighted List Recognition (range 0–12). Higher EI = less credible performance. Some weights are unreachable for a given subtest (Digit Span never yields 1 or 4).</p>
+          <table class="pvt-table">
+            <thead><tr><th>Digit Span (raw)</th><th>List Recognition (raw)</th><th>Weighted score</th></tr></thead>
+            <tbody>
+              <tr><td>8–16</td><td>18–20</td><td>0</td></tr>
+              <tr><td>—</td><td>17</td><td>1</td></tr>
+              <tr><td>7</td><td>15–16</td><td>2</td></tr>
+              <tr><td>6</td><td>13–14</td><td>3</td></tr>
+              <tr><td>—</td><td>11–12</td><td>4</td></tr>
+              <tr><td>5</td><td>10</td><td>5</td></tr>
+              <tr><td>0–4</td><td>0–9</td><td>6</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== Effort Scale ===== -->
+    <div class="pvt-tab-content" id="pvt-es">
+      <div class="panel">
+        <div class="field-row-4">
+          <div class="field">
+            <label>RBANS Digit Span <span class="hint">(raw, 0–16)</span></label>
+            <input type="number" min="0" max="16" step="1" data-pvt-field="ds" id="pvt-es-ds" placeholder="e.g. 9">
+          </div>
+          <div class="field">
+            <label>RBANS List Recognition <span class="hint">(raw, 0–20)</span></label>
+            <input type="number" min="0" max="20" step="1" data-pvt-field="lrec" id="pvt-es-lrec" placeholder="e.g. 19">
+          </div>
+          <div class="field">
+            <label>List Recall <span class="hint">(raw)</span></label>
+            <input type="number" min="0" max="10" step="1" data-pvt-field="listRecall" id="pvt-es-listrecall" placeholder="e.g. 4">
+          </div>
+        </div>
+        <div class="field-row-4">
+          <div class="field">
+            <label>Story Recall <span class="hint">(raw)</span></label>
+            <input type="number" min="0" max="12" step="1" data-pvt-field="storyRecall" id="pvt-es-storyrecall" placeholder="e.g. 5">
+          </div>
+          <div class="field">
+            <label>Figure Recall <span class="hint">(raw)</span></label>
+            <input type="number" min="0" max="20" step="1" data-pvt-field="figRecall" id="pvt-es-figrecall" placeholder="e.g. 8">
+          </div>
+        </div>
+        <div class="info-box" style="margin-bottom:0"><strong>Mandatory gate.</strong> The ES is computed only where there is already evidence of low performance: Digit Span &lt; 9, <em>or</em> List Recognition &lt; 19, <em>or</em> their sum &lt; 28. In cognitively intact examinees free recall normally far exceeds the ceiling-limited recognition score, so an ungated ES over-flags (Novitski et al., 2012).</div>
+      </div>
+      <div class="pvt-result" id="pvt-es-result"></div>
+      <div class="caution-box"><strong>Cautions.</strong> Built around the Alzheimer's recall/recognition dissociation — conditions producing mixed or atypical memory profiles may not match that pattern. Later work shows low failure rates (~4%) in AD but ~31% in non-AD dementia and &gt;60% suboptimal rates in Parkinson's disease. The amnestic validation sample had no independent effort testing; confirm with a stand-alone PVT (Novitski et al., 2012).</div>
+      <details class="formula-disclosure">
+        <summary>Formula</summary>
+        <div class="formula-body">
+          <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. Only ~15–17% of the normal standardisation sample fall below the combined &lt; 28 screen.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== Reliable Digit Span ===== -->
+    <div class="pvt-tab-content" id="pvt-rds">
+      <div class="panel">
+        <div class="field-row-4">
+          <div class="field">
+            <label>Longest forward span passed on <em>both</em> trials</label>
+            <input type="number" min="0" max="9" step="1" id="pvt-rds-f" placeholder="e.g. 6">
+          </div>
+          <div class="field">
+            <label>Longest backward span passed on <em>both</em> trials</label>
+            <input type="number" min="0" max="8" step="1" id="pvt-rds-b" placeholder="e.g. 4">
+          </div>
+          <div class="field">
+            <label>Cut-off</label>
+            <select id="pvt-rds-cutoff">
+              <option value="conservative" selected>RDS ≤ 6 · conservative (specificity &gt; .90)</option>
+              <option value="traditional">RDS ≤ 7 · traditional</option>
+            </select>
+          </div>
+        </div>
+        <div class="info-box" style="margin-bottom:0"><strong>Classic variant.</strong> RDS here is Forward + Backward only (WAIS-R/III), which is what the validation literature uses. The WAIS-IV Sequencing-inclusive variants use different cut-offs and are not scored here — document which variant you used. Floor rule: failing at least one trial each of 3 forward and 2 backward is recorded as RDS = 3 (Greiffenstein et al., 1994).</div>
+      </div>
+      <div class="pvt-result" id="pvt-rds-result"></div>
+      <div class="caution-box"><strong>Cautions.</strong> RDS loads on attention/working memory: low scores occur legitimately in genuine attentional impairment, anxiety, and especially conduction aphasia. Validation samples were predominantly mild-TBI/litigating; Schroeder et al. (2012) found the ≤ 7 cut-off had inadequate specificity across clinical groups — prefer ≤ 6 in genuinely impaired populations.</div>
+      <details class="formula-disclosure">
+        <summary>Scoring &amp; worked example</summary>
+        <div class="formula-body">
+          <p>RDS = (longest forward span passed on both trials) + (longest backward span passed on both trials) (Greiffenstein, Baker &amp; Gola, 1994; cross-validated by Meyers &amp; Volbrecht, 1998). Worked example from the original paper: passes both trials of 3 forward but fails one 4-forward trial → forward = 3; passes both trials of 2 backward but fails one 3-backward trial → backward = 2; RDS = 3 + 2 = 5. Reference values: mean RDS ~8.8 in non-malingering TBI vs ~6.7 in probable malingerers (Greiffenstein et al., 1994).</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== TOMM ===== -->
+    <div class="pvt-tab-content" id="pvt-tomm">
+      <div class="panel">
+        <div class="field-row-4">
+          <div class="field">
+            <label>Trial 1 <span class="hint">(/50)</span></label>
+            <input type="number" min="0" max="50" step="1" id="pvt-tomm-t1" placeholder="e.g. 44">
+          </div>
+          <div class="field">
+            <label>Trial 2 <span class="hint">(/50)</span></label>
+            <input type="number" min="0" max="50" step="1" id="pvt-tomm-t2" placeholder="e.g. 48">
+          </div>
+          <div class="field">
+            <label>Retention <span class="hint">(/50, optional)</span></label>
+            <input type="number" min="0" max="50" step="1" id="pvt-tomm-ret" placeholder="e.g. 49">
+          </div>
+        </div>
+        <div class="field-row-4">
+          <div class="field">
+            <label>Trial 1 cut-off</label>
+            <select id="pvt-tomm-t1cut">
+              <option value="t1-42" selected>&lt; 42 · meta-analytic optimum</option>
+              <option value="t1-41">&lt; 41 · conservative (Denning, 2012)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Trial 2 / Retention cut-off</label>
+            <select id="pvt-tomm-t2cut">
+              <option value="45" selected>&lt; 45 · traditional (all settings)</option>
+              <option value="49">&lt; 49 · liberal (no severe impairment expected)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Base rate of invalidity <span class="hint">(your setting)</span></label>
+            <select id="pvt-tomm-br">
+              <option value="0.1" selected>10% · typical clinical</option>
+              <option value="0.2">20%</option>
+              <option value="0.3">30%</option>
+              <option value="0.4">40% · forensic</option>
+              <option value="0.5">50%</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="pvt-result" id="pvt-tomm-result"></div>
+      <div id="pvt-tomm-power"></div>
+      <div class="caution-box"><strong>Cautions.</strong> Dementia is the key exception: across dementia samples, weighted-mean specificity was ≤ .70 at traditional cut-offs, with no study achieving a false-positive rate under 10% — traditional TOMM cut-offs should <em>not</em> be interpreted in suspected or confirmed dementia. Specificity for the liberal &lt; 49 cut-off also dipped below 90% in moderate/severe TBI and severe depression. Simulator studies overestimate sensitivity relative to real known-groups patients (Martin et al., 2020).</div>
+      <details class="formula-disclosure">
+        <summary>Cut-offs &amp; classification accuracy</summary>
+        <div class="formula-body">
+          <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45 — spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49 — spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42 — spec. .91, sens. .67–.69; Trial 1 &lt; 41 — spec. .93, sens. .66 (Denning, 2012). Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17. Failure on Trial 1 is unrelated to age, education, or gender.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== Summary & Aggregation ===== -->
+    <div class="pvt-tab-content" id="pvt-summary">
+      <div id="pvt-summary-body"></div>
+      <div class="panel">
+        <div class="block-title">Aggregating multiple PVTs (Larrabee, 2014)</div>
+        <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity in real clinical data — Monte Carlo warnings that false positives climb steeply with more tests overestimate the problem, because genuine patients' PVT scores are skewed and at-ceiling rather than multivariate-normal. Classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT):</p>
+        <table class="pvt-table">
+          <thead><tr><th>Threshold</th><th>Specificity</th><th>Sensitivity</th><th>Total correct</th></tr></thead>
+          <tbody>
+            <tr><td>≥ 2 of 7 failures</td><td>88.9%</td><td>97.6%</td><td>92.6%</td></tr>
+            <tr><td>≥ 3 of 7 failures</td><td>96.3%</td><td>87.8%</td><td>92.6%</td></tr>
+            <tr><td>≥ 4 of 7 failures</td><td>100%</td><td>63.4%</td><td>84.2%</td></tr>
+          </tbody>
+        </table>
+        <div class="info-box" style="margin-top:14px;margin-bottom:0"><strong>Two practical rules.</strong> <em>Independence is required</em>: indices sharing subtests are correlated, so failing one raises the odds of failing another — the Effort Index and Effort Scale here are computed from the same RBANS subtests and count as <strong>one</strong> indicator, and RDS also loads on digit span. <em>Examinee characteristics shift the threshold</em>: lower education alone can move the failure count needed to keep false positives &lt; 10% from 2-of-5 up to 4-of-5 — demand more failures, or rely on high-specificity forced-choice measures, in lower-education, older, or genuinely impaired examinees (Larrabee, 2014).</div>
+      </div>
+      <div class="info-box" data-apa-note="pvt"></div>
+
+      <div class="apa-wrap">
+        <div class="apa-toolbar">
+          <div class="apa-toolbar-left"><span class="apa-toolbar-label">APA-formatted output</span></div>
+          <div></div>
+          <button class="btn" data-copy="pvt-apa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+            Copy table
+          </button>
+        </div>
+        <div class="apa-table-container" id="pvt-apa"><div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least one validity measure to preview.</div></div>
+      </div>
+    </div>
   </section>
 
   <!-- ========== 04 SCORE CHARTS ========== -->
@@ -16798,6 +17060,17 @@ input[type="number"].ds-age-pop-input{
       <p>Jacobson, N. S., &amp; Truax, P. (1991). Clinical significance: A statistical approach to defining meaningful change in psychotherapy research. <i>Journal of Consulting and Clinical Psychology, 59</i>(1), 12–19.</p>
       <p>McSweeney, A. J., Naugle, R. I., Chelune, G. J., &amp; Lüders, H. (1993). "T scores for change": An illustration of a regression approach to depicting change in clinical neuropsychology. <i>The Clinical Neuropsychologist, 7</i>(3), 300–312.</p>
       <p>Sawilowsky, S. S. (2009). New effect size rules of thumb. <i>Journal of Modern Applied Statistical Methods, 8</i>(2), 597–599.</p>
+
+      <div class="references-group">Performance validity sources</div>
+      <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
+      <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224. [Reliable Digit Span: scoring, floor rule and traditional cut-off.]</p>
+      <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373. [Aggregation of multiple PVTs; classification accuracy by number of failures.]</p>
+      <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. [TOMM cut-offs and the sensitivity/specificity values behind the predictive-power display, Tables 16–17.]</p>
+      <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
+      <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195. [Effort Scale formula, screening gate and cut-off.]</p>
+      <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30. [Basis for preferring the conservative RDS ≤ 6 cut-off.]</p>
+      <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. [Effort Index weighting table and cut-offs.]</p>
+      <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
 
       <div class="references-group">Effect-size benchmarks</div>
       <p>Cipriani, A., Furukawa, T. A., Salanti, G., Chaimani, A., Atkinson, L. Z., Ogawa, Y., Leucht, S., Ruhe, H. G., Turner, E. H., Higgins, J. P. T., Egger, M., Takeshima, N., Hayasaka, Y., Imai, H., Shinohara, K., Tajika, A., Ioannidis, J. P. A., &amp; Geddes, J. R. (2018). Comparative efficacy and acceptability of 21 antidepressant drugs for the acute treatment of adults with major depressive disorder: A systematic review and network meta-analysis. <i>The Lancet, 391</i>(10128), 1357–1366.</p>
@@ -18703,6 +18976,99 @@ const OPIE_BASE_RATES = {
     "Symbol Span": { m1:10.1, sd1:2.8, m2:10.7, sd2:3, r:0.69, rCorrected:0.73, n:69, separateBattery:true, rInternal:0.84, rInternalAgeMax:90, rInternalByAge:{65:0.88, 70:0.87, 75:0.81, 80:0.84, 85:0.76} }
   }
 };
+
+/* ============================================================================
+   PERFORMANCE VALIDITY (PVT) REFERENCE DATA
+
+   Sources (primary; the on-screen references list carries full citations):
+   - RBANS Effort Index:  Silverberg, Wertheimer & Fichtenberg (2007), TCN 21(5), 841-854.
+   - RBANS Effort Scale:  Novitski, Steele, Karantzoulis & Randolph (2012), ACN 27(2), 190-195.
+   - Reliable Digit Span: Greiffenstein, Baker & Gola (1994), Psych. Assessment 6(3), 218-224;
+                          Meyers & Volbrecht (1998); Schroeder et al. (2012).
+   - TOMM:                Martin, Schroeder, Olsen, Maloy, Boettcher, Ernst & Okut (2020),
+                          TCN 34(1), 88-119 (meta-analysis); Tombaugh (1996).
+   - Aggregation:         Larrabee (2014), ACN 29(4), 364-373.
+
+   These pages take RAW scores directly and never read normDB. Cut-offs and
+   weights are stored verbatim from the cited papers; every table below is
+   pinned in tools/check.js §38. PVT results are reported as cut-off
+   comparisons, never as verdicts — no output may label an examinee
+   "malingering" or the profile "invalid" from a single indicator.
+   ========================================================================= */
+
+/* Silverberg et al. (2007) Table 2 — raw-to-weighted conversion for the two
+   Effort Index components. Bands are [min, max] inclusive on the raw score;
+   note the deliberate gaps (Digit Span never yields a weight of 1 or 4).
+   EI = weighted Digit Span + weighted List Recognition, range 0-12. */
+const PVT_EI_WEIGHTS = {
+  digitSpan: [            // RBANS Digit Span raw, 0-16
+    { min: 8, max: 16, w: 0 },
+    { min: 7, max: 7,  w: 2 },
+    { min: 6, max: 6,  w: 3 },
+    { min: 5, max: 5,  w: 5 },
+    { min: 0, max: 4,  w: 6 }
+  ],
+  listRecognition: [      // RBANS List Recognition raw, 0-20
+    { min: 18, max: 20, w: 0 },
+    { min: 17, max: 17, w: 1 },
+    { min: 15, max: 16, w: 2 },
+    { min: 13, max: 14, w: 3 },
+    { min: 11, max: 12, w: 4 },
+    { min: 10, max: 10, w: 5 },
+    { min: 0,  max: 9,  w: 6 }
+  ]
+};
+/* EI > 3: standard threshold (~94% specificity in the derivation sample);
+   EI > 1: the authors' optimal screening cut-off for post-acute mild TBI. */
+const PVT_EI_CUTOFFS = { standard: 3, sensitive: 1 };
+
+/* Novitski et al. (2012). ES = (List Recognition - [List Recall + Story
+   Recall + Figure Recall]) + Digit Span, all raw. LOWER is more suspicious.
+   The gate is mandatory: computed only where Digit Span < 9 OR List
+   Recognition < 19 OR their sum < 28 — in intact examinees free recall
+   normally far exceeds ceiling-limited recognition, so an ungated ES
+   over-flags. Cut-off: ES < 12 once the gate is met. */
+const PVT_ES = {
+  gate: { digitSpanBelow: 9, listRecognitionBelow: 19, combinedBelow: 28 },
+  cutoff: 12
+};
+
+/* Greiffenstein et al. (1994); Meyers & Volbrecht (1998). RDS = longest
+   forward string passed on BOTH trials + longest backward string passed on
+   BOTH trials (classic variant: Forward + Backward only, no WAIS-IV
+   Sequencing). Floor rule: failing at least one trial each of 3 forward and
+   2 backward is recorded as RDS = 3.
+   <= 7: traditional cut-off. <= 6: conservative — Schroeder et al. (2012)
+   found <= 7 had inadequate specificity across clinical groups while <= 6
+   held specificity > .90; prefer <= 6 in genuinely impaired populations. */
+const PVT_RDS = { floor: 3, cutoffTraditional: 7, cutoffConservative: 6 };
+
+/* Martin et al. (2020) meta-analytic TOMM cut-offs — weighted-mean
+   specificity/sensitivity for neurocognitive/psychiatric samples (the most
+   clinically generalisable subgroup). Scores are correct responses out of 50;
+   "cut" means scores BELOW it fail. sens/spec are the point values the
+   meta-analysis uses for its predictive-power tables (Tables 16-17), from
+   which the app derives PPP/NPP by Bayes at the chosen base rate.
+   specRange/sensRange, where present, are the ranges quoted for the cut-off
+   summary table. Trial 1 < 41 row: Denning (2012). */
+const PVT_TOMM_CUTOFFS = [
+  { id: 't1-41',  trial: 'trial1',    label: 'Trial 1 < 41',   cut: 41, sens: 0.66, spec: 0.93, note: 'Conservative abbreviated/screening cut-off (Denning, 2012).' },
+  { id: 't1-42',  trial: 'trial1',    label: 'Trial 1 < 42',   cut: 42, sens: 0.69, spec: 0.91, note: 'Meta-analytic optimum for abbreviated/screening use.' },
+  { id: 't2-45',  trial: 'trial2',    label: 'Trial 2 < 45',   cut: 45, sens: 0.45, spec: 0.97, specRange: '.96–.98', sensRange: '.45–.55', note: 'Traditional cut-off; very high specificity across settings.' },
+  { id: 't2-49',  trial: 'trial2',    label: 'Trial 2 < 49',   cut: 49, sens: 0.63, spec: 0.95, specRange: '.91–.97', sensRange: '.59–.70', note: 'Liberal; only where significant impairment is not expected.' },
+  { id: 'ret-45', trial: 'retention', label: 'Retention < 45', cut: 45, sens: 0.55, spec: 0.98, note: 'Traditional cut-off; very high specificity across settings.' },
+  { id: 'ret-49', trial: 'retention', label: 'Retention < 49', cut: 49, sens: 0.70, spec: 0.93, note: 'Liberal; only where significant impairment is not expected.' }
+];
+/* Base-rate options for the PPP/NPP display, as in Martin et al. Tables 16-17. */
+const PVT_BASE_RATES = [0.10, 0.20, 0.30, 0.40, 0.50];
+
+/* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
+   accuracy by number of failures. Percentages as published. */
+const PVT_AGGREGATION = [
+  { threshold: '≥ 2 of 7 failures', spec: 88.9, sens: 97.6, correct: 92.6 },
+  { threshold: '≥ 3 of 7 failures', spec: 96.3, sens: 87.8, correct: 92.6 },
+  { threshold: '≥ 4 of 7 failures', spec: 100,  sens: 63.4, correct: 84.2 }
+];
 
 </script>
 <script data-inlined-from="app.js">
@@ -21765,6 +22131,22 @@ const APA_NOTES = {
     'WAIS-IV indices are predicted from ToPF, education and sex; WMS-IV indices from ToPF and age.',
     'Difference = Achieved − Predicted.',
     'Base rate = published % at or below this discrepancy (ToPF-UK manual, negative discrepancies only). The manual derives these from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.'
+  ],
+  /* Performance Validity page — one note under the single combined table.
+     'Fail' is defined as the cut-off comparison it is, and the note carries
+     the no-single-verdict rule and the population caveat, because those are
+     the load-bearing claims of the whole page. Conditional sentences ADD
+     context in the export; the on-screen mirror shows the base sentences. */
+  'pvt': ctx => [
+    'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
+    '"Fail" denotes a score beyond the published cut-off for that measure; it is a cut-off comparison, not a determination of invalidity. No single indicator is a verdict: probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
+    ctx.bothRbans
+      ? 'The Effort Index and Effort Scale are computed from the same RBANS subtests and constitute one indicator, not two.'
+      : '',
+    ctx.esGated
+      ? 'The Effort Scale is reported as not computed because its screening gate (Digit Span < 9, List Recognition < 19, or their sum < 28) was not met; on such a profile the scale is not interpretable (Novitski et al., 2012).'
+      : '',
+    'Cut-offs assume the validation populations of the cited studies; specificity falls substantially in dementia and severe cognitive impairment, and traditional TOMM cut-offs should not be interpreted in suspected or confirmed dementia.'
   ],
   'pre-opiepredict': () => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
@@ -25205,6 +25587,376 @@ document.addEventListener('click', e => {
   else openPremorbidLinkPopover();
 });
 
+/* ================================================================
+   PERFORMANCE VALIDITY (PVT) PAGE
+
+   Scores four validity indicators against their published cut-offs
+   (constants in data.js, pinned by check.js §38):
+     - RBANS Effort Index      Silverberg et al. (2007)
+     - RBANS Effort Scale      Novitski et al. (2012) — GATED, see below
+     - Reliable Digit Span     Greiffenstein et al. (1994)
+     - TOMM                    Martin et al. (2020) meta-analysis
+
+   Design constraints, in order of importance:
+   1. Results are CUT-OFF COMPARISONS, never verdicts. "Fail" means the
+      score is beyond the published cut-off — the conventional PVT term —
+      and the APA note defines it as exactly that. No output may label an
+      examinee or a protocol invalid from a single indicator.
+   2. The ES gate is mandatory, not advisory: in intact examinees free
+      recall normally exceeds ceiling-limited recognition, so an ungated
+      ES over-flags. The gate unmet is rendered as "not computed", never
+      as a number.
+   3. TOMM PPP/NPP are DERIVED by Bayes from the pinned meta-analytic
+      sensitivity/specificity and the selected base rate, exactly as
+      Martin et al. built Tables 16-17 from the same values. 57 of the 60
+      published cells reproduce at 2 dp (§38); deriving rather than
+      storing avoids transcribing the one cell that does not.
+   4. One APA export for the whole page (pvt-apa, on the Summary tab):
+      the four indicators belong in one report table, and four
+      near-identical tables would recreate the Change Analysis bloat
+      that consent gating exists to fix.
+
+   The two RBANS inputs (Digit Span, List Recognition) appear on both the
+   EI and ES tabs; pvtState is the master and every [data-pvt-field] input
+   is a synced view of it, so a value entered on either tab carries to the
+   other. Raw entry only — this page never reads normDB.
+   ================================================================ */
+
+const pvtState = { ds:'', lrec:'', listRecall:'', storyRecall:'', figRecall:'' };
+
+/* Parse one raw-score field. Returns:  undefined = empty,  null = not a
+   whole number in [min, max],  number = usable. The two non-values stay
+   distinct so an out-of-range entry reads as "check the value" rather
+   than as still-waiting-for-input. */
+function pvtInt(v, min, max){
+  if (v === '' || v === null || v === undefined) return undefined;
+  const n = Number(v);
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < min || n > max) return null;
+  return n;
+}
+
+/* ---------- Effort Index (Silverberg et al., 2007) ---------- */
+function pvtEiWeight(bands, raw){
+  for (const b of bands) if (raw >= b.min && raw <= b.max) return b.w;
+  return null;
+}
+function getPvtEi(){
+  const ds = pvtInt(pvtState.ds, 0, 16);
+  const lr = pvtInt(pvtState.lrec, 0, 20);
+  if (ds === undefined && lr === undefined) return { empty: true };
+  if (ds === null || lr === null) return { invalid: true };
+  if (ds === undefined || lr === undefined) return { partial: true };
+  const wDs = pvtEiWeight(PVT_EI_WEIGHTS.digitSpan, ds);
+  const wLr = pvtEiWeight(PVT_EI_WEIGHTS.listRecognition, lr);
+  const cutKey = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
+  const cut = PVT_EI_CUTOFFS[cutKey];
+  const ei = wDs + wLr;
+  return { ds, lr, wDs, wLr, ei, cutKey, cut, fail: ei > cut };
+}
+
+/* ---------- Effort Scale (Novitski et al., 2012) ---------- */
+function getPvtEs(){
+  const ds   = pvtInt(pvtState.ds, 0, 16);
+  const lr   = pvtInt(pvtState.lrec, 0, 20);
+  const list = pvtInt(pvtState.listRecall, 0, 10);
+  const stor = pvtInt(pvtState.storyRecall, 0, 12);
+  const fig  = pvtInt(pvtState.figRecall, 0, 20);
+  const vals = [ds, lr, list, stor, fig];
+  if (vals.every(v => v === undefined)) return { empty: true };
+  if (vals.some(v => v === null)) return { invalid: true };
+  if (vals.some(v => v === undefined)) return { partial: true };
+  const g = PVT_ES.gate;
+  const gateMet = ds < g.digitSpanBelow || lr < g.listRecognitionBelow || (ds + lr) < g.combinedBelow;
+  if (!gateMet) return { ds, lr, gated: true };
+  const es = (lr - (list + stor + fig)) + ds;
+  return { ds, lr, list, stor, fig, es, fail: es < PVT_ES.cutoff };
+}
+
+/* ---------- Reliable Digit Span (Greiffenstein et al., 1994) ---------- */
+function getPvtRds(){
+  const f = pvtInt(document.getElementById('pvt-rds-f')?.value, 0, 9);
+  const b = pvtInt(document.getElementById('pvt-rds-b')?.value, 0, 8);
+  if (f === undefined && b === undefined) return { empty: true };
+  if (f === null || b === null) return { invalid: true };
+  if (f === undefined || b === undefined) return { partial: true };
+  const sum = f + b;
+  /* Floor rule: failing at least one trial each of the lowest items is
+     recorded as RDS = 3 — with two-number entry that is any sum below 3. */
+  const floored = sum < PVT_RDS.floor;
+  const rds = floored ? PVT_RDS.floor : sum;
+  const conservative = document.getElementById('pvt-rds-cutoff')?.value !== 'traditional';
+  const cut = conservative ? PVT_RDS.cutoffConservative : PVT_RDS.cutoffTraditional;
+  return { f, b, rds, floored, conservative, cut, fail: rds <= cut };
+}
+
+/* ---------- TOMM (Martin et al., 2020) ---------- */
+function pvtPPP(sens, spec, br){ return (sens * br) / (sens * br + (1 - spec) * (1 - br)); }
+function pvtNPP(sens, spec, br){ return (spec * (1 - br)) / (spec * (1 - br) + (1 - sens) * br); }
+function pvtTommCutoffById(id){ return PVT_TOMM_CUTOFFS.find(c => c.id === id) || null; }
+function getPvtTomm(){
+  const t1  = pvtInt(document.getElementById('pvt-tomm-t1')?.value, 0, 50);
+  const t2  = pvtInt(document.getElementById('pvt-tomm-t2')?.value, 0, 50);
+  const ret = pvtInt(document.getElementById('pvt-tomm-ret')?.value, 0, 50);
+  if (t1 === undefined && t2 === undefined && ret === undefined) return { empty: true };
+  if (t1 === null || t2 === null || ret === null) return { invalid: true };
+  const t1CutId = document.getElementById('pvt-tomm-t1cut')?.value === 't1-41' ? 't1-41' : 't1-42';
+  const lateCut = document.getElementById('pvt-tomm-t2cut')?.value === '49' ? '49' : '45';
+  const br = parseFloat(document.getElementById('pvt-tomm-br')?.value) || 0.10;
+  const rows = [];
+  const addRow = (label, score, cutoff) => {
+    if (score === undefined || !cutoff) return;
+    rows.push({
+      label, score, cutoff,
+      fail: score < cutoff.cut,
+      ppp: pvtPPP(cutoff.sens, cutoff.spec, br),
+      npp: pvtNPP(cutoff.sens, cutoff.spec, br)
+    });
+  };
+  addRow('Trial 1',   t1,  pvtTommCutoffById(t1CutId));
+  addRow('Trial 2',   t2,  pvtTommCutoffById('t2-' + lateCut));
+  addRow('Retention', ret, pvtTommCutoffById('ret-' + lateCut));
+  return { rows, br, anyFail: rows.some(r => r.fail) };
+}
+
+/* ---------- result boxes ---------- */
+function pvtResultHtml(kind, headline, detail){
+  return `<div class="pvt-result-inner is-${kind}"><span class="pvt-result-headline">${headline}</span>${detail ? `<span class="pvt-result-detail">${detail}</span>` : ''}</div>`;
+}
+const PVT_PROMPTS = {
+  partial: 'Enter the remaining score(s) to compute this index.',
+  invalid: 'Check the entered values — one is outside the possible raw-score range.'
+};
+function pvtStatusWord(fail){ return fail ? 'Fail' : 'Pass'; }
+
+function renderPvtEi(){
+  const out = document.getElementById('pvt-ei-result');
+  if (!out) return;
+  const s = getPvtEi();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
+  const cutLabel = `EI &gt; ${s.cut}${s.cutKey === 'sensitive' ? ' (screening)' : ''}`;
+  out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
+    `Effort Index = ${s.ei} — ${pvtStatusWord(s.fail)} at ${cutLabel}`,
+    `Digit Span ${s.ds} → weight ${s.wDs}; List Recognition ${s.lr} → weight ${s.wLr}. ${s.fail
+      ? 'The index exceeds the published cut-off, which is conventionally reported as a PVT failure — corroborate with an independent, preferably forced-choice, measure before drawing any conclusion.'
+      : 'The index does not exceed the published cut-off.'}`);
+}
+
+function renderPvtEs(){
+  const out = document.getElementById('pvt-es-result');
+  if (!out) return;
+  const s = getPvtEs();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
+  if (s.gated){
+    out.innerHTML = pvtResultHtml('na',
+      'Effort Scale not computed — screening gate not met',
+      `Digit Span ${s.ds} (gate &lt; 9), List Recognition ${s.lr} (gate &lt; 19), sum ${s.ds + s.lr} (gate &lt; 28). On a profile this strong the ES is not interpretable: free recall normally exceeds the ceiling-limited recognition score in intact examinees, so computing it here would over-flag (Novitski et al., 2012).`);
+    return;
+  }
+  out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
+    `Effort Scale = ${s.es} — ${pvtStatusWord(s.fail)} at ES &lt; ${PVT_ES.cutoff}`,
+    `(${s.lr} − [${s.list} + ${s.stor} + ${s.fig}]) + ${s.ds} = ${s.es}. Gate met, so the score is interpretable. ${s.fail
+      ? 'The score falls below the published cut-off, which is conventionally reported as a PVT failure — confirm with a stand-alone forced-choice measure.'
+      : 'The score does not fall below the published cut-off.'}`);
+}
+
+function renderPvtRds(){
+  const out = document.getElementById('pvt-rds-result');
+  if (!out) return;
+  const s = getPvtRds();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
+  const cutLabel = `RDS ≤ ${s.cut}${s.conservative ? ' (conservative)' : ' (traditional)'}`;
+  out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
+    `RDS = ${s.rds} — ${pvtStatusWord(s.fail)} at ${cutLabel}`,
+    `${s.f} forward + ${s.b} backward${s.floored ? ` = ${s.f + s.b}; the floor rule records any RDS below 3 as 3 (Greiffenstein et al., 1994)` : ''}. ${s.fail
+      ? 'The score is at or below the published cut-off, which is conventionally reported as a PVT failure — weigh genuine attentional impairment, anxiety and aphasia before drawing any conclusion.'
+      : 'The score is above the published cut-off.'}`);
+}
+
+function renderPvtTomm(){
+  const out = document.getElementById('pvt-tomm-result');
+  const power = document.getElementById('pvt-tomm-power');
+  if (!out || !power) return;
+  const s = getPvtTomm();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.'); power.innerHTML = ''; return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
+  const lines = s.rows.map(r =>
+    `${r.label} = ${r.score} — <strong>${pvtStatusWord(r.fail)}</strong> at ${r.cutoff.label.replace('<', '&lt;')}`).join('<br>');
+  out.innerHTML = pvtResultHtml(s.anyFail ? 'fail' : 'pass', lines,
+    s.anyFail
+      ? 'At least one trial falls below its selected cut-off, which is conventionally reported as a PVT failure. Interpret against the predictive-power table below — at low base rates a single failure has modest positive predictive power.'
+      : 'No entered trial falls below its selected cut-off.');
+  const brPct = Math.round(s.br * 100);
+  power.innerHTML = `
+    <div class="panel">
+      <div class="block-title">Predictive power at a ${brPct}% base rate of invalidity</div>
+      <table class="pvt-table">
+        <thead><tr><th>Trial · cut-off</th><th>Sens.</th><th>Spec.</th><th>PPP</th><th>NPP</th></tr></thead>
+        <tbody>${s.rows.map(r => `
+          <tr><td>${r.cutoff.label.replace('<', '&lt;')}</td>
+          <td>${r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.ppp.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.npp.toFixed(2).replace(/^0/, '')}</td></tr>`).join('')}
+        </tbody>
+      </table>
+      <p class="pvt-agg-copy" style="margin-top:10px;margin-bottom:0">PPP = probability a failure is a true positive; NPP = probability a pass is a true negative. Derived by Bayes' theorem from the meta-analytic weighted-mean sensitivity/specificity for neurocognitive/psychiatric samples and the selected base rate, as in Martin et al. (2020), Tables 16–17. PPP uses the point sensitivity/specificity even where a range is shown.</p>
+    </div>`;
+}
+
+/* ---------- summary + APA export ---------- */
+/* One row per reportable line. TOMM contributes one row per entered trial
+   but counts as ONE indicator; EI and ES share their RBANS subtests and
+   also count as one. The independence arithmetic is the point of the
+   summary — see Larrabee (2014). */
+function getPvtSummaryRows(){
+  const rows = [];
+  const ei = getPvtEi();
+  if (ei.ei !== undefined) rows.push({
+    id: 'ei', group: 'rbans', measure: 'RBANS Effort Index',
+    score: String(ei.ei), cutoff: `> ${ei.cut}${ei.cutKey === 'sensitive' ? ' (screening)' : ''}`,
+    result: pvtStatusWord(ei.fail), fail: ei.fail
+  });
+  const es = getPvtEs();
+  if (es.gated) rows.push({
+    id: 'es', group: 'rbans', measure: 'RBANS Effort Scale',
+    score: '—', cutoff: `< ${PVT_ES.cutoff}`, result: 'Not computed (gate not met)', fail: false, gated: true
+  });
+  else if (es.es !== undefined) rows.push({
+    id: 'es', group: 'rbans', measure: 'RBANS Effort Scale',
+    score: String(es.es), cutoff: `< ${PVT_ES.cutoff}`, result: pvtStatusWord(es.fail), fail: es.fail
+  });
+  const rds = getPvtRds();
+  if (rds.rds !== undefined) rows.push({
+    id: 'rds', group: 'rds', measure: 'Reliable Digit Span',
+    score: String(rds.rds), cutoff: `≤ ${rds.cut}${rds.conservative ? ' (conservative)' : ''}`,
+    result: pvtStatusWord(rds.fail), fail: rds.fail
+  });
+  const tomm = getPvtTomm();
+  if (tomm.rows) tomm.rows.forEach(r => rows.push({
+    id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
+    score: String(r.score), cutoff: r.cutoff.label.replace(/^.* </, '< '),
+    result: pvtStatusWord(r.fail), fail: r.fail
+  }));
+  return rows;
+}
+function pvtIndicatorCounts(rows){
+  const groups = [...new Set(rows.filter(r => !r.gated).map(r => r.group))];
+  const failed = groups.filter(g => rows.some(r => r.group === g && r.fail));
+  return { total: groups.length, failed: failed.length };
+}
+
+function renderPvtSummary(){
+  const host = document.getElementById('pvt-summary-body');
+  if (!host) return;
+  const rows = getPvtSummaryRows();
+  if (rows.length === 0){
+    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet — score at least one measure on the other tabs and the summary builds itself.') + '</div>';
+    return;
+  }
+  const c = pvtIndicatorCounts(rows);
+  const countLine = c.total === 0 ? '' :
+    `<p class="pvt-agg-copy" style="margin-top:12px"><strong>${c.failed} of ${c.total}</strong> independent indicator${c.total === 1 ? '' : 's'} with data ${c.failed === 1 ? 'falls' : 'fall'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — counting the two RBANS indices as one indicator and the TOMM trials as one. Failing ≥ 2 independent PVTs supports probable invalidity; a single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).</p>`;
+  host.innerHTML = `
+    <div class="panel">
+      <div class="block-title">Indicators scored this session</div>
+      <table class="pvt-table">
+        <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Result</th></tr></thead>
+        <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
+      </table>
+      ${countLine}
+    </div>`;
+}
+
+function renderPvtApa(){
+  const out = document.getElementById('pvt-apa');
+  if (!out) return;
+  const rows = getPvtSummaryRows();
+  /* EMPTY-STATE GUARD — same contract §35 enforces on the premorbid
+     renderers: the working-report observer's only test is the presence of
+     .apa-table, so a renderer that always writes one always offers an
+     empty table to the report. No data, no table. */
+  if (rows.length === 0){
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least one validity measure to preview.</div>';
+    return;
+  }
+  const ei = getPvtEi(), es = getPvtEs();
+  out.innerHTML = `
+    <div class="apa-table-num">Table 1</div>
+    <div class="apa-table-title">Performance validity indicators</div>
+    <table class="apa-table">
+      <thead><tr><th>Measure</th><th class="num">Score</th><th>Cut-off</th><th>Result</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${escapeHtml(r.measure)}</td><td class="num">${escapeHtml(r.score)}</td><td>${escapeHtml(r.cutoff)}</td><td>${escapeHtml(r.result)}</td></tr>`).join('')}</tbody>
+    </table>
+    ${apaNoteHtml('pvt', {
+      hasEi: ei.ei !== undefined,
+      hasEs: es.es !== undefined,
+      esGated: !!es.gated,
+      bothRbans: ei.ei !== undefined && es.es !== undefined,
+      hasTomm: rows.some(r => r.group === 'tomm')
+    })}
+  `;
+}
+
+function renderPvtAll(){
+  renderPvtEi();
+  renderPvtEs();
+  renderPvtRds();
+  renderPvtTomm();
+  renderPvtSummary();
+  renderPvtApa();
+}
+
+function switchPvtTab(name){
+  document.querySelectorAll('#validity .pvt-tabs .tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.pvtTab === name));
+  document.querySelectorAll('#validity .pvt-tab-content').forEach(c =>
+    c.classList.toggle('active', c.id === 'pvt-' + name));
+}
+
+function clearPvt(){
+  Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
+  document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
+  ['pvt-rds-f','pvt-rds-b','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderPvtAll();
+}
+
+function setupPvtPage(){
+  const root = document.getElementById('validity');
+  if (!root) return;
+  root.querySelectorAll('.pvt-tabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
+  });
+  /* The shared RBANS fields appear on both the EI and ES tabs; pvtState is
+     the master and every input with the same data-pvt-field mirrors it. */
+  root.querySelectorAll('[data-pvt-field]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const field = inp.dataset.pvtField;
+      pvtState[field] = inp.value;
+      root.querySelectorAll(`[data-pvt-field="${field}"]`).forEach(other => {
+        if (other !== inp && other.value !== inp.value) other.value = inp.value;
+      });
+      renderPvtAll();
+    });
+  });
+  ['pvt-rds-f','pvt-rds-b','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', renderPvtAll);
+  });
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', renderPvtAll);
+  });
+  renderPvtAll();
+}
+
+
 // Premorbid setup
 setupPreTabs();
 buildPredictTable();
@@ -25216,6 +25968,9 @@ calcOpiePredict();
 // Battery autofill input wiring (combobox listeners)
 wireBatteryAutofill();
 wireSdiAutofill();
+
+// Performance Validity page
+setupPvtPage();
 
 // Final initialization
 refreshAll();
@@ -25251,6 +26006,8 @@ refreshAll();
         if (typeof clearMethodRows === 'function') clearMethodRows(m);
       });
     } catch(e){}
+    // Performance Validity page
+    try { if (typeof clearPvt === 'function') clearPvt(); } catch(e){}
     /* Premorbid inputs (predictors + demographics), and the master patient age.
        #patient-age is listed explicitly rather than left to the #pre-age mirror:
        the mirror would in fact carry the blank across, but a patient identity
@@ -25468,6 +26225,7 @@ refreshAll();
     'rci-crawford': 'change',
     'change-analysis': 'change',
     charts: 'charts',
+    validity: 'validity',
     premorbid: 'premorbid'
     // Norms (custom-tests) and Reference (about) live in the footer, not the top nav
   };
@@ -25486,6 +26244,7 @@ refreshAll();
     'rci-crawford': 'Crawford Regression-Based',
     'change-analysis': 'Change Analysis',
     charts: 'Score Charts',
+    validity: 'Performance Validity',
     premorbid: 'Premorbid Estimation',
     'custom-tests': 'Data',
     about: 'Methods & References'
@@ -25563,7 +26322,8 @@ const ReportBundle = (function(){
     'rci-crawford-apa':  'Crawford Regression-Based',
     'pre-estimates-apa':    'Premorbid · Estimates',
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
-    'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted'
+    'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted',
+    'pvt-apa':              'Performance Validity'
   };
   /* Method / tool names - combined with the detected test family to produce
      intelligent table titles like "Crawford Regression-Based Change: WAIS-IV". */
@@ -25576,7 +26336,8 @@ const ReportBundle = (function(){
     'rci-crawford-apa':     'Crawford Regression-Based Change',
     'pre-estimates-apa':    'Premorbid Cognitive Estimate',
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',
-    'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved'
+    'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved',
+    'pvt-apa':              'Performance Validity Indicators'
   };
   /* Backwards alias - SOURCE_TITLES still referenced in a couple of places */
   const SOURCE_TITLES = SOURCE_METHOD_NAMES;
@@ -25591,7 +26352,10 @@ const ReportBundle = (function(){
     // the predicted indices), but those aren't the "test family" - the test is
     // ToPF / OPIE, already named in the method. Skip family detection here so
     // we don't end up with "ToPF-Predicted vs Achieved: WAIS-IV".
-    if (parentId && parentId.startsWith('pre-')){
+    /* Validity tables mention RBANS / Digit Span / TOMM as the indicators'
+       host tests, not as a test family whose results these are — titling the
+       table "Performance Validity Indicators: RBANS" would misdescribe it. */
+    if (parentId && (parentId.startsWith('pre-') || parentId.startsWith('pvt-'))){
       return method || 'APA Table';
     }
 
@@ -26030,8 +26794,10 @@ const ReportBundle = (function(){
   function pillLabelFor(html, sourceId){
     const parentId = (sourceId || '').split('::')[0];
     // Premorbid sources: don't pattern-match WAIS-IV/WMS-IV from the table -
-    // those are predicted outcomes, not the test family.
-    if (parentId && parentId.startsWith('pre-')){
+    // those are predicted outcomes, not the test family. Validity sources:
+    // same shape - RBANS / Digit Span / TOMM name the indicators' host
+    // tests, so the pill would read "RBANS added to report".
+    if (parentId && (parentId.startsWith('pre-') || parentId.startsWith('pvt-'))){
       return SOURCE_LABELS[parentId] || null;
     }
     const family = detectTestFamily(html);
@@ -28071,6 +28837,7 @@ if (document.readyState === 'loading'){
     'effectsize':     'Effect Sizes',
     'change-analysis':'Change Analysis',
     'charts':         'Score Charts',
+    'validity':       'Performance Validity',
     'rci-basic':      'Standard Deviation Index',
     'rci-practice':   'Simple Reliable Change',
     'rci-srb':        'Practice-Adjusted',

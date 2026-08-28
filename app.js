@@ -3058,6 +3058,22 @@ const APA_NOTES = {
     'Difference = Achieved − Predicted.',
     'Base rate = published % at or below this discrepancy (ToPF-UK manual, negative discrepancies only). The manual derives these from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.'
   ],
+  /* Performance Validity page — one note under the single combined table.
+     'Fail' is defined as the cut-off comparison it is, and the note carries
+     the no-single-verdict rule and the population caveat, because those are
+     the load-bearing claims of the whole page. Conditional sentences ADD
+     context in the export; the on-screen mirror shows the base sentences. */
+  'pvt': ctx => [
+    'EI = RBANS Effort Index (Silverberg et al., 2007); ES = RBANS Effort Scale (Novitski et al., 2012); RDS = Reliable Digit Span, Forward + Backward (Greiffenstein et al., 1994); TOMM = Test of Memory Malingering (Tombaugh, 1996), interpreted against meta-analytic cut-offs (Martin et al., 2020).',
+    '"Fail" denotes a score beyond the published cut-off for that measure; it is a cut-off comparison, not a determination of invalidity. No single indicator is a verdict: probable invalidity is conventionally supported by failure of at least two independent validity indicators (Larrabee, 2014).',
+    ctx.bothRbans
+      ? 'The Effort Index and Effort Scale are computed from the same RBANS subtests and constitute one indicator, not two.'
+      : '',
+    ctx.esGated
+      ? 'The Effort Scale is reported as not computed because its screening gate (Digit Span < 9, List Recognition < 19, or their sum < 28) was not met; on such a profile the scale is not interpretable (Novitski et al., 2012).'
+      : '',
+    'Cut-offs assume the validation populations of the cited studies; specificity falls substantially in dementia and severe cognitive impairment, and traditional TOMM cut-offs should not be interpreted in suspected or confirmed dementia.'
+  ],
   'pre-opiepredict': () => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
     '<span class="uk-caution-red">Illustrative only in a UK context as this is derived from US regression equations. The numbers should not be considered to be accurate in a UK context.</span> The published equations also use US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). These estimates would likely run high for patients who left school early and low for graduates.'
@@ -6497,6 +6513,376 @@ document.addEventListener('click', e => {
   else openPremorbidLinkPopover();
 });
 
+/* ================================================================
+   PERFORMANCE VALIDITY (PVT) PAGE
+
+   Scores four validity indicators against their published cut-offs
+   (constants in data.js, pinned by check.js §38):
+     - RBANS Effort Index      Silverberg et al. (2007)
+     - RBANS Effort Scale      Novitski et al. (2012) — GATED, see below
+     - Reliable Digit Span     Greiffenstein et al. (1994)
+     - TOMM                    Martin et al. (2020) meta-analysis
+
+   Design constraints, in order of importance:
+   1. Results are CUT-OFF COMPARISONS, never verdicts. "Fail" means the
+      score is beyond the published cut-off — the conventional PVT term —
+      and the APA note defines it as exactly that. No output may label an
+      examinee or a protocol invalid from a single indicator.
+   2. The ES gate is mandatory, not advisory: in intact examinees free
+      recall normally exceeds ceiling-limited recognition, so an ungated
+      ES over-flags. The gate unmet is rendered as "not computed", never
+      as a number.
+   3. TOMM PPP/NPP are DERIVED by Bayes from the pinned meta-analytic
+      sensitivity/specificity and the selected base rate, exactly as
+      Martin et al. built Tables 16-17 from the same values. 57 of the 60
+      published cells reproduce at 2 dp (§38); deriving rather than
+      storing avoids transcribing the one cell that does not.
+   4. One APA export for the whole page (pvt-apa, on the Summary tab):
+      the four indicators belong in one report table, and four
+      near-identical tables would recreate the Change Analysis bloat
+      that consent gating exists to fix.
+
+   The two RBANS inputs (Digit Span, List Recognition) appear on both the
+   EI and ES tabs; pvtState is the master and every [data-pvt-field] input
+   is a synced view of it, so a value entered on either tab carries to the
+   other. Raw entry only — this page never reads normDB.
+   ================================================================ */
+
+const pvtState = { ds:'', lrec:'', listRecall:'', storyRecall:'', figRecall:'' };
+
+/* Parse one raw-score field. Returns:  undefined = empty,  null = not a
+   whole number in [min, max],  number = usable. The two non-values stay
+   distinct so an out-of-range entry reads as "check the value" rather
+   than as still-waiting-for-input. */
+function pvtInt(v, min, max){
+  if (v === '' || v === null || v === undefined) return undefined;
+  const n = Number(v);
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < min || n > max) return null;
+  return n;
+}
+
+/* ---------- Effort Index (Silverberg et al., 2007) ---------- */
+function pvtEiWeight(bands, raw){
+  for (const b of bands) if (raw >= b.min && raw <= b.max) return b.w;
+  return null;
+}
+function getPvtEi(){
+  const ds = pvtInt(pvtState.ds, 0, 16);
+  const lr = pvtInt(pvtState.lrec, 0, 20);
+  if (ds === undefined && lr === undefined) return { empty: true };
+  if (ds === null || lr === null) return { invalid: true };
+  if (ds === undefined || lr === undefined) return { partial: true };
+  const wDs = pvtEiWeight(PVT_EI_WEIGHTS.digitSpan, ds);
+  const wLr = pvtEiWeight(PVT_EI_WEIGHTS.listRecognition, lr);
+  const cutKey = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
+  const cut = PVT_EI_CUTOFFS[cutKey];
+  const ei = wDs + wLr;
+  return { ds, lr, wDs, wLr, ei, cutKey, cut, fail: ei > cut };
+}
+
+/* ---------- Effort Scale (Novitski et al., 2012) ---------- */
+function getPvtEs(){
+  const ds   = pvtInt(pvtState.ds, 0, 16);
+  const lr   = pvtInt(pvtState.lrec, 0, 20);
+  const list = pvtInt(pvtState.listRecall, 0, 10);
+  const stor = pvtInt(pvtState.storyRecall, 0, 12);
+  const fig  = pvtInt(pvtState.figRecall, 0, 20);
+  const vals = [ds, lr, list, stor, fig];
+  if (vals.every(v => v === undefined)) return { empty: true };
+  if (vals.some(v => v === null)) return { invalid: true };
+  if (vals.some(v => v === undefined)) return { partial: true };
+  const g = PVT_ES.gate;
+  const gateMet = ds < g.digitSpanBelow || lr < g.listRecognitionBelow || (ds + lr) < g.combinedBelow;
+  if (!gateMet) return { ds, lr, gated: true };
+  const es = (lr - (list + stor + fig)) + ds;
+  return { ds, lr, list, stor, fig, es, fail: es < PVT_ES.cutoff };
+}
+
+/* ---------- Reliable Digit Span (Greiffenstein et al., 1994) ---------- */
+function getPvtRds(){
+  const f = pvtInt(document.getElementById('pvt-rds-f')?.value, 0, 9);
+  const b = pvtInt(document.getElementById('pvt-rds-b')?.value, 0, 8);
+  if (f === undefined && b === undefined) return { empty: true };
+  if (f === null || b === null) return { invalid: true };
+  if (f === undefined || b === undefined) return { partial: true };
+  const sum = f + b;
+  /* Floor rule: failing at least one trial each of the lowest items is
+     recorded as RDS = 3 — with two-number entry that is any sum below 3. */
+  const floored = sum < PVT_RDS.floor;
+  const rds = floored ? PVT_RDS.floor : sum;
+  const conservative = document.getElementById('pvt-rds-cutoff')?.value !== 'traditional';
+  const cut = conservative ? PVT_RDS.cutoffConservative : PVT_RDS.cutoffTraditional;
+  return { f, b, rds, floored, conservative, cut, fail: rds <= cut };
+}
+
+/* ---------- TOMM (Martin et al., 2020) ---------- */
+function pvtPPP(sens, spec, br){ return (sens * br) / (sens * br + (1 - spec) * (1 - br)); }
+function pvtNPP(sens, spec, br){ return (spec * (1 - br)) / (spec * (1 - br) + (1 - sens) * br); }
+function pvtTommCutoffById(id){ return PVT_TOMM_CUTOFFS.find(c => c.id === id) || null; }
+function getPvtTomm(){
+  const t1  = pvtInt(document.getElementById('pvt-tomm-t1')?.value, 0, 50);
+  const t2  = pvtInt(document.getElementById('pvt-tomm-t2')?.value, 0, 50);
+  const ret = pvtInt(document.getElementById('pvt-tomm-ret')?.value, 0, 50);
+  if (t1 === undefined && t2 === undefined && ret === undefined) return { empty: true };
+  if (t1 === null || t2 === null || ret === null) return { invalid: true };
+  const t1CutId = document.getElementById('pvt-tomm-t1cut')?.value === 't1-41' ? 't1-41' : 't1-42';
+  const lateCut = document.getElementById('pvt-tomm-t2cut')?.value === '49' ? '49' : '45';
+  const br = parseFloat(document.getElementById('pvt-tomm-br')?.value) || 0.10;
+  const rows = [];
+  const addRow = (label, score, cutoff) => {
+    if (score === undefined || !cutoff) return;
+    rows.push({
+      label, score, cutoff,
+      fail: score < cutoff.cut,
+      ppp: pvtPPP(cutoff.sens, cutoff.spec, br),
+      npp: pvtNPP(cutoff.sens, cutoff.spec, br)
+    });
+  };
+  addRow('Trial 1',   t1,  pvtTommCutoffById(t1CutId));
+  addRow('Trial 2',   t2,  pvtTommCutoffById('t2-' + lateCut));
+  addRow('Retention', ret, pvtTommCutoffById('ret-' + lateCut));
+  return { rows, br, anyFail: rows.some(r => r.fail) };
+}
+
+/* ---------- result boxes ---------- */
+function pvtResultHtml(kind, headline, detail){
+  return `<div class="pvt-result-inner is-${kind}"><span class="pvt-result-headline">${headline}</span>${detail ? `<span class="pvt-result-detail">${detail}</span>` : ''}</div>`;
+}
+const PVT_PROMPTS = {
+  partial: 'Enter the remaining score(s) to compute this index.',
+  invalid: 'Check the entered values — one is outside the possible raw-score range.'
+};
+function pvtStatusWord(fail){ return fail ? 'Fail' : 'Pass'; }
+
+function renderPvtEi(){
+  const out = document.getElementById('pvt-ei-result');
+  if (!out) return;
+  const s = getPvtEi();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
+  const cutLabel = `EI &gt; ${s.cut}${s.cutKey === 'sensitive' ? ' (screening)' : ''}`;
+  out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
+    `Effort Index = ${s.ei} — ${pvtStatusWord(s.fail)} at ${cutLabel}`,
+    `Digit Span ${s.ds} → weight ${s.wDs}; List Recognition ${s.lr} → weight ${s.wLr}. ${s.fail
+      ? 'The index exceeds the published cut-off, which is conventionally reported as a PVT failure — corroborate with an independent, preferably forced-choice, measure before drawing any conclusion.'
+      : 'The index does not exceed the published cut-off.'}`);
+}
+
+function renderPvtEs(){
+  const out = document.getElementById('pvt-es-result');
+  if (!out) return;
+  const s = getPvtEs();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
+  if (s.gated){
+    out.innerHTML = pvtResultHtml('na',
+      'Effort Scale not computed — screening gate not met',
+      `Digit Span ${s.ds} (gate &lt; 9), List Recognition ${s.lr} (gate &lt; 19), sum ${s.ds + s.lr} (gate &lt; 28). On a profile this strong the ES is not interpretable: free recall normally exceeds the ceiling-limited recognition score in intact examinees, so computing it here would over-flag (Novitski et al., 2012).`);
+    return;
+  }
+  out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
+    `Effort Scale = ${s.es} — ${pvtStatusWord(s.fail)} at ES &lt; ${PVT_ES.cutoff}`,
+    `(${s.lr} − [${s.list} + ${s.stor} + ${s.fig}]) + ${s.ds} = ${s.es}. Gate met, so the score is interpretable. ${s.fail
+      ? 'The score falls below the published cut-off, which is conventionally reported as a PVT failure — confirm with a stand-alone forced-choice measure.'
+      : 'The score does not fall below the published cut-off.'}`);
+}
+
+function renderPvtRds(){
+  const out = document.getElementById('pvt-rds-result');
+  if (!out) return;
+  const s = getPvtRds();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
+  const cutLabel = `RDS ≤ ${s.cut}${s.conservative ? ' (conservative)' : ' (traditional)'}`;
+  out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
+    `RDS = ${s.rds} — ${pvtStatusWord(s.fail)} at ${cutLabel}`,
+    `${s.f} forward + ${s.b} backward${s.floored ? ` = ${s.f + s.b}; the floor rule records any RDS below 3 as 3 (Greiffenstein et al., 1994)` : ''}. ${s.fail
+      ? 'The score is at or below the published cut-off, which is conventionally reported as a PVT failure — weigh genuine attentional impairment, anxiety and aphasia before drawing any conclusion.'
+      : 'The score is above the published cut-off.'}`);
+}
+
+function renderPvtTomm(){
+  const out = document.getElementById('pvt-tomm-result');
+  const power = document.getElementById('pvt-tomm-power');
+  if (!out || !power) return;
+  const s = getPvtTomm();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.'); power.innerHTML = ''; return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
+  const lines = s.rows.map(r =>
+    `${r.label} = ${r.score} — <strong>${pvtStatusWord(r.fail)}</strong> at ${r.cutoff.label.replace('<', '&lt;')}`).join('<br>');
+  out.innerHTML = pvtResultHtml(s.anyFail ? 'fail' : 'pass', lines,
+    s.anyFail
+      ? 'At least one trial falls below its selected cut-off, which is conventionally reported as a PVT failure. Interpret against the predictive-power table below — at low base rates a single failure has modest positive predictive power.'
+      : 'No entered trial falls below its selected cut-off.');
+  const brPct = Math.round(s.br * 100);
+  power.innerHTML = `
+    <div class="panel">
+      <div class="block-title">Predictive power at a ${brPct}% base rate of invalidity</div>
+      <table class="pvt-table">
+        <thead><tr><th>Trial · cut-off</th><th>Sens.</th><th>Spec.</th><th>PPP</th><th>NPP</th></tr></thead>
+        <tbody>${s.rows.map(r => `
+          <tr><td>${r.cutoff.label.replace('<', '&lt;')}</td>
+          <td>${r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.ppp.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.npp.toFixed(2).replace(/^0/, '')}</td></tr>`).join('')}
+        </tbody>
+      </table>
+      <p class="pvt-agg-copy" style="margin-top:10px;margin-bottom:0">PPP = probability a failure is a true positive; NPP = probability a pass is a true negative. Derived by Bayes' theorem from the meta-analytic weighted-mean sensitivity/specificity for neurocognitive/psychiatric samples and the selected base rate, as in Martin et al. (2020), Tables 16–17. PPP uses the point sensitivity/specificity even where a range is shown.</p>
+    </div>`;
+}
+
+/* ---------- summary + APA export ---------- */
+/* One row per reportable line. TOMM contributes one row per entered trial
+   but counts as ONE indicator; EI and ES share their RBANS subtests and
+   also count as one. The independence arithmetic is the point of the
+   summary — see Larrabee (2014). */
+function getPvtSummaryRows(){
+  const rows = [];
+  const ei = getPvtEi();
+  if (ei.ei !== undefined) rows.push({
+    id: 'ei', group: 'rbans', measure: 'RBANS Effort Index',
+    score: String(ei.ei), cutoff: `> ${ei.cut}${ei.cutKey === 'sensitive' ? ' (screening)' : ''}`,
+    result: pvtStatusWord(ei.fail), fail: ei.fail
+  });
+  const es = getPvtEs();
+  if (es.gated) rows.push({
+    id: 'es', group: 'rbans', measure: 'RBANS Effort Scale',
+    score: '—', cutoff: `< ${PVT_ES.cutoff}`, result: 'Not computed (gate not met)', fail: false, gated: true
+  });
+  else if (es.es !== undefined) rows.push({
+    id: 'es', group: 'rbans', measure: 'RBANS Effort Scale',
+    score: String(es.es), cutoff: `< ${PVT_ES.cutoff}`, result: pvtStatusWord(es.fail), fail: es.fail
+  });
+  const rds = getPvtRds();
+  if (rds.rds !== undefined) rows.push({
+    id: 'rds', group: 'rds', measure: 'Reliable Digit Span',
+    score: String(rds.rds), cutoff: `≤ ${rds.cut}${rds.conservative ? ' (conservative)' : ''}`,
+    result: pvtStatusWord(rds.fail), fail: rds.fail
+  });
+  const tomm = getPvtTomm();
+  if (tomm.rows) tomm.rows.forEach(r => rows.push({
+    id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
+    score: String(r.score), cutoff: r.cutoff.label.replace(/^.* </, '< '),
+    result: pvtStatusWord(r.fail), fail: r.fail
+  }));
+  return rows;
+}
+function pvtIndicatorCounts(rows){
+  const groups = [...new Set(rows.filter(r => !r.gated).map(r => r.group))];
+  const failed = groups.filter(g => rows.some(r => r.group === g && r.fail));
+  return { total: groups.length, failed: failed.length };
+}
+
+function renderPvtSummary(){
+  const host = document.getElementById('pvt-summary-body');
+  if (!host) return;
+  const rows = getPvtSummaryRows();
+  if (rows.length === 0){
+    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet — score at least one measure on the other tabs and the summary builds itself.') + '</div>';
+    return;
+  }
+  const c = pvtIndicatorCounts(rows);
+  const countLine = c.total === 0 ? '' :
+    `<p class="pvt-agg-copy" style="margin-top:12px"><strong>${c.failed} of ${c.total}</strong> independent indicator${c.total === 1 ? '' : 's'} with data ${c.failed === 1 ? 'falls' : 'fall'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — counting the two RBANS indices as one indicator and the TOMM trials as one. Failing ≥ 2 independent PVTs supports probable invalidity; a single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).</p>`;
+  host.innerHTML = `
+    <div class="panel">
+      <div class="block-title">Indicators scored this session</div>
+      <table class="pvt-table">
+        <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Result</th></tr></thead>
+        <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
+      </table>
+      ${countLine}
+    </div>`;
+}
+
+function renderPvtApa(){
+  const out = document.getElementById('pvt-apa');
+  if (!out) return;
+  const rows = getPvtSummaryRows();
+  /* EMPTY-STATE GUARD — same contract §35 enforces on the premorbid
+     renderers: the working-report observer's only test is the presence of
+     .apa-table, so a renderer that always writes one always offers an
+     empty table to the report. No data, no table. */
+  if (rows.length === 0){
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least one validity measure to preview.</div>';
+    return;
+  }
+  const ei = getPvtEi(), es = getPvtEs();
+  out.innerHTML = `
+    <div class="apa-table-num">Table 1</div>
+    <div class="apa-table-title">Performance validity indicators</div>
+    <table class="apa-table">
+      <thead><tr><th>Measure</th><th class="num">Score</th><th>Cut-off</th><th>Result</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${escapeHtml(r.measure)}</td><td class="num">${escapeHtml(r.score)}</td><td>${escapeHtml(r.cutoff)}</td><td>${escapeHtml(r.result)}</td></tr>`).join('')}</tbody>
+    </table>
+    ${apaNoteHtml('pvt', {
+      hasEi: ei.ei !== undefined,
+      hasEs: es.es !== undefined,
+      esGated: !!es.gated,
+      bothRbans: ei.ei !== undefined && es.es !== undefined,
+      hasTomm: rows.some(r => r.group === 'tomm')
+    })}
+  `;
+}
+
+function renderPvtAll(){
+  renderPvtEi();
+  renderPvtEs();
+  renderPvtRds();
+  renderPvtTomm();
+  renderPvtSummary();
+  renderPvtApa();
+}
+
+function switchPvtTab(name){
+  document.querySelectorAll('#validity .pvt-tabs .tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.pvtTab === name));
+  document.querySelectorAll('#validity .pvt-tab-content').forEach(c =>
+    c.classList.toggle('active', c.id === 'pvt-' + name));
+}
+
+function clearPvt(){
+  Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
+  document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
+  ['pvt-rds-f','pvt-rds-b','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderPvtAll();
+}
+
+function setupPvtPage(){
+  const root = document.getElementById('validity');
+  if (!root) return;
+  root.querySelectorAll('.pvt-tabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
+  });
+  /* The shared RBANS fields appear on both the EI and ES tabs; pvtState is
+     the master and every input with the same data-pvt-field mirrors it. */
+  root.querySelectorAll('[data-pvt-field]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const field = inp.dataset.pvtField;
+      pvtState[field] = inp.value;
+      root.querySelectorAll(`[data-pvt-field="${field}"]`).forEach(other => {
+        if (other !== inp && other.value !== inp.value) other.value = inp.value;
+      });
+      renderPvtAll();
+    });
+  });
+  ['pvt-rds-f','pvt-rds-b','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', renderPvtAll);
+  });
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', renderPvtAll);
+  });
+  renderPvtAll();
+}
+
+
 // Premorbid setup
 setupPreTabs();
 buildPredictTable();
@@ -6508,6 +6894,9 @@ calcOpiePredict();
 // Battery autofill input wiring (combobox listeners)
 wireBatteryAutofill();
 wireSdiAutofill();
+
+// Performance Validity page
+setupPvtPage();
 
 // Final initialization
 refreshAll();
@@ -6543,6 +6932,8 @@ refreshAll();
         if (typeof clearMethodRows === 'function') clearMethodRows(m);
       });
     } catch(e){}
+    // Performance Validity page
+    try { if (typeof clearPvt === 'function') clearPvt(); } catch(e){}
     /* Premorbid inputs (predictors + demographics), and the master patient age.
        #patient-age is listed explicitly rather than left to the #pre-age mirror:
        the mirror would in fact carry the blank across, but a patient identity
@@ -6760,6 +7151,7 @@ refreshAll();
     'rci-crawford': 'change',
     'change-analysis': 'change',
     charts: 'charts',
+    validity: 'validity',
     premorbid: 'premorbid'
     // Norms (custom-tests) and Reference (about) live in the footer, not the top nav
   };
@@ -6778,6 +7170,7 @@ refreshAll();
     'rci-crawford': 'Crawford Regression-Based',
     'change-analysis': 'Change Analysis',
     charts: 'Score Charts',
+    validity: 'Performance Validity',
     premorbid: 'Premorbid Estimation',
     'custom-tests': 'Data',
     about: 'Methods & References'
@@ -6855,7 +7248,8 @@ const ReportBundle = (function(){
     'rci-crawford-apa':  'Crawford Regression-Based',
     'pre-estimates-apa':    'Premorbid · Estimates',
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
-    'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted'
+    'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted',
+    'pvt-apa':              'Performance Validity'
   };
   /* Method / tool names - combined with the detected test family to produce
      intelligent table titles like "Crawford Regression-Based Change: WAIS-IV". */
@@ -6868,7 +7262,8 @@ const ReportBundle = (function(){
     'rci-crawford-apa':     'Crawford Regression-Based Change',
     'pre-estimates-apa':    'Premorbid Cognitive Estimate',
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',
-    'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved'
+    'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved',
+    'pvt-apa':              'Performance Validity Indicators'
   };
   /* Backwards alias - SOURCE_TITLES still referenced in a couple of places */
   const SOURCE_TITLES = SOURCE_METHOD_NAMES;
@@ -6883,7 +7278,10 @@ const ReportBundle = (function(){
     // the predicted indices), but those aren't the "test family" - the test is
     // ToPF / OPIE, already named in the method. Skip family detection here so
     // we don't end up with "ToPF-Predicted vs Achieved: WAIS-IV".
-    if (parentId && parentId.startsWith('pre-')){
+    /* Validity tables mention RBANS / Digit Span / TOMM as the indicators'
+       host tests, not as a test family whose results these are — titling the
+       table "Performance Validity Indicators: RBANS" would misdescribe it. */
+    if (parentId && (parentId.startsWith('pre-') || parentId.startsWith('pvt-'))){
       return method || 'APA Table';
     }
 
@@ -7322,8 +7720,10 @@ const ReportBundle = (function(){
   function pillLabelFor(html, sourceId){
     const parentId = (sourceId || '').split('::')[0];
     // Premorbid sources: don't pattern-match WAIS-IV/WMS-IV from the table -
-    // those are predicted outcomes, not the test family.
-    if (parentId && parentId.startsWith('pre-')){
+    // those are predicted outcomes, not the test family. Validity sources:
+    // same shape - RBANS / Digit Span / TOMM name the indicators' host
+    // tests, so the pill would read "RBANS added to report".
+    if (parentId && (parentId.startsWith('pre-') || parentId.startsWith('pvt-'))){
       return SOURCE_LABELS[parentId] || null;
     }
     const family = detectTestFamily(html);

@@ -1867,3 +1867,96 @@ const OPIE_BASE_RATES = {
     "Symbol Span": { m1:10.1, sd1:2.8, m2:10.7, sd2:3, r:0.69, rCorrected:0.73, n:69, separateBattery:true, rInternal:0.84, rInternalAgeMax:90, rInternalByAge:{65:0.88, 70:0.87, 75:0.81, 80:0.84, 85:0.76} }
   }
 };
+
+/* ============================================================================
+   PERFORMANCE VALIDITY (PVT) REFERENCE DATA
+
+   Sources (primary; the on-screen references list carries full citations):
+   - RBANS Effort Index:  Silverberg, Wertheimer & Fichtenberg (2007), TCN 21(5), 841-854.
+   - RBANS Effort Scale:  Novitski, Steele, Karantzoulis & Randolph (2012), ACN 27(2), 190-195.
+   - Reliable Digit Span: Greiffenstein, Baker & Gola (1994), Psych. Assessment 6(3), 218-224;
+                          Meyers & Volbrecht (1998); Schroeder et al. (2012).
+   - TOMM:                Martin, Schroeder, Olsen, Maloy, Boettcher, Ernst & Okut (2020),
+                          TCN 34(1), 88-119 (meta-analysis); Tombaugh (1996).
+   - Aggregation:         Larrabee (2014), ACN 29(4), 364-373.
+
+   These pages take RAW scores directly and never read normDB. Cut-offs and
+   weights are stored verbatim from the cited papers; every table below is
+   pinned in tools/check.js §38. PVT results are reported as cut-off
+   comparisons, never as verdicts — no output may label an examinee
+   "malingering" or the profile "invalid" from a single indicator.
+   ========================================================================= */
+
+/* Silverberg et al. (2007) Table 2 — raw-to-weighted conversion for the two
+   Effort Index components. Bands are [min, max] inclusive on the raw score;
+   note the deliberate gaps (Digit Span never yields a weight of 1 or 4).
+   EI = weighted Digit Span + weighted List Recognition, range 0-12. */
+const PVT_EI_WEIGHTS = {
+  digitSpan: [            // RBANS Digit Span raw, 0-16
+    { min: 8, max: 16, w: 0 },
+    { min: 7, max: 7,  w: 2 },
+    { min: 6, max: 6,  w: 3 },
+    { min: 5, max: 5,  w: 5 },
+    { min: 0, max: 4,  w: 6 }
+  ],
+  listRecognition: [      // RBANS List Recognition raw, 0-20
+    { min: 18, max: 20, w: 0 },
+    { min: 17, max: 17, w: 1 },
+    { min: 15, max: 16, w: 2 },
+    { min: 13, max: 14, w: 3 },
+    { min: 11, max: 12, w: 4 },
+    { min: 10, max: 10, w: 5 },
+    { min: 0,  max: 9,  w: 6 }
+  ]
+};
+/* EI > 3: standard threshold (~94% specificity in the derivation sample);
+   EI > 1: the authors' optimal screening cut-off for post-acute mild TBI. */
+const PVT_EI_CUTOFFS = { standard: 3, sensitive: 1 };
+
+/* Novitski et al. (2012). ES = (List Recognition - [List Recall + Story
+   Recall + Figure Recall]) + Digit Span, all raw. LOWER is more suspicious.
+   The gate is mandatory: computed only where Digit Span < 9 OR List
+   Recognition < 19 OR their sum < 28 — in intact examinees free recall
+   normally far exceeds ceiling-limited recognition, so an ungated ES
+   over-flags. Cut-off: ES < 12 once the gate is met. */
+const PVT_ES = {
+  gate: { digitSpanBelow: 9, listRecognitionBelow: 19, combinedBelow: 28 },
+  cutoff: 12
+};
+
+/* Greiffenstein et al. (1994); Meyers & Volbrecht (1998). RDS = longest
+   forward string passed on BOTH trials + longest backward string passed on
+   BOTH trials (classic variant: Forward + Backward only, no WAIS-IV
+   Sequencing). Floor rule: failing at least one trial each of 3 forward and
+   2 backward is recorded as RDS = 3.
+   <= 7: traditional cut-off. <= 6: conservative — Schroeder et al. (2012)
+   found <= 7 had inadequate specificity across clinical groups while <= 6
+   held specificity > .90; prefer <= 6 in genuinely impaired populations. */
+const PVT_RDS = { floor: 3, cutoffTraditional: 7, cutoffConservative: 6 };
+
+/* Martin et al. (2020) meta-analytic TOMM cut-offs — weighted-mean
+   specificity/sensitivity for neurocognitive/psychiatric samples (the most
+   clinically generalisable subgroup). Scores are correct responses out of 50;
+   "cut" means scores BELOW it fail. sens/spec are the point values the
+   meta-analysis uses for its predictive-power tables (Tables 16-17), from
+   which the app derives PPP/NPP by Bayes at the chosen base rate.
+   specRange/sensRange, where present, are the ranges quoted for the cut-off
+   summary table. Trial 1 < 41 row: Denning (2012). */
+const PVT_TOMM_CUTOFFS = [
+  { id: 't1-41',  trial: 'trial1',    label: 'Trial 1 < 41',   cut: 41, sens: 0.66, spec: 0.93, note: 'Conservative abbreviated/screening cut-off (Denning, 2012).' },
+  { id: 't1-42',  trial: 'trial1',    label: 'Trial 1 < 42',   cut: 42, sens: 0.69, spec: 0.91, note: 'Meta-analytic optimum for abbreviated/screening use.' },
+  { id: 't2-45',  trial: 'trial2',    label: 'Trial 2 < 45',   cut: 45, sens: 0.45, spec: 0.97, specRange: '.96–.98', sensRange: '.45–.55', note: 'Traditional cut-off; very high specificity across settings.' },
+  { id: 't2-49',  trial: 'trial2',    label: 'Trial 2 < 49',   cut: 49, sens: 0.63, spec: 0.95, specRange: '.91–.97', sensRange: '.59–.70', note: 'Liberal; only where significant impairment is not expected.' },
+  { id: 'ret-45', trial: 'retention', label: 'Retention < 45', cut: 45, sens: 0.55, spec: 0.98, note: 'Traditional cut-off; very high specificity across settings.' },
+  { id: 'ret-49', trial: 'retention', label: 'Retention < 49', cut: 49, sens: 0.70, spec: 0.93, note: 'Liberal; only where significant impairment is not expected.' }
+];
+/* Base-rate options for the PPP/NPP display, as in Martin et al. Tables 16-17. */
+const PVT_BASE_RATES = [0.10, 0.20, 0.30, 0.40, 0.50];
+
+/* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
+   accuracy by number of failures. Percentages as published. */
+const PVT_AGGREGATION = [
+  { threshold: '≥ 2 of 7 failures', spec: 88.9, sens: 97.6, correct: 92.6 },
+  { threshold: '≥ 3 of 7 failures', spec: 96.3, sens: 87.8, correct: 92.6 },
+  { threshold: '≥ 4 of 7 failures', spec: 100,  sens: 63.4, correct: 84.2 }
+];

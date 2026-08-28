@@ -23,6 +23,7 @@
     'effectsize':     'Effect Sizes',
     'change-analysis':'Change Analysis',
     'charts':         'Score Charts',
+    'validity':       'Performance Validity',
     'rci-basic':      'Standard Deviation Index',
     'rci-practice':   'Simple Reliable Change',
     'rci-srb':        'Practice-Adjusted',
