@@ -2046,6 +2046,46 @@ const PVT_REY15_ACCURACY = {
   combo:  { sens: '.71', spec: '.92–.94' }
 };
 
+/* Rey 15-Item stimulus layouts, for in-app administration.
+   Sources: the recall page is the classic 5x3 array (Rey, 1964; Lezak);
+   the recognition page is Boone et al. (2002) Figure 1, "Rey 15-Item
+   Recognition Stimulus Page", transcribed item by item from the figure
+   in reading order — 5 rows of 6.
+
+   The 15 TARGETS are not asserted here: `target` is derived in
+   check.js §38 by testing each recognition item's id against the recall
+   set, and the check fails unless exactly 15 match and the matching set
+   IS the recall set. That is the invariant that makes the foils
+   trustworthy — a mis-transcribed foil would either break the count or
+   claim a target that never appeared on the recall page.
+
+   The foils mirror each target series one step on (D E F / 4 5 6 /
+   d e f / diamond, pentagon, parallelogram / one, two and three
+   horizontal rules against I, II, III), which is the design that makes
+   the recognition trial discriminating. Boone's pathognomonic
+   false-positive errors — f, 5, 6 and the pentagon — are all here.
+
+   TEST SECURITY: these are rendered ONLY inside the administration
+   overlay, which requires an explicit start in-session; they never
+   appear in the page's static markup, in an exported table, or behind a
+   deep link. §38 asserts all four. */
+const REY15_RECALL_ROWS = [
+  ['A', 'B', 'C'],
+  ['1', '2', '3'],
+  ['a', 'b', 'c'],
+  ['circle', 'square', 'triangle'],
+  ['I', 'II', 'III']
+];
+const REY15_RECOGNITION_ROWS = [
+  ['d', 'diamond', 'II', 'B', '5', 'c'],
+  ['A', 'III', 'e', 'pentagon', '2', 'rule1'],
+  ['rule3', 'square', '6', '1', 'F', 'a'],
+  ['parallelogram', '4', 'C', 'b', 'triangle', 'D'],
+  ['I', 'E', 'f', 'rule2', 'circle', '3']
+];
+/* How each id draws: a glyph is set in type, a shape is stroked. */
+const REY15_SHAPES = ['circle', 'square', 'triangle', 'diamond', 'pentagon', 'parallelogram', 'rule1', 'rule2', 'rule3'];
+
 /* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
 const PVT_AGGREGATION = [

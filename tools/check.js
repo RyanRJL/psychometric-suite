@@ -50,6 +50,7 @@ vm.runInContext(
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
     ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
+    ' REY15_RECALL_ROWS, REY15_RECOGNITION_ROWS, REY15_SHAPES,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -7076,10 +7077,9 @@ check('Rey 15-Item: cut-offs, accuracy and independence (Boone et al., 2002)', (
   if (!/group: 'rey15'/.test(reyBlock) || /group: 'rds'/.test(reyBlock.split('getPvtTomm')[0])){
     bad.push('the Rey rows are not in their own group - a stand-alone measure must add an independent indicator');
   }
-  /* The stimulus must stay out of the shipped page - test security. */
-  if (/pvt-rey[^"]*stimulus|rey15[^"]*\.(png|svg|jpg)/i.test(HTML_SRC)){
-    bad.push('a Rey 15-Item stimulus image appears in the page - publishing PVT stimuli beside their cut-offs is a test-security hazard');
-  }
+  /* The stimulus contract moved: it is no longer "never present" but
+     "only inside the administration overlay", asserted four ways in the
+     administration check below. */
   if (!HTML_SRC.includes('Boone, K. B., Salazar, X., Lu, P.')) bad.push('references lost Boone et al. (2002)');
   return bad.length === 0 || bad.join('; ');
 });
@@ -7197,6 +7197,70 @@ check('the readout gives every index its OWN state, and states never rest on col
   return bad.length === 0 || bad.join('; ');
 });
 
+
+
+check('Rey 15-Item administration: the layouts are the published pages, and the stimuli stay out of the page', () => {
+  /* PINNED: the recall page is the classic 5x3 array; the recognition page
+     is Boone et al. (2002) Figure 1, transcribed in reading order. The
+     TARGET SET IS DERIVED, NOT ASSERTED — each recognition item is tested
+     against the recall set, and exactly 15 must match. A mis-transcribed
+     foil either breaks that count or claims a target that never appeared
+     on the recall page, so this one check validates the whole figure. */
+  const bad = [];
+  const recall = D.REY15_RECALL_ROWS.flat();
+  const recog  = D.REY15_RECOGNITION_ROWS.flat();
+  if (D.REY15_RECALL_ROWS.length !== 5 || D.REY15_RECALL_ROWS.some(r => r.length !== 3)){
+    bad.push('the recall page is no longer 5 rows of 3');
+  }
+  if (D.REY15_RECOGNITION_ROWS.length !== 5 || D.REY15_RECOGNITION_ROWS.some(r => r.length !== 6)){
+    bad.push('the recognition page is no longer 5 rows of 6');
+  }
+  if (recall.length !== 15) bad.push('the recall page is not 15 items');
+  if (recog.length !== 30)  bad.push('the recognition page is not 30 items');
+  if (new Set(recog).size !== 30) bad.push('the recognition page repeats an item');
+  const targets = recog.filter(i => recall.includes(i));
+  if (targets.length !== 15) bad.push(`the recognition page holds ${targets.length} targets, not 15 — a transcription error`);
+  const missing = recall.filter(i => !recog.includes(i));
+  if (missing.length) bad.push('recall items absent from the recognition page: ' + missing.join(', '));
+  /* Boone's pathognomonic false-positive errors must all be FOILS. */
+  ['f', '5', '6', 'pentagon'].forEach(id => {
+    if (!recog.includes(id)) bad.push('the recognition page lost the ' + id + ' foil');
+    if (recall.includes(id)) bad.push(id + ' is a target — Boone lists it among the pathognomonic false-positive errors');
+  });
+  /* Every item must be drawable: a shape has SVG, anything else is a glyph. */
+  const svgBlock = APP_SRC.slice(APP_SRC.indexOf('const REY15_SHAPE_SVG'), APP_SRC.indexOf('function rey15ItemHtml'));
+  D.REY15_SHAPES.forEach(s => {
+    if (!new RegExp('\\b' + s + ':').test(svgBlock)) bad.push('no SVG for the ' + s + ' shape');
+  });
+  recog.concat(recall).forEach(id => {
+    if (D.REY15_SHAPES.includes(id) && !new RegExp('\\b' + id + ':').test(svgBlock)) bad.push(id + ' is a shape with no drawing');
+  });
+  /* The scorer must count targets, never trust a stored flag. */
+  const isT = extractFn(APP_SRC, 'rey15IsTarget');
+  if (!/REY15_RECALL_ROWS/.test(isT)) bad.push('rey15IsTarget no longer derives from the recall page');
+  /* TEST SECURITY, four ways. */
+  if (/data-rey-item|rey-grid|REY15_RECOGNITION/.test(HTML_SRC)){
+    bad.push('a stimulus item appears in the page markup — it must render only inside the administration overlay');
+  }
+  const open = extractFn(APP_SRC, 'reyAdminOpen');
+  if (!/document\.body\.appendChild/.test(open)){
+    bad.push('the overlay is not mounted on <body> — position:fixed would resolve against the animated panel');
+  }
+  const go = extractFn(APP_SRC, 'reyAdminGo');
+  if (!/step === 'intro'/.test(go)) bad.push('the overlay no longer opens on a confirmation step');
+  const setup = extractFn(APP_SRC, 'setupPvtPage');
+  if (!/pvt-rey-administer'\)\?\.addEventListener\('click', reyAdminOpen\)/.test(setup)){
+    bad.push('the overlay is reachable other than by an explicit click, or not at all');
+  }
+  const apa = extractFn(APP_SRC, 'renderPvtApa');
+  if (/rey15ItemHtml|REY15_/.test(apa)) bad.push('a stimulus reaches the APA export');
+  /* The 10-second exposure is protocol: it may not be shortened. */
+  const exp = extractFn(APP_SRC, 'reyAdminStartExposure');
+  if (!/let left = 10;/.test(exp) || !/setInterval\(tick, 1000\)/.test(exp)){
+    bad.push('the exposure is no longer the protocol\'s 10 seconds at one-second ticks');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
 
 check('PVT page wiring: report source, APA note, empty-state guard, markup', () => {
   const bad = [];

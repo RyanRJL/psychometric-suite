@@ -9967,3 +9967,81 @@ body.rb-docked-active{padding-right:0}
 .pvt-source-cite i{font-style:italic}
 .pvt-source-accuracy{color:#5A5A5A;font-weight:500}
 .pvt-source-accuracy:empty{display:none}
+
+/* ---------- Rey 15-Item administration overlay ----------
+   Mounted on <body> (position:fixed against a transformed ancestor is the
+   trap that moved the old age popover), full-viewport, above the drawer. */
+.rey-admin-row{display:flex;align-items:center;gap:12px;margin:2px 0 12px;flex-wrap:wrap}
+.rey-admin-hint{font-family:var(--sans);font-size:10.5px;color:#7A766E;line-height:1.45;flex:1;min-width:200px}
+.rey-admin{
+  position:fixed;
+  inset:0;
+  z-index:9000;
+  background:#FFFFFF;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px;
+}
+.rey-close{
+  position:absolute;top:18px;right:22px;
+  width:34px;height:34px;
+  border:1px solid rgba(20,15,5,0.12);
+  border-radius:50%;
+  background:#FFFFFF;
+  color:var(--muted);
+  font-size:20px;line-height:1;
+  cursor:pointer;
+}
+.rey-close:hover{color:var(--ink);border-color:rgba(20,15,5,0.28)}
+.rey-panel{max-width:620px;text-align:left}
+.rey-kicker{
+  font-family:var(--sans);font-size:10px;font-weight:600;
+  letter-spacing:0.12em;text-transform:uppercase;color:#7A766E;margin-bottom:10px;
+}
+.rey-title{font-family:var(--serif,Georgia,serif);font-size:26px;color:var(--ink);margin:0 0 12px;line-height:1.2}
+.rey-copy{font-family:var(--sans);font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 12px}
+.rey-script{
+  padding:12px 14px;
+  border-left:3px solid rgba(156,61,42,0.35);
+  background:rgba(244,240,232,0.6);
+  border-radius:0 var(--r-md) var(--r-md) 0;
+  color:#4D4840;
+}
+.rey-actions{display:flex;gap:10px;margin-top:18px}
+
+/* The stimulus stage: big, centred, nothing else on screen. */
+.rey-stage{display:flex;flex-direction:column;align-items:center;gap:26px;width:100%}
+.rey-grid{display:grid;gap:26px 54px;justify-items:center;align-items:center}
+.rey-grid-3{grid-template-columns:repeat(3,minmax(0,110px))}
+.rey-grid-6{grid-template-columns:repeat(6,minmax(0,96px));gap:18px 26px}
+.rey-cell{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;min-height:78px;color:#111;
+}
+.rey-glyph-text{font-family:'Helvetica Neue',Arial,sans-serif;font-size:56px;font-weight:400;line-height:1}
+.rey-grid-6 .rey-glyph-text{font-size:44px}
+svg.rey-glyph{width:56px;height:56px}
+.rey-grid-6 svg.rey-glyph{width:46px;height:46px}
+/* Selecting an item stands in for circling it on the paper form. */
+.rey-pick{
+  border:2px solid transparent;
+  border-radius:12px;
+  background:transparent;
+  cursor:pointer;
+  padding:6px;
+  transition:border-color 120ms ease,background 120ms ease;
+}
+.rey-pick:hover{border-color:rgba(20,15,5,0.14)}
+.rey-pick:focus-visible{outline:none;border-color:rgba(156,61,42,0.5)}
+.rey-pick.is-picked{border-color:#9C3D2A;background:rgba(156,61,42,0.07)}
+.rey-stage-foot{display:flex;align-items:center;gap:18px;margin-top:6px}
+.rey-picked{font-family:var(--sans);font-size:12px;color:var(--muted)}
+.rey-countdown{
+  font-family:var(--mono);font-size:15px;color:var(--muted);
+  border:1px solid rgba(20,15,5,0.12);border-radius:999px;padding:5px 16px;
+}
+@media (max-width:760px){
+  .rey-grid-6{grid-template-columns:repeat(3,minmax(0,90px))}
+  .rey-glyph-text{font-size:42px}
+}

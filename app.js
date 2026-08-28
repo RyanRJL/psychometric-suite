@@ -6699,6 +6699,189 @@ function getPvtRey(){
   return s;
 }
 
+/* ---------- Rey 15-Item administration ----------
+   Displays the stimulus for the protocol's 10 seconds, then the
+   recognition page, and writes the two recognition scores back into the
+   tab so they cannot be mis-transcribed. Free recall stays a manual
+   entry: the examinee draws it on paper.
+
+   MOUNTED ON <body>, NEVER INSIDE THE SECTION. position:fixed resolves
+   against the nearest TRANSFORMED ancestor, and staggerSectionContent
+   animates panel children on every page entry — an overlay built inside
+   the panel would be positioned against a moving box. Same reason the
+   consent card lives on body.
+
+   TEST SECURITY: nothing here renders until the clinician clicks through
+   an explicit confirmation in-session. There is no deep link to it, it
+   is not in the page's static markup, and it never reaches an export. */
+const REY15_SHAPE_SVG = {
+  circle:        '<circle cx="26" cy="26" r="19"/>',
+  square:        '<rect x="7" y="7" width="38" height="38"/>',
+  triangle:      '<path d="M26 6 L46 45 L6 45 Z"/>',
+  diamond:       '<path d="M26 5 L45 26 L26 47 L7 26 Z"/>',
+  pentagon:      '<path d="M26 6 L45 20 L38 43 L14 43 L7 20 Z"/>',
+  parallelogram: '<path d="M17 12 L48 12 L35 40 L4 40 Z"/>',
+  rule1:         '<line x1="6" y1="26" x2="46" y2="26"/>',
+  rule2:         '<line x1="6" y1="19" x2="46" y2="19"/><line x1="6" y1="33" x2="46" y2="33"/>',
+  rule3:         '<line x1="6" y1="15" x2="46" y2="15"/><line x1="6" y1="26" x2="46" y2="26"/><line x1="6" y1="37" x2="46" y2="37"/>'
+};
+function rey15ItemHtml(id){
+  if (REY15_SHAPES.indexOf(id) !== -1){
+    return `<svg class="rey-glyph" viewBox="0 0 52 52" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" aria-hidden="true">${REY15_SHAPE_SVG[id]}</svg>`;
+  }
+  return `<span class="rey-glyph rey-glyph-text">${escapeHtml(id)}</span>`;
+}
+function rey15IsTarget(id){
+  return REY15_RECALL_ROWS.some(row => row.indexOf(id) !== -1);
+}
+
+const reyAdmin = { el: null, step: null, selected: null, timer: null };
+
+function reyAdminClose(){
+  if (reyAdmin.timer){ clearInterval(reyAdmin.timer); reyAdmin.timer = null; }
+  if (reyAdmin.el){ reyAdmin.el.remove(); reyAdmin.el = null; }
+  reyAdmin.step = null;
+  document.removeEventListener('keydown', reyAdminKey);
+  document.getElementById('pvt-rey-administer')?.focus();
+}
+function reyAdminKey(e){ if (e.key === 'Escape') reyAdminClose(); }
+
+function reyAdminOpen(){
+  reyAdminClose();
+  reyAdmin.selected = new Set();
+  const el = document.createElement('div');
+  el.className = 'rey-admin';
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'true');
+  el.setAttribute('aria-label', 'Rey 15-Item administration');
+  document.body.appendChild(el);
+  reyAdmin.el = el;
+  el.addEventListener('click', reyAdminClick);
+  document.addEventListener('keydown', reyAdminKey);
+  reyAdminGo('intro');
+}
+function reyAdminClick(e){
+  const btn = e.target.closest('[data-rey-action]');
+  if (btn){ reyAdminAction(btn.dataset.reyAction); return; }
+  const item = e.target.closest('[data-rey-item]');
+  if (item && reyAdmin.step === 'recognition'){
+    const id = item.dataset.reyItem;
+    if (reyAdmin.selected.has(id)) reyAdmin.selected.delete(id);
+    else reyAdmin.selected.add(id);
+    item.classList.toggle('is-picked', reyAdmin.selected.has(id));
+    item.setAttribute('aria-pressed', reyAdmin.selected.has(id) ? 'true' : 'false');
+    const n = reyAdmin.el.querySelector('[data-rey-picked]');
+    if (n) n.textContent = String(reyAdmin.selected.size);
+  }
+}
+function reyAdminAction(action){
+  if (action === 'close'){ reyAdminClose(); return; }
+  if (action === 'apply'){ reyAdminApply(); return; }
+  reyAdminGo(action);
+}
+
+/* The 10-second exposure is the protocol, not an animation: reduced
+   motion suppresses the countdown's transition, never its duration. */
+function reyAdminStartExposure(){
+  let left = 10;
+  const tick = () => {
+    const n = reyAdmin.el?.querySelector('[data-rey-count]');
+    if (n) n.textContent = String(left);
+    if (left <= 0){
+      clearInterval(reyAdmin.timer);
+      reyAdmin.timer = null;
+      reyAdminGo('draw');
+      return;
+    }
+    left--;
+  };
+  tick();
+  reyAdmin.timer = setInterval(tick, 1000);
+}
+
+function reyAdminGo(step){
+  if (!reyAdmin.el) return;
+  if (reyAdmin.timer){ clearInterval(reyAdmin.timer); reyAdmin.timer = null; }
+  reyAdmin.step = step;
+  const close = '<button type="button" class="rey-close" data-rey-action="close" aria-label="Close administration">×</button>';
+  if (step === 'intro'){
+    reyAdmin.el.innerHTML = `${close}<div class="rey-panel">
+      <div class="rey-kicker">Rey 15-Item · administration</div>
+      <h2 class="rey-title">Ready to begin?</h2>
+      <p class="rey-copy">This displays the test stimuli full screen. Start it only with the examinee present — and have paper and a pen ready for their drawing.</p>
+      <p class="rey-copy rey-script">Read: “I'm going to show you a page with 15 different things on it for just a short period of time, and I want you to learn as many of the things as you can. When I take away the page, I'll want you to draw as many of the things as you can remember. Keep in mind, there are <strong>15</strong> different things so you will have to learn them very quickly.”</p>
+      <div class="rey-actions">
+        <button type="button" class="btn" data-rey-action="close">Cancel</button>
+        <button type="button" class="btn btn-primary" data-rey-action="exposure">Show the stimulus (10 s)</button>
+      </div>
+    </div>`;
+    return;
+  }
+  if (step === 'exposure'){
+    reyAdmin.el.innerHTML = `<div class="rey-stage">
+      <div class="rey-grid rey-grid-3">${REY15_RECALL_ROWS.flat().map(id =>
+        `<div class="rey-cell">${rey15ItemHtml(id)}</div>`).join('')}</div>
+      <div class="rey-countdown"><span data-rey-count>10</span></div>
+    </div>`;
+    reyAdminStartExposure();
+    return;
+  }
+  if (step === 'draw'){
+    reyAdmin.el.innerHTML = `${close}<div class="rey-panel">
+      <div class="rey-kicker">Rey 15-Item · recall</div>
+      <h2 class="rey-title">Now draw what you can remember</h2>
+      <p class="rey-copy">The examinee draws on paper. Score the free recall yourself and enter it on the tab — this step is not scored on screen.</p>
+      <p class="rey-copy rey-script">Then read: “On this page are the 15 things I showed you as well as 15 items that were not on the page. I want you to circle the things you remember from the page I showed you.”</p>
+      <div class="rey-actions">
+        <button type="button" class="btn" data-rey-action="close">Stop here</button>
+        <button type="button" class="btn btn-primary" data-rey-action="recognition">Show the recognition page</button>
+      </div>
+    </div>`;
+    return;
+  }
+  if (step === 'recognition'){
+    reyAdmin.el.innerHTML = `<div class="rey-stage">
+      <div class="rey-grid rey-grid-6">${REY15_RECOGNITION_ROWS.flat().map(id =>
+        `<button type="button" class="rey-cell rey-pick" data-rey-item="${escapeAttr(id)}" aria-pressed="false">${rey15ItemHtml(id)}</button>`).join('')}</div>
+      <div class="rey-stage-foot">
+        <span class="rey-picked"><span data-rey-picked>0</span> selected</span>
+        <button type="button" class="btn btn-primary" data-rey-action="done">Finish recognition</button>
+      </div>
+    </div>`;
+    return;
+  }
+  if (step === 'done'){
+    const picked = [...reyAdmin.selected];
+    const correct = picked.filter(rey15IsTarget).length;
+    const fp = picked.length - correct;
+    reyAdmin.el.innerHTML = `${close}<div class="rey-panel">
+      <div class="rey-kicker">Rey 15-Item · recognition scored</div>
+      <h2 class="rey-title">${correct} correct · ${fp} false positive${fp === 1 ? '' : 's'}</h2>
+      <p class="rey-copy">Scored from the ${picked.length} item${picked.length === 1 ? '' : 's'} selected. Applying these fills the recognition fields on the tab; enter the free-recall score from the drawing yourself.</p>
+      <div class="rey-actions">
+        <button type="button" class="btn" data-rey-action="close">Discard</button>
+        <button type="button" class="btn btn-primary" data-rey-action="apply">Apply to the tab</button>
+      </div>
+    </div>`;
+  }
+}
+
+function reyAdminApply(){
+  const picked = [...reyAdmin.selected];
+  const correct = picked.filter(rey15IsTarget).length;
+  const fp = picked.length - correct;
+  const set = (id, v) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = String(v);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  set('pvt-rey-recog', correct);
+  set('pvt-rey-fp', fp);
+  reyAdminClose();
+  if (typeof showToast === 'function') showToast('Recognition scores applied');
+}
+
 /* ---------- TOMM (Martin et al., 2020) ---------- */
 function pvtPPP(sens, spec, br){ return (sens * br) / (sens * br + (1 - spec) * (1 - br)); }
 function pvtNPP(sens, spec, br){ return (spec * (1 - br)) / (spec * (1 - br) + (1 - sens) * br); }
@@ -7309,6 +7492,7 @@ function setupPvtPage(){
   ['patient-age','pre-age'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
+  document.getElementById('pvt-rey-administer')?.addEventListener('click', reyAdminOpen);
   ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
