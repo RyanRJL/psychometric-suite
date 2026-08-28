@@ -9578,11 +9578,12 @@ body.rb-docked-active{padding-right:0}
 #validity > .eyebrow,
 #validity > .section-title{display:none!important}
 #validity > .section-desc{
-  max-width:none;
-  margin:0 0 14px;
-  font-family:var(--sans);
-  font-size:13px;
-  color:#5A5A5A;
+  max-width:none!important;
+  margin:0 0 14px!important;
+  font-family:var(--sans)!important;
+  font-size:13px!important;
+  line-height:1.55!important;
+  color:#5A5A5A!important;
 }
 
 /* ---- Tab strip: white rounded-top sheet ---- */
@@ -9648,9 +9649,9 @@ body.rb-docked-active{padding-right:0}
 .pvt-method-tab.active .pvt-method-label{color:#1A1A1A;font-weight:600}
 .pvt-method-meta{
   font-family:var(--sans);
-  font-size:10.25px;
-  color:#9E9A93;
-  line-height:1.25;
+  font-size:11px;
+  color:#5A5A5A;
+  line-height:1.3;
 }
 
 /* Live status chip - state colours match the result card's bands. */
@@ -9708,11 +9709,12 @@ body.rb-docked-active{padding-right:0}
   padding:16px 18px;
 }
 .pvt-card-kicker{
-  font-family:var(--mono);
-  font-size:9.5px;
-  letter-spacing:0.1em;
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.12em;
   text-transform:uppercase;
-  color:var(--faint);
+  color:#7A766E;
   margin-bottom:12px;
 }
 .pvt-field-grid{
@@ -9721,8 +9723,18 @@ body.rb-docked-active{padding-right:0}
   gap:0 14px;
 }
 .pvt-field-grid .field{margin-bottom:14px}
+.pvt-card .field label{
+  font-size:10.5px!important;
+  letter-spacing:0.08em!important;
+  color:#5A5A5A!important;
+}
+.pvt-card .field input,
+.pvt-card .field select{
+  font-family:var(--sans)!important;
+  font-size:13.5px!important;
+}
 .pvt-field-wide{grid-column:1 / -1}
-.pvt-note{margin-bottom:0;font-size:12px;background:#FFFFFF;border-radius:var(--r-md)}
+.pvt-note{margin-bottom:0;font-size:12.5px;background:#FFFFFF;border-radius:var(--r-md)}
 .pvt-card .formula-disclosure{margin-top:4px}
 
 .pvt-outcome{display:flex;flex-direction:column;gap:14px;min-width:0}
@@ -9741,9 +9753,20 @@ body.rb-docked-active{padding-right:0}
 .pvt-result-inner.is-na .pvt-result-headline{color:#8a7a2c}
 .pvt-result-detail{display:block;font-size:12.5px;color:var(--muted,#555);line-height:1.55}
 
-.pvt-table{width:100%;border-collapse:collapse;font-size:12.5px}
-.pvt-table th{text-align:left;font-weight:600;padding:6px 10px;border-bottom:2px solid var(--border);white-space:nowrap}
-.pvt-table td{padding:5px 10px;border-bottom:1px solid rgba(20,15,5,0.06)}
+.pvt-table{width:100%;border-collapse:collapse;font-size:12px}
+.pvt-table th{
+  text-align:left;
+  font-family:var(--sans);
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:#4D4840;
+  padding:8px 12px;
+  border-bottom:2px solid var(--border);
+  white-space:nowrap;
+}
+.pvt-table td{padding:6px 12px;border-bottom:1px solid rgba(20,15,5,0.06)}
 .pvt-table tr:last-child td{border-bottom:0}
 .pvt-cell-fail{color:#9c3d2a;font-weight:600}
 .pvt-agg-copy{font-size:12.5px;color:var(--muted,#555);line-height:1.55;margin:0 0 12px}
@@ -9762,9 +9785,9 @@ body.rb-docked-active{padding-right:0}
   border-radius:var(--r-md);
   background:#FFFFFF;
   padding:10px 14px;
-  font-size:12px;
-  color:var(--muted);
-  line-height:1.5;
+  font-size:12.5px;
+  color:#4D4840;
+  line-height:1.55;
 }
 .pvt-caution summary{cursor:pointer;list-style:none;color:var(--ink-2)}
 .pvt-caution summary::-webkit-details-marker{display:none}
