@@ -9621,7 +9621,7 @@ body.rb-docked-active{padding-right:0}
 /* ---- Tab strip: white rounded-top sheet ---- */
 .pvt-method-tabs{
   display:grid;
-  grid-template-columns:repeat(7,minmax(120px,1fr));
+  grid-template-columns:repeat(8,minmax(110px,1fr));
   gap:0;
   background:#FFFFFF;
   border:1px solid rgba(20,15,5,0.08);
@@ -16176,8 +16176,16 @@ input[type="number"].ds-age-pop-input{
         </span>
         <span class="pvt-status" id="pvt-status-tomm">—</span>
       </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="acs" role="tab">
+        <span class="pvt-method-num">07</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">ACS PVTs</span>
+          <span class="pvt-method-meta">WAIS-IV/WMS-IV · multivariate</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-acs">—</span>
+      </button>
       <button type="button" class="pvt-method-tab" data-pvt-tab="summary" role="tab">
-        <span class="pvt-method-num">05</span>
+        <span class="pvt-method-num">08</span>
         <span class="pvt-method-main">
           <span class="pvt-method-label">Summary</span>
           <span class="pvt-method-meta">Aggregation · Larrabee (2014)</span>
@@ -16489,6 +16497,53 @@ input[type="number"].ds-age-pop-input{
       </div>
     </div>
 
+    <!-- ===== ACS multivariate PVTs ===== -->
+    <div class="pvt-tab-content" id="pvt-acs">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">From the ACS score report</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Base-rate cut-off applied <span class="hint">(chosen a priori)</span></label>
+              <select id="pvt-acs-cutoff">
+                <option value="25">≤ 25% of the clinical sample</option>
+                <option value="15">≤ 15%</option>
+                <option value="10" selected>≤ 10% · widely used</option>
+                <option value="5">≤ 5%</option>
+                <option value="2">≤ 2%</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>ACS PVT scores at or below it <span class="hint">(of 5)</span></label>
+              <input type="number" min="0" max="5" step="1" id="pvt-acs-count" placeholder="e.g. 2">
+            </div>
+            <div class="field pvt-field-wide">
+              <label>Comparison group</label>
+              <select id="pvt-acs-group"></select>
+            </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Multivariate base rates: Holdnack, Millis, Larrabee &amp; Iverson (2013), ch. 7 of <i>WAIS-IV, WMS-IV, and ACS: Advanced Clinical Interpretation</i>, Tables 7.1–7.5 (© 2009 Pearson).</span>
+            <span class="pvt-source-accuracy">Interpreted against published base rates — the raw ACS cut-off scores are withheld by the source for test security and are not stored here.</span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>How to use this tab</summary>
+            <div class="formula-body">
+              <p>The five ACS performance validity measures are Word Choice, WAIS-IV Reliable Digit Span, and the WMS-IV Logical Memory II, Verbal Paired Associates II and Visual Reproduction II recognition scores. The ACS score report states how many of the five fell at or below each base-rate cut-off of the overall clinical sample (n = 371); enter that count here and this tab reports how often that pattern occurs in a comparable clinical group, the WMS-IV normative sample, and simulators. Select the cut-off criterion <em>before</em> the evaluation — the chapter records a case where a clinician shopped between cut-offs after seeing the scores and calls it "clearly, an inappropriate use of the base rates". Its worked criterion treats one score at or below the 15% cut-off as <em>possible</em>, and two or more at or below the 10% cut-off as <em>probable</em>, invalid performance; two or more at 15% or 10%, or three or more at 25%, is unusual for most clinical groups.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-acs-result"></div>
+          <div id="pvt-acs-rates"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> An aggregate, not an extra indicator — and its rates do not hold in intellectual disability.</summary>
+            <div class="pvt-caution-body">The ACS pattern already aggregates five indicators, one of which is WAIS-IV Reliable Digit Span, so it is excluded from this page's independent-indicator count and must not be counted alongside a separately entered RDS. Mild intellectual disability is the standing exception to every cut-off (88% have two or more low scores at the 25% cut-off), and low GAI or low education raise the rates — compare against the band matching the examinee. Base rates come from non-litigating clinical patients; none had an incentive to underperform (Holdnack et al., 2013).</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== Summary & Aggregation ===== -->
     <div class="pvt-tab-content" id="pvt-summary">
       <div class="pvt-workspace">
@@ -16538,6 +16593,7 @@ input[type="number"].ds-age-pop-input{
         <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
         <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
+        <p>Holdnack, J. A., Millis, S., Larrabee, G. J., &amp; Iverson, G. L. (2013). Assessing performance validity with the ACS. In J. A. Holdnack, L. W. Drozdick, L. G. Weiss, &amp; G. L. Iverson (Eds.), <i>WAIS-IV, WMS-IV, and ACS: Advanced clinical interpretation</i> (pp. 331–365). Oxford: Academic Press.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
         <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
@@ -17601,6 +17657,7 @@ input[type="number"].ds-age-pop-input{
       <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
       <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
       <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224. [Reliable Digit Span: scoring, floor rule and traditional cut-off.]</p>
+      <p>Holdnack, J. A., Millis, S., Larrabee, G. J., &amp; Iverson, G. L. (2013). Assessing performance validity with the ACS. In J. A. Holdnack, L. W. Drozdick, L. G. Weiss, &amp; G. L. Iverson (Eds.), <i>WAIS-IV, WMS-IV, and ACS: Advanced clinical interpretation</i> (pp. 331–365). Oxford: Academic Press.</p>
       <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
       <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373. [Aggregation of multiple PVTs; classification accuracy by number of failures.]</p>
       <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. [TOMM cut-offs and the sensitivity/specificity values behind the predictive-power display, Tables 16–17.]</p>
@@ -19692,6 +19749,126 @@ const PVT_REY15_ACCURACY = {
   recall: { sens: '.47', spec: '.97–1.00' },
   combo:  { sens: '.71', spec: '.92–.94' }
 };
+
+/* ACS performance validity indicators — multivariate base rates.
+   Holdnack, Millis, Larrabee & Iverson (2013), "Assessing Performance
+   Validity with the ACS", ch. 7 of WAIS-IV, WMS-IV, and ACS: Advanced
+   Clinical Interpretation (the same volume the OPIE-4 coefficients come
+   from), Tables 7.1-7.5. Each cell is the percentage of a group having
+   N OR MORE of the five ACS PVT scores (Word Choice, WAIS-IV Reliable
+   Digit Span, and the three WMS-IV recognition measures) at or below the
+   named base-rate cut-off of the overall clinical sample (n = 371).
+
+   THE RAW CUT-OFF SCORES ARE DELIBERATELY NOT STORED: the chapter
+   withholds them for test security ("The actual cut-off scores are
+   presented in the ACS technical manual, for reasons of test security
+   they are not presented here"), so the clinician reads the number of
+   low scores off their ACS score report and this page interprets the
+   PATTERN against these published base rates. Never add raw ACS
+   cut-offs from any secondary source.
+
+   The columns are cumulative — the prose's own worked examples pin the
+   reading (at the 15% cut-off: 22% of the clinical sample, 36% of TBI
+   and 11% of the normative sample have one or more low scores; at 10%:
+   19/30/7 at one or more, 5/6/1 at two or more). null = the source
+   prints a dash. The Anxiety Disorder row appears only in the 25% table
+   — a property of the source. Interpretive criteria from the same
+   chapter: two or more scores at the 15% or 10% cut-off, or three or
+   more at the 25% cut-off, is unusual for most clinical groups EXCEPT
+   mild intellectual disability; the worked criterion calls one score at
+   or below 15% "possible" and two or more at or below 10% "probable"
+   invalid performance, chosen A PRIORI, never after seeing the scores.
+   Pinned by check.js §38, including both monotonicity invariants. */
+const PVT_ACS_GROUPS = [
+  { id: 'clinical',  label: 'Overall clinical sample' },
+  { id: 'tbi',       label: 'Moderate–severe TBI' },
+  { id: 'templob',   label: 'Temporal lobectomy' },
+  { id: 'schiz',     label: 'Schizophrenia' },
+  { id: 'mdd',       label: 'Major depressive disorder' },
+  { id: 'anxiety',   label: 'Anxiety disorder' },
+  { id: 'id',        label: 'Intellectual disability (mild)' },
+  { id: 'autism',    label: 'Autistic disorder' },
+  { id: 'asperger',  label: "Asperger's syndrome" },
+  { id: 'reading',   label: 'Reading disorder' },
+  { id: 'math',      label: 'Mathematics disorder' },
+  { id: 'adhd',      label: 'ADHD' },
+  { id: 'norm',      label: 'WMS-IV normative sample' },
+  { id: 'edu8',      label: '≤ 8 years education' },
+  { id: 'edu911',    label: '9–11 years education' },
+  { id: 'edu12',     label: '12 years education' },
+  { id: 'edu1315',   label: '13–15 years education' },
+  { id: 'edu16',     label: '≥ 16 years education' },
+  { id: 'gai69',     label: 'GAI ≤ 69' },
+  { id: 'gai7084',   label: 'GAI 70–84' },
+  { id: 'gai8599',   label: 'GAI 85–99' },
+  { id: 'gai100114', label: 'GAI 100–114' },
+  { id: 'gai115',    label: 'GAI ≥ 115' },
+  { id: 'sim',       label: 'Simulators' },
+  { id: 'nostim',    label: 'No-stimulus (guessing)' }
+];
+/* [≥1, ≥2, ≥3, ≥4, ≥5] per group, per cut-off level. */
+const PVT_ACS_BASERATES = {
+  25: {
+    nostim:[100,100,100,92,null], sim:[76,58,38,24,16], clinical:[38,19,6,3,1],
+    tbi:[48,18,3,0,0], templob:[29,25,4,0,0], schiz:[71,31,7,2,0],
+    mdd:[34,12,2,0,0], anxiety:[8,3,0,0,null], id:[91,88,47,31,13],
+    autism:[55,14,9,0,0], asperger:[20,6,0,0,0], reading:[27,0,0,0,0],
+    math:[36,5,0,0,0], adhd:[12,9,0,0,0], norm:[23,7,2,0,0],
+    edu8:[63,27,7,0,0], edu911:[42,13,5,1,0], edu12:[27,9,3,0,0],
+    edu1315:[19,5,2,0,0], edu16:[9,2,0,0,0],
+    gai69:[81,38,13,0,0], gai7084:[52,25,10,2,0], gai8599:[28,8,2,0,0],
+    gai100114:[13,1,0,0,0], gai115:[4,0,0,0,0]
+  },
+  15: {
+    nostim:[100,100,96,72,null], sim:[70,36,22,12,8], clinical:[22,7,2,0,0],
+    tbi:[36,9,0,0,0], templob:[21,4,0,0,0], schiz:[35,9,2,0,0],
+    mdd:[16,2,0,0,0], id:[72,41,22,9,0],
+    autism:[27,9,5,0,0], asperger:[11,6,0,0,0], reading:[7,0,0,0,0],
+    math:[18,0,0,0,0], adhd:[9,3,0,0,0], norm:[11,1,0,0,0],
+    edu8:[34,2,0,0,0], edu911:[23,5,1,1,0], edu12:[13,1,0,0,0],
+    edu1315:[8,1,0,0,0], edu16:[5,0,0,0,0],
+    gai69:[44,13,0,0,0], gai7084:[29,4,1,1,0], gai8599:[12,1,0,0,0],
+    gai100114:[7,1,0,0,0], gai115:[0,0,0,0,0]
+  },
+  10: {
+    nostim:[100,100,96,60,null], sim:[64,36,20,10,8], clinical:[19,5,1,0,0],
+    tbi:[30,6,0,0,0], templob:[17,0,0,0,0], schiz:[35,7,0,0,0],
+    mdd:[12,2,0,0,0], id:[63,31,16,6,0],
+    autism:[27,9,0,0,0], asperger:[9,3,0,0,0], reading:[7,0,0,0,0],
+    math:[14,0,0,0,0], adhd:[9,3,0,0,0], norm:[7,1,0,0,0],
+    edu8:[27,2,0,0,0], edu911:[17,4,1,1,0], edu12:[5,0,0,0,0],
+    edu1315:[5,1,0,0,0], edu16:[4,0,0,0,0],
+    gai69:[38,6,0,0,0], gai7084:[19,2,1,1,0], gai8599:[7,1,0,0,0],
+    gai100114:[4,0,0,0,0], gai115:[0,0,0,0,0]
+  },
+  5: {
+    nostim:[100,100,88,38,null], sim:[40,24,14,10,2], clinical:[9,2,0,0,0],
+    tbi:[9,3,0,0,0], templob:[8,0,0,0,0], schiz:[15,2,0,0,0],
+    mdd:[4,0,0,0,0], id:[38,13,3,3,0],
+    autism:[23,5,0,0,0], asperger:[3,0,0,0,0], reading:[0,0,0,0,0],
+    math:[14,0,0,0,0], adhd:[6,3,0,0,0], norm:[2,0,0,0,0],
+    edu8:[15,2,0,0,0], edu911:[9,1,0,0,0], edu12:[2,0,0,0,0],
+    edu1315:[1,0,0,0,0], edu16:[1,0,0,0,0],
+    gai69:[19,6,0,0,0], gai7084:[7,1,0,0,0], gai8599:[2,0,0,0,0],
+    gai100114:[1,0,0,0,0], gai115:[0,0,0,0,0]
+  },
+  2: {
+    nostim:[100,92,50,8,null], sim:[22,18,8,4,0], clinical:[4,0,0,0,0],
+    tbi:[6,0,0,0,0], templob:[0,0,0,0,0], schiz:[4,0,0,0,0],
+    mdd:[1,0,0,0,0], id:[31,3,3,0,0],
+    autism:[14,0,0,0,0], asperger:[0,0,0,0,0], reading:[0,0,0,0,0],
+    math:[0,0,0,0,0], adhd:[0,0,0,0,0], norm:[1,0,0,0,0],
+    edu8:[7,0,0,0,0], edu911:[4,0,0,0,0], edu12:[1,0,0,0,0],
+    edu1315:[0,0,0,0,0], edu16:[0,0,0,0,0],
+    gai69:[19,0,0,0,0], gai7084:[2,0,0,0,0], gai8599:[1,0,0,0,0],
+    gai100114:[0,0,0,0,0], gai115:[0,0,0,0,0]
+  }
+};
+/* The chapter's interpretive criteria, applied a priori:
+   - "unusual": >= 2 scores at the 15% or 10% cut-off, or >= 3 at 25%.
+   - the worked criterion: 1 at or below 15% = "possible", >= 2 at or
+     below 10% = "probable" invalid performance. */
+const PVT_ACS_RULES = { unusual: { 25: 3, 15: 2, 10: 2 }, possible15: 1, probable10: 2 };
 
 /* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
@@ -22785,6 +22962,7 @@ const APA_NOTES = {
     if (ctx.hasDs)   sources.push('Digit Span indices (Iverson & Tulsky, 2003; Axelrod et al., 2006 — WAIS-III)');
     if (ctx.hasRey)  sources.push('Rey 15-Item (Boone et al., 2002)');
     if (ctx.hasTomm) sources.push('TOMM (Tombaugh, 1996; cut-offs Martin et al., 2020)');
+    if (ctx.hasAcs)  sources.push('ACS validity indicators, interpreted against multivariate base rates (Holdnack et al., 2013)');
     const shared = [];
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
     if (ctx.bothDigitSpan) shared.push('the digit-span indices');
@@ -22798,6 +22976,9 @@ const APA_NOTES = {
         ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks an index published as a base rate or an AUC rather than as a pair.'
         : 'Sensitivity and specificity are the published values at the applied cut-off.',
       shared.length ? `Indices sharing a subtest count as one indicator: ${shared.join(' and ')}.` : '',
+      ctx.hasAcs
+        ? 'The ACS pattern aggregates five indicators including Reliable Digit Span and is not counted as an additional independent indicator.'
+        : '',
       ctx.esGated
         ? 'The Effort Scale is not computed because its screening gate was not met (Novitski et al., 2012).'
         : '',
@@ -26671,6 +26852,70 @@ function renderPvtTomm(){
     </div>`;
 }
 
+/* ---------- ACS multivariate PVTs (Holdnack et al., 2013) ---------- */
+function getPvtAcs(){
+  const count = pvtInt(document.getElementById('pvt-acs-count')?.value, 0, 5);
+  if (count === undefined) return { empty: true };
+  if (count === null) return { invalid: true };
+  const cutoff = parseInt(document.getElementById('pvt-acs-cutoff')?.value, 10) || 10;
+  const groupId = document.getElementById('pvt-acs-group')?.value || 'clinical';
+  const table = PVT_ACS_BASERATES[cutoff] || {};
+  /* Columns are "N or more", so a count of 0 has no column — it is simply
+     the untroubled case. */
+  const rate = id => (count >= 1 && table[id]) ? table[id][count - 1] : null;
+  const s = {
+    count, cutoff, groupId,
+    groupLabel: (PVT_ACS_GROUPS.find(g => g.id === groupId) || {}).label || groupId,
+    groupRate: rate(groupId), normRate: rate('norm'), simRate: rate('sim'),
+    /* The chapter's a-priori criteria — "unusual" per cut-off, and the
+       worked possible/probable readings at 15% and 10%. */
+    unusual: PVT_ACS_RULES.unusual[cutoff] !== undefined && count >= PVT_ACS_RULES.unusual[cutoff],
+    probable: cutoff === 10 && count >= PVT_ACS_RULES.probable10,
+    possible: cutoff === 15 && count >= PVT_ACS_RULES.possible15
+  };
+  return s;
+}
+
+function renderPvtAcs(){
+  const out = document.getElementById('pvt-acs-result');
+  const rates = document.getElementById('pvt-acs-rates');
+  if (!out || !rates) return;
+  const s = getPvtAcs();
+  if (s.empty){
+    out.innerHTML = pvtResultHtml('empty', 'Enter the number of low ACS PVT scores from the score report.');
+    rates.innerHTML = '';
+    return;
+  }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); rates.innerHTML = ''; return; }
+  const patternLabel = s.count === 0 ? 'No scores at or below the cut-off' : `${s.count}+ of 5 scores at or below the ${s.cutoff}% cut-off`;
+  const state = s.count === 0 ? 'pass' : s.unusual ? 'flag' : 'na';
+  const word = s.count === 0 ? 'Pass' : s.unusual ? 'Flag' : 'Review';
+  const readings = [];
+  if (s.probable) readings.push('the chapter\'s worked criterion reads two or more at the 10% cut-off as <em>probable</em> invalid performance');
+  else if (s.possible) readings.push('the chapter\'s worked criterion reads one or more at the 15% cut-off as <em>possible</em> invalid performance');
+  if (s.unusual && !s.probable) readings.push('this pattern is unusual for most clinical groups, mild intellectual disability excepted');
+  out.innerHTML = pvtReadoutHtml([{
+    label: 'ACS multivariate pattern', value: s.count === 0 ? '0' : `${s.count}+`,
+    state, word,
+    meta: `${patternLabel} · criterion chosen a priori (Holdnack et al., 2013)`
+  }], readings.length ? readings.join('; ') + '.' : '');
+  if (s.count === 0){ rates.innerHTML = ''; return; }
+  const fmtRate = v => v === null ? '—' : `${v}%`;
+  rates.innerHTML = `
+    <div class="pvt-card">
+      <div class="pvt-card-kicker">How often ${s.count}+ low scores occur at the ${s.cutoff}% cut-off</div>
+      <table class="pvt-table">
+        <thead><tr><th>Group</th><th>Base rate</th></tr></thead>
+        <tbody>
+          <tr><td>${escapeHtml(s.groupLabel)}</td><td>${fmtRate(s.groupRate)}</td></tr>
+          ${s.groupId !== 'norm' ? `<tr><td>WMS-IV normative sample</td><td>${fmtRate(s.normRate)}</td></tr>` : ''}
+          ${s.groupId !== 'sim' ? `<tr><td>Simulators</td><td>${fmtRate(s.simRate)}</td></tr>` : ''}
+        </tbody>
+      </table>
+      <p class="pvt-agg-copy" style="margin-top:10px;margin-bottom:0">Percentage of each group with this many of the five ACS PVT scores at or below the cut-off (Holdnack et al., 2013, Tables 7.1–7.5).</p>
+    </div>`;
+}
+
 /* ---------- summary + APA export ---------- */
 /* One row per reportable line. TOMM contributes one row per entered trial
    but counts as ONE indicator; EI and ES share their RBANS subtests and
@@ -26756,6 +27001,18 @@ function getPvtSummaryRows(){
       result: pvtStatusWord(rey.comboFail), fail: rey.comboFail
     });
   }
+  /* The ACS pattern aggregates five indicators (one of them RDS), so it
+     is reported but EXEMPT from the independent-indicator count — counting
+     an aggregate beside its own members would double-count. */
+  const acs = getPvtAcs();
+  if (acs.count !== undefined && !acs.empty && !acs.invalid) rows.push({
+    id: 'acs', group: 'acs', countExempt: true, measure: 'ACS validity indicators (multivariate)',
+    score: acs.count === 0 ? '0 of 5' : `${acs.count}+ of 5`,
+    cutoff: `≤ ${acs.cutoff}% base-rate cut-off`,
+    sens: '—', spec: '—',
+    result: acs.count === 0 ? 'Pass' : acs.unusual ? 'Flagged' : 'See base rates',
+    fail: acs.unusual
+  });
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
@@ -26767,8 +27024,9 @@ function getPvtSummaryRows(){
   return rows;
 }
 function pvtIndicatorCounts(rows){
-  const groups = [...new Set(rows.filter(r => !r.gated).map(r => r.group))];
-  const failed = groups.filter(g => rows.some(r => r.group === g && r.fail));
+  const counted = rows.filter(r => !r.gated && !r.countExempt);
+  const groups = [...new Set(counted.map(r => r.group))];
+  const failed = groups.filter(g => counted.some(r => r.group === g && r.fail));
   return { total: groups.length, failed: failed.length };
 }
 
@@ -26824,6 +27082,7 @@ function renderPvtApa(){
       hasDs:   rows.some(r => r.id.startsWith('ds')),
       hasRey:  rows.some(r => r.id.startsWith('rey')),
       hasTomm: rows.some(r => r.group === 'tomm'),
+      hasAcs:  rows.some(r => r.id === 'acs'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
       bothDigitSpan: rows.some(r => r.id === 'rds') && rows.some(r => r.id.startsWith('ds')),
@@ -26874,6 +27133,11 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-tomm'),
     tommHas ? (tomm.anyFail ? 'Fail' : 'Pass') : '—',
     tommHas ? (tomm.anyFail ? 'fail' : 'pass') : null);
+  const acsS = getPvtAcs();
+  const acsAny = !acsS.empty && !acsS.invalid;
+  pvtChip(document.getElementById('pvt-status-acs'),
+    acsAny ? (acsS.unusual ? 'Flag' : acsS.count === 0 ? 'Pass' : 'Review') : '—',
+    acsAny ? (acsS.unusual ? 'fail' : acsS.count === 0 ? 'pass' : 'na') : null);
   const c = pvtIndicatorCounts(getPvtSummaryRows());
   pvtChip(document.getElementById('pvt-status-summary'),
     c.total > 0 ? `${c.failed}/${c.total}` : '—',
@@ -26909,6 +27173,7 @@ function renderPvtAll(){
   renderPvtDs();
   renderPvtRey();
   renderPvtTomm();
+  renderPvtAcs();
   renderPvtAccuracy();
   renderPvtNav();
   renderPvtSummary();
@@ -26928,7 +27193,7 @@ function switchPvtTab(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-acs-count','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -26938,6 +27203,18 @@ function clearPvt(){
 function setupPvtPage(){
   const root = document.getElementById('validity');
   if (!root) return;
+  /* Populate the ACS comparison-group select from the shipped roster, so
+     the dropdown and the data cannot disagree. */
+  const acsGroupSel = document.getElementById('pvt-acs-group');
+  if (acsGroupSel && !acsGroupSel.options.length){
+    PVT_ACS_GROUPS.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = g.label;
+      if (g.id === 'clinical') opt.selected = true;
+      acsGroupSel.appendChild(opt);
+    });
+  }
   root.querySelectorAll('.pvt-method-tab').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
   });
@@ -26953,7 +27230,7 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-acs-count','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   /* The forward-span index reads the shared top-bar age, so an age typed
@@ -26963,7 +27240,7 @@ function setupPvtPage(){
   ['patient-age','pre-age'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
-  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-acs-cutoff','pvt-acs-group','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
   renderPvtAll();

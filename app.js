@@ -3080,6 +3080,7 @@ const APA_NOTES = {
     if (ctx.hasDs)   sources.push('Digit Span indices (Iverson & Tulsky, 2003; Axelrod et al., 2006 — WAIS-III)');
     if (ctx.hasRey)  sources.push('Rey 15-Item (Boone et al., 2002)');
     if (ctx.hasTomm) sources.push('TOMM (Tombaugh, 1996; cut-offs Martin et al., 2020)');
+    if (ctx.hasAcs)  sources.push('ACS validity indicators, interpreted against multivariate base rates (Holdnack et al., 2013)');
     const shared = [];
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
     if (ctx.bothDigitSpan) shared.push('the digit-span indices');
@@ -3093,6 +3094,9 @@ const APA_NOTES = {
         ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks an index published as a base rate or an AUC rather than as a pair.'
         : 'Sensitivity and specificity are the published values at the applied cut-off.',
       shared.length ? `Indices sharing a subtest count as one indicator: ${shared.join(' and ')}.` : '',
+      ctx.hasAcs
+        ? 'The ACS pattern aggregates five indicators including Reliable Digit Span and is not counted as an additional independent indicator.'
+        : '',
       ctx.esGated
         ? 'The Effort Scale is not computed because its screening gate was not met (Novitski et al., 2012).'
         : '',
@@ -6966,6 +6970,70 @@ function renderPvtTomm(){
     </div>`;
 }
 
+/* ---------- ACS multivariate PVTs (Holdnack et al., 2013) ---------- */
+function getPvtAcs(){
+  const count = pvtInt(document.getElementById('pvt-acs-count')?.value, 0, 5);
+  if (count === undefined) return { empty: true };
+  if (count === null) return { invalid: true };
+  const cutoff = parseInt(document.getElementById('pvt-acs-cutoff')?.value, 10) || 10;
+  const groupId = document.getElementById('pvt-acs-group')?.value || 'clinical';
+  const table = PVT_ACS_BASERATES[cutoff] || {};
+  /* Columns are "N or more", so a count of 0 has no column — it is simply
+     the untroubled case. */
+  const rate = id => (count >= 1 && table[id]) ? table[id][count - 1] : null;
+  const s = {
+    count, cutoff, groupId,
+    groupLabel: (PVT_ACS_GROUPS.find(g => g.id === groupId) || {}).label || groupId,
+    groupRate: rate(groupId), normRate: rate('norm'), simRate: rate('sim'),
+    /* The chapter's a-priori criteria — "unusual" per cut-off, and the
+       worked possible/probable readings at 15% and 10%. */
+    unusual: PVT_ACS_RULES.unusual[cutoff] !== undefined && count >= PVT_ACS_RULES.unusual[cutoff],
+    probable: cutoff === 10 && count >= PVT_ACS_RULES.probable10,
+    possible: cutoff === 15 && count >= PVT_ACS_RULES.possible15
+  };
+  return s;
+}
+
+function renderPvtAcs(){
+  const out = document.getElementById('pvt-acs-result');
+  const rates = document.getElementById('pvt-acs-rates');
+  if (!out || !rates) return;
+  const s = getPvtAcs();
+  if (s.empty){
+    out.innerHTML = pvtResultHtml('empty', 'Enter the number of low ACS PVT scores from the score report.');
+    rates.innerHTML = '';
+    return;
+  }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); rates.innerHTML = ''; return; }
+  const patternLabel = s.count === 0 ? 'No scores at or below the cut-off' : `${s.count}+ of 5 scores at or below the ${s.cutoff}% cut-off`;
+  const state = s.count === 0 ? 'pass' : s.unusual ? 'flag' : 'na';
+  const word = s.count === 0 ? 'Pass' : s.unusual ? 'Flag' : 'Review';
+  const readings = [];
+  if (s.probable) readings.push('the chapter\'s worked criterion reads two or more at the 10% cut-off as <em>probable</em> invalid performance');
+  else if (s.possible) readings.push('the chapter\'s worked criterion reads one or more at the 15% cut-off as <em>possible</em> invalid performance');
+  if (s.unusual && !s.probable) readings.push('this pattern is unusual for most clinical groups, mild intellectual disability excepted');
+  out.innerHTML = pvtReadoutHtml([{
+    label: 'ACS multivariate pattern', value: s.count === 0 ? '0' : `${s.count}+`,
+    state, word,
+    meta: `${patternLabel} · criterion chosen a priori (Holdnack et al., 2013)`
+  }], readings.length ? readings.join('; ') + '.' : '');
+  if (s.count === 0){ rates.innerHTML = ''; return; }
+  const fmtRate = v => v === null ? '—' : `${v}%`;
+  rates.innerHTML = `
+    <div class="pvt-card">
+      <div class="pvt-card-kicker">How often ${s.count}+ low scores occur at the ${s.cutoff}% cut-off</div>
+      <table class="pvt-table">
+        <thead><tr><th>Group</th><th>Base rate</th></tr></thead>
+        <tbody>
+          <tr><td>${escapeHtml(s.groupLabel)}</td><td>${fmtRate(s.groupRate)}</td></tr>
+          ${s.groupId !== 'norm' ? `<tr><td>WMS-IV normative sample</td><td>${fmtRate(s.normRate)}</td></tr>` : ''}
+          ${s.groupId !== 'sim' ? `<tr><td>Simulators</td><td>${fmtRate(s.simRate)}</td></tr>` : ''}
+        </tbody>
+      </table>
+      <p class="pvt-agg-copy" style="margin-top:10px;margin-bottom:0">Percentage of each group with this many of the five ACS PVT scores at or below the cut-off (Holdnack et al., 2013, Tables 7.1–7.5).</p>
+    </div>`;
+}
+
 /* ---------- summary + APA export ---------- */
 /* One row per reportable line. TOMM contributes one row per entered trial
    but counts as ONE indicator; EI and ES share their RBANS subtests and
@@ -7051,6 +7119,18 @@ function getPvtSummaryRows(){
       result: pvtStatusWord(rey.comboFail), fail: rey.comboFail
     });
   }
+  /* The ACS pattern aggregates five indicators (one of them RDS), so it
+     is reported but EXEMPT from the independent-indicator count — counting
+     an aggregate beside its own members would double-count. */
+  const acs = getPvtAcs();
+  if (acs.count !== undefined && !acs.empty && !acs.invalid) rows.push({
+    id: 'acs', group: 'acs', countExempt: true, measure: 'ACS validity indicators (multivariate)',
+    score: acs.count === 0 ? '0 of 5' : `${acs.count}+ of 5`,
+    cutoff: `≤ ${acs.cutoff}% base-rate cut-off`,
+    sens: '—', spec: '—',
+    result: acs.count === 0 ? 'Pass' : acs.unusual ? 'Flagged' : 'See base rates',
+    fail: acs.unusual
+  });
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
@@ -7062,8 +7142,9 @@ function getPvtSummaryRows(){
   return rows;
 }
 function pvtIndicatorCounts(rows){
-  const groups = [...new Set(rows.filter(r => !r.gated).map(r => r.group))];
-  const failed = groups.filter(g => rows.some(r => r.group === g && r.fail));
+  const counted = rows.filter(r => !r.gated && !r.countExempt);
+  const groups = [...new Set(counted.map(r => r.group))];
+  const failed = groups.filter(g => counted.some(r => r.group === g && r.fail));
   return { total: groups.length, failed: failed.length };
 }
 
@@ -7119,6 +7200,7 @@ function renderPvtApa(){
       hasDs:   rows.some(r => r.id.startsWith('ds')),
       hasRey:  rows.some(r => r.id.startsWith('rey')),
       hasTomm: rows.some(r => r.group === 'tomm'),
+      hasAcs:  rows.some(r => r.id === 'acs'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
       bothDigitSpan: rows.some(r => r.id === 'rds') && rows.some(r => r.id.startsWith('ds')),
@@ -7169,6 +7251,11 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-tomm'),
     tommHas ? (tomm.anyFail ? 'Fail' : 'Pass') : '—',
     tommHas ? (tomm.anyFail ? 'fail' : 'pass') : null);
+  const acsS = getPvtAcs();
+  const acsAny = !acsS.empty && !acsS.invalid;
+  pvtChip(document.getElementById('pvt-status-acs'),
+    acsAny ? (acsS.unusual ? 'Flag' : acsS.count === 0 ? 'Pass' : 'Review') : '—',
+    acsAny ? (acsS.unusual ? 'fail' : acsS.count === 0 ? 'pass' : 'na') : null);
   const c = pvtIndicatorCounts(getPvtSummaryRows());
   pvtChip(document.getElementById('pvt-status-summary'),
     c.total > 0 ? `${c.failed}/${c.total}` : '—',
@@ -7204,6 +7291,7 @@ function renderPvtAll(){
   renderPvtDs();
   renderPvtRey();
   renderPvtTomm();
+  renderPvtAcs();
   renderPvtAccuracy();
   renderPvtNav();
   renderPvtSummary();
@@ -7223,7 +7311,7 @@ function switchPvtTab(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-acs-count','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -7233,6 +7321,18 @@ function clearPvt(){
 function setupPvtPage(){
   const root = document.getElementById('validity');
   if (!root) return;
+  /* Populate the ACS comparison-group select from the shipped roster, so
+     the dropdown and the data cannot disagree. */
+  const acsGroupSel = document.getElementById('pvt-acs-group');
+  if (acsGroupSel && !acsGroupSel.options.length){
+    PVT_ACS_GROUPS.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = g.label;
+      if (g.id === 'clinical') opt.selected = true;
+      acsGroupSel.appendChild(opt);
+    });
+  }
   root.querySelectorAll('.pvt-method-tab').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
   });
@@ -7248,7 +7348,7 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-acs-count','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   /* The forward-span index reads the shared top-bar age, so an age typed
@@ -7258,7 +7358,7 @@ function setupPvtPage(){
   ['patient-age','pre-age'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
-  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-acs-cutoff','pvt-acs-group','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
   renderPvtAll();

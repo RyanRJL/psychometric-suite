@@ -50,6 +50,7 @@ vm.runInContext(
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
     ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
+    ' PVT_ACS_GROUPS, PVT_ACS_BASERATES, PVT_ACS_RULES,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -7194,6 +7195,109 @@ check('the readout gives every index its OWN state, and states never rest on col
   ['renderPvtEi', 'renderPvtRds', 'renderPvtDs', 'renderPvtRey', 'renderPvtTomm'].forEach(fn => {
     if (!/Cut-off/.test(extractFn(APP_SRC, fn))) bad.push(fn + ' no longer prints the cut-off on the row');
   });
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('ACS multivariate base rates: pinned cells, both monotonicity invariants, the aggregate exemption', () => {
+  /* PINNED SOURCE: Holdnack, Millis, Larrabee & Iverson (2013), ch. 7,
+     Tables 7.1-7.5 (© 2009 Pearson) — percentages of groups having N or
+     more of the five ACS PVT scores at or below each base-rate cut-off of
+     the overall clinical sample. The chapter's PROSE pins the cumulative
+     reading: at the 15% cut-off, 22% of the clinical sample / 36% of TBI /
+     11% of the normative sample have one or more low scores (7% / 9% / 1%
+     two or more); at 10%, 19 / 30 / 7 and 5 / 6 / 1. */
+  const bad = [];
+  const B = D.PVT_ACS_BASERATES;
+  const pin = (cut, g, i, want) => {
+    if (B[cut][g][i] !== want) bad.push(`${cut}%/${g}[≥${i + 1}] drifted: ${B[cut][g][i]} vs ${want}`);
+  };
+  pin(15, 'clinical', 0, 22); pin(15, 'tbi', 0, 36); pin(15, 'norm', 0, 11);
+  pin(15, 'clinical', 1, 7);  pin(15, 'tbi', 1, 9);  pin(15, 'norm', 1, 1);
+  pin(10, 'clinical', 0, 19); pin(10, 'tbi', 0, 30); pin(10, 'norm', 0, 7);
+  pin(10, 'clinical', 1, 5);  pin(10, 'tbi', 1, 6);  pin(10, 'norm', 1, 1);
+  pin(10, 'clinical', 2, 1);  pin(25, 'id', 1, 88);  pin(25, 'sim', 4, 16);
+  if (B[25].anxiety === undefined) bad.push('the Anxiety row is missing from the 25% table');
+  [15, 10, 5, 2].forEach(cut => {
+    if (B[cut].anxiety !== undefined) bad.push(`an Anxiety row appeared in the ${cut}% table — the source prints it only at 25%`);
+  });
+  /* INVARIANTS. Within a row, "N or more" cannot rise with N; across
+     cut-offs, a stricter cut-off cannot raise a rate. Either failing is a
+     transcription error. */
+  const cuts = [25, 15, 10, 5, 2];
+  cuts.forEach(cut => Object.keys(B[cut]).forEach(g => {
+    const row = B[cut][g];
+    if (row.length !== 5) bad.push(`${cut}%/${g} is not five columns`);
+    for (let i = 1; i < 5; i++){
+      if (row[i] !== null && row[i - 1] !== null && row[i] > row[i - 1]) bad.push(`${cut}%/${g}: ≥${i + 1} exceeds ≥${i}`);
+    }
+    row.forEach(v => { if (v !== null && (v < 0 || v > 100)) bad.push(`${cut}%/${g} holds an impossible percentage`); });
+  }));
+  Object.keys(B[10]).forEach(g => {
+    for (let i = 0; i < 5; i++) for (let j = 1; j < cuts.length; j++){
+      const a = B[cuts[j - 1]][g] ? B[cuts[j - 1]][g][i] : null;
+      const b = B[cuts[j]][g] ? B[cuts[j]][g][i] : null;
+      if (a !== null && a !== undefined && b !== null && b !== undefined && b > a){
+        bad.push(`${g}[≥${i + 1}]: rate rises from the ${cuts[j - 1]}% to the stricter ${cuts[j]}% cut-off`);
+      }
+    }
+  });
+  /* Every dropdown group must have data at every cut-off (Anxiety, the one
+     source-sanctioned exception, appears only at 25%). */
+  D.PVT_ACS_GROUPS.forEach(g => {
+    cuts.forEach(cut => {
+      if (B[cut][g.id] === undefined && !(g.id === 'anxiety' && cut !== 25)){
+        bad.push(`group ${g.id} has no ${cut}% row`);
+      }
+    });
+  });
+  /* The chapter's a-priori criteria. */
+  if (D.PVT_ACS_RULES.unusual[25] !== 3 || D.PVT_ACS_RULES.unusual[15] !== 2 || D.PVT_ACS_RULES.unusual[10] !== 2){
+    bad.push('the "unusual" criteria drifted from the chapter (≥3 at 25%, ≥2 at 15% or 10%)');
+  }
+  if (D.PVT_ACS_RULES.possible15 !== 1 || D.PVT_ACS_RULES.probable10 !== 2){
+    bad.push('the possible/probable worked criteria drifted (1 at 15%, 2 at 10%)');
+  }
+  /* THE AGGREGATE EXEMPTION. The ACS pattern aggregates five indicators,
+     one of them RDS — counting it beside its members would double-count,
+     so its summary row must be countExempt and pvtIndicatorCounts must
+     honour the flag. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  const acsBlock = rowsFn.split('getPvtAcs()')[1] || '';
+  if (!/countExempt: true/.test(acsBlock)) bad.push('the ACS summary row lost its countExempt flag — an aggregate would join the independent count');
+  const counts = extractFn(APP_SRC, 'pvtIndicatorCounts');
+  if (!/countExempt/.test(counts)) bad.push('pvtIndicatorCounts no longer honours countExempt');
+  /* No raw ACS cut-off scores may ever be stored: the source withholds
+     them for test security. */
+  if (/PVT_ACS_CUTOFF_SCORES|acsCutoffScore|wordChoiceCut/i.test(DATA_SRC)){
+    bad.push('raw ACS cut-off scores appear in data.js — the source withholds them for test security');
+  }
+  /* Drive the shipped calculator. */
+  const run = (count, cutoff, group) => {
+    const vals = { 'pvt-acs-count': count, 'pvt-acs-cutoff': { value: String(cutoff) }, 'pvt-acs-group': { value: group } };
+    const c = {
+      PVT_ACS_BASERATES: D.PVT_ACS_BASERATES, PVT_ACS_GROUPS: D.PVT_ACS_GROUPS,
+      PVT_ACS_RULES: D.PVT_ACS_RULES, parseInt,
+      document: { getElementById: id =>
+        id === 'pvt-acs-count' ? { value: count }
+        : id === 'pvt-acs-cutoff' ? { value: String(cutoff) }
+        : id === 'pvt-acs-group' ? { value: group } : null }
+    };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtAcs')
+      + ';globalThis.__R = getPvtAcs();', c);
+    return c.__R;
+  };
+  let r = run('2', 10, 'tbi');
+  if (!r.unusual || !r.probable) bad.push('2 at the 10% cut-off should be unusual AND probable per the chapter');
+  if (r.groupRate !== 6 || r.normRate !== 1 || r.simRate !== 36) bad.push('2+ at 10% should read 6% TBI / 1% normative / 36% simulators');
+  r = run('1', 15, 'clinical');
+  if (r.unusual || !r.possible) bad.push('1 at the 15% cut-off is possible-but-not-unusual per the chapter');
+  if (r.groupRate !== 22) bad.push('1+ at 15% should read 22% of the clinical sample');
+  r = run('0', 10, 'clinical');
+  if (r.groupRate !== null || r.unusual) bad.push('a count of 0 has no base-rate column and cannot be unusual');
+  r = run('3', 25, 'clinical');
+  if (!r.unusual) bad.push('3 at the 25% cut-off should be unusual per the chapter');
   return bad.length === 0 || bad.join('; ');
 });
 
