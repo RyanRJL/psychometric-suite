@@ -498,7 +498,6 @@ function navigateTo(target, opts){
     if (typeof refreshBatteryAgePrompt === 'function') refreshBatteryAgePrompt();
     /* The popover is anchored to a control on Score Tables, so it cannot
        survive a page change — its anchor goes with it. */
-    if (target !== 'battery' && typeof closeBatteryAgePop === 'function') closeBatteryAgePop();
   };
 
   // Re-selecting the page you're already on shouldn't flash it away and back.
@@ -2201,174 +2200,71 @@ function refreshPatientAgeIndicator(){
   field.classList.toggle('is-live', patientAgeIsInUse());
 }
 
-/* THE MISSING-AGE POPOVER.
+/* THE REQUIRED-AGE BAR.
 
-   Asks for the age at the moment a blank one starts costing a sharper
-   interval, anchored to the Score CI toggle — the control that creates that
-   moment.
+   The predecessor here was a dismissable POPOVER anchored to the Score CI
+   toggle: edge-triggered, with a skip button — an offer, because a blank age
+   only cost a sharper interval. Two things ended it (owner decision,
+   2026-08): base-rate rows made the age load-bearing for SCORING, not just
+   interval width, and the anchor stopped making sense once the ask could
+   arise with the interval untouched — it drew its arrow at the 90% CI button
+   while talking about scoring. It also simply was not effective: a floating
+   popover reads as ignorable, and the ask is not ignorable any more.
 
-   EDGE-TRIGGERED, NOT STATE-TRIGGERED. renderBattery() runs on every keystroke
-   in the table, so opening whenever the condition holds would re-open it
-   continuously while someone types scores. It opens on the TRANSITION into the
-   condition, which also fixes the ordering problem a click handler would have:
-   CI switched on with D-KEFS already loaded fires, and D-KEFS autofilled while
-   CI is already on fires too. A handler on the CI button would catch only the
-   first, and would fire on an RBANS table where the age changes nothing.
+   What replaced it is this inline bar directly above the table, shown
+   whenever any row actually reads the age (batteryAgeBandRowCount() > 0) and
+   none is stored. It is REQUIRED in presentation: no skip, no outside-click
+   dismissal, it stays until an age is entered. Note this reverses the old
+   "the gate must not ask about the table's contents" rule — that rule
+   belonged to the offer, whose n === 0 branch existed so a CI-only ask never
+   looked arbitrary; a REQUIREMENT shown on a table where nothing reads the
+   age would be a false claim, so the bar is gated on actual readers.
 
-   ONCE PER PATIENT. Re-armed only by "New patient", not by clearing the age —
-   a clinician who skipped, then cleared the age, has already answered. The
-   residual .is-wanted state on the topbar field is what carries the message
-   after that, so a skipped or missed popover still leaves a trace.
+   STATE-DRIVEN, NOT EDGE-TRIGGERED. An inline element cannot "re-open"
+   annoyingly the way a popover could, so the whole edge/arming machinery
+   (batAgePopLastWanted, batAgePopJustOpened, the opening-click guard, the
+   fixed-position zoom mathematics) went with the popover. The bar is
+   rewritten only when its message changes, so typing into its own age input
+   is never clobbered by a table-keystroke re-render.
 
-   IT IS AN OFFER, NOT A DEMAND. A blank age is legitimate and citable: those
-   measures fall back to the publisher's own all-ages coefficient. Hence no
-   backdrop, no dimming, a skip that names the real alternative, and no word
-   anywhere suggesting something is missing or wrong. If this ever starts
-   reading as a validation error, it is wrong — see the CI-column note in
-   CLAUDE.md. */
-let batAgePopLastWanted = false; // previous edge state
-
-/* THE RULE: the interval is switched on and no age is stored. That is all.
-
-   It deliberately does NOT ask whether this table holds measures that publish
-   reliability by age band. An earlier version did, and it was wrong in
-   practice: a clinician who turns on confidence intervals has said they care
-   about interval width, and they cannot be expected to know which instruments
-   tabulate reliability by band — that is the app's job, not theirs. Asking
-   only for the families that happen to qualify made the prompt feel arbitrary,
-   and it stayed silent in the case people actually hit.
-
-   Edge-triggered on this condition, which gives "once per switch-on" for free
-   and needs no arming flag: turning CI on with no age opens it, and it will
-   not re-open until the condition drops and returns. Clearing the age with CI
-   already on also opens it, which is right — that is the same situation
-   arriving by a different route. */
+   It shares its predicate with the topbar residual (.is-wanted): one
+   predicate, so bar and residual cannot disagree. */
 function batteryAgeWanted(){
-  const ci = document.getElementById('bat-ci-level');
-  const ciOn = !!ci && ci.value !== 'off';
-  /* The OR-branch BROADENS the ask, it never narrows it: the CI trigger above
-     stays exactly as pinned. Base-rate rows join because for them the age is
-     not an offer of a sharper interval — their scoring is withheld until an
-     age is entered (batteryBaseRateAgeState), so the popover is also the
-     fastest way to unblock the table. */
-  return (ciOn || batteryBaseRateRowCount() > 0) && patientAge() === null;
+  return batteryAgeBandRowCount() > 0 && patientAge() === null;
 }
 
-/* Anchored with position:fixed against the CI toggle's own rect, rather than
-   nested inside the inline bar: that bar is rebuilt by design-system.js, and a
-   child would be destroyed with it. Clamped to the viewport so a narrow window
-   cannot push it off-screen.
-
-   MIND THE PAGE ZOOM. styles.css sets `body{zoom:0.9}` — a deliberate global
-   10% downscale. That splits measurement into two coordinate spaces and they
-   are easy to mix:
-
-     getBoundingClientRect()  VISUAL px   (already scaled by 0.9)
-     offsetWidth              LAYOUT px   (unscaled — reports 320 for a 320px
-                                          box that occupies 282 visual px)
-     style.top / style.left   LAYOUT px   (the browser multiplies by the zoom)
-
-   The first version read rects and offsetWidth together and wrote the result
-   straight back, which put the popover 19px ABOVE its anchor and 58px off
-   centre — a systematic error, not a layout-timing one, which is why
-   re-positioning did not shift it. Everything below is computed in visual px
-   and divided by the zoom on the way out. The factor is read from the element
-   rather than hardcoded, so changing that 0.9 cannot silently break this. */
+/* body{zoom:0.9} splits measurement into visual and layout px — anything
+   positioning from a measured rect divides by this. Survives the popover it
+   was written for: the consent card's pill stacking still reads it, and a
+   missing definition would fall through that call site's typeof guard to 1,
+   silently reintroducing the exact offset bug CLAUDE.md documents. */
 function pageZoomFactor(){
   const z = parseFloat(getComputedStyle(document.body).zoom);
   return Number.isFinite(z) && z > 0 ? z : 1;
 }
 
-function positionBatteryAgePop(){
-  const pop = document.getElementById('bat-age-pop');
-  if (!pop || !pop.classList.contains('is-open')) return;
-  const anchor = document.querySelector('#battery .ds-inline-bar-toggle[aria-label="Score confidence interval"]')
-              || document.querySelector('#battery .ds-inline-bar');
-  if (!anchor) return;
-  const z = pageZoomFactor();
-  const a = anchor.getBoundingClientRect();
-  const w = pop.getBoundingClientRect().width;   // visual px — NOT offsetWidth
-  const centre = a.left + a.width / 2;
-  const left = Math.max(12, Math.min(centre - w / 2, window.innerWidth - w - 12));
-  pop.style.top  = ((a.bottom + 10) / z) + 'px';
-  pop.style.left = (left / z) + 'px';
-  const arrow = pop.querySelector('.ds-age-pop-arrow');
-  if (arrow) arrow.style.left = (Math.max(14, Math.min(centre - left, w - 14)) / z) + 'px';
-}
-
-/* THE OPENING CLICK MUST NOT ALSO DISMISS IT.
-
-   The popover opens from inside renderBattery(), which usually runs during a
-   click — "Add selected tests", the CI toggle, a row edit. That same click then
-   continues bubbling to the document-level outside-click handler below, which
-   sees a popover that is now open, sees the target is not inside it, and closes
-   it. Net effect: OPEN immediately followed by CLOSE, and nothing on screen.
-
-   That is exactly how this shipped. It went unnoticed because the checks and my
-   browser probes called renderBattery() directly, so no click was ever in
-   flight and the dismissal never ran — the bug only exists on the real UI path.
-
-   The flag is cleared on a timeout so it survives the whole synchronous
-   dispatch of the opening click and no longer. It replaces an earlier
-   special-case exemption for the CI toggle, which fixed one route and left
-   every other one broken. */
-let batAgePopJustOpened = false;
-
-function openBatteryAgePop(counts){
-  const pop = document.getElementById('bat-age-pop');
-  const body = document.getElementById('bat-age-pop-body');
-  if (!pop || !body) return;
-  batAgePopJustOpened = true;
-  setTimeout(() => { batAgePopJustOpened = false; }, 0);
-  const n  = counts && Number.isFinite(counts.bands) ? counts.bands : 0;
-  const br = counts && Number.isFinite(counts.baseRate) ? counts.baseRate : 0;
-  const ci = document.getElementById('bat-ci-level');
-  const ciOn = !!ci && ci.value !== 'off';
-  /* Three branches for the reliability half, because the popover opens
-     whenever the interval is on and no age is stored — so the table may hold
-     NO age-band measures at all, and a count sentence would read "0 measures
-     ... publish their reliability".
-
-     Every clause agrees with its count: subject, verb and pronoun. Written out
-     per branch rather than assembled from shared fragments, because "1 measure
-     publish their reliability" is exactly what fragment-assembly produced on
-     the first pass, and this is text a clinician reads while deciding.
-
-     The base-rate sentence is a separate, harder claim and comes FIRST when it
-     applies: those rows are not offered a sharper interval, they are unscored
-     until an age is entered (batteryBaseRateAgeState). The reliability
-     sentences render only while the interval is on — with CI off they would
-     promise a narrowing the page is not currently printing. */
+/* Every clause agrees with its count — written out per branch, not assembled
+   from fragments; see the note on the old popover text in check.js §26. */
+function batteryAgeBarHtml(){
+  const br = batteryBaseRateRowCount();
+  const bands = batteryCiAgeBandRowCount();
   const parts = [];
-  if (br === 1){
-    parts.push('<strong>1 measure</strong> in this table is scored from an age-banded base-rate table, so it stays unscored until an age is entered.');
-  } else if (br > 1){
-    parts.push('<strong>' + br + ' measures</strong> in this table are scored from age-banded base-rate tables, so they stay unscored until an age is entered.');
-  }
-  if (ciOn){
-    parts.push(
-      n === 0
-        ? 'Some measures publish their reliability by age band, and an age narrows those intervals. Without one they use the published all-ages coefficient, which is equally citable.'
-      : n === 1
-        ? '<strong>1 measure</strong> in this table publishes its reliability by age band. An age narrows its interval; left blank, it uses the published all-ages coefficient.'
-        : '<strong>' + n + ' measures</strong> in this table publish their reliability by age band. An age narrows their intervals; left blank, they use the published all-ages coefficient.'
-    );
-  }
-  body.innerHTML = parts.join(' ');
-  const input = document.getElementById('bat-age-pop-input');
-  if (input) input.value = '';
-  pop.classList.add('is-open');
-  positionBatteryAgePop();
+  if (br === 1) parts.push('<strong>1 measure</strong> in this table is scored from an age-banded base-rate table and stays unscored until the age is entered.');
+  else if (br > 1) parts.push('<strong>' + br + ' measures</strong> in this table are scored from age-banded base-rate tables and stay unscored until the age is entered.');
+  if (bands === 1) parts.push('<strong>1 measure</strong> publishes its reliability by age band; the age selects the correct coefficient for its interval.');
+  else if (bands > 1) parts.push('<strong>' + bands + ' measures</strong> publish their reliability by age band; the age selects the correct coefficients for their intervals.');
+  return '<div class="bat-age-bar-main">'
+    + '<div class="bat-age-bar-title">Patient age required</div>'
+    + '<div class="bat-age-bar-body">' + parts.join(' ') + '</div>'
+    + '</div>'
+    + '<div class="bat-age-bar-row">'
+    + '<input type="number" id="bat-age-bar-input" class="bat-age-bar-input" min="5" max="110" step="1" placeholder="e.g. 72" aria-label="Patient age">'
+    + '<button type="button" class="bat-age-bar-add" id="bat-age-bar-add">Add age</button>'
+    + '</div>';
 }
 
-function closeBatteryAgePop(){
-  const pop = document.getElementById('bat-age-pop');
-  if (pop) pop.classList.remove('is-open');
-}
-
-/* The age was typed into the popover, which sits over the table — so the field
-   that now holds it, up in the top bar, is somewhere the clinician was not
-   looking. The pulse says "it landed here", and answers the question the
+/* The age was typed into the bar above the table — so the field that now
+   holds it, up in the top bar, is somewhere the clinician was not looking. The pulse says "it landed here", and answers the question the
    popover leaves behind: where did that value actually go?
 
    Restarted rather than re-added, so a second commit re-runs the animation
@@ -2386,15 +2282,16 @@ function pulsePatientAgeField(){
 
 /* Writes through to the master and lets its own listener do the rest — the
    sync, the re-render and the pip all hang off that one 'input' event. */
-function commitBatteryAgePop(){
-  const input = document.getElementById('bat-age-pop-input');
+/* Writes through to the master and lets its own listener do the rest — the
+   sync, the re-render and the pip all hang off that one 'input' event. */
+function commitBatteryAgeBar(){
+  const input = document.getElementById('bat-age-bar-input');
   const master = document.getElementById('patient-age');
   if (!input || !master) return;
   const v = parseFloat(input.value);
   if (!Number.isFinite(v)) { input.focus(); return; }
   master.value = String(v);
   master.dispatchEvent(new Event('input', { bubbles: true }));
-  closeBatteryAgePop();
   /* After the dispatch, so the pulse lands on a field already showing the new
      value and its .is-live pip rather than on a stale one. */
   pulsePatientAgeField();
@@ -2402,49 +2299,31 @@ function commitBatteryAgePop(){
 
 function refreshBatteryAgePrompt(){
   const wanted = batteryAgeWanted();
-
-  /* THE RESIDUAL IS A DIFFERENT CLAIM, and keeps its own, narrower condition.
-     The popover asks "no age — want to add one?"; the dashed field says "an
-     age would actually change something here". The second is only true where
-     a measure publishes reliability by age band OR is scored from an
-     age-banded base-rate table (both counted by batteryAgeBandRowCount).
-     They were one predicate while the popover made the same claim; they no
-     longer do, and collapsing them would
-     make the field assert something untrue on a CVLT-3 table. */
+  /* ONE predicate for the bar and the topbar residual, so the table cannot
+     demand an age while the field beside the age box implies nothing reads
+     one, or vice versa. */
   const field = document.getElementById('patient-age-field');
-  if (field) field.classList.toggle('is-wanted', batteryAgeBandRowCount() > 0 && patientAge() === null);
-
-  /* No arming flag: the edge itself gives "once per switch-on". It re-opens
-     only when the condition drops and returns — CI off then on, or an age
-     entered then cleared. */
-  if (wanted && !batAgePopLastWanted) openBatteryAgePop({ bands: batteryCiAgeBandRowCount(), baseRate: batteryBaseRateRowCount() });
-  if (!wanted) closeBatteryAgePop();
-  batAgePopLastWanted = wanted;
+  if (field) field.classList.toggle('is-wanted', wanted);
+  const bar = document.getElementById('bat-age-required');
+  if (!bar) return;
+  bar.hidden = !wanted;
+  if (wanted){
+    const html = batteryAgeBarHtml();
+    /* Rewrite only on change: renderBattery() runs on every keystroke in the
+       score cells, and clobbering the bar would clear its half-typed age. */
+    if (bar.dataset.sig !== html){ bar.dataset.sig = html; bar.innerHTML = html; }
+  }
 }
 
 document.addEventListener('click', e => {
-  if (e.target.closest('#bat-age-pop-add')){ commitBatteryAgePop(); return; }
-  if (e.target.closest('#bat-age-pop-skip')){ closeBatteryAgePop(); return; }
-  /* Outside click dismisses — but never the click that opened it. See the note
-     on batAgePopJustOpened: the open happens inside renderBattery(), mid-click,
-     so without this the same gesture that asks the question also answers it. */
-  const pop = document.getElementById('bat-age-pop');
-  if (!pop || !pop.classList.contains('is-open')) return;
-  if (batAgePopJustOpened) return;
-  if (e.target.closest('#bat-age-pop')) return;
-  closeBatteryAgePop();
+  if (e.target.closest('#bat-age-bar-add')) commitBatteryAgeBar();
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeBatteryAgePop();
-  else if (e.key === 'Enter' && e.target && e.target.id === 'bat-age-pop-input'){
+  if (e.key === 'Enter' && e.target && e.target.id === 'bat-age-bar-input'){
     e.preventDefault();
-    commitBatteryAgePop();
+    commitBatteryAgeBar();
   }
 });
-/* Fixed positioning does not follow the page, so it is recomputed rather than
-   left pointing at empty space. */
-window.addEventListener('scroll', positionBatteryAgePop, { passive: true });
-window.addEventListener('resize', positionBatteryAgePop);
 
 /* Pick the published coefficient for the patient's age band.
    rInternalByAge is keyed by the LOWER BOUND of each normative band, so the
@@ -2759,11 +2638,26 @@ function renderBattery(){
        Show Raw toggle says — a hidden entry column is an unusable row. The
        .raw-forced class outranks .raw-hidden in styles.css by specificity. */
   let hasBaseRateRows = false;
+  const rebandAge = batteryPatientAge();
   batteryRows.forEach(r => {
     if (!batteryBaseRateEntry(r)) return;
     hasBaseRateRows = true;
     if ((r.raw === '' || r.raw == null) && r.score !== '' && r.score != null){
       r.raw = r.score; r.score = '';
+    }
+    /* AUTO-REBAND. The dropdown offers one entry per base-rate family and the
+       band is a mechanical function of the required age, so when the age and
+       the row's band disagree, the row is re-pointed at the sibling band
+       containing the age — silently correct beats a complaint the clinician
+       has to resolve by re-adding the row. Only where the target band
+       actually publishes the measure; otherwise the row keeps its group and
+       the out-of-band hint states the refusal. */
+    if (rebandAge != null){
+      const band = ageBandRange(r.group);
+      if (band && (rebandAge < band.lo || rebandAge > band.hi)){
+        const target = baseRateGroupForAge(r.group, r.name, rebandAge);
+        if (target) r.group = target;
+      }
     }
   });
   document.getElementById('bat-table').classList.toggle('raw-forced', hasBaseRateRows);
@@ -4600,6 +4494,35 @@ function familyScoredByAgeBand(name){
   return Object.values(fam).some(e => e && typeof e === 'object' && (e.baseRates || e.separateBattery));
 }
 
+/* Base-rate families ONLY: every entry scored by published lookup. Distinct
+   from familyScoredByAgeBand, which also matches separateBattery (WMS-IV) —
+   there the band is a CLINICAL choice of battery (§30) and must stay
+   selectable; here it is a mechanical function of the patient age. */
+function familyGroupIsBaseRate(name){
+  const fam = normDB[name];
+  if (!fam) return false;
+  const entries = Object.values(fam).filter(e => e && typeof e === 'object');
+  return entries.length > 0 && entries.every(e => e.baseRates);
+}
+
+/* The banded sibling group that contains this age AND publishes this measure.
+   Per MEASURE, not per family: Longest Letter-Number Sequence is published
+   only to 65-69 while its siblings run to 85-90, so a 70-year-old has a band
+   for the digit spans and none for LNS. */
+function baseRateGroupForAge(group, name, age){
+  if (age == null) return null;
+  const base = familyBaseName(group);
+  const db = getMergedDB();
+  for (const g of Object.keys(db)){
+    if (!hasAgeBandSuffix(g) || familyBaseName(g) !== base) continue;
+    const band = ageBandRange(g);
+    if (!band || age < band.lo || age > band.hi) continue;
+    const e = db[g] && db[g][name];
+    if (e && e.baseRates) return g;
+  }
+  return null;
+}
+
 /* ── AGE-BAND FILTERING OF THE FAMILY DROPDOWNS ──────────────────────────────
 
    With one patient age now on screen everywhere, the dropdowns can stop
@@ -4692,8 +4615,28 @@ function buildFamilyListHtml(families, opts){
   order.forEach(base => {
     const allMembers = groups[base];
     const members = familyMembersForAge(allMembers, age);
-    if (members.length < allMembers.length) narrowed = true;
     const groupKey = `grp:${base}`;
+    /* A base-rate family collapses to ONE entry on the flat (Score Tables)
+       list: its band is a mechanical function of the now-required patient
+       age, so fourteen selectable bands were fourteen chances to pick the
+       wrong one. The stored value is the band containing the age where one
+       is known — with no age yet, the first band stands in and renderBattery
+       auto-rebands the rows the moment the age arrives. Not marked as
+       "narrowed": nothing selectable was hidden, and the show-all-bands note
+       must not claim otherwise. WMS-IV does NOT come this way —
+       familyGroupIsBaseRate is false for separateBattery groups, whose band
+       choice is the clinician's (§30). */
+    if (flat && !allMembers.some(isCustom) && allMembers.length > 0
+        && hasAgeBandSuffix(allMembers[0]) && allMembers.every(familyGroupIsBaseRate)){
+      const inBand = age != null
+        ? allMembers.find(m => { const b = ageBandRange(m); return b && age >= b.lo && age <= b.hi; })
+        : null;
+      const bandText = inBand ? (inBand.match(/·\s*(.+)$/) || [,''])[1] : '';
+      html += comboCheckboxItemHtml(inBand || allMembers[0], false, false, groupKey, base,
+        inBand ? bandText : 'band set by age');
+      return;
+    }
+    if (members.length < allMembers.length) narrowed = true;
     if (members.length === 1 && !hasAgeBandSuffix(members[0])){
       html += comboCheckboxItemHtml(members[0], isCustom(members[0]), false, groupKey);
     } else if (flat && !members.some(isCustom) && !members.some(familyScoredByAgeBand)){
