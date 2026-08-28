@@ -9774,16 +9774,107 @@ body.rb-docked-active{padding-right:0}
 .pvt-summary-left{min-width:0}
 
 .pvt-result{margin:0}
-.pvt-result-inner{display:block;border:1px solid rgba(20,15,5,0.08);border-left:4px solid var(--border);border-radius:var(--r-md);padding:14px 16px;background:#FFFFFF}
+/* The message card - empty, invalid and partial states only. A SCORED
+   measure never renders through this: it renders as .pvt-readout below,
+   one row per index. */
+.pvt-result-inner{display:block;border:1px solid rgba(20,15,5,0.08);border-radius:var(--r-md);padding:14px 16px;background:#FFFFFF}
 .pvt-result-inner.is-empty{color:var(--faint);font-style:italic;font-size:13.5px}
-.pvt-result-inner.is-pass{border-left-color:#2e7d4f}
-.pvt-result-inner.is-fail{border-left-color:#9c3d2a}
-.pvt-result-inner.is-na{border-left-color:#8a7a2c}
-.pvt-result-headline{display:block;font-weight:600;font-size:15px;margin-bottom:4px}
-.pvt-result-inner.is-fail .pvt-result-headline{color:#9c3d2a}
-.pvt-result-inner.is-pass .pvt-result-headline{color:#2e7d4f}
-.pvt-result-inner.is-na .pvt-result-headline{color:#8a7a2c}
-.pvt-result-detail{display:block;font-size:12.5px;color:var(--muted,#555);line-height:1.55}
+.pvt-result-headline{display:block;font-size:13px;color:var(--muted)}
+.pvt-result-detail{display:block;margin-top:4px;font-size:12.5px;color:var(--muted,#555);line-height:1.55}
+
+/* ---------- per-index readout ----------
+   Values and labels stay in INK; the chip beside them carries the state.
+   A card-level colour cannot express four indices in four states, which
+   is exactly what it got wrong before. Every chip carries its word, so
+   state never rests on colour alone. */
+.pvt-readout{
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
+  background:#FFFFFF;
+  padding:4px 16px;
+}
+.pvt-readout-head{
+  padding:11px 0 9px;
+  border-bottom:1px solid rgba(20,15,5,0.06);
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:var(--muted);
+}
+.pvt-readout-head strong{color:var(--ink);font-weight:600}
+.pvt-index{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:start;
+  gap:14px;
+  padding:12px 0;
+  border-bottom:1px solid rgba(20,15,5,0.06);
+}
+.pvt-index:last-child{border-bottom:0}
+.pvt-index-main{min-width:0}
+.pvt-index-top{display:flex;align-items:baseline;gap:10px;margin-bottom:7px}
+.pvt-index-label{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.2}
+.pvt-index-value{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+.pvt-index-value.is-none{color:var(--faint)}
+.pvt-index-meta{margin-top:7px;font-family:var(--sans);font-size:10.5px;color:#7A766E;line-height:1.45}
+
+/* Score against its cut-off. Recessive track, tinted failing zone, one
+   thin marker with a surface ring so it reads on either ground. */
+.pvt-meter{
+  position:relative;
+  display:block;
+  height:4px;
+  border-radius:2px;
+  background:rgba(20,15,5,0.07);
+  overflow:visible;
+}
+.pvt-meter-zone{
+  position:absolute;top:0;bottom:0;
+  background:rgba(156,61,42,0.18);
+  border-radius:2px;
+}
+.pvt-meter-mark{
+  position:absolute;
+  top:-4px;
+  width:3px;
+  height:12px;
+  margin-left:-1.5px;
+  border-radius:1.5px;
+  background:var(--ink);
+  box-shadow:0 0 0 2px #FFFFFF;
+}
+.pvt-meter-mark.is-flagged{background:#9c3d2a}
+
+/* Status chip. Colour + word, never colour alone. */
+.pvt-flag{
+  align-self:center;
+  display:inline-flex;
+  align-items:center;
+  height:20px;
+  padding:0 9px;
+  border:1px solid rgba(20,15,5,0.12);
+  border-radius:10px;
+  background:#FFFFFF;
+  color:var(--muted);
+  font-family:var(--sans);
+  font-size:9.5px;
+  font-weight:600;
+  letter-spacing:0.07em;
+  text-transform:uppercase;
+  line-height:1;
+  white-space:nowrap;
+}
+.pvt-flag.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.38);background:rgba(46,125,79,0.06)}
+.pvt-flag.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.38);background:rgba(156,61,42,0.06)}
+.pvt-flag.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.38);background:rgba(138,122,44,0.06)}
+.pvt-readout-note{
+  padding:10px 0 12px;
+  border-top:1px solid rgba(20,15,5,0.06);
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:var(--muted);
+  line-height:1.5;
+}
+.pvt-index + .pvt-readout-note{border-top:0;padding-top:0}
 
 .pvt-table{width:100%;border-collapse:collapse;font-size:12px}
 .pvt-table th{
@@ -26355,6 +26446,93 @@ function getPvtTomm(){
 function pvtResultHtml(kind, headline, detail){
   return `<div class="pvt-result-inner is-${kind}"><span class="pvt-result-headline">${headline}</span>${detail ? `<span class="pvt-result-detail">${detail}</span>` : ''}</div>`;
 }
+
+/* ---------- the per-index readout ----------
+   ONE ROW PER INDEX, each carrying its OWN state.
+
+   This replaces a single card-level state that coloured every line at once:
+   a Digit Span card holding four indices printed "ACSS = 8 — Pass" in
+   failure red because one span had flagged. The rule that fixes it is that
+   VALUES AND LABELS STAY IN INK and a coloured chip beside them carries the
+   state, so a card can hold four indices in four different states and each
+   reads correctly. Status colour never appears alone — every chip carries
+   its word ("Pass", "Flag", "Not evaluated"), so the state survives
+   greyscale, colour-blindness and print.
+
+   Each row also plots the score against its cut-off on a slim track. The
+   domain is never invented: it is the measure's own possible range (a
+   scaled-score metric, a trial out of 50, or the arithmetic minimum and
+   maximum of the raw inputs that feed a composite). The shaded zone is the
+   side of the boundary that fails, placed on the half-integer between the
+   last passing and first failing score, so it is exact for these
+   integer-valued scales rather than approximate. */
+const PVT_STATE_WORD = { pass: 'Pass', fail: 'Fail', flag: 'Flag', na: 'n/a' };
+
+/* Where the failing side starts, in value units. Integer scales, so the
+   boundary sits on the half-integer between the last passing and the first
+   failing score — exact, not eyeballed. */
+function pvtFailBoundary(op, cut){
+  if (op === 'lt')  return cut - 0.5;   // fail if score <  cut
+  if (op === 'lte') return cut + 0.5;   // fail if score <= cut
+  if (op === 'gt')  return cut + 0.5;   // fail if score >  cut
+  return cut - 0.5;                     // 'gte': fail if score >= cut
+}
+function pvtMeterHtml(o){
+  if (!Number.isFinite(o.value) || !Number.isFinite(o.min) || !Number.isFinite(o.max)) return '';
+  const span = o.max - o.min;
+  if (!(span > 0)) return '';
+  const pct = v => Math.max(0, Math.min(100, ((v - o.min) / span) * 100));
+  const b = pctClamp(pct(pvtFailBoundary(o.op, o.cut)));
+  const failLow = (o.op === 'lt' || o.op === 'lte');
+  const zone = failLow
+    ? `left:0;width:${b.toFixed(2)}%`
+    : `left:${b.toFixed(2)}%;right:0`;
+  const markPct = pct(o.value);
+  const label = `${o.label}: ${o.value} on a ${o.min}–${o.max} scale; ${
+    failLow ? 'scores at or below' : 'scores at or above'} the cut-off fall in the shaded zone`;
+  return `<span class="pvt-meter" role="img" aria-label="${escapeAttr(label)}">
+      <span class="pvt-meter-zone" style="${zone}"></span>
+      <span class="pvt-meter-mark${o.state === 'pass' ? '' : ' is-flagged'}" style="left:${markPct.toFixed(2)}%"></span>
+    </span>`;
+}
+function pctClamp(v){ return Math.max(0, Math.min(100, v)); }
+
+/* state: 'pass' | 'fail' | 'flag' | 'na'. `word` overrides the default
+   chip text (a base-rate index reads "Flag", a withheld one "Not
+   evaluated"). */
+function pvtIndexRowHtml(o){
+  const word = o.word || PVT_STATE_WORD[o.state] || '';
+  const chipState = o.state === 'flag' ? 'fail' : o.state;
+  const valueHtml = (o.value === undefined || o.value === null || o.value === '')
+    ? '<span class="pvt-index-value is-none">—</span>'
+    : `<span class="pvt-index-value">${escapeHtml(String(o.value))}</span>`;
+  return `<div class="pvt-index">
+    <div class="pvt-index-main">
+      <div class="pvt-index-top">
+        <span class="pvt-index-label">${o.label}</span>
+        ${valueHtml}
+      </div>
+      ${o.state === 'na' ? '' : pvtMeterHtml(o)}
+      ${o.meta ? `<div class="pvt-index-meta">${o.meta}</div>` : ''}
+    </div>
+    <span class="pvt-flag is-${chipState}">${word}</span>
+  </div>`;
+}
+
+/* Wrap rows in the card. `note` carries any arithmetic or explanation that
+   belongs to the whole measure rather than to one index. */
+function pvtReadoutHtml(rows, note){
+  const flagged = rows.filter(r => r.state === 'fail' || r.state === 'flag').length;
+  const scored  = rows.filter(r => r.state !== 'na').length;
+  const head = (rows.length > 1 && scored > 0)
+    ? `<div class="pvt-readout-head"><strong>${flagged}</strong> of ${scored} scored ${scored === 1 ? 'index' : 'indices'} beyond ${flagged === 1 ? 'its' : 'their'} cut-off</div>`
+    : '';
+  return `<div class="pvt-readout">
+    ${head}
+    ${rows.map(pvtIndexRowHtml).join('')}
+    ${note ? `<div class="pvt-readout-note">${note}</div>` : ''}
+  </div>`;
+}
 const PVT_PROMPTS = {
   partial: 'Enter the remaining score(s) to compute this index.',
   invalid: 'Check the entered values — one is outside the possible raw-score range.'
@@ -26368,12 +26546,13 @@ function renderPvtEi(){
   if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
-  const cutLabel = `EI &gt; ${s.cut}${s.cutKey === 'sensitive' ? ' (screening)' : ''}`;
-  out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
-    `Effort Index = ${s.ei} — ${pvtStatusWord(s.fail)} at ${cutLabel}`,
-    `Digit Span ${s.ds} → weight ${s.wDs}; List Recognition ${s.lr} → weight ${s.wLr}.${s.fail
-      ? ' Corroborate with an independent, preferably forced-choice, measure.'
-      : ''}`);
+  const acc = PVT_EI_ACCURACY[s.cutKey];
+  out.innerHTML = pvtReadoutHtml([{
+    label: 'Effort Index', value: s.ei, state: s.fail ? 'fail' : 'pass',
+    min: 0, max: 12, cut: s.cut, op: 'gt',
+    meta: `Cut-off &gt; ${s.cut}${s.cutKey === 'sensitive' ? ' (screening)' : ''} · sens. ${acc.sens} · spec. ${acc.spec} · higher = less credible`
+  }], `Digit Span ${s.ds} → weight ${s.wDs}; List Recognition ${s.lr} → weight ${s.wLr}; sum ${s.ei}.${
+    s.fail ? ' Corroborate with an independent, preferably forced-choice, measure.' : ''}`);
 }
 
 function renderPvtEs(){
@@ -26384,16 +26563,20 @@ function renderPvtEs(){
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   if (s.gated){
-    out.innerHTML = pvtResultHtml('na',
-      'Effort Scale not computed — screening gate not met',
-      `Digit Span ${s.ds}, List Recognition ${s.lr}, sum ${s.ds + s.lr} — no gate clause met (&lt; 9 / &lt; 19 / &lt; 28). On a profile this strong the ES over-flags, so no score is reported (Novitski et al., 2012).`);
+    out.innerHTML = pvtReadoutHtml([{
+      label: 'Effort Scale', value: null, state: 'na', word: 'Not computed',
+      meta: `Gate not met — Digit Span ${s.ds} (&lt; 9), List Recognition ${s.lr} (&lt; 19), sum ${s.ds + s.lr} (&lt; 28)`
+    }], 'On a profile this strong the ES over-flags, so no score is reported (Novitski et al., 2012).');
     return;
   }
-  out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
-    `Effort Scale = ${s.es} — ${pvtStatusWord(s.fail)} at ES &lt; ${PVT_ES.cutoff}`,
-    `(${s.lr} − [${s.list} + ${s.stor} + ${s.fig}]) + ${s.ds} = ${s.es}. Gate met.${s.fail
-      ? ' Confirm with a stand-alone forced-choice measure.'
-      : ''}`);
+  /* Domain is the arithmetic range of the inputs that feed the formula:
+     List Recognition 0-20 minus total recall 0-42, plus Digit Span 0-16. */
+  out.innerHTML = pvtReadoutHtml([{
+    label: 'Effort Scale', value: s.es, state: s.fail ? 'fail' : 'pass',
+    min: -42, max: 36, cut: PVT_ES.cutoff, op: 'lt',
+    meta: `Cut-off &lt; ${PVT_ES.cutoff} · ROC AUC ${PVT_ES_ACCURACY.auc} (no published sens/spec) · lower = less credible`
+  }], `(${s.lr} − [${s.list} + ${s.stor} + ${s.fig}]) + ${s.ds} = ${s.es}. Gate met.${
+    s.fail ? ' Confirm with a stand-alone forced-choice measure.' : ''}`);
 }
 
 function renderPvtRds(){
@@ -26403,12 +26586,13 @@ function renderPvtRds(){
   if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
-  const cutLabel = `RDS ≤ ${s.cut}${s.conservative ? ' (conservative)' : ' (traditional)'}`;
-  out.innerHTML = pvtResultHtml(s.fail ? 'fail' : 'pass',
-    `RDS = ${s.rds} — ${pvtStatusWord(s.fail)} at ${cutLabel}`,
-    `${s.f} forward + ${s.b} backward${s.floored ? ` = ${s.f + s.b}; the floor rule records any RDS below 3 as 3` : ''}.${s.fail
-      ? ' Weigh genuine attentional impairment, anxiety and aphasia before concluding.'
-      : ''}`);
+  const racc = PVT_RDS_ACCURACY[s.conservative ? 'conservative' : 'traditional'];
+  out.innerHTML = pvtReadoutHtml([{
+    label: 'Reliable Digit Span', value: s.rds, state: s.fail ? 'fail' : 'pass',
+    min: 0, max: 17, cut: s.cut, op: 'lte',
+    meta: `Cut-off ≤ ${s.cut} (${s.conservative ? 'conservative' : 'traditional'}) · sens. ${racc.sens} · spec. ${racc.spec} · lower = less credible`
+  }], `${s.f} forward + ${s.b} backward${s.floored ? ` = ${s.f + s.b}; the floor rule records any RDS below 3 as 3` : ` = ${s.rds}`}.${
+    s.fail ? ' Weigh genuine attentional impairment, anxiety and aphasia before concluding.' : ''}`);
 }
 
 function renderPvtDs(){
@@ -26418,31 +26602,44 @@ function renderPvtDs(){
   if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score — Vocabulary alone computes nothing.'); return; }
-  const cutLabel = `ACSS ≤ ${s.cut}${s.conservative ? ' (conservative)' : ''}`;
-  let head = `Digit Span ACSS = ${s.acss} — ${pvtStatusWord(s.fail)} at ${cutLabel}`;
-  let detail = '';
-  if (s.diff !== undefined){
-    head += `<br>Vocabulary − Digit Span = ${s.diff} — <strong>${s.diffFail ? 'Flagged' : 'Not flagged'}</strong> at ≥ ${PVT_DS.vocabDiffCutoff}`;
-    if (s.diffFail) detail = `A Vocabulary − Digit Span difference this large occurs in ${PVT_DS_VOCABDIFF_BASERATES.standardization} of the standardisation sample and ${PVT_DS_VOCABDIFF_BASERATES.clinical} of the combined clinical sample.`;
-  }
+  const dacc = PVT_DS_ACCURACY[s.conservative ? 'conservative' : 'sensitive'];
+  const rows = [{
+    label: 'Digit Span ACSS', value: s.acss, state: s.fail ? 'fail' : 'pass',
+    min: 1, max: 19, cut: s.cut, op: 'lte',
+    meta: `Cut-off ≤ ${s.cut}${s.conservative ? ' (conservative)' : ''} · sens. ${dacc.sens} · spec. ${dacc.spec}`
+  }];
+  if (s.diff !== undefined) rows.push({
+    label: 'Vocabulary − Digit Span', value: s.diff,
+    state: s.diffFail ? 'flag' : 'pass', word: s.diffFail ? 'Flag' : 'Pass',
+    /* Both scaled scores run 1-19, so the difference runs -18 to 18. */
+    min: -18, max: 18, cut: PVT_DS.vocabDiffCutoff, op: 'gte',
+    meta: `Cut-off ≥ ${PVT_DS.vocabDiffCutoff} · base rate ${PVT_DS_VOCABDIFF_BASERATES.standardization} standardisation / ${PVT_DS_VOCABDIFF_BASERATES.clinical} clinical`
+  });
   if (s.lsf !== undefined){
-    if (s.lsfState === 'no-age'){
-      head += `<br>Longest span forward = ${s.lsf} — <strong>not evaluated</strong> (enter the patient age in the top bar; the index applies under age ${PVT_DS.lsfAgeBelow})`;
-    } else if (s.lsfState === 'over-age'){
-      head += `<br>Longest span forward = ${s.lsf} — <strong>not applicable</strong> at age ${PVT_DS.lsfAgeBelow}+ (Iverson & Tulsky limit this index to under-55s)`;
-    } else {
-      head += `<br>Longest span forward = ${s.lsf} — <strong>${s.lsfFail ? 'Flagged' : 'Not flagged'}</strong> at ≤ ${PVT_DS.lsfCutoff}`;
-      if (s.lsfFail) detail += ` A forward span this short occurs in ${PVT_DS_SPAN_BASERATES.lsf.standardization} of the under-55 standardisation bands and ${PVT_DS_SPAN_BASERATES.lsf.clinical} of the combined clinical sample.`;
-    }
+    if (s.lsfState === 'ok') rows.push({
+      label: 'Longest span forward', value: s.lsf,
+      state: s.lsfFail ? 'flag' : 'pass', word: s.lsfFail ? 'Flag' : 'Pass',
+      min: 0, max: 9, cut: PVT_DS.lsfCutoff, op: 'lte',
+      meta: `Cut-off ≤ ${PVT_DS.lsfCutoff} (age &lt; ${PVT_DS.lsfAgeBelow}) · base rate ${PVT_DS_SPAN_BASERATES.lsf.standardization} standardisation / ${PVT_DS_SPAN_BASERATES.lsf.clinical} clinical`
+    });
+    else rows.push({
+      label: 'Longest span forward', value: s.lsf, state: 'na',
+      word: s.lsfState === 'no-age' ? 'Needs age' : 'n/a',
+      meta: s.lsfState === 'no-age'
+        ? `Enter the patient age in the top bar — this index applies under age ${PVT_DS.lsfAgeBelow}`
+        : `Not applicable at age ${PVT_DS.lsfAgeBelow}+ — Iverson &amp; Tulsky limit this index to under-55s`
+    });
   }
-  if (s.lsb !== undefined){
-    head += `<br>Longest span backward = ${s.lsb} — <strong>${s.lsbFail ? 'Flagged' : 'Not flagged'}</strong> at ≤ ${PVT_DS.lsbCutoff}`;
-    if (s.lsbFail) detail += ` A backward span this short occurs in ${PVT_DS_SPAN_BASERATES.lsb.standardization} of the standardisation bands and ${PVT_DS_SPAN_BASERATES.lsb.clinical} of the combined clinical sample.`;
-  }
-  detail = detail.trim();
-  if (s.fail && !detail) detail = 'Corroborate with an independent, preferably forced-choice, measure.';
+  if (s.lsb !== undefined) rows.push({
+    label: 'Longest span backward', value: s.lsb,
+    state: s.lsbFail ? 'flag' : 'pass', word: s.lsbFail ? 'Flag' : 'Pass',
+    min: 0, max: 8, cut: PVT_DS.lsbCutoff, op: 'lte',
+    meta: `Cut-off ≤ ${PVT_DS.lsbCutoff} · base rate ${PVT_DS_SPAN_BASERATES.lsb.standardization} standardisation / ${PVT_DS_SPAN_BASERATES.lsb.clinical} clinical`
+  });
   const anyFail = s.fail || s.diffFail || s.lsfFail || s.lsbFail;
-  out.innerHTML = pvtResultHtml(anyFail ? 'fail' : 'pass', head, detail);
+  out.innerHTML = pvtReadoutHtml(rows, anyFail
+    ? 'Base-rate indices state how often a score this extreme occurs in the standardisation and clinical samples; corroborate with an independent, preferably forced-choice, measure.'
+    : '');
 }
 
 function renderPvtRey(){
@@ -26452,17 +26649,29 @@ function renderPvtRey(){
   if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score — the recognition trial alone computes nothing.'); return; }
-  let head = `Free recall = ${s.recall} — ${pvtStatusWord(s.recallFail)} at &lt; ${PVT_REY15.recallCutoff}`;
-  let detail = '';
+  const rows = [{
+    label: 'Free recall', value: s.recall, state: s.recallFail ? 'fail' : 'pass',
+    min: 0, max: 15, cut: PVT_REY15.recallCutoff, op: 'lt',
+    meta: `Cut-off &lt; ${PVT_REY15.recallCutoff} · sens. ${PVT_REY15_ACCURACY.recall.sens} · spec. ${PVT_REY15_ACCURACY.recall.spec}`
+  }];
+  let note = '';
   if (s.combo !== undefined){
-    head += `<br>Combination = ${s.combo} — ${pvtStatusWord(s.comboFail)} at &lt; ${PVT_REY15.comboCutoff}`;
-    detail = `${s.recall} + (${s.recog} − ${s.fp}) = ${s.combo}. The combination score is the more sensitive index (.71 vs .47) at comparable specificity (Boone et al., 2002).`;
+    /* Domain is the arithmetic range of the formula's own inputs:
+       recall 0-15 plus (recognition 0-15 minus false positives 0-15). */
+    rows.push({
+      label: 'Combination score', value: s.combo, state: s.comboFail ? 'fail' : 'pass',
+      min: -15, max: 30, cut: PVT_REY15.comboCutoff, op: 'lt',
+      meta: `Cut-off &lt; ${PVT_REY15.comboCutoff} · sens. ${PVT_REY15_ACCURACY.combo.sens} · spec. ${PVT_REY15_ACCURACY.combo.spec} · the more sensitive index`
+    });
+    note = `${s.recall} + (${s.recog} − ${s.fp}) = ${s.combo}. The combination raises sensitivity from ${PVT_REY15_ACCURACY.recall.sens} to ${PVT_REY15_ACCURACY.combo.sens} at comparable specificity (Boone et al., 2002).`;
   } else if (s.comboPartial){
-    detail = 'Enter both recognition correct and false positives to compute the combination score.';
+    rows.push({
+      label: 'Combination score', value: null, state: 'na', word: 'Incomplete',
+      meta: 'Enter both recognition correct and false positives to compute this index'
+    });
   }
-  const anyFail = s.recallFail || !!s.comboFail;
-  if (anyFail && s.combo === undefined) detail = 'Corroborate with an independent, preferably forced-choice, measure.';
-  out.innerHTML = pvtResultHtml(anyFail ? 'fail' : 'pass', head, detail);
+  if ((s.recallFail || s.comboFail) && !note) note = 'Corroborate with an independent, preferably forced-choice, measure.';
+  out.innerHTML = pvtReadoutHtml(rows, note);
 }
 
 function renderPvtTomm(){
@@ -26472,12 +26681,13 @@ function renderPvtTomm(){
   const s = getPvtTomm();
   if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.'); power.innerHTML = ''; return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
-  const lines = s.rows.map(r =>
-    `${r.label} = ${r.score} — <strong>${pvtStatusWord(r.fail)}</strong> at ${r.cutoff.label.replace('<', '&lt;')}`).join('<br>');
-  out.innerHTML = pvtResultHtml(s.anyFail ? 'fail' : 'pass', lines,
-    s.anyFail
-      ? 'At low base rates a single failure has modest positive predictive power — see the table below.'
-      : '');
+  out.innerHTML = pvtReadoutHtml(s.rows.map(r => ({
+    label: `TOMM ${r.label}`, value: r.score, state: r.fail ? 'fail' : 'pass',
+    min: 0, max: 50, cut: r.cutoff.cut, op: 'lt',
+    meta: `Cut-off &lt; ${r.cutoff.cut} · sens. ${r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, '')} · spec. ${r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, '')} · PPP ${r.ppp.toFixed(2).replace(/^0/, '')} at this base rate`
+  })), s.anyFail
+    ? 'At low base rates a single failure has modest positive predictive power — see the table below.'
+    : '');
   const brPct = Math.round(s.br * 100);
   power.innerHTML = `
     <div class="pvt-card">

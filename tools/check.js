@@ -7140,6 +7140,58 @@ check('Digit Span span indices: cut-offs, the under-55 age gate, and the withhel
   return bad.length === 0 || bad.join('; ');
 });
 
+
+/* PVT_STATE_WORD lives in app.js (it is render-layer, not data), so pull it
+   out of the shipped file rather than duplicating the roster here. */
+const PVT_STATE_WORD_OBJ = (() => {
+  const m = /const PVT_STATE_WORD = (\{[^}]*\});/.exec(APP_SRC);
+  if (!m) throw new Error('PVT_STATE_WORD not found in app.js');
+  const c = {}; vm.createContext(c);
+  vm.runInContext('globalThis.__O = ' + m[1] + ';', c);
+  return c.__O;
+})();
+
+check('the readout gives every index its OWN state, and states never rest on colour alone', () => {
+  /* THE BUG THIS PINS: the result card used to take one state for the whole
+     block, so `.pvt-result-inner.is-fail .pvt-result-headline` painted every
+     line red — a Digit Span card printed "ACSS = 8 — Pass" in failure red
+     because a span had flagged. Values and labels now stay in ink and a
+     chip beside each index carries its state. */
+  const bad = [];
+  /* No rule may colour headline text from a card-level state again. */
+  if (/\.pvt-result-inner\.is-(fail|pass|na)\s+\.pvt-result-headline/.test(CSS_SRC)){
+    bad.push('a card-level state colours the headline text again — one failing index would repaint every line');
+  }
+  /* Every scored renderer must go through the per-index readout. */
+  ['renderPvtEi', 'renderPvtEs', 'renderPvtRds', 'renderPvtDs', 'renderPvtRey', 'renderPvtTomm'].forEach(fn => {
+    const body = extractFn(APP_SRC, fn);
+    if (!/pvtReadoutHtml\(/.test(body)) bad.push(fn + ' no longer renders through the per-index readout');
+    /* pvtResultHtml survives ONLY for the empty/invalid/partial messages. */
+    const scoredResultCall = /pvtResultHtml\((?!'empty')/.test(body);
+    if (scoredResultCall) bad.push(fn + ' still renders a scored index through the single-state card');
+  });
+  /* Chips carry a word, so state survives greyscale and colour-blindness. */
+  const rowFn = extractFn(APP_SRC, 'pvtIndexRowHtml');
+  if (!/o\.word \|\| PVT_STATE_WORD/.test(rowFn)) bad.push('the chip no longer carries a word — state would rest on colour alone');
+  ['pass', 'fail', 'flag', 'na'].forEach(k => {
+    if (!(k in PVT_STATE_WORD_OBJ)) bad.push('PVT_STATE_WORD lost the ' + k + ' state');
+  });
+  /* The meter boundary is exact for integer scales: half-integer between
+     the last passing and first failing score, per comparison operator. */
+  const b = extractFn(APP_SRC, 'pvtFailBoundary');
+  const c = {}; vm.createContext(c);
+  vm.runInContext(b + ';globalThis.__B = pvtFailBoundary;', c);
+  const B = c.__B;
+  if (B('lt', 9)   !== 8.5) bad.push('"< 9" should fail from 8.5 down');
+  if (B('lte', 6)  !== 6.5) bad.push('"<= 6" should fail from 6.5 down');
+  if (B('gt', 3)   !== 3.5) bad.push('"> 3" should fail from 3.5 up');
+  if (B('gte', 5)  !== 4.5) bad.push('">= 5" should fail from 4.5 up');
+  /* A withheld index draws no meter — plotting a score against a cut-off
+     that was not applied would assert an evaluation that did not happen. */
+  if (!/o\.state === 'na' \? '' : pvtMeterHtml/.test(rowFn)) bad.push('a withheld index would still draw a meter against a cut-off it was not evaluated on');
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('PVT page wiring: report source, APA note, empty-state guard, markup', () => {
   const bad = [];
   if (!/'pvt-apa':\s*'Performance Validity'/.test(APP_SRC)) bad.push('pvt-apa missing from SOURCE_LABELS — the report will never collect the table');
