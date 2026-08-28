@@ -9565,68 +9565,104 @@ body.rb-docked-active{padding-right:0}
 
 /* =============================================================
    PERFORMANCE VALIDITY PAGE
-   All standalone classes, per the cascade rule: nothing here
-   modifies a class design-system.css or a page-scoped block
-   already touches. The shell mirrors the Change Analysis
-   workspace language (rich tab cards over a working area) with
-   one addition the other pages don't have: a live status chip
-   per measure, updated on every keystroke.
+   Standalone pvt-* classes throughout, per the cascade rule — but the
+   VISUAL SYSTEM is copied from the modern Change Analysis treatment
+   (styles.css "BOLDER TAB-TO-PANEL CONNECTION" + overview layers):
+   hidden hero (the topbar names the page), a white rounded tab strip
+   with centred labels, an active tab in the warm cream (#F0E8D6)
+   joined to the panel by a 3px accent rail, and the panel itself as a
+   cream-to-white gradient sheet holding white rounded cards. If that
+   treatment changes there, change it here to match.
    ============================================================= */
-#validity.section{max-width:none;width:100%;padding:22px 50px 28px}
-#validity .section-desc{max-width:880px;margin-bottom:16px}
+#validity.section{max-width:none;width:100%;padding:24px 40px 80px}
+#validity > .eyebrow,
+#validity > .section-title{display:none!important}
+#validity > .section-desc{
+  max-width:none;
+  margin:0 0 14px;
+  font-family:var(--sans);
+  font-size:13px;
+  color:#5A5A5A;
+}
 
+/* ---- Tab strip: white rounded-top sheet ---- */
 .pvt-method-tabs{
   display:grid;
   grid-template-columns:repeat(5,minmax(150px,1fr));
   gap:0;
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
-  margin-bottom:18px;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-bottom:none;
+  border-radius:var(--r-lg) var(--r-lg) 0 0;
+  box-shadow:0 1px 2px rgba(20,15,5,0.04);
+  overflow:visible;
 }
 .pvt-method-tab{
   width:100%;
-  border:1px solid transparent;
-  border-right:1px solid var(--border-soft);
-  background:var(--paper);
-  color:var(--ink-2);
+  border:none;
+  border-right:1px solid rgba(20,15,5,0.04);
+  background:#FFFFFF;
   font-family:var(--sans);
-  padding:12px 12px 11px;
+  padding:16px 14px 14px;
   cursor:pointer;
-  text-align:left;
-  display:grid;
-  grid-template-columns:auto minmax(0,1fr) auto;
-  gap:2px 10px;
-  align-items:start;
-  min-height:60px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
   position:relative;
-  transition:background 140ms ease,box-shadow 140ms ease;
+  box-shadow:inset 0 -1px 0 rgba(20,15,5,0.08);
+  transition:background 240ms var(--ease,ease), color 240ms var(--ease,ease);
 }
+.pvt-method-tab:first-child{border-radius:var(--r-lg) 0 0 0}
+.pvt-method-tab:last-child{border-right:none;border-radius:0 var(--r-lg) 0 0}
 .pvt-method-tab:focus{outline:none}
 .pvt-method-tab:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.22)}
-.pvt-method-tab:last-child{border-right:0}
-.pvt-method-tab:hover{box-shadow:inset 0 1px 0 rgba(156,61,42,0.13)}
+.pvt-method-tab:hover:not(.active){background:#F8F5ED}
 .pvt-method-tab.active{
-  background:rgba(156,61,42,0.035);
-  box-shadow:inset 0 1px 0 var(--accent);
+  background:#F0E8D6;
+  position:relative;
+  z-index:2;
 }
-.pvt-method-num{font-family:var(--mono);font-size:10.5px;color:var(--faint);line-height:1.15;padding-top:1px}
-.pvt-method-main{min-width:0}
-.pvt-method-label{display:block;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink);line-height:1.08}
-.pvt-method-meta{display:block;margin-top:3px;font-size:10.25px;color:var(--muted);line-height:1.25}
-.pvt-method-tab.active .pvt-method-label,
-.pvt-method-tab.active .pvt-method-num{color:var(--accent)}
+.pvt-method-tab.active::after{
+  /* 3px accent rail along the bottom edge, extending 1px below the strip
+     so tab and panel read as one shared coloured seam — same device as
+     the Change Analysis tabs. */
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:-1px;
+  height:3px;
+  background:#9C3D2A;
+  z-index:3;
+}
+.pvt-method-num{display:none}
+.pvt-method-main{display:flex;flex-direction:column;gap:1px;min-width:0}
+.pvt-method-label{
+  font-family:var(--sans);
+  font-size:13px;
+  font-weight:500;
+  color:#3F3F3F;
+  line-height:1.25;
+}
+.pvt-method-tab.active .pvt-method-label{color:#1A1A1A;font-weight:600}
+.pvt-method-meta{
+  font-family:var(--sans);
+  font-size:10.25px;
+  color:#9E9A93;
+  line-height:1.25;
+}
 
-/* Live status chip - the state colours match the result card's bands. */
+/* Live status chip - state colours match the result card's bands. */
 .pvt-status{
-  align-self:start;
   display:inline-flex;
   align-items:center;
   height:17px;
-  padding:0 7px;
-  border:1px solid var(--border);
+  padding:0 8px;
+  border:1px solid rgba(20,15,5,0.12);
   border-radius:9px;
-  background:rgba(250,247,241,0.66);
-  color:var(--faint);
+  background:#FFFFFF;
+  color:#9E9A93;
   font-family:var(--mono);
   font-size:8.5px;
   letter-spacing:0.06em;
@@ -9639,8 +9675,22 @@ body.rb-docked-active{padding-right:0}
 .pvt-status.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.4);background:rgba(156,61,42,0.07)}
 .pvt-status.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.4);background:rgba(138,122,44,0.07)}
 
+/* ---- Content panel: the cream-to-white gradient sheet ---- */
 .pvt-tab-content{display:none}
-.pvt-tab-content.active{display:block;animation:fadeIn 200ms ease}
+.pvt-tab-content.active{
+  display:block;
+  background:linear-gradient(180deg, #F0E8D6 0%, #F7F2E6 80px, #FFFFFF 100%);
+  border:1px solid rgba(20,15,5,0.08);
+  border-top:none;
+  border-radius:0 0 var(--r-lg) var(--r-lg);
+  box-shadow:0 6px 18px rgba(20,15,5,0.05);
+  padding:24px;
+  animation:pvt-panel-in 180ms var(--ease,ease) both;
+}
+@keyframes pvt-panel-in{
+  from{ opacity:0; transform:translateY(-4px); }
+  to  { opacity:1; transform:translateY(0); }
+}
 
 .pvt-workspace{
   display:grid;
@@ -9650,9 +9700,11 @@ body.rb-docked-active{padding-right:0}
 }
 @media (max-width:1100px){ .pvt-workspace{grid-template-columns:1fr} }
 
+/* ---- White cards on the sheet ---- */
 .pvt-card{
-  border:1px solid var(--border-soft);
-  background:var(--paper);
+  border:1px solid rgba(20,15,5,0.06);
+  background:#FFFFFF;
+  border-radius:var(--r-md);
   padding:16px 18px;
 }
 .pvt-card-kicker{
@@ -9670,17 +9722,16 @@ body.rb-docked-active{padding-right:0}
 }
 .pvt-field-grid .field{margin-bottom:14px}
 .pvt-field-wide{grid-column:1 / -1}
-.pvt-note{margin-bottom:0;font-size:12px}
+.pvt-note{margin-bottom:0;font-size:12px;background:#FFFFFF;border-radius:var(--r-md)}
 .pvt-card .formula-disclosure{margin-top:4px}
 
 .pvt-outcome{display:flex;flex-direction:column;gap:14px;min-width:0}
-.pvt-outcome .caution-box{margin:0;font-size:12px}
 .pvt-outcome .panel{margin-bottom:0}
 .pvt-summary-left{min-width:0}
 
 .pvt-result{margin:0}
-.pvt-result-inner{display:block;border:1px solid var(--border);border-left-width:4px;border-radius:6px;padding:14px 16px;background:var(--paper,#fff)}
-.pvt-result-inner.is-empty{border-left-color:var(--border);color:var(--faint);font-style:italic;font-size:13.5px}
+.pvt-result-inner{display:block;border:1px solid rgba(20,15,5,0.08);border-left:4px solid var(--border);border-radius:var(--r-md);padding:14px 16px;background:#FFFFFF}
+.pvt-result-inner.is-empty{color:var(--faint);font-style:italic;font-size:13.5px}
 .pvt-result-inner.is-pass{border-left-color:#2e7d4f}
 .pvt-result-inner.is-fail{border-left-color:#9c3d2a}
 .pvt-result-inner.is-na{border-left-color:#8a7a2c}
@@ -9692,63 +9743,30 @@ body.rb-docked-active{padding-right:0}
 
 .pvt-table{width:100%;border-collapse:collapse;font-size:12.5px}
 .pvt-table th{text-align:left;font-weight:600;padding:6px 10px;border-bottom:2px solid var(--border);white-space:nowrap}
-.pvt-table td{padding:5px 10px;border-bottom:1px solid var(--border)}
+.pvt-table td{padding:5px 10px;border-bottom:1px solid rgba(20,15,5,0.06)}
 .pvt-table tr:last-child td{border-bottom:0}
 .pvt-cell-fail{color:#9c3d2a;font-weight:600}
 .pvt-agg-copy{font-size:12.5px;color:var(--muted,#555);line-height:1.55;margin:0 0 12px}
 
 /* The headline count on the Summary tab. */
-.pvt-count{
-  display:flex;
-  align-items:baseline;
-  gap:10px;
-  margin:0 0 12px;
-}
-.pvt-count-num{
-  font-family:var(--mono);
-  font-size:26px;
-  font-weight:600;
-  color:var(--ink);
-  line-height:1;
-}
+.pvt-count{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
+.pvt-count-num{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--ink);line-height:1}
 .pvt-count-num.is-fail{color:#9c3d2a}
 .pvt-count-label{font-size:12px;color:var(--muted);line-height:1.4;max-width:520px}
 
-/* Collapsed footer references - keeps the workspace on one screen while
-   the citations stay one click away and pinned by check.js §38. */
-.pvt-refs{margin-top:22px;border-top:1px solid var(--border-soft);padding-top:10px}
-.pvt-refs summary{
-  cursor:pointer;
-  font-family:var(--mono);
-  font-size:9.5px;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:var(--faint);
-  list-style:none;
-}
-.pvt-refs summary::-webkit-details-marker{display:none}
-.pvt-refs summary::before{content:'+ '}
-.pvt-refs[open] summary::before{content:'\2212\00a0 '}
-.pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
-
-/* One-line expandable cautions - the headline stays on screen, the full
-   text one click away. Caution tint matches .caution-box without touching
-   that class (it belongs to other pages). */
+/* One-line expandable cautions - headline on screen, full text one click
+   away. White card like everything else on the sheet, caution rail. */
 .pvt-caution{
   border:1px solid rgba(156,61,42,0.25);
   border-left:4px solid #9c3d2a;
-  border-radius:6px;
-  background:rgba(156,61,42,0.04);
+  border-radius:var(--r-md);
+  background:#FFFFFF;
   padding:10px 14px;
   font-size:12px;
   color:var(--muted);
   line-height:1.5;
 }
-.pvt-caution summary{
-  cursor:pointer;
-  list-style:none;
-  color:var(--ink-2);
-}
+.pvt-caution summary{cursor:pointer;list-style:none;color:var(--ink-2)}
 .pvt-caution summary::-webkit-details-marker{display:none}
 .pvt-caution summary::after{
   content:'more';
@@ -9762,3 +9780,19 @@ body.rb-docked-active{padding-right:0}
 .pvt-caution[open] summary::after{content:'less'}
 .pvt-caution summary strong{color:#9c3d2a}
 .pvt-caution-body{margin-top:8px}
+
+/* Collapsed footer references - outside the sheet, quiet. */
+.pvt-refs{margin-top:22px;padding-top:10px}
+.pvt-refs summary{
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--faint);
+  list-style:none;
+}
+.pvt-refs summary::-webkit-details-marker{display:none}
+.pvt-refs summary::before{content:'+ '}
+.pvt-refs[open] summary::before{content:'\2212\00a0 '}
+.pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
