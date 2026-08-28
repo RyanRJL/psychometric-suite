@@ -6955,6 +6955,18 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
       if (!vHtml.includes(name)) bad.push('#validity references lost ' + name);
     });
   })();
+  /* The live status chips restate the same getPvt* state the result cards
+     render; a chip updating without the card (or vice versa) would show two
+     different verdicts for one score. renderPvtAll is the single caller. */
+  const all = extractFn(APP_SRC, 'renderPvtAll');
+  if (!/renderPvtNav\(\);/.test(all)) bad.push('renderPvtAll no longer refreshes the tab-strip status chips');
+  const nav = extractFn(APP_SRC, 'renderPvtNav');
+  ['getPvtEi', 'getPvtEs', 'getPvtRds', 'getPvtTomm', 'pvtIndicatorCounts'].forEach(fn => {
+    if (!nav.includes(fn + '(')) bad.push('renderPvtNav no longer reads ' + fn + ' — a chip could disagree with its result card');
+  });
+  ['pvt-status-ei', 'pvt-status-es', 'pvt-status-rds', 'pvt-status-tomm', 'pvt-status-summary'].forEach(id => {
+    if (!HTML_SRC.includes('id="' + id + '"')) bad.push('the ' + id + ' chip is gone from the tab strip');
+  });
   /* The ES gate must be enforced in code, not just described in copy. */
   const es = extractFn(APP_SRC, 'getPvtEs');
   if (!/gateMet/.test(es) || !/gated: true/.test(es)) bad.push('getPvtEs lost its gate');

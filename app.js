@@ -6719,8 +6719,8 @@ function renderPvtTomm(){
       : 'No entered trial falls below its selected cut-off.');
   const brPct = Math.round(s.br * 100);
   power.innerHTML = `
-    <div class="panel">
-      <div class="block-title">Predictive power at a ${brPct}% base rate of invalidity</div>
+    <div class="pvt-card">
+      <div class="pvt-card-kicker">Predictive power at a ${brPct}% base rate of invalidity</div>
       <table class="pvt-table">
         <thead><tr><th>Trial · cut-off</th><th>Sens.</th><th>Spec.</th><th>PPP</th><th>NPP</th></tr></thead>
         <tbody>${s.rows.map(r => `
@@ -6782,20 +6782,23 @@ function renderPvtSummary(){
   if (!host) return;
   const rows = getPvtSummaryRows();
   if (rows.length === 0){
-    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet — score at least one measure on the other tabs and the summary builds itself.') + '</div>';
+    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet — score at least one measure on the other tabs and the summary builds itself. The tab strip above tracks each measure as you go.') + '</div>';
     return;
   }
   const c = pvtIndicatorCounts(rows);
-  const countLine = c.total === 0 ? '' :
-    `<p class="pvt-agg-copy" style="margin-top:12px"><strong>${c.failed} of ${c.total}</strong> independent indicator${c.total === 1 ? '' : 's'} with data ${c.failed === 1 ? 'falls' : 'fall'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — counting the two RBANS indices as one indicator and the TOMM trials as one. Failing ≥ 2 independent PVTs supports probable invalidity; a single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).</p>`;
+  const countStat = c.total === 0 ? '' :
+    `<div class="pvt-count">
+      <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
+      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} with data ${c.failed === 1 ? 'falls' : 'fall'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — counting the two RBANS indices as one indicator and the TOMM trials as one. Failing ≥ 2 independent PVTs supports probable invalidity; a single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).</span>
+    </div>`;
   host.innerHTML = `
-    <div class="panel">
-      <div class="block-title">Indicators scored this session</div>
+    <div class="pvt-card">
+      <div class="pvt-card-kicker">Indicators scored this session</div>
+      ${countStat}
       <table class="pvt-table">
         <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Result</th></tr></thead>
         <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
       </table>
-      ${countLine}
     </div>`;
 }
 
@@ -6829,18 +6832,55 @@ function renderPvtApa(){
   `;
 }
 
+/* The tab strip's live status chips. One chip per measure, restated from
+   the same getPvt* state the result cards render, so strip and card cannot
+   disagree. The summary chip carries the independent-indicator count. */
+function pvtChip(el, text, kind){
+  if (!el) return;
+  el.textContent = text;
+  el.classList.remove('is-pass', 'is-fail', 'is-na');
+  if (kind) el.classList.add('is-' + kind);
+}
+function renderPvtNav(){
+  const ei = getPvtEi();
+  pvtChip(document.getElementById('pvt-status-ei'),
+    ei.ei !== undefined ? (ei.fail ? 'Fail' : 'Pass') : '—',
+    ei.ei !== undefined ? (ei.fail ? 'fail' : 'pass') : null);
+  const es = getPvtEs();
+  pvtChip(document.getElementById('pvt-status-es'),
+    es.gated ? 'Gated' : es.es !== undefined ? (es.fail ? 'Fail' : 'Pass') : '—',
+    es.gated ? 'na' : es.es !== undefined ? (es.fail ? 'fail' : 'pass') : null);
+  const rds = getPvtRds();
+  pvtChip(document.getElementById('pvt-status-rds'),
+    rds.rds !== undefined ? (rds.fail ? 'Fail' : 'Pass') : '—',
+    rds.rds !== undefined ? (rds.fail ? 'fail' : 'pass') : null);
+  const tomm = getPvtTomm();
+  const tommHas = !!(tomm.rows && tomm.rows.length);
+  pvtChip(document.getElementById('pvt-status-tomm'),
+    tommHas ? (tomm.anyFail ? 'Fail' : 'Pass') : '—',
+    tommHas ? (tomm.anyFail ? 'fail' : 'pass') : null);
+  const c = pvtIndicatorCounts(getPvtSummaryRows());
+  pvtChip(document.getElementById('pvt-status-summary'),
+    c.total > 0 ? `${c.failed}/${c.total}` : '—',
+    c.total > 0 ? (c.failed > 0 ? 'fail' : 'pass') : null);
+}
+
 function renderPvtAll(){
   renderPvtEi();
   renderPvtEs();
   renderPvtRds();
   renderPvtTomm();
+  renderPvtNav();
   renderPvtSummary();
   renderPvtApa();
 }
 
 function switchPvtTab(name){
-  document.querySelectorAll('#validity .pvt-tabs .tab').forEach(t =>
-    t.classList.toggle('active', t.dataset.pvtTab === name));
+  document.querySelectorAll('#validity .pvt-method-tab').forEach(t => {
+    const on = t.dataset.pvtTab === name;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
   document.querySelectorAll('#validity .pvt-tab-content').forEach(c =>
     c.classList.toggle('active', c.id === 'pvt-' + name));
 }
@@ -6858,7 +6898,7 @@ function clearPvt(){
 function setupPvtPage(){
   const root = document.getElementById('validity');
   if (!root) return;
-  root.querySelectorAll('.pvt-tabs .tab').forEach(tab => {
+  root.querySelectorAll('.pvt-method-tab').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
   });
   /* The shared RBANS fields appear on both the EI and ES tabs; pvtState is

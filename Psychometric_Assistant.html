@@ -9599,27 +9599,169 @@ body.rb-docked-active{padding-right:0}
    PERFORMANCE VALIDITY PAGE
    All standalone classes, per the cascade rule: nothing here
    modifies a class design-system.css or a page-scoped block
-   already touches.
+   already touches. The shell mirrors the Change Analysis
+   workspace language (rich tab cards over a working area) with
+   one addition the other pages don't have: a live status chip
+   per measure, updated on every keystroke.
    ============================================================= */
+#validity.section{max-width:none;width:100%;padding:22px 50px 28px}
+#validity .section-desc{max-width:880px;margin-bottom:16px}
+
+.pvt-method-tabs{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(150px,1fr));
+  gap:0;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  margin-bottom:18px;
+}
+.pvt-method-tab{
+  width:100%;
+  border:1px solid transparent;
+  border-right:1px solid var(--border-soft);
+  background:var(--paper);
+  color:var(--ink-2);
+  font-family:var(--sans);
+  padding:12px 12px 11px;
+  cursor:pointer;
+  text-align:left;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:2px 10px;
+  align-items:start;
+  min-height:60px;
+  position:relative;
+  transition:background 140ms ease,box-shadow 140ms ease;
+}
+.pvt-method-tab:focus{outline:none}
+.pvt-method-tab:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.22)}
+.pvt-method-tab:last-child{border-right:0}
+.pvt-method-tab:hover{box-shadow:inset 0 1px 0 rgba(156,61,42,0.13)}
+.pvt-method-tab.active{
+  background:rgba(156,61,42,0.035);
+  box-shadow:inset 0 1px 0 var(--accent);
+}
+.pvt-method-num{font-family:var(--mono);font-size:10.5px;color:var(--faint);line-height:1.15;padding-top:1px}
+.pvt-method-main{min-width:0}
+.pvt-method-label{display:block;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink);line-height:1.08}
+.pvt-method-meta{display:block;margin-top:3px;font-size:10.25px;color:var(--muted);line-height:1.25}
+.pvt-method-tab.active .pvt-method-label,
+.pvt-method-tab.active .pvt-method-num{color:var(--accent)}
+
+/* Live status chip - the state colours match the result card's bands. */
+.pvt-status{
+  align-self:start;
+  display:inline-flex;
+  align-items:center;
+  height:17px;
+  padding:0 7px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(250,247,241,0.66);
+  color:var(--faint);
+  font-family:var(--mono);
+  font-size:8.5px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  line-height:1;
+  white-space:nowrap;
+  transition:background 140ms ease,color 140ms ease,border-color 140ms ease;
+}
+.pvt-status.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.4);background:rgba(46,125,79,0.07)}
+.pvt-status.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.4);background:rgba(156,61,42,0.07)}
+.pvt-status.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.4);background:rgba(138,122,44,0.07)}
+
 .pvt-tab-content{display:none}
 .pvt-tab-content.active{display:block;animation:fadeIn 200ms ease}
-.pvt-result{margin:16px 0}
-.pvt-result-inner{display:block;border:1px solid var(--border);border-left-width:4px;border-radius:6px;padding:14px 16px;background:var(--panel,#fff)}
+
+.pvt-workspace{
+  display:grid;
+  grid-template-columns:minmax(380px,0.9fr) minmax(430px,1.1fr);
+  gap:16px;
+  align-items:start;
+}
+@media (max-width:1100px){ .pvt-workspace{grid-template-columns:1fr} }
+
+.pvt-card{
+  border:1px solid var(--border-soft);
+  background:var(--paper);
+  padding:16px 18px;
+}
+.pvt-card-kicker{
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--faint);
+  margin-bottom:12px;
+}
+.pvt-field-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0 14px;
+}
+.pvt-field-grid .field{margin-bottom:14px}
+.pvt-field-wide{grid-column:1 / -1}
+.pvt-note{margin-bottom:0;font-size:12px}
+.pvt-card .formula-disclosure{margin-top:4px}
+
+.pvt-outcome{display:flex;flex-direction:column;gap:14px;min-width:0}
+.pvt-outcome .caution-box{margin:0;font-size:12px}
+.pvt-outcome .panel{margin-bottom:0}
+.pvt-summary-left{min-width:0}
+
+.pvt-result{margin:0}
+.pvt-result-inner{display:block;border:1px solid var(--border);border-left-width:4px;border-radius:6px;padding:14px 16px;background:var(--paper,#fff)}
 .pvt-result-inner.is-empty{border-left-color:var(--border);color:var(--faint);font-style:italic;font-size:13.5px}
 .pvt-result-inner.is-pass{border-left-color:#2e7d4f}
 .pvt-result-inner.is-fail{border-left-color:#9c3d2a}
 .pvt-result-inner.is-na{border-left-color:#8a7a2c}
-.pvt-result-headline{display:block;font-weight:600;font-size:14.5px;margin-bottom:4px}
+.pvt-result-headline{display:block;font-weight:600;font-size:15px;margin-bottom:4px}
 .pvt-result-inner.is-fail .pvt-result-headline{color:#9c3d2a}
 .pvt-result-inner.is-pass .pvt-result-headline{color:#2e7d4f}
 .pvt-result-inner.is-na .pvt-result-headline{color:#8a7a2c}
-.pvt-result-detail{display:block;font-size:13px;color:var(--muted,#555);line-height:1.55}
-.pvt-table{width:100%;border-collapse:collapse;font-size:13px}
-.pvt-table th{text-align:left;font-weight:600;padding:7px 10px;border-bottom:2px solid var(--border);white-space:nowrap}
-.pvt-table td{padding:6px 10px;border-bottom:1px solid var(--border)}
+.pvt-result-detail{display:block;font-size:12.5px;color:var(--muted,#555);line-height:1.55}
+
+.pvt-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.pvt-table th{text-align:left;font-weight:600;padding:6px 10px;border-bottom:2px solid var(--border);white-space:nowrap}
+.pvt-table td{padding:5px 10px;border-bottom:1px solid var(--border)}
 .pvt-table tr:last-child td{border-bottom:0}
 .pvt-cell-fail{color:#9c3d2a;font-weight:600}
-.pvt-agg-copy{font-size:13px;color:var(--muted,#555);line-height:1.6;margin:0 0 12px}
+.pvt-agg-copy{font-size:12.5px;color:var(--muted,#555);line-height:1.55;margin:0 0 12px}
+
+/* The headline count on the Summary tab. */
+.pvt-count{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  margin:0 0 12px;
+}
+.pvt-count-num{
+  font-family:var(--mono);
+  font-size:26px;
+  font-weight:600;
+  color:var(--ink);
+  line-height:1;
+}
+.pvt-count-num.is-fail{color:#9c3d2a}
+.pvt-count-label{font-size:12px;color:var(--muted);line-height:1.4;max-width:520px}
+
+/* Collapsed footer references - keeps the workspace on one screen while
+   the citations stay one click away and pinned by check.js §38. */
+.pvt-refs{margin-top:22px;border-top:1px solid var(--border-soft);padding-top:10px}
+.pvt-refs summary{
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--faint);
+  list-style:none;
+}
+.pvt-refs summary::-webkit-details-marker{display:none}
+.pvt-refs summary::before{content:'+ '}
+.pvt-refs[open] summary::before{content:'\2212\00a0 '}
+.pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
 
 </style>
 <style data-inlined-from="design-system.css">
@@ -15805,202 +15947,259 @@ input[type="number"].ds-age-pop-input{
   <section class="section" id="validity">
     <div class="eyebrow">Performance Validity · Embedded &amp; Stand-Alone PVTs</div>
     <h1 class="section-title">Performance <span class="ink">Validity</span></h1>
-    <p class="section-desc">Score and interpret common performance validity indicators against their published cut-offs: the RBANS Effort Index and Effort Scale, Reliable Digit Span, and the TOMM — with base-rate-aware interpretation and guidance on aggregating multiple indicators. No single index is a verdict: results are reported as cut-off comparisons only.</p>
+    <p class="section-desc">Score four validity indicators against their published cut-offs, then weigh them together. No single index is a verdict: results are reported as cut-off comparisons only, and the tabs track each measure's live status as you enter scores.</p>
 
-    <div class="tabs pvt-tabs" role="tablist" aria-label="Performance validity measures">
-      <div class="tab active" data-pvt-tab="ei" role="tab" aria-selected="true"><span>RBANS Effort Index</span></div>
-      <div class="tab" data-pvt-tab="es" role="tab"><span>RBANS Effort Scale</span></div>
-      <div class="tab" data-pvt-tab="rds" role="tab"><span>Reliable Digit Span</span></div>
-      <div class="tab" data-pvt-tab="tomm" role="tab"><span>TOMM</span></div>
-      <div class="tab" data-pvt-tab="summary" role="tab"><span>Summary &amp; Aggregation</span></div>
+    <div class="pvt-method-tabs" role="tablist" aria-label="Performance validity measures">
+      <button type="button" class="pvt-method-tab active" data-pvt-tab="ei" role="tab" aria-selected="true">
+        <span class="pvt-method-num">01</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Effort Index</span>
+          <span class="pvt-method-meta">RBANS embedded · weighted sum</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-ei">—</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="es" role="tab">
+        <span class="pvt-method-num">02</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Effort Scale</span>
+          <span class="pvt-method-meta">RBANS embedded · gated</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-es">—</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="rds" role="tab">
+        <span class="pvt-method-num">03</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Reliable Digit Span</span>
+          <span class="pvt-method-meta">WAIS Digit Span · both trials</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-rds">—</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
+        <span class="pvt-method-num">04</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">TOMM</span>
+          <span class="pvt-method-meta">Stand-alone · forced choice</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-tomm">—</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="summary" role="tab">
+        <span class="pvt-method-num">05</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">Summary</span>
+          <span class="pvt-method-meta">Aggregation · Larrabee (2014)</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-summary">—</span>
+      </button>
     </div>
 
     <!-- ===== Effort Index ===== -->
     <div class="pvt-tab-content active" id="pvt-ei">
-      <div class="panel">
-        <div class="field-row-4">
-          <div class="field">
-            <label>RBANS Digit Span <span class="hint">(raw, 0–16)</span></label>
-            <input type="number" min="0" max="16" step="1" data-pvt-field="ds" id="pvt-ei-ds" placeholder="e.g. 9">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>RBANS Digit Span <span class="hint">(raw, 0–16)</span></label>
+              <input type="number" min="0" max="16" step="1" data-pvt-field="ds" id="pvt-ei-ds" placeholder="e.g. 9">
+            </div>
+            <div class="field">
+              <label>RBANS List Recognition <span class="hint">(raw, 0–20)</span></label>
+              <input type="number" min="0" max="20" step="1" data-pvt-field="lrec" id="pvt-ei-lrec" placeholder="e.g. 19">
+            </div>
+            <div class="field pvt-field-wide">
+              <label>Cut-off</label>
+              <select id="pvt-ei-cutoff">
+                <option value="standard" selected>EI &gt; 3 · standard (~94% specificity)</option>
+                <option value="sensitive">EI &gt; 1 · screening (more sensitive)</option>
+              </select>
+            </div>
           </div>
-          <div class="field">
-            <label>RBANS List Recognition <span class="hint">(raw, 0–20)</span></label>
-            <input type="number" min="0" max="20" step="1" data-pvt-field="lrec" id="pvt-ei-lrec" placeholder="e.g. 19">
-          </div>
-          <div class="field">
-            <label>Cut-off</label>
-            <select id="pvt-ei-cutoff">
-              <option value="standard" selected>EI &gt; 3 · standard (~94% specificity)</option>
-              <option value="sensitive">EI &gt; 1 · screening (more sensitive)</option>
-            </select>
-          </div>
+          <details class="formula-disclosure">
+            <summary>Formula &amp; weighting table</summary>
+            <div class="formula-body">
+              <p>Each raw score converts to a weighted score (Silverberg, Wertheimer &amp; Fichtenberg, 2007, Table 2); EI = weighted Digit Span + weighted List Recognition (range 0–12). Higher EI = less credible performance. Some weights are unreachable for a given subtest (Digit Span never yields 1 or 4).</p>
+              <table class="pvt-table">
+                <thead><tr><th>Digit Span (raw)</th><th>List Recognition (raw)</th><th>Weighted score</th></tr></thead>
+                <tbody>
+                  <tr><td>8–16</td><td>18–20</td><td>0</td></tr>
+                  <tr><td>—</td><td>17</td><td>1</td></tr>
+                  <tr><td>7</td><td>15–16</td><td>2</td></tr>
+                  <tr><td>6</td><td>13–14</td><td>3</td></tr>
+                  <tr><td>—</td><td>11–12</td><td>4</td></tr>
+                  <tr><td>5</td><td>10</td><td>5</td></tr>
+                  <tr><td>0–4</td><td>0–9</td><td>6</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-ei-result"></div>
+          <div class="caution-box"><strong>Cautions.</strong> False positives rise sharply with genuine impairment — later studies report failure rates near 48% in dementia and ~31–37% in severely impaired geriatric samples. Both subtests load on attention/working memory and verbal recognition, so aphasia or significant memory disorder can inflate the EI without poor effort. Do not apply single-subtest cut-offs in place of the combined EI, and do not declare a whole RBANS protocol invalid on the EI alone — use it to generate hypotheses and trigger further validity testing (Silverberg et al., 2007).</div>
         </div>
       </div>
-      <div class="pvt-result" id="pvt-ei-result"></div>
-      <div class="caution-box"><strong>Cautions.</strong> False positives rise sharply with genuine impairment — later studies report failure rates near 48% in dementia and ~31–37% in severely impaired geriatric samples. Both subtests load on attention/working memory and verbal recognition, so aphasia or significant memory disorder can inflate the EI without poor effort. Do not apply single-subtest cut-offs in place of the combined EI, and do not declare a whole RBANS protocol invalid on the EI alone — use it to generate hypotheses and trigger further validity testing (Silverberg et al., 2007).</div>
-      <details class="formula-disclosure">
-        <summary>Formula &amp; weighting table</summary>
-        <div class="formula-body">
-          <p>Each raw score converts to a weighted score (Silverberg, Wertheimer &amp; Fichtenberg, 2007, Table 2); EI = weighted Digit Span + weighted List Recognition (range 0–12). Higher EI = less credible performance. Some weights are unreachable for a given subtest (Digit Span never yields 1 or 4).</p>
-          <table class="pvt-table">
-            <thead><tr><th>Digit Span (raw)</th><th>List Recognition (raw)</th><th>Weighted score</th></tr></thead>
-            <tbody>
-              <tr><td>8–16</td><td>18–20</td><td>0</td></tr>
-              <tr><td>—</td><td>17</td><td>1</td></tr>
-              <tr><td>7</td><td>15–16</td><td>2</td></tr>
-              <tr><td>6</td><td>13–14</td><td>3</td></tr>
-              <tr><td>—</td><td>11–12</td><td>4</td></tr>
-              <tr><td>5</td><td>10</td><td>5</td></tr>
-              <tr><td>0–4</td><td>0–9</td><td>6</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </details>
     </div>
 
     <!-- ===== Effort Scale ===== -->
     <div class="pvt-tab-content" id="pvt-es">
-      <div class="panel">
-        <div class="field-row-4">
-          <div class="field">
-            <label>RBANS Digit Span <span class="hint">(raw, 0–16)</span></label>
-            <input type="number" min="0" max="16" step="1" data-pvt-field="ds" id="pvt-es-ds" placeholder="e.g. 9">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>RBANS Digit Span <span class="hint">(raw, 0–16)</span></label>
+              <input type="number" min="0" max="16" step="1" data-pvt-field="ds" id="pvt-es-ds" placeholder="e.g. 9">
+            </div>
+            <div class="field">
+              <label>RBANS List Recognition <span class="hint">(raw, 0–20)</span></label>
+              <input type="number" min="0" max="20" step="1" data-pvt-field="lrec" id="pvt-es-lrec" placeholder="e.g. 19">
+            </div>
+            <div class="field">
+              <label>List Recall <span class="hint">(raw)</span></label>
+              <input type="number" min="0" max="10" step="1" data-pvt-field="listRecall" id="pvt-es-listrecall" placeholder="e.g. 4">
+            </div>
+            <div class="field">
+              <label>Story Recall <span class="hint">(raw)</span></label>
+              <input type="number" min="0" max="12" step="1" data-pvt-field="storyRecall" id="pvt-es-storyrecall" placeholder="e.g. 5">
+            </div>
+            <div class="field">
+              <label>Figure Recall <span class="hint">(raw)</span></label>
+              <input type="number" min="0" max="20" step="1" data-pvt-field="figRecall" id="pvt-es-figrecall" placeholder="e.g. 8">
+            </div>
           </div>
-          <div class="field">
-            <label>RBANS List Recognition <span class="hint">(raw, 0–20)</span></label>
-            <input type="number" min="0" max="20" step="1" data-pvt-field="lrec" id="pvt-es-lrec" placeholder="e.g. 19">
-          </div>
-          <div class="field">
-            <label>List Recall <span class="hint">(raw)</span></label>
-            <input type="number" min="0" max="10" step="1" data-pvt-field="listRecall" id="pvt-es-listrecall" placeholder="e.g. 4">
-          </div>
+          <div class="info-box pvt-note"><strong>Mandatory gate.</strong> The ES is computed only where there is already evidence of low performance: Digit Span &lt; 9, <em>or</em> List Recognition &lt; 19, <em>or</em> their sum &lt; 28. In cognitively intact examinees free recall normally far exceeds the ceiling-limited recognition score, so an ungated ES over-flags (Novitski et al., 2012).</div>
+          <details class="formula-disclosure">
+            <summary>Formula</summary>
+            <div class="formula-body">
+              <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. Only 17% of the normal standardisation sample fall below the combined &lt; 28 screen, and 15.1% meet it while also scoring ES &lt; 12 (Novitski et al., 2012).</p>
+            </div>
+          </details>
         </div>
-        <div class="field-row-4">
-          <div class="field">
-            <label>Story Recall <span class="hint">(raw)</span></label>
-            <input type="number" min="0" max="12" step="1" data-pvt-field="storyRecall" id="pvt-es-storyrecall" placeholder="e.g. 5">
-          </div>
-          <div class="field">
-            <label>Figure Recall <span class="hint">(raw)</span></label>
-            <input type="number" min="0" max="20" step="1" data-pvt-field="figRecall" id="pvt-es-figrecall" placeholder="e.g. 8">
-          </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-es-result"></div>
+          <div class="caution-box"><strong>Cautions.</strong> Built around the Alzheimer's recall/recognition dissociation — conditions producing mixed or atypical memory profiles may not match that pattern. Later work shows low failure rates (~4%) in AD but ~31% in non-AD dementia and &gt;60% suboptimal rates in Parkinson's disease. The amnestic validation sample had no independent effort testing; confirm with a stand-alone PVT (Novitski et al., 2012).</div>
         </div>
-        <div class="info-box" style="margin-bottom:0"><strong>Mandatory gate.</strong> The ES is computed only where there is already evidence of low performance: Digit Span &lt; 9, <em>or</em> List Recognition &lt; 19, <em>or</em> their sum &lt; 28. In cognitively intact examinees free recall normally far exceeds the ceiling-limited recognition score, so an ungated ES over-flags (Novitski et al., 2012).</div>
       </div>
-      <div class="pvt-result" id="pvt-es-result"></div>
-      <div class="caution-box"><strong>Cautions.</strong> Built around the Alzheimer's recall/recognition dissociation — conditions producing mixed or atypical memory profiles may not match that pattern. Later work shows low failure rates (~4%) in AD but ~31% in non-AD dementia and &gt;60% suboptimal rates in Parkinson's disease. The amnestic validation sample had no independent effort testing; confirm with a stand-alone PVT (Novitski et al., 2012).</div>
-      <details class="formula-disclosure">
-        <summary>Formula</summary>
-        <div class="formula-body">
-          <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. Only 17% of the normal standardisation sample fall below the combined &lt; 28 screen, and 15.1% meet it while also scoring ES &lt; 12 (Novitski et al., 2012).</p>
-        </div>
-      </details>
     </div>
 
     <!-- ===== Reliable Digit Span ===== -->
     <div class="pvt-tab-content" id="pvt-rds">
-      <div class="panel">
-        <div class="field-row-4">
-          <div class="field">
-            <label>Longest forward span passed on <em>both</em> trials</label>
-            <input type="number" min="0" max="9" step="1" id="pvt-rds-f" placeholder="e.g. 6">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Longest forward span passed on <em>both</em> trials</label>
+              <input type="number" min="0" max="9" step="1" id="pvt-rds-f" placeholder="e.g. 6">
+            </div>
+            <div class="field">
+              <label>Longest backward span passed on <em>both</em> trials</label>
+              <input type="number" min="0" max="8" step="1" id="pvt-rds-b" placeholder="e.g. 4">
+            </div>
+            <div class="field pvt-field-wide">
+              <label>Cut-off</label>
+              <select id="pvt-rds-cutoff">
+                <option value="conservative" selected>RDS ≤ 6 · conservative (specificity &gt; .90)</option>
+                <option value="traditional">RDS ≤ 7 · traditional</option>
+              </select>
+            </div>
           </div>
-          <div class="field">
-            <label>Longest backward span passed on <em>both</em> trials</label>
-            <input type="number" min="0" max="8" step="1" id="pvt-rds-b" placeholder="e.g. 4">
-          </div>
-          <div class="field">
-            <label>Cut-off</label>
-            <select id="pvt-rds-cutoff">
-              <option value="conservative" selected>RDS ≤ 6 · conservative (specificity &gt; .90)</option>
-              <option value="traditional">RDS ≤ 7 · traditional</option>
-            </select>
-          </div>
+          <div class="info-box pvt-note"><strong>Classic variant.</strong> RDS here is Forward + Backward only (WAIS-R/III), which is what the validation literature uses. The WAIS-IV Sequencing-inclusive variants use different cut-offs and are not scored here — document which variant you used. Floor rule: failing at least one trial each of 3 forward and 2 backward is recorded as RDS = 3 (Greiffenstein et al., 1994).</div>
+          <details class="formula-disclosure">
+            <summary>Scoring &amp; worked example</summary>
+            <div class="formula-body">
+              <p>RDS = (longest forward span passed on both trials) + (longest backward span passed on both trials) (Greiffenstein, Baker &amp; Gola, 1994; cross-validated by Meyers &amp; Volbrecht, 1998). Worked example from the original paper: passes both trials of 3 forward but fails one 4-forward trial → forward = 3; passes both trials of 2 backward but fails one 3-backward trial → backward = 2; RDS = 3 + 2 = 5. Reference values: mean RDS ~8.8 in non-malingering TBI vs ~6.7 in probable malingerers (Greiffenstein et al., 1994).</p>
+            </div>
+          </details>
         </div>
-        <div class="info-box" style="margin-bottom:0"><strong>Classic variant.</strong> RDS here is Forward + Backward only (WAIS-R/III), which is what the validation literature uses. The WAIS-IV Sequencing-inclusive variants use different cut-offs and are not scored here — document which variant you used. Floor rule: failing at least one trial each of 3 forward and 2 backward is recorded as RDS = 3 (Greiffenstein et al., 1994).</div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-rds-result"></div>
+          <div class="caution-box"><strong>Cautions.</strong> RDS loads on attention/working memory: low scores occur legitimately in genuine attentional impairment, anxiety, and especially conduction aphasia. Validation samples were predominantly mild-TBI/litigating; Schroeder et al. (2012) found the ≤ 7 cut-off had inadequate specificity (82–85%) across clinical groups — prefer ≤ 6, which held specificity at 96–97% overall. Even at ≤ 6, specificity remains inadequate in cerebrovascular accident, severe memory disorders, intellectual disability or borderline intellectual functioning, and English-as-a-second-language examinees (Schroeder et al., 2012).</div>
+        </div>
       </div>
-      <div class="pvt-result" id="pvt-rds-result"></div>
-      <div class="caution-box"><strong>Cautions.</strong> RDS loads on attention/working memory: low scores occur legitimately in genuine attentional impairment, anxiety, and especially conduction aphasia. Validation samples were predominantly mild-TBI/litigating; Schroeder et al. (2012) found the ≤ 7 cut-off had inadequate specificity (82–85%) across clinical groups — prefer ≤ 6, which held specificity at 96–97% overall. Even at ≤ 6, specificity remains inadequate in cerebrovascular accident, severe memory disorders, intellectual disability or borderline intellectual functioning, and English-as-a-second-language examinees (Schroeder et al., 2012).</div>
-      <details class="formula-disclosure">
-        <summary>Scoring &amp; worked example</summary>
-        <div class="formula-body">
-          <p>RDS = (longest forward span passed on both trials) + (longest backward span passed on both trials) (Greiffenstein, Baker &amp; Gola, 1994; cross-validated by Meyers &amp; Volbrecht, 1998). Worked example from the original paper: passes both trials of 3 forward but fails one 4-forward trial → forward = 3; passes both trials of 2 backward but fails one 3-backward trial → backward = 2; RDS = 3 + 2 = 5. Reference values: mean RDS ~8.8 in non-malingering TBI vs ~6.7 in probable malingerers (Greiffenstein et al., 1994).</p>
-        </div>
-      </details>
     </div>
 
     <!-- ===== TOMM ===== -->
     <div class="pvt-tab-content" id="pvt-tomm">
-      <div class="panel">
-        <div class="field-row-4">
-          <div class="field">
-            <label>Trial 1 <span class="hint">(/50)</span></label>
-            <input type="number" min="0" max="50" step="1" id="pvt-tomm-t1" placeholder="e.g. 44">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Trial 1 <span class="hint">(/50)</span></label>
+              <input type="number" min="0" max="50" step="1" id="pvt-tomm-t1" placeholder="e.g. 44">
+            </div>
+            <div class="field">
+              <label>Trial 2 <span class="hint">(/50)</span></label>
+              <input type="number" min="0" max="50" step="1" id="pvt-tomm-t2" placeholder="e.g. 48">
+            </div>
+            <div class="field">
+              <label>Retention <span class="hint">(/50, optional)</span></label>
+              <input type="number" min="0" max="50" step="1" id="pvt-tomm-ret" placeholder="e.g. 49">
+            </div>
+            <div class="field">
+              <label>Trial 1 cut-off</label>
+              <select id="pvt-tomm-t1cut">
+                <option value="t1-42" selected>&lt; 42 · meta-analytic optimum</option>
+                <option value="t1-41">&lt; 41 · conservative</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Trial 2 / Retention cut-off</label>
+              <select id="pvt-tomm-t2cut">
+                <option value="45" selected>&lt; 45 · traditional (all settings)</option>
+                <option value="49">&lt; 49 · liberal (no severe impairment expected)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Base rate of invalidity <span class="hint">(your setting)</span></label>
+              <select id="pvt-tomm-br">
+                <option value="0.1" selected>10% · typical clinical</option>
+                <option value="0.2">20%</option>
+                <option value="0.3">30%</option>
+                <option value="0.4">40% · forensic</option>
+                <option value="0.5">50%</option>
+              </select>
+            </div>
           </div>
-          <div class="field">
-            <label>Trial 2 <span class="hint">(/50)</span></label>
-            <input type="number" min="0" max="50" step="1" id="pvt-tomm-t2" placeholder="e.g. 48">
-          </div>
-          <div class="field">
-            <label>Retention <span class="hint">(/50, optional)</span></label>
-            <input type="number" min="0" max="50" step="1" id="pvt-tomm-ret" placeholder="e.g. 49">
-          </div>
+          <details class="formula-disclosure">
+            <summary>Cut-offs &amp; classification accuracy</summary>
+            <div class="formula-body">
+              <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45 — spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49 — spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42 — spec. .91, sens. .67–.69; Trial 1 &lt; 41 — spec. .93, sens. .66. All are Martin et al.'s weighted-mean values for neurocognitive/psychiatric samples; an earlier aggregation of Trial 1 (Denning, 2012) reported .92/.77 averaged across cut-offs 34–44, which is why the meta-analysis examined each cut-off individually. Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17.</p>
+            </div>
+          </details>
         </div>
-        <div class="field-row-4">
-          <div class="field">
-            <label>Trial 1 cut-off</label>
-            <select id="pvt-tomm-t1cut">
-              <option value="t1-42" selected>&lt; 42 · meta-analytic optimum</option>
-              <option value="t1-41">&lt; 41 · conservative</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Trial 2 / Retention cut-off</label>
-            <select id="pvt-tomm-t2cut">
-              <option value="45" selected>&lt; 45 · traditional (all settings)</option>
-              <option value="49">&lt; 49 · liberal (no severe impairment expected)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Base rate of invalidity <span class="hint">(your setting)</span></label>
-            <select id="pvt-tomm-br">
-              <option value="0.1" selected>10% · typical clinical</option>
-              <option value="0.2">20%</option>
-              <option value="0.3">30%</option>
-              <option value="0.4">40% · forensic</option>
-              <option value="0.5">50%</option>
-            </select>
-          </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-tomm-result"></div>
+          <div id="pvt-tomm-power"></div>
+          <div class="caution-box"><strong>Cautions.</strong> Dementia is the key exception: across dementia samples, weighted-mean specificity was ≤ .70 at traditional cut-offs, with no study achieving a false-positive rate under 10% — traditional TOMM cut-offs should <em>not</em> be interpreted in suspected or confirmed dementia. Specificity for the liberal &lt; 49 cut-off also dipped below 90% in moderate/severe TBI and severe depression. Simulator studies overestimate sensitivity relative to real known-groups patients (Martin et al., 2020).</div>
         </div>
       </div>
-      <div class="pvt-result" id="pvt-tomm-result"></div>
-      <div id="pvt-tomm-power"></div>
-      <div class="caution-box"><strong>Cautions.</strong> Dementia is the key exception: across dementia samples, weighted-mean specificity was ≤ .70 at traditional cut-offs, with no study achieving a false-positive rate under 10% — traditional TOMM cut-offs should <em>not</em> be interpreted in suspected or confirmed dementia. Specificity for the liberal &lt; 49 cut-off also dipped below 90% in moderate/severe TBI and severe depression. Simulator studies overestimate sensitivity relative to real known-groups patients (Martin et al., 2020).</div>
-      <details class="formula-disclosure">
-        <summary>Cut-offs &amp; classification accuracy</summary>
-        <div class="formula-body">
-          <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45 — spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49 — spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42 — spec. .91, sens. .67–.69; Trial 1 &lt; 41 — spec. .93, sens. .66. All are Martin et al.'s weighted-mean values for neurocognitive/psychiatric samples; an earlier aggregation of Trial 1 (Denning, 2012) reported .92/.77 averaged across cut-offs 34–44, which is why the meta-analysis examined each cut-off individually. Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17.</p>
-        </div>
-      </details>
     </div>
 
     <!-- ===== Summary & Aggregation ===== -->
     <div class="pvt-tab-content" id="pvt-summary">
-      <div id="pvt-summary-body"></div>
-      <div class="panel">
-        <div class="block-title">Aggregating multiple PVTs (Larrabee, 2014)</div>
-        <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity in real clinical data — Monte Carlo warnings that false positives climb steeply with more tests overestimate the problem, because genuine patients' PVT scores are skewed and at-ceiling rather than multivariate-normal. Classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT):</p>
-        <table class="pvt-table">
-          <thead><tr><th>Threshold</th><th>Specificity</th><th>Sensitivity</th><th>Total correct</th></tr></thead>
-          <tbody>
-            <tr><td>≥ 2 of 7 failures</td><td>88.9%</td><td>97.6%</td><td>92.6%</td></tr>
-            <tr><td>≥ 3 of 7 failures</td><td>96.3%</td><td>87.8%</td><td>92.6%</td></tr>
-            <tr><td>≥ 4 of 7 failures</td><td>100%</td><td>63.4%</td><td>84.2%</td></tr>
-          </tbody>
-        </table>
-        <div class="info-box" style="margin-top:14px;margin-bottom:0"><strong>Two practical rules.</strong> <em>Independence is required</em>: indices sharing subtests are correlated, so failing one raises the odds of failing another — the Effort Index and Effort Scale here are computed from the same RBANS subtests and count as <strong>one</strong> indicator, and RDS also loads on digit span. <em>Examinee characteristics shift the threshold</em>: lower education alone can move the failure count needed to keep false positives &lt; 10% from 2-of-5 up to 4-of-5 — demand more failures, or rely on high-specificity forced-choice measures, in lower-education, older, or genuinely impaired examinees (Larrabee, 2014).</div>
+      <div class="pvt-workspace">
+        <div class="pvt-summary-left">
+          <div id="pvt-summary-body"></div>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-card">
+            <div class="pvt-card-kicker">Aggregating multiple PVTs (Larrabee, 2014)</div>
+            <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity in real clinical data — Monte Carlo warnings that false positives climb steeply with more tests overestimate the problem, because genuine patients' PVT scores are skewed and at-ceiling rather than multivariate-normal. Classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT):</p>
+            <table class="pvt-table">
+              <thead><tr><th>Threshold</th><th>Specificity</th><th>Sensitivity</th><th>Total correct</th></tr></thead>
+              <tbody>
+                <tr><td>≥ 2 of 7 failures</td><td>88.9%</td><td>97.6%</td><td>92.6%</td></tr>
+                <tr><td>≥ 3 of 7 failures</td><td>96.3%</td><td>87.8%</td><td>92.6%</td></tr>
+                <tr><td>≥ 4 of 7 failures</td><td>100%</td><td>63.4%</td><td>84.2%</td></tr>
+              </tbody>
+            </table>
+            <div class="info-box pvt-note" style="margin-top:12px"><strong>Two practical rules.</strong> <em>Independence is required</em>: indices sharing subtests are correlated, so failing one raises the odds of failing another — the Effort Index and Effort Scale here are computed from the same RBANS subtests and count as <strong>one</strong> indicator, and RDS also loads on digit span. <em>Examinee characteristics shift the threshold</em>: lower education alone can move the failure count needed to keep false positives &lt; 10% from 2-of-5 up to 4-of-5 — demand more failures, or rely on high-specificity forced-choice measures, in lower-education, older, or genuinely impaired examinees (Larrabee, 2014).</div>
+          </div>
+          <div class="info-box pvt-note" data-apa-note="pvt"></div>
+        </div>
       </div>
-      <div class="info-box" data-apa-note="pvt"></div>
 
       <div class="apa-wrap">
         <div class="apa-toolbar">
@@ -16014,21 +16213,21 @@ input[type="number"].ds-age-pop-input{
         <div class="apa-table-container" id="pvt-apa"><div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least one validity measure to preview.</div></div>
       </div>
     </div>
-      <!-- Always visible beneath whichever tab is active: every cut-off on this
-         page is a published claim, so the sources sit on the page itself, not
-         only in Methods & References. -->
-    <div class="references" id="pvt-references">
-      <div class="references-title">References — Performance Validity</div>
-      <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
-      <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
-      <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
-      <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
-      <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
-      <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</p>
-      <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30.</p>
-      <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
-      <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
-    </div>
+
+    <details class="pvt-refs">
+      <summary>References — Performance Validity</summary>
+      <div class="references" id="pvt-references">
+        <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
+        <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
+        <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
+        <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
+        <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
+        <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</p>
+        <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30.</p>
+        <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
+        <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
+      </div>
+    </details>
   </section>
 
 
@@ -25809,8 +26008,8 @@ function renderPvtTomm(){
       : 'No entered trial falls below its selected cut-off.');
   const brPct = Math.round(s.br * 100);
   power.innerHTML = `
-    <div class="panel">
-      <div class="block-title">Predictive power at a ${brPct}% base rate of invalidity</div>
+    <div class="pvt-card">
+      <div class="pvt-card-kicker">Predictive power at a ${brPct}% base rate of invalidity</div>
       <table class="pvt-table">
         <thead><tr><th>Trial · cut-off</th><th>Sens.</th><th>Spec.</th><th>PPP</th><th>NPP</th></tr></thead>
         <tbody>${s.rows.map(r => `
@@ -25872,20 +26071,23 @@ function renderPvtSummary(){
   if (!host) return;
   const rows = getPvtSummaryRows();
   if (rows.length === 0){
-    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet — score at least one measure on the other tabs and the summary builds itself.') + '</div>';
+    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet — score at least one measure on the other tabs and the summary builds itself. The tab strip above tracks each measure as you go.') + '</div>';
     return;
   }
   const c = pvtIndicatorCounts(rows);
-  const countLine = c.total === 0 ? '' :
-    `<p class="pvt-agg-copy" style="margin-top:12px"><strong>${c.failed} of ${c.total}</strong> independent indicator${c.total === 1 ? '' : 's'} with data ${c.failed === 1 ? 'falls' : 'fall'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — counting the two RBANS indices as one indicator and the TOMM trials as one. Failing ≥ 2 independent PVTs supports probable invalidity; a single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).</p>`;
+  const countStat = c.total === 0 ? '' :
+    `<div class="pvt-count">
+      <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
+      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} with data ${c.failed === 1 ? 'falls' : 'fall'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — counting the two RBANS indices as one indicator and the TOMM trials as one. Failing ≥ 2 independent PVTs supports probable invalidity; a single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).</span>
+    </div>`;
   host.innerHTML = `
-    <div class="panel">
-      <div class="block-title">Indicators scored this session</div>
+    <div class="pvt-card">
+      <div class="pvt-card-kicker">Indicators scored this session</div>
+      ${countStat}
       <table class="pvt-table">
         <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Result</th></tr></thead>
         <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
       </table>
-      ${countLine}
     </div>`;
 }
 
@@ -25919,18 +26121,55 @@ function renderPvtApa(){
   `;
 }
 
+/* The tab strip's live status chips. One chip per measure, restated from
+   the same getPvt* state the result cards render, so strip and card cannot
+   disagree. The summary chip carries the independent-indicator count. */
+function pvtChip(el, text, kind){
+  if (!el) return;
+  el.textContent = text;
+  el.classList.remove('is-pass', 'is-fail', 'is-na');
+  if (kind) el.classList.add('is-' + kind);
+}
+function renderPvtNav(){
+  const ei = getPvtEi();
+  pvtChip(document.getElementById('pvt-status-ei'),
+    ei.ei !== undefined ? (ei.fail ? 'Fail' : 'Pass') : '—',
+    ei.ei !== undefined ? (ei.fail ? 'fail' : 'pass') : null);
+  const es = getPvtEs();
+  pvtChip(document.getElementById('pvt-status-es'),
+    es.gated ? 'Gated' : es.es !== undefined ? (es.fail ? 'Fail' : 'Pass') : '—',
+    es.gated ? 'na' : es.es !== undefined ? (es.fail ? 'fail' : 'pass') : null);
+  const rds = getPvtRds();
+  pvtChip(document.getElementById('pvt-status-rds'),
+    rds.rds !== undefined ? (rds.fail ? 'Fail' : 'Pass') : '—',
+    rds.rds !== undefined ? (rds.fail ? 'fail' : 'pass') : null);
+  const tomm = getPvtTomm();
+  const tommHas = !!(tomm.rows && tomm.rows.length);
+  pvtChip(document.getElementById('pvt-status-tomm'),
+    tommHas ? (tomm.anyFail ? 'Fail' : 'Pass') : '—',
+    tommHas ? (tomm.anyFail ? 'fail' : 'pass') : null);
+  const c = pvtIndicatorCounts(getPvtSummaryRows());
+  pvtChip(document.getElementById('pvt-status-summary'),
+    c.total > 0 ? `${c.failed}/${c.total}` : '—',
+    c.total > 0 ? (c.failed > 0 ? 'fail' : 'pass') : null);
+}
+
 function renderPvtAll(){
   renderPvtEi();
   renderPvtEs();
   renderPvtRds();
   renderPvtTomm();
+  renderPvtNav();
   renderPvtSummary();
   renderPvtApa();
 }
 
 function switchPvtTab(name){
-  document.querySelectorAll('#validity .pvt-tabs .tab').forEach(t =>
-    t.classList.toggle('active', t.dataset.pvtTab === name));
+  document.querySelectorAll('#validity .pvt-method-tab').forEach(t => {
+    const on = t.dataset.pvtTab === name;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
   document.querySelectorAll('#validity .pvt-tab-content').forEach(c =>
     c.classList.toggle('active', c.id === 'pvt-' + name));
 }
@@ -25948,7 +26187,7 @@ function clearPvt(){
 function setupPvtPage(){
   const root = document.getElementById('validity');
   if (!root) return;
-  root.querySelectorAll('.pvt-tabs .tab').forEach(tab => {
+  root.querySelectorAll('.pvt-method-tab').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
   });
   /* The shared RBANS fields appear on both the EI and ES tabs; pvtState is

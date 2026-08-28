@@ -9567,24 +9567,166 @@ body.rb-docked-active{padding-right:0}
    PERFORMANCE VALIDITY PAGE
    All standalone classes, per the cascade rule: nothing here
    modifies a class design-system.css or a page-scoped block
-   already touches.
+   already touches. The shell mirrors the Change Analysis
+   workspace language (rich tab cards over a working area) with
+   one addition the other pages don't have: a live status chip
+   per measure, updated on every keystroke.
    ============================================================= */
+#validity.section{max-width:none;width:100%;padding:22px 50px 28px}
+#validity .section-desc{max-width:880px;margin-bottom:16px}
+
+.pvt-method-tabs{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(150px,1fr));
+  gap:0;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  margin-bottom:18px;
+}
+.pvt-method-tab{
+  width:100%;
+  border:1px solid transparent;
+  border-right:1px solid var(--border-soft);
+  background:var(--paper);
+  color:var(--ink-2);
+  font-family:var(--sans);
+  padding:12px 12px 11px;
+  cursor:pointer;
+  text-align:left;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:2px 10px;
+  align-items:start;
+  min-height:60px;
+  position:relative;
+  transition:background 140ms ease,box-shadow 140ms ease;
+}
+.pvt-method-tab:focus{outline:none}
+.pvt-method-tab:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.22)}
+.pvt-method-tab:last-child{border-right:0}
+.pvt-method-tab:hover{box-shadow:inset 0 1px 0 rgba(156,61,42,0.13)}
+.pvt-method-tab.active{
+  background:rgba(156,61,42,0.035);
+  box-shadow:inset 0 1px 0 var(--accent);
+}
+.pvt-method-num{font-family:var(--mono);font-size:10.5px;color:var(--faint);line-height:1.15;padding-top:1px}
+.pvt-method-main{min-width:0}
+.pvt-method-label{display:block;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink);line-height:1.08}
+.pvt-method-meta{display:block;margin-top:3px;font-size:10.25px;color:var(--muted);line-height:1.25}
+.pvt-method-tab.active .pvt-method-label,
+.pvt-method-tab.active .pvt-method-num{color:var(--accent)}
+
+/* Live status chip - the state colours match the result card's bands. */
+.pvt-status{
+  align-self:start;
+  display:inline-flex;
+  align-items:center;
+  height:17px;
+  padding:0 7px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(250,247,241,0.66);
+  color:var(--faint);
+  font-family:var(--mono);
+  font-size:8.5px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  line-height:1;
+  white-space:nowrap;
+  transition:background 140ms ease,color 140ms ease,border-color 140ms ease;
+}
+.pvt-status.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.4);background:rgba(46,125,79,0.07)}
+.pvt-status.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.4);background:rgba(156,61,42,0.07)}
+.pvt-status.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.4);background:rgba(138,122,44,0.07)}
+
 .pvt-tab-content{display:none}
 .pvt-tab-content.active{display:block;animation:fadeIn 200ms ease}
-.pvt-result{margin:16px 0}
-.pvt-result-inner{display:block;border:1px solid var(--border);border-left-width:4px;border-radius:6px;padding:14px 16px;background:var(--panel,#fff)}
+
+.pvt-workspace{
+  display:grid;
+  grid-template-columns:minmax(380px,0.9fr) minmax(430px,1.1fr);
+  gap:16px;
+  align-items:start;
+}
+@media (max-width:1100px){ .pvt-workspace{grid-template-columns:1fr} }
+
+.pvt-card{
+  border:1px solid var(--border-soft);
+  background:var(--paper);
+  padding:16px 18px;
+}
+.pvt-card-kicker{
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--faint);
+  margin-bottom:12px;
+}
+.pvt-field-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0 14px;
+}
+.pvt-field-grid .field{margin-bottom:14px}
+.pvt-field-wide{grid-column:1 / -1}
+.pvt-note{margin-bottom:0;font-size:12px}
+.pvt-card .formula-disclosure{margin-top:4px}
+
+.pvt-outcome{display:flex;flex-direction:column;gap:14px;min-width:0}
+.pvt-outcome .caution-box{margin:0;font-size:12px}
+.pvt-outcome .panel{margin-bottom:0}
+.pvt-summary-left{min-width:0}
+
+.pvt-result{margin:0}
+.pvt-result-inner{display:block;border:1px solid var(--border);border-left-width:4px;border-radius:6px;padding:14px 16px;background:var(--paper,#fff)}
 .pvt-result-inner.is-empty{border-left-color:var(--border);color:var(--faint);font-style:italic;font-size:13.5px}
 .pvt-result-inner.is-pass{border-left-color:#2e7d4f}
 .pvt-result-inner.is-fail{border-left-color:#9c3d2a}
 .pvt-result-inner.is-na{border-left-color:#8a7a2c}
-.pvt-result-headline{display:block;font-weight:600;font-size:14.5px;margin-bottom:4px}
+.pvt-result-headline{display:block;font-weight:600;font-size:15px;margin-bottom:4px}
 .pvt-result-inner.is-fail .pvt-result-headline{color:#9c3d2a}
 .pvt-result-inner.is-pass .pvt-result-headline{color:#2e7d4f}
 .pvt-result-inner.is-na .pvt-result-headline{color:#8a7a2c}
-.pvt-result-detail{display:block;font-size:13px;color:var(--muted,#555);line-height:1.55}
-.pvt-table{width:100%;border-collapse:collapse;font-size:13px}
-.pvt-table th{text-align:left;font-weight:600;padding:7px 10px;border-bottom:2px solid var(--border);white-space:nowrap}
-.pvt-table td{padding:6px 10px;border-bottom:1px solid var(--border)}
+.pvt-result-detail{display:block;font-size:12.5px;color:var(--muted,#555);line-height:1.55}
+
+.pvt-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.pvt-table th{text-align:left;font-weight:600;padding:6px 10px;border-bottom:2px solid var(--border);white-space:nowrap}
+.pvt-table td{padding:5px 10px;border-bottom:1px solid var(--border)}
 .pvt-table tr:last-child td{border-bottom:0}
 .pvt-cell-fail{color:#9c3d2a;font-weight:600}
-.pvt-agg-copy{font-size:13px;color:var(--muted,#555);line-height:1.6;margin:0 0 12px}
+.pvt-agg-copy{font-size:12.5px;color:var(--muted,#555);line-height:1.55;margin:0 0 12px}
+
+/* The headline count on the Summary tab. */
+.pvt-count{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  margin:0 0 12px;
+}
+.pvt-count-num{
+  font-family:var(--mono);
+  font-size:26px;
+  font-weight:600;
+  color:var(--ink);
+  line-height:1;
+}
+.pvt-count-num.is-fail{color:#9c3d2a}
+.pvt-count-label{font-size:12px;color:var(--muted);line-height:1.4;max-width:520px}
+
+/* Collapsed footer references - keeps the workspace on one screen while
+   the citations stay one click away and pinned by check.js §38. */
+.pvt-refs{margin-top:22px;border-top:1px solid var(--border-soft);padding-top:10px}
+.pvt-refs summary{
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--faint);
+  list-style:none;
+}
+.pvt-refs summary::-webkit-details-marker{display:none}
+.pvt-refs summary::before{content:'+ '}
+.pvt-refs[open] summary::before{content:'\2212\00a0 '}
+.pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
