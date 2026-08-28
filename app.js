@@ -7386,45 +7386,96 @@ function renderPvtAccuracy(){
    tab away. It reads the SAME getPvtSummaryRows/pvtIndicatorCounts the
    Summary tab and the APA export read — three surfaces, one derivation,
    which is why a measure can never appear scored here and unscored there. */
-const PVT_RAIL_MEASURES = [
-  { tab: 'ei',    group: 'rbans', label: 'RBANS Effort Index',  ids: ['ei'] },
-  { tab: 'es',    group: 'rbans', label: 'RBANS Effort Scale',  ids: ['es'] },
-  { tab: 'rds',   group: 'rds',   label: 'Reliable Digit Span', ids: ['rds'] },
-  { tab: 'ds',    group: 'rds',   label: 'Digit Span indices',  ids: ['ds', 'ds-vocab', 'ds-lsf', 'ds-lsb'] },
-  { tab: 'rey15', group: 'rey15', label: 'Rey 15-Item',         ids: ['rey-recall', 'rey-combo'] },
-  { tab: 'tomm',  group: 'tomm',  label: 'TOMM',                ids: ['tomm'] }
+/* The rail is grouped by INDEPENDENT INDICATOR, not by measure, because
+   the count above it is over indicators: the two RBANS indices are one,
+   and the two digit-span measures are one. Listing six flat rows beside a
+   "3 of 4" count invited exactly the arithmetic the page keeps warning
+   against, so the grouping now shows on screen what the note says in
+   words. Rows are buttons: the rail doubles as navigation. */
+const PVT_RAIL_GROUPS = [
+  { id: 'rbans', label: 'RBANS', members: [
+    { tab: 'ei',    label: 'Effort Index', ids: ['ei'] },
+    { tab: 'es',    label: 'Effort Scale', ids: ['es'] }
+  ]},
+  { id: 'rds', label: 'Digit span', members: [
+    { tab: 'rds',   label: 'Reliable Digit Span', ids: ['rds'] },
+    { tab: 'ds',    label: 'Digit Span indices',  ids: ['ds', 'ds-vocab', 'ds-lsf', 'ds-lsb'] }
+  ]},
+  { id: 'rey15', label: 'Rey 15-Item', members: [
+    { tab: 'rey15', label: 'Recall & recognition', ids: ['rey-recall', 'rey-combo'] }
+  ]},
+  { id: 'tomm', label: 'TOMM', members: [
+    { tab: 'tomm',  label: 'Forced choice', ids: ['tomm'] }
+  ]}
 ];
+const PVT_RAIL_ICON = {
+  flag: PVT_STATE_ICON.flag,
+  pass: PVT_STATE_ICON.pass,
+  gated: PVT_STATE_ICON.na,
+  idle: '<svg class="pvt-flag-icon" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6" cy="6" r="3.4"/></svg>'
+};
 function renderPvtRail(){
   const rail = document.getElementById('pvt-rail');
   if (!rail) return;
   const rows = getPvtSummaryRows();
   const c = pvtIndicatorCounts(rows);
   const current = document.querySelector('#validity .pvt-method-tab.active')?.dataset.pvtTab;
-  const items = PVT_RAIL_MEASURES.map(m => {
-    const mine = rows.filter(r => m.ids.includes(r.id));
-    const scored = mine.length > 0;
-    const flagged = mine.filter(r => r.fail).length;
-    const gated = mine.some(r => r.gated);
-    let val = '—';
-    if (gated) val = 'gated';
-    else if (scored) val = flagged ? `${flagged} flag${flagged === 1 ? '' : 's'}` : 'clear';
-    return `<div class="pvt-rail-item${scored ? '' : ' is-unscored'}${m.tab === current ? ' is-current' : ''}">
-      <span class="pvt-rail-name">${m.label}</span>
-      <span class="pvt-rail-val">${val}</span>
+
+  let scoredMeasures = 0, totalMeasures = 0;
+  const groupsHtml = PVT_RAIL_GROUPS.map(g => {
+    const membersHtml = g.members.map(m => {
+      totalMeasures++;
+      const mine = rows.filter(r => m.ids.includes(r.id));
+      const gated = mine.some(r => r.gated);
+      const scored = mine.length > 0 && !gated;
+      if (mine.length) scoredMeasures++;
+      const flagged = mine.filter(r => r.fail).length;
+      const state = gated ? 'gated' : !scored ? 'idle' : flagged ? 'flag' : 'pass';
+      const detail = gated ? 'gate not met'
+        : !scored ? 'not scored'
+        : flagged ? `${flagged} beyond cut-off`
+        : 'within cut-offs';
+      return `<button type="button" class="pvt-rail-row is-${state}${m.tab === current ? ' is-current' : ''}" data-rail-tab="${m.tab}">
+        <span class="pvt-rail-icon">${PVT_RAIL_ICON[state]}</span>
+        <span class="pvt-rail-text">
+          <span class="pvt-rail-name">${m.label}</span>
+          <span class="pvt-rail-detail">${detail}</span>
+        </span>
+      </button>`;
+    }).join('');
+    const shared = g.members.length > 1;
+    return `<div class="pvt-rail-group${shared ? ' is-shared' : ''}">
+      <div class="pvt-rail-group-head">
+        <span class="pvt-rail-group-name">${g.label}</span>
+        ${shared ? '<span class="pvt-rail-group-tag">counts as one</span>' : ''}
+      </div>
+      ${membersHtml}
     </div>`;
   }).join('');
-  const head = c.total === 0
-    ? '<p class="pvt-rail-empty">Nothing scored yet. Each measure you complete appears here, with a running count of independent indicators.</p>'
-    : `<div class="pvt-rail-count">
-        <span class="pvt-rail-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
-        <span class="pvt-rail-num-sub">independent<br>indicator${c.total === 1 ? '' : 's'}</span>
+
+  const tone = c.failed >= 2 ? 'is-fail' : c.failed === 1 ? 'is-warn' : c.total ? 'is-pass' : '';
+  const stat = c.total === 0
+    ? '<p class="pvt-rail-empty">Score a measure and its indicator appears here, with a running count.</p>'
+    : `<div class="pvt-rail-stat ${tone}">
+        <span class="pvt-rail-num">${c.failed}<span class="pvt-rail-sep">/</span>${c.total}</span>
+        <span class="pvt-rail-stat-label">independent indicator${c.total === 1 ? '' : 's'}<br>beyond cut-off</span>
       </div>
       <p class="pvt-rail-note">${c.failed >= 2
         ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
         : c.failed === 1
           ? 'A single failure is a hypothesis to corroborate, not a conclusion.'
-          : 'No indicator beyond its cut-off so far.'}</p>`;
-  rail.innerHTML = `<div class="pvt-rail-kicker">Running summary</div>${head}<div class="pvt-rail-list">${items}</div>`;
+          : 'Nothing beyond its cut-off so far.'}</p>`;
+  const pct = totalMeasures ? Math.round((scoredMeasures / totalMeasures) * 100) : 0;
+
+  rail.innerHTML = `<div class="pvt-rail-card">
+    <div class="pvt-rail-kicker">Running summary</div>
+    ${stat}
+    <div class="pvt-rail-groups">${groupsHtml}</div>
+    <div class="pvt-rail-progress">
+      <span class="pvt-rail-bar"><span style="width:${pct}%"></span></span>
+      <span class="pvt-rail-progress-text">${scoredMeasures} of ${totalMeasures} measures scored</span>
+    </div>
+  </div>`;
 }
 
 function renderPvtAll(){
@@ -7493,6 +7544,12 @@ function setupPvtPage(){
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   document.getElementById('pvt-rey-administer')?.addEventListener('click', reyAdminOpen);
+  /* The rail doubles as navigation — delegated, because it re-renders on
+     every keystroke and bound handlers would not survive. */
+  document.getElementById('pvt-rail')?.addEventListener('click', e => {
+    const row = e.target.closest('[data-rail-tab]');
+    if (row) switchPvtTab(row.dataset.railTab);
+  });
   ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
