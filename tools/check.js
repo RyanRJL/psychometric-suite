@@ -6942,6 +6942,19 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
   if (!/data-apa-note="pvt"/.test(HTML_SRC)) bad.push('the on-screen note mirror is gone');
   if (!/id="pvt-apa"/.test(HTML_SRC)) bad.push('the APA container is gone');
   if (!/data-target="validity"/.test(HTML_SRC)) bad.push('no nav item points at the validity page');
+  /* Full citations on the page itself, not only in Methods & References —
+     every cut-off here is a published claim. One author-year per source. */
+  (() => {
+    const vStart = HTML_SRC.indexOf('<section class="section" id="validity">');
+    const vEnd = HTML_SRC.indexOf('</section>', vStart);
+    const vHtml = vStart === -1 ? '' : HTML_SRC.slice(vStart, vEnd);
+    if (!/id="pvt-references"/.test(vHtml)){ bad.push('the on-page references block is gone from #validity'); return; }
+    ['Silverberg, N. D.', 'Novitski, J.', 'Greiffenstein, M. F.', 'Meyers, J. E.',
+     'Schroeder, R. W., Twumasi-Ankrah', 'Martin, P. K.', 'Denning, J. H.',
+     'Larrabee, G. J.', 'Tombaugh, T. N.'].forEach(name => {
+      if (!vHtml.includes(name)) bad.push('#validity references lost ' + name);
+    });
+  })();
   /* The ES gate must be enforced in code, not just described in copy. */
   const es = extractFn(APP_SRC, 'getPvtEs');
   if (!/gateMet/.test(es) || !/gated: true/.test(es)) bad.push('getPvtEs lost its gate');
