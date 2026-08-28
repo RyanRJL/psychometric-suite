@@ -4885,6 +4885,311 @@ input[type="number"].ds-age-pop-input{
 .ds-inline-bar-cibasis[hidden]{ display: none !important; }
 
 /* =====================================================================
+   THE HOME DIAL
+
+   Seven tools on a ring. The grid it replaces orphaned its last card at
+   every column count that divides seven, which is none of them but one
+   and seven: 3 / 3 / 1 at full width, 2 / 2 / 2 / 1 at the breakpoint.
+
+   All new standalone `.home-dial-*` names. Nothing here modifies
+   `.home-db-*`, which is still declared in this file and in styles.css.
+
+   Three things worth knowing before editing:
+
+   1. POSITION COMES FROM --a, NOT FROM SOURCE ORDER. Each node carries its
+      angle inline. The transform chain rotates to the angle, walks out by
+      the radius, rotates back so the label stays upright, then centres the
+      box on that point. To move a tool around the ring change its --a; do
+      NOT reorder the buttons, because their source order is the tab order
+      and it deliberately follows the clinical workflow.
+
+   2. THE DESCRIPTION LIVES IN THE HUB. A ring has nowhere to put a line of
+      body copy beside each label, which is the main thing that makes radial
+      layouts worse than grids. Putting it in the middle is what buys the
+      copy back. Inactive descriptions are hidden with opacity, never
+      display:none, so they stay in the accessibility tree for the
+      aria-describedby on each node.
+
+   3. THE RING IS NOT A LAYOUT, SO IT DOES NOT REFLOW. Below 760px the whole
+      thing becomes a plain vertical list. That is a second layout for one
+      component, accepted deliberately here: a circle cannot narrow.
+   ===================================================================== */
+.home-dial{
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+}
+.home-dial-stage{
+  position: relative;
+  width: 620px;
+  height: 540px;
+  flex-shrink: 0;
+}
+
+/* The ring itself: a hairline the nodes sit on, so the arrangement reads as
+   deliberate rather than as scattered buttons. */
+.home-dial-ring{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 392px;
+  height: 392px;
+  margin: -196px 0 0 -196px;
+  border: 1px dashed rgba(156,61,42,0.22);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.home-dial-node{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  /* 136 wide on a 196 radius. Adjacent centres are 170px apart along the
+     chord, so the hit areas clear each other by 34px. At the first sizing,
+     146 wide on a 178 radius, two pairs of boxes intersected and each node
+     was clickable over part of its neighbour. */
+  width: 136px;
+  /* rotate to the angle, walk out along the radius, rotate back upright,
+     then centre the box on the point it landed on. */
+  transform:
+    rotate(var(--a))
+    translateY(-196px)
+    rotate(calc(-1 * var(--a)))
+    translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 4px;
+  background: none;
+  border: none;
+  border-radius: var(--ds-radius-md);
+  cursor: pointer;
+  font-family: var(--sans);
+  color: var(--ds-text);
+  text-align: center;
+}
+.home-dial-dot{
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 5px rgba(20,15,8,0.08);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.home-dial-dot svg{ width: 23px; height: 23px; }
+.home-dial-label{
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--ds-text);
+  transition: color 180ms ease;
+}
+
+/* Every rule from here down is !important, and it is not decoration.
+   Without it these lose: an identical rule injected last in the document,
+   at 0-2-0 against a 0-1-0 base and with no !important competitor findable
+   anywhere in either stylesheet, still did not apply, while the same rule
+   carrying !important did. The overriding declaration was not identified;
+   what is established is that plain state rules do not survive in this
+   cascade, which is the same conclusion the narrow-viewport block reached
+   independently. Verified by driving a real pointer over a node, not by
+   calling a function. */
+.home-dial-node:hover .home-dial-dot,
+.home-dial-node:focus-visible .home-dial-dot{
+  border-color: var(--ds-primary) !important;
+  box-shadow: 0 4px 14px rgba(156,61,42,0.16), 0 1px 4px rgba(20,15,8,0.06) !important;
+  transform: translateY(-2px) !important;
+}
+.home-dial-node:hover .home-dial-label,
+.home-dial-node:focus-visible .home-dial-label{ color: var(--ds-primary) !important; }
+.home-dial-node:focus{ outline: none; }
+.home-dial-node:focus-visible{
+  outline: var(--ds-ring-width, 2px) solid var(--ds-primary-ring);
+  outline-offset: 3px;
+}
+
+/* ---- the hub ---- */
+.home-dial-hub{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 208px;
+  height: 208px;
+  margin: -104px 0 0 -104px;
+  border-radius: 50%;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  box-shadow: 0 2px 14px rgba(20,15,8,0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 26px;
+  pointer-events: none;
+}
+.home-dial-hub-rest,
+.home-dial-desc{
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  margin: 0;
+  text-align: center;
+  transition: opacity 160ms ease;
+}
+.home-dial-hub-rest{
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.home-dial-hub-title{
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ds-text);
+  line-height: 1.15;
+}
+.home-dial-hub-hint{
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--ds-text-faint);
+  letter-spacing: 0.02em;
+}
+.home-dial-desc{
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ds-text-muted);
+  opacity: 0;              /* never display:none — see note 2 above */
+}
+
+/* Reveal the hovered or keyboard-focused node's description, and stand the
+   rest state down. General sibling combinator, which only reaches forwards:
+   this is why the hub is the last child of the stage. */
+.home-dial-node:hover ~ .home-dial-hub .home-dial-hub-rest,
+.home-dial-node:focus-visible ~ .home-dial-hub .home-dial-hub-rest{ opacity: 0 !important; }
+
+.home-dial-node[data-dial="0"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="0"],
+.home-dial-node[data-dial="0"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="0"],
+.home-dial-node[data-dial="1"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="1"],
+.home-dial-node[data-dial="1"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="1"],
+.home-dial-node[data-dial="2"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="2"],
+.home-dial-node[data-dial="2"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="2"],
+.home-dial-node[data-dial="3"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="3"],
+.home-dial-node[data-dial="3"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="3"],
+.home-dial-node[data-dial="4"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="4"],
+.home-dial-node[data-dial="4"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="4"],
+.home-dial-node[data-dial="5"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="5"],
+.home-dial-node[data-dial="5"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="5"],
+.home-dial-node[data-dial="6"]:hover ~ .home-dial-hub .home-dial-desc[data-dial-desc="6"],
+.home-dial-node[data-dial="6"]:focus-visible ~ .home-dial-hub .home-dial-desc[data-dial-desc="6"]{
+  opacity: 1 !important;
+}
+
+/* The same reveal, driven by `data-active` on the stage instead of by a state
+   pseudo-class. This is the path that actually carries the feature; the rules
+   above are kept so a browser resolving :hover loses nothing, but nothing
+   depends on them. See the note in design-system.js for why: state pseudo-
+   classes could not be confirmed to resolve when driving the real page, and an
+   attribute selector is ordinary cascade that can be set and read back.
+
+   It is also what makes the dial work on touch, where there is no hover. */
+.home-dial-stage[data-active] .home-dial-hub-rest{ opacity: 0 !important; }
+
+.home-dial-stage[data-active="0"] .home-dial-desc[data-dial-desc="0"],
+.home-dial-stage[data-active="1"] .home-dial-desc[data-dial-desc="1"],
+.home-dial-stage[data-active="2"] .home-dial-desc[data-dial-desc="2"],
+.home-dial-stage[data-active="3"] .home-dial-desc[data-dial-desc="3"],
+.home-dial-stage[data-active="4"] .home-dial-desc[data-dial-desc="4"],
+.home-dial-stage[data-active="5"] .home-dial-desc[data-dial-desc="5"],
+.home-dial-stage[data-active="6"] .home-dial-desc[data-dial-desc="6"]{
+  opacity: 1 !important;
+}
+
+.home-dial-stage[data-active="0"] .home-dial-node[data-dial="0"] .home-dial-dot,
+.home-dial-stage[data-active="1"] .home-dial-node[data-dial="1"] .home-dial-dot,
+.home-dial-stage[data-active="2"] .home-dial-node[data-dial="2"] .home-dial-dot,
+.home-dial-stage[data-active="3"] .home-dial-node[data-dial="3"] .home-dial-dot,
+.home-dial-stage[data-active="4"] .home-dial-node[data-dial="4"] .home-dial-dot,
+.home-dial-stage[data-active="5"] .home-dial-node[data-dial="5"] .home-dial-dot,
+.home-dial-stage[data-active="6"] .home-dial-node[data-dial="6"] .home-dial-dot{
+  border-color: var(--ds-primary) !important;
+  box-shadow: 0 4px 14px rgba(156,61,42,0.16), 0 1px 4px rgba(20,15,8,0.06) !important;
+  transform: translateY(-2px) !important;
+}
+
+.home-dial-stage[data-active="0"] .home-dial-node[data-dial="0"] .home-dial-label,
+.home-dial-stage[data-active="1"] .home-dial-node[data-dial="1"] .home-dial-label,
+.home-dial-stage[data-active="2"] .home-dial-node[data-dial="2"] .home-dial-label,
+.home-dial-stage[data-active="3"] .home-dial-node[data-dial="3"] .home-dial-label,
+.home-dial-stage[data-active="4"] .home-dial-node[data-dial="4"] .home-dial-label,
+.home-dial-stage[data-active="5"] .home-dial-node[data-dial="5"] .home-dial-label,
+.home-dial-stage[data-active="6"] .home-dial-node[data-dial="6"] .home-dial-label{
+  color: var(--ds-primary) !important;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .home-dial-stage[data-active] .home-dial-node .home-dial-dot{ transform: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .home-dial-dot,
+  .home-dial-label,
+  .home-dial-hub-rest,
+  .home-dial-desc{ transition: none; }
+  .home-dial-node:hover .home-dial-dot,
+  .home-dial-node:focus-visible .home-dial-dot{ transform: none; }
+}
+
+/* ---- below 760px the ring becomes a list ----------------------------
+   A circle cannot narrow: shrink the radius far enough for a phone and the
+   labels collide. So the stage stops being a stage, the transforms are
+   dropped, and the same seven buttons stack. The hub goes with it, since a
+   hover-revealed description is no use on a touch screen. */
+@media (max-width:760px){
+  .home-dial{ display: block; }
+  .home-dial-stage{
+    position: static;
+    width: auto;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .home-dial-ring,
+  .home-dial-hub{ display: none; }
+  .home-dial-node{
+    position: static;
+    transform: none;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 13px;
+    text-align: left;
+    padding: 13px 15px;
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-lg);
+    box-shadow: 0 1px 4px rgba(20,15,8,0.06);
+  }
+  .home-dial-dot{
+    width: 38px;
+    height: 38px;
+    border: none;
+    box-shadow: none;
+    background: rgba(156,61,42,0.07);
+    border-radius: 10px;
+  }
+  .home-dial-dot svg{ width: 19px; height: 19px; }
+  .home-dial-label{ font-size: 14px; }
+}
+
+/* =====================================================================
    THE LONG-FORM TOAST
 
    Only the once-ever first-export notice uses this. The ordinary toast is

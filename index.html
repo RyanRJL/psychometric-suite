@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
 <link rel="stylesheet" href="styles.css?v=20260828aa">
-<link rel="stylesheet" href="design-system.css?v=20260828ac">
+<link rel="stylesheet" href="design-system.css?v=20260828ag">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -712,111 +712,149 @@
       <p class="home-db-sub">Neuropsychological calculators for clinical practice</p>
     </header>
 
-    <div class="home-db-grid">
+    <!-- ========== THE DIAL ==============================================
+         Seven tools on a ring rather than in a grid. The grid orphaned its
+         last card at every column count that divides seven, which is none
+         of them but one and seven.
 
-      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;converter&quot;]').click()">
-        <div class="home-db-card-icon">
-          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/>
-            <line x1="2" y1="11" x2="20" y2="11"/>
-            <line x1="11" y1="2" x2="11" y2="6"/><line x1="11" y1="16" x2="11" y2="20"/>
-          </svg>
+         Two things about this markup are load-bearing:
+
+         1. DOM ORDER IS THE WORKFLOW ORDER, and it is also the tab order.
+            Position comes from a CSS transform per node, not from source
+            order, so a keyboard or screen-reader user gets Performance
+            Validity, Premorbid, Score Tables, Change Analysis, Charts, then
+            the two utilities, which is the order the suite is actually used
+            in. Do not reorder these buttons to move something around the
+            ring; change --a instead.
+
+         2. THE HUB COMES LAST, and it must. Each node reveals its own
+            description in the hub via a general sibling selector
+            (`.home-dial-node[data-dial="n"]:hover ~ .home-dial-hub ...`),
+            which can only reach forwards. Move the hub above the nodes and
+            every description stops appearing, silently, with no error.
+
+         The hub carrying the description is what makes a ring viable at all:
+         a circle has nowhere to put a line of body copy next to each label,
+         so the copy goes in the middle and only the hovered one shows.
+         ================================================================ -->
+    <div class="home-dial">
+      <div class="home-dial-stage">
+
+        <div class="home-dial-ring" aria-hidden="true"></div>
+
+        <button class="home-dial-node" data-dial="0" aria-describedby="dial-desc-0" style="--a:0deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 2.5 L18 5.2 v4.8 c0 4.4-3 7.5-7 8.9 c-4-1.4-7-4.5-7-8.9 V5.2 Z"/>
+              <polyline points="7.8,11 10.2,13.4 14.8,8.2"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Performance Validity</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="1" aria-describedby="dial-desc-1" style="--a:51.4286deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;premorbid&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/>
+              <circle cx="11" cy="11" r="3"/>
+              <line x1="11" y1="1" x2="11" y2="5"/>
+              <line x1="11" y1="17" x2="11" y2="21"/>
+              <line x1="1" y1="11" x2="5" y2="11"/>
+              <line x1="17" y1="11" x2="21" y2="11"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Premorbid Estimation</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="2" aria-describedby="dial-desc-2" style="--a:102.8571deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;battery&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="4" width="18" height="14" rx="2"/>
+              <line x1="2" y1="9" x2="20" y2="9"/>
+              <line x1="8" y1="9" x2="8" y2="18"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Score Tables</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="3" aria-describedby="dial-desc-3" style="--a:154.2857deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;change-analysis&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="2,16 7,10 12,13 20,5"/>
+              <polyline points="15,5 20,5 20,10"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Change Analysis</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="4" aria-describedby="dial-desc-4" style="--a:205.7143deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;charts&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="3" y1="18.5" x2="19" y2="18.5"/>
+              <line x1="6" y1="15.5" x2="6" y2="10"/>
+              <line x1="11" y1="15.5" x2="11" y2="4.5"/>
+              <line x1="16" y1="15.5" x2="16" y2="7.5"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Score Charts</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="5" aria-describedby="dial-desc-5" style="--a:257.1429deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="4" y1="18" x2="18" y2="4"/>
+              <circle cx="6" cy="16" r="2.5"/>
+              <circle cx="16" cy="6" r="2.5"/>
+              <line x1="4" y1="11" x2="8" y2="11"/>
+              <line x1="6" y1="9" x2="6" y2="13"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Effect Size Tools</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="6" aria-describedby="dial-desc-6" style="--a:308.5714deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;converter&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/>
+              <line x1="2" y1="11" x2="20" y2="11"/>
+              <line x1="11" y1="2" x2="11" y2="6"/><line x1="11" y1="16" x2="11" y2="20"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Score Converter</span>
+        </button>
+
+        <!-- Hub. Last on purpose, see note above.
+
+             NOT aria-hidden: these paragraphs are the single copy of each
+             tool's description, and each node points at its own through
+             aria-describedby. That is also why the inactive ones are hidden
+             with opacity rather than display:none — display:none would drop
+             them out of the accessibility tree and take the description with
+             them, leaving screen-reader users with a bare label where sighted
+             users get a sentence. Only the rest-state block below is
+             decorative. -->
+        <div class="home-dial-hub">
+          <div class="home-dial-hub-rest" aria-hidden="true">
+            <span class="home-dial-hub-title">Seven tools</span>
+            <span class="home-dial-hub-hint">Point at one</span>
+          </div>
+          <p class="home-dial-desc" id="dial-desc-0" data-dial-desc="0">Score embedded and stand-alone PVTs against published cut-offs, with base-rate-aware interpretation.</p>
+          <p class="home-dial-desc" id="dial-desc-1" data-dial-desc="1">Estimate premorbid ability using ToPF and OPIE-4, compared against WAIS-IV and WMS-IV.</p>
+          <p class="home-dial-desc" id="dial-desc-2" data-dial-desc="2">Build APA-formatted report tables with confidence-interval columns and premorbid comparison.</p>
+          <p class="home-dial-desc" id="dial-desc-3" data-dial-desc="3">Evaluate test-retest change across five methods, from descriptive SDI to Crawford regression.</p>
+          <p class="home-dial-desc" id="dial-desc-4" data-dial-desc="4">Chart scores entered elsewhere in the suite against classification and reliable-change bands.</p>
+          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
+          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
         </div>
-        <div class="home-db-card-name">Score Converter</div>
-        <div class="home-db-card-desc">Convert between standard, scaled, T, z-scores and percentiles with classification bands</div>
-        <div class="home-db-card-arrow">→</div>
-      </button>
 
-      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;battery&quot;]').click()">
-        <div class="home-db-card-icon">
-          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="4" width="18" height="14" rx="2"/>
-            <line x1="2" y1="9" x2="20" y2="9"/>
-            <line x1="8" y1="9" x2="8" y2="18"/>
-          </svg>
-        </div>
-        <div class="home-db-card-name">Score Tables</div>
-        <div class="home-db-card-desc">Build APA-formatted neuropsych report tables with CI columns and premorbid comparison</div>
-        <div class="home-db-card-arrow">→</div>
-      </button>
-
-      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;change-analysis&quot;]').click()">
-        <div class="home-db-card-icon">
-          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="2,16 7,10 12,13 20,5"/>
-            <polyline points="15,5 20,5 20,10"/>
-          </svg>
-        </div>
-        <div class="home-db-card-name">Change Analysis</div>
-        <div class="home-db-card-desc">Evaluate test-retest change with five methods from descriptive SDI to Crawford regression</div>
-        <div class="home-db-card-arrow">→</div>
-      </button>
-
-      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;premorbid&quot;]').click()">
-        <div class="home-db-card-icon">
-          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <circle cx="11" cy="11" r="3"/>
-            <line x1="11" y1="1" x2="11" y2="5"/>
-            <line x1="11" y1="17" x2="11" y2="21"/>
-            <line x1="1" y1="11" x2="5" y2="11"/>
-            <line x1="17" y1="11" x2="21" y2="11"/>
-          </svg>
-        </div>
-        <div class="home-db-card-name">Premorbid Estimation</div>
-        <div class="home-db-card-desc">Estimate premorbid ability using ToPF and OPIE-4 models with WAIS-IV/WMS-IV comparison</div>
-        <div class="home-db-card-arrow">→</div>
-      </button>
-
-      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
-        <div class="home-db-card-icon">
-          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 2.5 L18 5.2 v4.8 c0 4.4-3 7.5-7 8.9 c-4-1.4-7-4.5-7-8.9 V5.2 Z"/>
-            <polyline points="7.8,11 10.2,13.4 14.8,8.2"/>
-          </svg>
-        </div>
-        <div class="home-db-card-name">Performance Validity</div>
-        <div class="home-db-card-desc">Score embedded and stand-alone PVTs against published cut-offs with base-rate-aware interpretation</div>
-        <div class="home-db-card-arrow">→</div>
-      </button>
-
-
-      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
-        <div class="home-db-card-icon">
-          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="4" y1="18" x2="18" y2="4"/>
-            <circle cx="6" cy="16" r="2.5"/>
-            <circle cx="16" cy="6" r="2.5"/>
-            <line x1="4" y1="11" x2="8" y2="11"/>
-            <line x1="6" y1="9" x2="6" y2="13"/>
-          </svg>
-        </div>
-        <div class="home-db-card-name">Effect Size Tools</div>
-        <div class="home-db-card-desc">Convert between and interpret effect sizes: Cohen's d, r, η², odds ratios and more</div>
-        <div class="home-db-card-arrow">→</div>
-      </button>
-
-      <!-- Score Charts. Not `home-db-card--muted`: that dimming marked the
-           reference tile that used to sit here as secondary to the tools
-           around it, and this is a tool. Methods & References keeps its
-           sidebar entry (08) and its footer link, so it is still two clicks
-           from anywhere; it just no longer takes a slot in the tool grid.
-           Bars scaled from the top-bar icon (20 -> 22 viewBox) so the two
-           read as the same page. -->
-      <button class="home-db-card" onclick="document.querySelector('.nav-item[data-target=&quot;charts&quot;]').click()">
-        <div class="home-db-card-icon">
-          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="18.5" x2="19" y2="18.5"/>
-            <line x1="6" y1="15.5" x2="6" y2="10"/>
-            <line x1="11" y1="15.5" x2="11" y2="4.5"/>
-            <line x1="16" y1="15.5" x2="16" y2="7.5"/>
-          </svg>
-        </div>
-        <div class="home-db-card-name">Score Charts</div>
-        <div class="home-db-card-desc">Chart scores entered elsewhere in the suite against classification and reliable-change bands</div>
-        <div class="home-db-card-arrow">→</div>
-      </button>
-
+      </div>
     </div>
   </section>
 
@@ -2937,7 +2975,7 @@
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260828aa"></script>
 <script src="app.js?v=20260828aa"></script>
-<script src="design-system.js?v=20260828aa" defer></script>
+<script src="design-system.js?v=20260828ab" defer></script>
 <script src="app-effectsize-page.js?v=20260828aa"></script>
 <script src="app-viz-page.js?v=20260828aa"></script>
 
