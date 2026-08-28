@@ -5860,14 +5860,11 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* Empty action column header (the Ã— delete column) â€” make it blend in
    so it doesn't appear as a weird detached strip on the right edge */
-#change-analysis .input-table thead tr:not(.table-group-row) th.row-actions,
-#change-analysis .input-table thead tr:not(.table-group-row) th:last-child:empty{
+#change-analysis .input-table thead th.row-actions,
+#change-analysis .input-table thead th:last-child:empty{
   background:transparent!important;
   border-bottom-color:transparent!important;
 }
-/* ...but NOT in the grouped header band: the method tables carry their own
-   paper background now, so a transparent last cell there reads as a white
-   notch cut out of the beige Norms/Scores/Results strip, not as blending. */
 
 /* Hide the "Test data & patient scores" heading in each Change Analysis
    method panel â€” the table itself is self-explanatory */

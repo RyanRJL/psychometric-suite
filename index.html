@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260828d">
-<link rel="stylesheet" href="design-system.css?v=20260828d">
+<link rel="stylesheet" href="styles.css?v=20260828e">
+<link rel="stylesheet" href="design-system.css?v=20260828e">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -317,14 +317,6 @@
     position:relative;
   }
   .change-method-body::before{content:none}
-  /* Capped and centred: on wide monitors an uncapped shell left the method
-     table adrift in empty space. 1400px comfortably fits Crawford's full
-     column set (the widest of the four methods); tabs and panel share the
-     same cap so they stay visually stacked. */
-  .change-flow-shell{
-    max-width:1400px;
-    margin:0 auto;
-  }
   .change-method-panel{
     display:none;
     max-width:none!important;
@@ -451,13 +443,6 @@
   }
   .change-table-scroll .input-table{
     margin:0;
-  }
-  /* The four method tables carry explicit pixel colgroups (see the comment on
-     #rci-basic-table). Below the sum of those widths the fixed-layout table
-     cannot shrink further, so the wrapper scrolls instead of clipping cells. */
-  @media (max-width:1240px){
-    .change-table-scroll{overflow-x:auto}
-    .change-table-scroll .input-table{min-width:1120px}
   }
   #change-analysis .input-table th{
     padding:7px 5px;
@@ -1476,35 +1461,17 @@
 
     <h2 class="block-title">Test data &amp; patient scores</h2>
     <table class="input-table" id="rci-basic-table">
-      <!-- Explicit colgroup: the Change Analysis wrapper sets table-layout:fixed,
-           and the injected colspan group row (Norms/Scores/Results) is the first
-           thead row, so per-th widths are ignored and each tab's columns used to
-           be negotiated independently. Shared columns (dates, RCI, p, Outcome)
-           carry the same widths on every method tab so they do not jump when
-           switching tabs; the flexible column absorbs each method's difference. -->
-      <colgroup>
-        <col style="width:30px">
-        <col><!-- Subtest flexes: absorbs each method's slack -->
-        <col style="width:120px">
-        <col style="width:110px">
-        <col style="width:120px">
-        <col style="width:120px">
-        <col style="width:100px">
-        <col style="width:90px">
-        <col style="width:200px"><!-- Outcome -->
-        <col style="width:40px">
-      </colgroup>
       <thead>
         <tr>
           <th class="row-num">#</th>
-          <th>Subtest</th>
-          <th>SD</th>
-          <th>r</th>
-          <th class="d1-head">Date 1</th>
-          <th class="d2-head">Date 2</th>
-          <th style="text-align:right">RCI (z)</th>
-          <th style="text-align:right"><i>p</i></th>
-          <th>Outcome</th>
+          <th style="min-width:180px">Subtest</th>
+          <th style="width:80px">SD</th>
+          <th style="width:80px">r</th>
+          <th style="width:90px" class="d1-head">Date 1</th>
+          <th style="width:90px" class="d2-head">Date 2</th>
+          <th style="width:80px;text-align:right">RCI (z)</th>
+          <th style="width:80px;text-align:right"><i>p</i></th>
+          <th style="width:160px">Outcome</th>
           <th class="row-actions"></th>
         </tr>
       </thead>
@@ -1576,40 +1543,20 @@
 
     <h2 class="block-title">Test data &amp; patient scores</h2>
     <table class="input-table" id="rci-practice-table">
-      <!-- Colgroup shared with McSweeney and Crawford: identical widths for the
-           identically-headed columns (#, Subtest, M/SD, r, dates, RCI, p), so
-           those columns sit at the same x-position on all three tabs. Outcome
-           has no width and absorbs each method's extra columns. See the note
-           on #rci-basic-table. -->
-      <colgroup>
-        <col style="width:30px">
-        <col><!-- Subtest flexes: absorbs each method's slack -->
-        <col style="width:76px">
-        <col style="width:76px">
-        <col style="width:76px">
-        <col style="width:76px">
-        <col style="width:70px">
-        <col style="width:95px">
-        <col style="width:95px">
-        <col style="width:80px">
-        <col style="width:70px">
-        <col style="width:150px"><!-- Outcome -->
-        <col style="width:40px">
-      </colgroup>
       <thead>
         <tr>
           <th class="row-num">#</th>
-          <th>Subtest</th>
-          <th>M₁</th>
-          <th>SD₁</th>
-          <th>M₂</th>
-          <th>SD₂</th>
-          <th>r</th>
-          <th class="d1-head">Date 1</th>
-          <th class="d2-head">Date 2</th>
-          <th style="text-align:right">RCI (z)</th>
-          <th style="text-align:right"><i>p</i></th>
-          <th>Outcome</th>
+          <th style="min-width:180px">Subtest</th>
+          <th style="width:70px">M₁</th>
+          <th style="width:70px">SD₁</th>
+          <th style="width:70px">M₂</th>
+          <th style="width:70px">SD₂</th>
+          <th style="width:65px">r</th>
+          <th style="width:80px" class="d1-head">Date 1</th>
+          <th style="width:80px" class="d2-head">Date 2</th>
+          <th style="width:75px;text-align:right">RCI (z)</th>
+          <th style="width:75px;text-align:right"><i>p</i></th>
+          <th style="width:150px">Outcome</th>
           <th class="row-actions"></th>
         </tr>
       </thead>
@@ -1684,39 +1631,21 @@
 
     <h2 class="block-title">Test data &amp; patient scores</h2>
     <table class="input-table" id="rci-srb-table">
-      <!-- Same widths as #rci-practice-table for every shared column; the extra
-           Ŷ₂ column comes out of the flexible Outcome column. -->
-      <colgroup>
-        <col style="width:30px">
-        <col><!-- Subtest flexes: absorbs each method's slack -->
-        <col style="width:76px">
-        <col style="width:76px">
-        <col style="width:76px">
-        <col style="width:76px">
-        <col style="width:70px">
-        <col style="width:95px">
-        <col style="width:95px">
-        <col style="width:80px">
-        <col style="width:80px">
-        <col style="width:70px">
-        <col style="width:150px"><!-- Outcome -->
-        <col style="width:40px">
-      </colgroup>
       <thead>
         <tr>
           <th class="row-num">#</th>
-          <th>Subtest</th>
-          <th>M₁</th>
-          <th>SD₁</th>
-          <th>M₂</th>
-          <th>SD₂</th>
-          <th>r</th>
-          <th class="d1-head">Date 1</th>
-          <th class="d2-head">Date 2</th>
-          <th style="text-align:right">Ŷ₂</th>
-          <th style="text-align:right">RCI (z)</th>
-          <th style="text-align:right"><i>p</i></th>
-          <th>Outcome</th>
+          <th style="min-width:180px">Subtest</th>
+          <th style="width:70px">M₁</th>
+          <th style="width:70px">SD₁</th>
+          <th style="width:70px">M₂</th>
+          <th style="width:70px">SD₂</th>
+          <th style="width:65px">r</th>
+          <th style="width:80px" class="d1-head">Date 1</th>
+          <th style="width:80px" class="d2-head">Date 2</th>
+          <th style="width:75px;text-align:right">Ŷ₂</th>
+          <th style="width:75px;text-align:right">RCI (z)</th>
+          <th style="width:75px;text-align:right"><i>p</i></th>
+          <th style="width:140px">Outcome</th>
           <th class="row-actions"></th>
         </tr>
       </thead>
@@ -1798,41 +1727,22 @@
 
     <h2 class="block-title">Test data &amp; patient scores</h2>
     <table class="input-table" id="rci-crawford-table">
-      <!-- Same widths as #rci-practice-table for every shared column; the extra
-           N and Ŷ₂ columns come out of the flexible Outcome column. -->
-      <colgroup>
-        <col style="width:30px">
-        <col><!-- Subtest flexes: absorbs each method's slack -->
-        <col style="width:76px">
-        <col style="width:76px">
-        <col style="width:76px">
-        <col style="width:76px">
-        <col style="width:70px">
-        <col style="width:70px">
-        <col style="width:95px">
-        <col style="width:95px">
-        <col style="width:80px">
-        <col style="width:80px">
-        <col style="width:70px">
-        <col style="width:150px"><!-- Outcome -->
-        <col style="width:40px">
-      </colgroup>
       <thead>
         <tr>
           <th class="row-num">#</th>
-          <th>Subtest</th>
-          <th>M₁</th>
-          <th>SD₁</th>
-          <th>M₂</th>
-          <th>SD₂</th>
-          <th>r</th>
-          <th>N</th>
-          <th class="d1-head">Date 1</th>
-          <th class="d2-head">Date 2</th>
-          <th style="text-align:right">Ŷ₂</th>
-          <th style="text-align:right"><i>t</i>(RB)</th>
-          <th style="text-align:right"><i>p</i></th>
-          <th>Outcome</th>
+          <th style="min-width:180px">Subtest</th>
+          <th style="width:65px">M₁</th>
+          <th style="width:65px">SD₁</th>
+          <th style="width:65px">M₂</th>
+          <th style="width:65px">SD₂</th>
+          <th style="width:60px">r</th>
+          <th style="width:60px">N</th>
+          <th style="width:75px" class="d1-head">Date 1</th>
+          <th style="width:75px" class="d2-head">Date 2</th>
+          <th style="width:75px;text-align:right">Ŷ₂</th>
+          <th style="width:75px;text-align:right"><i>t</i>(RB)</th>
+          <th style="width:75px;text-align:right"><i>p</i></th>
+          <th style="width:140px">Outcome</th>
           <th class="row-actions"></th>
         </tr>
       </thead>
@@ -2470,11 +2380,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260828d"></script>
-<script src="app.js?v=20260828d"></script>
-<script src="design-system.js?v=20260828d" defer></script>
-<script src="app-effectsize-page.js?v=20260828d"></script>
-<script src="app-viz-page.js?v=20260828d"></script>
+<script src="data.js?v=20260828e"></script>
+<script src="app.js?v=20260828e"></script>
+<script src="design-system.js?v=20260828e" defer></script>
+<script src="app-effectsize-page.js?v=20260828e"></script>
+<script src="app-viz-page.js?v=20260828e"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
