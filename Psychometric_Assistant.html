@@ -14565,8 +14565,25 @@ input[type="number"].ds-age-pop-input{
   .tabs .tab span{white-space:normal}
 
   /* --- Tab strips wrap --------------------------------------------- */
-  #premorbid .pre-tabs{flex-wrap:wrap !important}
+  /* Pinned nowrap by `#premorbid.ds-prem-restructured .pre-tabs`, which is
+     1-2-0 AND !important, so a 1-1-0 override loses even carrying !important
+     of its own. The page-state class has to be matched to beat it. Three tabs
+     of 158 + 134 + 146 in a 251px strip is what it was producing. */
+  #premorbid.ds-prem-restructured .pre-tabs{flex-wrap:wrap !important}
   #premorbid .pre-tabs .tab{flex:1 1 auto !important;min-width:0 !important}
+
+  /* --- Two-up panels stack ------------------------------------------ */
+  /* Effect Sizes puts the slider row beside the mode pane in a nowrap flex
+     row: 252 + 16 + 175 against a 303px card. */
+  #effectsize .es-input-panel{flex-wrap:wrap !important}
+  #effectsize .es-input-panel > *{flex:1 1 100% !important;min-width:0 !important}
+
+  /* The premorbid link button is a 206px control inside a 22px anchor
+     wrapper, so it overflows its own wrapper by design and lands off-screen
+     once the card is narrow. `.ds-prem-card` already wraps, so giving the
+     wrapper a full-width basis puts the button on its own row. */
+  #battery .bat-prem-link-wrap{flex:1 1 100% !important;min-width:0 !important}
+  #battery .bat-prem-link-btn{max-width:100% !important}
 }
 
 </style>
