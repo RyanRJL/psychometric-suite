@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260828c">
-<link rel="stylesheet" href="design-system.css?v=20260828c">
+<link rel="stylesheet" href="styles.css?v=20260828d">
+<link rel="stylesheet" href="design-system.css?v=20260828d">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -317,6 +317,14 @@
     position:relative;
   }
   .change-method-body::before{content:none}
+  /* Capped and centred: on wide monitors an uncapped shell left the method
+     table adrift in empty space. 1400px comfortably fits Crawford's full
+     column set (the widest of the four methods); tabs and panel share the
+     same cap so they stay visually stacked. */
+  .change-flow-shell{
+    max-width:1400px;
+    margin:0 auto;
+  }
   .change-method-panel{
     display:none;
     max-width:none!important;
@@ -443,12 +451,6 @@
   }
   .change-table-scroll .input-table{
     margin:0;
-    /* Size each method table to its colgroup instead of stretching to the
-       panel. With the shared fixed column widths this keeps identically-headed
-       columns at identical positions across the method tabs, without the
-       method-specific leftover space piling into one over-wide column. */
-    width:auto;
-    max-width:100%;
   }
   /* The four method tables carry explicit pixel colgroups (see the comment on
      #rci-basic-table). Below the sum of those widths the fixed-layout table
@@ -1482,14 +1484,14 @@
            switching tabs; the flexible column absorbs each method's difference. -->
       <colgroup>
         <col style="width:30px">
-        <col style="width:340px"><!-- Subtest: widest here, fewest columns -->
+        <col><!-- Subtest flexes: absorbs each method's slack -->
+        <col style="width:120px">
+        <col style="width:110px">
+        <col style="width:120px">
+        <col style="width:120px">
         <col style="width:100px">
         <col style="width:90px">
-        <col style="width:95px">
-        <col style="width:95px">
-        <col style="width:80px">
-        <col style="width:70px">
-        <col style="width:150px"><!-- Outcome -->
+        <col style="width:200px"><!-- Outcome -->
         <col style="width:40px">
       </colgroup>
       <thead>
@@ -1581,7 +1583,7 @@
            on #rci-basic-table. -->
       <colgroup>
         <col style="width:30px">
-        <col style="width:240px">
+        <col><!-- Subtest flexes: absorbs each method's slack -->
         <col style="width:76px">
         <col style="width:76px">
         <col style="width:76px">
@@ -1686,7 +1688,7 @@
            Ŷ₂ column comes out of the flexible Outcome column. -->
       <colgroup>
         <col style="width:30px">
-        <col style="width:240px">
+        <col><!-- Subtest flexes: absorbs each method's slack -->
         <col style="width:76px">
         <col style="width:76px">
         <col style="width:76px">
@@ -1800,7 +1802,7 @@
            N and Ŷ₂ columns come out of the flexible Outcome column. -->
       <colgroup>
         <col style="width:30px">
-        <col style="width:240px">
+        <col><!-- Subtest flexes: absorbs each method's slack -->
         <col style="width:76px">
         <col style="width:76px">
         <col style="width:76px">
@@ -2468,11 +2470,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260828c"></script>
-<script src="app.js?v=20260828c"></script>
-<script src="design-system.js?v=20260828c" defer></script>
-<script src="app-effectsize-page.js?v=20260828c"></script>
-<script src="app-viz-page.js?v=20260828c"></script>
+<script src="data.js?v=20260828d"></script>
+<script src="app.js?v=20260828d"></script>
+<script src="design-system.js?v=20260828d" defer></script>
+<script src="app-effectsize-page.js?v=20260828d"></script>
+<script src="app-viz-page.js?v=20260828d"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
