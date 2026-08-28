@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260828u">
-<link rel="stylesheet" href="design-system.css?v=20260828u">
+<link rel="stylesheet" href="styles.css?v=20260828v">
+<link rel="stylesheet" href="design-system.css?v=20260828v">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1377,16 +1377,8 @@
         </span>
         <span class="pvt-status" id="pvt-status-tomm">—</span>
       </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="acs" role="tab">
-        <span class="pvt-method-num">07</span>
-        <span class="pvt-method-main">
-          <span class="pvt-method-label">ACS PVTs</span>
-          <span class="pvt-method-meta">WAIS-IV/WMS-IV · multivariate</span>
-        </span>
-        <span class="pvt-status" id="pvt-status-acs">—</span>
-      </button>
       <button type="button" class="pvt-method-tab" data-pvt-tab="summary" role="tab">
-        <span class="pvt-method-num">08</span>
+        <span class="pvt-method-num">07</span>
         <span class="pvt-method-main">
           <span class="pvt-method-label">Summary</span>
           <span class="pvt-method-meta">Aggregation · Larrabee (2014)</span>
@@ -1698,76 +1690,6 @@
       </div>
     </div>
 
-    <!-- ===== ACS multivariate PVTs ===== -->
-    <div class="pvt-tab-content" id="pvt-acs">
-      <div class="pvt-workspace">
-        <div class="pvt-card">
-          <div class="pvt-card-kicker">From the ACS score report</div>
-          <div class="pvt-field-grid">
-            <div class="field">
-              <label>Base-rate cut-off applied <span class="hint">(chosen a priori)</span></label>
-              <select id="pvt-acs-cutoff">
-                <option value="25">≤ 25% of the clinical sample</option>
-                <option value="15">≤ 15%</option>
-                <option value="10" selected>≤ 10% · widely used</option>
-                <option value="5">≤ 5%</option>
-                <option value="2">≤ 2%</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>ACS PVT scores at or below it <span class="hint">(of 5)</span></label>
-              <input type="number" min="0" max="5" step="1" id="pvt-acs-count" placeholder="e.g. 2">
-            </div>
-            <div class="field pvt-field-wide">
-              <label>Comparison group</label>
-              <select id="pvt-acs-group"></select>
-            </div>
-          </div>
-          <div class="pvt-card-kicker" style="margin-top:6px">Raw scores — optional, computes the five-subtest model</div>
-          <div class="pvt-field-grid">
-            <div class="field">
-              <label>Reliable Digit Span <span class="hint">(as on the RDS tab)</span></label>
-              <input type="number" min="0" max="17" step="1" id="pvt-acs-rds" placeholder="e.g. 8">
-            </div>
-            <div class="field">
-              <label>Word Choice <span class="hint">(raw, /50)</span></label>
-              <input type="number" min="0" max="50" step="1" id="pvt-acs-wct" placeholder="e.g. 45">
-            </div>
-            <div class="field">
-              <label>LM II Recognition <span class="hint">(raw)</span></label>
-              <input type="number" min="0" max="50" step="1" id="pvt-acs-lmr" placeholder="e.g. 22">
-            </div>
-            <div class="field">
-              <label>VPA II Recognition <span class="hint">(raw)</span></label>
-              <input type="number" min="0" max="60" step="1" id="pvt-acs-vpar" placeholder="e.g. 32">
-            </div>
-            <div class="field">
-              <label>VR II Recognition <span class="hint">(raw)</span></label>
-              <input type="number" min="0" max="10" step="1" id="pvt-acs-vrr" placeholder="e.g. 5">
-            </div>
-          </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Multivariate base rates: Holdnack, Millis, Larrabee &amp; Iverson (2013), ch. 7 of <i>WAIS-IV, WMS-IV, and ACS: Advanced Clinical Interpretation</i>, Tables 7.1–7.5 (© 2009 Pearson). Five-subtest model: Miller et al. (2011), coefficients and external validation as printed in the same chapter.</span>
-            <span class="pvt-source-accuracy">Interpreted against published base rates — the raw ACS cut-off scores are withheld by the source for test security and are not stored here.</span>
-          </div>
-          <details class="formula-disclosure">
-            <summary>How to use this tab</summary>
-            <div class="formula-body">
-              <p>The five ACS performance validity measures are Word Choice, WAIS-IV Reliable Digit Span, and the WMS-IV Logical Memory II, Verbal Paired Associates II and Visual Reproduction II recognition scores. The ACS score report states how many of the five fell at or below each base-rate cut-off of the overall clinical sample (n = 371); enter that count here and this tab reports how often that pattern occurs in a comparable clinical group, the WMS-IV normative sample, and simulators. Select the cut-off criterion <em>before</em> the evaluation — the chapter records a case where a clinician shopped between cut-offs after seeing the scores and calls it "clearly, an inappropriate use of the base rates". Its worked criterion treats one score at or below the 15% cut-off as <em>possible</em>, and two or more at or below the 10% cut-off as <em>probable</em>, invalid performance; two or more at 15% or 10%, or three or more at 25%, is unusual for most clinical groups. Where the five raw scores are entered, the Miller et al. (2011) logistic regression — L = 10.61 − 0.65·RDS − 0.23·WCT − 0.007·LMR + 0.24·VPAR − 0.95·VRR, p = e<sup>L</sup>/(1 + e<sup>L</sup>) — estimates resemblance to coached simulators versus moderate–severe TBI (AUC .95 in derivation, .87 in the chapter's external validation); no classification cut-off is published for the probability, and the VPA II coefficient is positive as printed. A Word Choice raw score below 20 falls below the published random-responding range (20–30, the 90% binomial CI); the clinical cut-offs above that range are in the ACS score report only.</p>
-            </div>
-          </details>
-        </div>
-        <div class="pvt-outcome">
-          <div class="pvt-result" id="pvt-acs-result"></div>
-          <div id="pvt-acs-rates"></div>
-          <details class="pvt-caution">
-            <summary><strong>Caution.</strong> An aggregate, not an extra indicator — and its rates do not hold in intellectual disability.</summary>
-            <div class="pvt-caution-body">The ACS pattern already aggregates five indicators, one of which is WAIS-IV Reliable Digit Span, so it is excluded from this page's independent-indicator count and must not be counted alongside a separately entered RDS. Mild intellectual disability is the standing exception to every cut-off (88% have two or more low scores at the 25% cut-off), and low GAI or low education raise the rates — compare against the band matching the examinee. Base rates come from non-litigating clinical patients; none had an incentive to underperform (Holdnack et al., 2013).</div>
-          </details>
-        </div>
-      </div>
-    </div>
-
     <!-- ===== Summary & Aggregation ===== -->
     <div class="pvt-tab-content" id="pvt-summary">
       <div class="pvt-workspace">
@@ -1817,7 +1739,6 @@
         <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
         <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
-        <p>Holdnack, J. A., Millis, S., Larrabee, G. J., &amp; Iverson, G. L. (2013). Assessing performance validity with the ACS. In J. A. Holdnack, L. W. Drozdick, L. G. Weiss, &amp; G. L. Iverson (Eds.), <i>WAIS-IV, WMS-IV, and ACS: Advanced clinical interpretation</i> (pp. 331–365). Oxford: Academic Press.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
         <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
@@ -2881,7 +2802,6 @@
       <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
       <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
       <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224. [Reliable Digit Span: scoring, floor rule and traditional cut-off.]</p>
-      <p>Holdnack, J. A., Millis, S., Larrabee, G. J., &amp; Iverson, G. L. (2013). Assessing performance validity with the ACS. In J. A. Holdnack, L. W. Drozdick, L. G. Weiss, &amp; G. L. Iverson (Eds.), <i>WAIS-IV, WMS-IV, and ACS: Advanced clinical interpretation</i> (pp. 331–365). Oxford: Academic Press.</p>
       <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
       <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373. [Aggregation of multiple PVTs; classification accuracy by number of failures.]</p>
       <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. [TOMM cut-offs and the sensitivity/specificity values behind the predictive-power display, Tables 16–17.]</p>
@@ -2925,11 +2845,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260828u"></script>
-<script src="app.js?v=20260828u"></script>
-<script src="design-system.js?v=20260828u" defer></script>
-<script src="app-effectsize-page.js?v=20260828u"></script>
-<script src="app-viz-page.js?v=20260828u"></script>
+<script src="data.js?v=20260828v"></script>
+<script src="app.js?v=20260828v"></script>
+<script src="design-system.js?v=20260828v" defer></script>
+<script src="app-effectsize-page.js?v=20260828v"></script>
+<script src="app-viz-page.js?v=20260828v"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

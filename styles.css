@@ -9589,7 +9589,7 @@ body.rb-docked-active{padding-right:0}
 /* ---- Tab strip: white rounded-top sheet ---- */
 .pvt-method-tabs{
   display:grid;
-  grid-template-columns:repeat(8,minmax(110px,1fr));
+  grid-template-columns:repeat(7,minmax(120px,1fr));
   gap:0;
   background:#FFFFFF;
   border:1px solid rgba(20,15,5,0.08);
