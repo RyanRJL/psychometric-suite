@@ -6666,6 +6666,100 @@ check('one dropdown entry per base-rate family, and rows auto-reband to the age'
   return bad.length === 0 || bad.join('; ');
 });
 
+/* ==========================================================================
+   38. Band-mismatch caution on Change Analysis and the SD Index
+   On those pages the band selects the RETEST SAMPLE the r was measured in —
+   a clinical choice (All Ages often has larger N and stronger r; WMS-IV
+   publishes overlapping bands) — so a band that excludes the patient age is
+   FLAGGED, never auto-rebanded and never gated: swapping m1/sd1/m2/sd2/r
+   under typed scores would silently change every printed result, and keeping
+   a neighbouring band or All Ages can be deliberate. This is the deliberate
+   OPPOSITE of the Score Tables base-rate treatment (§37), where the band is
+   a mechanical lookup and rows reband silently.
+   ========================================================================== */
+heading('38. Band-mismatch caution (Change Analysis / SDI)');
+
+check('the mismatch flag fires only when a real band excludes a real age', () => {
+  const c = { patientAge: () => 45, escapeHtml: s => String(s) };
+  vm.createContext(c);
+  vm.runInContext(
+    extractFn(APP_SRC, 'ageBandRange') + ';' + extractFn(APP_SRC, 'ageBandLabel') + ';'
+    + extractFn(APP_SRC, 'groupAgeMismatchHtml') + ';globalThis.__F = groupAgeMismatchHtml;', c);
+  const f = c.__F;
+  const bad = [];
+  if (!f('RBANS Subtests · Ages 12-19')) bad.push('adolescent norms under a 45-year-old raise no flag');
+  if (f('RBANS Subtests · Ages 20-89')) bad.push('a band containing the age is flagged');
+  if (f('CVLT-3 Standard Form · All Ages')) bad.push('All Ages is flagged — it has no band to contradict');
+  c.patientAge = () => null;
+  if (f('RBANS Subtests · Ages 12-19')) bad.push('a blank age is flagged — there is nothing to contradict yet');
+  /* The flag text names the band and the age, so it reads as a statement the
+     clinician can check, not a bare warning icon. */
+  c.patientAge = () => 45;
+  const html = f('RBANS Subtests · Ages 12-19');
+  if (!/Ages 12-19/.test(html) || !/45/.test(html)) bad.push('the flag does not name the band and the age');
+  if (!/band-age-flag/.test(html)) bad.push('the flag lost its class, so it renders unstyled');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('both group headers carry the flag, and nothing computes from it', () => {
+  const bad = [];
+  if (!/groupAgeMismatchHtml\(r\.group\)/.test(extractFn(APP_SRC, 'renderRci'))) bad.push('the Change Analysis headers lost the flag');
+  if (!/groupAgeMismatchHtml\(r\.group\)/.test(extractFn(APP_SRC, 'renderSdi'))) bad.push('the SDI headers lost the flag');
+  /* A CAUTION, not a gate: the four calc functions and the SDI computation
+     must never read the patient age — the mismatch may not blank or alter a
+     single number. */
+  for (const fn of ['calcBasicRow', 'calcPracticeRow', 'calcSrbRow', 'calcCrawfordRow', 'sdiComputeChange']){
+    if (/patientAge|groupAgeMismatch/.test(extractFn(APP_SRC, fn))) bad.push(fn + ' consults the age — the flag has become a gate');
+  }
+  /* And no auto-reband on these pages: the reband helper belongs to the
+     base-rate rows on Score Tables alone. */
+  if (/baseRateGroupForAge/.test(extractFn(APP_SRC, 'renderRci') + extractFn(APP_SRC, 'renderSdi'))) {
+    bad.push('Change Analysis or SDI rebands rows — the band there is a clinical choice, not an age lookup');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a changed age re-renders the loaded tables, without accepting any method', () => {
+  const bad = [];
+  const refresh = extractFn(APP_SRC, 'refreshBandMismatchViews');
+  if (!/renderSdi\(\)/.test(refresh) || !/renderRci\(m\)/.test(refresh)) bad.push('the refresh no longer re-renders both pages');
+  if (!/lastMismatchAge/.test(refresh)) bad.push('the refresh is unguarded — typing 7 then 2 for 72 re-renders four tables against age 7');
+  /* View-only: consent (§34) is accepted by ENTERING data, and an age change
+     is not data entry on these pages. */
+  if (/rciMarkMethodUsed/.test(refresh)) bad.push('the age-change refresh accepts methods into the report — §34 forbids this');
+  const master = APP_SRC.slice(APP_SRC.indexOf("getElementById('patient-age')?.addEventListener"), APP_SRC.indexOf("getElementById('patient-age')?.addEventListener") + 800);
+  if (!/refreshBandMismatchViews\(\)/.test(master)) bad.push('the master age input never refreshes the flags');
+  const mirrorAt = APP_SRC.indexOf('const mirror = () =>');
+  const mirror = mirrorAt < 0 ? '' : APP_SRC.slice(mirrorAt, mirrorAt + 600);
+  if (!/refreshBandMismatchViews/.test(mirror)) bad.push('the #pre-age mirror never refreshes the flags');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the dropdown tags the matching band only while all bands are showing', () => {
+  /* With the age filter active every visible band already matches — that is
+     what the filter does — so the tag would be noise on every pill. It earns
+     its place under "Show all bands", where the matching band needs picking
+     out of the full list. */
+  const build = extractFn(APP_SRC, 'buildFamilyListHtml');
+  const bad = [];
+  if (!/matches age/.test(build)) bad.push('the matching-band tag is gone');
+  const tagAt = build.indexOf('ageMatchTag');
+  const tagFn = build.slice(build.indexOf('const ageMatchTag'), build.indexOf('matches age') + 40);
+  if (!/familyListShowAllBands/.test(tagFn)) bad.push('the tag ignores the show-all-bands state, so it stamps every pill under the filter');
+  if (tagAt < 0) bad.push('the tag helper is gone');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the SDI dropdown carries the age-band note, without the interval clause', () => {
+  const bad = [];
+  if (!/comboAgeBandNoteHtml\(\{ interval: false \}\)/.test(extractFn(APP_SRC, 'rebuildSdiFamilyList'))) {
+    bad.push('the SDI list lost its age-band explainer');
+  }
+  const note = extractFn(APP_SRC, 'comboAgeBandNoteHtml');
+  if (!/interval \?/.test(note) && !/interval\s*\?/.test(note)) bad.push('the interval clause is unconditional — the SDI list has no greyed intervals to explain');
+  return bad.length === 0 || bad.join('; ');
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

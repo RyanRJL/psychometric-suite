@@ -3253,8 +3253,14 @@ function comboCustomTag(isCustom){
 function comboFooterHtml(){
   return '<div class="combo-footer"><span class="combo-count">0 selected</span><button class="btn btn-ghost combo-clear" type="button">Clear</button><button class="btn btn-primary combo-add" type="button" disabled>Add selected tests</button></div>';
 }
-function comboAgeBandNoteHtml(){
-  return '<div class="combo-ageband-note"><span class="combo-ageband-note-icon">ℹ</span><span><strong>Age bands</strong>: more age-specific but smaller <em>N</em> (less stable <em>r</em>). <strong>All Ages</strong>: larger <em>N</em>, stronger <em>r</em>. <strong>Greyed time</strong> = the retest interval each <em>r</em> was measured over.</span></div>';
+/* The interval clause is Change Analysis-only: the SD Index list carries no
+   greyed retest-interval suffixes, and explaining a marking the list does not
+   have would send someone looking for it. */
+function comboAgeBandNoteHtml(opts){
+  const interval = !opts || opts.interval !== false;
+  return '<div class="combo-ageband-note"><span class="combo-ageband-note-icon">ℹ</span><span><strong>Age bands</strong>: more age-specific but smaller <em>N</em> (less stable <em>r</em>). <strong>All Ages</strong>: larger <em>N</em>, stronger <em>r</em>.'
+    + (interval ? ' <strong>Greyed time</strong> = the retest interval each <em>r</em> was measured over.' : '')
+    + '</span></div>';
 }
 function comboCheckboxItemHtml(f, isCustom, indented, groupKey, displayLabel, suffix){
   const cls = 'combo-item combo-check' + (indented ? ' combo-indented' : '');
@@ -3459,6 +3465,7 @@ document.getElementById('patient-age')?.addEventListener('input', () => {
   if (typeof calcPremorbid === 'function'){ calcPremorbid(); calcPredict(); calcOpiePredict(); }
   refreshPatientAgeIndicator();
   rebuildFamilyListsForAge();
+  refreshBandMismatchViews();
   /* The Data page reports which coefficient an interval rests on, and that
      answer moves with the age for every banded measure. Left un-rendered it
      would keep showing the previous patient's reading — the same staleness the
@@ -3601,7 +3608,10 @@ function renderSdi(){
         const stLabel = groupTypes.size > 1 ? 'Mixed' : scoreTypeLabel([...groupTypes][0]);
         badge = ` <span class="type-badge">· ${escapeHtml(stLabel)}</span>`;
       }
-      ghr.innerHTML = `<td colspan="${colspan}">${escapeHtml(stripAgeRange(r.group))}${badge}<button class="group-remove" data-rm-sdi-group="${escapeAttr(r.group)}" title="Remove group">×</button></td>`;
+      /* stripAgeRange hides the band from this header, which makes the
+         mismatch flag MORE load-bearing here: it is the only thing that says
+         which band these rows are actually on when it contradicts the age. */
+      ghr.innerHTML = `<td colspan="${colspan}">${escapeHtml(stripAgeRange(r.group))}${badge}${groupAgeMismatchHtml(r.group)}<button class="group-remove" data-rm-sdi-group="${escapeAttr(r.group)}" title="Remove group">×</button></td>`;
       tbody.appendChild(ghr);
       lastGroup = r.group;
     } else if (!r.group){
@@ -3785,7 +3795,7 @@ function rebuildSdiFamilyList(){
      for the opposite reason — they have no second administration to compare. */
   const families = Object.keys(db).sort()
     .filter(f => !isAltFormFamily(f) && !isSingleAdministrationFamily(f));
-  list.innerHTML = comboFooterHtml() + buildFamilyListHtml(families);
+  list.innerHTML = comboFooterHtml() + comboAgeBandNoteHtml({ interval: false }) + buildFamilyListHtml(families);
   wireMultiSelectFamilyList(list, families => {
     families.forEach(loadFamilyIntoSdi);
     const inp = document.getElementById('sdi-family-input');
@@ -4144,7 +4154,7 @@ function renderRci(method){
     if (r.group && r.group !== lastGroup){
       const ghr = document.createElement('tr');
       ghr.className = 'group-header';
-      ghr.innerHTML = `<td colspan="${colCount}">${escapeHtml(caGroupDisplay(r.group))}<button class="group-remove" data-rm-rci-group="${escapeAttr(r.group)}" data-method="${method}" title="Remove group">×</button></td>`;
+      ghr.innerHTML = `<td colspan="${colCount}">${escapeHtml(caGroupDisplay(r.group))}${groupAgeMismatchHtml(r.group)}<button class="group-remove" data-rm-rci-group="${escapeAttr(r.group)}" data-method="${method}" title="Remove group">×</button></td>`;
       tbody.appendChild(ghr);
       lastGroup = r.group;
     } else if (!r.group){
@@ -4523,6 +4533,51 @@ function baseRateGroupForAge(group, name, age){
   return null;
 }
 
+/* ── BAND-MISMATCH FLAG (Change Analysis + SD Index) ─────────────────────────
+
+   On these pages the band selects the RETEST SAMPLE the r and practice effect
+   were measured in — a clinical choice, not an age lookup (All Ages often has
+   the larger N and stronger r; WMS-IV publishes overlapping bands). So unlike
+   Score Tables' base-rate rows, a loaded band that excludes the patient age is
+   NEVER auto-rebanded and NEVER gated: swapping m1/sd1/m2/sd2/r under
+   already-typed scores would silently change every printed result, and using
+   a neighbouring band or All Ages can be deliberate. It IS flagged, though —
+   RBANS 12-19 norms under a 45-year-old, loaded before the age was typed or
+   left behind by an age change, would otherwise compute silently on the wrong
+   sample. A caution the clinician can act on (re-add the family, which the
+   age-filtered dropdown then narrows correctly) or knowingly keep. */
+function groupAgeMismatchHtml(group){
+  const band = ageBandRange(group);
+  if (!band) return '';                          // All Ages / unbanded: nothing to contradict
+  const age = (typeof patientAge === 'function') ? patientAge() : null;
+  if (age == null || (age >= band.lo && age <= band.hi)) return '';
+  return ` <span class="band-age-flag" title="These norms were loaded before the current age was entered, or the age has changed. Re-add the family to load the band matching the age — or keep this band deliberately: a neighbouring band or All Ages can be a legitimate choice (larger N, stronger r).">`
+    + `${ageBandLabel(group)} band — does not include the current patient age (${escapeHtml(String(age))})</span>`;
+}
+
+/* A changed age must re-render any loaded Change Analysis / SDI tables or the
+   flag above goes stale — it is read at render time. Guarded on the PARSED
+   value, same reason as rebuildFamilyListsForAge: typing "7" then "2" for 72
+   must not re-render four tables against the nonsense age 7 in between.
+   View-only: re-rendering here never calls rciMarkMethodUsed, so an age
+   change cannot accept a Change Analysis method into the report (§34). */
+let lastMismatchAge;
+function refreshBandMismatchViews(){
+  const age = (typeof patientAge === 'function') ? patientAge() : null;
+  if (age === lastMismatchAge) return;
+  lastMismatchAge = age;
+  try {
+    if (typeof sdiRows !== 'undefined' && typeof renderSdi === 'function' && sdiRows.some(r => r.group)) renderSdi();
+  } catch(e){}
+  try {
+    if (typeof rciState !== 'undefined' && typeof renderRci === 'function'){
+      Object.keys(rciState).forEach(m => {
+        if (rciState[m].rows.some(r => r.group)) renderRci(m);
+      });
+    }
+  } catch(e){}
+}
+
 /* ── AGE-BAND FILTERING OF THE FAMILY DROPDOWNS ──────────────────────────────
 
    With one patient age now on screen everywhere, the dropdowns can stop
@@ -4611,6 +4666,17 @@ function buildFamilyListHtml(families, opts){
   const age = (typeof patientAge === 'function') ? patientAge() : null;
   let narrowed = false;
 
+  /* Tag the band containing the age — but only while "Show all bands" is on.
+     With the age filter active, every visible band already matches (that is
+     what the filter does), so the tag would be noise on every pill; it earns
+     its place exactly when the full band list is showing and the matching one
+     needs picking out. */
+  const ageMatchTag = f => {
+    if (!familyListShowAllBands || age == null) return '';
+    const b = ageBandRange(f);
+    return (b && age >= b.lo && age <= b.hi) ? `matches age ${age}` : '';
+  };
+
   let html = '';
   order.forEach(base => {
     const allMembers = groups[base];
@@ -4650,7 +4716,7 @@ function buildFamilyListHtml(families, opts){
          matters". */
       html += `<div class="combo-group-heading" data-group="${escapeAttr(groupKey)}">${escapeHtml(base)}</div>`;
       html += `<div class="combo-indented-row" data-group="${escapeAttr(groupKey)}">`;
-      members.forEach(f => { html += comboCheckboxItemHtml(f, isCustom(f), true, groupKey); });
+      members.forEach(f => { html += comboCheckboxItemHtml(f, isCustom(f), true, groupKey, null, ageMatchTag(f)); });
       html += `</div>`;
     } else if (flat){
       // Custom families sharing a base name are separate user-authored tests
@@ -4665,7 +4731,8 @@ function buildFamilyListHtml(families, opts){
       // in half on long family lists (e.g. CVLT-3 INDICES + TRIALS, etc.).
       html += `<div class="combo-indented-row" data-group="${escapeAttr(groupKey)}">`;
       members.forEach(f => {
-        const suffix = (opts && typeof opts.itemSuffix === 'function') ? opts.itemSuffix(f) : '';
+        const base2 = (opts && typeof opts.itemSuffix === 'function') ? opts.itemSuffix(f) : '';
+        const suffix = [base2, ageMatchTag(f)].filter(Boolean).join(' · ');
         html += comboCheckboxItemHtml(f, isCustom(f), true, groupKey, null, suffix);
       });
       html += `</div>`;
@@ -6182,6 +6249,7 @@ function setupPremorbidListeners(){
       if (typeof renderBattery === 'function') renderBattery();
       if (typeof refreshPatientAgeIndicator === 'function') refreshPatientAgeIndicator();
       if (typeof rebuildFamilyListsForAge === 'function') rebuildFamilyListsForAge();
+      if (typeof refreshBandMismatchViews === 'function') refreshBandMismatchViews();
     };
     ageEl.addEventListener('input', mirror);
     ageEl.addEventListener('change', mirror);

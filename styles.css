@@ -9562,3 +9562,13 @@ body.rb-docked-active{padding-right:0}
   color:#fff;background:var(--warn);border:none;border-radius:6px;cursor:pointer;
 }
 .bat-age-bar-add:hover{filter:brightness(1.08)}
+
+/* Band-mismatch caution on Change Analysis / SD Index group headers: the
+   loaded group's age band excludes the entered patient age. A caution, not a
+   gate — the band choice is clinical (All Ages / neighbouring bands are
+   legitimate), so nothing is blocked and nothing rebands automatically.
+   Standalone class per CLAUDE.md. */
+.band-age-flag{
+  font-family:var(--sans);font-size:11.5px;font-style:italic;font-weight:500;
+  color:var(--warn);margin-left:10px;white-space:normal;
+}
