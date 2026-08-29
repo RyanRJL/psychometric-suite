@@ -6596,6 +6596,13 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   100% { transform:scale(1);    box-shadow:0 0 0 0 rgba(156,61,42,0),    0 6px 18px rgba(0,0,0,0.18); }
 }
 /* Count badge "+1" bump when a new table is captured */
+/* An empty report shows a quiet grey badge: the terracotta fill is the
+   "you have captured tables" signal, and a red 0 reads as an alert about
+   nothing. */
+.rb-chip-count.is-zero{
+  background:linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
+  color:rgba(255,255,255,0.55);
+}
 .rb-chip-count.rb-count-bump{ animation:rb-count-bump 460ms cubic-bezier(0.2,0.85,0.3,1.2); }
 @keyframes rb-count-bump{
   0%   { transform:scale(1); }
@@ -9686,10 +9693,13 @@ body.rb-docked-active{padding-right:0}
   line-height:1.3;
 }
 
-/* Live status chip - state colours match the result card's bands. */
+/* Live status chip - state colours match the result card's bands.
+   Unscored tabs render NO chip (.is-idle): an empty pill is dead chrome,
+   and seven of them made the strip read as broken before first entry. */
 .pvt-status{
   display:inline-flex;
   align-items:center;
+  gap:4px;
   height:17px;
   padding:0 8px;
   border:1px solid rgba(20,15,5,0.12);
@@ -9707,6 +9717,8 @@ body.rb-docked-active{padding-right:0}
 .pvt-status.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.4);background:rgba(46,125,79,0.07)}
 .pvt-status.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.4);background:rgba(156,61,42,0.07)}
 .pvt-status.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.4);background:rgba(138,122,44,0.07)}
+.pvt-status.is-idle{display:none}
+.pvt-status .pvt-flag-icon{width:9px;height:9px;flex:none}
 
 /* ---- Content panel: the cream-to-white gradient sheet ---- */
 /* The sheet holds every method panel AND the running rail, so the rail is
@@ -9907,12 +9919,12 @@ body.rb-docked-active{padding-right:0}
   font-size:11px;
   font-weight:600;
   letter-spacing:0.02em;
-  color:#9C3D2A;
+  color:var(--ink);
   text-align:left;
   cursor:pointer;
   transition:background 120ms ease;
 }
-.pvt-rail-cta:hover{background:rgba(156,61,42,0.05)}
+.pvt-rail-cta:hover{background:rgba(20,15,5,0.04)}
 .pvt-rail-cta:focus{outline:none}
 .pvt-rail-cta:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
 @keyframes pvt-panel-in{
@@ -9973,7 +9985,16 @@ body.rb-docked-active{padding-right:0}
    measure never renders through this: it renders as .pvt-readout below,
    one row per index. */
 .pvt-result-inner{display:block;border:1px solid rgba(20,15,5,0.08);border-radius:var(--r-md);padding:14px 16px;background:#FFFFFF}
-.pvt-result-inner.is-empty{color:var(--faint);font-style:italic;font-size:13.5px}
+/* The blank state is a deliberate card, not a wan italic line: dashed
+   border says "placeholder", the headline carries the one instruction, and
+   the detail says what will appear so the wide column reads as reserved
+   rather than dead. */
+.pvt-result-inner.is-empty{
+  border:1px dashed rgba(20,15,8,0.20);
+  background:rgba(253,250,246,0.65);
+  padding:18px 20px;
+}
+.pvt-result-inner.is-empty .pvt-result-headline{font-size:13.5px;font-weight:600;color:var(--ink)}
 .pvt-result-headline{display:block;font-size:13px;color:var(--muted)}
 .pvt-result-detail{display:block;margin-top:4px;font-size:12.5px;color:var(--muted,#555);line-height:1.55}
 
@@ -10074,9 +10095,14 @@ body.rb-docked-active{padding-right:0}
 
 /* One-line expandable cautions - headline on screen, full text one click
    away. White card like everything else on the sheet, caution rail. */
+/* Neutral by default: an always-on red caution beside an empty form is
+   wallpaper, and on this page red is reserved for "an indicator flagged".
+   .is-flagged (set from renderPvtNav, the same states the chips render)
+   restores the emphasis in amber once the method on that tab has a result
+   the caveat is actually about. */
 .pvt-caution{
-  border:1px solid rgba(156,61,42,0.25);
-  border-left:4px solid #9c3d2a;
+  border:1px solid rgba(20,15,8,0.12);
+  border-left:4px solid rgba(20,15,8,0.22);
   border-radius:var(--r-md);
   background:#FFFFFF;
   padding:10px 14px;
@@ -10096,8 +10122,14 @@ body.rb-docked-active{padding-right:0}
   color:var(--faint);
 }
 .pvt-caution[open] summary::after{content:'less'}
-.pvt-caution summary strong{color:#9c3d2a}
+.pvt-caution summary strong{color:var(--ink)}
 .pvt-caution-body{margin-top:8px}
+.pvt-caution.is-flagged{
+  border-color:rgba(183,121,31,0.40);
+  border-left-color:#B7791F;
+  background:rgba(183,121,31,0.05);
+}
+.pvt-caution.is-flagged summary strong{color:#8a6215}
 
 /* Collapsed footer references - outside the sheet, quiet. */
 .pvt-refs{margin-top:22px;padding-top:10px}
@@ -27726,7 +27758,7 @@ function renderPvtEi(){
   const out = document.getElementById('pvt-ei-result');
   if (!out) return;
   const s = getPvtEi();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   const acc = PVT_EI_ACCURACY[s.cutKey];
@@ -27741,7 +27773,7 @@ function renderPvtEs(){
   const out = document.getElementById('pvt-es-result');
   if (!out) return;
   const s = getPvtEs();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   if (s.gated){
@@ -27764,7 +27796,7 @@ function renderPvtRds(){
   const out = document.getElementById('pvt-rds-result');
   if (!out) return;
   const s = getPvtRds();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   const racc = PVT_RDS_ACCURACY[s.conservative ? 'conservative' : 'traditional'];
@@ -27779,7 +27811,7 @@ function renderPvtDs(){
   const out = document.getElementById('pvt-ds-result');
   if (!out) return;
   const s = getPvtDs();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score — Vocabulary alone computes nothing.'); return; }
   const dacc = PVT_DS_ACCURACY[s.conservative ? 'conservative' : 'sensitive'];
@@ -27821,7 +27853,7 @@ function renderPvtRey(){
   const out = document.getElementById('pvt-rey15-result');
   if (!out) return;
   const s = getPvtRey();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score — the recognition trial alone computes nothing.'); return; }
   const rows = [{
@@ -27850,7 +27882,7 @@ function renderPvtTomm(){
   const power = document.getElementById('pvt-tomm-power');
   if (!out || !power) return;
   const s = getPvtTomm();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.'); power.innerHTML = ''; return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.', 'The result appears here and the outcome joins the running summary.'); power.innerHTML = ''; return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
   out.innerHTML = pvtReadoutHtml(s.rows.map(r => ({
     label: `TOMM ${r.label}`, value: r.score, state: r.fail ? 'fail' : 'pass',
@@ -28043,11 +28075,26 @@ function renderPvtApa(){
 /* The tab strip's live status chips. One chip per measure, restated from
    the same getPvt* state the result cards render, so strip and card cannot
    disagree. The summary chip carries the independent-indicator count. */
+/* An unscored tab shows NO chip at all: a dash in a pill reads as seven
+   pieces of dead chrome before anything is entered, so the pill appears
+   only once it has a state to report. Scored chips carry the same glyphs
+   as the readout rows (shape + word + colour, never colour alone). */
 function pvtChip(el, text, kind){
   if (!el) return;
-  el.textContent = text;
   el.classList.remove('is-pass', 'is-fail', 'is-na');
-  if (kind) el.classList.add('is-' + kind);
+  el.classList.toggle('is-idle', !kind);
+  if (!kind){ el.textContent = ''; return; }
+  const icon = PVT_STATE_ICON[kind === 'fail' ? 'flag' : kind === 'na' ? 'na' : 'pass'] || '';
+  el.innerHTML = icon + escapeHtml(text);
+  el.classList.add('is-' + kind);
+}
+
+/* The caution under each result is neutral reference text until the method
+   on that tab actually flags — then it takes the amber emphasis, because
+   "corroborate before concluding" is advice about a result that now
+   exists. Driven from the same states the chips render, in one place. */
+function pvtCautionFlag(tab, flagged){
+  document.querySelector(`#pvt-${tab} .pvt-caution`)?.classList.toggle('is-flagged', !!flagged);
 }
 function renderPvtNav(){
   const ei = getPvtEi();
@@ -28083,6 +28130,12 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-summary'),
     c.total > 0 ? `${c.failed}/${c.total}` : '—',
     c.total > 0 ? (c.failed > 0 ? 'fail' : 'pass') : null);
+  pvtCautionFlag('ei', ei.ei !== undefined && ei.fail);
+  pvtCautionFlag('es', es.es !== undefined && !es.gated && es.fail);
+  pvtCautionFlag('rds', rds.rds !== undefined && rds.fail);
+  pvtCautionFlag('ds', dsFail);
+  pvtCautionFlag('rey15', reyFail);
+  pvtCautionFlag('tomm', tommHas && tomm.anyFail);
 }
 
 /* The published-accuracy line beside each cut-off select — same strings the
@@ -28176,9 +28229,10 @@ function renderPvtRail(){
       </div>${members}</div>`;
   }).join('');
 
-  const hint = c.total === 0
-    ? 'Score a measure to start the count.'
-    : c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
+  /* With nothing scored the section shows the bare 0/6 count alone — the
+     workspace card already carries the "enter scores" instruction, and the
+     Flagged stat is withheld rather than printed as 0/0. */
+  const hint = c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
     : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion.'
     : 'Nothing beyond its cut-off so far.';
 
@@ -28195,15 +28249,15 @@ function renderPvtRail(){
     <div class="pvt-rail-body">
       <div class="pvt-rail-section">
         <div class="pvt-rail-kicker">Indicators</div>
-        <div class="pvt-rail-stat${c.failed ? ' is-flagged' : ''}">
+        ${c.total > 0 ? `<div class="pvt-rail-stat${c.failed ? ' is-flagged' : ''}">
           <span class="pvt-rail-stat-label">Flagged</span>
           <span class="pvt-rail-stat-value">${c.failed}<span class="pvt-rail-sep">/</span>${c.total}</span>
-        </div>
+        </div>` : ''}
         <div class="pvt-rail-stat">
           <span class="pvt-rail-stat-label">Measures scored</span>
           <span class="pvt-rail-stat-value">${scored}<span class="pvt-rail-sep">/</span>${total}</span>
         </div>
-        <p class="pvt-rail-hint">${hint}</p>
+        ${c.total > 0 ? `<p class="pvt-rail-hint">${hint}</p>` : ''}
       </div>
       <div class="pvt-rail-section">
         <div class="pvt-rail-kicker">By indicator</div>
@@ -30108,7 +30162,7 @@ ${buildReportHtmlBody()}
           </svg>
         </span>
         <span class="rb-chip-label">Working Report <span class="rb-chip-sub">APA Tables</span></span>
-        <span class="rb-chip-count" data-rb-count>0</span>
+        <span class="rb-chip-count is-zero" data-rb-count>0</span>
       </button>
       <div class="rb-onboarding" data-rb-onboarding hidden aria-hidden="true">
         <div class="rb-onboarding-bubble">
@@ -31059,6 +31113,7 @@ ${buildReportHtmlBody()}
     const countNow = state.items.length;
     rootEl.querySelectorAll('[data-rb-count]').forEach(el => {
       el.textContent = String(countNow);
+      el.classList.toggle('is-zero', countNow === 0);
       // Pop the badge when the count goes UP (a new table was captured).
       if (countNow > rbPrevCount){
         el.classList.remove('rb-count-bump'); void el.offsetWidth; el.classList.add('rb-count-bump');

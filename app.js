@@ -7030,7 +7030,7 @@ function renderPvtEi(){
   const out = document.getElementById('pvt-ei-result');
   if (!out) return;
   const s = getPvtEi();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   const acc = PVT_EI_ACCURACY[s.cutKey];
@@ -7045,7 +7045,7 @@ function renderPvtEs(){
   const out = document.getElementById('pvt-es-result');
   if (!out) return;
   const s = getPvtEs();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   if (s.gated){
@@ -7068,7 +7068,7 @@ function renderPvtRds(){
   const out = document.getElementById('pvt-rds-result');
   if (!out) return;
   const s = getPvtRds();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   const racc = PVT_RDS_ACCURACY[s.conservative ? 'conservative' : 'traditional'];
@@ -7083,7 +7083,7 @@ function renderPvtDs(){
   const out = document.getElementById('pvt-ds-result');
   if (!out) return;
   const s = getPvtDs();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score — Vocabulary alone computes nothing.'); return; }
   const dacc = PVT_DS_ACCURACY[s.conservative ? 'conservative' : 'sensitive'];
@@ -7125,7 +7125,7 @@ function renderPvtRey(){
   const out = document.getElementById('pvt-rey15-result');
   if (!out) return;
   const s = getPvtRey();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score — the recognition trial alone computes nothing.'); return; }
   const rows = [{
@@ -7154,7 +7154,7 @@ function renderPvtTomm(){
   const power = document.getElementById('pvt-tomm-power');
   if (!out || !power) return;
   const s = getPvtTomm();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.'); power.innerHTML = ''; return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.', 'The result appears here and the outcome joins the running summary.'); power.innerHTML = ''; return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
   out.innerHTML = pvtReadoutHtml(s.rows.map(r => ({
     label: `TOMM ${r.label}`, value: r.score, state: r.fail ? 'fail' : 'pass',
@@ -7347,11 +7347,26 @@ function renderPvtApa(){
 /* The tab strip's live status chips. One chip per measure, restated from
    the same getPvt* state the result cards render, so strip and card cannot
    disagree. The summary chip carries the independent-indicator count. */
+/* An unscored tab shows NO chip at all: a dash in a pill reads as seven
+   pieces of dead chrome before anything is entered, so the pill appears
+   only once it has a state to report. Scored chips carry the same glyphs
+   as the readout rows (shape + word + colour, never colour alone). */
 function pvtChip(el, text, kind){
   if (!el) return;
-  el.textContent = text;
   el.classList.remove('is-pass', 'is-fail', 'is-na');
-  if (kind) el.classList.add('is-' + kind);
+  el.classList.toggle('is-idle', !kind);
+  if (!kind){ el.textContent = ''; return; }
+  const icon = PVT_STATE_ICON[kind === 'fail' ? 'flag' : kind === 'na' ? 'na' : 'pass'] || '';
+  el.innerHTML = icon + escapeHtml(text);
+  el.classList.add('is-' + kind);
+}
+
+/* The caution under each result is neutral reference text until the method
+   on that tab actually flags — then it takes the amber emphasis, because
+   "corroborate before concluding" is advice about a result that now
+   exists. Driven from the same states the chips render, in one place. */
+function pvtCautionFlag(tab, flagged){
+  document.querySelector(`#pvt-${tab} .pvt-caution`)?.classList.toggle('is-flagged', !!flagged);
 }
 function renderPvtNav(){
   const ei = getPvtEi();
@@ -7387,6 +7402,12 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-summary'),
     c.total > 0 ? `${c.failed}/${c.total}` : '—',
     c.total > 0 ? (c.failed > 0 ? 'fail' : 'pass') : null);
+  pvtCautionFlag('ei', ei.ei !== undefined && ei.fail);
+  pvtCautionFlag('es', es.es !== undefined && !es.gated && es.fail);
+  pvtCautionFlag('rds', rds.rds !== undefined && rds.fail);
+  pvtCautionFlag('ds', dsFail);
+  pvtCautionFlag('rey15', reyFail);
+  pvtCautionFlag('tomm', tommHas && tomm.anyFail);
 }
 
 /* The published-accuracy line beside each cut-off select — same strings the
@@ -7480,9 +7501,10 @@ function renderPvtRail(){
       </div>${members}</div>`;
   }).join('');
 
-  const hint = c.total === 0
-    ? 'Score a measure to start the count.'
-    : c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
+  /* With nothing scored the section shows the bare 0/6 count alone — the
+     workspace card already carries the "enter scores" instruction, and the
+     Flagged stat is withheld rather than printed as 0/0. */
+  const hint = c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
     : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion.'
     : 'Nothing beyond its cut-off so far.';
 
@@ -7499,15 +7521,15 @@ function renderPvtRail(){
     <div class="pvt-rail-body">
       <div class="pvt-rail-section">
         <div class="pvt-rail-kicker">Indicators</div>
-        <div class="pvt-rail-stat${c.failed ? ' is-flagged' : ''}">
+        ${c.total > 0 ? `<div class="pvt-rail-stat${c.failed ? ' is-flagged' : ''}">
           <span class="pvt-rail-stat-label">Flagged</span>
           <span class="pvt-rail-stat-value">${c.failed}<span class="pvt-rail-sep">/</span>${c.total}</span>
-        </div>
+        </div>` : ''}
         <div class="pvt-rail-stat">
           <span class="pvt-rail-stat-label">Measures scored</span>
           <span class="pvt-rail-stat-value">${scored}<span class="pvt-rail-sep">/</span>${total}</span>
         </div>
-        <p class="pvt-rail-hint">${hint}</p>
+        ${c.total > 0 ? `<p class="pvt-rail-hint">${hint}</p>` : ''}
       </div>
       <div class="pvt-rail-section">
         <div class="pvt-rail-kicker">By indicator</div>
@@ -9412,7 +9434,7 @@ ${buildReportHtmlBody()}
           </svg>
         </span>
         <span class="rb-chip-label">Working Report <span class="rb-chip-sub">APA Tables</span></span>
-        <span class="rb-chip-count" data-rb-count>0</span>
+        <span class="rb-chip-count is-zero" data-rb-count>0</span>
       </button>
       <div class="rb-onboarding" data-rb-onboarding hidden aria-hidden="true">
         <div class="rb-onboarding-bubble">
@@ -10363,6 +10385,7 @@ ${buildReportHtmlBody()}
     const countNow = state.items.length;
     rootEl.querySelectorAll('[data-rb-count]').forEach(el => {
       el.textContent = String(countNow);
+      el.classList.toggle('is-zero', countNow === 0);
       // Pop the badge when the count goes UP (a new table was captured).
       if (countNow > rbPrevCount){
         el.classList.remove('rb-count-bump'); void el.offsetWidth; el.classList.add('rb-count-bump');
