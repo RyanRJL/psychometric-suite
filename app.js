@@ -7618,8 +7618,10 @@ function renderPvtAboutPanel(){
   ];
   const body = rows.map(r => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
     <td class="pvt-overview-measure">
-      <span class="pvt-overview-title">${r.title}</span>
-      <span class="pvt-overview-desc">${r.desc}</span>
+      <div class="pvt-overview-titlerow">
+        <span class="pvt-overview-title">${r.title}</span>
+        <button type="button" class="pvt-overview-info" data-pvtip="${r.desc}" aria-label="More about ${r.title}" tabindex="0">?</button>
+      </div>
       <span class="pvt-overview-cite">${r.cite}</span>
     </td>
     <td class="pvt-overview-cell">${r.source}</td>
@@ -7629,13 +7631,13 @@ function renderPvtAboutPanel(){
       : `<span class="pvt-overview-cut">${r.cut}</span>sens. ${r.sens} · spec. ${r.spec}`}</td>
     <td class="pvt-overview-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></td>
   </tr>`).join('');
-  el.innerHTML = `<div class="pvt-card pvt-overview-card">
+  el.innerHTML = `<div class="pvt-overview-wrap">
     <table class="pvt-overview-table">
       <thead><tr>
-        <th class="pvt-overview-th">Measure</th>
-        <th class="pvt-overview-th" title="Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity.">Source</th>
-        <th class="pvt-overview-th" title="Measures derived from the same administration of the same instrument share error and are not independent evidence: each named group counts as ONE indicator in the aggregation.">Counts as</th>
-        <th class="pvt-overview-th" title="Published accuracy at the cut-off named in the cell — the same figures printed beside each measure's cut-off selector.">Accuracy at default cut-off</th>
+        <th class="pvt-overview-th is-measure">Measure</th>
+        <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity.">Source</span></th>
+        <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="Measures derived from the same administration of the same instrument share error and are not independent evidence: each named group counts as ONE indicator in the aggregation.">Counts as</span></th>
+        <th class="pvt-overview-th"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="Published accuracy at the cut-off named in the cell — the same figures printed beside each measure's cut-off selector.">Accuracy at default cut-off</span></th>
         <th aria-hidden="true"></th>
       </tr></thead>
       <tbody>${body}</tbody>
@@ -7644,8 +7646,11 @@ function renderPvtAboutPanel(){
   </div>`;
   el.querySelectorAll('[data-about-tab]').forEach(row => {
     const go = () => switchPvtTab(row.dataset.aboutTab);
-    row.addEventListener('click', go);
-    row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+    row.addEventListener('click', e => { if (e.target.closest('.pvt-overview-info')) return; go(); });
+    row.addEventListener('keydown', e => {
+      if (e.target.closest('.pvt-overview-info')) return;
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); }
+    });
   });
 }
 
