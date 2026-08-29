@@ -18580,7 +18580,7 @@ input[type="number"].ds-age-pop-input{
       Six measures, each scored against its published cut-off: two RBANS-embedded indices — the <strong>Effort Index</strong> (Silverberg et al., 2007) and the <strong>Effort Scale</strong> (Novitski et al., 2012) — two WAIS-embedded ones — <strong>Reliable Digit Span</strong> (Greiffenstein et al., 1994; cut-offs per Schroeder et al., 2012) and the <strong>Digit Span indices</strong> (Iverson &amp; Tulsky, 2003; Axelrod et al., 2006) — and two stand-alone tests, the <strong>Rey 15-Item</strong> with recognition trial (Boone et al., 2002) and the <strong>TOMM</strong> (Tombaugh, 1996; cut-off accuracy per Martin et al., 2020). Every result is a cut-off comparison only, reported with the published sensitivity and specificity at the chosen cut-off; the app issues no verdict on the protocol, because no single indicator supports one.
     </p>
     <p class="section-body-text">
-      Aggregation follows Larrabee (2014): failing two or more <em>independent</em> validity indicators supports probable invalidity. Independence is the load-bearing word — measures derived from the same administration of the same instrument share error and cannot be counted twice, so the two RBANS indices count as one indicator between them, as do the two Digit Span measures. The Summary tab converts the failure count to post-test probabilities across a range of assumed base rates rather than at a single figure, because the base rate of invalid performance differs by setting and the choice belongs to the clinician, not the app.
+      Aggregation follows Larrabee (2014): failing two or more <em>independent</em> validity indicators supports probable invalidity. Independence is the load-bearing word — measures derived from the same administration of the same instrument share error and cannot be counted twice, so the two RBANS indices count as one indicator between them, as do the two Digit Span measures. The Summary tab reports Larrabee's published classification accuracy at each failure count. Positive and negative predictive power appear on the TOMM tab, derived by Bayes' theorem from the meta-analytic sensitivity and specificity and a base rate the clinician selects (Martin et al., 2020, Tables 16–17) — a selectable rate rather than a fixed one, because the base rate of invalid performance differs by setting and the choice belongs to the clinician, not the app.
     </p>
     <p class="section-body-text">
       Embedded indices are computed from subtests that also measure genuine ability, so each carries a caution naming the populations in which it over-flags — dementia and severe impairment chief among them — and the caution takes emphasis only once that measure has actually flagged. Cut-offs validated in one edition of an instrument are labelled with that edition, and the clinician should document which edition was administered.
@@ -28454,7 +28454,7 @@ function renderPvtAboutPanel(){
     { tab: 'es', title: 'Effort Scale', cite: 'Novitski et al. (2012)',
       source: 'RBANS embedded', group: 'RBANS', cut: 'ES &lt; 12',
       sens: null, spec: null, acc: `ROC AUC ${PVT_ES_ACCURACY.auc}`,
-      desc: 'Recognition-minus-recall composite; gated so it is only computed on profiles where it does not over-flag.' },
+      desc: 'List Recognition minus the three recall scores, plus Digit Span, all raw; computed only where its gate is met, because an ungated ES over-flags intact examinees.' },
     { tab: 'rds', title: 'Reliable Digit Span', cite: 'Greiffenstein et al. (1994); Schroeder et al. (2012)',
       source: 'WAIS embedded', group: 'Digit span', cut: 'RDS ≤ 6',
       sens: PVT_RDS_ACCURACY.conservative.sens, spec: PVT_RDS_ACCURACY.conservative.spec,
@@ -28471,7 +28471,7 @@ function renderPvtAboutPanel(){
       source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
       sens: t2 ? (t2.sensRange || String(t2.sens).replace('0.', '.')) : '—',
       spec: t2 ? (t2.specRange || String(t2.spec).replace('0.', '.')) : '—',
-      desc: 'Fifty-item forced-choice picture recognition; near-ceiling even in substantial genuine impairment.' }
+      desc: 'Fifty-item forced-choice picture recognition; robust to most genuine impairment, though specificity falls in dementia.' }
   ];
   const body = rows.map(r => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
     <td class="pvt-overview-measure">
@@ -28497,7 +28497,7 @@ function renderPvtAboutPanel(){
       </tr></thead>
       <tbody>${body}</tbody>
     </table>
-    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014) — measures sharing an instrument count as one between them, which is what the running summary's "counts as one" tags mean. The Summary tab converts the failure count to post-test probabilities across a range of base rates. No single index is a verdict.</p>
+    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014) — measures sharing an instrument count as one between them, which is what the running summary's "counts as one" tags mean. The Summary tab reports Larrabee's published classification accuracy at each failure count. No single index is a verdict.</p>
   </div>`;
   el.querySelectorAll('[data-about-tab]').forEach(row => {
     const go = () => switchPvtTab(row.dataset.aboutTab);

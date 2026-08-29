@@ -7597,7 +7597,7 @@ function renderPvtAboutPanel(){
     { tab: 'es', title: 'Effort Scale', cite: 'Novitski et al. (2012)',
       source: 'RBANS embedded', group: 'RBANS', cut: 'ES &lt; 12',
       sens: null, spec: null, acc: `ROC AUC ${PVT_ES_ACCURACY.auc}`,
-      desc: 'Recognition-minus-recall composite; gated so it is only computed on profiles where it does not over-flag.' },
+      desc: 'List Recognition minus the three recall scores, plus Digit Span, all raw; computed only where its gate is met, because an ungated ES over-flags intact examinees.' },
     { tab: 'rds', title: 'Reliable Digit Span', cite: 'Greiffenstein et al. (1994); Schroeder et al. (2012)',
       source: 'WAIS embedded', group: 'Digit span', cut: 'RDS ≤ 6',
       sens: PVT_RDS_ACCURACY.conservative.sens, spec: PVT_RDS_ACCURACY.conservative.spec,
@@ -7614,7 +7614,7 @@ function renderPvtAboutPanel(){
       source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
       sens: t2 ? (t2.sensRange || String(t2.sens).replace('0.', '.')) : '—',
       spec: t2 ? (t2.specRange || String(t2.spec).replace('0.', '.')) : '—',
-      desc: 'Fifty-item forced-choice picture recognition; near-ceiling even in substantial genuine impairment.' }
+      desc: 'Fifty-item forced-choice picture recognition; robust to most genuine impairment, though specificity falls in dementia.' }
   ];
   const body = rows.map(r => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
     <td class="pvt-overview-measure">
@@ -7640,7 +7640,7 @@ function renderPvtAboutPanel(){
       </tr></thead>
       <tbody>${body}</tbody>
     </table>
-    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014) — measures sharing an instrument count as one between them, which is what the running summary's "counts as one" tags mean. The Summary tab converts the failure count to post-test probabilities across a range of base rates. No single index is a verdict.</p>
+    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014) — measures sharing an instrument count as one between them, which is what the running summary's "counts as one" tags mean. The Summary tab reports Larrabee's published classification accuracy at each failure count. No single index is a verdict.</p>
   </div>`;
   el.querySelectorAll('[data-about-tab]').forEach(row => {
     const go = () => switchPvtTab(row.dataset.aboutTab);
