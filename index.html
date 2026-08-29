@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260829aa">
+<link rel="stylesheet" href="styles.css?v=20260829ab">
 <link rel="stylesheet" href="design-system.css?v=20260828al">
 
 <style>
@@ -1379,7 +1379,11 @@
     <p class="section-desc">Score embedded and stand-alone validity indicators against their published cut-offs, then weigh them together. No single index is a verdict — results are cut-off comparisons only.</p>
 
     <div class="pvt-method-tabs" role="tablist" aria-label="Performance validity measures">
-      <button type="button" class="pvt-method-tab active" data-pvt-tab="ei" role="tab" aria-selected="true">
+      <button type="button" class="pvt-method-tab pvt-method-tab-about active" data-pvt-tab="about" role="tab" aria-selected="true">
+        <span class="pvt-about-bubble" aria-hidden="true">?</span>
+        <span class="pvt-about-tab-label">About</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="ei" role="tab" aria-selected="false">
         <span class="pvt-method-num">01</span>
         <span class="pvt-method-main">
           <span class="pvt-method-label">Effort Index</span>
@@ -1439,8 +1443,15 @@
 
     <div class="pvt-sheet">
       <div class="pvt-sheet-main">
+    <!-- ===== About / orientation (landing tab; body rendered by
+         renderPvtAboutPanel from the same accuracy constants the method
+         tabs print, so the two can never disagree) ===== -->
+    <div class="pvt-tab-content active" id="pvt-about">
+      <div id="pvt-about-body"></div>
+    </div>
+
     <!-- ===== Effort Index ===== -->
-    <div class="pvt-tab-content active" id="pvt-ei">
+    <div class="pvt-tab-content" id="pvt-ei">
       <div class="pvt-workspace">
         <div class="pvt-card">
           <div class="pvt-card-kicker">Scores &amp; settings</div>
@@ -2686,7 +2697,7 @@
 
     <h3 class="methods-h3">What this tool does</h3>
     <p class="section-body-text">
-      Seven working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Size Tools</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
+      Eight working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Performance Validity</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Size Tools</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
     </p>
     <p class="section-body-text">
       The auto-fill normative database holds published parameters for seven instrument families — D-KEFS (original and Advanced), WAIS-IV, WMS-IV, WISC-V, CVLT-3, CVLT-C and the RBANS — with the retest sample size <i>N</i> where the publisher reports one. <i>N</i> is required for the Crawford &amp; Garthwaite method and may need entering by hand where it is unavailable. Clinicians should verify every imported parameter against the current manual, and against local service standards, before interpreting it.
@@ -2813,6 +2824,17 @@
     </p>
     <p class="section-body-text">
       Outcomes are reported as significance only — "Reliable change" or "No reliable change" — never as improvement or decline. The database holds many measures on which a higher score is the worse result (intrusions, perseverations, errors, false positives), and carries no score-direction flag, so reading a clinical direction off the sign of the statistic would assert the wrong conclusion for all of them. The signed statistic is displayed alongside, so the direction stays visible without the app interpreting it.
+    </p>
+
+    <h3 class="methods-h3">Performance validity</h3>
+    <p class="section-body-text">
+      Six measures, each scored against its published cut-off: two RBANS-embedded indices — the <strong>Effort Index</strong> (Silverberg et al., 2007) and the <strong>Effort Scale</strong> (Novitski et al., 2012) — two WAIS-embedded ones — <strong>Reliable Digit Span</strong> (Greiffenstein et al., 1994; cut-offs per Schroeder et al., 2012) and the <strong>Digit Span indices</strong> (Iverson &amp; Tulsky, 2003; Axelrod et al., 2006) — and two stand-alone tests, the <strong>Rey 15-Item</strong> with recognition trial (Boone et al., 2002) and the <strong>TOMM</strong> (Tombaugh, 1996; cut-off accuracy per Martin et al., 2020). Every result is a cut-off comparison only, reported with the published sensitivity and specificity at the chosen cut-off; the app issues no verdict on the protocol, because no single indicator supports one.
+    </p>
+    <p class="section-body-text">
+      Aggregation follows Larrabee (2014): failing two or more <em>independent</em> validity indicators supports probable invalidity. Independence is the load-bearing word — measures derived from the same administration of the same instrument share error and cannot be counted twice, so the two RBANS indices count as one indicator between them, as do the two Digit Span measures. The Summary tab converts the failure count to post-test probabilities across a range of assumed base rates rather than at a single figure, because the base rate of invalid performance differs by setting and the choice belongs to the clinician, not the app.
+    </p>
+    <p class="section-body-text">
+      Embedded indices are computed from subtests that also measure genuine ability, so each carries a caution naming the populations in which it over-flags — dementia and severe impairment chief among them — and the caution takes emphasis only once that measure has actually flagged. Cut-offs validated in one edition of an instrument are labelled with that edition, and the clinician should document which edition was administered.
     </p>
 
     <h3 class="methods-h3">Premorbid estimation</h3>
@@ -2986,7 +3008,7 @@
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260828aa"></script>
-<script src="app.js?v=20260829aa"></script>
+<script src="app.js?v=20260829ab"></script>
 <script src="design-system.js?v=20260828ab" defer></script>
 <script src="app-effectsize-page.js?v=20260828aa"></script>
 <script src="app-viz-page.js?v=20260828aa"></script>

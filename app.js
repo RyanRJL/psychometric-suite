@@ -7577,9 +7577,82 @@ function clearPvt(){
   renderPvtAll();
 }
 
+/* ---------- the About landing tab ----------
+   The page lands here rather than on the Effort Index, which was only
+   ever first by markup order. Same idiom as the Change Analysis overview:
+   one row per measure, click to jump, a Counts-as column carrying the
+   independence grouping that the ≥ 2-failure rule depends on. Accuracy
+   cells are rendered from the SAME constants the method tabs print
+   (PVT_*_ACCURACY, PVT_TOMM_CUTOFFS), so this table cannot drift from
+   the pages it describes. */
+function renderPvtAboutPanel(){
+  const el = document.getElementById('pvt-about-body');
+  if (!el) return;
+  const t2 = PVT_TOMM_CUTOFFS.find(c => c.id === 't2-45');
+  const rows = [
+    { tab: 'ei', title: 'Effort Index', cite: 'Silverberg et al. (2007)',
+      source: 'RBANS embedded', group: 'RBANS', cut: 'EI &gt; 3',
+      sens: PVT_EI_ACCURACY.standard.sens, spec: PVT_EI_ACCURACY.standard.spec,
+      desc: 'Weighted sum of the Digit Span and List Recognition raw scores (0–12); higher = less credible.' },
+    { tab: 'es', title: 'Effort Scale', cite: 'Novitski et al. (2012)',
+      source: 'RBANS embedded', group: 'RBANS', cut: 'ES &lt; 12',
+      sens: null, spec: null, acc: `ROC AUC ${PVT_ES_ACCURACY.auc}`,
+      desc: 'Recognition-minus-recall composite; gated so it is only computed on profiles where it does not over-flag.' },
+    { tab: 'rds', title: 'Reliable Digit Span', cite: 'Greiffenstein et al. (1994); Schroeder et al. (2012)',
+      source: 'WAIS embedded', group: 'Digit span', cut: 'RDS ≤ 6',
+      sens: PVT_RDS_ACCURACY.conservative.sens, spec: PVT_RDS_ACCURACY.conservative.spec,
+      desc: 'Longest forward span plus longest backward span passed on both trials.' },
+    { tab: 'ds', title: 'Digit Span indices', cite: 'Iverson &amp; Tulsky (2003); Axelrod et al. (2006)',
+      source: 'WAIS embedded', group: 'Digit span', cut: 'ACSS ≤ 5',
+      sens: PVT_DS_ACCURACY.conservative.sens, spec: PVT_DS_ACCURACY.conservative.spec,
+      desc: 'Age-corrected scaled-score cut-off, with Vocabulary − Digit Span and longest-span base rates alongside.' },
+    { tab: 'rey15', title: 'Rey 15-Item', cite: 'Boone et al. (2002)',
+      source: 'Stand-alone', group: 'Rey 15-Item', cut: 'Recall + recognition',
+      sens: PVT_REY15_ACCURACY.combo.sens, spec: PVT_REY15_ACCURACY.combo.spec,
+      desc: 'Free recall of fifteen over-learned items, with a recognition trial that raises sensitivity.' },
+    { tab: 'tomm', title: 'TOMM', cite: 'Tombaugh (1996); Martin et al. (2020)',
+      source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
+      sens: t2 ? (t2.sensRange || String(t2.sens).replace('0.', '.')) : '—',
+      spec: t2 ? (t2.specRange || String(t2.spec).replace('0.', '.')) : '—',
+      desc: 'Fifty-item forced-choice picture recognition; near-ceiling even in substantial genuine impairment.' }
+  ];
+  const body = rows.map(r => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
+    <td class="pvt-overview-measure">
+      <span class="pvt-overview-title">${r.title}</span>
+      <span class="pvt-overview-desc">${r.desc}</span>
+      <span class="pvt-overview-cite">${r.cite}</span>
+    </td>
+    <td class="pvt-overview-cell">${r.source}</td>
+    <td class="pvt-overview-cell">${r.group}</td>
+    <td class="pvt-overview-cell pvt-overview-acc">${r.acc
+      ? `<span class="pvt-overview-cut">${r.cut}</span>${r.acc}`
+      : `<span class="pvt-overview-cut">${r.cut}</span>sens. ${r.sens} · spec. ${r.spec}`}</td>
+    <td class="pvt-overview-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></td>
+  </tr>`).join('');
+  el.innerHTML = `<div class="pvt-card pvt-overview-card">
+    <table class="pvt-overview-table">
+      <thead><tr>
+        <th class="pvt-overview-th">Measure</th>
+        <th class="pvt-overview-th" title="Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity.">Source</th>
+        <th class="pvt-overview-th" title="Measures derived from the same administration of the same instrument share error and are not independent evidence: each named group counts as ONE indicator in the aggregation.">Counts as</th>
+        <th class="pvt-overview-th" title="Published accuracy at the cut-off named in the cell — the same figures printed beside each measure's cut-off selector.">Accuracy at default cut-off</th>
+        <th aria-hidden="true"></th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014) — measures sharing an instrument count as one between them, which is what the running summary's "counts as one" tags mean. The Summary tab converts the failure count to post-test probabilities across a range of base rates. No single index is a verdict.</p>
+  </div>`;
+  el.querySelectorAll('[data-about-tab]').forEach(row => {
+    const go = () => switchPvtTab(row.dataset.aboutTab);
+    row.addEventListener('click', go);
+    row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+  });
+}
+
 function setupPvtPage(){
   const root = document.getElementById('validity');
   if (!root) return;
+  renderPvtAboutPanel();
   root.querySelectorAll('.pvt-method-tab').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
   });

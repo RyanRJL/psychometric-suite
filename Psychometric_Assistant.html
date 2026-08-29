@@ -9628,7 +9628,8 @@ body.rb-docked-active{padding-right:0}
 /* ---- Tab strip: white rounded-top sheet ---- */
 .pvt-method-tabs{
   display:grid;
-  grid-template-columns:repeat(7,minmax(120px,1fr));
+  /* Narrow leftmost About column + the seven measure tabs. */
+  grid-template-columns:minmax(72px,auto) repeat(7,minmax(120px,1fr));
   gap:0;
   background:#FFFFFF;
   border:1px solid rgba(20,15,5,0.08);
@@ -9719,6 +9720,112 @@ body.rb-docked-active{padding-right:0}
 .pvt-status.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.4);background:rgba(138,122,44,0.07)}
 .pvt-status.is-idle{display:none}
 .pvt-status .pvt-flag-icon{width:9px;height:9px;flex:none}
+
+/* ---- About landing tab + overview table ----
+   Same idiom as the Change Analysis overview: a small leftmost "?" tab
+   the page lands on, and a comparison table with click-to-jump rows.
+   Standalone class names throughout (the cascade rule in CLAUDE.md). */
+.pvt-method-tab-about{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+.pvt-about-bubble{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  border:1px solid rgba(20,15,5,0.18);
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  color:#5A5A5A;
+}
+.pvt-method-tab-about.active .pvt-about-bubble{border-color:rgba(156,61,42,0.45);color:#9C3D2A}
+.pvt-about-tab-label{
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:500;
+  color:#3F3F3F;
+}
+.pvt-method-tab-about.active .pvt-about-tab-label{color:#1A1A1A;font-weight:600}
+
+.pvt-overview-card{padding:6px 6px 12px}
+.pvt-overview-table{width:100%;border-collapse:collapse}
+.pvt-overview-th{
+  padding:10px 12px 8px;
+  text-align:left;
+  font-family:var(--sans);
+  font-size:9.5px;
+  font-weight:600;
+  letter-spacing:0.11em;
+  text-transform:uppercase;
+  color:#A29D95;
+  border-bottom:1px solid rgba(20,15,5,0.08);
+  white-space:nowrap;
+}
+.pvt-overview-row{cursor:pointer;transition:background 120ms ease}
+.pvt-overview-row:hover{background:rgba(20,15,5,0.035)}
+.pvt-overview-row:focus{outline:none}
+.pvt-overview-row:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+.pvt-overview-row td{
+  padding:11px 12px;
+  border-bottom:1px solid rgba(20,15,5,0.06);
+  vertical-align:top;
+}
+.pvt-overview-row:last-child td{border-bottom:none}
+.pvt-overview-measure{min-width:230px}
+.pvt-overview-title{
+  display:block;
+  font-family:var(--sans);
+  font-size:13px;
+  font-weight:600;
+  color:var(--ink);
+  line-height:1.3;
+}
+.pvt-overview-desc{
+  display:block;
+  margin-top:2px;
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:#6E6860;
+  line-height:1.45;
+}
+.pvt-overview-cite{
+  display:block;
+  margin-top:3px;
+  font-family:var(--sans);
+  font-size:10.5px;
+  color:#9E9890;
+}
+.pvt-overview-cell{
+  font-family:var(--sans);
+  font-size:12px;
+  color:#4D4840;
+  white-space:nowrap;
+}
+.pvt-overview-acc{white-space:normal;min-width:150px}
+.pvt-overview-cut{
+  display:block;
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  color:var(--ink);
+  margin-bottom:1px;
+}
+.pvt-overview-arrow{width:24px;color:#BCB6AD}
+.pvt-overview-arrow svg{width:14px;height:14px;display:block}
+.pvt-overview-foot{
+  margin:10px 12px 0;
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:#6E6860;
+  line-height:1.55;
+}
 
 /* ---- Content panel: the cream-to-white gradient sheet ---- */
 /* The sheet holds every method panel AND the running rail, so the rail is
@@ -17021,7 +17128,11 @@ input[type="number"].ds-age-pop-input{
     <p class="section-desc">Score embedded and stand-alone validity indicators against their published cut-offs, then weigh them together. No single index is a verdict — results are cut-off comparisons only.</p>
 
     <div class="pvt-method-tabs" role="tablist" aria-label="Performance validity measures">
-      <button type="button" class="pvt-method-tab active" data-pvt-tab="ei" role="tab" aria-selected="true">
+      <button type="button" class="pvt-method-tab pvt-method-tab-about active" data-pvt-tab="about" role="tab" aria-selected="true">
+        <span class="pvt-about-bubble" aria-hidden="true">?</span>
+        <span class="pvt-about-tab-label">About</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="ei" role="tab" aria-selected="false">
         <span class="pvt-method-num">01</span>
         <span class="pvt-method-main">
           <span class="pvt-method-label">Effort Index</span>
@@ -17081,8 +17192,15 @@ input[type="number"].ds-age-pop-input{
 
     <div class="pvt-sheet">
       <div class="pvt-sheet-main">
+    <!-- ===== About / orientation (landing tab; body rendered by
+         renderPvtAboutPanel from the same accuracy constants the method
+         tabs print, so the two can never disagree) ===== -->
+    <div class="pvt-tab-content active" id="pvt-about">
+      <div id="pvt-about-body"></div>
+    </div>
+
     <!-- ===== Effort Index ===== -->
-    <div class="pvt-tab-content active" id="pvt-ei">
+    <div class="pvt-tab-content" id="pvt-ei">
       <div class="pvt-workspace">
         <div class="pvt-card">
           <div class="pvt-card-kicker">Scores &amp; settings</div>
@@ -18328,7 +18446,7 @@ input[type="number"].ds-age-pop-input{
 
     <h3 class="methods-h3">What this tool does</h3>
     <p class="section-body-text">
-      Seven working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Size Tools</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
+      Eight working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Performance Validity</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Size Tools</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
     </p>
     <p class="section-body-text">
       The auto-fill normative database holds published parameters for seven instrument families — D-KEFS (original and Advanced), WAIS-IV, WMS-IV, WISC-V, CVLT-3, CVLT-C and the RBANS — with the retest sample size <i>N</i> where the publisher reports one. <i>N</i> is required for the Crawford &amp; Garthwaite method and may need entering by hand where it is unavailable. Clinicians should verify every imported parameter against the current manual, and against local service standards, before interpreting it.
@@ -18455,6 +18573,17 @@ input[type="number"].ds-age-pop-input{
     </p>
     <p class="section-body-text">
       Outcomes are reported as significance only — "Reliable change" or "No reliable change" — never as improvement or decline. The database holds many measures on which a higher score is the worse result (intrusions, perseverations, errors, false positives), and carries no score-direction flag, so reading a clinical direction off the sign of the statistic would assert the wrong conclusion for all of them. The signed statistic is displayed alongside, so the direction stays visible without the app interpreting it.
+    </p>
+
+    <h3 class="methods-h3">Performance validity</h3>
+    <p class="section-body-text">
+      Six measures, each scored against its published cut-off: two RBANS-embedded indices — the <strong>Effort Index</strong> (Silverberg et al., 2007) and the <strong>Effort Scale</strong> (Novitski et al., 2012) — two WAIS-embedded ones — <strong>Reliable Digit Span</strong> (Greiffenstein et al., 1994; cut-offs per Schroeder et al., 2012) and the <strong>Digit Span indices</strong> (Iverson &amp; Tulsky, 2003; Axelrod et al., 2006) — and two stand-alone tests, the <strong>Rey 15-Item</strong> with recognition trial (Boone et al., 2002) and the <strong>TOMM</strong> (Tombaugh, 1996; cut-off accuracy per Martin et al., 2020). Every result is a cut-off comparison only, reported with the published sensitivity and specificity at the chosen cut-off; the app issues no verdict on the protocol, because no single indicator supports one.
+    </p>
+    <p class="section-body-text">
+      Aggregation follows Larrabee (2014): failing two or more <em>independent</em> validity indicators supports probable invalidity. Independence is the load-bearing word — measures derived from the same administration of the same instrument share error and cannot be counted twice, so the two RBANS indices count as one indicator between them, as do the two Digit Span measures. The Summary tab converts the failure count to post-test probabilities across a range of assumed base rates rather than at a single figure, because the base rate of invalid performance differs by setting and the choice belongs to the clinician, not the app.
+    </p>
+    <p class="section-body-text">
+      Embedded indices are computed from subtests that also measure genuine ability, so each carries a caution naming the populations in which it over-flags — dementia and severe impairment chief among them — and the caution takes emphasis only once that measure has actually flagged. Cut-offs validated in one edition of an instrument are labelled with that edition, and the clinician should document which edition was administered.
     </p>
 
     <h3 class="methods-h3">Premorbid estimation</h3>
@@ -28305,9 +28434,82 @@ function clearPvt(){
   renderPvtAll();
 }
 
+/* ---------- the About landing tab ----------
+   The page lands here rather than on the Effort Index, which was only
+   ever first by markup order. Same idiom as the Change Analysis overview:
+   one row per measure, click to jump, a Counts-as column carrying the
+   independence grouping that the ≥ 2-failure rule depends on. Accuracy
+   cells are rendered from the SAME constants the method tabs print
+   (PVT_*_ACCURACY, PVT_TOMM_CUTOFFS), so this table cannot drift from
+   the pages it describes. */
+function renderPvtAboutPanel(){
+  const el = document.getElementById('pvt-about-body');
+  if (!el) return;
+  const t2 = PVT_TOMM_CUTOFFS.find(c => c.id === 't2-45');
+  const rows = [
+    { tab: 'ei', title: 'Effort Index', cite: 'Silverberg et al. (2007)',
+      source: 'RBANS embedded', group: 'RBANS', cut: 'EI &gt; 3',
+      sens: PVT_EI_ACCURACY.standard.sens, spec: PVT_EI_ACCURACY.standard.spec,
+      desc: 'Weighted sum of the Digit Span and List Recognition raw scores (0–12); higher = less credible.' },
+    { tab: 'es', title: 'Effort Scale', cite: 'Novitski et al. (2012)',
+      source: 'RBANS embedded', group: 'RBANS', cut: 'ES &lt; 12',
+      sens: null, spec: null, acc: `ROC AUC ${PVT_ES_ACCURACY.auc}`,
+      desc: 'Recognition-minus-recall composite; gated so it is only computed on profiles where it does not over-flag.' },
+    { tab: 'rds', title: 'Reliable Digit Span', cite: 'Greiffenstein et al. (1994); Schroeder et al. (2012)',
+      source: 'WAIS embedded', group: 'Digit span', cut: 'RDS ≤ 6',
+      sens: PVT_RDS_ACCURACY.conservative.sens, spec: PVT_RDS_ACCURACY.conservative.spec,
+      desc: 'Longest forward span plus longest backward span passed on both trials.' },
+    { tab: 'ds', title: 'Digit Span indices', cite: 'Iverson &amp; Tulsky (2003); Axelrod et al. (2006)',
+      source: 'WAIS embedded', group: 'Digit span', cut: 'ACSS ≤ 5',
+      sens: PVT_DS_ACCURACY.conservative.sens, spec: PVT_DS_ACCURACY.conservative.spec,
+      desc: 'Age-corrected scaled-score cut-off, with Vocabulary − Digit Span and longest-span base rates alongside.' },
+    { tab: 'rey15', title: 'Rey 15-Item', cite: 'Boone et al. (2002)',
+      source: 'Stand-alone', group: 'Rey 15-Item', cut: 'Recall + recognition',
+      sens: PVT_REY15_ACCURACY.combo.sens, spec: PVT_REY15_ACCURACY.combo.spec,
+      desc: 'Free recall of fifteen over-learned items, with a recognition trial that raises sensitivity.' },
+    { tab: 'tomm', title: 'TOMM', cite: 'Tombaugh (1996); Martin et al. (2020)',
+      source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
+      sens: t2 ? (t2.sensRange || String(t2.sens).replace('0.', '.')) : '—',
+      spec: t2 ? (t2.specRange || String(t2.spec).replace('0.', '.')) : '—',
+      desc: 'Fifty-item forced-choice picture recognition; near-ceiling even in substantial genuine impairment.' }
+  ];
+  const body = rows.map(r => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
+    <td class="pvt-overview-measure">
+      <span class="pvt-overview-title">${r.title}</span>
+      <span class="pvt-overview-desc">${r.desc}</span>
+      <span class="pvt-overview-cite">${r.cite}</span>
+    </td>
+    <td class="pvt-overview-cell">${r.source}</td>
+    <td class="pvt-overview-cell">${r.group}</td>
+    <td class="pvt-overview-cell pvt-overview-acc">${r.acc
+      ? `<span class="pvt-overview-cut">${r.cut}</span>${r.acc}`
+      : `<span class="pvt-overview-cut">${r.cut}</span>sens. ${r.sens} · spec. ${r.spec}`}</td>
+    <td class="pvt-overview-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></td>
+  </tr>`).join('');
+  el.innerHTML = `<div class="pvt-card pvt-overview-card">
+    <table class="pvt-overview-table">
+      <thead><tr>
+        <th class="pvt-overview-th">Measure</th>
+        <th class="pvt-overview-th" title="Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity.">Source</th>
+        <th class="pvt-overview-th" title="Measures derived from the same administration of the same instrument share error and are not independent evidence: each named group counts as ONE indicator in the aggregation.">Counts as</th>
+        <th class="pvt-overview-th" title="Published accuracy at the cut-off named in the cell — the same figures printed beside each measure's cut-off selector.">Accuracy at default cut-off</th>
+        <th aria-hidden="true"></th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014) — measures sharing an instrument count as one between them, which is what the running summary's "counts as one" tags mean. The Summary tab converts the failure count to post-test probabilities across a range of base rates. No single index is a verdict.</p>
+  </div>`;
+  el.querySelectorAll('[data-about-tab]').forEach(row => {
+    const go = () => switchPvtTab(row.dataset.aboutTab);
+    row.addEventListener('click', go);
+    row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+  });
+}
+
 function setupPvtPage(){
   const root = document.getElementById('validity');
   if (!root) return;
+  renderPvtAboutPanel();
   root.querySelectorAll('.pvt-method-tab').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
   });

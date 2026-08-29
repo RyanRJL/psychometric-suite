@@ -9596,7 +9596,8 @@ body.rb-docked-active{padding-right:0}
 /* ---- Tab strip: white rounded-top sheet ---- */
 .pvt-method-tabs{
   display:grid;
-  grid-template-columns:repeat(7,minmax(120px,1fr));
+  /* Narrow leftmost About column + the seven measure tabs. */
+  grid-template-columns:minmax(72px,auto) repeat(7,minmax(120px,1fr));
   gap:0;
   background:#FFFFFF;
   border:1px solid rgba(20,15,5,0.08);
@@ -9687,6 +9688,112 @@ body.rb-docked-active{padding-right:0}
 .pvt-status.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.4);background:rgba(138,122,44,0.07)}
 .pvt-status.is-idle{display:none}
 .pvt-status .pvt-flag-icon{width:9px;height:9px;flex:none}
+
+/* ---- About landing tab + overview table ----
+   Same idiom as the Change Analysis overview: a small leftmost "?" tab
+   the page lands on, and a comparison table with click-to-jump rows.
+   Standalone class names throughout (the cascade rule in CLAUDE.md). */
+.pvt-method-tab-about{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+.pvt-about-bubble{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  border:1px solid rgba(20,15,5,0.18);
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  color:#5A5A5A;
+}
+.pvt-method-tab-about.active .pvt-about-bubble{border-color:rgba(156,61,42,0.45);color:#9C3D2A}
+.pvt-about-tab-label{
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:500;
+  color:#3F3F3F;
+}
+.pvt-method-tab-about.active .pvt-about-tab-label{color:#1A1A1A;font-weight:600}
+
+.pvt-overview-card{padding:6px 6px 12px}
+.pvt-overview-table{width:100%;border-collapse:collapse}
+.pvt-overview-th{
+  padding:10px 12px 8px;
+  text-align:left;
+  font-family:var(--sans);
+  font-size:9.5px;
+  font-weight:600;
+  letter-spacing:0.11em;
+  text-transform:uppercase;
+  color:#A29D95;
+  border-bottom:1px solid rgba(20,15,5,0.08);
+  white-space:nowrap;
+}
+.pvt-overview-row{cursor:pointer;transition:background 120ms ease}
+.pvt-overview-row:hover{background:rgba(20,15,5,0.035)}
+.pvt-overview-row:focus{outline:none}
+.pvt-overview-row:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+.pvt-overview-row td{
+  padding:11px 12px;
+  border-bottom:1px solid rgba(20,15,5,0.06);
+  vertical-align:top;
+}
+.pvt-overview-row:last-child td{border-bottom:none}
+.pvt-overview-measure{min-width:230px}
+.pvt-overview-title{
+  display:block;
+  font-family:var(--sans);
+  font-size:13px;
+  font-weight:600;
+  color:var(--ink);
+  line-height:1.3;
+}
+.pvt-overview-desc{
+  display:block;
+  margin-top:2px;
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:#6E6860;
+  line-height:1.45;
+}
+.pvt-overview-cite{
+  display:block;
+  margin-top:3px;
+  font-family:var(--sans);
+  font-size:10.5px;
+  color:#9E9890;
+}
+.pvt-overview-cell{
+  font-family:var(--sans);
+  font-size:12px;
+  color:#4D4840;
+  white-space:nowrap;
+}
+.pvt-overview-acc{white-space:normal;min-width:150px}
+.pvt-overview-cut{
+  display:block;
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  color:var(--ink);
+  margin-bottom:1px;
+}
+.pvt-overview-arrow{width:24px;color:#BCB6AD}
+.pvt-overview-arrow svg{width:14px;height:14px;display:block}
+.pvt-overview-foot{
+  margin:10px 12px 0;
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:#6E6860;
+  line-height:1.55;
+}
 
 /* ---- Content panel: the cream-to-white gradient sheet ---- */
 /* The sheet holds every method panel AND the running rail, so the rail is
