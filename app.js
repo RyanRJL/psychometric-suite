@@ -921,7 +921,11 @@ function renderConvFullTable(){
     const cells = cols.map(m => {
       const anchored = m === convFullAnchor;
       const raw = anchored ? v : fromZ(z, m);
-      const dp = m === 'z' ? 2 : anchored ? a.dp : 1;
+      /* Score columns print whole scores — that is how standard, T and
+         scaled scores are reported, and how the manuals' own conversion
+         tables print them. z keeps 2 dp: it is the one column that shows
+         exactly where two metrics fail to map cleanly. */
+      const dp = m === 'z' ? 2 : 0;
       return `<td class="conv-full-cell${anchored ? ' is-anchor' : ''}">${fmt(raw, dp)}</td>`;
     }).join('');
     rowsHtml.push(`<tr class="conv-full-row${i === currentIdx ? ' is-current' : ''}">
@@ -1218,6 +1222,11 @@ document.getElementById('conv-value').addEventListener('input', renderConverter)
 document.getElementById('conv-full-anchor')?.addEventListener('click', e => {
   const btn = e.target.closest('[data-anchor]');
   if (btn) convFullSetAnchor(btn.dataset.anchor);
+});
+/* Opening the disclosure re-renders so the highlighted row is scrolled to
+   centre — scrollTop set while the details was closed does not stick. */
+document.getElementById('conv-full-details')?.addEventListener('toggle', function(){
+  if (this.open) renderConvFullTable();
 });
 
 // Slider - syncs back to the value input and re-renders

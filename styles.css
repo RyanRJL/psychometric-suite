@@ -5611,7 +5611,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 /* ---- View tabs: Equivalents / Distribution segmented control ---- */
 #converter .conv-view-tabs{
   display:grid!important;
-  grid-template-columns:repeat(3,1fr)!important;
+  grid-template-columns:1fr 1fr!important;
   gap:0!important;
   background:rgba(20,15,5,0.07)!important;
   border:1px solid rgba(20,15,5,0.10)!important;
@@ -5660,8 +5660,59 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 #converter .conv-view-pane.is-active{display:block!important}
 
 /* ---- Full conversion table view ----
-   Standalone .conv-full-* classes (the cascade rule in CLAUDE.md). The
-   scroll box owns the height; the header is sticky inside it. */
+   Standalone .conv-full-* classes (the cascade rule in CLAUDE.md). A
+   collapsed full-width disclosure in the cockpit grid (grid-area: table);
+   the scroll box owns the height and the header is sticky inside it. */
+.conv-full-details{
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
+  background:#FFFFFF;
+}
+.conv-full-details summary{
+  display:flex;
+  align-items:baseline;
+  gap:9px;
+  padding:13px 16px;
+  cursor:pointer;
+  list-style:none;
+  font-family:var(--sans);
+  font-size:13px;
+  font-weight:600;
+  color:#1A1A1A;
+}
+.conv-full-details summary::-webkit-details-marker{display:none}
+.conv-full-details summary svg{
+  width:14px;height:14px;
+  align-self:center;
+  flex:none;
+  color:#7A766E;
+}
+.conv-full-details summary::after{
+  content:'show';
+  margin-left:auto;
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--faint,#9E9890);
+}
+.conv-full-details[open] summary::after{content:'hide'}
+.conv-full-details summary:hover{background:rgba(20,15,5,0.02)}
+.conv-full-summary-hint{
+  font-family:var(--sans);
+  font-size:11.5px;
+  font-weight:400;
+  color:#8A867E;
+}
+.conv-full-details[open] > summary{border-bottom:1px solid rgba(20,15,5,0.07)}
+.conv-full-details .conv-full-controls,
+.conv-full-details .conv-full-scroll,
+.conv-full-details .conv-full-foot{
+  margin-left:16px;
+  margin-right:16px;
+}
+.conv-full-details .conv-full-controls{margin-top:14px}
+.conv-full-details .conv-full-foot{margin-bottom:14px}
 .conv-full-controls{
   display:flex;
   align-items:center;
@@ -8353,6 +8404,7 @@ body.rb-docked-active{padding-right:0}
     "fields  slider"
     "equiv   curve"
     "class   class"
+    "table   table"
     "foot    foot" !important;
   column-gap:24px !important;
   row-gap:18px !important;
@@ -8368,6 +8420,7 @@ body.rb-docked-active{padding-right:0}
 #converter .conv-unified-panel > #conv-output     { grid-area: equiv; }
 #converter .conv-unified-panel > .curve-wrap      { grid-area: curve; }
 #converter .conv-unified-panel > .conv-meta-strip { grid-area: class; }
+#converter .conv-unified-panel > .conv-full-details { grid-area: table; }
 #converter .conv-unified-panel > .conv-desc-footnote { grid-area: foot; }
 
 /* Equivalents column — vertical stack of 5 chips, one score per row.

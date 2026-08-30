@@ -5643,7 +5643,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 /* ---- View tabs: Equivalents / Distribution segmented control ---- */
 #converter .conv-view-tabs{
   display:grid!important;
-  grid-template-columns:repeat(3,1fr)!important;
+  grid-template-columns:1fr 1fr!important;
   gap:0!important;
   background:rgba(20,15,5,0.07)!important;
   border:1px solid rgba(20,15,5,0.10)!important;
@@ -5692,8 +5692,59 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 #converter .conv-view-pane.is-active{display:block!important}
 
 /* ---- Full conversion table view ----
-   Standalone .conv-full-* classes (the cascade rule in CLAUDE.md). The
-   scroll box owns the height; the header is sticky inside it. */
+   Standalone .conv-full-* classes (the cascade rule in CLAUDE.md). A
+   collapsed full-width disclosure in the cockpit grid (grid-area: table);
+   the scroll box owns the height and the header is sticky inside it. */
+.conv-full-details{
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
+  background:#FFFFFF;
+}
+.conv-full-details summary{
+  display:flex;
+  align-items:baseline;
+  gap:9px;
+  padding:13px 16px;
+  cursor:pointer;
+  list-style:none;
+  font-family:var(--sans);
+  font-size:13px;
+  font-weight:600;
+  color:#1A1A1A;
+}
+.conv-full-details summary::-webkit-details-marker{display:none}
+.conv-full-details summary svg{
+  width:14px;height:14px;
+  align-self:center;
+  flex:none;
+  color:#7A766E;
+}
+.conv-full-details summary::after{
+  content:'show';
+  margin-left:auto;
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--faint,#9E9890);
+}
+.conv-full-details[open] summary::after{content:'hide'}
+.conv-full-details summary:hover{background:rgba(20,15,5,0.02)}
+.conv-full-summary-hint{
+  font-family:var(--sans);
+  font-size:11.5px;
+  font-weight:400;
+  color:#8A867E;
+}
+.conv-full-details[open] > summary{border-bottom:1px solid rgba(20,15,5,0.07)}
+.conv-full-details .conv-full-controls,
+.conv-full-details .conv-full-scroll,
+.conv-full-details .conv-full-foot{
+  margin-left:16px;
+  margin-right:16px;
+}
+.conv-full-details .conv-full-controls{margin-top:14px}
+.conv-full-details .conv-full-foot{margin-bottom:14px}
 .conv-full-controls{
   display:flex;
   align-items:center;
@@ -8385,6 +8436,7 @@ body.rb-docked-active{padding-right:0}
     "fields  slider"
     "equiv   curve"
     "class   class"
+    "table   table"
     "foot    foot" !important;
   column-gap:24px !important;
   row-gap:18px !important;
@@ -8400,6 +8452,7 @@ body.rb-docked-active{padding-right:0}
 #converter .conv-unified-panel > #conv-output     { grid-area: equiv; }
 #converter .conv-unified-panel > .curve-wrap      { grid-area: curve; }
 #converter .conv-unified-panel > .conv-meta-strip { grid-area: class; }
+#converter .conv-unified-panel > .conv-full-details { grid-area: table; }
 #converter .conv-unified-panel > .conv-desc-footnote { grid-area: foot; }
 
 /* Equivalents column — vertical stack of 5 chips, one score per row.
@@ -16904,10 +16957,6 @@ input[type="number"].ds-age-pop-input{
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12c1-0 2-2 3-3 1-2 2-5 3-5 1 0 2 3 3 5 1 1 2 3 3 3"/></svg>
           <span>Distribution</span>
         </button>
-        <button class="conv-view-tab" type="button" data-conv-view="table" role="tab" aria-selected="false">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2" width="11" height="10" rx="1"/><line x1="1.5" y1="5.5" x2="12.5" y2="5.5"/><line x1="5.2" y1="5.5" x2="5.2" y2="12"/><line x1="8.9" y1="5.5" x2="8.9" y2="12"/></svg>
-          <span>Full table</span>
-        </button>
       </div>
 
       <div id="conv-output" class="conv-view-pane is-active" data-pane="equivalents" style="display: block;">
@@ -16932,10 +16981,18 @@ input[type="number"].ds-age-pop-input{
         </svg>
       </div>
 
-      <!-- Full conversion table: rendered by renderConvFullTable from the
-           SAME toZ/fromZ/fmtPct/classification functions the converter
-           uses, so the table and the one-at-a-time result cannot differ. -->
-      <div class="conv-view-pane" data-pane="table">
+      <!-- Full conversion table: a collapsed full-width section in the
+           cockpit grid (the view tabs are dropped by the cockpit layout,
+           so this is a disclosure, not a pane). Rendered by
+           renderConvFullTable from the SAME toZ/fromZ/fmtPct/
+           classification functions the converter uses, so the table and
+           the one-at-a-time result cannot differ. -->
+      <details class="conv-full-details" id="conv-full-details">
+        <summary>
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2" width="11" height="10" rx="1"/><line x1="1.5" y1="5.5" x2="12.5" y2="5.5"/><line x1="5.2" y1="5.5" x2="5.2" y2="12"/><line x1="8.9" y1="5.5" x2="8.9" y2="12"/></svg>
+          <span>Full conversion table</span>
+          <span class="conv-full-summary-hint">every score, scannable — the entered score's row is highlighted</span>
+        </summary>
         <div class="conv-full-controls">
           <span class="conv-full-label">Rows anchored on</span>
           <div class="conv-full-anchor" id="conv-full-anchor" role="tablist" aria-label="Anchor metric">
@@ -16946,8 +17003,8 @@ input[type="number"].ds-age-pop-input{
           </div>
         </div>
         <div class="conv-full-scroll" id="conv-full-scroll"></div>
-        <p class="conv-full-foot">The anchored column runs in whole scores (z in 0.25 steps); the other columns are the exact normal-curve equivalents, to 1 dp (z to 2 dp), so a fractional value marks where two metrics do not map cleanly. Percentile and classification conventions match the converter above. Ranges: Standard 40–160 · T 10–90 · Scaled 1–19 · z −4 to +4.</p>
-      </div>
+        <p class="conv-full-foot">Score columns are rounded to the nearest whole score, as scores are reported; z is exact to 2 dp, so it marks where two metrics do not map cleanly. Percentile and classification conventions match the converter above. Ranges: Standard 40–160 · T 10–90 · Scaled 1–19 · z −4 to +4 in 0.25 steps.</p>
+      </details>
 
       <div class="conv-meta-strip">
         <div class="conv-desc-rows">
@@ -22033,7 +22090,11 @@ function renderConvFullTable(){
     const cells = cols.map(m => {
       const anchored = m === convFullAnchor;
       const raw = anchored ? v : fromZ(z, m);
-      const dp = m === 'z' ? 2 : anchored ? a.dp : 1;
+      /* Score columns print whole scores — that is how standard, T and
+         scaled scores are reported, and how the manuals' own conversion
+         tables print them. z keeps 2 dp: it is the one column that shows
+         exactly where two metrics fail to map cleanly. */
+      const dp = m === 'z' ? 2 : 0;
       return `<td class="conv-full-cell${anchored ? ' is-anchor' : ''}">${fmt(raw, dp)}</td>`;
     }).join('');
     rowsHtml.push(`<tr class="conv-full-row${i === currentIdx ? ' is-current' : ''}">
@@ -22330,6 +22391,11 @@ document.getElementById('conv-value').addEventListener('input', renderConverter)
 document.getElementById('conv-full-anchor')?.addEventListener('click', e => {
   const btn = e.target.closest('[data-anchor]');
   if (btn) convFullSetAnchor(btn.dataset.anchor);
+});
+/* Opening the disclosure re-renders so the highlighted row is scrolled to
+   centre — scrollTop set while the details was closed does not stick. */
+document.getElementById('conv-full-details')?.addEventListener('toggle', function(){
+  if (this.open) renderConvFullTable();
 });
 
 // Slider - syncs back to the value input and re-renders
