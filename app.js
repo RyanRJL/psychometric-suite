@@ -911,26 +911,56 @@ function renderConvFullTable(){
   }
 
   const cols = ['standard', 't', 'scaled', 'z'];
+  /* One whole score of a metric spans this much of the z axis. A column
+     COARSER than the anchor's row spacing prints each whole score only on
+     the row where it actually falls, blank between — the manuals' own
+     convention, and the honest one: repeating "21" down five standard-score
+     rows would claim each of them converts to scaled 21. A column FINER
+     than the anchor never repeats, so it prints its nearest whole score on
+     every row. z always prints exact to 2 dp: it is the continuous ruler
+     that shows where every score sits. */
+  const CONV_Z_UNIT = { standard: 1/15, t: 1/10, scaled: 1/3 };
+  const anchorZStep = convFullAnchor === 'z' ? a.step : CONV_Z_UNIT[convFullAnchor];
+  /* Compute anchor values from the integer step index rather than by
+     repeated addition, so the z column's 0.25 steps stay exact. Rows are
+     built ascending and rendered descending. */
+  const rowVals = [];
+  for (let i = 0; i <= steps; i++){
+    const v = a.min + i * a.step;
+    rowVals.push({ v, z: toZ(v, convFullAnchor), cells: {} });
+  }
+  cols.forEach(m => {
+    if (m === convFullAnchor){
+      rowVals.forEach(r => { r.cells[m] = fmt(r.v, a.dp); });
+      return;
+    }
+    if (m === 'z'){
+      rowVals.forEach(r => { r.cells[m] = fmt(r.z, 2); });
+      return;
+    }
+    if (CONV_Z_UNIT[m] > anchorZStep + 1e-9){
+      /* Sparse: place each whole score of this metric on its nearest row.
+         Spacing exceeds one row by construction, so no two collide. */
+      rowVals.forEach(r => { r.cells[m] = ''; });
+      const range = CONV_FULL_ANCHORS[m];
+      for (let t = range.min; t <= range.max; t++){
+        const idx = Math.round((fromZ(toZ(t, m), convFullAnchor) - a.min) / a.step);
+        if (idx >= 0 && idx <= steps) rowVals[idx].cells[m] = fmt(t, 0);
+      }
+    } else {
+      rowVals.forEach(r => { r.cells[m] = fmt(fromZ(r.z, m), 0); });
+    }
+  });
   const rowsHtml = [];
   for (let i = steps; i >= 0; i--){
-    /* Compute the anchor value from the integer step index rather than by
-       repeated addition, so the z column's 0.25 steps stay exact. */
-    const v = a.min + i * a.step;
-    const z = toZ(v, convFullAnchor);
-    const ss = fromZ(z, 'standard');
-    const cells = cols.map(m => {
-      const anchored = m === convFullAnchor;
-      const raw = anchored ? v : fromZ(z, m);
-      /* Score columns print whole scores — that is how standard, T and
-         scaled scores are reported, and how the manuals' own conversion
-         tables print them. z keeps 2 dp: it is the one column that shows
-         exactly where two metrics fail to map cleanly. */
-      const dp = m === 'z' ? 2 : 0;
-      return `<td class="conv-full-cell${anchored ? ' is-anchor' : ''}">${fmt(raw, dp)}</td>`;
-    }).join('');
+    const r = rowVals[i];
+    const ss = fromZ(r.z, 'standard');
+    const cells = cols.map(m =>
+      `<td class="conv-full-cell${m === convFullAnchor ? ' is-anchor' : ''}">${r.cells[m]}</td>`
+    ).join('');
     rowsHtml.push(`<tr class="conv-full-row${i === currentIdx ? ' is-current' : ''}">
       ${cells}
-      <td class="conv-full-cell">${fmtPct(fromZ(z, 'percentile'))}</td>
+      <td class="conv-full-cell">${fmtPct(fromZ(r.z, 'percentile'))}</td>
       <td class="conv-full-desc">${wechslerDesc(ss)}</td>
       <td class="conv-full-desc">${aanDesc(ss)}</td>
     </tr>`);
