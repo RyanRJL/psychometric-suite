@@ -5643,7 +5643,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 /* ---- View tabs: Equivalents / Distribution segmented control ---- */
 #converter .conv-view-tabs{
   display:grid!important;
-  grid-template-columns:1fr 1fr!important;
+  grid-template-columns:repeat(3,1fr)!important;
   gap:0!important;
   background:rgba(20,15,5,0.07)!important;
   border:1px solid rgba(20,15,5,0.10)!important;
@@ -5690,6 +5690,121 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 /* Pane visibility â€” only the active pane is shown */
 #converter .conv-view-pane{display:none!important}
 #converter .conv-view-pane.is-active{display:block!important}
+
+/* ---- Full conversion table view ----
+   Standalone .conv-full-* classes (the cascade rule in CLAUDE.md). The
+   scroll box owns the height; the header is sticky inside it. */
+.conv-full-controls{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:2px 0 12px;
+}
+.conv-full-label{
+  font-family:var(--sans);
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#7A766E;
+}
+.conv-full-anchor{
+  display:inline-flex;
+  background:rgba(20,15,5,0.06);
+  border:1px solid rgba(20,15,5,0.10);
+  border-radius:var(--r-pill);
+  padding:3px;
+  gap:2px;
+}
+.conv-full-anchor button{
+  border:none;
+  background:transparent;
+  font-family:var(--sans);
+  font-size:12px;
+  font-weight:500;
+  color:#5A5A5A;
+  padding:5px 14px;
+  border-radius:var(--r-pill);
+  cursor:pointer;
+  transition:background 140ms var(--ease), color 140ms var(--ease);
+}
+.conv-full-anchor button:hover:not(.is-active){color:#1A1A1A}
+.conv-full-anchor button.is-active{
+  background:#FFFFFF;
+  color:#1A1A1A;
+  font-weight:600;
+  box-shadow:0 1px 2px rgba(20,15,5,0.08), 0 0 0 1px rgba(20,15,5,0.04);
+}
+.conv-full-anchor button:focus{outline:none}
+.conv-full-anchor button:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.30)}
+.conv-full-scroll{
+  max-height:520px;
+  overflow:auto;
+  border:1px solid rgba(20,15,5,0.10);
+  border-radius:var(--r-md);
+  background:#FFFFFF;
+}
+.conv-full-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+}
+.conv-full-th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#F7F4EF;
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#7A766E;
+  text-align:center;
+  padding:10px 12px 9px;
+  border-bottom:1px solid rgba(20,15,5,0.12);
+  white-space:nowrap;
+}
+.conv-full-th.is-anchor{color:#9C3D2A}
+.conv-full-row td{
+  padding:6px 12px;
+  text-align:center;
+  border-bottom:1px solid rgba(20,15,5,0.045);
+}
+.conv-full-row:last-child td{border-bottom:none}
+.conv-full-row:hover td{background:rgba(20,15,5,0.03)}
+.conv-full-cell{
+  font-family:var(--mono);
+  font-size:12px;
+  color:#3F3F3F;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.conv-full-cell.is-anchor{
+  font-weight:600;
+  color:#1A1A1A;
+  background:rgba(20,15,5,0.02);
+}
+.conv-full-desc{
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:#4D4840;
+  white-space:nowrap;
+}
+/* The entered score's row — same quiet cream the app uses for "current". */
+.conv-full-row.is-current td{
+  background:#F7F2E6;
+  border-top:1px solid rgba(156,61,42,0.30);
+  border-bottom:1px solid rgba(156,61,42,0.30);
+}
+.conv-full-row.is-current .conv-full-cell.is-anchor{color:#9C3D2A}
+.conv-full-foot{
+  margin:10px 2px 0;
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:#6E6860;
+  line-height:1.55;
+}
 /* Override the inline style="display:block" on conv-output */
 #converter #conv-output[style]{display:none!important}
 #converter #conv-output.is-active[style]{display:block!important}
@@ -16789,6 +16904,10 @@ input[type="number"].ds-age-pop-input{
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12c1-0 2-2 3-3 1-2 2-5 3-5 1 0 2 3 3 5 1 1 2 3 3 3"/></svg>
           <span>Distribution</span>
         </button>
+        <button class="conv-view-tab" type="button" data-conv-view="table" role="tab" aria-selected="false">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2" width="11" height="10" rx="1"/><line x1="1.5" y1="5.5" x2="12.5" y2="5.5"/><line x1="5.2" y1="5.5" x2="5.2" y2="12"/><line x1="8.9" y1="5.5" x2="8.9" y2="12"/></svg>
+          <span>Full table</span>
+        </button>
       </div>
 
       <div id="conv-output" class="conv-view-pane is-active" data-pane="equivalents" style="display: block;">
@@ -16811,6 +16930,23 @@ input[type="number"].ds-age-pop-input{
     <text x="60" y="52" font-family="Source Serif 4, serif" font-style="italic" font-size="22" fill="var(--accent)" font-weight="500">50.0%</text>
   
         </svg>
+      </div>
+
+      <!-- Full conversion table: rendered by renderConvFullTable from the
+           SAME toZ/fromZ/fmtPct/classification functions the converter
+           uses, so the table and the one-at-a-time result cannot differ. -->
+      <div class="conv-view-pane" data-pane="table">
+        <div class="conv-full-controls">
+          <span class="conv-full-label">Rows anchored on</span>
+          <div class="conv-full-anchor" id="conv-full-anchor" role="tablist" aria-label="Anchor metric">
+            <button type="button" data-anchor="standard" class="is-active" role="tab" aria-selected="true">Standard</button>
+            <button type="button" data-anchor="t" role="tab" aria-selected="false">T</button>
+            <button type="button" data-anchor="scaled" role="tab" aria-selected="false">Scaled</button>
+            <button type="button" data-anchor="z" role="tab" aria-selected="false">z</button>
+          </div>
+        </div>
+        <div class="conv-full-scroll" id="conv-full-scroll"></div>
+        <p class="conv-full-foot">The anchored column runs in whole scores (z in 0.25 steps); the other columns are the exact normal-curve equivalents, to 1 dp (z to 2 dp), so a fractional value marks where two metrics do not map cleanly. Percentile and classification conventions match the converter above. Ranges: Standard 40–160 · T 10–90 · Scaled 1–19 · z −4 to +4.</p>
       </div>
 
       <div class="conv-meta-strip">
@@ -21814,10 +21950,10 @@ function renderConverter(){
   const type = document.getElementById('conv-type').value;
   const val = document.getElementById('conv-value').value;
   const out = document.getElementById('conv-output');
-  if (val === '' || isNaN(val)){ out.style.display = 'none'; return; }
+  if (val === '' || isNaN(val)){ out.style.display = 'none'; renderConvFullTable(); return; }
   out.style.display = 'block';
   const z = toZ(val, type);
-  if (z == null){ out.style.display = 'none'; return; }
+  if (z == null){ out.style.display = 'none'; renderConvFullTable(); return; }
   // Sync slider and readout
   const slider = document.getElementById('conv-slider');
   if (slider) slider.value = Math.max(-3, Math.min(3, z)).toFixed(2);
@@ -21847,6 +21983,90 @@ function renderConverter(){
   updateDescCarousel('conv-aan-block', activeIdx);
 
   drawCurve(z, type);
+  renderConvFullTable();
+}
+
+/* ---------- Full conversion table view ----------
+   A scannable lookup table, the appendix every manual carries. Every cell
+   is computed through the SAME toZ/fromZ/fmt/fmtPct/wechslerDesc/aanDesc
+   the one-at-a-time converter uses — no second table of numbers exists to
+   drift. Rows are anchored on ONE metric at that metric's real integer
+   values (z in 0.25 steps): a merged table anchored on standard scores
+   would print scaled "7.3", a score nobody can report, so the fractional
+   equivalents stay in the non-anchored columns where they honestly mark
+   that two metrics do not map cleanly. Descending, as the manuals print.
+   The entered score's row is highlighted and scrolled into view, so the
+   input above doubles as "find me in the table". */
+const CONV_FULL_ANCHORS = {
+  standard: { min: 40,  max: 160, step: 1,    dp: 0 },
+  t:        { min: 10,  max: 90,  step: 1,    dp: 0 },
+  scaled:   { min: 1,   max: 19,  step: 1,    dp: 0 },
+  z:        { min: -4,  max: 4,   step: 0.25, dp: 2 }
+};
+let convFullAnchor = 'standard';
+function renderConvFullTable(){
+  const wrap = document.getElementById('conv-full-scroll');
+  if (!wrap) return;
+  const a = CONV_FULL_ANCHORS[convFullAnchor];
+  const type = document.getElementById('conv-type')?.value;
+  const val = document.getElementById('conv-value')?.value;
+  const zIn = (val === '' || val == null) ? null : toZ(val, type);
+
+  /* The highlighted row is the anchor value nearest the entered score,
+     and only if the score actually lands inside the table's range. */
+  let currentIdx = -1;
+  const steps = Math.round((a.max - a.min) / a.step);
+  if (zIn != null){
+    const equiv = fromZ(zIn, convFullAnchor);
+    const idx = Math.round((equiv - a.min) / a.step);
+    if (idx >= 0 && idx <= steps) currentIdx = idx;
+  }
+
+  const cols = ['standard', 't', 'scaled', 'z'];
+  const rowsHtml = [];
+  for (let i = steps; i >= 0; i--){
+    /* Compute the anchor value from the integer step index rather than by
+       repeated addition, so the z column's 0.25 steps stay exact. */
+    const v = a.min + i * a.step;
+    const z = toZ(v, convFullAnchor);
+    const ss = fromZ(z, 'standard');
+    const cells = cols.map(m => {
+      const anchored = m === convFullAnchor;
+      const raw = anchored ? v : fromZ(z, m);
+      const dp = m === 'z' ? 2 : anchored ? a.dp : 1;
+      return `<td class="conv-full-cell${anchored ? ' is-anchor' : ''}">${fmt(raw, dp)}</td>`;
+    }).join('');
+    rowsHtml.push(`<tr class="conv-full-row${i === currentIdx ? ' is-current' : ''}">
+      ${cells}
+      <td class="conv-full-cell">${fmtPct(fromZ(z, 'percentile'))}</td>
+      <td class="conv-full-desc">${wechslerDesc(ss)}</td>
+      <td class="conv-full-desc">${aanDesc(ss)}</td>
+    </tr>`);
+  }
+  wrap.innerHTML = `<table class="conv-full-table">
+    <thead><tr>
+      <th class="conv-full-th${convFullAnchor === 'standard' ? ' is-anchor' : ''}">Standard</th>
+      <th class="conv-full-th${convFullAnchor === 't' ? ' is-anchor' : ''}">T</th>
+      <th class="conv-full-th${convFullAnchor === 'scaled' ? ' is-anchor' : ''}">Scaled</th>
+      <th class="conv-full-th${convFullAnchor === 'z' ? ' is-anchor' : ''}">z</th>
+      <th class="conv-full-th">Percentile</th>
+      <th class="conv-full-th">Wechsler</th>
+      <th class="conv-full-th">AACN</th>
+    </tr></thead>
+    <tbody>${rowsHtml.join('')}</tbody>
+  </table>`;
+  const cur = wrap.querySelector('.conv-full-row.is-current');
+  if (cur) wrap.scrollTop = Math.max(0, cur.offsetTop - wrap.clientHeight / 2);
+}
+function convFullSetAnchor(name){
+  if (!CONV_FULL_ANCHORS[name]) return;
+  convFullAnchor = name;
+  document.querySelectorAll('#conv-full-anchor [data-anchor]').forEach(b => {
+    const on = b.dataset.anchor === name;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  renderConvFullTable();
 }
 /* Horizontal geometry of the converter curve, shared by the code that DRAWS it
    and the code that maps a click back to a z score. These were duplicated, and
@@ -22100,9 +22320,17 @@ function updateSliderTicks(type) {
 
 document.getElementById('conv-type').addEventListener('change', function() {
   updateSliderTicks(this.value);
+  /* The full table follows the input type so the highlighted row lands in
+     the anchored column — except percentile, which is an output, not a
+     metric the table can anchor on (see SCORE_METRICS). */
+  if (CONV_FULL_ANCHORS[this.value]) convFullSetAnchor(this.value);
   renderConverter();
 });
 document.getElementById('conv-value').addEventListener('input', renderConverter);
+document.getElementById('conv-full-anchor')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-anchor]');
+  if (btn) convFullSetAnchor(btn.dataset.anchor);
+});
 
 // Slider - syncs back to the value input and re-renders
 document.getElementById('conv-slider').addEventListener('input', function(){

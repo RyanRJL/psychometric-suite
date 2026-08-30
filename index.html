@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260829ae">
+<link rel="stylesheet" href="styles.css?v=20260830aa">
 <link rel="stylesheet" href="design-system.css?v=20260828al">
 
 <style>
@@ -921,6 +921,10 @@
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12c1-0 2-2 3-3 1-2 2-5 3-5 1 0 2 3 3 5 1 1 2 3 3 3"/></svg>
           <span>Distribution</span>
         </button>
+        <button class="conv-view-tab" type="button" data-conv-view="table" role="tab" aria-selected="false">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2" width="11" height="10" rx="1"/><line x1="1.5" y1="5.5" x2="12.5" y2="5.5"/><line x1="5.2" y1="5.5" x2="5.2" y2="12"/><line x1="8.9" y1="5.5" x2="8.9" y2="12"/></svg>
+          <span>Full table</span>
+        </button>
       </div>
 
       <div id="conv-output" class="conv-view-pane is-active" data-pane="equivalents" style="display: block;">
@@ -943,6 +947,23 @@
     <text x="60" y="52" font-family="Source Serif 4, serif" font-style="italic" font-size="22" fill="var(--accent)" font-weight="500">50.0%</text>
   
         </svg>
+      </div>
+
+      <!-- Full conversion table: rendered by renderConvFullTable from the
+           SAME toZ/fromZ/fmtPct/classification functions the converter
+           uses, so the table and the one-at-a-time result cannot differ. -->
+      <div class="conv-view-pane" data-pane="table">
+        <div class="conv-full-controls">
+          <span class="conv-full-label">Rows anchored on</span>
+          <div class="conv-full-anchor" id="conv-full-anchor" role="tablist" aria-label="Anchor metric">
+            <button type="button" data-anchor="standard" class="is-active" role="tab" aria-selected="true">Standard</button>
+            <button type="button" data-anchor="t" role="tab" aria-selected="false">T</button>
+            <button type="button" data-anchor="scaled" role="tab" aria-selected="false">Scaled</button>
+            <button type="button" data-anchor="z" role="tab" aria-selected="false">z</button>
+          </div>
+        </div>
+        <div class="conv-full-scroll" id="conv-full-scroll"></div>
+        <p class="conv-full-foot">The anchored column runs in whole scores (z in 0.25 steps); the other columns are the exact normal-curve equivalents, to 1 dp (z to 2 dp), so a fractional value marks where two metrics do not map cleanly. Percentile and classification conventions match the converter above. Ranges: Standard 40–160 · T 10–90 · Scaled 1–19 · z −4 to +4.</p>
       </div>
 
       <div class="conv-meta-strip">
@@ -3008,7 +3029,7 @@
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
 <script src="data.js?v=20260828aa"></script>
-<script src="app.js?v=20260829ae"></script>
+<script src="app.js?v=20260830aa"></script>
 <script src="design-system.js?v=20260828ab" defer></script>
 <script src="app-effectsize-page.js?v=20260828aa"></script>
 <script src="app-viz-page.js?v=20260828aa"></script>

@@ -838,10 +838,10 @@ function renderConverter(){
   const type = document.getElementById('conv-type').value;
   const val = document.getElementById('conv-value').value;
   const out = document.getElementById('conv-output');
-  if (val === '' || isNaN(val)){ out.style.display = 'none'; return; }
+  if (val === '' || isNaN(val)){ out.style.display = 'none'; renderConvFullTable(); return; }
   out.style.display = 'block';
   const z = toZ(val, type);
-  if (z == null){ out.style.display = 'none'; return; }
+  if (z == null){ out.style.display = 'none'; renderConvFullTable(); return; }
   // Sync slider and readout
   const slider = document.getElementById('conv-slider');
   if (slider) slider.value = Math.max(-3, Math.min(3, z)).toFixed(2);
@@ -871,6 +871,90 @@ function renderConverter(){
   updateDescCarousel('conv-aan-block', activeIdx);
 
   drawCurve(z, type);
+  renderConvFullTable();
+}
+
+/* ---------- Full conversion table view ----------
+   A scannable lookup table, the appendix every manual carries. Every cell
+   is computed through the SAME toZ/fromZ/fmt/fmtPct/wechslerDesc/aanDesc
+   the one-at-a-time converter uses — no second table of numbers exists to
+   drift. Rows are anchored on ONE metric at that metric's real integer
+   values (z in 0.25 steps): a merged table anchored on standard scores
+   would print scaled "7.3", a score nobody can report, so the fractional
+   equivalents stay in the non-anchored columns where they honestly mark
+   that two metrics do not map cleanly. Descending, as the manuals print.
+   The entered score's row is highlighted and scrolled into view, so the
+   input above doubles as "find me in the table". */
+const CONV_FULL_ANCHORS = {
+  standard: { min: 40,  max: 160, step: 1,    dp: 0 },
+  t:        { min: 10,  max: 90,  step: 1,    dp: 0 },
+  scaled:   { min: 1,   max: 19,  step: 1,    dp: 0 },
+  z:        { min: -4,  max: 4,   step: 0.25, dp: 2 }
+};
+let convFullAnchor = 'standard';
+function renderConvFullTable(){
+  const wrap = document.getElementById('conv-full-scroll');
+  if (!wrap) return;
+  const a = CONV_FULL_ANCHORS[convFullAnchor];
+  const type = document.getElementById('conv-type')?.value;
+  const val = document.getElementById('conv-value')?.value;
+  const zIn = (val === '' || val == null) ? null : toZ(val, type);
+
+  /* The highlighted row is the anchor value nearest the entered score,
+     and only if the score actually lands inside the table's range. */
+  let currentIdx = -1;
+  const steps = Math.round((a.max - a.min) / a.step);
+  if (zIn != null){
+    const equiv = fromZ(zIn, convFullAnchor);
+    const idx = Math.round((equiv - a.min) / a.step);
+    if (idx >= 0 && idx <= steps) currentIdx = idx;
+  }
+
+  const cols = ['standard', 't', 'scaled', 'z'];
+  const rowsHtml = [];
+  for (let i = steps; i >= 0; i--){
+    /* Compute the anchor value from the integer step index rather than by
+       repeated addition, so the z column's 0.25 steps stay exact. */
+    const v = a.min + i * a.step;
+    const z = toZ(v, convFullAnchor);
+    const ss = fromZ(z, 'standard');
+    const cells = cols.map(m => {
+      const anchored = m === convFullAnchor;
+      const raw = anchored ? v : fromZ(z, m);
+      const dp = m === 'z' ? 2 : anchored ? a.dp : 1;
+      return `<td class="conv-full-cell${anchored ? ' is-anchor' : ''}">${fmt(raw, dp)}</td>`;
+    }).join('');
+    rowsHtml.push(`<tr class="conv-full-row${i === currentIdx ? ' is-current' : ''}">
+      ${cells}
+      <td class="conv-full-cell">${fmtPct(fromZ(z, 'percentile'))}</td>
+      <td class="conv-full-desc">${wechslerDesc(ss)}</td>
+      <td class="conv-full-desc">${aanDesc(ss)}</td>
+    </tr>`);
+  }
+  wrap.innerHTML = `<table class="conv-full-table">
+    <thead><tr>
+      <th class="conv-full-th${convFullAnchor === 'standard' ? ' is-anchor' : ''}">Standard</th>
+      <th class="conv-full-th${convFullAnchor === 't' ? ' is-anchor' : ''}">T</th>
+      <th class="conv-full-th${convFullAnchor === 'scaled' ? ' is-anchor' : ''}">Scaled</th>
+      <th class="conv-full-th${convFullAnchor === 'z' ? ' is-anchor' : ''}">z</th>
+      <th class="conv-full-th">Percentile</th>
+      <th class="conv-full-th">Wechsler</th>
+      <th class="conv-full-th">AACN</th>
+    </tr></thead>
+    <tbody>${rowsHtml.join('')}</tbody>
+  </table>`;
+  const cur = wrap.querySelector('.conv-full-row.is-current');
+  if (cur) wrap.scrollTop = Math.max(0, cur.offsetTop - wrap.clientHeight / 2);
+}
+function convFullSetAnchor(name){
+  if (!CONV_FULL_ANCHORS[name]) return;
+  convFullAnchor = name;
+  document.querySelectorAll('#conv-full-anchor [data-anchor]').forEach(b => {
+    const on = b.dataset.anchor === name;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  renderConvFullTable();
 }
 /* Horizontal geometry of the converter curve, shared by the code that DRAWS it
    and the code that maps a click back to a z score. These were duplicated, and
@@ -1124,9 +1208,17 @@ function updateSliderTicks(type) {
 
 document.getElementById('conv-type').addEventListener('change', function() {
   updateSliderTicks(this.value);
+  /* The full table follows the input type so the highlighted row lands in
+     the anchored column — except percentile, which is an output, not a
+     metric the table can anchor on (see SCORE_METRICS). */
+  if (CONV_FULL_ANCHORS[this.value]) convFullSetAnchor(this.value);
   renderConverter();
 });
 document.getElementById('conv-value').addEventListener('input', renderConverter);
+document.getElementById('conv-full-anchor')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-anchor]');
+  if (btn) convFullSetAnchor(btn.dataset.anchor);
+});
 
 // Slider - syncs back to the value input and re-renders
 document.getElementById('conv-slider').addEventListener('input', function(){
