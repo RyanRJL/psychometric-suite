@@ -17776,7 +17776,15 @@ input[type="number"].ds-age-pop-input{
               <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-hits" placeholder="e.g. 16">
             </div>
             <div class="field">
-              <label>Base-rate criterion</label>
+              <label>Flag basis</label>
+              <select id="pvt-cvlt3-basis">
+                <option value="baserate" selected>Base rate by age &middot; CVLT-3 manual</option>
+                <option value="e15">&le; 15 &middot; a single error (Erdodi et al., 2018)</option>
+                <option value="e14">&le; 14 &middot; de facto standard (Schwartz et al., 2016)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Base-rate criterion <span class="hint">(base-rate basis only)</span></label>
               <select id="pvt-cvlt3-criterion">
                 <option value="standard" selected>10% &middot; conventional (spec. &ge; .90)</option>
                 <option value="conservative">5% &middot; stricter</option>
@@ -17792,22 +17800,25 @@ input[type="number"].ds-age-pop-input{
             </div>
           </div>
           <div class="pvt-source">
-            <span class="pvt-source-cite">Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms). The manual publishes <strong>base rates by age band, not a cut-off</strong>, and no sensitivity/specificity pair &mdash; the accuracy columns print dashes.</span>
+            <span class="pvt-source-cite">Base rates: Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms) &mdash; the manual publishes <strong>base rates by age band, not a cut-off</strong>. Cut-offs and accuracy: Erdodi et al. (2018) and Schwartz et al. (2016), both <strong>CVLT-II</strong>.</span>
+            <span class="pvt-source-accuracy" id="pvt-cvlt3-accuracy"></span>
           </div>
           <details class="formula-disclosure">
             <summary>How the threshold is derived, and why it moves with age</summary>
             <div class="formula-body">
-              <p>Table D.13 gives the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>, by age band. There is no published cut score, so the flag is derived rather than stored: the rarest score whose published base rate is still at or below the selected per-test false-positive criterion. 10% is this page's own convention &mdash; PVT cut-offs are conventionally set so specificity is .90 or better &mdash; so nothing outside the manual enters the number itself.</p>
+              <p><strong>Base rate by age (the default, and the only reading sourced to the CVLT-3).</strong> Table D.13 gives the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>, by age band. There is no published cut score, so the flag is derived rather than stored: the rarest score whose published base rate is still at or below the selected per-test false-positive criterion. 10% is this page's own convention &mdash; PVT cut-offs are conventionally set so specificity is .90 or better &mdash; so nothing outside the manual enters the number itself.</p>
               <p><strong>The age band does real work here.</strong> 15 of 16 hits is the 8.6th percentile across all ages but the <strong>26th</strong> at ages 80&ndash;90, so the derived threshold is &le; 15 in every band except 80&ndash;90, where it is &le; 14. Reading 15 as &ldquo;one off perfect, fine&rdquo; is a 3&ndash;6% event in a working-age adult and an unremarkable one in an 85-year-old. With no age entered the manual's own All ages column is used, and the readout says so.</p>
-              <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on the easier Forced Choice trial. Tables D.14 and D.15 give their base rates the other way round &mdash; that many <em>or more</em> &mdash; and the threshold is derived the same way. They come from the same administration as the hits, so all three count as <strong>one</strong> indicator.</p>
+              <p><strong>The two published cut-offs are CVLT-II figures, and the page says so wherever one is in force.</strong> The trial is structurally identical across editions &mdash; 16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition &mdash; so the transfer is the ordinary one, but it is a transfer. <strong>&le; 14</strong> is the de facto standard: across 17 studies and 4,432 patients it gives sensitivity .50 at specificity .93, and no healthy control in the review scored at or below it (Schwartz et al., 2016). <strong>&le; 15</strong> treats a single error as a failure: in 104 adults with TBI it raised sensitivity to .56 while holding specificity at .92 across seven reference PVTs, identifying about 6% more invalid response sets (Erdodi et al., 2018). Note the two approaches converge &mdash; the derived threshold is already &le; 15 for every patient under 80.</p>
+              <p><strong>Failing rules invalidity in; passing rules nothing out.</strong> Examinees who failed a reference PVT were about eight times more likely to fail Forced Choice, but roughly half of invalid response sets pass it, because a sophisticated simulator recognises how easy the task is (Schwartz et al., 2016).</p>
+              <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on the easier Forced Choice trial. Tables D.14 and D.15 give their base rates the other way round &mdash; that many <em>or more</em> &mdash; and their threshold is always derived from those tables, whichever basis the hits use. They come from the same administration as the hits, so all three count as <strong>one</strong> indicator.</p>
             </div>
           </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-cvlt3-result"></div>
           <details class="pvt-caution">
-            <summary><strong>Caution.</strong> A near-perfect score does not rule out exaggeration, and the Brief Form cannot be scored here.</summary>
-            <div class="pvt-caution-body">The manual is explicit that forced-choice recognition is suited to blatant exaggeration: &ldquo;a poor score on forced choice testing is often a strong indicator of symptom amplification, but a perfect or near-perfect score does not rule it out&rdquo;, since a sophisticated simulator recognises the task as easy. Appendix D tabulates the Standard and Alternate Forms only &mdash; the Brief Form's 9-item list has no published base rates &mdash; and the trial is designed to be given after the Yes/No Recognition trial, roughly 10 minutes on (Delis et al., 2017).</div>
+            <summary><strong>Caution.</strong> Failure rates climb with genuine impairment; a near-perfect score rules nothing out.</summary>
+            <div class="pvt-caution-body">The manual is explicit that forced-choice recognition is suited to blatant exaggeration: &ldquo;a poor score on forced choice testing is often a strong indicator of symptom amplification, but a perfect or near-perfect score does not rule it out&rdquo;, since a sophisticated simulator recognises the task as easy. <strong>False positives concentrate in severe impairment</strong> &mdash; failure rates rise with the severity of neurocognitive disorder, and are substantially elevated in dementia and intellectual disability, so the cut-offs should not be read at face value there (Schwartz et al., 2016). Conversely there is a well-replicated <strong>reverse severity effect</strong> in head injury: patients with mild TBI were two to three times more likely to fail than those with moderate-to-severe TBI, and failure was unrelated to injury severity, neuroradiological findings or performance on tests sensitive to TBI (Erdodi et al., 2018). Appendix D tabulates the Standard and Alternate Forms only &mdash; the Brief Form's 9-item list has no published base rates &mdash; and the trial is given after the Yes/No Recognition trial, roughly 10 minutes on (Delis et al., 2017).</div>
           </details>
         </div>
       </div>
@@ -17929,14 +17940,18 @@ input[type="number"].ds-age-pop-input{
         <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson. [Forced Choice Recognition base rates by age band, Appendix D Tables D.13-D.15; the manual publishes no cut-off for this trial.]</p>
       <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson.</p>
-        <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
+        <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859.</p>
+        <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859. [The CVLT-II <span style="white-space:nowrap">&le; 15</span> cut-off and its accuracy across seven reference PVTs.]</p>
+      <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
         <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
         <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
         <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</p>
         <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30.</p>
-        <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
+        <p>Schwartz, E. S., Erdodi, L., Rodriguez, N., Ghosh, J. J., Curtain, J. R., Flashman, L. A., &amp; Roth, R. M. (2016). CVLT-II Forced Choice Recognition trial as an embedded validity indicator: A systematic review of the evidence. <i>Journal of the International Neuropsychological Society, 22</i>(8), 851&ndash;858.</p>
+        <p>Schwartz, E. S., Erdodi, L., Rodriguez, N., Ghosh, J. J., Curtain, J. R., Flashman, L. A., &amp; Roth, R. M. (2016). CVLT-II Forced Choice Recognition trial as an embedded validity indicator: A systematic review of the evidence. <i>Journal of the International Neuropsychological Society, 22</i>(8), 851&ndash;858. [The CVLT-II <span style="white-space:nowrap">&le; 14</span> cut-off; classification accuracy and the impairment gradient in failure rates.]</p>
+      <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
         <p>Slick, D. J., Sherman, E. M. S., &amp; Iverson, G. L. (1999). Diagnostic criteria for malingered neurocognitive dysfunction: Proposed standards for clinical practice and research. <i>The Clinical Neuropsychologist, 13</i>(4), 545–561.</p>
         <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
       </div>
@@ -21329,6 +21344,61 @@ const PVT_CVLT3_CRITERIA = [
   { key: 'conservative', pct:  5, label: '5% — stricter' }
 ];
 
+/* -------------------------------------------------------------------------
+   CVLT-3 FORCED CHOICE — the published cut-offs, which come from the CVLT-II
+
+   The CVLT-3 manual prints base rates and no cut-off (above). The CVLT-II
+   literature prints the opposite: a cut-off with classification accuracy,
+   and no age-banded base rates. Both are offered, and WHICH INSTRUMENT EACH
+   BELONGS TO IS STATED ON SCREEN AND IN THE EXPORT, because they are not the
+   same source. The trial is structurally identical across editions -- 16
+   List A targets, one distractor each, administered about 10 minutes after
+   Yes/No Recognition -- so the transfer is the ordinary one clinicians make,
+   but it is a transfer, not a CVLT-3 finding, and must never be printed as
+   though Delis et al. (2017) published it.
+
+   The base-rate reading stays the DEFAULT: it is the only one sourced to the
+   instrument in front of the clinician, and it is age-corrected, which a
+   fixed cut-off is not. Note the two agree almost everywhere -- the derived
+   threshold at the 10% criterion is <= 15 in every band below 80, which is
+   exactly Erdodi et al.'s recommendation, reached from a different direction.
+
+   TRANSCRIPTION PROOF. Erdodi et al. (2018) Table 6 reports sensitivity and
+   specificity for both cut-offs against seven reference PVTs, and states
+   summary values in the text. Those summaries are the ARITHMETIC MEAN of the
+   seven columns and reproduce exactly: <= 15 gives .5586 -> .56 sensitivity
+   and .9214 -> .92 specificity; <= 14 gives .4971 -> .50 and .9257 -> .93.
+   check.js section 39 re-derives all four, so a mistyped cell fails.
+
+   One wrinkle worth knowing before anyone "corrects" it: Erdodi's prose says
+   the new cut-off preserves "the same specificity (.92)", but its own table
+   averages to .92 for <= 15 and .93 for <= 14. The .93 stored here for <= 14
+   is Schwartz et al.'s (2016) systematic-review figure, which agrees with
+   that arithmetic. Both stored digits are published; the prose rounds.
+   ------------------------------------------------------------------------- */
+const PVT_CVLT3_FC_CUTOFFS = [
+  { key: 'baserate', cut: null, label: 'Base rate by age · CVLT-3 manual',
+    sens: '—', spec: '—',
+    cite: 'Delis et al. (2017), Appendix D — base rates by age band; no cut-off or accuracy pair is published.' },
+  { key: 'e15', cut: 15, label: '≤ 15 · a single error (Erdodi et al., 2018)',
+    sens: '.56', spec: '.92',
+    cite: 'Erdodi et al. (2018), ACN 33(7), 845–859 — mean across seven reference PVTs in 104 adults with TBI. CVLT-II.' },
+  { key: 'e14', cut: 14, label: '≤ 14 · de facto standard (Schwartz et al., 2016)',
+    sens: '.50', spec: '.93',
+    cite: 'Schwartz et al. (2016), JINS 22(8), 851–858 — systematic review, 17 studies, N = 4,432. CVLT-II.' }
+];
+
+/* Erdodi et al. (2018) Table 6, held so the summary figures above can be
+   DERIVED rather than asserted. Order: WMT, WCT, EI-5REC, EI-5NR, CVLT-II
+   Yes/No recognition hits, Wolfe LRE, Digit Span ACSS. */
+const PVT_CVLT3_ERDODI_T6 = {
+  refs: ['WMT', 'WCT', 'EI-5 REC', 'EI-5 NR', 'CVLT-II RH', 'Wolfe LRE', 'DS ACSS'],
+  e15: { sens: [0.47, 0.50, 0.52, 0.58, 0.72, 0.59, 0.53],
+         spec: [0.95, 0.93, 0.98, 0.90, 0.92, 0.88, 0.89] },
+  e14: { sens: [0.40, 0.48, 0.44, 0.50, 0.65, 0.56, 0.45],
+         spec: [0.95, 0.93, 0.98, 0.91, 0.93, 0.89, 0.89] }
+};
+
 </script>
 <script data-inlined-from="app.js">
 ﻿/* ============================================================
@@ -24574,7 +24644,12 @@ const APA_NOTES = {
     if (ctx.hasRds)  sources.push('Reliable Digit Span (Greiffenstein et al., 1994)');
     if (ctx.hasDs)   sources.push('Digit Span indices (Iverson & Tulsky, 2003; Axelrod et al., 2006 — WAIS-III)');
     if (ctx.hasRey)  sources.push('Rey 15-Item (Boone et al., 2002)');
-    if (ctx.hasCvlt3) sources.push('CVLT-3 Forced Choice (Delis et al., 2017, Tables D.13–D.15)');
+    /* The source entry follows the basis: with a borrowed cut-off in force
+       the table rests on two publications, not one, and the Sources line is
+       where a reader looks for that. */
+    if (ctx.hasCvlt3) sources.push(ctx.cvlt3Borrowed
+      ? `CVLT-3 Forced Choice (base rates Delis et al., 2017, Tables D.13–D.15; cut-off and accuracy ${ctx.cvlt3Cite}, CVLT-II)`
+      : 'CVLT-3 Forced Choice (Delis et al., 2017, Tables D.13–D.15)');
     if (ctx.hasTomm) sources.push('TOMM (Tombaugh, 1996; cut-offs Martin et al., 2020)');
     const shared = [];
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
@@ -24592,8 +24667,11 @@ const APA_NOTES = {
       /* The CVLT-3 is the one measure here with no published cut-off, so an
          exported table must say where its threshold came from — otherwise
          the Cut-off column implies the manual printed one. */
-      ctx.hasCvlt3
+      ctx.hasCvlt3 && !ctx.cvlt3Borrowed
         ? 'The CVLT-3 Forced Choice manual publishes base rates by age band, not a cut-off; its threshold is the rarest score whose published base rate is at or below the stated per-test false-positive criterion, so it varies with age.'
+        : '',
+      ctx.cvlt3Borrowed
+        ? `The CVLT-3 manual publishes no cut-off for Forced Choice Recognition; the cut-off and accuracy applied here are CVLT-II figures (${ctx.cvlt3Cite}), the trial being structurally identical across editions. The base rate shown is the CVLT-3 manual's own.`
         : '',
       ctx.esGated
         ? 'The Effort Scale is not computed because its screening gate was not met (Novitski et al., 2012).'
@@ -28473,6 +28551,10 @@ function pvtCvlt3CriticalThreshold(band, pct, which){
   }
   return null;
 }
+function pvtCvlt3Basis(){
+  const key = document.getElementById('pvt-cvlt3-basis')?.value;
+  return PVT_CVLT3_FC_CUTOFFS.find(c => c.key === key) || PVT_CVLT3_FC_CUTOFFS[0];
+}
 function pvtCvlt3Criterion(){
   const key = document.getElementById('pvt-cvlt3-criterion')?.value;
   return PVT_CVLT3_CRITERIA.find(c => c.key === key) || PVT_CVLT3_CRITERIA[0];
@@ -28489,7 +28571,15 @@ function getPvtCvlt3(){
   const crit = pvtCvlt3Criterion();
   const s = { hits, age, band, usedAllAges: band === 'All ages', criterion: crit };
   s.hitsRate = pvtCvlt3HitsRate(hits, band);
-  s.hitsThreshold = pvtCvlt3HitsThreshold(band, crit.pct);
+  /* The base rate is ALWAYS shown — it is the CVLT-3's own published figure
+     and the reason to read the age band at all. What the basis selects is
+     what the FLAG rests on: the derived threshold, or one of the two
+     CVLT-II cut-offs, which carry a published accuracy pair the manual
+     does not. Either way the app prints which, and on which instrument. */
+  const basis = pvtCvlt3Basis();
+  s.basis = basis;
+  s.derivedThreshold = pvtCvlt3HitsThreshold(band, crit.pct);
+  s.hitsThreshold = basis.cut === null ? s.derivedThreshold : basis.cut;
   s.hitsFail = s.hitsThreshold !== null && hits <= s.hitsThreshold;
   [['recall', rc, 'critRecall'], ['recognition', yc, 'critRecog']].forEach(([which, val, key]) => {
     if (val === undefined) return;
@@ -28838,8 +28928,10 @@ function getPvtSummaryRows(){
     rows.push({
       id: 'cvlt3', group: 'cvlt3', measure: 'CVLT-3 Forced Choice hits',
       score: `${cv.hits}/${PVT_CVLT3_FC_HITS.max}`,
-      cutoff: cv.hitsThreshold === null ? '—' : `≤ ${cv.hitsThreshold} (base rate, ages ${cv.band})`,
-      sens: '—', spec: '—',
+      cutoff: cv.hitsThreshold === null ? '—'
+        : cv.basis.cut === null ? `≤ ${cv.hitsThreshold} (base rate, ages ${cv.band})`
+        : `≤ ${cv.hitsThreshold} (CVLT-II)`,
+      sens: cv.basis.sens, spec: cv.basis.spec,
       result: pvtStatusWord(cv.hitsFail), fail: cv.hitsFail
     });
     [cv.critRecall, cv.critRecog].forEach((c, i) => {
@@ -28888,13 +28980,16 @@ function renderPvtCvlt3(){
   if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits to look up its published base rate.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits — the critical-item counts are read against it.'); return; }
+  const derived = s.basis.cut === null;
   const rows = [{
     label: 'Forced Choice total hits', value: `${s.hits}/${PVT_CVLT3_FC_HITS.max}`,
     state: s.hitsFail ? 'fail' : 'pass',
     meta: `Base rate ${pvtFmtRate(s.hitsRate)} at ages ${s.band} (Table D.13)${
       s.hitsThreshold === null
         ? ' · no score in this band reaches the criterion'
-        : ` · flags at ≤ ${s.hitsThreshold}, derived at the ${s.criterion.pct}% criterion`}`
+        : derived
+          ? ` · flags at ≤ ${s.hitsThreshold}, derived at the ${s.criterion.pct}% criterion`
+          : ` · cut-off ≤ ${s.hitsThreshold} · sens. ${s.basis.sens} · spec. ${s.basis.spec} (CVLT-II)`}`
   }];
   [s.critRecall, s.critRecog].forEach(c => {
     if (!c) return;
@@ -28906,11 +29001,16 @@ function renderPvtCvlt3(){
                              : ` · flags at ≥ ${c.threshold}`}`
     });
   });
+  /* Which instrument the flag came from is the one thing a reader of the
+     report must not have to guess, so it is stated whenever the flag rests
+     on a borrowed cut-off rather than on the CVLT-3's own table. */
+  const basisNote = derived ? '' :
+    ` The flag rests on the CVLT-II cut-off ≤ ${s.basis.cut}, not on a CVLT-3 figure; the base rate beside it is the CVLT-3 manual's.`;
   const note = `${s.usedAllAges
       ? (s.age === null ? 'No patient age entered, so the manual&rsquo;s All ages column is used — enter an age in the top bar for the banded reading, which can differ sharply.'
                         : `Age ${s.age} falls outside the CVLT-3 normative range (16&ndash;90), so the All ages column is used.`)
       : `Read against the ${s.band} band for the entered age of ${s.age}.`
-    } A poor forced-choice score is a strong indicator of exaggeration, but a perfect or near-perfect one does not rule it out (Delis et al., 2017).`;
+    }${basisNote} A poor forced-choice score is a strong indicator of exaggeration, but a perfect or near-perfect one does not rule it out (Delis et al., 2017).`;
   out.innerHTML = pvtReadoutHtml(rows, note);
 }
 
@@ -28966,6 +29066,8 @@ function renderPvtApa(){
       hasDs:   rows.some(r => r.id.startsWith('ds')),
       hasRey:  rows.some(r => r.id.startsWith('rey')),
       hasCvlt3: rows.some(r => r.group === 'cvlt3'),
+      cvlt3Borrowed: rows.some(r => r.group === 'cvlt3') && (typeof getPvtCvlt3 === 'function') && getPvtCvlt3().basis?.cut !== null && getPvtCvlt3().basis !== undefined,
+      cvlt3Cite: (getPvtCvlt3().basis?.cut === 15) ? 'Erdodi et al., 2018' : 'Schwartz et al., 2016',
       hasTomm: rows.some(r => r.group === 'tomm'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
@@ -29065,6 +29167,8 @@ function renderPvtAccuracy(){
       ? `Published accuracy at this cut-off: sens. ${PVT_DS_ACCURACY.conservative.sens} · spec. ${PVT_DS_ACCURACY.conservative.spec} (Axelrod et al., 2006); base rate 3.8% standardisation / 3.4% clinical (Iverson & Tulsky, 2003)`
       : `Published accuracy at this cut-off: sens. ${PVT_DS_ACCURACY.sensitive.sens} · spec. ${PVT_DS_ACCURACY.sensitive.spec} (Axelrod et al., 2006)`;
   }
+  const cvEl = document.getElementById('pvt-cvlt3-accuracy');
+  if (cvEl) cvEl.textContent = pvtCvlt3Basis().cite;
   const rdsEl = document.getElementById('pvt-rds-accuracy');
   if (rdsEl){
     const key = document.getElementById('pvt-rds-cutoff')?.value === 'traditional' ? 'traditional' : 'conservative';
@@ -29345,7 +29449,7 @@ function setupPvtPage(){
     const row = e.target.closest('[data-rail-tab]');
     if (row) switchPvtTab(row.dataset.railTab);
   });
-  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion'].forEach(id => {
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion','pvt-cvlt3-basis'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
   renderPvtAll();
@@ -32207,7 +32311,7 @@ if (document.readyState === 'loading'){
 }
 
 </script>
-<script src="design-system.js?v=20260903c" defer></script>
+<script src="design-system.js?v=20260903d" defer></script>
 <script data-inlined-from="app-effectsize-page.js">
 /* =====================================================================
    Effect Size Tools - page module (#effectsize)

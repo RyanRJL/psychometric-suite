@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260903c">
-<link rel="stylesheet" href="design-system.css?v=20260903c">
+<link rel="stylesheet" href="styles.css?v=20260903d">
+<link rel="stylesheet" href="design-system.css?v=20260903d">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1737,7 +1737,15 @@
               <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-hits" placeholder="e.g. 16">
             </div>
             <div class="field">
-              <label>Base-rate criterion</label>
+              <label>Flag basis</label>
+              <select id="pvt-cvlt3-basis">
+                <option value="baserate" selected>Base rate by age &middot; CVLT-3 manual</option>
+                <option value="e15">&le; 15 &middot; a single error (Erdodi et al., 2018)</option>
+                <option value="e14">&le; 14 &middot; de facto standard (Schwartz et al., 2016)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Base-rate criterion <span class="hint">(base-rate basis only)</span></label>
               <select id="pvt-cvlt3-criterion">
                 <option value="standard" selected>10% &middot; conventional (spec. &ge; .90)</option>
                 <option value="conservative">5% &middot; stricter</option>
@@ -1753,22 +1761,25 @@
             </div>
           </div>
           <div class="pvt-source">
-            <span class="pvt-source-cite">Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms). The manual publishes <strong>base rates by age band, not a cut-off</strong>, and no sensitivity/specificity pair &mdash; the accuracy columns print dashes.</span>
+            <span class="pvt-source-cite">Base rates: Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms) &mdash; the manual publishes <strong>base rates by age band, not a cut-off</strong>. Cut-offs and accuracy: Erdodi et al. (2018) and Schwartz et al. (2016), both <strong>CVLT-II</strong>.</span>
+            <span class="pvt-source-accuracy" id="pvt-cvlt3-accuracy"></span>
           </div>
           <details class="formula-disclosure">
             <summary>How the threshold is derived, and why it moves with age</summary>
             <div class="formula-body">
-              <p>Table D.13 gives the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>, by age band. There is no published cut score, so the flag is derived rather than stored: the rarest score whose published base rate is still at or below the selected per-test false-positive criterion. 10% is this page's own convention &mdash; PVT cut-offs are conventionally set so specificity is .90 or better &mdash; so nothing outside the manual enters the number itself.</p>
+              <p><strong>Base rate by age (the default, and the only reading sourced to the CVLT-3).</strong> Table D.13 gives the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>, by age band. There is no published cut score, so the flag is derived rather than stored: the rarest score whose published base rate is still at or below the selected per-test false-positive criterion. 10% is this page's own convention &mdash; PVT cut-offs are conventionally set so specificity is .90 or better &mdash; so nothing outside the manual enters the number itself.</p>
               <p><strong>The age band does real work here.</strong> 15 of 16 hits is the 8.6th percentile across all ages but the <strong>26th</strong> at ages 80&ndash;90, so the derived threshold is &le; 15 in every band except 80&ndash;90, where it is &le; 14. Reading 15 as &ldquo;one off perfect, fine&rdquo; is a 3&ndash;6% event in a working-age adult and an unremarkable one in an 85-year-old. With no age entered the manual's own All ages column is used, and the readout says so.</p>
-              <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on the easier Forced Choice trial. Tables D.14 and D.15 give their base rates the other way round &mdash; that many <em>or more</em> &mdash; and the threshold is derived the same way. They come from the same administration as the hits, so all three count as <strong>one</strong> indicator.</p>
+              <p><strong>The two published cut-offs are CVLT-II figures, and the page says so wherever one is in force.</strong> The trial is structurally identical across editions &mdash; 16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition &mdash; so the transfer is the ordinary one, but it is a transfer. <strong>&le; 14</strong> is the de facto standard: across 17 studies and 4,432 patients it gives sensitivity .50 at specificity .93, and no healthy control in the review scored at or below it (Schwartz et al., 2016). <strong>&le; 15</strong> treats a single error as a failure: in 104 adults with TBI it raised sensitivity to .56 while holding specificity at .92 across seven reference PVTs, identifying about 6% more invalid response sets (Erdodi et al., 2018). Note the two approaches converge &mdash; the derived threshold is already &le; 15 for every patient under 80.</p>
+              <p><strong>Failing rules invalidity in; passing rules nothing out.</strong> Examinees who failed a reference PVT were about eight times more likely to fail Forced Choice, but roughly half of invalid response sets pass it, because a sophisticated simulator recognises how easy the task is (Schwartz et al., 2016).</p>
+              <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on the easier Forced Choice trial. Tables D.14 and D.15 give their base rates the other way round &mdash; that many <em>or more</em> &mdash; and their threshold is always derived from those tables, whichever basis the hits use. They come from the same administration as the hits, so all three count as <strong>one</strong> indicator.</p>
             </div>
           </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-cvlt3-result"></div>
           <details class="pvt-caution">
-            <summary><strong>Caution.</strong> A near-perfect score does not rule out exaggeration, and the Brief Form cannot be scored here.</summary>
-            <div class="pvt-caution-body">The manual is explicit that forced-choice recognition is suited to blatant exaggeration: &ldquo;a poor score on forced choice testing is often a strong indicator of symptom amplification, but a perfect or near-perfect score does not rule it out&rdquo;, since a sophisticated simulator recognises the task as easy. Appendix D tabulates the Standard and Alternate Forms only &mdash; the Brief Form's 9-item list has no published base rates &mdash; and the trial is designed to be given after the Yes/No Recognition trial, roughly 10 minutes on (Delis et al., 2017).</div>
+            <summary><strong>Caution.</strong> Failure rates climb with genuine impairment; a near-perfect score rules nothing out.</summary>
+            <div class="pvt-caution-body">The manual is explicit that forced-choice recognition is suited to blatant exaggeration: &ldquo;a poor score on forced choice testing is often a strong indicator of symptom amplification, but a perfect or near-perfect score does not rule it out&rdquo;, since a sophisticated simulator recognises the task as easy. <strong>False positives concentrate in severe impairment</strong> &mdash; failure rates rise with the severity of neurocognitive disorder, and are substantially elevated in dementia and intellectual disability, so the cut-offs should not be read at face value there (Schwartz et al., 2016). Conversely there is a well-replicated <strong>reverse severity effect</strong> in head injury: patients with mild TBI were two to three times more likely to fail than those with moderate-to-severe TBI, and failure was unrelated to injury severity, neuroradiological findings or performance on tests sensitive to TBI (Erdodi et al., 2018). Appendix D tabulates the Standard and Alternate Forms only &mdash; the Brief Form's 9-item list has no published base rates &mdash; and the trial is given after the Yes/No Recognition trial, roughly 10 minutes on (Delis et al., 2017).</div>
           </details>
         </div>
       </div>
@@ -1890,14 +1901,18 @@
         <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson. [Forced Choice Recognition base rates by age band, Appendix D Tables D.13-D.15; the manual publishes no cut-off for this trial.]</p>
       <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson.</p>
-        <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
+        <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859.</p>
+        <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859. [The CVLT-II <span style="white-space:nowrap">&le; 15</span> cut-off and its accuracy across seven reference PVTs.]</p>
+      <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
         <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
         <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
         <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</p>
         <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30.</p>
-        <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
+        <p>Schwartz, E. S., Erdodi, L., Rodriguez, N., Ghosh, J. J., Curtain, J. R., Flashman, L. A., &amp; Roth, R. M. (2016). CVLT-II Forced Choice Recognition trial as an embedded validity indicator: A systematic review of the evidence. <i>Journal of the International Neuropsychological Society, 22</i>(8), 851&ndash;858.</p>
+        <p>Schwartz, E. S., Erdodi, L., Rodriguez, N., Ghosh, J. J., Curtain, J. R., Flashman, L. A., &amp; Roth, R. M. (2016). CVLT-II Forced Choice Recognition trial as an embedded validity indicator: A systematic review of the evidence. <i>Journal of the International Neuropsychological Society, 22</i>(8), 851&ndash;858. [The CVLT-II <span style="white-space:nowrap">&le; 14</span> cut-off; classification accuracy and the impairment gradient in failure rates.]</p>
+      <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
         <p>Slick, D. J., Sherman, E. M. S., &amp; Iverson, G. L. (1999). Diagnostic criteria for malingered neurocognitive dysfunction: Proposed standards for clinical practice and research. <i>The Clinical Neuropsychologist, 13</i>(4), 545–561.</p>
         <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
       </div>
@@ -3091,11 +3106,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260903c"></script>
-<script src="app.js?v=20260903c"></script>
-<script src="design-system.js?v=20260903c" defer></script>
-<script src="app-effectsize-page.js?v=20260903c"></script>
-<script src="app-viz-page.js?v=20260903c"></script>
+<script src="data.js?v=20260903d"></script>
+<script src="app.js?v=20260903d"></script>
+<script src="design-system.js?v=20260903d" defer></script>
+<script src="app-effectsize-page.js?v=20260903d"></script>
+<script src="app-viz-page.js?v=20260903d"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

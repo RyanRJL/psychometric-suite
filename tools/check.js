@@ -52,6 +52,7 @@ vm.runInContext(
     ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
     ' REY15_RECALL_ROWS, REY15_RECOGNITION_ROWS, REY15_SHAPES,' +
     ' PVT_CVLT3_BANDS, PVT_CVLT3_FC_HITS, PVT_CVLT3_CRITICAL, PVT_CVLT3_CRITERIA,' +
+    ' PVT_CVLT3_FC_CUTOFFS, PVT_CVLT3_ERDODI_T6,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -7418,6 +7419,7 @@ function cvlt3Context(state, age){
   const c = {
     PVT_CVLT3_BANDS: D.PVT_CVLT3_BANDS, PVT_CVLT3_FC_HITS: D.PVT_CVLT3_FC_HITS,
     PVT_CVLT3_CRITICAL: D.PVT_CVLT3_CRITICAL, PVT_CVLT3_CRITERIA: D.PVT_CVLT3_CRITERIA,
+    PVT_CVLT3_FC_CUTOFFS: D.PVT_CVLT3_FC_CUTOFFS,
     patientAge: () => (age === undefined ? null : age),
     document: { getElementById: id => (id in state ? { value: String(state[id]) } : null) }
   };
@@ -7425,7 +7427,7 @@ function cvlt3Context(state, age){
   vm.runInContext(
     ['pvtInt', 'pvtCvlt3Band', 'pvtCvlt3HitsRate', 'pvtCvlt3CriticalRate',
      'pvtCvlt3HitsThreshold', 'pvtCvlt3CriticalThreshold', 'pvtCvlt3Criterion',
-     'getPvtCvlt3'].map(f => extractFn(APP_SRC, f)).join(';')
+     'pvtCvlt3Basis', 'getPvtCvlt3'].map(f => extractFn(APP_SRC, f)).join(';')
     + ';globalThis.__CV = getPvtCvlt3; globalThis.__TH = pvtCvlt3HitsThreshold;', c);
   return c;
 }
@@ -7513,10 +7515,25 @@ check('CVLT-3 is one independent indicator, published with dashes, and wired to 
   if (new Set(cvGroups).size !== 1 || cvGroups[0] !== 'cvlt3'){
     bad.push('the CVLT-3 rows no longer share one group — they would count as up to three independent indicators');
   }
-  /* The manual publishes no accuracy pair, so the columns must stay dashes.
-     Inventing one here would be the exact failure the ES comment warns of. */
-  if (/sens: '(?!—)/.test(cvBlock) || /spec: '(?!—)/.test(cvBlock)){
-    bad.push('a sensitivity or specificity has appeared on a CVLT-3 row — the manual publishes none');
+  /* Accuracy columns. The CVLT-3 manual publishes no pair, so on its own
+     base-rate reading they MUST be dashes; a borrowed CVLT-II cut-off brings
+     its own published pair. Driven rather than grepped, because the rows now
+     read the pair off the selected basis. */
+  (() => {
+    const b = cvlt3Context({ 'pvt-cvlt3-hits': 15, 'pvt-cvlt3-basis': 'baserate' }, 40).__CV();
+    if (b.basis.sens !== '—' || b.basis.spec !== '—'){
+      bad.push('the base-rate reading now prints an accuracy pair the CVLT-3 manual does not publish');
+    }
+    const e = cvlt3Context({ 'pvt-cvlt3-hits': 15, 'pvt-cvlt3-basis': 'e15' }, 40).__CV();
+    if (e.basis.sens === '—' || e.basis.spec === '—'){
+      bad.push('the borrowed cut-off lost its published accuracy pair');
+    }
+  })();
+  /* The critical-item rows have no published pair under ANY basis — their
+     thresholds always come from Tables D.14/D.15. */
+  const critBlock = cvBlock.slice(cvBlock.indexOf('[cv.critRecall, cv.critRecog]'));
+  if (!/sens: '—', spec: '—'/.test(critBlock)){
+    bad.push('a critical-item row has acquired an accuracy pair — no source publishes one');
   }
   /* The APA note must say where the threshold came from, or the Cut-off
      column implies the manual printed one. */
@@ -7547,6 +7564,75 @@ check('CVLT-3 is one independent indicator, published with dashes, and wired to 
      the Standard and Alternate Forms only. */
   if (!/Brief Form/.test(HTML_SRC)) bad.push('the Brief Form exclusion is no longer stated on the page');
   if (!/Delis, D\. C\., Kramer/.test(HTML_SRC)) bad.push('the CVLT-3 manual is not in the references');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+check('the CVLT-II cut-off accuracy is DERIVED from Erdodi Table 6, not asserted', () => {
+  /* Erdodi et al. (2018) report sensitivity and specificity for both cut-offs
+     against seven reference PVTs, and summarise each in the text. Those
+     summaries are the arithmetic mean of the seven columns, so the stored
+     pair can be re-derived from the table rather than taken on trust — the
+     same posture as the WAIS-IV averages in 28. A mistyped cell fails here. */
+  const bad = [];
+  const T = D.PVT_CVLT3_ERDODI_T6;
+  const mean = v => v.reduce((a, b) => a + b, 0) / v.length;
+  const r2 = v => (Math.round(v * 100) / 100).toFixed(2).replace(/^0/, '');
+  [['e15', '.56', '.92'], ['e14', '.50', '.93']].forEach(([key, sens, spec]) => {
+    const t = T[key];
+    if (!t || t.sens.length !== 7 || t.spec.length !== 7){ bad.push(key + ': Table 6 is not seven reference PVTs'); return; }
+    if (r2(mean(t.sens)) !== sens) bad.push(key + ' sensitivity derives ' + r2(mean(t.sens)) + ', paper states ' + sens);
+    if (r2(mean(t.spec)) !== spec) bad.push(key + ' specificity derives ' + r2(mean(t.spec)) + ', paper states ' + spec);
+    const stored = D.PVT_CVLT3_FC_CUTOFFS.find(c => c.key === key);
+    if (!stored) { bad.push('the ' + key + ' cut-off option is gone'); return; }
+    if (stored.sens !== sens || stored.spec !== spec) bad.push(key + ': the stored pair no longer matches its own table');
+  });
+  /* Erdodi's PROSE says the new cut-off preserves "the same specificity
+     (.92)", but its table averages to .92 and .93. The stored .93 for <= 14
+     is Schwartz et al.'s systematic-review figure, which agrees with the
+     arithmetic. Pinned so the discrepancy reads as known, not as a typo. */
+  if (r2(mean(T.e14.spec)) === r2(mean(T.e15.spec))){
+    bad.push('the two specificities now agree — re-read the note before assuming a regression');
+  }
+  /* Every cut-off must be higher-is-safer and ordered, and the base-rate
+     option must carry no cut at all. */
+  const base = D.PVT_CVLT3_FC_CUTOFFS.find(c => c.key === 'baserate');
+  if (!base || base.cut !== null) bad.push('the base-rate option has acquired a stored cut-off');
+  if (base && (base.sens !== '—' || base.spec !== '—')) bad.push('the base-rate option prints an accuracy pair the CVLT-3 manual does not publish');
+  if (D.PVT_CVLT3_FC_CUTOFFS[0].key !== 'baserate') bad.push('the CVLT-3 manual reading is no longer the default');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a borrowed CVLT-II cut-off is labelled as one, everywhere it can be read', () => {
+  /* The base rates are CVLT-3 and the cut-offs are CVLT-II. Printing the
+     second as though the manual published it would be the exact failure the
+     OPIE-4 UK labelling exists to prevent, so the instrument is named on the
+     card, in the summary table's cut-off column, and in the APA note. */
+  const bad = [];
+  D.PVT_CVLT3_FC_CUTOFFS.filter(c => c.cut !== null).forEach(c => {
+    if (!/CVLT-II/.test(c.cite)) bad.push(c.key + ': its citation no longer names the instrument it came from');
+  });
+  const cv = cvlt3Context({ 'pvt-cvlt3-hits': 15, 'pvt-cvlt3-basis': 'e15' }, 85).__CV();
+  /* Age 85: the derived threshold is <= 14 and would PASS a 15, while the
+     borrowed cut-off is <= 15 and fails it. If the basis were ignored these
+     would agree and the selector would be inert. */
+  if (cv.derivedThreshold !== 14) bad.push('the derived threshold is no longer computed alongside the borrowed one');
+  if (cv.hitsThreshold !== 15 || !cv.hitsFail) bad.push('selecting the Erdodi cut-off did not change the flag at age 85 — the selector is inert');
+  if (cv.hitsRate !== 26.0) bad.push('the CVLT-3 base rate stopped being shown once a cut-off was selected');
+  const cvBase = cvlt3Context({ 'pvt-cvlt3-hits': 15, 'pvt-cvlt3-basis': 'baserate' }, 85).__CV();
+  if (cvBase.hitsFail) bad.push('the default base-rate basis no longer passes 15 hits at age 85');
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  if (!/\(CVLT-II\)/.test(rowsFn)) bad.push("the summary's cut-off column no longer names CVLT-II on a borrowed cut-off");
+  if (!/cvlt3Borrowed/.test(APP_SRC)) bad.push('the APA note no longer distinguishes a borrowed cut-off from the derived one');
+  if (!/the cut-off and accuracy applied here are CVLT-II figures/.test(APP_SRC)) bad.push('the APA note lost its borrowed-source sentence');
+  if (!/cut-off and accuracy \$\{ctx\.cvlt3Cite\}, CVLT-II/.test(APP_SRC)) bad.push("the note's Sources line credits only the manual when a borrowed cut-off is in force");
+  /* The page must carry both caveats these sources establish, and both
+     citations. */
+  ['Erdodi, L. A., Abeare', 'Schwartz, E. S., Erdodi'].forEach(n => {
+    if (!HTML_SRC.includes(n)) bad.push('the references lost ' + n);
+  });
+  if (!/failure rates rise with the severity of neurocognitive disorder/.test(HTML_SRC)) bad.push('the caution lost the impairment gradient in failure rates');
+  if (!/reverse severity effect/.test(HTML_SRC)) bad.push('the caution lost the mild-TBI reverse severity effect');
   return bad.length === 0 || bad.join('; ');
 });
 

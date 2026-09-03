@@ -3241,7 +3241,12 @@ const APA_NOTES = {
     if (ctx.hasRds)  sources.push('Reliable Digit Span (Greiffenstein et al., 1994)');
     if (ctx.hasDs)   sources.push('Digit Span indices (Iverson & Tulsky, 2003; Axelrod et al., 2006 — WAIS-III)');
     if (ctx.hasRey)  sources.push('Rey 15-Item (Boone et al., 2002)');
-    if (ctx.hasCvlt3) sources.push('CVLT-3 Forced Choice (Delis et al., 2017, Tables D.13–D.15)');
+    /* The source entry follows the basis: with a borrowed cut-off in force
+       the table rests on two publications, not one, and the Sources line is
+       where a reader looks for that. */
+    if (ctx.hasCvlt3) sources.push(ctx.cvlt3Borrowed
+      ? `CVLT-3 Forced Choice (base rates Delis et al., 2017, Tables D.13–D.15; cut-off and accuracy ${ctx.cvlt3Cite}, CVLT-II)`
+      : 'CVLT-3 Forced Choice (Delis et al., 2017, Tables D.13–D.15)');
     if (ctx.hasTomm) sources.push('TOMM (Tombaugh, 1996; cut-offs Martin et al., 2020)');
     const shared = [];
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
@@ -3259,8 +3264,11 @@ const APA_NOTES = {
       /* The CVLT-3 is the one measure here with no published cut-off, so an
          exported table must say where its threshold came from — otherwise
          the Cut-off column implies the manual printed one. */
-      ctx.hasCvlt3
+      ctx.hasCvlt3 && !ctx.cvlt3Borrowed
         ? 'The CVLT-3 Forced Choice manual publishes base rates by age band, not a cut-off; its threshold is the rarest score whose published base rate is at or below the stated per-test false-positive criterion, so it varies with age.'
+        : '',
+      ctx.cvlt3Borrowed
+        ? `The CVLT-3 manual publishes no cut-off for Forced Choice Recognition; the cut-off and accuracy applied here are CVLT-II figures (${ctx.cvlt3Cite}), the trial being structurally identical across editions. The base rate shown is the CVLT-3 manual's own.`
         : '',
       ctx.esGated
         ? 'The Effort Scale is not computed because its screening gate was not met (Novitski et al., 2012).'
@@ -7140,6 +7148,10 @@ function pvtCvlt3CriticalThreshold(band, pct, which){
   }
   return null;
 }
+function pvtCvlt3Basis(){
+  const key = document.getElementById('pvt-cvlt3-basis')?.value;
+  return PVT_CVLT3_FC_CUTOFFS.find(c => c.key === key) || PVT_CVLT3_FC_CUTOFFS[0];
+}
 function pvtCvlt3Criterion(){
   const key = document.getElementById('pvt-cvlt3-criterion')?.value;
   return PVT_CVLT3_CRITERIA.find(c => c.key === key) || PVT_CVLT3_CRITERIA[0];
@@ -7156,7 +7168,15 @@ function getPvtCvlt3(){
   const crit = pvtCvlt3Criterion();
   const s = { hits, age, band, usedAllAges: band === 'All ages', criterion: crit };
   s.hitsRate = pvtCvlt3HitsRate(hits, band);
-  s.hitsThreshold = pvtCvlt3HitsThreshold(band, crit.pct);
+  /* The base rate is ALWAYS shown — it is the CVLT-3's own published figure
+     and the reason to read the age band at all. What the basis selects is
+     what the FLAG rests on: the derived threshold, or one of the two
+     CVLT-II cut-offs, which carry a published accuracy pair the manual
+     does not. Either way the app prints which, and on which instrument. */
+  const basis = pvtCvlt3Basis();
+  s.basis = basis;
+  s.derivedThreshold = pvtCvlt3HitsThreshold(band, crit.pct);
+  s.hitsThreshold = basis.cut === null ? s.derivedThreshold : basis.cut;
   s.hitsFail = s.hitsThreshold !== null && hits <= s.hitsThreshold;
   [['recall', rc, 'critRecall'], ['recognition', yc, 'critRecog']].forEach(([which, val, key]) => {
     if (val === undefined) return;
@@ -7505,8 +7525,10 @@ function getPvtSummaryRows(){
     rows.push({
       id: 'cvlt3', group: 'cvlt3', measure: 'CVLT-3 Forced Choice hits',
       score: `${cv.hits}/${PVT_CVLT3_FC_HITS.max}`,
-      cutoff: cv.hitsThreshold === null ? '—' : `≤ ${cv.hitsThreshold} (base rate, ages ${cv.band})`,
-      sens: '—', spec: '—',
+      cutoff: cv.hitsThreshold === null ? '—'
+        : cv.basis.cut === null ? `≤ ${cv.hitsThreshold} (base rate, ages ${cv.band})`
+        : `≤ ${cv.hitsThreshold} (CVLT-II)`,
+      sens: cv.basis.sens, spec: cv.basis.spec,
       result: pvtStatusWord(cv.hitsFail), fail: cv.hitsFail
     });
     [cv.critRecall, cv.critRecog].forEach((c, i) => {
@@ -7555,13 +7577,16 @@ function renderPvtCvlt3(){
   if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits to look up its published base rate.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits — the critical-item counts are read against it.'); return; }
+  const derived = s.basis.cut === null;
   const rows = [{
     label: 'Forced Choice total hits', value: `${s.hits}/${PVT_CVLT3_FC_HITS.max}`,
     state: s.hitsFail ? 'fail' : 'pass',
     meta: `Base rate ${pvtFmtRate(s.hitsRate)} at ages ${s.band} (Table D.13)${
       s.hitsThreshold === null
         ? ' · no score in this band reaches the criterion'
-        : ` · flags at ≤ ${s.hitsThreshold}, derived at the ${s.criterion.pct}% criterion`}`
+        : derived
+          ? ` · flags at ≤ ${s.hitsThreshold}, derived at the ${s.criterion.pct}% criterion`
+          : ` · cut-off ≤ ${s.hitsThreshold} · sens. ${s.basis.sens} · spec. ${s.basis.spec} (CVLT-II)`}`
   }];
   [s.critRecall, s.critRecog].forEach(c => {
     if (!c) return;
@@ -7573,11 +7598,16 @@ function renderPvtCvlt3(){
                              : ` · flags at ≥ ${c.threshold}`}`
     });
   });
+  /* Which instrument the flag came from is the one thing a reader of the
+     report must not have to guess, so it is stated whenever the flag rests
+     on a borrowed cut-off rather than on the CVLT-3's own table. */
+  const basisNote = derived ? '' :
+    ` The flag rests on the CVLT-II cut-off ≤ ${s.basis.cut}, not on a CVLT-3 figure; the base rate beside it is the CVLT-3 manual's.`;
   const note = `${s.usedAllAges
       ? (s.age === null ? 'No patient age entered, so the manual&rsquo;s All ages column is used — enter an age in the top bar for the banded reading, which can differ sharply.'
                         : `Age ${s.age} falls outside the CVLT-3 normative range (16&ndash;90), so the All ages column is used.`)
       : `Read against the ${s.band} band for the entered age of ${s.age}.`
-    } A poor forced-choice score is a strong indicator of exaggeration, but a perfect or near-perfect one does not rule it out (Delis et al., 2017).`;
+    }${basisNote} A poor forced-choice score is a strong indicator of exaggeration, but a perfect or near-perfect one does not rule it out (Delis et al., 2017).`;
   out.innerHTML = pvtReadoutHtml(rows, note);
 }
 
@@ -7633,6 +7663,8 @@ function renderPvtApa(){
       hasDs:   rows.some(r => r.id.startsWith('ds')),
       hasRey:  rows.some(r => r.id.startsWith('rey')),
       hasCvlt3: rows.some(r => r.group === 'cvlt3'),
+      cvlt3Borrowed: rows.some(r => r.group === 'cvlt3') && (typeof getPvtCvlt3 === 'function') && getPvtCvlt3().basis?.cut !== null && getPvtCvlt3().basis !== undefined,
+      cvlt3Cite: (getPvtCvlt3().basis?.cut === 15) ? 'Erdodi et al., 2018' : 'Schwartz et al., 2016',
       hasTomm: rows.some(r => r.group === 'tomm'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
@@ -7732,6 +7764,8 @@ function renderPvtAccuracy(){
       ? `Published accuracy at this cut-off: sens. ${PVT_DS_ACCURACY.conservative.sens} · spec. ${PVT_DS_ACCURACY.conservative.spec} (Axelrod et al., 2006); base rate 3.8% standardisation / 3.4% clinical (Iverson & Tulsky, 2003)`
       : `Published accuracy at this cut-off: sens. ${PVT_DS_ACCURACY.sensitive.sens} · spec. ${PVT_DS_ACCURACY.sensitive.spec} (Axelrod et al., 2006)`;
   }
+  const cvEl = document.getElementById('pvt-cvlt3-accuracy');
+  if (cvEl) cvEl.textContent = pvtCvlt3Basis().cite;
   const rdsEl = document.getElementById('pvt-rds-accuracy');
   if (rdsEl){
     const key = document.getElementById('pvt-rds-cutoff')?.value === 'traditional' ? 'traditional' : 'conservative';
@@ -8012,7 +8046,7 @@ function setupPvtPage(){
     const row = e.target.closest('[data-rail-tab]');
     if (row) switchPvtTab(row.dataset.railTab);
   });
-  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion'].forEach(id => {
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion','pvt-cvlt3-basis'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
   renderPvtAll();

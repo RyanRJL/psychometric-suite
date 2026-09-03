@@ -2195,3 +2195,58 @@ const PVT_CVLT3_CRITERIA = [
   { key: 'standard',     pct: 10, label: '10% — conventional (spec. ≥ .90)' },
   { key: 'conservative', pct:  5, label: '5% — stricter' }
 ];
+
+/* -------------------------------------------------------------------------
+   CVLT-3 FORCED CHOICE — the published cut-offs, which come from the CVLT-II
+
+   The CVLT-3 manual prints base rates and no cut-off (above). The CVLT-II
+   literature prints the opposite: a cut-off with classification accuracy,
+   and no age-banded base rates. Both are offered, and WHICH INSTRUMENT EACH
+   BELONGS TO IS STATED ON SCREEN AND IN THE EXPORT, because they are not the
+   same source. The trial is structurally identical across editions -- 16
+   List A targets, one distractor each, administered about 10 minutes after
+   Yes/No Recognition -- so the transfer is the ordinary one clinicians make,
+   but it is a transfer, not a CVLT-3 finding, and must never be printed as
+   though Delis et al. (2017) published it.
+
+   The base-rate reading stays the DEFAULT: it is the only one sourced to the
+   instrument in front of the clinician, and it is age-corrected, which a
+   fixed cut-off is not. Note the two agree almost everywhere -- the derived
+   threshold at the 10% criterion is <= 15 in every band below 80, which is
+   exactly Erdodi et al.'s recommendation, reached from a different direction.
+
+   TRANSCRIPTION PROOF. Erdodi et al. (2018) Table 6 reports sensitivity and
+   specificity for both cut-offs against seven reference PVTs, and states
+   summary values in the text. Those summaries are the ARITHMETIC MEAN of the
+   seven columns and reproduce exactly: <= 15 gives .5586 -> .56 sensitivity
+   and .9214 -> .92 specificity; <= 14 gives .4971 -> .50 and .9257 -> .93.
+   check.js section 39 re-derives all four, so a mistyped cell fails.
+
+   One wrinkle worth knowing before anyone "corrects" it: Erdodi's prose says
+   the new cut-off preserves "the same specificity (.92)", but its own table
+   averages to .92 for <= 15 and .93 for <= 14. The .93 stored here for <= 14
+   is Schwartz et al.'s (2016) systematic-review figure, which agrees with
+   that arithmetic. Both stored digits are published; the prose rounds.
+   ------------------------------------------------------------------------- */
+const PVT_CVLT3_FC_CUTOFFS = [
+  { key: 'baserate', cut: null, label: 'Base rate by age · CVLT-3 manual',
+    sens: '—', spec: '—',
+    cite: 'Delis et al. (2017), Appendix D — base rates by age band; no cut-off or accuracy pair is published.' },
+  { key: 'e15', cut: 15, label: '≤ 15 · a single error (Erdodi et al., 2018)',
+    sens: '.56', spec: '.92',
+    cite: 'Erdodi et al. (2018), ACN 33(7), 845–859 — mean across seven reference PVTs in 104 adults with TBI. CVLT-II.' },
+  { key: 'e14', cut: 14, label: '≤ 14 · de facto standard (Schwartz et al., 2016)',
+    sens: '.50', spec: '.93',
+    cite: 'Schwartz et al. (2016), JINS 22(8), 851–858 — systematic review, 17 studies, N = 4,432. CVLT-II.' }
+];
+
+/* Erdodi et al. (2018) Table 6, held so the summary figures above can be
+   DERIVED rather than asserted. Order: WMT, WCT, EI-5REC, EI-5NR, CVLT-II
+   Yes/No recognition hits, Wolfe LRE, Digit Span ACSS. */
+const PVT_CVLT3_ERDODI_T6 = {
+  refs: ['WMT', 'WCT', 'EI-5 REC', 'EI-5 NR', 'CVLT-II RH', 'Wolfe LRE', 'DS ACSS'],
+  e15: { sens: [0.47, 0.50, 0.52, 0.58, 0.72, 0.59, 0.53],
+         spec: [0.95, 0.93, 0.98, 0.90, 0.92, 0.88, 0.89] },
+  e14: { sens: [0.40, 0.48, 0.44, 0.50, 0.65, 0.56, 0.45],
+         spec: [0.95, 0.93, 0.98, 0.91, 0.93, 0.89, 0.89] }
+};
