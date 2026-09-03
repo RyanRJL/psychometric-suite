@@ -399,8 +399,8 @@
     } catch (e){
       if (typeof showToast === 'function'){
         showToast(e && e.message === 'no-clipboard-api'
-          ? 'This browser cannot copy images — use Save PNG instead'
-          : 'Could not copy the chart — use Save PNG instead', true);
+          ? 'This browser cannot copy images. Use Save PNG instead.'
+          : 'Could not copy the chart. Use Save PNG instead.', true);
       }
     }
   }
@@ -501,7 +501,7 @@
     native: '',
     percentile: 'Axis is the percentile rank, converted from each row’s own metric so the whole test shares one scale. A percentile scale is deliberately non-linear: it compresses the tails, so two clearly different low scores can sit close together, and confidence intervals become asymmetric. Scores are shown as entered.',
     standard: 'Axis is the standard-score metric (M 100, SD 15), converted from each row’s own metric so the whole test shares one scale. Scores are shown as entered.',
-    raw: 'The raw scores as entered, so their spread is visible directly. Nothing is derived from them — no norms, no classification bands, no percentile. The axis spans the values entered for that test, not each measure’s possible range, because no raw maximum is held for any measure; where a test’s measures are counted on different scales their positions are not comparable with each other.'
+    raw: 'The raw scores as entered, so their spread is visible directly. Nothing is derived from them: no norms, no classification bands, no percentile. The axis spans the values entered for that test, not each measure’s possible range, because no raw maximum is held for any measure. Where a test’s measures are counted on different scales their positions are not comparable with each other.'
   };
 
   const VIZ_CONV_AXIS = {
@@ -701,7 +701,7 @@
         if (panel.mixed) notes.push('This test mixes score metrics, so each row carries its own metric tag. The Score column shows the score as entered; only the axis position is converted.');
       }
       if (excluded.length){
-        body += `<div class="viz-raw-row">Not plotted on a converted axis — raw-score measures with no standardised metric: ` +
+        body += `<div class="viz-raw-row">Not plotted on a converted axis. Raw-score measures with no standardised metric:` +
           excluded.map(r => `<b>${escapeHtml(r.name)}</b>`).join(', ') + `.</div>`;
       }
     } else {
@@ -720,7 +720,7 @@
         /* One line, not one box per measure: four dashed boxes repeating the
            same sentence cost ~160px on RBANS and read as an error list. Each
            measure keeps its score and interval; the reason is stated once. */
-        body += `<div class="viz-raw-row">Not plotted — no standardised metric, so no percentile or classification is derived: ` +
+        body += `<div class="viz-raw-row">Not plotted. No standardised metric, so no percentile or classification is derived:` +
           rawRows.map(r => {
             const ciText = ciLevel !== 'off' ? getBatteryCiHtml(parseFloat(r.score), r, ciLevel) : '';
             return `<b>${escapeHtml(r.name)}</b> ${escapeHtml(String(r.score))}${ciText ? ` (${ciText})` : ''}`;
@@ -856,7 +856,7 @@
     const cards = [];
     let empty = '';
     if (!chartable.length){
-      empty = `<p class="viz-empty-line">Rows are entered on Change Analysis, but none has the values the ${escapeHtml(VIZ_RCI_METHODS.find(x => x[0] === method)[1])} method needs yet — scores at both dates, plus the normative parameters.</p>`;
+      empty = `<p class="viz-empty-line">Rows are entered on Change Analysis, but none has the values the ${escapeHtml(VIZ_RCI_METHODS.find(x => x[0] === method)[1])} method needs yet. Enter scores at both dates, plus the normative parameters.</p>`;
     } else {
       const families = new Map();
       for (const r of chartable){
@@ -1022,7 +1022,7 @@
     const chartable = rows.filter(r => sdiComputeChange(r) !== null);
     if (!chartable.length){
       return { key:'sdi', label:'SD Index', ctrl:null, legend:'', cards:[],
-        empty:'<p class="viz-empty-line">Rows are entered on the SD Index page, but none can compute yet — each needs both scores, and an SD in raw mode.</p>' };
+        empty:'<p class="viz-empty-line">Rows are entered on the SD Index page, but none can compute yet. Each needs both scores, and an SD in raw mode.</p>' };
     }
 
     const families = new Map();
