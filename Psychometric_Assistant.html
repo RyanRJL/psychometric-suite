@@ -18020,8 +18020,8 @@ input[type="number"].ds-age-pop-input{
     <details class="formula-disclosure">
       <summary>How these charts are drawn</summary>
       <div class="info-box">
-        <p>Charts read the same data and settings as their source tables, so the two cannot disagree. Each source — Score Tables, Premorbid, Change Analysis, SD Index — is its own pane; only sources with data appear.</p>
-        <p><b>Score Tables</b> charts draw each subtest in its native metric with classification bands and confidence intervals matching the table. Base-rate measures show a cumulative step line; error measures (marked ↓) reverse the bands to describe performance; raw-score measures are listed with their confidence interval but not plotted.</p>
+        <p>Charts read the same data and settings as their source tables, so the two cannot disagree. Each source (Score Tables, Premorbid, Change Analysis, SD Index) is its own pane, and only sources with data appear.</p>
+        <p><b>Score Tables</b> charts draw each subtest in its native metric with classification bands and confidence intervals matching the table. Base-rate measures show a cumulative step line. Error measures (marked ↓) reverse the bands to describe performance. Raw-score measures are listed with their confidence interval but not plotted.</p>
         <p><b>Change Analysis</b> charts plot both testings against the reliable-change interval for the selected method. Outcomes state significance only, never a direction.</p>
         <p><b>SD Index</b> charts plot change in SD units against the significance band. <b>Premorbid</b> charts show predicted vs achieved scores with prediction intervals and base rates, read directly from the tables.</p>
         <p>The Score Tables pane offers four axis modes: <i>Native metric</i>, <i>Percentile</i>, <i>Standard score</i> and <i>Raw scores</i>. Use <i>All charts</i> to see the full profile, or <i>One at a time</i> for a closer look with arrow-key paging.</p>
@@ -32451,7 +32451,7 @@ if (document.readyState === 'loading'){
 }
 
 </script>
-<script src="design-system.js?v=20260903f" defer></script>
+<script src="design-system.js?v=20260903g" defer></script>
 <script data-inlined-from="app-effectsize-page.js">
 /* =====================================================================
    Effect Size Tools - page module (#effectsize)
@@ -33686,8 +33686,8 @@ if (document.readyState === 'loading'){
     } catch (e){
       if (typeof showToast === 'function'){
         showToast(e && e.message === 'no-clipboard-api'
-          ? 'This browser cannot copy images — use Save PNG instead'
-          : 'Could not copy the chart — use Save PNG instead', true);
+          ? 'This browser cannot copy images. Use Save PNG instead.'
+          : 'Could not copy the chart. Use Save PNG instead.', true);
       }
     }
   }
@@ -33788,7 +33788,7 @@ if (document.readyState === 'loading'){
     native: '',
     percentile: 'Axis is the percentile rank, converted from each row’s own metric so the whole test shares one scale. A percentile scale is deliberately non-linear: it compresses the tails, so two clearly different low scores can sit close together, and confidence intervals become asymmetric. Scores are shown as entered.',
     standard: 'Axis is the standard-score metric (M 100, SD 15), converted from each row’s own metric so the whole test shares one scale. Scores are shown as entered.',
-    raw: 'The raw scores as entered, so their spread is visible directly. Nothing is derived from them — no norms, no classification bands, no percentile. The axis spans the values entered for that test, not each measure’s possible range, because no raw maximum is held for any measure; where a test’s measures are counted on different scales their positions are not comparable with each other.'
+    raw: 'The raw scores as entered, so their spread is visible directly. Nothing is derived from them: no norms, no classification bands, no percentile. The axis spans the values entered for that test, not each measure’s possible range, because no raw maximum is held for any measure. Where a test’s measures are counted on different scales their positions are not comparable with each other.'
   };
 
   const VIZ_CONV_AXIS = {
@@ -33988,7 +33988,7 @@ if (document.readyState === 'loading'){
         if (panel.mixed) notes.push('This test mixes score metrics, so each row carries its own metric tag. The Score column shows the score as entered; only the axis position is converted.');
       }
       if (excluded.length){
-        body += `<div class="viz-raw-row">Not plotted on a converted axis — raw-score measures with no standardised metric: ` +
+        body += `<div class="viz-raw-row">Not plotted on a converted axis. Raw-score measures with no standardised metric:` +
           excluded.map(r => `<b>${escapeHtml(r.name)}</b>`).join(', ') + `.</div>`;
       }
     } else {
@@ -34007,7 +34007,7 @@ if (document.readyState === 'loading'){
         /* One line, not one box per measure: four dashed boxes repeating the
            same sentence cost ~160px on RBANS and read as an error list. Each
            measure keeps its score and interval; the reason is stated once. */
-        body += `<div class="viz-raw-row">Not plotted — no standardised metric, so no percentile or classification is derived: ` +
+        body += `<div class="viz-raw-row">Not plotted. No standardised metric, so no percentile or classification is derived:` +
           rawRows.map(r => {
             const ciText = ciLevel !== 'off' ? getBatteryCiHtml(parseFloat(r.score), r, ciLevel) : '';
             return `<b>${escapeHtml(r.name)}</b> ${escapeHtml(String(r.score))}${ciText ? ` (${ciText})` : ''}`;
@@ -34143,7 +34143,7 @@ if (document.readyState === 'loading'){
     const cards = [];
     let empty = '';
     if (!chartable.length){
-      empty = `<p class="viz-empty-line">Rows are entered on Change Analysis, but none has the values the ${escapeHtml(VIZ_RCI_METHODS.find(x => x[0] === method)[1])} method needs yet — scores at both dates, plus the normative parameters.</p>`;
+      empty = `<p class="viz-empty-line">Rows are entered on Change Analysis, but none has the values the ${escapeHtml(VIZ_RCI_METHODS.find(x => x[0] === method)[1])} method needs yet. Enter scores at both dates, plus the normative parameters.</p>`;
     } else {
       const families = new Map();
       for (const r of chartable){
@@ -34309,7 +34309,7 @@ if (document.readyState === 'loading'){
     const chartable = rows.filter(r => sdiComputeChange(r) !== null);
     if (!chartable.length){
       return { key:'sdi', label:'SD Index', ctrl:null, legend:'', cards:[],
-        empty:'<p class="viz-empty-line">Rows are entered on the SD Index page, but none can compute yet — each needs both scores, and an SD in raw mode.</p>' };
+        empty:'<p class="viz-empty-line">Rows are entered on the SD Index page, but none can compute yet. Each needs both scores, and an SD in raw mode.</p>' };
     }
 
     const families = new Map();
