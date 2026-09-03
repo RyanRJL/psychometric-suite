@@ -10533,6 +10533,45 @@ body.rb-docked-active{padding-right:0}
 .pvt-source-accuracy{color:#5A5A5A;font-weight:500}
 .pvt-source-accuracy:empty{display:none}
 
+/* "Derived on" — the instrument and edition each cut-off was calibrated on,
+   written from PVT_INSTRUMENTS. Sits inside the citation block because it is
+   part of the provenance, not a separate claim. The mismatch warning is
+   toned like the caution boxes: it is the sentence that goes in a report. */
+.pvt-derived-line{display:block}
+.pvt-derived{
+  display:block;
+  margin-top:5px;
+  padding-top:5px;
+  border-top:1px solid rgba(20,15,5,0.07);
+  color:#4A4A4A;
+}
+.pvt-derived-label{
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:0.11em;
+  text-transform:uppercase;
+  color:#918C84;
+  margin-right:5px;
+}
+.pvt-derived-gap{color:#918C84;font-style:italic}
+.pvt-derived-warn{
+  display:block;
+  margin-top:5px;
+  padding-left:8px;
+  border-left:2px solid rgba(156,61,42,0.35);
+  color:#7A5148;
+  line-height:1.5;
+}
+.pvt-overview-derived{line-height:1.35}
+.pvt-overview-sub{
+  display:block;
+  font-size:9.5px;
+  color:#9E9A93;
+  line-height:1.35;
+  margin-top:1px;
+}
+.pvt-overview-sub.is-warn{color:#9c3d2a}
+
 /* ---------- Rey 15-Item administration overlay ----------
    Mounted on <body> (position:fixed against a transformed ancestor is the
    trap that moved the old age popover), full-viewport, above the drawer. */

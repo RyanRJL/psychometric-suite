@@ -10565,6 +10565,45 @@ body.rb-docked-active{padding-right:0}
 .pvt-source-accuracy{color:#5A5A5A;font-weight:500}
 .pvt-source-accuracy:empty{display:none}
 
+/* "Derived on" — the instrument and edition each cut-off was calibrated on,
+   written from PVT_INSTRUMENTS. Sits inside the citation block because it is
+   part of the provenance, not a separate claim. The mismatch warning is
+   toned like the caution boxes: it is the sentence that goes in a report. */
+.pvt-derived-line{display:block}
+.pvt-derived{
+  display:block;
+  margin-top:5px;
+  padding-top:5px;
+  border-top:1px solid rgba(20,15,5,0.07);
+  color:#4A4A4A;
+}
+.pvt-derived-label{
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:0.11em;
+  text-transform:uppercase;
+  color:#918C84;
+  margin-right:5px;
+}
+.pvt-derived-gap{color:#918C84;font-style:italic}
+.pvt-derived-warn{
+  display:block;
+  margin-top:5px;
+  padding-left:8px;
+  border-left:2px solid rgba(156,61,42,0.35);
+  color:#7A5148;
+  line-height:1.5;
+}
+.pvt-overview-derived{line-height:1.35}
+.pvt-overview-sub{
+  display:block;
+  font-size:9.5px;
+  color:#9E9A93;
+  line-height:1.35;
+  margin-top:1px;
+}
+.pvt-overview-sub.is-warn{color:#9c3d2a}
+
 /* ---------- Rey 15-Item administration overlay ----------
    Mounted on <body> (position:fixed against a transformed ancestor is the
    trap that moved the old age popover), full-viewport, above the drawer. */
@@ -17547,6 +17586,7 @@ input[type="number"].ds-age-pop-input{
           <div class="pvt-source">
             <span class="pvt-source-cite">Cut-offs: Silverberg, Wertheimer &amp; Fichtenberg (2007), <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</span>
             <span class="pvt-source-accuracy" id="pvt-ei-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="ei"></span>
           </div>
           <details class="formula-disclosure">
             <summary>Formula &amp; weighting table</summary>
@@ -17608,6 +17648,7 @@ input[type="number"].ds-age-pop-input{
           <div class="pvt-source">
             <span class="pvt-source-cite">Formula, gate &amp; cut-off: Novitski, Steele, Karantzoulis &amp; Randolph (2012), <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</span>
             <span class="pvt-source-accuracy">No published sensitivity/specificity pair — discrimination is ROC AUC = .91 vs amnestic patients (vs .61 for the EI).</span>
+            <span class="pvt-derived-line" data-pvt-derived="es"></span>
           </div>
           <details class="formula-disclosure">
             <summary>Formula</summary>
@@ -17652,6 +17693,7 @@ input[type="number"].ds-age-pop-input{
           <div class="pvt-source">
             <span class="pvt-source-cite">Scoring: Greiffenstein, Baker &amp; Gola (1994), <i>Psychological Assessment, 6</i>(3), 218–224. Cut-off accuracy: Schroeder et al. (2012), <i>Assessment, 19</i>(1), 21–30.</span>
             <span class="pvt-source-accuracy" id="pvt-rds-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="rds"></span>
           </div>
           <details class="formula-disclosure">
             <summary>Scoring &amp; worked example</summary>
@@ -17703,6 +17745,7 @@ input[type="number"].ds-age-pop-input{
           <div class="pvt-source">
             <span class="pvt-source-cite">Base rates &amp; suspicion indices: Iverson &amp; Tulsky (2003), <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9. Classification accuracy: Axelrod, Fichtenberg, Millis &amp; Wertheimer (2006), <i>The Clinical Neuropsychologist, 20</i>(3), 513–523. Both WAIS-III.</span>
             <span class="pvt-source-accuracy" id="pvt-ds-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="ds"></span>
           </div>
           <details class="formula-disclosure">
             <summary>Indices &amp; base rates</summary>
@@ -17747,6 +17790,7 @@ input[type="number"].ds-age-pop-input{
           <div class="pvt-source">
             <span class="pvt-source-cite">Recognition trial, combination score &amp; accuracy: Boone, Salazar, Lu, Warner-Chacon &amp; Razani (2002), <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</span>
             <span class="pvt-source-accuracy">Recall &lt; 9: sens. .47 · spec. .97–1.00. Combination &lt; 20: sens. .71 · spec. .92–.94.</span>
+            <span class="pvt-derived-line" data-pvt-derived="rey15"></span>
           </div>
           <details class="formula-disclosure">
             <summary>Scoring &amp; administration</summary>
@@ -17802,6 +17846,7 @@ input[type="number"].ds-age-pop-input{
           <div class="pvt-source">
             <span class="pvt-source-cite">Base rates: Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms) &mdash; the manual publishes <strong>base rates by age band, not a cut-off</strong>. Cut-offs and accuracy: Erdodi et al. (2018) and Schwartz et al. (2016), both <strong>CVLT-II</strong>.</span>
             <span class="pvt-source-accuracy" id="pvt-cvlt3-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="cvlt3"></span>
           </div>
           <details class="formula-disclosure">
             <summary>How the threshold is derived, and why it moves with age</summary>
@@ -17868,6 +17913,7 @@ input[type="number"].ds-age-pop-input{
           </div>
           <div class="pvt-source">
             <span class="pvt-source-cite">Test: Tombaugh (1996). Cut-offs &amp; accuracy: Martin et al. (2020), <i>The Clinical Neuropsychologist, 34</i>(1), 88–119 — meta-analytic weighted means, shown per trial in the predictive-power table.</span>
+            <span class="pvt-derived-line" data-pvt-derived="tomm"></span>
           </div>
           <details class="formula-disclosure">
             <summary>Cut-offs &amp; classification accuracy</summary>
@@ -21399,6 +21445,62 @@ const PVT_CVLT3_ERDODI_T6 = {
          spec: [0.95, 0.93, 0.98, 0.91, 0.93, 0.89, 0.89] }
 };
 
+/* =========================================================================
+   WHICH INSTRUMENT, AND WHICH EDITION, EACH PVT CUT-OFF WAS DERIVED ON
+
+   A validity cut-off belongs to the version of the test it was calibrated
+   on. Report readers -- particularly in medico-legal work -- ask exactly
+   this, and two of the measures here already needed the answer written into
+   their own copy: the Digit Span indices are WAIS-III and the CVLT-3 Forced
+   Choice cut-offs are CVLT-II. Answering it ad hoc, per measure, meant the
+   other four said nothing at all. This is the single source of truth, read
+   by both the method cards and the About roster so the two cannot disagree.
+
+   THE FIELD STATES WHAT THE APP CAN CITE, and nothing more. Where the
+   sources held here do not name a form or edition, `unspecified` says so
+   rather than the app inferring one from a publication date -- an inference
+   would read as a warranted match and it is not one. `mismatch` carries the
+   substantive warning where the version a clinician is likely administering
+   is NOT the version the cut-off came from; it is the sentence that belongs
+   in a report, so it is written to be read by a reviewer, not by us.
+
+   check.js section 40 pins the roster: an entry per method tab, no tab
+   without one, and every mismatch surfaced on its card AND in the export.
+   ========================================================================= */
+const PVT_INSTRUMENTS = {
+  ei: {
+    kind: 'Embedded', derived: 'RBANS', unspecified: true,
+    detail: 'Digit Span and List Recognition raw scores.'
+  },
+  es: {
+    kind: 'Embedded', derived: 'RBANS', unspecified: true,
+    detail: 'List Recognition, the three recall scores and Digit Span, all raw.'
+  },
+  rds: {
+    kind: 'Embedded', derived: 'WAIS-R, WAIS-III and WAIS-IV',
+    detail: 'Digit Span, Forward and Backward trials.',
+    mismatch: 'Classic Reliable Digit Span is Forward + Backward only. The WAIS-IV and WAIS-5 subtest adds a Sequencing trial, which is NOT included here; sequencing-inclusive variants exist but carry different cut-offs. Record which variant was scored.'
+  },
+  ds: {
+    kind: 'Embedded', derived: 'WAIS-III',
+    detail: 'Age-corrected scaled score, Vocabulary − Digit Span, and longest spans.',
+    mismatch: 'Both sources are WAIS-III. A WAIS-IV or WAIS-5 age-corrected scaled score includes Sequencing in the composite, so it is not on the identical metric these cut-offs were derived on.'
+  },
+  rey15: {
+    kind: 'Stand-alone', derived: 'Rey 15-Item with the Boone recognition trial',
+    detail: 'Free recall plus the recognition trial Boone et al. added.'
+  },
+  tomm: {
+    kind: 'Stand-alone', derived: 'TOMM',
+    detail: 'Trial 1, Trial 2 and Retention, 50 items each.'
+  },
+  cvlt3: {
+    kind: 'Embedded', derived: 'CVLT-3 (base rates) · CVLT-II (cut-offs)',
+    detail: 'Forced Choice Recognition total hits and critical items.',
+    mismatch: 'The base rates are the CVLT-3 manual’s own. The two selectable cut-offs and their accuracy are CVLT-II figures, applied here because the trial is structurally identical across editions — 16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition.'
+  }
+};
+
 </script>
 <script data-inlined-from="app.js">
 ﻿/* ============================================================
@@ -24672,6 +24774,12 @@ const APA_NOTES = {
         : '',
       ctx.cvlt3Borrowed
         ? `The CVLT-3 manual publishes no cut-off for Forced Choice Recognition; the cut-off and accuracy applied here are CVLT-II figures (${ctx.cvlt3Cite}), the trial being structurally identical across editions. The base rate shown is the CVLT-3 manual's own.`
+        : '',
+      /* A cut-off derived on one edition of a test does not automatically
+         transfer to another, and the exported table is where a reviewer
+         asks. Emitted only for the measures actually in the table. */
+      ctx.versionCaveats && ctx.versionCaveats.length
+        ? `Instrument versions: ${ctx.versionCaveats.join(' ')}`
         : '',
       ctx.esGated
         ? 'The Effort Scale is not computed because its screening gate was not met (Novitski et al., 2012).'
@@ -29068,6 +29176,13 @@ function renderPvtApa(){
       hasCvlt3: rows.some(r => r.group === 'cvlt3'),
       cvlt3Borrowed: rows.some(r => r.group === 'cvlt3') && (typeof getPvtCvlt3 === 'function') && getPvtCvlt3().basis?.cut !== null && getPvtCvlt3().basis !== undefined,
       cvlt3Cite: (getPvtCvlt3().basis?.cut === 15) ? 'Erdodi et al., 2018' : 'Schwartz et al., 2016',
+      /* One sentence per measure present that carries a version mismatch,
+         drawn from the same PVT_INSTRUMENTS the cards render. The CVLT-3's
+         is stated above in its own clause, so it is not repeated here. */
+      versionCaveats: (typeof PVT_INSTRUMENTS === 'object' ? Object.keys(PVT_INSTRUMENTS) : [])
+        .filter(tab => PVT_INSTRUMENTS[tab].mismatch && tab !== 'cvlt3')
+        .filter(tab => rows.some(r => r.id === tab || r.id.startsWith(tab + '-') || (tab === 'ds' && r.id.startsWith('ds'))))
+        .map(tab => PVT_INSTRUMENTS[tab].mismatch),
       hasTomm: rows.some(r => r.group === 'tomm'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
@@ -29154,6 +29269,23 @@ function renderPvtNav(){
 
 /* The published-accuracy line beside each cut-off select — same strings the
    summary table and APA export print, so screen and export cannot differ. */
+/* The "Derived on" line under every method's citation, and the mismatch
+   warning where the edition a clinician is administering is not the one the
+   cut-off came from. Both are written into placeholders in the markup from
+   PVT_INSTRUMENTS, so the cards and the About roster cannot drift. */
+function pvtInstrumentLineHtml(tab){
+  const i = PVT_INSTRUMENTS[tab];
+  if (!i) return '';
+  return `<span class="pvt-derived"><span class="pvt-derived-label">Derived on</span> ${i.derived}${
+    i.unspecified ? ' <span class="pvt-derived-gap">— form/edition not recorded here</span>' : ''}</span>${
+    i.mismatch ? `<span class="pvt-derived-warn">${i.mismatch}</span>` : ''}`;
+}
+function renderPvtInstruments(){
+  document.querySelectorAll('#validity [data-pvt-derived]').forEach(el => {
+    const html = pvtInstrumentLineHtml(el.dataset.pvtDerived);
+    if (el.innerHTML !== html) el.innerHTML = html;
+  });
+}
 function renderPvtAccuracy(){
   const eiEl = document.getElementById('pvt-ei-accuracy');
   if (eiEl){
@@ -29296,6 +29428,7 @@ function renderPvtAll(){
   renderPvtTomm();
   renderPvtCvlt3();
   renderPvtAccuracy();
+  renderPvtInstruments();
   renderPvtNav();
   renderPvtRail();
   renderPvtSummary();
@@ -29358,6 +29491,10 @@ function renderPvtAboutPanel(){
       source: 'Stand-alone', group: 'Rey 15-Item', cut: 'Recall + recognition',
       sens: PVT_REY15_ACCURACY.combo.sens, spec: PVT_REY15_ACCURACY.combo.spec,
       desc: 'Free recall of fifteen over-learned items, with a recognition trial that raises sensitivity.' },
+    { tab: 'cvlt3', title: 'CVLT-3 Forced Choice', cite: 'Delis et al. (2017); Erdodi et al. (2018)',
+      source: 'Embedded', group: 'CVLT-3', cut: 'Base rate by age',
+      sens: null, spec: null, acc: 'no pair published for the base-rate reading',
+      desc: 'Total hits on the Forced Choice trial, read against the CVLT-3 manual’s age-banded base rates, with the CVLT-II cut-offs selectable alongside.' },
     { tab: 'tomm', title: 'TOMM', cite: 'Tombaugh (1996); Martin et al. (2020)',
       source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
       sens: t2 ? (t2.sensRange || String(t2.sens).replace('0.', '.')) : '—',
@@ -29372,7 +29509,10 @@ function renderPvtAboutPanel(){
       </div>
       <span class="pvt-overview-cite">${r.cite}</span>
     </td>
-    <td class="pvt-overview-cell">${r.source}</td>
+    <td class="pvt-overview-cell pvt-overview-derived">${(PVT_INSTRUMENTS[r.tab] || {}).derived || r.source}${
+      (PVT_INSTRUMENTS[r.tab] || {}).unspecified ? '<span class="pvt-overview-sub">edition not recorded</span>' : ''}${
+      (PVT_INSTRUMENTS[r.tab] || {}).mismatch ? '<span class="pvt-overview-sub is-warn">version caveat — see the measure</span>' : ''}<span class="pvt-overview-sub">${
+      (PVT_INSTRUMENTS[r.tab] || {}).kind || r.source}</span></td>
     <td class="pvt-overview-cell">${r.group}</td>
     <td class="pvt-overview-cell pvt-overview-acc">${r.acc
       ? `<span class="pvt-overview-cut">${r.cut}</span>${r.acc}`
@@ -29383,7 +29523,7 @@ function renderPvtAboutPanel(){
     <table class="pvt-overview-table">
       <thead><tr>
         <th class="pvt-overview-th is-measure">Measure</th>
-        <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity.">Source</span></th>
+        <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The instrument and edition each cut-off was calibrated on. Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity. A cut-off derived on one edition does not automatically transfer to another.">Derived on</span></th>
         <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="Measures derived from the same administration of the same instrument share error and are not independent evidence: each named group counts as ONE indicator in the aggregation.">Counts as</span></th>
         <th class="pvt-overview-th"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="Published accuracy at the cut-off named in the cell — the same figures printed beside each measure's cut-off selector.">Accuracy at default cut-off</span></th>
         <th aria-hidden="true"></th>
@@ -32311,7 +32451,7 @@ if (document.readyState === 'loading'){
 }
 
 </script>
-<script src="design-system.js?v=20260903d" defer></script>
+<script src="design-system.js?v=20260903e" defer></script>
 <script data-inlined-from="app-effectsize-page.js">
 /* =====================================================================
    Effect Size Tools - page module (#effectsize)

@@ -2250,3 +2250,59 @@ const PVT_CVLT3_ERDODI_T6 = {
   e14: { sens: [0.40, 0.48, 0.44, 0.50, 0.65, 0.56, 0.45],
          spec: [0.95, 0.93, 0.98, 0.91, 0.93, 0.89, 0.89] }
 };
+
+/* =========================================================================
+   WHICH INSTRUMENT, AND WHICH EDITION, EACH PVT CUT-OFF WAS DERIVED ON
+
+   A validity cut-off belongs to the version of the test it was calibrated
+   on. Report readers -- particularly in medico-legal work -- ask exactly
+   this, and two of the measures here already needed the answer written into
+   their own copy: the Digit Span indices are WAIS-III and the CVLT-3 Forced
+   Choice cut-offs are CVLT-II. Answering it ad hoc, per measure, meant the
+   other four said nothing at all. This is the single source of truth, read
+   by both the method cards and the About roster so the two cannot disagree.
+
+   THE FIELD STATES WHAT THE APP CAN CITE, and nothing more. Where the
+   sources held here do not name a form or edition, `unspecified` says so
+   rather than the app inferring one from a publication date -- an inference
+   would read as a warranted match and it is not one. `mismatch` carries the
+   substantive warning where the version a clinician is likely administering
+   is NOT the version the cut-off came from; it is the sentence that belongs
+   in a report, so it is written to be read by a reviewer, not by us.
+
+   check.js section 40 pins the roster: an entry per method tab, no tab
+   without one, and every mismatch surfaced on its card AND in the export.
+   ========================================================================= */
+const PVT_INSTRUMENTS = {
+  ei: {
+    kind: 'Embedded', derived: 'RBANS', unspecified: true,
+    detail: 'Digit Span and List Recognition raw scores.'
+  },
+  es: {
+    kind: 'Embedded', derived: 'RBANS', unspecified: true,
+    detail: 'List Recognition, the three recall scores and Digit Span, all raw.'
+  },
+  rds: {
+    kind: 'Embedded', derived: 'WAIS-R, WAIS-III and WAIS-IV',
+    detail: 'Digit Span, Forward and Backward trials.',
+    mismatch: 'Classic Reliable Digit Span is Forward + Backward only. The WAIS-IV and WAIS-5 subtest adds a Sequencing trial, which is NOT included here; sequencing-inclusive variants exist but carry different cut-offs. Record which variant was scored.'
+  },
+  ds: {
+    kind: 'Embedded', derived: 'WAIS-III',
+    detail: 'Age-corrected scaled score, Vocabulary − Digit Span, and longest spans.',
+    mismatch: 'Both sources are WAIS-III. A WAIS-IV or WAIS-5 age-corrected scaled score includes Sequencing in the composite, so it is not on the identical metric these cut-offs were derived on.'
+  },
+  rey15: {
+    kind: 'Stand-alone', derived: 'Rey 15-Item with the Boone recognition trial',
+    detail: 'Free recall plus the recognition trial Boone et al. added.'
+  },
+  tomm: {
+    kind: 'Stand-alone', derived: 'TOMM',
+    detail: 'Trial 1, Trial 2 and Retention, 50 items each.'
+  },
+  cvlt3: {
+    kind: 'Embedded', derived: 'CVLT-3 (base rates) · CVLT-II (cut-offs)',
+    detail: 'Forced Choice Recognition total hits and critical items.',
+    mismatch: 'The base rates are the CVLT-3 manual’s own. The two selectable cut-offs and their accuracy are CVLT-II figures, applied here because the trial is structurally identical across editions — 16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition.'
+  }
+};

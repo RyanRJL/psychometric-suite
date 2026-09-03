@@ -3270,6 +3270,12 @@ const APA_NOTES = {
       ctx.cvlt3Borrowed
         ? `The CVLT-3 manual publishes no cut-off for Forced Choice Recognition; the cut-off and accuracy applied here are CVLT-II figures (${ctx.cvlt3Cite}), the trial being structurally identical across editions. The base rate shown is the CVLT-3 manual's own.`
         : '',
+      /* A cut-off derived on one edition of a test does not automatically
+         transfer to another, and the exported table is where a reviewer
+         asks. Emitted only for the measures actually in the table. */
+      ctx.versionCaveats && ctx.versionCaveats.length
+        ? `Instrument versions: ${ctx.versionCaveats.join(' ')}`
+        : '',
       ctx.esGated
         ? 'The Effort Scale is not computed because its screening gate was not met (Novitski et al., 2012).'
         : '',
@@ -7665,6 +7671,13 @@ function renderPvtApa(){
       hasCvlt3: rows.some(r => r.group === 'cvlt3'),
       cvlt3Borrowed: rows.some(r => r.group === 'cvlt3') && (typeof getPvtCvlt3 === 'function') && getPvtCvlt3().basis?.cut !== null && getPvtCvlt3().basis !== undefined,
       cvlt3Cite: (getPvtCvlt3().basis?.cut === 15) ? 'Erdodi et al., 2018' : 'Schwartz et al., 2016',
+      /* One sentence per measure present that carries a version mismatch,
+         drawn from the same PVT_INSTRUMENTS the cards render. The CVLT-3's
+         is stated above in its own clause, so it is not repeated here. */
+      versionCaveats: (typeof PVT_INSTRUMENTS === 'object' ? Object.keys(PVT_INSTRUMENTS) : [])
+        .filter(tab => PVT_INSTRUMENTS[tab].mismatch && tab !== 'cvlt3')
+        .filter(tab => rows.some(r => r.id === tab || r.id.startsWith(tab + '-') || (tab === 'ds' && r.id.startsWith('ds'))))
+        .map(tab => PVT_INSTRUMENTS[tab].mismatch),
       hasTomm: rows.some(r => r.group === 'tomm'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
@@ -7751,6 +7764,23 @@ function renderPvtNav(){
 
 /* The published-accuracy line beside each cut-off select — same strings the
    summary table and APA export print, so screen and export cannot differ. */
+/* The "Derived on" line under every method's citation, and the mismatch
+   warning where the edition a clinician is administering is not the one the
+   cut-off came from. Both are written into placeholders in the markup from
+   PVT_INSTRUMENTS, so the cards and the About roster cannot drift. */
+function pvtInstrumentLineHtml(tab){
+  const i = PVT_INSTRUMENTS[tab];
+  if (!i) return '';
+  return `<span class="pvt-derived"><span class="pvt-derived-label">Derived on</span> ${i.derived}${
+    i.unspecified ? ' <span class="pvt-derived-gap">— form/edition not recorded here</span>' : ''}</span>${
+    i.mismatch ? `<span class="pvt-derived-warn">${i.mismatch}</span>` : ''}`;
+}
+function renderPvtInstruments(){
+  document.querySelectorAll('#validity [data-pvt-derived]').forEach(el => {
+    const html = pvtInstrumentLineHtml(el.dataset.pvtDerived);
+    if (el.innerHTML !== html) el.innerHTML = html;
+  });
+}
 function renderPvtAccuracy(){
   const eiEl = document.getElementById('pvt-ei-accuracy');
   if (eiEl){
@@ -7893,6 +7923,7 @@ function renderPvtAll(){
   renderPvtTomm();
   renderPvtCvlt3();
   renderPvtAccuracy();
+  renderPvtInstruments();
   renderPvtNav();
   renderPvtRail();
   renderPvtSummary();
@@ -7955,6 +7986,10 @@ function renderPvtAboutPanel(){
       source: 'Stand-alone', group: 'Rey 15-Item', cut: 'Recall + recognition',
       sens: PVT_REY15_ACCURACY.combo.sens, spec: PVT_REY15_ACCURACY.combo.spec,
       desc: 'Free recall of fifteen over-learned items, with a recognition trial that raises sensitivity.' },
+    { tab: 'cvlt3', title: 'CVLT-3 Forced Choice', cite: 'Delis et al. (2017); Erdodi et al. (2018)',
+      source: 'Embedded', group: 'CVLT-3', cut: 'Base rate by age',
+      sens: null, spec: null, acc: 'no pair published for the base-rate reading',
+      desc: 'Total hits on the Forced Choice trial, read against the CVLT-3 manual’s age-banded base rates, with the CVLT-II cut-offs selectable alongside.' },
     { tab: 'tomm', title: 'TOMM', cite: 'Tombaugh (1996); Martin et al. (2020)',
       source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
       sens: t2 ? (t2.sensRange || String(t2.sens).replace('0.', '.')) : '—',
@@ -7969,7 +8004,10 @@ function renderPvtAboutPanel(){
       </div>
       <span class="pvt-overview-cite">${r.cite}</span>
     </td>
-    <td class="pvt-overview-cell">${r.source}</td>
+    <td class="pvt-overview-cell pvt-overview-derived">${(PVT_INSTRUMENTS[r.tab] || {}).derived || r.source}${
+      (PVT_INSTRUMENTS[r.tab] || {}).unspecified ? '<span class="pvt-overview-sub">edition not recorded</span>' : ''}${
+      (PVT_INSTRUMENTS[r.tab] || {}).mismatch ? '<span class="pvt-overview-sub is-warn">version caveat — see the measure</span>' : ''}<span class="pvt-overview-sub">${
+      (PVT_INSTRUMENTS[r.tab] || {}).kind || r.source}</span></td>
     <td class="pvt-overview-cell">${r.group}</td>
     <td class="pvt-overview-cell pvt-overview-acc">${r.acc
       ? `<span class="pvt-overview-cut">${r.cut}</span>${r.acc}`
@@ -7980,7 +8018,7 @@ function renderPvtAboutPanel(){
     <table class="pvt-overview-table">
       <thead><tr>
         <th class="pvt-overview-th is-measure">Measure</th>
-        <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity.">Source</span></th>
+        <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The instrument and edition each cut-off was calibrated on. Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity. A cut-off derived on one edition does not automatically transfer to another.">Derived on</span></th>
         <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="Measures derived from the same administration of the same instrument share error and are not independent evidence: each named group counts as ONE indicator in the aggregation.">Counts as</span></th>
         <th class="pvt-overview-th"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="Published accuracy at the cut-off named in the cell — the same figures printed beside each measure's cut-off selector.">Accuracy at default cut-off</span></th>
         <th aria-hidden="true"></th>

@@ -52,7 +52,7 @@ vm.runInContext(
     ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
     ' REY15_RECALL_ROWS, REY15_RECOGNITION_ROWS, REY15_SHAPES,' +
     ' PVT_CVLT3_BANDS, PVT_CVLT3_FC_HITS, PVT_CVLT3_CRITICAL, PVT_CVLT3_CRITERIA,' +
-    ' PVT_CVLT3_FC_CUTOFFS, PVT_CVLT3_ERDODI_T6,' +
+    ' PVT_CVLT3_FC_CUTOFFS, PVT_CVLT3_ERDODI_T6, PVT_INSTRUMENTS,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -7633,6 +7633,88 @@ check('a borrowed CVLT-II cut-off is labelled as one, everywhere it can be read'
   });
   if (!/failure rates rise with the severity of neurocognitive disorder/.test(HTML_SRC)) bad.push('the caution lost the impairment gradient in failure rates');
   if (!/reverse severity effect/.test(HTML_SRC)) bad.push('the caution lost the mild-TBI reverse severity effect');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+heading('40. Every PVT states the instrument and edition it was derived on');
+
+check('the roster covers every method tab, and every method tab is in the roster', () => {
+  /* A validity cut-off belongs to the version of the test it was calibrated
+     on, and that is what a report reader asks. The roster is derived FROM
+     the markup rather than restated, so a measure added without provenance
+     fails rather than silently saying nothing. */
+  const bad = [];
+  const tabs = [...HTML_SRC.matchAll(/data-pvt-tab="([a-z0-9]+)"/g)].map(m => m[1])
+    .filter(t => t !== 'about' && t !== 'summary');
+  const roster = Object.keys(D.PVT_INSTRUMENTS);
+  tabs.forEach(t => { if (!roster.includes(t)) bad.push('method tab "' + t + '" has no entry in PVT_INSTRUMENTS'); });
+  roster.forEach(t => { if (!tabs.includes(t)) bad.push('PVT_INSTRUMENTS names "' + t + '", which is not a method tab'); });
+  /* Each entry has to actually say something. */
+  roster.forEach(t => {
+    const i = D.PVT_INSTRUMENTS[t];
+    if (!i.derived || !/\S/.test(i.derived)) bad.push(t + ': no instrument named');
+    if (!i.kind) bad.push(t + ': embedded or stand-alone not stated');
+    if (i.mismatch && i.mismatch.length < 40) bad.push(t + ': the version caveat is too terse to be usable in a report');
+  });
+  /* Every card must carry the placeholder the line is written into. */
+  tabs.forEach(t => {
+    if (!HTML_SRC.includes('data-pvt-derived="' + t + '"')) bad.push('the ' + t + ' card has no "Derived on" line');
+  });
+  if (!/renderPvtInstruments\(\);/.test(extractFn(APP_SRC, 'renderPvtAll'))) bad.push('renderPvtAll never writes the Derived on lines');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the editions named are the ones the sources actually name', () => {
+  /* Pinned to the citations the page itself carries, so a drift in either
+     direction fails. These are claims about published instruments, not
+     inferences from publication dates: where the sources held here name no
+     form or edition, the entry must SAY so rather than guess one. */
+  const bad = [];
+  const I = D.PVT_INSTRUMENTS;
+  /* Iverson & Tulsky (2003) and Axelrod et al. (2006) both name WAIS-III in
+     their titles, and the page prints both citations. */
+  if (!/WAIS-III/.test(I.ds.derived)) bad.push('the Digit Span indices no longer name WAIS-III');
+  if (!/Detecting malingering on the WAIS-III/.test(HTML_SRC)) bad.push('the Iverson & Tulsky citation no longer supports the WAIS-III claim');
+  /* Schroeder et al. (2012) is a systematic review spanning WAIS editions. */
+  ['WAIS-R', 'WAIS-III', 'WAIS-IV'].forEach(e => {
+    if (!I.rds.derived.includes(e)) bad.push('Reliable Digit Span no longer names ' + e);
+  });
+  /* CVLT-3 base rates, CVLT-II cut-offs — the split is the whole point. */
+  if (!/CVLT-3/.test(I.cvlt3.derived) || !/CVLT-II/.test(I.cvlt3.derived)){
+    bad.push('the CVLT-3 entry no longer distinguishes its base rates from its borrowed cut-offs');
+  }
+  /* The two RBANS measures must keep declaring the gap rather than
+     acquiring an edition nobody cited. */
+  ['ei', 'es'].forEach(t => {
+    if (!I[t].unspecified) bad.push(t + ': an RBANS form or edition has appeared that no cited source names');
+    if (/Update|Form [ABCD]/.test(I[t].derived)) bad.push(t + ': names an RBANS form the sources here do not');
+  });
+  /* Exactly the three known mismatches, so a fourth has to be acknowledged. */
+  const mism = Object.keys(I).filter(t => I[t].mismatch).sort();
+  if (JSON.stringify(mism) !== JSON.stringify(['cvlt3', 'ds', 'rds'])){
+    bad.push('the set of version mismatches changed: [' + mism.join(', ') + '] — expected [cvlt3, ds, rds]');
+  }
+  /* The RDS caveat is the one most likely to bite in practice, because the
+     WAIS-IV subtest a clinician is holding adds a trial the index excludes. */
+  if (!/Sequencing/.test(I.rds.mismatch)) bad.push('the RDS caveat no longer warns about the Sequencing trial');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a version mismatch reaches the exported table, not just the screen', () => {
+  /* The screen is read by the clinician; the export is read by everyone
+     else. A caveat that lives only on the card is the one a reviewer will
+     say was never disclosed. */
+  const bad = [];
+  if (!/Instrument versions: \$\{ctx\.versionCaveats\.join/.test(APP_SRC)) bad.push('the APA note has no instrument-version clause');
+  if (!/versionCaveats:/.test(APP_SRC)) bad.push('the note context never builds the version caveats');
+  /* Conditional on what the table holds — a TOMM-only export must not carry
+     a WAIS-III sentence. */
+  const ctx = APP_SRC.slice(APP_SRC.indexOf('versionCaveats:'));
+  if (!/rows\.some/.test(ctx.slice(0, 600))) bad.push('the version caveats are emitted unconditionally');
+  /* The CVLT-3 states its own in a dedicated clause, so it must be excluded
+     here or the export says it twice. */
+  if (!/tab !== 'cvlt3'/.test(APP_SRC)) bad.push('the CVLT-3 caveat would be printed twice in the export');
   return bad.length === 0 || bad.join('; ');
 });
 
