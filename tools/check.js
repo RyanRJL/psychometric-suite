@@ -7303,6 +7303,25 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
       if (!vHtml.includes(name)) bad.push('#validity references lost ' + name);
     });
   })();
+  /* The aggregation card states only what Larrabee (2014) contains. It once
+     carried "lower education alone can move the failure count needed to keep
+     false positives < 10% from 2-of-5 up to 4-of-5", cited to that paper —
+     a claim taken from a secondary summary and NOT in the paper, which
+     reports the opposite shape: education correlated with PVT failure count
+     only in Davis and Millis's data, and all six of its own false positives
+     were severe TBI with prolonged coma, complicated mild TBI, or stroke
+     with a CT lesion. Anything attributed to a source has to be in it. */
+  if (/2-of-5 up to 4-of-5|from '2 of 5' up to '4 of 5'/.test(HTML_SRC)){
+    bad.push('the education threshold claim is back — it is not in Larrabee (2014)');
+  }
+  if (!/severe TBI with prolonged coma, complicated mild TBI, or stroke with a lesion on CT/.test(HTML_SRC)){
+    bad.push('the aggregation card lost the paper\'s own false-positive characterisation');
+  }
+  /* Larrabee frames the two-failure rule inside Slick et al. (1999), which
+     also requires a substantial external incentive; stating the count rule
+     without that context overstates what two failures mean. */
+  if (!/substantial external incentive/.test(HTML_SRC)) bad.push('the aggregation card no longer names the external-incentive requirement');
+  if (!/Slick, D\. J\., Sherman/.test(HTML_SRC)) bad.push('Slick et al. (1999) is cited on the page but missing from the references');
   /* The live status chips restate the same getPvt* state the result cards
      render; a chip updating without the card (or vice versa) would show two
      different verdicts for one score. renderPvtAll is the single caller. */

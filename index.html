@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260828z">
-<link rel="stylesheet" href="design-system.css?v=20260828z">
+<link rel="stylesheet" href="styles.css?v=20260903a">
+<link rel="stylesheet" href="design-system.css?v=20260903a">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1705,7 +1705,7 @@
         <div class="pvt-outcome">
           <div class="pvt-card">
             <div class="pvt-card-kicker">Aggregating multiple PVTs (Larrabee, 2014)</div>
-            <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity. Classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT):</p>
+            <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity — within Slick et al.'s (1999) criteria, which also require a substantial external incentive. Classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT):</p>
             <table class="pvt-table">
               <thead><tr><th>Threshold</th><th>Specificity</th><th>Sensitivity</th><th>Total correct</th></tr></thead>
               <tbody>
@@ -1717,7 +1717,7 @@
             <details class="formula-disclosure">
               <summary>Why ≥ 2, and when to demand more</summary>
               <div class="formula-body">
-                <p>Monte Carlo warnings that false positives climb steeply with more tests overestimate the problem: genuine patients' PVT scores are skewed and at-ceiling rather than multivariate-normal, so real failures cluster differently than random normal data predict. Two practical rules follow. <em>Independence is required</em> — indices sharing subtests are correlated, so failing one raises the odds of failing another: the Effort Index and Effort Scale here are computed from the same RBANS subtests and count as <strong>one</strong> indicator, and RDS also loads on digit span. <em>Examinee characteristics shift the threshold</em> — lower education alone can move the failure count needed to keep false positives &lt; 10% from 2-of-5 up to 4-of-5, so demand more failures, or rely on high-specificity forced-choice measures, in lower-education, older, or genuinely impaired examinees (Larrabee, 2014).</p>
+                <p>Monte Carlo warnings that false positives climb steeply with more tests overestimate the problem: genuine patients' PVT scores are skewed and at-ceiling rather than multivariate-normal, so real failures cluster differently than random normal data predict. Two practical rules follow. <em>Independence is required</em> — indices sharing subtests are correlated, so failing one raises the odds of failing another: the Effort Index and Effort Scale here are computed from the same RBANS subtests and count as <strong>one</strong> indicator, and RDS also loads on digit span. <em>The false positives that do occur are the severely impaired</em> — all six non-malingering cases failing ≥ 2 of 7 in Larrabee's sample had severe TBI with prolonged coma, complicated mild TBI, or stroke with a lesion on CT, and most failed only just inside the invalid range (RDS 7, WCST failure-to-maintain-set 2). So weigh the count against clinical and neurological coherence, and lean on high-specificity forced-choice measures, before reading two failures as probable invalidity in a genuinely impaired examinee (Larrabee, 2014).</p>
               </div>
             </details>
           </div>
@@ -1755,6 +1755,7 @@
         <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</p>
         <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30.</p>
         <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
+        <p>Slick, D. J., Sherman, E. M. S., &amp; Iverson, G. L. (1999). Diagnostic criteria for malingered neurocognitive dysfunction: Proposed standards for clinical practice and research. <i>The Clinical Neuropsychologist, 13</i>(4), 545–561.</p>
         <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
       </div>
     </details>
@@ -2818,6 +2819,7 @@
       <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195. [Effort Scale formula, screening gate and cut-off.]</p>
       <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30. [Basis for preferring the conservative RDS ≤ 6 cut-off.]</p>
       <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. [Effort Index weighting table and cut-offs.]</p>
+      <p>Slick, D. J., Sherman, E. M. S., &amp; Iverson, G. L. (1999). Diagnostic criteria for malingered neurocognitive dysfunction: Proposed standards for clinical practice and research. <i>The Clinical Neuropsychologist, 13</i>(4), 545–561. [The criteria the two-failure rule sits inside; they also require a substantial external incentive.]</p>
       <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
 
       <div class="references-group">Effect-size benchmarks</div>
@@ -2854,11 +2856,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260828z"></script>
-<script src="app.js?v=20260828z"></script>
-<script src="design-system.js?v=20260828z" defer></script>
-<script src="app-effectsize-page.js?v=20260828z"></script>
-<script src="app-viz-page.js?v=20260828z"></script>
+<script src="data.js?v=20260903a"></script>
+<script src="app.js?v=20260903a"></script>
+<script src="design-system.js?v=20260903a" defer></script>
+<script src="app-effectsize-page.js?v=20260903a"></script>
+<script src="app-viz-page.js?v=20260903a"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
