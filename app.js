@@ -3241,6 +3241,7 @@ const APA_NOTES = {
     if (ctx.hasRds)  sources.push('Reliable Digit Span (Greiffenstein et al., 1994)');
     if (ctx.hasDs)   sources.push('Digit Span indices (Iverson & Tulsky, 2003; Axelrod et al., 2006 — WAIS-III)');
     if (ctx.hasRey)  sources.push('Rey 15-Item (Boone et al., 2002)');
+    if (ctx.hasCvlt3) sources.push('CVLT-3 Forced Choice (Delis et al., 2017, Tables D.13–D.15)');
     if (ctx.hasTomm) sources.push('TOMM (Tombaugh, 1996; cut-offs Martin et al., 2020)');
     const shared = [];
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
@@ -3255,6 +3256,12 @@ const APA_NOTES = {
         ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks an index published as a base rate or an AUC rather than as a pair.'
         : 'Sensitivity and specificity are the published values at the applied cut-off.',
       shared.length ? `Indices sharing a subtest count as one indicator: ${shared.join(' and ')}.` : '',
+      /* The CVLT-3 is the one measure here with no published cut-off, so an
+         exported table must say where its threshold came from — otherwise
+         the Cut-off column implies the manual printed one. */
+      ctx.hasCvlt3
+        ? 'The CVLT-3 Forced Choice manual publishes base rates by age band, not a cut-off; its threshold is the rarest score whose published base rate is at or below the stated per-test false-positive criterion, so it varies with age.'
+        : '',
       ctx.esGated
         ? 'The Effort Scale is not computed because its screening gate was not met (Novitski et al., 2012).'
         : '',
@@ -7074,6 +7081,97 @@ function getPvtTomm(){
 }
 
 /* ---------- result boxes ---------- */
+/* ---- CVLT-3 Forced Choice Recognition (Delis et al., 2017, Appendix D) ----
+   The one measure here scored from a published base-rate table rather than
+   a published cut-off, because the manual prints no cut-off. Everything the
+   flag rests on is derived from Tables D.13-D.15 at runtime. */
+
+/* The manual's age band containing this age, or 'All ages' when there is no
+   age, or the age falls outside the 16-90 normative range. Both readings are
+   published, so both are citable; the caller says which one it used. */
+function pvtCvlt3Band(age){
+  if (age === null || age === undefined || !isFinite(age)) return 'All ages';
+  const b = PVT_CVLT3_BANDS.find(x => age >= x.lo && age <= x.hi);
+  return b ? b.key : 'All ages';
+}
+/* Base rate for a score in a band. Hits read DOWNWARD (percentage scoring
+   that many or fewer) and clamp onto the manual's "≤12" row; critical items
+   read UPWARD (that many or more) and clamp onto its "≥3" row. */
+function pvtCvlt3HitsRate(hits, band){
+  const t = PVT_CVLT3_FC_HITS.bands[band];
+  if (!t) return null;
+  const key = Math.min(Math.max(hits, PVT_CVLT3_FC_HITS.floorRow), PVT_CVLT3_FC_HITS.max);
+  const v = t[key];
+  return typeof v === 'number' ? v : null;
+}
+function pvtCvlt3CriticalRate(count, band, which){
+  const spec = PVT_CVLT3_CRITICAL[which];
+  const t = spec && spec.bands[band];
+  if (!t) return null;
+  const key = Math.min(Math.max(count, 0), spec.capRow);
+  const v = t[key];
+  return typeof v === 'number' ? v : null;
+}
+/* THE DERIVED THRESHOLD. Not a stored cut-off: the rarest score in THIS
+   band whose published base rate is still at or below the selected per-test
+   false-positive criterion. On hits that is the highest such score, on
+   critical items the lowest. It moves with age by construction — 15 hits is
+   8.6% overall but 26% at 80-90, so the same score flags in a 30-year-old
+   and does not in an 85-year-old, which is the whole reason the band is
+   read rather than ignored. Returns null where no score in the table meets
+   the criterion, and the measure then reports its base rate without a flag. */
+function pvtCvlt3HitsThreshold(band, pct){
+  const t = PVT_CVLT3_FC_HITS.bands[band];
+  if (!t) return null;
+  let best = null;
+  for (let h = PVT_CVLT3_FC_HITS.floorRow; h < PVT_CVLT3_FC_HITS.max; h++){
+    const r = t[h];
+    if (typeof r === 'number' && r <= pct) best = Math.max(best === null ? h : best, h);
+  }
+  return best;
+}
+function pvtCvlt3CriticalThreshold(band, pct, which){
+  const spec = PVT_CVLT3_CRITICAL[which];
+  const t = spec && spec.bands[band];
+  if (!t) return null;
+  for (let n = 1; n <= spec.capRow; n++){
+    const r = t[n];
+    if (typeof r === 'number' && r <= pct) return n;
+  }
+  return null;
+}
+function pvtCvlt3Criterion(){
+  const key = document.getElementById('pvt-cvlt3-criterion')?.value;
+  return PVT_CVLT3_CRITERIA.find(c => c.key === key) || PVT_CVLT3_CRITERIA[0];
+}
+function getPvtCvlt3(){
+  const hits = pvtInt(document.getElementById('pvt-cvlt3-hits')?.value, 0, PVT_CVLT3_FC_HITS.max);
+  const rc   = pvtInt(document.getElementById('pvt-cvlt3-crit-recall')?.value, 0, 16);
+  const yc   = pvtInt(document.getElementById('pvt-cvlt3-crit-recog')?.value, 0, 16);
+  if (hits === undefined && rc === undefined && yc === undefined) return { empty: true };
+  if (hits === null || rc === null || yc === null) return { invalid: true };
+  if (hits === undefined) return { partial: true };   // critical items alone score nothing
+  const age = (typeof patientAge === 'function') ? patientAge() : null;
+  const band = pvtCvlt3Band(age);
+  const crit = pvtCvlt3Criterion();
+  const s = { hits, age, band, usedAllAges: band === 'All ages', criterion: crit };
+  s.hitsRate = pvtCvlt3HitsRate(hits, band);
+  s.hitsThreshold = pvtCvlt3HitsThreshold(band, crit.pct);
+  s.hitsFail = s.hitsThreshold !== null && hits <= s.hitsThreshold;
+  [['recall', rc, 'critRecall'], ['recognition', yc, 'critRecog']].forEach(([which, val, key]) => {
+    if (val === undefined) return;
+    const th = pvtCvlt3CriticalThreshold(band, crit.pct, which);
+    s[key] = {
+      which, count: val, label: PVT_CVLT3_CRITICAL[which].label,
+      rate: pvtCvlt3CriticalRate(val, band, which),
+      threshold: th,
+      fail: th !== null && val >= th
+    };
+  });
+  s.anyFail = !!(s.hitsFail || s.critRecall?.fail || s.critRecog?.fail);
+  return s;
+}
+
 function pvtResultHtml(kind, headline, detail){
   return `<div class="pvt-result-inner is-${kind}"><span class="pvt-result-headline">${headline}</span>${detail ? `<span class="pvt-result-detail">${detail}</span>` : ''}</div>`;
 }
@@ -7396,6 +7494,33 @@ function getPvtSummaryRows(){
       result: pvtStatusWord(rey.comboFail), fail: rey.comboFail
     });
   }
+  /* CVLT-3: a word list, sharing no subtest with anything above, so its own
+     group. Hits and critical items come from ONE administration of the same
+     trial, so they sit in that one group together — the same non-independence
+     rule that collapses EI/ES and the digit-span indices. The cut-off column
+     names the derived threshold and the criterion it came from, so an
+     exported table never implies the manual published a cut score. */
+  const cv = getPvtCvlt3();
+  if (cv.hits !== undefined){
+    rows.push({
+      id: 'cvlt3', group: 'cvlt3', measure: 'CVLT-3 Forced Choice hits',
+      score: `${cv.hits}/${PVT_CVLT3_FC_HITS.max}`,
+      cutoff: cv.hitsThreshold === null ? '—' : `≤ ${cv.hitsThreshold} (base rate, ages ${cv.band})`,
+      sens: '—', spec: '—',
+      result: pvtStatusWord(cv.hitsFail), fail: cv.hitsFail
+    });
+    [cv.critRecall, cv.critRecog].forEach((c, i) => {
+      if (!c) return;
+      rows.push({
+        id: 'cvlt3-crit-' + (i === 0 ? 'recall' : 'recog'), group: 'cvlt3',
+        measure: 'CVLT-3 ' + c.label.charAt(0).toLowerCase() + c.label.slice(1),
+        score: String(c.count),
+        cutoff: c.threshold === null ? '—' : `≥ ${c.threshold} (base rate, ages ${cv.band})`,
+        sens: '—', spec: '—',
+        result: c.fail ? 'Flagged' : 'Not flagged', fail: c.fail
+      });
+    });
+  }
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
@@ -7412,6 +7537,50 @@ function pvtIndicatorCounts(rows){
   return { total: groups.length, failed: failed.length };
 }
 
+function pvtFmtRate(r){
+  if (r === null || r === undefined) return '—';
+  /* A published 0.0 is a real cell here (nobody in the standardisation
+     sample), unlike the ToPF table where zero cells are omitted. Print it
+     as "< 0.1%" rather than "0%": the sample is finite, so the honest claim
+     is that the rate rounds to zero, not that the score cannot occur. */
+  if (r === 0) return '&lt; 0.1%';
+  /* One decimal always, as the manual prints it — "3%" beside a stored
+     3.0 invites a reader to wonder which is the real figure. */
+  return r.toFixed(1) + '%';
+}
+function renderPvtCvlt3(){
+  const out = document.getElementById('pvt-cvlt3-result');
+  if (!out) return;
+  const s = getPvtCvlt3();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits to look up its published base rate.', 'The result appears here and the outcome joins the running summary.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits — the critical-item counts are read against it.'); return; }
+  const rows = [{
+    label: 'Forced Choice total hits', value: `${s.hits}/${PVT_CVLT3_FC_HITS.max}`,
+    state: s.hitsFail ? 'fail' : 'pass',
+    meta: `Base rate ${pvtFmtRate(s.hitsRate)} at ages ${s.band} (Table D.13)${
+      s.hitsThreshold === null
+        ? ' · no score in this band reaches the criterion'
+        : ` · flags at ≤ ${s.hitsThreshold}, derived at the ${s.criterion.pct}% criterion`}`
+  }];
+  [s.critRecall, s.critRecog].forEach(c => {
+    if (!c) return;
+    rows.push({
+      label: c.label, value: String(c.count),
+      state: c.fail ? 'fail' : 'pass',
+      meta: `Base rate ${pvtFmtRate(c.rate)} at ages ${s.band} (Table ${PVT_CVLT3_CRITICAL[c.which].table})${
+        c.threshold === null ? ' · no count in this band reaches the criterion'
+                             : ` · flags at ≥ ${c.threshold}`}`
+    });
+  });
+  const note = `${s.usedAllAges
+      ? (s.age === null ? 'No patient age entered, so the manual&rsquo;s All ages column is used — enter an age in the top bar for the banded reading, which can differ sharply.'
+                        : `Age ${s.age} falls outside the CVLT-3 normative range (16&ndash;90), so the All ages column is used.`)
+      : `Read against the ${s.band} band for the entered age of ${s.age}.`
+    } A poor forced-choice score is a strong indicator of exaggeration, but a perfect or near-perfect one does not rule it out (Delis et al., 2017).`;
+  out.innerHTML = pvtReadoutHtml(rows, note);
+}
+
 function renderPvtSummary(){
   const host = document.getElementById('pvt-summary-body');
   if (!host) return;
@@ -7424,7 +7593,7 @@ function renderPvtSummary(){
   const countStat = c.total === 0 ? '' :
     `<div class="pvt-count">
       <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
-      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the digit-span indices as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
+      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the digit-span indices as one, the CVLT-3 forced-choice scores as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
     </div>`;
   host.innerHTML = `
     <div class="pvt-card">
@@ -7463,6 +7632,7 @@ function renderPvtApa(){
       hasRds:  rows.some(r => r.id === 'rds'),
       hasDs:   rows.some(r => r.id.startsWith('ds')),
       hasRey:  rows.some(r => r.id.startsWith('rey')),
+      hasCvlt3: rows.some(r => r.group === 'cvlt3'),
       hasTomm: rows.some(r => r.group === 'tomm'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
@@ -7524,6 +7694,11 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-rey15'),
     reyAny ? (reyFail ? 'Fail' : 'Pass') : '—',
     reyAny ? (reyFail ? 'fail' : 'pass') : null);
+  const cvS = getPvtCvlt3();
+  const cvAny = cvS.hits !== undefined;
+  pvtChip(document.getElementById('pvt-status-cvlt3'),
+    cvAny ? (cvS.anyFail ? 'Fail' : 'Pass') : '—',
+    cvAny ? (cvS.anyFail ? 'fail' : 'pass') : null);
   const tomm = getPvtTomm();
   const tommHas = !!(tomm.rows && tomm.rows.length);
   pvtChip(document.getElementById('pvt-status-tomm'),
@@ -7538,6 +7713,7 @@ function renderPvtNav(){
   pvtCautionFlag('rds', rds.rds !== undefined && rds.fail);
   pvtCautionFlag('ds', dsFail);
   pvtCautionFlag('rey15', reyFail);
+  pvtCautionFlag('cvlt3', cvAny && cvS.anyFail);
   pvtCautionFlag('tomm', tommHas && tomm.anyFail);
 }
 
@@ -7586,6 +7762,9 @@ const PVT_RAIL_GROUPS = [
   ]},
   { id: 'rey15', label: 'Rey 15-Item', members: [
     { tab: 'rey15', label: 'Recall & recognition', ids: ['rey-recall', 'rey-combo'] }
+  ]},
+  { id: 'cvlt3', label: 'CVLT-3', members: [
+    { tab: 'cvlt3', label: 'Forced choice', ids: ['cvlt3', 'cvlt3-crit-recall', 'cvlt3-crit-recog'] }
   ]},
   { id: 'tomm', label: 'TOMM', members: [
     { tab: 'tomm',  label: 'Forced choice', ids: ['tomm'] }
@@ -7678,6 +7857,7 @@ function renderPvtAll(){
   renderPvtDs();
   renderPvtRey();
   renderPvtTomm();
+  renderPvtCvlt3();
   renderPvtAccuracy();
   renderPvtNav();
   renderPvtRail();
@@ -7701,7 +7881,7 @@ function switchPvtTab(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -7804,7 +7984,7 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   /* The forward-span index reads the shared top-bar age, so an age typed
@@ -7832,7 +8012,7 @@ function setupPvtPage(){
     const row = e.target.closest('[data-rail-tab]');
     if (row) switchPvtTab(row.dataset.railTab);
   });
-  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
   renderPvtAll();

@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260903b">
-<link rel="stylesheet" href="design-system.css?v=20260903b">
+<link rel="stylesheet" href="styles.css?v=20260903c">
+<link rel="stylesheet" href="design-system.css?v=20260903c">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1448,8 +1448,16 @@
         </span>
         <span class="pvt-status" id="pvt-status-rey15">—</span>
       </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
+      <button type="button" class="pvt-method-tab" data-pvt-tab="cvlt3" role="tab">
         <span class="pvt-method-num">06</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">CVLT-3 Forced Choice</span>
+          <span class="pvt-method-meta">Embedded &middot; base rate by age</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-cvlt3">&mdash;</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
+        <span class="pvt-method-num">07</span>
         <span class="pvt-method-main">
           <span class="pvt-method-label">TOMM</span>
           <span class="pvt-method-meta">Stand-alone · forced choice</span>
@@ -1457,7 +1465,7 @@
         <span class="pvt-status" id="pvt-status-tomm">—</span>
       </button>
       <button type="button" class="pvt-method-tab" data-pvt-tab="summary" role="tab">
-        <span class="pvt-method-num">07</span>
+        <span class="pvt-method-num">08</span>
         <span class="pvt-method-main">
           <span class="pvt-method-label">Summary</span>
           <span class="pvt-method-meta">Aggregation · Larrabee (2014)</span>
@@ -1719,6 +1727,53 @@
     </div>
 
     <!-- ===== TOMM ===== -->
+    <div class="pvt-tab-content" id="pvt-cvlt3">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Forced Choice total hits <span class="hint">(/16)</span></label>
+              <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-hits" placeholder="e.g. 16">
+            </div>
+            <div class="field">
+              <label>Base-rate criterion</label>
+              <select id="pvt-cvlt3-criterion">
+                <option value="standard" selected>10% &middot; conventional (spec. &ge; .90)</option>
+                <option value="conservative">5% &middot; stricter</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Recall critical items <span class="hint">(optional)</span></label>
+              <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-crit-recall" placeholder="e.g. 0">
+            </div>
+            <div class="field">
+              <label>Yes/No recognition critical items <span class="hint">(optional)</span></label>
+              <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-crit-recog" placeholder="e.g. 0">
+            </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms). The manual publishes <strong>base rates by age band, not a cut-off</strong>, and no sensitivity/specificity pair &mdash; the accuracy columns print dashes.</span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>How the threshold is derived, and why it moves with age</summary>
+            <div class="formula-body">
+              <p>Table D.13 gives the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>, by age band. There is no published cut score, so the flag is derived rather than stored: the rarest score whose published base rate is still at or below the selected per-test false-positive criterion. 10% is this page's own convention &mdash; PVT cut-offs are conventionally set so specificity is .90 or better &mdash; so nothing outside the manual enters the number itself.</p>
+              <p><strong>The age band does real work here.</strong> 15 of 16 hits is the 8.6th percentile across all ages but the <strong>26th</strong> at ages 80&ndash;90, so the derived threshold is &le; 15 in every band except 80&ndash;90, where it is &le; 14. Reading 15 as &ldquo;one off perfect, fine&rdquo; is a 3&ndash;6% event in a working-age adult and an unremarkable one in an 85-year-old. With no age entered the manual's own All ages column is used, and the readout says so.</p>
+              <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on the easier Forced Choice trial. Tables D.14 and D.15 give their base rates the other way round &mdash; that many <em>or more</em> &mdash; and the threshold is derived the same way. They come from the same administration as the hits, so all three count as <strong>one</strong> indicator.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-cvlt3-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> A near-perfect score does not rule out exaggeration, and the Brief Form cannot be scored here.</summary>
+            <div class="pvt-caution-body">The manual is explicit that forced-choice recognition is suited to blatant exaggeration: &ldquo;a poor score on forced choice testing is often a strong indicator of symptom amplification, but a perfect or near-perfect score does not rule it out&rdquo;, since a sophisticated simulator recognises the task as easy. Appendix D tabulates the Standard and Alternate Forms only &mdash; the Brief Form's 9-item list has no published base rates &mdash; and the trial is designed to be given after the Yes/No Recognition trial, roughly 10 minutes on (Delis et al., 2017).</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
     <div class="pvt-tab-content" id="pvt-tomm">
       <div class="pvt-workspace">
         <div class="pvt-card">
@@ -1832,7 +1887,9 @@
       <div class="references" id="pvt-references">
         <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
         <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
-        <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
+        <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson. [Forced Choice Recognition base rates by age band, Appendix D Tables D.13-D.15; the manual publishes no cut-off for this trial.]</p>
+      <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
+        <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson.</p>
         <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
@@ -3034,11 +3091,11 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260903b"></script>
-<script src="app.js?v=20260903b"></script>
-<script src="design-system.js?v=20260903b" defer></script>
-<script src="app-effectsize-page.js?v=20260903b"></script>
-<script src="app-viz-page.js?v=20260903b"></script>
+<script src="data.js?v=20260903c"></script>
+<script src="app.js?v=20260903c"></script>
+<script src="design-system.js?v=20260903c" defer></script>
+<script src="app-effectsize-page.js?v=20260903c"></script>
+<script src="app-viz-page.js?v=20260903c"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

@@ -9796,8 +9796,11 @@ body.rb-docked-active{padding-right:0}
 /* ---- Tab strip: white rounded-top sheet ---- */
 .pvt-method-tabs{
   display:grid;
-  /* Narrow leftmost About column + the seven measure tabs. */
-  grid-template-columns:minmax(72px,auto) repeat(7,minmax(120px,1fr));
+  /* Narrow leftmost About column + one column per measure tab. THE COUNT
+     MUST MATCH the markup: an extra tab with the count left at 7 does not
+     overflow or scroll, it silently wraps onto an implicit second row and
+     the strip reads as broken. check.js §39 pins the two together. */
+  grid-template-columns:minmax(72px,auto) repeat(8,minmax(104px,1fr));
   gap:0;
   background:#FFFFFF;
   border:1px solid rgba(20,15,5,0.08);
@@ -9812,7 +9815,7 @@ body.rb-docked-active{padding-right:0}
   border-right:1px solid rgba(20,15,5,0.04);
   background:#FFFFFF;
   font-family:var(--sans);
-  padding:16px 14px 14px;
+  padding:16px 10px 14px;
   cursor:pointer;
   text-align:center;
   display:flex;
@@ -17484,8 +17487,16 @@ input[type="number"].ds-age-pop-input{
         </span>
         <span class="pvt-status" id="pvt-status-rey15">—</span>
       </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
+      <button type="button" class="pvt-method-tab" data-pvt-tab="cvlt3" role="tab">
         <span class="pvt-method-num">06</span>
+        <span class="pvt-method-main">
+          <span class="pvt-method-label">CVLT-3 Forced Choice</span>
+          <span class="pvt-method-meta">Embedded &middot; base rate by age</span>
+        </span>
+        <span class="pvt-status" id="pvt-status-cvlt3">&mdash;</span>
+      </button>
+      <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
+        <span class="pvt-method-num">07</span>
         <span class="pvt-method-main">
           <span class="pvt-method-label">TOMM</span>
           <span class="pvt-method-meta">Stand-alone · forced choice</span>
@@ -17493,7 +17504,7 @@ input[type="number"].ds-age-pop-input{
         <span class="pvt-status" id="pvt-status-tomm">—</span>
       </button>
       <button type="button" class="pvt-method-tab" data-pvt-tab="summary" role="tab">
-        <span class="pvt-method-num">07</span>
+        <span class="pvt-method-num">08</span>
         <span class="pvt-method-main">
           <span class="pvt-method-label">Summary</span>
           <span class="pvt-method-meta">Aggregation · Larrabee (2014)</span>
@@ -17755,6 +17766,53 @@ input[type="number"].ds-age-pop-input{
     </div>
 
     <!-- ===== TOMM ===== -->
+    <div class="pvt-tab-content" id="pvt-cvlt3">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Forced Choice total hits <span class="hint">(/16)</span></label>
+              <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-hits" placeholder="e.g. 16">
+            </div>
+            <div class="field">
+              <label>Base-rate criterion</label>
+              <select id="pvt-cvlt3-criterion">
+                <option value="standard" selected>10% &middot; conventional (spec. &ge; .90)</option>
+                <option value="conservative">5% &middot; stricter</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Recall critical items <span class="hint">(optional)</span></label>
+              <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-crit-recall" placeholder="e.g. 0">
+            </div>
+            <div class="field">
+              <label>Yes/No recognition critical items <span class="hint">(optional)</span></label>
+              <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-crit-recog" placeholder="e.g. 0">
+            </div>
+          </div>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms). The manual publishes <strong>base rates by age band, not a cut-off</strong>, and no sensitivity/specificity pair &mdash; the accuracy columns print dashes.</span>
+          </div>
+          <details class="formula-disclosure">
+            <summary>How the threshold is derived, and why it moves with age</summary>
+            <div class="formula-body">
+              <p>Table D.13 gives the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>, by age band. There is no published cut score, so the flag is derived rather than stored: the rarest score whose published base rate is still at or below the selected per-test false-positive criterion. 10% is this page's own convention &mdash; PVT cut-offs are conventionally set so specificity is .90 or better &mdash; so nothing outside the manual enters the number itself.</p>
+              <p><strong>The age band does real work here.</strong> 15 of 16 hits is the 8.6th percentile across all ages but the <strong>26th</strong> at ages 80&ndash;90, so the derived threshold is &le; 15 in every band except 80&ndash;90, where it is &le; 14. Reading 15 as &ldquo;one off perfect, fine&rdquo; is a 3&ndash;6% event in a working-age adult and an unremarkable one in an 85-year-old. With no age entered the manual's own All ages column is used, and the readout says so.</p>
+              <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on the easier Forced Choice trial. Tables D.14 and D.15 give their base rates the other way round &mdash; that many <em>or more</em> &mdash; and the threshold is derived the same way. They come from the same administration as the hits, so all three count as <strong>one</strong> indicator.</p>
+            </div>
+          </details>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-cvlt3-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> A near-perfect score does not rule out exaggeration, and the Brief Form cannot be scored here.</summary>
+            <div class="pvt-caution-body">The manual is explicit that forced-choice recognition is suited to blatant exaggeration: &ldquo;a poor score on forced choice testing is often a strong indicator of symptom amplification, but a perfect or near-perfect score does not rule it out&rdquo;, since a sophisticated simulator recognises the task as easy. Appendix D tabulates the Standard and Alternate Forms only &mdash; the Brief Form's 9-item list has no published base rates &mdash; and the trial is designed to be given after the Yes/No Recognition trial, roughly 10 minutes on (Delis et al., 2017).</div>
+          </details>
+        </div>
+      </div>
+    </div>
+
     <div class="pvt-tab-content" id="pvt-tomm">
       <div class="pvt-workspace">
         <div class="pvt-card">
@@ -17868,7 +17926,9 @@ input[type="number"].ds-age-pop-input{
       <div class="references" id="pvt-references">
         <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale—Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
         <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
-        <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
+        <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson. [Forced Choice Recognition base rates by age band, Appendix D Tables D.13-D.15; the manual publishes no cut-off for this trial.]</p>
+      <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
+        <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson.</p>
         <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
@@ -21167,6 +21227,108 @@ const PVT_AGGREGATION = [
   { threshold: '≥ 4 of 7 failures', spec: 100,  sens: 63.4, correct: 84.2 }
 ];
 
+/* =========================================================================
+   CVLT-3 FORCED CHOICE RECOGNITION — Delis, Kramer, Kaplan & Ober (2017),
+   California Verbal Learning Test, Third Edition. Appendix D, Tables D.13,
+   D.14 and D.15, Standard/Alternate Forms.
+
+   THE MANUAL PUBLISHES NO CUT-OFF AND NO SENSITIVITY/SPECIFICITY for this
+   trial. What it publishes is BASE RATES by normative age band, and that is
+   what is stored — verbatim, as printed. The flag is DERIVED from the table
+   at runtime (pvtCvlt3Threshold): the rarest score whose published base rate
+   is at or below the selected per-test false-positive criterion. Nothing
+   here is a number this project invented, and no fixed cut-off is stored,
+   because storing one would assert a decision rule the manual does not make.
+
+   DIRECTION, established arithmetically rather than assumed. Total Hits is
+   the percentage scoring x OR LOWER (16 = 100.0); critical items are the
+   percentage scoring x OR MORE (0 = 100.0). Reconstructing each table's own
+   printed mean from its cumulative column reproduces all three — for a
+   whole-number score E[X] = Σ P(X ≥ x), and its mirror for the descending
+   table. All ages: 16 − (8.6+1.4+0.4+0.1)/100 = 15.90 against a printed
+   15.9; ages 80-90: 16 − 0.40 = 15.60 against 15.6. check.js §39 re-runs it
+   over every band of every table, so flipping a table's sense fails loudly.
+
+   THE AGE BAND IS LOAD-BEARING HERE, far more than on the other measures:
+   15 of 16 hits is the 8.6th percentile overall but the 26th at ages 80-90,
+   so the derived threshold itself moves with age. A blank age falls back to
+   the manual's own All ages column rather than withholding — both readings
+   are published, so both are citable — and the app states which it used.
+
+   SCOPE: Standard and Alternate Forms only, 16 targets. The Brief Form's
+   9-item list is not tabulated in Appendix D and cannot be scored here.
+   ========================================================================= */
+const PVT_CVLT3_BANDS = [
+  { key: '16-19', lo: 16, hi: 19 },
+  { key: '20-29', lo: 20, hi: 29 },
+  { key: '30-44', lo: 30, hi: 44 },
+  { key: '45-59', lo: 45, hi: 59 },
+  { key: '60-69', lo: 60, hi: 69 },
+  { key: '70-79', lo: 70, hi: 79 },
+  { key: '80-90', lo: 80, hi: 90 }
+];
+
+/* Table D.13 — Total Hits on Forced Choice Recognition (max 16). Keys are
+   hit counts; `12` carries the manual's "≤12" row, so any score below 12
+   reads it too. Values are the percentage scoring that many hits or FEWER.
+   `mean`/`sd` are the manual's printed descriptives, held for the check. */
+const PVT_CVLT3_FC_HITS = {
+  max: 16,
+  floorRow: 12,
+  bands: {
+    '16-19':   { 16: 100.0, 15:  5.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 16.0, sd: 0.2 },
+    '20-29':   { 16: 100.0, 15:  4.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 16.0, sd: 0.2 },
+    '30-44':   { 16: 100.0, 15:  3.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 16.0, sd: 0.2 },
+    '45-59':   { 16: 100.0, 15:  6.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 15.9, sd: 0.2 },
+    '60-69':   { 16: 100.0, 15:  6.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 15.9, sd: 0.2 },
+    '70-79':   { 16: 100.0, 15: 10.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 15.9, sd: 0.3 },
+    '80-90':   { 16: 100.0, 15: 26.0, 14: 10.0, 13: 3.0, 12: 1.0, mean: 15.6, sd: 0.8 },
+    'All ages':{ 16: 100.0, 15:  8.6, 14:  1.4, 13: 0.4, 12: 0.1, mean: 15.9, sd: 0.4 }
+  }
+};
+
+/* Tables D.14 and D.15 — critical items: targets recalled (D.14) or
+   recognised on Yes/No (D.15) earlier but NOT chosen on Forced Choice.
+   Keys are counts; `3` carries the manual's "≥3" row. Values are the
+   percentage scoring that many or MORE. */
+const PVT_CVLT3_CRITICAL = {
+  recall: {
+    label: 'Recall critical items', table: 'D.14', capRow: 3,
+    bands: {
+      '16-19':   { 0: 100.0, 1:  4.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '20-29':   { 0: 100.0, 1:  4.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '30-44':   { 0: 100.0, 1:  3.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '45-59':   { 0: 100.0, 1:  3.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '60-69':   { 0: 100.0, 1:  3.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '70-79':   { 0: 100.0, 1:  9.0, 2: 0.0, 3: 0.0, mean: 0.1 },
+      '80-90':   { 0: 100.0, 1: 16.0, 2: 2.0, 3: 1.0, mean: 0.2 },
+      'All ages':{ 0: 100.0, 1:  6.0, 2: 0.3, 3: 0.1, mean: 0.1 }
+    }
+  },
+  recognition: {
+    label: 'Yes/No recognition critical items', table: 'D.15', capRow: 3,
+    bands: {
+      '16-19':   { 0: 100.0, 1:  3.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '20-29':   { 0: 100.0, 1:  1.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '30-44':   { 0: 100.0, 1:  0.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '45-59':   { 0: 100.0, 1:  4.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '60-69':   { 0: 100.0, 1:  3.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '70-79':   { 0: 100.0, 1:  5.0, 2: 0.0, 3: 0.0, mean: 0.1 },
+      '80-90':   { 0: 100.0, 1: 15.0, 2: 2.0, 3: 0.0, mean: 0.2 },
+      'All ages':{ 0: 100.0, 1:  4.4, 2: 0.3, 3: 0.0, mean: 0.0 }
+    }
+  }
+};
+
+/* The per-test false-positive criterion the derived threshold is read at.
+   10% is this page's own stated convention — PVT cut-offs are conventionally
+   set so specificity is .90 or better (Boone, 2007; Larrabee, 2014) — and is
+   the default; 5% is offered for a clinician who wants a stricter reading. */
+const PVT_CVLT3_CRITERIA = [
+  { key: 'standard',     pct: 10, label: '10% — conventional (spec. ≥ .90)' },
+  { key: 'conservative', pct:  5, label: '5% — stricter' }
+];
+
 </script>
 <script data-inlined-from="app.js">
 ﻿/* ============================================================
@@ -24412,6 +24574,7 @@ const APA_NOTES = {
     if (ctx.hasRds)  sources.push('Reliable Digit Span (Greiffenstein et al., 1994)');
     if (ctx.hasDs)   sources.push('Digit Span indices (Iverson & Tulsky, 2003; Axelrod et al., 2006 — WAIS-III)');
     if (ctx.hasRey)  sources.push('Rey 15-Item (Boone et al., 2002)');
+    if (ctx.hasCvlt3) sources.push('CVLT-3 Forced Choice (Delis et al., 2017, Tables D.13–D.15)');
     if (ctx.hasTomm) sources.push('TOMM (Tombaugh, 1996; cut-offs Martin et al., 2020)');
     const shared = [];
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
@@ -24426,6 +24589,12 @@ const APA_NOTES = {
         ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks an index published as a base rate or an AUC rather than as a pair.'
         : 'Sensitivity and specificity are the published values at the applied cut-off.',
       shared.length ? `Indices sharing a subtest count as one indicator: ${shared.join(' and ')}.` : '',
+      /* The CVLT-3 is the one measure here with no published cut-off, so an
+         exported table must say where its threshold came from — otherwise
+         the Cut-off column implies the manual printed one. */
+      ctx.hasCvlt3
+        ? 'The CVLT-3 Forced Choice manual publishes base rates by age band, not a cut-off; its threshold is the rarest score whose published base rate is at or below the stated per-test false-positive criterion, so it varies with age.'
+        : '',
       ctx.esGated
         ? 'The Effort Scale is not computed because its screening gate was not met (Novitski et al., 2012).'
         : '',
@@ -28245,6 +28414,97 @@ function getPvtTomm(){
 }
 
 /* ---------- result boxes ---------- */
+/* ---- CVLT-3 Forced Choice Recognition (Delis et al., 2017, Appendix D) ----
+   The one measure here scored from a published base-rate table rather than
+   a published cut-off, because the manual prints no cut-off. Everything the
+   flag rests on is derived from Tables D.13-D.15 at runtime. */
+
+/* The manual's age band containing this age, or 'All ages' when there is no
+   age, or the age falls outside the 16-90 normative range. Both readings are
+   published, so both are citable; the caller says which one it used. */
+function pvtCvlt3Band(age){
+  if (age === null || age === undefined || !isFinite(age)) return 'All ages';
+  const b = PVT_CVLT3_BANDS.find(x => age >= x.lo && age <= x.hi);
+  return b ? b.key : 'All ages';
+}
+/* Base rate for a score in a band. Hits read DOWNWARD (percentage scoring
+   that many or fewer) and clamp onto the manual's "≤12" row; critical items
+   read UPWARD (that many or more) and clamp onto its "≥3" row. */
+function pvtCvlt3HitsRate(hits, band){
+  const t = PVT_CVLT3_FC_HITS.bands[band];
+  if (!t) return null;
+  const key = Math.min(Math.max(hits, PVT_CVLT3_FC_HITS.floorRow), PVT_CVLT3_FC_HITS.max);
+  const v = t[key];
+  return typeof v === 'number' ? v : null;
+}
+function pvtCvlt3CriticalRate(count, band, which){
+  const spec = PVT_CVLT3_CRITICAL[which];
+  const t = spec && spec.bands[band];
+  if (!t) return null;
+  const key = Math.min(Math.max(count, 0), spec.capRow);
+  const v = t[key];
+  return typeof v === 'number' ? v : null;
+}
+/* THE DERIVED THRESHOLD. Not a stored cut-off: the rarest score in THIS
+   band whose published base rate is still at or below the selected per-test
+   false-positive criterion. On hits that is the highest such score, on
+   critical items the lowest. It moves with age by construction — 15 hits is
+   8.6% overall but 26% at 80-90, so the same score flags in a 30-year-old
+   and does not in an 85-year-old, which is the whole reason the band is
+   read rather than ignored. Returns null where no score in the table meets
+   the criterion, and the measure then reports its base rate without a flag. */
+function pvtCvlt3HitsThreshold(band, pct){
+  const t = PVT_CVLT3_FC_HITS.bands[band];
+  if (!t) return null;
+  let best = null;
+  for (let h = PVT_CVLT3_FC_HITS.floorRow; h < PVT_CVLT3_FC_HITS.max; h++){
+    const r = t[h];
+    if (typeof r === 'number' && r <= pct) best = Math.max(best === null ? h : best, h);
+  }
+  return best;
+}
+function pvtCvlt3CriticalThreshold(band, pct, which){
+  const spec = PVT_CVLT3_CRITICAL[which];
+  const t = spec && spec.bands[band];
+  if (!t) return null;
+  for (let n = 1; n <= spec.capRow; n++){
+    const r = t[n];
+    if (typeof r === 'number' && r <= pct) return n;
+  }
+  return null;
+}
+function pvtCvlt3Criterion(){
+  const key = document.getElementById('pvt-cvlt3-criterion')?.value;
+  return PVT_CVLT3_CRITERIA.find(c => c.key === key) || PVT_CVLT3_CRITERIA[0];
+}
+function getPvtCvlt3(){
+  const hits = pvtInt(document.getElementById('pvt-cvlt3-hits')?.value, 0, PVT_CVLT3_FC_HITS.max);
+  const rc   = pvtInt(document.getElementById('pvt-cvlt3-crit-recall')?.value, 0, 16);
+  const yc   = pvtInt(document.getElementById('pvt-cvlt3-crit-recog')?.value, 0, 16);
+  if (hits === undefined && rc === undefined && yc === undefined) return { empty: true };
+  if (hits === null || rc === null || yc === null) return { invalid: true };
+  if (hits === undefined) return { partial: true };   // critical items alone score nothing
+  const age = (typeof patientAge === 'function') ? patientAge() : null;
+  const band = pvtCvlt3Band(age);
+  const crit = pvtCvlt3Criterion();
+  const s = { hits, age, band, usedAllAges: band === 'All ages', criterion: crit };
+  s.hitsRate = pvtCvlt3HitsRate(hits, band);
+  s.hitsThreshold = pvtCvlt3HitsThreshold(band, crit.pct);
+  s.hitsFail = s.hitsThreshold !== null && hits <= s.hitsThreshold;
+  [['recall', rc, 'critRecall'], ['recognition', yc, 'critRecog']].forEach(([which, val, key]) => {
+    if (val === undefined) return;
+    const th = pvtCvlt3CriticalThreshold(band, crit.pct, which);
+    s[key] = {
+      which, count: val, label: PVT_CVLT3_CRITICAL[which].label,
+      rate: pvtCvlt3CriticalRate(val, band, which),
+      threshold: th,
+      fail: th !== null && val >= th
+    };
+  });
+  s.anyFail = !!(s.hitsFail || s.critRecall?.fail || s.critRecog?.fail);
+  return s;
+}
+
 function pvtResultHtml(kind, headline, detail){
   return `<div class="pvt-result-inner is-${kind}"><span class="pvt-result-headline">${headline}</span>${detail ? `<span class="pvt-result-detail">${detail}</span>` : ''}</div>`;
 }
@@ -28567,6 +28827,33 @@ function getPvtSummaryRows(){
       result: pvtStatusWord(rey.comboFail), fail: rey.comboFail
     });
   }
+  /* CVLT-3: a word list, sharing no subtest with anything above, so its own
+     group. Hits and critical items come from ONE administration of the same
+     trial, so they sit in that one group together — the same non-independence
+     rule that collapses EI/ES and the digit-span indices. The cut-off column
+     names the derived threshold and the criterion it came from, so an
+     exported table never implies the manual published a cut score. */
+  const cv = getPvtCvlt3();
+  if (cv.hits !== undefined){
+    rows.push({
+      id: 'cvlt3', group: 'cvlt3', measure: 'CVLT-3 Forced Choice hits',
+      score: `${cv.hits}/${PVT_CVLT3_FC_HITS.max}`,
+      cutoff: cv.hitsThreshold === null ? '—' : `≤ ${cv.hitsThreshold} (base rate, ages ${cv.band})`,
+      sens: '—', spec: '—',
+      result: pvtStatusWord(cv.hitsFail), fail: cv.hitsFail
+    });
+    [cv.critRecall, cv.critRecog].forEach((c, i) => {
+      if (!c) return;
+      rows.push({
+        id: 'cvlt3-crit-' + (i === 0 ? 'recall' : 'recog'), group: 'cvlt3',
+        measure: 'CVLT-3 ' + c.label.charAt(0).toLowerCase() + c.label.slice(1),
+        score: String(c.count),
+        cutoff: c.threshold === null ? '—' : `≥ ${c.threshold} (base rate, ages ${cv.band})`,
+        sens: '—', spec: '—',
+        result: c.fail ? 'Flagged' : 'Not flagged', fail: c.fail
+      });
+    });
+  }
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
@@ -28583,6 +28870,50 @@ function pvtIndicatorCounts(rows){
   return { total: groups.length, failed: failed.length };
 }
 
+function pvtFmtRate(r){
+  if (r === null || r === undefined) return '—';
+  /* A published 0.0 is a real cell here (nobody in the standardisation
+     sample), unlike the ToPF table where zero cells are omitted. Print it
+     as "< 0.1%" rather than "0%": the sample is finite, so the honest claim
+     is that the rate rounds to zero, not that the score cannot occur. */
+  if (r === 0) return '&lt; 0.1%';
+  /* One decimal always, as the manual prints it — "3%" beside a stored
+     3.0 invites a reader to wonder which is the real figure. */
+  return r.toFixed(1) + '%';
+}
+function renderPvtCvlt3(){
+  const out = document.getElementById('pvt-cvlt3-result');
+  if (!out) return;
+  const s = getPvtCvlt3();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits to look up its published base rate.', 'The result appears here and the outcome joins the running summary.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits — the critical-item counts are read against it.'); return; }
+  const rows = [{
+    label: 'Forced Choice total hits', value: `${s.hits}/${PVT_CVLT3_FC_HITS.max}`,
+    state: s.hitsFail ? 'fail' : 'pass',
+    meta: `Base rate ${pvtFmtRate(s.hitsRate)} at ages ${s.band} (Table D.13)${
+      s.hitsThreshold === null
+        ? ' · no score in this band reaches the criterion'
+        : ` · flags at ≤ ${s.hitsThreshold}, derived at the ${s.criterion.pct}% criterion`}`
+  }];
+  [s.critRecall, s.critRecog].forEach(c => {
+    if (!c) return;
+    rows.push({
+      label: c.label, value: String(c.count),
+      state: c.fail ? 'fail' : 'pass',
+      meta: `Base rate ${pvtFmtRate(c.rate)} at ages ${s.band} (Table ${PVT_CVLT3_CRITICAL[c.which].table})${
+        c.threshold === null ? ' · no count in this band reaches the criterion'
+                             : ` · flags at ≥ ${c.threshold}`}`
+    });
+  });
+  const note = `${s.usedAllAges
+      ? (s.age === null ? 'No patient age entered, so the manual&rsquo;s All ages column is used — enter an age in the top bar for the banded reading, which can differ sharply.'
+                        : `Age ${s.age} falls outside the CVLT-3 normative range (16&ndash;90), so the All ages column is used.`)
+      : `Read against the ${s.band} band for the entered age of ${s.age}.`
+    } A poor forced-choice score is a strong indicator of exaggeration, but a perfect or near-perfect one does not rule it out (Delis et al., 2017).`;
+  out.innerHTML = pvtReadoutHtml(rows, note);
+}
+
 function renderPvtSummary(){
   const host = document.getElementById('pvt-summary-body');
   if (!host) return;
@@ -28595,7 +28926,7 @@ function renderPvtSummary(){
   const countStat = c.total === 0 ? '' :
     `<div class="pvt-count">
       <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
-      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the digit-span indices as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
+      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the digit-span indices as one, the CVLT-3 forced-choice scores as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
     </div>`;
   host.innerHTML = `
     <div class="pvt-card">
@@ -28634,6 +28965,7 @@ function renderPvtApa(){
       hasRds:  rows.some(r => r.id === 'rds'),
       hasDs:   rows.some(r => r.id.startsWith('ds')),
       hasRey:  rows.some(r => r.id.startsWith('rey')),
+      hasCvlt3: rows.some(r => r.group === 'cvlt3'),
       hasTomm: rows.some(r => r.group === 'tomm'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
@@ -28695,6 +29027,11 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-rey15'),
     reyAny ? (reyFail ? 'Fail' : 'Pass') : '—',
     reyAny ? (reyFail ? 'fail' : 'pass') : null);
+  const cvS = getPvtCvlt3();
+  const cvAny = cvS.hits !== undefined;
+  pvtChip(document.getElementById('pvt-status-cvlt3'),
+    cvAny ? (cvS.anyFail ? 'Fail' : 'Pass') : '—',
+    cvAny ? (cvS.anyFail ? 'fail' : 'pass') : null);
   const tomm = getPvtTomm();
   const tommHas = !!(tomm.rows && tomm.rows.length);
   pvtChip(document.getElementById('pvt-status-tomm'),
@@ -28709,6 +29046,7 @@ function renderPvtNav(){
   pvtCautionFlag('rds', rds.rds !== undefined && rds.fail);
   pvtCautionFlag('ds', dsFail);
   pvtCautionFlag('rey15', reyFail);
+  pvtCautionFlag('cvlt3', cvAny && cvS.anyFail);
   pvtCautionFlag('tomm', tommHas && tomm.anyFail);
 }
 
@@ -28757,6 +29095,9 @@ const PVT_RAIL_GROUPS = [
   ]},
   { id: 'rey15', label: 'Rey 15-Item', members: [
     { tab: 'rey15', label: 'Recall & recognition', ids: ['rey-recall', 'rey-combo'] }
+  ]},
+  { id: 'cvlt3', label: 'CVLT-3', members: [
+    { tab: 'cvlt3', label: 'Forced choice', ids: ['cvlt3', 'cvlt3-crit-recall', 'cvlt3-crit-recog'] }
   ]},
   { id: 'tomm', label: 'TOMM', members: [
     { tab: 'tomm',  label: 'Forced choice', ids: ['tomm'] }
@@ -28849,6 +29190,7 @@ function renderPvtAll(){
   renderPvtDs();
   renderPvtRey();
   renderPvtTomm();
+  renderPvtCvlt3();
   renderPvtAccuracy();
   renderPvtNav();
   renderPvtRail();
@@ -28872,7 +29214,7 @@ function switchPvtTab(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -28975,7 +29317,7 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   /* The forward-span index reads the shared top-bar age, so an age typed
@@ -29003,7 +29345,7 @@ function setupPvtPage(){
     const row = e.target.closest('[data-rail-tab]');
     if (row) switchPvtTab(row.dataset.railTab);
   });
-  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br'].forEach(id => {
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
   renderPvtAll();
@@ -31865,7 +32207,7 @@ if (document.readyState === 'loading'){
 }
 
 </script>
-<script src="design-system.js?v=20260903b" defer></script>
+<script src="design-system.js?v=20260903c" defer></script>
 <script data-inlined-from="app-effectsize-page.js">
 /* =====================================================================
    Effect Size Tools - page module (#effectsize)

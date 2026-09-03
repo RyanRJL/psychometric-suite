@@ -51,6 +51,7 @@ vm.runInContext(
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
     ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
     ' REY15_RECALL_ROWS, REY15_RECOGNITION_ROWS, REY15_SHAPES,' +
+    ' PVT_CVLT3_BANDS, PVT_CVLT3_FC_HITS, PVT_CVLT3_CRITICAL, PVT_CVLT3_CRITERIA,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -7337,6 +7338,215 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
   /* The ES gate must be enforced in code, not just described in copy. */
   const es = extractFn(APP_SRC, 'getPvtEs');
   if (!/gateMet/.test(es) || !/gated: true/.test(es)) bad.push('getPvtEs lost its gate');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+heading('39. CVLT-3 Forced Choice: the base-rate tables and the derived threshold');
+
+/* The manual publishes base rates, not a cut-off, so this section has two
+   jobs the other measures do not need: prove the tables were transcribed
+   in the right SENSE, and prove the flag is derived from them rather than
+   from a number this project chose. */
+
+check('the three base-rate tables reconstruct their own printed means', () => {
+  /* For a whole-number score E[X] = Sum P(X >= x). Table D.13 is stated the
+     other way round (percentage scoring x or FEWER), so its mean is
+     max - Sum P(X <= x) over x below the maximum. Reproducing every printed
+     mean from the cumulative column both proves the transcription and
+     settles the direction — a table read the wrong way round misses its own
+     mean by a mile. Source: Delis et al. (2017), Appendix D. */
+  const bad = [];
+  const H = D.PVT_CVLT3_FC_HITS;
+  Object.entries(H.bands).forEach(([band, t]) => {
+    let below = 0;
+    for (let h = H.floorRow; h < H.max; h++) below += t[h] / 100;
+    const derived = H.max - below;
+    /* The manual prints its mean to 1 dp, so allow the half-unit of that
+       rounding: ages 16-19 derive 15.95 against a printed 16.0. Same
+       tolerance shape as the WAIS-IV Longest Span reconstruction in 22. */
+    if (Math.abs(derived - t.mean) > 0.06){
+      bad.push('D.13 ' + band + ': cumulative column gives ' + derived.toFixed(2) + ', manual prints ' + t.mean);
+    }
+    if (t[H.max] !== 100) bad.push('D.13 ' + band + ': the top row must be 100.0 — the table is cumulative from the bottom');
+  });
+  Object.entries(D.PVT_CVLT3_CRITICAL).forEach(([which, spec]) => {
+    Object.entries(spec.bands).forEach(([band, t]) => {
+      let m = 0;
+      for (let n = 1; n <= spec.capRow; n++) m += t[n] / 100;
+      if (Math.abs(m - t.mean) > 0.06){
+        bad.push(spec.table + ' ' + band + ': cumulative column gives ' + m.toFixed(2) + ', manual prints ' + t.mean);
+      }
+      if (t[0] !== 100) bad.push(spec.table + ' ' + band + ': the zero row must be 100.0 — the table is cumulative from the top');
+    });
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the tables are monotone and cover every published age band', () => {
+  const bad = [];
+  const bands = D.PVT_CVLT3_BANDS.map(b => b.key).concat(['All ages']);
+  if (bands.length !== 8) bad.push('the band roster is no longer the manual\'s seven bands plus All ages');
+  /* The bands must tile 16-90 with no gap and no overlap: the derived
+     threshold is looked up by "the band containing this age", so a hole
+     would silently drop a patient onto the All ages column. */
+  D.PVT_CVLT3_BANDS.forEach((b, i) => {
+    if (i === 0 && b.lo !== 16) bad.push('the first band no longer starts at 16');
+    if (i === D.PVT_CVLT3_BANDS.length - 1 && b.hi !== 90) bad.push('the last band no longer ends at 90');
+    if (i > 0 && b.lo !== D.PVT_CVLT3_BANDS[i - 1].hi + 1) bad.push('a gap or overlap at band ' + b.key);
+  });
+  const H = D.PVT_CVLT3_FC_HITS;
+  bands.forEach(band => {
+    const t = H.bands[band];
+    if (!t){ bad.push('D.13 has no ' + band + ' column'); return; }
+    for (let h = H.floorRow; h < H.max; h++){
+      if (t[h] > t[h + 1]) bad.push('D.13 ' + band + ' is not monotone at ' + h);
+    }
+    Object.entries(D.PVT_CVLT3_CRITICAL).forEach(([which, spec]) => {
+      const c = spec.bands[band];
+      if (!c){ bad.push(spec.table + ' has no ' + band + ' column'); return; }
+      for (let n = 1; n <= spec.capRow; n++){
+        if (c[n] > c[n - 1]) bad.push(spec.table + ' ' + band + ' is not monotone at ' + n);
+      }
+    });
+  });
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ---- drive the shipped threshold and calculator ---- */
+function cvlt3Context(state, age){
+  const c = {
+    PVT_CVLT3_BANDS: D.PVT_CVLT3_BANDS, PVT_CVLT3_FC_HITS: D.PVT_CVLT3_FC_HITS,
+    PVT_CVLT3_CRITICAL: D.PVT_CVLT3_CRITICAL, PVT_CVLT3_CRITERIA: D.PVT_CVLT3_CRITERIA,
+    patientAge: () => (age === undefined ? null : age),
+    document: { getElementById: id => (id in state ? { value: String(state[id]) } : null) }
+  };
+  vm.createContext(c);
+  vm.runInContext(
+    ['pvtInt', 'pvtCvlt3Band', 'pvtCvlt3HitsRate', 'pvtCvlt3CriticalRate',
+     'pvtCvlt3HitsThreshold', 'pvtCvlt3CriticalThreshold', 'pvtCvlt3Criterion',
+     'getPvtCvlt3'].map(f => extractFn(APP_SRC, f)).join(';')
+    + ';globalThis.__CV = getPvtCvlt3; globalThis.__TH = pvtCvlt3HitsThreshold;', c);
+  return c;
+}
+
+check('the flag threshold is DERIVED from the table, and moves with the age band', () => {
+  /* No cut-off is stored anywhere, so this drives the shipped function and
+     checks its answers against the printed table by hand. At the 10%
+     criterion the answer is <= 15 in every band except 80-90 — where 15 has
+     a base rate of 26.0 and only 14 (10.0) qualifies. That single step is
+     the entire argument for reading the age band, so it is pinned. */
+  const bad = [];
+  const c = cvlt3Context({});
+  const at10 = {};
+  ['16-19','20-29','30-44','45-59','60-69','70-79','80-90','All ages'].forEach(b => {
+    at10[b] = c.__TH(b, 10);
+  });
+  ['16-19','20-29','30-44','45-59','60-69','70-79','All ages'].forEach(b => {
+    if (at10[b] !== 15) bad.push('at the 10% criterion, ages ' + b + ' should flag at <= 15, got ' + at10[b]);
+  });
+  if (at10['80-90'] !== 14) bad.push('ages 80-90 should flag at <= 14 (15 has a base rate of 26.0%), got ' + at10['80-90']);
+  /* Falsification: if the threshold did not move with age, the check above
+     would pass on a constant. Assert the step exists. */
+  if (at10['80-90'] === at10['30-44']) bad.push('the threshold no longer varies by age band — the whole reason the band is read');
+  /* A stricter criterion must be at least as strict everywhere. */
+  ['16-19','20-29','30-44','45-59','60-69','70-79','80-90','All ages'].forEach(b => {
+    const at5 = c.__TH(b, 5);
+    if (at5 !== null && at5 > at10[b]) bad.push('the 5% criterion is looser than 10% at ' + b);
+  });
+  /* And no fixed cut-off may be stored for this measure — storing one would
+     assert a decision rule the manual does not make. */
+  if (/PVT_CVLT3[A-Z_]*\s*=\s*\{[^}]*cutoff/i.test(DATA_SRC)) bad.push('a stored CVLT-3 cut-off has appeared — the manual publishes none');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('shipped CVLT-3 calculator: base rates, age fallback, and the critical-item direction', () => {
+  const bad = [];
+  /* 15 hits at 30: base rate 3.0%, flags. The same 15 at 85: 26.0%, does not. */
+  let r = cvlt3Context({ 'pvt-cvlt3-hits': 15 }, 30).__CV();
+  if (r.hitsRate !== 3.0 || !r.hitsFail) bad.push('15 hits at age 30 should read 3.0% and flag, got ' + JSON.stringify([r.hitsRate, r.hitsFail]));
+  r = cvlt3Context({ 'pvt-cvlt3-hits': 15 }, 85).__CV();
+  if (r.hitsRate !== 26.0 || r.hitsFail) bad.push('15 hits at age 85 should read 26.0% and NOT flag, got ' + JSON.stringify([r.hitsRate, r.hitsFail]));
+  /* 16 is the ceiling and can never flag — 100% of the sample scores it or
+     fewer, which is what makes a perfect score uninformative. */
+  [20, 45, 85].forEach(age => {
+    const p = cvlt3Context({ 'pvt-cvlt3-hits': 16 }, age).__CV();
+    if (p.hitsFail) bad.push('a perfect 16 flagged at age ' + age);
+    if (p.hitsRate !== 100) bad.push('16 hits should read 100% at age ' + age);
+  });
+  /* No age falls back to the manual's own All ages column, not to a guess,
+     and says so. 15 there is 8.6% and still flags at the 10% criterion. */
+  r = cvlt3Context({ 'pvt-cvlt3-hits': 15 }).__CV();
+  if (r.band !== 'All ages' || !r.usedAllAges) bad.push('a blank age should fall back to the All ages column');
+  if (r.hitsRate !== 8.6 || !r.hitsFail) bad.push('15 hits with no age should read 8.6% and flag');
+  /* An age outside the 16-90 normative range takes the same fallback. */
+  if (cvlt3Context({ 'pvt-cvlt3-hits': 15 }, 12).__CV().band !== 'All ages') bad.push('an out-of-range age should fall back to All ages');
+  /* Critical items run the OTHER way: MORE is worse. One recall critical
+     item is 3.0% at 30-44 and flags; the same one is 16.0% at 80-90 and
+     does not. If the direction were flipped this pair would invert. */
+  r = cvlt3Context({ 'pvt-cvlt3-hits': 16, 'pvt-cvlt3-crit-recall': 1 }, 35).__CV();
+  if (!r.critRecall || r.critRecall.rate !== 3.0 || !r.critRecall.fail) bad.push('1 recall critical item at 35 should read 3.0% and flag');
+  r = cvlt3Context({ 'pvt-cvlt3-hits': 16, 'pvt-cvlt3-crit-recall': 1 }, 85).__CV();
+  if (!r.critRecall || r.critRecall.rate !== 16.0 || r.critRecall.fail) bad.push('1 recall critical item at 85 should read 16.0% and NOT flag');
+  r = cvlt3Context({ 'pvt-cvlt3-hits': 16, 'pvt-cvlt3-crit-recall': 0 }, 35).__CV();
+  if (r.critRecall.fail) bad.push('zero critical items flagged');
+  /* Critical items alone compute nothing — they are read against the hits. */
+  if (!cvlt3Context({ 'pvt-cvlt3-crit-recall': 2 }, 35).__CV().partial) bad.push('critical items without a hit count should be partial, not scored');
+  /* Out of range is refused rather than clamped. */
+  if (!cvlt3Context({ 'pvt-cvlt3-hits': 17 }, 35).__CV().invalid) bad.push('17 hits should be refused — the Standard/Alternate list is 16');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('CVLT-3 is one independent indicator, published with dashes, and wired to the page', () => {
+  const bad = [];
+  /* Hits and critical items come from one administration of one trial, so
+     they must share a group — the same non-independence rule that collapses
+     EI/ES and the digit-span indices, and Larrabee (2014)'s whole argument. */
+  const rows = extractFn(APP_SRC, 'getPvtSummaryRows');
+  const cvBlockStart = rows.indexOf('const cv = getPvtCvlt3();');
+  const cvBlock = cvBlockStart === -1 ? '' : rows.slice(cvBlockStart, rows.indexOf('const tomm = getPvtTomm();', cvBlockStart));
+  if (!cvBlock) bad.push('the summary no longer emits any CVLT-3 rows');
+  const pushes = (cvBlock.match(/rows\.push\(/g) || []).length;
+  if (pushes < 2) bad.push('the summary emits fewer than the hits row and its critical items, got ' + pushes + ' pushes');
+  const cvGroups = [...cvBlock.matchAll(/group: '([^']+)'/g)].map(m => m[1]);
+  if (cvGroups.length < 2) bad.push('the CVLT-3 rows no longer declare a group each');
+  if (new Set(cvGroups).size !== 1 || cvGroups[0] !== 'cvlt3'){
+    bad.push('the CVLT-3 rows no longer share one group — they would count as up to three independent indicators');
+  }
+  /* The manual publishes no accuracy pair, so the columns must stay dashes.
+     Inventing one here would be the exact failure the ES comment warns of. */
+  if (/sens: '(?!—)/.test(cvBlock) || /spec: '(?!—)/.test(cvBlock)){
+    bad.push('a sensitivity or specificity has appeared on a CVLT-3 row — the manual publishes none');
+  }
+  /* The APA note must say where the threshold came from, or the Cut-off
+     column implies the manual printed one. */
+  if (!/publishes base rates by age band, not a cut-off/.test(APP_SRC)) bad.push('the APA note no longer explains the derived CVLT-3 threshold');
+  if (!/ctx\.hasCvlt3/.test(APP_SRC)) bad.push('the CVLT-3 note clause is unconditional or gone');
+  /* Wiring. */
+  if (!/renderPvtCvlt3\(\);/.test(extractFn(APP_SRC, 'renderPvtAll'))) bad.push('renderPvtAll no longer draws the CVLT-3 card');
+  if (!extractFn(APP_SRC, 'renderPvtNav').includes('getPvtCvlt3')) bad.push('the tab chip no longer reads getPvtCvlt3 — chip and card could disagree');
+  if (!/id="pvt-cvlt3"/.test(HTML_SRC)) bad.push('the CVLT-3 panel is gone');
+  if (!/id="pvt-status-cvlt3"/.test(HTML_SRC)) bad.push('the CVLT-3 chip is gone from the tab strip');
+  if (!/id="pvt-cvlt3-hits"/.test(HTML_SRC)) bad.push('the hits input is gone');
+  /* The tab strip is a CSS grid with a HARD-CODED column count. A tab added
+     without bumping it does not overflow or scroll — it wraps onto an
+     implicit second row, which reads as a broken strip rather than as a
+     missing rule. Found exactly that way when this tab was added. */
+  (() => {
+    const tabs = (HTML_SRC.match(/data-pvt-tab="/g) || []).length;
+    const m = CSS_SRC.match(/\.pvt-method-tabs\{[\s\S]*?grid-template-columns:minmax\(\d+px,auto\) repeat\((\d+),/);
+    if (!m){ bad.push('the tab strip grid template is gone or reshaped — the column count can no longer be checked'); return; }
+    /* One About column plus one per measure, and the markup carries a
+       data-pvt-tab per tab INCLUDING About. */
+    if (Number(m[1]) !== tabs - 1){
+      bad.push('the tab strip declares ' + m[1] + ' measure columns for ' + (tabs - 1) + ' measure tabs — the strip will wrap');
+    }
+  })();
+  if (!/'cvlt3'/.test(APP_SRC.slice(APP_SRC.indexOf('const PVT_RAIL_GROUPS')))) bad.push('the rail no longer carries a CVLT-3 group');
+  /* The page must say the Brief Form is out of scope: Appendix D tabulates
+     the Standard and Alternate Forms only. */
+  if (!/Brief Form/.test(HTML_SRC)) bad.push('the Brief Form exclusion is no longer stated on the page');
+  if (!/Delis, D\. C\., Kramer/.test(HTML_SRC)) bad.push('the CVLT-3 manual is not in the references');
   return bad.length === 0 || bad.join('; ');
 });
 

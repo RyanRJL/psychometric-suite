@@ -2093,3 +2093,105 @@ const PVT_AGGREGATION = [
   { threshold: '≥ 3 of 7 failures', spec: 96.3, sens: 87.8, correct: 92.6 },
   { threshold: '≥ 4 of 7 failures', spec: 100,  sens: 63.4, correct: 84.2 }
 ];
+
+/* =========================================================================
+   CVLT-3 FORCED CHOICE RECOGNITION — Delis, Kramer, Kaplan & Ober (2017),
+   California Verbal Learning Test, Third Edition. Appendix D, Tables D.13,
+   D.14 and D.15, Standard/Alternate Forms.
+
+   THE MANUAL PUBLISHES NO CUT-OFF AND NO SENSITIVITY/SPECIFICITY for this
+   trial. What it publishes is BASE RATES by normative age band, and that is
+   what is stored — verbatim, as printed. The flag is DERIVED from the table
+   at runtime (pvtCvlt3Threshold): the rarest score whose published base rate
+   is at or below the selected per-test false-positive criterion. Nothing
+   here is a number this project invented, and no fixed cut-off is stored,
+   because storing one would assert a decision rule the manual does not make.
+
+   DIRECTION, established arithmetically rather than assumed. Total Hits is
+   the percentage scoring x OR LOWER (16 = 100.0); critical items are the
+   percentage scoring x OR MORE (0 = 100.0). Reconstructing each table's own
+   printed mean from its cumulative column reproduces all three — for a
+   whole-number score E[X] = Σ P(X ≥ x), and its mirror for the descending
+   table. All ages: 16 − (8.6+1.4+0.4+0.1)/100 = 15.90 against a printed
+   15.9; ages 80-90: 16 − 0.40 = 15.60 against 15.6. check.js §39 re-runs it
+   over every band of every table, so flipping a table's sense fails loudly.
+
+   THE AGE BAND IS LOAD-BEARING HERE, far more than on the other measures:
+   15 of 16 hits is the 8.6th percentile overall but the 26th at ages 80-90,
+   so the derived threshold itself moves with age. A blank age falls back to
+   the manual's own All ages column rather than withholding — both readings
+   are published, so both are citable — and the app states which it used.
+
+   SCOPE: Standard and Alternate Forms only, 16 targets. The Brief Form's
+   9-item list is not tabulated in Appendix D and cannot be scored here.
+   ========================================================================= */
+const PVT_CVLT3_BANDS = [
+  { key: '16-19', lo: 16, hi: 19 },
+  { key: '20-29', lo: 20, hi: 29 },
+  { key: '30-44', lo: 30, hi: 44 },
+  { key: '45-59', lo: 45, hi: 59 },
+  { key: '60-69', lo: 60, hi: 69 },
+  { key: '70-79', lo: 70, hi: 79 },
+  { key: '80-90', lo: 80, hi: 90 }
+];
+
+/* Table D.13 — Total Hits on Forced Choice Recognition (max 16). Keys are
+   hit counts; `12` carries the manual's "≤12" row, so any score below 12
+   reads it too. Values are the percentage scoring that many hits or FEWER.
+   `mean`/`sd` are the manual's printed descriptives, held for the check. */
+const PVT_CVLT3_FC_HITS = {
+  max: 16,
+  floorRow: 12,
+  bands: {
+    '16-19':   { 16: 100.0, 15:  5.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 16.0, sd: 0.2 },
+    '20-29':   { 16: 100.0, 15:  4.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 16.0, sd: 0.2 },
+    '30-44':   { 16: 100.0, 15:  3.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 16.0, sd: 0.2 },
+    '45-59':   { 16: 100.0, 15:  6.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 15.9, sd: 0.2 },
+    '60-69':   { 16: 100.0, 15:  6.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 15.9, sd: 0.2 },
+    '70-79':   { 16: 100.0, 15: 10.0, 14:  0.0, 13: 0.0, 12: 0.0, mean: 15.9, sd: 0.3 },
+    '80-90':   { 16: 100.0, 15: 26.0, 14: 10.0, 13: 3.0, 12: 1.0, mean: 15.6, sd: 0.8 },
+    'All ages':{ 16: 100.0, 15:  8.6, 14:  1.4, 13: 0.4, 12: 0.1, mean: 15.9, sd: 0.4 }
+  }
+};
+
+/* Tables D.14 and D.15 — critical items: targets recalled (D.14) or
+   recognised on Yes/No (D.15) earlier but NOT chosen on Forced Choice.
+   Keys are counts; `3` carries the manual's "≥3" row. Values are the
+   percentage scoring that many or MORE. */
+const PVT_CVLT3_CRITICAL = {
+  recall: {
+    label: 'Recall critical items', table: 'D.14', capRow: 3,
+    bands: {
+      '16-19':   { 0: 100.0, 1:  4.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '20-29':   { 0: 100.0, 1:  4.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '30-44':   { 0: 100.0, 1:  3.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '45-59':   { 0: 100.0, 1:  3.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '60-69':   { 0: 100.0, 1:  3.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '70-79':   { 0: 100.0, 1:  9.0, 2: 0.0, 3: 0.0, mean: 0.1 },
+      '80-90':   { 0: 100.0, 1: 16.0, 2: 2.0, 3: 1.0, mean: 0.2 },
+      'All ages':{ 0: 100.0, 1:  6.0, 2: 0.3, 3: 0.1, mean: 0.1 }
+    }
+  },
+  recognition: {
+    label: 'Yes/No recognition critical items', table: 'D.15', capRow: 3,
+    bands: {
+      '16-19':   { 0: 100.0, 1:  3.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '20-29':   { 0: 100.0, 1:  1.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '30-44':   { 0: 100.0, 1:  0.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '45-59':   { 0: 100.0, 1:  4.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '60-69':   { 0: 100.0, 1:  3.0, 2: 0.0, 3: 0.0, mean: 0.0 },
+      '70-79':   { 0: 100.0, 1:  5.0, 2: 0.0, 3: 0.0, mean: 0.1 },
+      '80-90':   { 0: 100.0, 1: 15.0, 2: 2.0, 3: 0.0, mean: 0.2 },
+      'All ages':{ 0: 100.0, 1:  4.4, 2: 0.3, 3: 0.0, mean: 0.0 }
+    }
+  }
+};
+
+/* The per-test false-positive criterion the derived threshold is read at.
+   10% is this page's own stated convention — PVT cut-offs are conventionally
+   set so specificity is .90 or better (Boone, 2007; Larrabee, 2014) — and is
+   the default; 5% is offered for a clinician who wants a stricter reading. */
+const PVT_CVLT3_CRITERIA = [
+  { key: 'standard',     pct: 10, label: '10% — conventional (spec. ≥ .90)' },
+  { key: 'conservative', pct:  5, label: '5% — stricter' }
+];

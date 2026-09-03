@@ -9764,8 +9764,11 @@ body.rb-docked-active{padding-right:0}
 /* ---- Tab strip: white rounded-top sheet ---- */
 .pvt-method-tabs{
   display:grid;
-  /* Narrow leftmost About column + the seven measure tabs. */
-  grid-template-columns:minmax(72px,auto) repeat(7,minmax(120px,1fr));
+  /* Narrow leftmost About column + one column per measure tab. THE COUNT
+     MUST MATCH the markup: an extra tab with the count left at 7 does not
+     overflow or scroll, it silently wraps onto an implicit second row and
+     the strip reads as broken. check.js §39 pins the two together. */
+  grid-template-columns:minmax(72px,auto) repeat(8,minmax(104px,1fr));
   gap:0;
   background:#FFFFFF;
   border:1px solid rgba(20,15,5,0.08);
@@ -9780,7 +9783,7 @@ body.rb-docked-active{padding-right:0}
   border-right:1px solid rgba(20,15,5,0.04);
   background:#FFFFFF;
   font-family:var(--sans);
-  padding:16px 14px 14px;
+  padding:16px 10px 14px;
   cursor:pointer;
   text-align:center;
   display:flex;
