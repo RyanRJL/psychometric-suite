@@ -3239,7 +3239,7 @@ const APA_NOTES = {
     if (ctx.hasEi)   sources.push('Effort Index (Silverberg et al., 2007)');
     if (ctx.hasEs)   sources.push('Effort Scale (Novitski et al., 2012)');
     if (ctx.hasRds)  sources.push('Reliable Digit Span (Greiffenstein et al., 1994)');
-    if (ctx.hasDs)   sources.push('Digit Span indices (Iverson & Tulsky, 2003; Axelrod et al., 2006 — WAIS-III)');
+    if (ctx.hasDs)   sources.push('Digit Span indices (Iverson & Tulsky, 2003; Axelrod et al., 2006, WAIS-III)');
     if (ctx.hasRey)  sources.push('Rey 15-Item (Boone et al., 2002)');
     /* The source entry follows the basis: with a borrowed cut-off in force
        the table rests on two publications, not one, and the Sources line is
@@ -6991,7 +6991,7 @@ function reyAdminGo(step){
     reyAdmin.el.innerHTML = `${close}<div class="rey-panel">
       <div class="rey-kicker">Rey 15-Item · administration</div>
       <h2 class="rey-title">Ready to begin?</h2>
-      <p class="rey-copy">This displays the test stimuli full screen. Start it only with the examinee present — and have paper and a pen ready for their drawing.</p>
+      <p class="rey-copy">This displays the test stimuli full screen. Start it only with the examinee present, and have paper and a pen ready for their drawing.</p>
       <p class="rey-copy rey-script">Read: “I'm going to show you a page with 15 different things on it for just a short period of time, and I want you to learn as many of the things as you can. When I take away the page, I'll want you to draw as many of the things as you can remember. Keep in mind, there are <strong>15</strong> different things so you will have to learn them very quickly.”</p>
       <div class="rey-actions">
         <button type="button" class="btn" data-rey-action="close">Cancel</button>
@@ -7013,7 +7013,7 @@ function reyAdminGo(step){
     reyAdmin.el.innerHTML = `${close}<div class="rey-panel">
       <div class="rey-kicker">Rey 15-Item · recall</div>
       <h2 class="rey-title">Now draw what you can remember</h2>
-      <p class="rey-copy">The examinee draws on paper. Score the free recall yourself and enter it on the tab — this step is not scored on screen.</p>
+      <p class="rey-copy">The examinee draws on paper. Score the free recall yourself and enter it on the tab. This step is not scored on screen.</p>
       <p class="rey-copy rey-script">Then read: “On this page are the 15 things I showed you as well as 15 items that were not on the page. I want you to circle the things you remember from the page I showed you.”</p>
       <div class="rey-actions">
         <button type="button" class="btn" data-rey-action="close">Stop here</button>
@@ -7340,7 +7340,7 @@ function renderPvtDs(){
   const s = getPvtDs();
   if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
-  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score — Vocabulary alone computes nothing.'); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score. Vocabulary alone computes nothing.'); return; }
   const dacc = PVT_DS_ACCURACY[s.conservative ? 'conservative' : 'sensitive'];
   const rows = [{
     label: 'Digit Span ACSS', value: s.acss, state: s.fail ? 'fail' : 'pass',
@@ -7361,8 +7361,8 @@ function renderPvtDs(){
       label: 'Longest span forward', value: s.lsf, state: 'na',
       word: s.lsfState === 'no-age' ? 'Needs age' : 'n/a',
       meta: s.lsfState === 'no-age'
-        ? `Enter the patient age in the top bar — this index applies under age ${PVT_DS.lsfAgeBelow}`
-        : `Not applicable at age ${PVT_DS.lsfAgeBelow}+ — Iverson &amp; Tulsky limit this index to under-55s`
+        ? `Enter the patient age in the top bar. This index applies under age ${PVT_DS.lsfAgeBelow}.`
+        : `Not applicable at age ${PVT_DS.lsfAgeBelow}+. Iverson &amp; Tulsky limit this index to under-55s.`
     });
   }
   if (s.lsb !== undefined) rows.push({
@@ -7382,7 +7382,7 @@ function renderPvtRey(){
   const s = getPvtRey();
   if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
-  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score — the recognition trial alone computes nothing.'); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score. The recognition trial alone computes nothing.'); return; }
   const rows = [{
     label: 'Free recall', value: s.recall, state: s.recallFail ? 'fail' : 'pass',
     meta: `Cut-off &lt; ${PVT_REY15.recallCutoff} · sens. ${PVT_REY15_ACCURACY.recall.sens} · spec. ${PVT_REY15_ACCURACY.recall.spec}`
@@ -7415,7 +7415,7 @@ function renderPvtTomm(){
     label: `TOMM ${r.label}`, value: r.score, state: r.fail ? 'fail' : 'pass',
     meta: `Cut-off &lt; ${r.cutoff.cut} · sens. ${r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, '')} · spec. ${r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, '')} · PPP ${r.ppp.toFixed(2).replace(/^0/, '')} at this base rate`
   })), s.anyFail
-    ? 'At low base rates a single failure has modest positive predictive power — see the table below.'
+    ? 'At low base rates a single failure has modest positive predictive power. See the table below.'
     : '');
   const brPct = Math.round(s.br * 100);
   power.innerHTML = `
@@ -7431,7 +7431,7 @@ function renderPvtTomm(){
           <td>${r.npp.toFixed(2).replace(/^0/, '')}</td></tr>`).join('')}
         </tbody>
       </table>
-      <p class="pvt-agg-copy" style="margin-top:10px;margin-bottom:0">PPP = probability a failure is a true positive; NPP = probability a pass is a true negative — Bayes on the meta-analytic sens/spec and the selected base rate (Martin et al., 2020, Tables 16–17).</p>
+      <p class="pvt-agg-copy" style="margin-top:10px;margin-bottom:0">PPP = probability a failure is a true positive; NPP = probability a pass is a true negative, computed by Bayes' theorem from the meta-analytic sens/spec and the selected base rate (Martin et al., 2020, Tables 16–17).</p>
     </div>`;
 }
 
@@ -7582,7 +7582,7 @@ function renderPvtCvlt3(){
   const s = getPvtCvlt3();
   if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits to look up its published base rate.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
-  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits — the critical-item counts are read against it.'); return; }
+  if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits. The critical-item counts are read against it.'); return; }
   const derived = s.basis.cut === null;
   const rows = [{
     label: 'Forced Choice total hits', value: `${s.hits}/${PVT_CVLT3_FC_HITS.max}`,
@@ -7622,14 +7622,14 @@ function renderPvtSummary(){
   if (!host) return;
   const rows = getPvtSummaryRows();
   if (rows.length === 0){
-    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet — score at least one measure on the other tabs and the summary builds itself. The tab strip above tracks each measure as you go.') + '</div>';
+    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet. Score at least one measure on the other tabs and the summary builds itself. The tab strip above tracks each measure as you go.') + '</div>';
     return;
   }
   const c = pvtIndicatorCounts(rows);
   const countStat = c.total === 0 ? '' :
     `<div class="pvt-count">
       <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
-      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'} — the two RBANS indices count as one, the digit-span indices as one, the CVLT-3 forced-choice scores as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
+      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'}. The two RBANS indices count as one, the digit-span indices as one, the CVLT-3 forced-choice scores as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
     </div>`;
   host.innerHTML = `
     <div class="pvt-card">
@@ -8006,7 +8006,7 @@ function renderPvtAboutPanel(){
     </td>
     <td class="pvt-overview-cell pvt-overview-derived">${(PVT_INSTRUMENTS[r.tab] || {}).derived || r.source}${
       (PVT_INSTRUMENTS[r.tab] || {}).unspecified ? '<span class="pvt-overview-sub">edition not recorded</span>' : ''}${
-      (PVT_INSTRUMENTS[r.tab] || {}).mismatch ? '<span class="pvt-overview-sub is-warn">version caveat — see the measure</span>' : ''}<span class="pvt-overview-sub">${
+      (PVT_INSTRUMENTS[r.tab] || {}).mismatch ? '<span class="pvt-overview-sub is-warn">version caveat, see the measure</span>' : ''}<span class="pvt-overview-sub">${
       (PVT_INSTRUMENTS[r.tab] || {}).kind || r.source}</span></td>
     <td class="pvt-overview-cell">${r.group}</td>
     <td class="pvt-overview-cell pvt-overview-acc">${r.acc
@@ -8025,7 +8025,7 @@ function renderPvtAboutPanel(){
       </tr></thead>
       <tbody>${body}</tbody>
     </table>
-    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014) — measures sharing an instrument count as one between them, which is what the running summary's "counts as one" tags mean. The Summary tab reports Larrabee's published classification accuracy at each failure count. No single index is a verdict.</p>
+    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014). Measures sharing an instrument count as one between them, which is what the running summary's "counts as one" tags mean. The Summary tab reports Larrabee's published classification accuracy at each failure count. No single index is a verdict.</p>
   </div>`;
   el.querySelectorAll('[data-about-tab]').forEach(row => {
     const go = () => switchPvtTab(row.dataset.aboutTab);

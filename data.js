@@ -2303,6 +2303,6 @@ const PVT_INSTRUMENTS = {
   cvlt3: {
     kind: 'Embedded', derived: 'CVLT-3 (base rates) · CVLT-II (cut-offs)',
     detail: 'Forced Choice Recognition total hits and critical items.',
-    mismatch: 'The base rates are the CVLT-3 manual’s own. The two selectable cut-offs and their accuracy are CVLT-II figures, applied here because the trial is structurally identical across editions — 16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition.'
+    mismatch: 'The base rates are the CVLT-3 manual’s own. The two selectable cut-offs and their accuracy are CVLT-II figures, applied here because the trial is structurally identical across editions (16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition).'
   }
 };

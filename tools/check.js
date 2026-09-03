@@ -7022,7 +7022,7 @@ check('Digit Span ACSS: cut-offs, accuracy and non-independence (Iverson & Tulsk
   r = run('', '11');
   if (!r.partial) bad.push('Vocabulary alone should compute nothing');
   /* The WAIS-III provenance must reach the exported note. */
-  if (!/Iverson & Tulsky, 2003; Axelrod et al\., 2006 — WAIS-III/.test(APP_SRC)){
+  if (!/Iverson & Tulsky, 2003; Axelrod et al\., 2006, WAIS-III/.test(APP_SRC)){
     bad.push('the note lost the WAIS-III provenance of the Digit Span cut-offs');
   }
   ['Iverson &amp; Tulsky (2003)', 'Axelrod, B. N., Fichtenberg, N. L., Millis, S. R.'].forEach(n => {
@@ -7631,7 +7631,7 @@ check('a borrowed CVLT-II cut-off is labelled as one, everywhere it can be read'
   ['Erdodi, L. A., Abeare', 'Schwartz, E. S., Erdodi'].forEach(n => {
     if (!HTML_SRC.includes(n)) bad.push('the references lost ' + n);
   });
-  if (!/failure rates rise with the severity of neurocognitive disorder/.test(HTML_SRC)) bad.push('the caution lost the impairment gradient in failure rates');
+  if (!/[Ff]ailure rates rise with the severity of neurocognitive disorder/.test(HTML_SRC)) bad.push('the caution lost the impairment gradient in failure rates');
   if (!/reverse severity effect/.test(HTML_SRC)) bad.push('the caution lost the mild-TBI reverse severity effect');
   return bad.length === 0 || bad.join('; ');
 });
