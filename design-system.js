@@ -31,7 +31,8 @@
     'rci-crawford':   'Crawford Regression-Based',
     'premorbid':      'Premorbid Estimation',
     'about':          'Methods & References',
-    'custom-tests':   'Data'
+    'custom-tests':   'Data',
+    'privacy-use':    'Privacy & use'
   };
 
   function setTitleForTarget(target){
@@ -1128,4 +1129,77 @@
   } else {
     initPremorbidLayout();
   }
+})();
+
+/* =============================================================================
+   HOME DIAL — which tool the hub is describing
+
+   The ring has nowhere to put a line of body copy beside each label, so the
+   description lives in the hub and only the active tool's is shown. That
+   reveal is driven from `data-active` on the stage rather than from `:hover`
+   and `:focus-visible` in CSS, for three reasons:
+
+     1. It is verifiable. A state pseudo-class could not be confirmed to
+        resolve when driving the real page here: a pointer over a node made
+        `matches(':hover')` true and keyboard focus made `matches(':focus-
+        visible')` true, yet in both cases the computed style stayed at the
+        base value, while a non-state control rule injected in the same
+        recalculation applied immediately. An attribute selector is ordinary
+        cascade with no state involved, so it can be driven and read back.
+
+     2. It works on touch, where there is no hover at all. A tap sets the
+        description before the click navigates.
+
+     3. It keeps one mechanism. The CSS still carries the :hover and
+        :focus-visible rules as well, so a browser that resolves them loses
+        nothing, but nothing depends on them.
+
+   Delegated on `document`, so this needs no element to exist when it runs and
+   cannot be broken by init ordering — the hazard recorded in CLAUDE.md, where
+   a top-level call to a missing function killed every statement after it.
+   ========================================================================== */
+(function(){
+  'use strict';
+
+  function stageOf(el){
+    return el && el.closest ? el.closest('.home-dial-stage') : null;
+  }
+
+  function setActive(node){
+    const stage = stageOf(node);
+    if (!stage) return;
+    const i = node.getAttribute('data-dial');
+    if (i == null) return;
+    stage.setAttribute('data-active', i);
+  }
+
+  function clearActive(stage){
+    if (stage) stage.removeAttribute('data-active');
+  }
+
+  /* pointerover/out rather than mouseenter/leave: those do not bubble, and
+     everything here is delegated. */
+  document.addEventListener('pointerover', e => {
+    const node = e.target.closest && e.target.closest('.home-dial-node');
+    if (node) setActive(node);
+  });
+
+  document.addEventListener('pointerout', e => {
+    const stage = stageOf(e.target);
+    if (!stage) return;
+    /* Only clear when the pointer has actually left the stage, not when it
+       crosses between a node's own children. */
+    if (!e.relatedTarget || !stage.contains(e.relatedTarget)) clearActive(stage);
+  });
+
+  document.addEventListener('focusin', e => {
+    const node = e.target.closest && e.target.closest('.home-dial-node');
+    if (node) setActive(node);
+  });
+
+  document.addEventListener('focusout', e => {
+    const stage = stageOf(e.target);
+    if (!stage) return;
+    if (!e.relatedTarget || !stage.contains(e.relatedTarget)) clearActive(stage);
+  });
 })();

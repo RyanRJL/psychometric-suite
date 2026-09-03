@@ -5658,6 +5658,172 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 /* Pane visibility â€” only the active pane is shown */
 #converter .conv-view-pane{display:none!important}
 #converter .conv-view-pane.is-active{display:block!important}
+
+/* ---- Full conversion table view ----
+   Standalone .conv-full-* classes (the cascade rule in CLAUDE.md). A
+   collapsed full-width disclosure in the cockpit grid (grid-area: table);
+   the scroll box owns the height and the header is sticky inside it. */
+.conv-full-details{
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
+  background:#FFFFFF;
+}
+.conv-full-details summary{
+  display:flex;
+  align-items:baseline;
+  gap:9px;
+  padding:13px 16px;
+  cursor:pointer;
+  list-style:none;
+  font-family:var(--sans);
+  font-size:13px;
+  font-weight:600;
+  color:#1A1A1A;
+}
+.conv-full-details summary::-webkit-details-marker{display:none}
+.conv-full-details summary svg{
+  width:14px;height:14px;
+  align-self:center;
+  flex:none;
+  color:#7A766E;
+}
+.conv-full-details summary::after{
+  content:'show';
+  margin-left:auto;
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--faint,#9E9890);
+}
+.conv-full-details[open] summary::after{content:'hide'}
+.conv-full-details summary:hover{background:rgba(20,15,5,0.02)}
+.conv-full-summary-hint{
+  font-family:var(--sans);
+  font-size:11.5px;
+  font-weight:400;
+  color:#8A867E;
+}
+.conv-full-details[open] > summary{border-bottom:1px solid rgba(20,15,5,0.07)}
+.conv-full-details .conv-full-controls,
+.conv-full-details .conv-full-scroll,
+.conv-full-details .conv-full-foot{
+  margin-left:16px;
+  margin-right:16px;
+}
+.conv-full-details .conv-full-controls{margin-top:14px}
+.conv-full-details .conv-full-foot{margin-bottom:14px}
+.conv-full-controls{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:2px 0 12px;
+}
+.conv-full-label{
+  font-family:var(--sans);
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#7A766E;
+}
+.conv-full-anchor{
+  display:inline-flex;
+  background:rgba(20,15,5,0.06);
+  border:1px solid rgba(20,15,5,0.10);
+  border-radius:var(--r-pill);
+  padding:3px;
+  gap:2px;
+}
+.conv-full-anchor button{
+  border:none;
+  background:transparent;
+  font-family:var(--sans);
+  font-size:12px;
+  font-weight:500;
+  color:#5A5A5A;
+  padding:5px 14px;
+  border-radius:var(--r-pill);
+  cursor:pointer;
+  transition:background 140ms var(--ease), color 140ms var(--ease);
+}
+.conv-full-anchor button:hover:not(.is-active){color:#1A1A1A}
+.conv-full-anchor button.is-active{
+  background:#FFFFFF;
+  color:#1A1A1A;
+  font-weight:600;
+  box-shadow:0 1px 2px rgba(20,15,5,0.08), 0 0 0 1px rgba(20,15,5,0.04);
+}
+.conv-full-anchor button:focus{outline:none}
+.conv-full-anchor button:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.30)}
+.conv-full-scroll{
+  max-height:520px;
+  overflow:auto;
+  border:1px solid rgba(20,15,5,0.10);
+  border-radius:var(--r-md);
+  background:#FFFFFF;
+}
+.conv-full-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+}
+.conv-full-th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#F7F4EF;
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#7A766E;
+  text-align:center;
+  padding:10px 12px 9px;
+  border-bottom:1px solid rgba(20,15,5,0.12);
+  white-space:nowrap;
+}
+.conv-full-th.is-anchor{color:#9C3D2A}
+.conv-full-row td{
+  padding:6px 12px;
+  text-align:center;
+  border-bottom:1px solid rgba(20,15,5,0.045);
+}
+.conv-full-row:last-child td{border-bottom:none}
+.conv-full-row:hover td{background:rgba(20,15,5,0.03)}
+.conv-full-cell{
+  font-family:var(--mono);
+  font-size:12px;
+  color:#3F3F3F;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.conv-full-cell.is-anchor{
+  font-weight:600;
+  color:#1A1A1A;
+  background:rgba(20,15,5,0.02);
+}
+.conv-full-desc{
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:#4D4840;
+  white-space:nowrap;
+}
+/* The entered score's row — same quiet cream the app uses for "current". */
+.conv-full-row.is-current td{
+  background:#F7F2E6;
+  border-top:1px solid rgba(156,61,42,0.30);
+  border-bottom:1px solid rgba(156,61,42,0.30);
+}
+.conv-full-row.is-current .conv-full-cell.is-anchor{color:#9C3D2A}
+.conv-full-foot{
+  margin:10px 2px 0;
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:#6E6860;
+  line-height:1.55;
+}
 /* Override the inline style="display:block" on conv-output */
 #converter #conv-output[style]{display:none!important}
 #converter #conv-output.is-active[style]{display:block!important}
@@ -6564,6 +6730,13 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   100% { transform:scale(1);    box-shadow:0 0 0 0 rgba(156,61,42,0),    0 6px 18px rgba(0,0,0,0.18); }
 }
 /* Count badge "+1" bump when a new table is captured */
+/* An empty report shows a quiet grey badge: the terracotta fill is the
+   "you have captured tables" signal, and a red 0 reads as an alert about
+   nothing. */
+.rb-chip-count.is-zero{
+  background:linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
+  color:rgba(255,255,255,0.55);
+}
 .rb-chip-count.rb-count-bump{ animation:rb-count-bump 460ms cubic-bezier(0.2,0.85,0.3,1.2); }
 @keyframes rb-count-bump{
   0%   { transform:scale(1); }
@@ -8231,6 +8404,7 @@ body.rb-docked-active{padding-right:0}
     "fields  slider"
     "equiv   curve"
     "class   class"
+    "table   table"
     "foot    foot" !important;
   column-gap:24px !important;
   row-gap:18px !important;
@@ -8246,6 +8420,7 @@ body.rb-docked-active{padding-right:0}
 #converter .conv-unified-panel > #conv-output     { grid-area: equiv; }
 #converter .conv-unified-panel > .curve-wrap      { grid-area: curve; }
 #converter .conv-unified-panel > .conv-meta-strip { grid-area: class; }
+#converter .conv-unified-panel > .conv-full-details { grid-area: table; }
 #converter .conv-unified-panel > .conv-desc-footnote { grid-area: foot; }
 
 /* Equivalents column — vertical stack of 5 chips, one score per row.
@@ -9589,7 +9764,8 @@ body.rb-docked-active{padding-right:0}
 /* ---- Tab strip: white rounded-top sheet ---- */
 .pvt-method-tabs{
   display:grid;
-  grid-template-columns:repeat(7,minmax(120px,1fr));
+  /* Narrow leftmost About column + the seven measure tabs. */
+  grid-template-columns:minmax(72px,auto) repeat(7,minmax(120px,1fr));
   gap:0;
   background:#FFFFFF;
   border:1px solid rgba(20,15,5,0.08);
@@ -9654,10 +9830,13 @@ body.rb-docked-active{padding-right:0}
   line-height:1.3;
 }
 
-/* Live status chip - state colours match the result card's bands. */
+/* Live status chip - state colours match the result card's bands.
+   Unscored tabs render NO chip (.is-idle): an empty pill is dead chrome,
+   and seven of them made the strip read as broken before first entry. */
 .pvt-status{
   display:inline-flex;
   align-items:center;
+  gap:4px;
   height:17px;
   padding:0 8px;
   border:1px solid rgba(20,15,5,0.12);
@@ -9675,6 +9854,233 @@ body.rb-docked-active{padding-right:0}
 .pvt-status.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.4);background:rgba(46,125,79,0.07)}
 .pvt-status.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.4);background:rgba(156,61,42,0.07)}
 .pvt-status.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.4);background:rgba(138,122,44,0.07)}
+.pvt-status.is-idle{display:none}
+.pvt-status .pvt-flag-icon{width:9px;height:9px;flex:none}
+
+/* ---- About landing tab + overview table ----
+   Deliberately the same visual vocabulary as the Change Analysis About
+   tab (its .change-overview-* rules above): filled terracotta "?" bubble
+   with the entry pulse, serif row titles with italic cites, a shaded
+   uppercase header band, cream row hover, dark hover popovers for the
+   per-row and per-column explainers. Standalone .pvt-* class names
+   throughout (the cascade rule in CLAUDE.md), and a private data-pvtip
+   attribute so the global [data-tooltip] rules cannot restyle these. */
+.pvt-method-tab-about{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+.pvt-about-bubble{
+  width:20px;height:20px;
+  border-radius:50%;
+  background:#A85544;
+  color:#FFFFFF;
+  font-family:var(--sans);
+  font-size:12px;
+  font-weight:700;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 1px 2px rgba(168,85,68,0.25), 0 0 0 2px rgba(168,85,68,0.15);
+  transition:transform 140ms var(--ease), box-shadow 140ms var(--ease);
+}
+.pvt-method-tab-about:hover .pvt-about-bubble{
+  transform:scale(1.08);
+  box-shadow:0 2px 4px rgba(168,85,68,0.35), 0 0 0 3px rgba(168,85,68,0.18);
+}
+.pvt-method-tab-about.active .pvt-about-bubble{
+  background:#7A2E1F;
+  box-shadow:0 2px 6px rgba(122,46,31,0.45), 0 0 0 3px rgba(168,85,68,0.20);
+}
+/* Same once-on-entry pulse the Change Analysis bubble runs (keyframes above). */
+#validity.section.active .pvt-about-bubble{
+  animation:about-bubble-pulse 2.4s var(--ease) 0.4s 2;
+}
+.pvt-about-tab-label{
+  font-family:var(--sans);
+  font-size:13px;
+  font-weight:600;
+  color:#A85544;
+}
+
+.pvt-overview-wrap{min-width:0}
+.pvt-overview-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-lg);
+  /* overflow:visible so the hover popovers can escape the table box;
+     corner rounding is reapplied to the thead cells below. */
+  overflow:visible;
+}
+.pvt-overview-table thead tr th:first-child{border-top-left-radius:var(--r-lg)}
+.pvt-overview-table thead tr th:last-child{border-top-right-radius:var(--r-lg)}
+.pvt-overview-th{
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#7A766E;
+  text-align:center;
+  padding:14px 12px 12px;
+  background:rgba(20,15,5,0.025);
+  border-bottom:1px solid rgba(20,15,5,0.08);
+  white-space:nowrap;
+}
+.pvt-overview-th.is-measure{text-align:left;padding-left:24px}
+.pvt-overview-colh{
+  position:relative;
+  display:inline-block;
+  cursor:help;
+  text-decoration:underline dotted rgba(20,15,5,0.28);
+  text-underline-offset:3px;
+  outline:none;
+}
+.pvt-overview-colh:hover,
+.pvt-overview-colh:focus-visible{
+  color:#9C3D2A;
+  text-decoration-color:rgba(156,61,42,0.55);
+}
+.pvt-overview-colh::before{
+  content:attr(data-pvtip);
+  position:absolute;
+  top:calc(100% + 10px);
+  left:50%;
+  transform:translateX(-50%) translateY(-4px);
+  width:320px;
+  padding:12px 14px;
+  background:rgba(15,18,24,0.96);
+  color:#FFFFFF;
+  border:1px solid rgba(15,18,24,0.96);
+  border-radius:8px;
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:400;
+  letter-spacing:0;
+  text-transform:none;
+  line-height:1.55;
+  text-align:left;
+  white-space:normal;
+  z-index:60;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+}
+.pvt-overview-colh.is-end::before{left:auto;right:0;transform:translateY(-4px)}
+.pvt-overview-colh:hover::before,
+.pvt-overview-colh:focus-visible::before{opacity:1;transform:translateX(-50%) translateY(0)}
+.pvt-overview-colh.is-end:hover::before,
+.pvt-overview-colh.is-end:focus-visible::before{transform:translateY(0)}
+.pvt-overview-row{cursor:pointer;transition:background 140ms var(--ease)}
+.pvt-overview-row:hover,
+.pvt-overview-row:focus-visible{background:#F7F2E6;outline:none}
+.pvt-overview-row:focus-visible{box-shadow:inset 3px 0 0 #9C3D2A}
+.pvt-overview-row + .pvt-overview-row > td{border-top:1px solid rgba(20,15,5,0.05)}
+.pvt-overview-row td{padding:14px 12px;vertical-align:middle}
+.pvt-overview-measure{padding-left:24px;min-width:240px}
+.pvt-overview-titlerow{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:8px;
+}
+.pvt-overview-title{
+  font-family:var(--serif);
+  font-size:15px;
+  font-weight:600;
+  color:#1A1A1A;
+  letter-spacing:-0.005em;
+}
+.pvt-overview-info{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:rgba(20,15,5,0.08);
+  border:none;
+  color:#6B6B6B;
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:700;
+  cursor:help;
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  line-height:1;
+  flex:0 0 auto;
+  transition:background 140ms var(--ease), color 140ms var(--ease);
+}
+.pvt-overview-info:hover,
+.pvt-overview-info:focus-visible{
+  background:#9C3D2A;
+  color:#FFFFFF;
+  outline:none;
+}
+.pvt-overview-info::before{
+  content:attr(data-pvtip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:-8px;
+  width:340px;
+  padding:12px 14px;
+  background:rgba(15,18,24,0.96);
+  color:#FFFFFF;
+  border:1px solid rgba(15,18,24,0.96);
+  border-radius:8px;
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:400;
+  line-height:1.55;
+  text-align:left;
+  white-space:normal;
+  z-index:60;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+  transform:translateY(4px);
+}
+.pvt-overview-info:hover::before,
+.pvt-overview-info:focus-visible::before{opacity:1;transform:translateY(0)}
+.pvt-overview-cite{
+  display:block;
+  margin-top:2px;
+  font-family:var(--sans);
+  font-size:11.5px;
+  font-style:italic;
+  color:#7A766E;
+  line-height:1.35;
+}
+.pvt-overview-cell{
+  font-family:var(--sans);
+  font-size:12px;
+  color:#4D4840;
+  text-align:center;
+  white-space:nowrap;
+}
+.pvt-overview-acc{white-space:normal;min-width:170px}
+.pvt-overview-cut{
+  display:block;
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  color:#1A1A1A;
+  margin-bottom:1px;
+}
+.pvt-overview-arrow{width:34px;color:#BCB6AD;text-align:center}
+.pvt-overview-arrow svg{width:14px;height:14px;display:inline-block;vertical-align:middle}
+.pvt-overview-foot{
+  margin:12px 2px 0;
+  font-family:var(--sans);
+  font-size:11.5px;
+  color:#6E6860;
+  line-height:1.55;
+}
 
 /* ---- Content panel: the cream-to-white gradient sheet ---- */
 /* The sheet holds every method panel AND the running rail, so the rail is
@@ -9875,12 +10281,12 @@ body.rb-docked-active{padding-right:0}
   font-size:11px;
   font-weight:600;
   letter-spacing:0.02em;
-  color:#9C3D2A;
+  color:var(--ink);
   text-align:left;
   cursor:pointer;
   transition:background 120ms ease;
 }
-.pvt-rail-cta:hover{background:rgba(156,61,42,0.05)}
+.pvt-rail-cta:hover{background:rgba(20,15,5,0.04)}
 .pvt-rail-cta:focus{outline:none}
 .pvt-rail-cta:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
 @keyframes pvt-panel-in{
@@ -9941,7 +10347,16 @@ body.rb-docked-active{padding-right:0}
    measure never renders through this: it renders as .pvt-readout below,
    one row per index. */
 .pvt-result-inner{display:block;border:1px solid rgba(20,15,5,0.08);border-radius:var(--r-md);padding:14px 16px;background:#FFFFFF}
-.pvt-result-inner.is-empty{color:var(--faint);font-style:italic;font-size:13.5px}
+/* The blank state is a deliberate card, not a wan italic line: dashed
+   border says "placeholder", the headline carries the one instruction, and
+   the detail says what will appear so the wide column reads as reserved
+   rather than dead. */
+.pvt-result-inner.is-empty{
+  border:1px dashed rgba(20,15,8,0.20);
+  background:rgba(253,250,246,0.65);
+  padding:18px 20px;
+}
+.pvt-result-inner.is-empty .pvt-result-headline{font-size:13.5px;font-weight:600;color:var(--ink)}
 .pvt-result-headline{display:block;font-size:13px;color:var(--muted)}
 .pvt-result-detail{display:block;margin-top:4px;font-size:12.5px;color:var(--muted,#555);line-height:1.55}
 
@@ -10042,9 +10457,14 @@ body.rb-docked-active{padding-right:0}
 
 /* One-line expandable cautions - headline on screen, full text one click
    away. White card like everything else on the sheet, caution rail. */
+/* Neutral by default: an always-on red caution beside an empty form is
+   wallpaper, and on this page red is reserved for "an indicator flagged".
+   .is-flagged (set from renderPvtNav, the same states the chips render)
+   restores the emphasis in amber once the method on that tab has a result
+   the caveat is actually about. */
 .pvt-caution{
-  border:1px solid rgba(156,61,42,0.25);
-  border-left:4px solid #9c3d2a;
+  border:1px solid rgba(20,15,8,0.12);
+  border-left:4px solid rgba(20,15,8,0.22);
   border-radius:var(--r-md);
   background:#FFFFFF;
   padding:10px 14px;
@@ -10064,8 +10484,14 @@ body.rb-docked-active{padding-right:0}
   color:var(--faint);
 }
 .pvt-caution[open] summary::after{content:'less'}
-.pvt-caution summary strong{color:#9c3d2a}
+.pvt-caution summary strong{color:var(--ink)}
 .pvt-caution-body{margin-top:8px}
+.pvt-caution.is-flagged{
+  border-color:rgba(183,121,31,0.40);
+  border-left-color:#B7791F;
+  background:rgba(183,121,31,0.05);
+}
+.pvt-caution.is-flagged summary strong{color:#8a6215}
 
 /* Collapsed footer references - outside the sheet, quiet. */
 .pvt-refs{margin-top:22px;padding-top:10px}

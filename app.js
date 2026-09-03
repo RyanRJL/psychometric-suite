@@ -531,12 +531,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* ---------- TOAST ---------- */
 let toastTimer;
-function showToast(msg, isError){
+function showToast(msg, isError, ms){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show' + (isError ? ' error' : '');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.className = 'toast', 2200);
+  toastTimer = setTimeout(() => t.className = 'toast', ms || 2200);
+}
+
+/* ---------- FIRST-EXPORT NOTICE ----------------------------------------
+   Copy is the boundary where a number crosses from this app into a
+   medico-legal document, which makes it the right moment to say that there
+   are terms. It is NOT the right moment to state them: at the instant of
+   copying, "make sure you are qualified" is un-actionable, the clinician
+   having already chosen the method and entered the scores.
+
+   So this fires ONCE, ever, and then never again. A per-copy notice on the
+   app's core output path would be dismissed reflexively within a week, and
+   a notice everyone dismisses is worth little to the user and probably
+   little as evidence that anyone was informed. Once is also why it can be
+   non-blocking: it never gates an export.
+
+   Every copy path routes through here rather than calling showToast
+   directly, so a new export route cannot silently miss it. */
+const EXPORT_NOTICE_KEY = 'paExportNoticeSeen';
+function exportToast(msg){
+  let first = false;
+  try { first = localStorage.getItem(EXPORT_NOTICE_KEY) !== 'true'; }
+  catch(e){ first = false; }   // private mode: confirm the copy, skip the notice
+  if (!first){ showToast(msg); return; }
+  try { localStorage.setItem(EXPORT_NOTICE_KEY, 'true'); } catch(e){}
+  showToast(msg + '  Interpretation and verification rest with you - see Privacy & use in the footer.', false, 9000);
+  /* The toast is white-space:nowrap, sized for "Table copied". This one is a
+     sentence, and on a narrow window a nowrap toast that long runs off the
+     screen. Added after showToast, which assigns className wholesale — which
+     is also what clears it again on the next ordinary toast. */
+  const t = document.getElementById('toast');
+  if (t) t.classList.add('is-longform');
 }
 
 /* ---------- COPY TO CLIPBOARD (rich HTML) ---------- */
@@ -570,7 +601,7 @@ async function copyApaTable(containerId){
     } else {
       await navigator.clipboard.writeText(plain);
     }
-    showToast('✓ Table copied - ready to paste into your report');
+    exportToast('✓ Table copied - ready to paste into your report');
     flashCopiedButton(document.querySelector(`[data-copy="${containerId}"]`));
     if (typeof ReportBundle !== 'undefined' && ReportBundle.showKofiPrompt) ReportBundle.showKofiPrompt();
   } catch(e){
@@ -807,10 +838,10 @@ function renderConverter(){
   const type = document.getElementById('conv-type').value;
   const val = document.getElementById('conv-value').value;
   const out = document.getElementById('conv-output');
-  if (val === '' || isNaN(val)){ out.style.display = 'none'; return; }
+  if (val === '' || isNaN(val)){ out.style.display = 'none'; renderConvFullTable(); return; }
   out.style.display = 'block';
   const z = toZ(val, type);
-  if (z == null){ out.style.display = 'none'; return; }
+  if (z == null){ out.style.display = 'none'; renderConvFullTable(); return; }
   // Sync slider and readout
   const slider = document.getElementById('conv-slider');
   if (slider) slider.value = Math.max(-3, Math.min(3, z)).toFixed(2);
@@ -840,6 +871,124 @@ function renderConverter(){
   updateDescCarousel('conv-aan-block', activeIdx);
 
   drawCurve(z, type);
+  renderConvFullTable();
+}
+
+/* ---------- Full conversion table view ----------
+   A scannable lookup table, the appendix every manual carries. Every cell
+   is computed through the SAME toZ/fromZ/fmt/fmtPct/wechslerDesc/aanDesc
+   the one-at-a-time converter uses — no second table of numbers exists to
+   drift. Rows are anchored on ONE metric at that metric's real integer
+   values (z in 0.25 steps): a merged table anchored on standard scores
+   would print scaled "7.3", a score nobody can report, so the fractional
+   equivalents stay in the non-anchored columns where they honestly mark
+   that two metrics do not map cleanly. Descending, as the manuals print.
+   The entered score's row is highlighted and scrolled into view, so the
+   input above doubles as "find me in the table". */
+const CONV_FULL_ANCHORS = {
+  standard: { min: 40,  max: 160, step: 1,    dp: 0 },
+  t:        { min: 10,  max: 90,  step: 1,    dp: 0 },
+  scaled:   { min: 1,   max: 19,  step: 1,    dp: 0 },
+  z:        { min: -4,  max: 4,   step: 0.25, dp: 2 }
+};
+let convFullAnchor = 'standard';
+function renderConvFullTable(){
+  const wrap = document.getElementById('conv-full-scroll');
+  if (!wrap) return;
+  const a = CONV_FULL_ANCHORS[convFullAnchor];
+  const type = document.getElementById('conv-type')?.value;
+  const val = document.getElementById('conv-value')?.value;
+  const zIn = (val === '' || val == null) ? null : toZ(val, type);
+
+  /* The highlighted row is the anchor value nearest the entered score,
+     and only if the score actually lands inside the table's range. */
+  let currentIdx = -1;
+  const steps = Math.round((a.max - a.min) / a.step);
+  if (zIn != null){
+    const equiv = fromZ(zIn, convFullAnchor);
+    const idx = Math.round((equiv - a.min) / a.step);
+    if (idx >= 0 && idx <= steps) currentIdx = idx;
+  }
+
+  const cols = ['standard', 't', 'scaled', 'z'];
+  /* One whole score of a metric spans this much of the z axis. A column
+     COARSER than the anchor's row spacing prints each whole score only on
+     the row where it actually falls, blank between — the manuals' own
+     convention, and the honest one: repeating "21" down five standard-score
+     rows would claim each of them converts to scaled 21. A column FINER
+     than the anchor never repeats, so it prints its nearest whole score on
+     every row. z always prints exact to 2 dp: it is the continuous ruler
+     that shows where every score sits. */
+  const CONV_Z_UNIT = { standard: 1/15, t: 1/10, scaled: 1/3 };
+  const anchorZStep = convFullAnchor === 'z' ? a.step : CONV_Z_UNIT[convFullAnchor];
+  /* Compute anchor values from the integer step index rather than by
+     repeated addition, so the z column's 0.25 steps stay exact. Rows are
+     built ascending and rendered descending. */
+  const rowVals = [];
+  for (let i = 0; i <= steps; i++){
+    const v = a.min + i * a.step;
+    rowVals.push({ v, z: toZ(v, convFullAnchor), cells: {} });
+  }
+  cols.forEach(m => {
+    if (m === convFullAnchor){
+      rowVals.forEach(r => { r.cells[m] = fmt(r.v, a.dp); });
+      return;
+    }
+    if (m === 'z'){
+      rowVals.forEach(r => { r.cells[m] = fmt(r.z, 2); });
+      return;
+    }
+    if (CONV_Z_UNIT[m] > anchorZStep + 1e-9){
+      /* Sparse: place each whole score of this metric on its nearest row.
+         Spacing exceeds one row by construction, so no two collide. */
+      rowVals.forEach(r => { r.cells[m] = ''; });
+      const range = CONV_FULL_ANCHORS[m];
+      for (let t = range.min; t <= range.max; t++){
+        const idx = Math.round((fromZ(toZ(t, m), convFullAnchor) - a.min) / a.step);
+        if (idx >= 0 && idx <= steps) rowVals[idx].cells[m] = fmt(t, 0);
+      }
+    } else {
+      rowVals.forEach(r => { r.cells[m] = fmt(fromZ(r.z, m), 0); });
+    }
+  });
+  const rowsHtml = [];
+  for (let i = steps; i >= 0; i--){
+    const r = rowVals[i];
+    const ss = fromZ(r.z, 'standard');
+    const cells = cols.map(m =>
+      `<td class="conv-full-cell${m === convFullAnchor ? ' is-anchor' : ''}">${r.cells[m]}</td>`
+    ).join('');
+    rowsHtml.push(`<tr class="conv-full-row${i === currentIdx ? ' is-current' : ''}">
+      ${cells}
+      <td class="conv-full-cell">${fmtPct(fromZ(r.z, 'percentile'))}</td>
+      <td class="conv-full-desc">${wechslerDesc(ss)}</td>
+      <td class="conv-full-desc">${aanDesc(ss)}</td>
+    </tr>`);
+  }
+  wrap.innerHTML = `<table class="conv-full-table">
+    <thead><tr>
+      <th class="conv-full-th${convFullAnchor === 'standard' ? ' is-anchor' : ''}">Standard</th>
+      <th class="conv-full-th${convFullAnchor === 't' ? ' is-anchor' : ''}">T</th>
+      <th class="conv-full-th${convFullAnchor === 'scaled' ? ' is-anchor' : ''}">Scaled</th>
+      <th class="conv-full-th${convFullAnchor === 'z' ? ' is-anchor' : ''}">z</th>
+      <th class="conv-full-th">Percentile</th>
+      <th class="conv-full-th">Wechsler</th>
+      <th class="conv-full-th">AACN</th>
+    </tr></thead>
+    <tbody>${rowsHtml.join('')}</tbody>
+  </table>`;
+  const cur = wrap.querySelector('.conv-full-row.is-current');
+  if (cur) wrap.scrollTop = Math.max(0, cur.offsetTop - wrap.clientHeight / 2);
+}
+function convFullSetAnchor(name){
+  if (!CONV_FULL_ANCHORS[name]) return;
+  convFullAnchor = name;
+  document.querySelectorAll('#conv-full-anchor [data-anchor]').forEach(b => {
+    const on = b.dataset.anchor === name;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  renderConvFullTable();
 }
 /* Horizontal geometry of the converter curve, shared by the code that DRAWS it
    and the code that maps a click back to a z score. These were duplicated, and
@@ -1093,9 +1242,22 @@ function updateSliderTicks(type) {
 
 document.getElementById('conv-type').addEventListener('change', function() {
   updateSliderTicks(this.value);
+  /* The full table follows the input type so the highlighted row lands in
+     the anchored column — except percentile, which is an output, not a
+     metric the table can anchor on (see SCORE_METRICS). */
+  if (CONV_FULL_ANCHORS[this.value]) convFullSetAnchor(this.value);
   renderConverter();
 });
 document.getElementById('conv-value').addEventListener('input', renderConverter);
+document.getElementById('conv-full-anchor')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-anchor]');
+  if (btn) convFullSetAnchor(btn.dataset.anchor);
+});
+/* Opening the disclosure re-renders so the highlighted row is scrolled to
+   centre — scrollTop set while the details was closed does not stick. */
+document.getElementById('conv-full-details')?.addEventListener('toggle', function(){
+  if (this.open) renderConvFullTable();
+});
 
 // Slider - syncs back to the value input and re-renders
 document.getElementById('conv-slider').addEventListener('input', function(){
@@ -6999,7 +7161,7 @@ function renderPvtEi(){
   const out = document.getElementById('pvt-ei-result');
   if (!out) return;
   const s = getPvtEi();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   const acc = PVT_EI_ACCURACY[s.cutKey];
@@ -7014,7 +7176,7 @@ function renderPvtEs(){
   const out = document.getElementById('pvt-es-result');
   if (!out) return;
   const s = getPvtEs();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   if (s.gated){
@@ -7037,7 +7199,7 @@ function renderPvtRds(){
   const out = document.getElementById('pvt-rds-result');
   if (!out) return;
   const s = getPvtRds();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   const racc = PVT_RDS_ACCURACY[s.conservative ? 'conservative' : 'traditional'];
@@ -7052,7 +7214,7 @@ function renderPvtDs(){
   const out = document.getElementById('pvt-ds-result');
   if (!out) return;
   const s = getPvtDs();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score — Vocabulary alone computes nothing.'); return; }
   const dacc = PVT_DS_ACCURACY[s.conservative ? 'conservative' : 'sensitive'];
@@ -7094,7 +7256,7 @@ function renderPvtRey(){
   const out = document.getElementById('pvt-rey15-result');
   if (!out) return;
   const s = getPvtRey();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.', 'The result appears here and the outcome joins the running summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score — the recognition trial alone computes nothing.'); return; }
   const rows = [{
@@ -7123,7 +7285,7 @@ function renderPvtTomm(){
   const power = document.getElementById('pvt-tomm-power');
   if (!out || !power) return;
   const s = getPvtTomm();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.'); power.innerHTML = ''; return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.', 'The result appears here and the outcome joins the running summary.'); power.innerHTML = ''; return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
   out.innerHTML = pvtReadoutHtml(s.rows.map(r => ({
     label: `TOMM ${r.label}`, value: r.score, state: r.fail ? 'fail' : 'pass',
@@ -7316,11 +7478,26 @@ function renderPvtApa(){
 /* The tab strip's live status chips. One chip per measure, restated from
    the same getPvt* state the result cards render, so strip and card cannot
    disagree. The summary chip carries the independent-indicator count. */
+/* An unscored tab shows NO chip at all: a dash in a pill reads as seven
+   pieces of dead chrome before anything is entered, so the pill appears
+   only once it has a state to report. Scored chips carry the same glyphs
+   as the readout rows (shape + word + colour, never colour alone). */
 function pvtChip(el, text, kind){
   if (!el) return;
-  el.textContent = text;
   el.classList.remove('is-pass', 'is-fail', 'is-na');
-  if (kind) el.classList.add('is-' + kind);
+  el.classList.toggle('is-idle', !kind);
+  if (!kind){ el.textContent = ''; return; }
+  const icon = PVT_STATE_ICON[kind === 'fail' ? 'flag' : kind === 'na' ? 'na' : 'pass'] || '';
+  el.innerHTML = icon + escapeHtml(text);
+  el.classList.add('is-' + kind);
+}
+
+/* The caution under each result is neutral reference text until the method
+   on that tab actually flags — then it takes the amber emphasis, because
+   "corroborate before concluding" is advice about a result that now
+   exists. Driven from the same states the chips render, in one place. */
+function pvtCautionFlag(tab, flagged){
+  document.querySelector(`#pvt-${tab} .pvt-caution`)?.classList.toggle('is-flagged', !!flagged);
 }
 function renderPvtNav(){
   const ei = getPvtEi();
@@ -7356,6 +7533,12 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-summary'),
     c.total > 0 ? `${c.failed}/${c.total}` : '—',
     c.total > 0 ? (c.failed > 0 ? 'fail' : 'pass') : null);
+  pvtCautionFlag('ei', ei.ei !== undefined && ei.fail);
+  pvtCautionFlag('es', es.es !== undefined && !es.gated && es.fail);
+  pvtCautionFlag('rds', rds.rds !== undefined && rds.fail);
+  pvtCautionFlag('ds', dsFail);
+  pvtCautionFlag('rey15', reyFail);
+  pvtCautionFlag('tomm', tommHas && tomm.anyFail);
 }
 
 /* The published-accuracy line beside each cut-off select — same strings the
@@ -7449,9 +7632,10 @@ function renderPvtRail(){
       </div>${members}</div>`;
   }).join('');
 
-  const hint = c.total === 0
-    ? 'Score a measure to start the count.'
-    : c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
+  /* With nothing scored the section shows the bare 0/6 count alone — the
+     workspace card already carries the "enter scores" instruction, and the
+     Flagged stat is withheld rather than printed as 0/0. */
+  const hint = c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
     : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion.'
     : 'Nothing beyond its cut-off so far.';
 
@@ -7468,15 +7652,15 @@ function renderPvtRail(){
     <div class="pvt-rail-body">
       <div class="pvt-rail-section">
         <div class="pvt-rail-kicker">Indicators</div>
-        <div class="pvt-rail-stat${c.failed ? ' is-flagged' : ''}">
+        ${c.total > 0 ? `<div class="pvt-rail-stat${c.failed ? ' is-flagged' : ''}">
           <span class="pvt-rail-stat-label">Flagged</span>
           <span class="pvt-rail-stat-value">${c.failed}<span class="pvt-rail-sep">/</span>${c.total}</span>
-        </div>
+        </div>` : ''}
         <div class="pvt-rail-stat">
           <span class="pvt-rail-stat-label">Measures scored</span>
           <span class="pvt-rail-stat-value">${scored}<span class="pvt-rail-sep">/</span>${total}</span>
         </div>
-        <p class="pvt-rail-hint">${hint}</p>
+        ${c.total > 0 ? `<p class="pvt-rail-hint">${hint}</p>` : ''}
       </div>
       <div class="pvt-rail-section">
         <div class="pvt-rail-kicker">By indicator</div>
@@ -7524,9 +7708,87 @@ function clearPvt(){
   renderPvtAll();
 }
 
+/* ---------- the About landing tab ----------
+   The page lands here rather than on the Effort Index, which was only
+   ever first by markup order. Same idiom as the Change Analysis overview:
+   one row per measure, click to jump, a Counts-as column carrying the
+   independence grouping that the ≥ 2-failure rule depends on. Accuracy
+   cells are rendered from the SAME constants the method tabs print
+   (PVT_*_ACCURACY, PVT_TOMM_CUTOFFS), so this table cannot drift from
+   the pages it describes. */
+function renderPvtAboutPanel(){
+  const el = document.getElementById('pvt-about-body');
+  if (!el) return;
+  const t2 = PVT_TOMM_CUTOFFS.find(c => c.id === 't2-45');
+  const rows = [
+    { tab: 'ei', title: 'Effort Index', cite: 'Silverberg et al. (2007)',
+      source: 'RBANS embedded', group: 'RBANS', cut: 'EI &gt; 3',
+      sens: PVT_EI_ACCURACY.standard.sens, spec: PVT_EI_ACCURACY.standard.spec,
+      desc: 'Weighted sum of the Digit Span and List Recognition raw scores (0–12); higher = less credible.' },
+    { tab: 'es', title: 'Effort Scale', cite: 'Novitski et al. (2012)',
+      source: 'RBANS embedded', group: 'RBANS', cut: 'ES &lt; 12',
+      sens: null, spec: null, acc: `ROC AUC ${PVT_ES_ACCURACY.auc}`,
+      desc: 'List Recognition minus the three recall scores, plus Digit Span, all raw; computed only where its gate is met, because an ungated ES over-flags intact examinees.' },
+    { tab: 'rds', title: 'Reliable Digit Span', cite: 'Greiffenstein et al. (1994); Schroeder et al. (2012)',
+      source: 'WAIS embedded', group: 'Digit span', cut: 'RDS ≤ 6',
+      sens: PVT_RDS_ACCURACY.conservative.sens, spec: PVT_RDS_ACCURACY.conservative.spec,
+      desc: 'Longest forward span plus longest backward span passed on both trials.' },
+    { tab: 'ds', title: 'Digit Span indices', cite: 'Iverson &amp; Tulsky (2003); Axelrod et al. (2006)',
+      source: 'WAIS embedded', group: 'Digit span', cut: 'ACSS ≤ 5',
+      sens: PVT_DS_ACCURACY.conservative.sens, spec: PVT_DS_ACCURACY.conservative.spec,
+      desc: 'Age-corrected scaled-score cut-off, with Vocabulary − Digit Span and longest-span base rates alongside.' },
+    { tab: 'rey15', title: 'Rey 15-Item', cite: 'Boone et al. (2002)',
+      source: 'Stand-alone', group: 'Rey 15-Item', cut: 'Recall + recognition',
+      sens: PVT_REY15_ACCURACY.combo.sens, spec: PVT_REY15_ACCURACY.combo.spec,
+      desc: 'Free recall of fifteen over-learned items, with a recognition trial that raises sensitivity.' },
+    { tab: 'tomm', title: 'TOMM', cite: 'Tombaugh (1996); Martin et al. (2020)',
+      source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
+      sens: t2 ? (t2.sensRange || String(t2.sens).replace('0.', '.')) : '—',
+      spec: t2 ? (t2.specRange || String(t2.spec).replace('0.', '.')) : '—',
+      desc: 'Fifty-item forced-choice picture recognition; robust to most genuine impairment, though specificity falls in dementia.' }
+  ];
+  const body = rows.map(r => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
+    <td class="pvt-overview-measure">
+      <div class="pvt-overview-titlerow">
+        <span class="pvt-overview-title">${r.title}</span>
+        <button type="button" class="pvt-overview-info" data-pvtip="${r.desc}" aria-label="More about ${r.title}" tabindex="0">?</button>
+      </div>
+      <span class="pvt-overview-cite">${r.cite}</span>
+    </td>
+    <td class="pvt-overview-cell">${r.source}</td>
+    <td class="pvt-overview-cell">${r.group}</td>
+    <td class="pvt-overview-cell pvt-overview-acc">${r.acc
+      ? `<span class="pvt-overview-cut">${r.cut}</span>${r.acc}`
+      : `<span class="pvt-overview-cut">${r.cut}</span>sens. ${r.sens} · spec. ${r.spec}`}</td>
+    <td class="pvt-overview-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></td>
+  </tr>`).join('');
+  el.innerHTML = `<div class="pvt-overview-wrap">
+    <table class="pvt-overview-table">
+      <thead><tr>
+        <th class="pvt-overview-th is-measure">Measure</th>
+        <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity.">Source</span></th>
+        <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="Measures derived from the same administration of the same instrument share error and are not independent evidence: each named group counts as ONE indicator in the aggregation.">Counts as</span></th>
+        <th class="pvt-overview-th"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="Published accuracy at the cut-off named in the cell — the same figures printed beside each measure's cut-off selector.">Accuracy at default cut-off</span></th>
+        <th aria-hidden="true"></th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014) — measures sharing an instrument count as one between them, which is what the running summary's "counts as one" tags mean. The Summary tab reports Larrabee's published classification accuracy at each failure count. No single index is a verdict.</p>
+  </div>`;
+  el.querySelectorAll('[data-about-tab]').forEach(row => {
+    const go = () => switchPvtTab(row.dataset.aboutTab);
+    row.addEventListener('click', e => { if (e.target.closest('.pvt-overview-info')) return; go(); });
+    row.addEventListener('keydown', e => {
+      if (e.target.closest('.pvt-overview-info')) return;
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); }
+    });
+  });
+}
+
 function setupPvtPage(){
   const root = document.getElementById('validity');
   if (!root) return;
+  renderPvtAboutPanel();
   root.querySelectorAll('.pvt-method-tab').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
   });
@@ -9270,7 +9532,7 @@ const ReportBundle = (function(){
       } else {
         await navigator.clipboard.writeText(plain);
       }
-      if (typeof showToast === 'function') showToast(`✓ ${blocks.length} table${blocks.length===1?'':'s'} copied`);
+      if (typeof exportToast === 'function') exportToast(`✓ ${blocks.length} table${blocks.length===1?'':'s'} copied`);
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector('[data-rb-action="copy"]'));
       maybeShowKofiToast();
     } catch(e){
@@ -9381,7 +9643,7 @@ ${buildReportHtmlBody()}
           </svg>
         </span>
         <span class="rb-chip-label">Working Report <span class="rb-chip-sub">APA Tables</span></span>
-        <span class="rb-chip-count" data-rb-count>0</span>
+        <span class="rb-chip-count is-zero" data-rb-count>0</span>
       </button>
       <div class="rb-onboarding" data-rb-onboarding hidden aria-hidden="true">
         <div class="rb-onboarding-bubble">
@@ -10072,7 +10334,7 @@ ${buildReportHtmlBody()}
       } else {
         await navigator.clipboard.writeText(plain);
       }
-      if (typeof showToast === 'function') showToast('✓ Table copied to clipboard');
+      if (typeof exportToast === 'function') exportToast('✓ Table copied to clipboard');
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector(`[data-rb-item-copy="${id}"]`));
       maybeShowKofiToast();
     } catch(e){
@@ -10159,7 +10421,7 @@ ${buildReportHtmlBody()}
       } else {
         await navigator.clipboard.writeText(plain);
       }
-      if (typeof showToast === 'function') showToast('✓ Merged table copied to clipboard');
+      if (typeof exportToast === 'function') exportToast('✓ Merged table copied to clipboard');
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector(`[data-rb-group-copy="${idKey}"]`));
       maybeShowKofiToast();
     } catch(e){
@@ -10332,6 +10594,7 @@ ${buildReportHtmlBody()}
     const countNow = state.items.length;
     rootEl.querySelectorAll('[data-rb-count]').forEach(el => {
       el.textContent = String(countNow);
+      el.classList.toggle('is-zero', countNow === 0);
       // Pop the badge when the count goes UP (a new table was captured).
       if (countNow > rbPrevCount){
         el.classList.remove('rb-count-bump'); void el.offsetWidth; el.classList.add('rb-count-bump');

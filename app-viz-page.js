@@ -395,7 +395,7 @@
         throw new Error('no-clipboard-api');
       }
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      if (typeof showToast === 'function') showToast('✓ Chart copied to clipboard');
+      if (typeof exportToast === 'function') exportToast('✓ Chart copied to clipboard');
     } catch (e){
       if (typeof showToast === 'function'){
         showToast(e && e.message === 'no-clipboard-api'

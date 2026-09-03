@@ -4883,3 +4883,541 @@ input[type="number"].ds-age-pop-input{
    and no rule to make it bite, so it had never actually hidden. Scoped to the
    standalone class so no other bar section moves. */
 .ds-inline-bar-cibasis[hidden]{ display: none !important; }
+
+/* =====================================================================
+   THE HOME DIAL
+
+   Seven tools on a ring. The grid it replaces orphaned its last card at
+   every column count that divides seven, which is none of them but one
+   and seven: 3 / 3 / 1 at full width, 2 / 2 / 2 / 1 at the breakpoint.
+
+   All new standalone `.home-dial-*` names. Nothing here modifies
+   `.home-db-*`, which is still declared in this file and in styles.css.
+
+   Three things worth knowing before editing:
+
+   1. POSITION COMES FROM --a, NOT FROM SOURCE ORDER. Each node carries its
+      angle inline. The transform chain rotates to the angle, walks out by
+      the radius, rotates back so the label stays upright, then centres the
+      box on that point. To move a tool around the ring change its --a; do
+      NOT reorder the buttons, because their source order is the tab order
+      and it deliberately follows the clinical workflow.
+
+   2. THE DESCRIPTION LIVES IN THE HUB. A ring has nowhere to put a line of
+      body copy beside each label, which is the main thing that makes radial
+      layouts worse than grids. Putting it in the middle is what buys the
+      copy back. Inactive descriptions are hidden with opacity, never
+      display:none, so they stay in the accessibility tree for the
+      aria-describedby on each node.
+
+   3. THE RING IS NOT A LAYOUT, SO IT DOES NOT REFLOW. Below 760px the whole
+      thing becomes a plain vertical list and the hub becomes an ordinary
+      heading above it. That is a second layout for one component, accepted
+      deliberately here: a circle cannot narrow.
+   ===================================================================== */
+.home-dial{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* The separate page header above the ring is gone, so the dial IS the home
+     page and has to be placed against the viewport rather than stacked under
+     something. Without this it sits hard against the top with a few hundred
+     pixels of dead space beneath it.
+
+     The subtraction is the top bar plus this section's own vertical padding.
+     Falls back to a plain block of air on any browser that cannot resolve the
+     calc, so the page is never worse than top-aligned. */
+  /* The /0.9 is the body zoom, and it is not optional. styles.css sets
+     body{zoom:0.9}, so 100vh resolves to visual pixels while min-height is
+     applied in layout pixels: the two spaces differ by exactly that factor,
+     and without the division the ring sits 178px high in a 980px viewport.
+     Same split that positionBatteryAgePop divides by pageZoomFactor() for.
+     If that 0.9 ever changes in styles.css, this changes with it. */
+  min-height: calc((100vh - var(--topbar-h, 108px)) / 0.9 - 64px);
+}
+
+/* The home section is a single centred object, so its padding has to be
+   symmetric or "centred" is centred in an asymmetric box. Every other page
+   scrolls and keeps the deep 80px footer gap. */
+#home.section{
+  padding-top: 32px;
+  padding-bottom: 32px;
+}
+.home-dial-stage{
+  position: relative;
+  width: 640px;
+  height: 580px;
+  flex-shrink: 0;
+}
+
+/* The ring itself: a hairline the nodes sit on, so the arrangement reads as
+   deliberate rather than as scattered buttons. */
+.home-dial-ring{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 428px;
+  height: 428px;
+  margin: -214px 0 0 -214px;
+  border: 1px dashed rgba(156,61,42,0.22);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.home-dial-node{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  /* 136 wide on a 214 radius. Adjacent centres are 186px apart along the
+     chord, so the hit areas clear each other by 50px. At the first sizing,
+     146 wide on a 178 radius, two pairs of boxes intersected and each node
+     was clickable over part of its neighbour, which is why this is measured
+     rather than eyeballed. */
+  width: 136px;
+  /* rotate to the angle, walk out along the radius, rotate back upright,
+     then centre the box on the point it landed on. */
+  transform:
+    rotate(var(--a))
+    translateY(-214px)
+    rotate(calc(-1 * var(--a)))
+    translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 4px;
+  background: none;
+  border: none;
+  border-radius: var(--ds-radius-md);
+  cursor: pointer;
+  font-family: var(--sans);
+  color: var(--ds-text);
+  text-align: center;
+}
+.home-dial-dot{
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 5px rgba(20,15,8,0.08);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.home-dial-dot svg{ width: 23px; height: 23px; }
+.home-dial-label{
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--ds-text);
+  transition: color 180ms ease;
+}
+
+/* Every rule from here down is !important, and it is not decoration.
+   Without it these lose: an identical rule injected last in the document,
+   at 0-2-0 against a 0-1-0 base and with no !important competitor findable
+   anywhere in either stylesheet, still did not apply, while the same rule
+   carrying !important did. The overriding declaration was not identified;
+   what is established is that plain state rules do not survive in this
+   cascade, which is the same conclusion the narrow-viewport block reached
+   independently. Verified by driving a real pointer over a node, not by
+   calling a function. */
+.home-dial-node:hover .home-dial-dot,
+.home-dial-node:focus-visible .home-dial-dot{
+  border-color: var(--ds-primary) !important;
+  box-shadow: 0 4px 14px rgba(156,61,42,0.16), 0 1px 4px rgba(20,15,8,0.06) !important;
+  transform: translateY(-2px) !important;
+}
+.home-dial-node:hover .home-dial-label,
+.home-dial-node:focus-visible .home-dial-label{ color: var(--ds-primary) !important; }
+.home-dial-node:focus{ outline: none; }
+.home-dial-node:focus-visible{
+  outline: var(--ds-ring-width, 2px) solid var(--ds-primary-ring);
+  outline-offset: 3px;
+}
+
+/* ---- the hub ---- */
+.home-dial-hub{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 264px;
+  height: 264px;
+  margin: -132px 0 0 -132px;
+  border-radius: 50%;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  box-shadow: 0 2px 14px rgba(20,15,8,0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  pointer-events: none;
+}
+.home-dial-hub-rest,
+.home-dial-desc{
+  position: absolute;
+  left: 30px;
+  right: 30px;
+  margin: 0;
+  text-align: center;
+  transition: opacity 160ms ease;
+}
+.home-dial-hub-rest{
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.home-dial-hub-title{
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ds-text);
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.home-dial-hub-title em{
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ds-primary);
+}
+.home-dial-hub-hint{
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--ds-text-subtle);
+  letter-spacing: 0.01em;
+}
+.home-dial-desc{
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ds-text-muted);
+  opacity: 0;              /* never display:none — see note 2 above */
+}
+
+/* The description reveal is `data-active` only.
+
+   It used to also exist as `:hover ~ .home-dial-hub`, a forward-only sibling
+   combinator, which is why the hub was once the last child of the stage. That
+   copy is gone: it forced the page heading to sit after all seven buttons in
+   the reading order, and it never carried the feature anyway. The dot and
+   label still take :hover directly, which is a descendant selector and
+   unaffected by where the hub sits. */
+
+/* The same reveal, driven by `data-active` on the stage instead of by a state
+   pseudo-class. This is the path that actually carries the feature; the rules
+   above are kept so a browser resolving :hover loses nothing, but nothing
+   depends on them. See the note in design-system.js for why: state pseudo-
+   classes could not be confirmed to resolve when driving the real page, and an
+   attribute selector is ordinary cascade that can be set and read back.
+
+   It is also what makes the dial work on touch, where there is no hover. */
+.home-dial-stage[data-active] .home-dial-hub-rest{ opacity: 0 !important; }
+
+.home-dial-stage[data-active="0"] .home-dial-desc[data-dial-desc="0"],
+.home-dial-stage[data-active="1"] .home-dial-desc[data-dial-desc="1"],
+.home-dial-stage[data-active="2"] .home-dial-desc[data-dial-desc="2"],
+.home-dial-stage[data-active="3"] .home-dial-desc[data-dial-desc="3"],
+.home-dial-stage[data-active="4"] .home-dial-desc[data-dial-desc="4"],
+.home-dial-stage[data-active="5"] .home-dial-desc[data-dial-desc="5"],
+.home-dial-stage[data-active="6"] .home-dial-desc[data-dial-desc="6"]{
+  opacity: 1 !important;
+}
+
+.home-dial-stage[data-active="0"] .home-dial-node[data-dial="0"] .home-dial-dot,
+.home-dial-stage[data-active="1"] .home-dial-node[data-dial="1"] .home-dial-dot,
+.home-dial-stage[data-active="2"] .home-dial-node[data-dial="2"] .home-dial-dot,
+.home-dial-stage[data-active="3"] .home-dial-node[data-dial="3"] .home-dial-dot,
+.home-dial-stage[data-active="4"] .home-dial-node[data-dial="4"] .home-dial-dot,
+.home-dial-stage[data-active="5"] .home-dial-node[data-dial="5"] .home-dial-dot,
+.home-dial-stage[data-active="6"] .home-dial-node[data-dial="6"] .home-dial-dot{
+  border-color: var(--ds-primary) !important;
+  box-shadow: 0 4px 14px rgba(156,61,42,0.16), 0 1px 4px rgba(20,15,8,0.06) !important;
+  transform: translateY(-2px) !important;
+}
+
+.home-dial-stage[data-active="0"] .home-dial-node[data-dial="0"] .home-dial-label,
+.home-dial-stage[data-active="1"] .home-dial-node[data-dial="1"] .home-dial-label,
+.home-dial-stage[data-active="2"] .home-dial-node[data-dial="2"] .home-dial-label,
+.home-dial-stage[data-active="3"] .home-dial-node[data-dial="3"] .home-dial-label,
+.home-dial-stage[data-active="4"] .home-dial-node[data-dial="4"] .home-dial-label,
+.home-dial-stage[data-active="5"] .home-dial-node[data-dial="5"] .home-dial-label,
+.home-dial-stage[data-active="6"] .home-dial-node[data-dial="6"] .home-dial-label{
+  color: var(--ds-primary) !important;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .home-dial-stage[data-active] .home-dial-node .home-dial-dot{ transform: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .home-dial-dot,
+  .home-dial-label,
+  .home-dial-hub-rest,
+  .home-dial-desc{ transition: none; }
+  .home-dial-node:hover .home-dial-dot,
+  .home-dial-node:focus-visible .home-dial-dot{ transform: none; }
+}
+
+/* ---- below 760px the ring becomes a list ----------------------------
+   A circle cannot narrow: shrink the radius far enough for a phone and the
+   labels collide. So the stage stops being a stage, the transforms are
+   dropped, and the same seven buttons stack. The hub goes with it, since a
+   hover-revealed description is no use on a touch screen. */
+@media (max-width:760px){
+  .home-dial{ display: block; min-height: 0; }
+  .home-dial-stage{
+    position: static;
+    width: auto;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .home-dial-ring{ display: none; }
+
+  /* The hub stops being a hub and becomes the page heading above the list.
+     It must NOT be display:none here: it holds the only H1 on the page, so
+     hiding it would leave the mobile home page with seven unlabelled buttons
+     and no title at all. */
+  .home-dial-hub{
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0 0 8px;
+    padding: 0;
+    display: block;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .home-dial-hub-rest{
+    position: static;
+    left: auto;
+    right: auto;
+    text-align: left;
+    gap: 7px;
+  }
+  .home-dial-hub-title{ font-size: 27px; }
+  .home-dial-hub-hint{ font-size: 12.5px; }
+
+  /* Descriptions have nowhere to go on a touch screen and no hover to reveal
+     them, but they are still each node's aria-describedby target, so they are
+     clipped rather than removed. display:none would take them out of the
+     accessibility tree along with the description. */
+  .home-dial-desc{
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    opacity: 1 !important;
+  }
+  .home-dial-node{
+    position: static;
+    transform: none;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 13px;
+    text-align: left;
+    padding: 13px 15px;
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-lg);
+    box-shadow: 0 1px 4px rgba(20,15,8,0.06);
+  }
+  .home-dial-dot{
+    width: 38px;
+    height: 38px;
+    border: none;
+    box-shadow: none;
+    background: rgba(156,61,42,0.07);
+    border-radius: 10px;
+  }
+  .home-dial-dot svg{ width: 19px; height: 19px; }
+  .home-dial-label{ font-size: 14px; }
+}
+
+/* =====================================================================
+   THE LONG-FORM TOAST
+
+   Only the once-ever first-export notice uses this. The ordinary toast is
+   `white-space:nowrap` and sized for "Table copied"; a full sentence in that
+   box runs off a narrow screen.
+
+   A compound rather than a standalone class is deliberate and checked: the
+   only `white-space:nowrap` on .toast is the 0-1-0 rule in styles.css, so
+   0-2-0 wins it outright without !important. The two design-system.css .toast
+   rules set colour and radius and do not touch layout, so nothing here is in
+   contention with them.
+   ===================================================================== */
+.toast.is-longform{
+  white-space: normal;
+  max-width: min(560px, calc(100vw - 32px));
+  text-align: left;
+  line-height: 1.45;
+}
+
+/* =====================================================================
+   THE STANDING PRIVACY LINE
+
+   A standalone class, not a modifier of anything in the footer. `.site-footer`
+   and `.site-footer-links` are each declared in both stylesheets, and this
+   needs no part of that argument.
+
+   Quiet on purpose: it is a reassurance a clinician looks for once, not a
+   banner. It sits in the footer's right-hand grid column and reads as a
+   statement of fact rather than a notice to be dismissed.
+   ===================================================================== */
+.site-footer-privacy{
+  margin: 0;
+  justify-self: end;
+  font-family: var(--sans);
+  font-size: var(--ds-text-xs);
+  line-height: 1.4;
+  color: var(--ds-text-subtle);
+  text-align: right;
+}
+/* The footer's three columns are sized for a wide window. Left as a 3-up grid
+   on a narrow one, this sentence gets a 47px column and stacks into a column
+   of single words. Below 900px the footer goes single-column instead.
+
+   Collapsing grid-template-columns is not enough on its own. The version stamp
+   carries `grid-column: 2` to centre it in the wide layout, and an explicit
+   placement into column 2 creates an IMPLICIT second column no matter how few
+   explicit tracks are declared: the row stayed two-up and only got narrower.
+   The placement has to be released as well, which is what the second rule
+   does. Verified on the rendered page, since the computed value is the only
+   thing that shows it. */
+@media (max-width:900px){
+  .site-footer-inner{
+    grid-template-columns: minmax(0,1fr);
+    justify-items: start;
+    gap: var(--ds-space-3);
+  }
+  .site-footer-inner .ds-version-stamp{
+    grid-column: auto;
+    justify-self: start;
+  }
+  .site-footer-privacy{ justify-self: start; text-align: left; }
+}
+
+/* =====================================================================
+   NARROW-VIEWPORT CONTAINMENT
+
+   Not a mobile layout, and it does not claim to be one. The scores tables
+   are transcribed from a paper record form at a desk. What this block
+   buys is that a narrow window degrades HONESTLY: the page itself stops
+   sliding sideways, so the top bar and the nav stay put, and a wide table
+   scrolls inside its own box instead of dragging the whole document with
+   it.
+
+   Measured at a 375px viewport against a 417px content column, before:
+   913 layout px on Score Converter, 745 on Change Analysis, 658 on Score
+   Tables, 1050 on the top nav.
+
+   Two things to know before editing:
+
+   1. Every rule here needs BOTH section-id specificity and !important.
+      Plain class selectors lose to the page-scoped blocks in styles.css:
+      `.change-method-tabs{overflow-x:auto}` was beaten silently, and the
+      symptom is not an error but a strip that simply keeps overflowing.
+      Verified by driving the page, not by reading the markup.
+
+   2. Put the overflow on the TABLE, never on a panel or block that wraps it.
+      A panel can hold a position:fixed popover, and `staggerSectionContent`
+      transforms panel children on page entry: a transformed ancestor makes a
+      fixed child clippable, so an overflow container around it would make the
+      popover vanish rather than scroll. `.bat-table-block` was the specific
+      case when this was written, holding the missing-age popover; that
+      popover has since been replaced by a required inline bar, but the rule
+      is about the shape, not that one element.
+   ===================================================================== */
+@media (max-width:900px){
+
+  /* --- Wide tables scroll inside themselves ------------------------- */
+  /* display:block turns the table into a scrollable box while the
+     internal thead/tbody/tr still form anonymous table boxes, so no
+     column can come adrift from its heading. That is the reason this is
+     not a reflow-to-cards layout: a header/cell mismatch on a scores
+     table is a misreported number, not a cosmetic fault. */
+  #bat-table,#sdi-table,#rci-basic-table,#rci-practice-table,
+  #rci-srb-table,#rci-crawford-table,#pre-predict-table,
+  #pre-opiepredict-table,#change-analysis .change-overview-table,
+  #validity .pvt-table,
+  .db-table,.methods-table,.es-examples-table{
+    display:block !important;
+    width:100% !important;
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* --- Horizontal control strips scroll rather than overflow -------- */
+  /* Scrolling, not wrapping: --topbar-h must stay constant, because the
+     toast and both popovers position against it. */
+  .topnav,
+  #change-analysis .change-method-tabs,
+  #validity .pvt-method-tabs{
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .topnav::-webkit-scrollbar,
+  #change-analysis .change-method-tabs::-webkit-scrollbar,
+  #validity .pvt-method-tabs::-webkit-scrollbar{display:none}
+  .topnav-item,
+  #change-analysis .change-method-tab,
+  #validity .pvt-method-tab{flex-shrink:0 !important}
+
+  /* --- Segmented control bars wrap --------------------------------- */
+  #battery .ds-prem-card,
+  #battery .ds-prem-mode-row,
+  #battery .ds-inline-bar-toggle{flex-wrap:wrap !important}
+  .ds-inline-bar-toggle-btn{min-width:0 !important;flex:1 1 auto}
+
+  /* --- Grid tracks may shrink below their content ------------------- */
+  /* `1fr` means `minmax(auto,1fr)`, so one long label sets a min-content
+     floor and the whole grid blows past the viewport. That is what put
+     Score Converter at 913px: a single 846px track inside a 337px panel. */
+  .field-row,.field-row-3,.field-row-4{grid-template-columns:minmax(0,1fr)}
+  #converter .conv-unified-panel,
+  #converter .conv-unified-panel > .field-row,
+  #effectsize .es-stat-row{grid-template-columns:minmax(0,1fr) !important}
+  #effectsize .es-mode-pane{min-width:0 !important}
+  .section,.panel,.field,.tabs .tab,
+  .field-row > *,.field-row input,.field-row select{min-width:0 !important}
+  .tabs .tab span{white-space:normal}
+
+  /* --- Tab strips wrap --------------------------------------------- */
+  /* Pinned nowrap by `#premorbid.ds-prem-restructured .pre-tabs`, which is
+     1-2-0 AND !important, so a 1-1-0 override loses even carrying !important
+     of its own. The page-state class has to be matched to beat it. Three tabs
+     of 158 + 134 + 146 in a 251px strip is what it was producing. */
+  #premorbid.ds-prem-restructured .pre-tabs{flex-wrap:wrap !important}
+  #premorbid .pre-tabs .tab{flex:1 1 auto !important;min-width:0 !important}
+
+  /* --- Two-up panels stack ------------------------------------------ */
+  /* Effect Sizes puts the slider row beside the mode pane in a nowrap flex
+     row: 252 + 16 + 175 against a 303px card. */
+  #effectsize .es-input-panel{flex-wrap:wrap !important}
+  #effectsize .es-input-panel > *{flex:1 1 100% !important;min-width:0 !important}
+
+  /* The premorbid link button is a 206px control inside a 22px anchor
+     wrapper, so it overflows its own wrapper by design and lands off-screen
+     once the card is narrow. `.ds-prem-card` already wraps, so giving the
+     wrapper a full-width basis puts the button on its own row. */
+  #battery .bat-prem-link-wrap{flex:1 1 100% !important;min-width:0 !important}
+  #battery .bat-prem-link-btn{max-width:100% !important}
+}
