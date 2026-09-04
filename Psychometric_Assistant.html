@@ -16041,12 +16041,36 @@ input[type="number"].ds-age-pop-input{
   #bat-table,#sdi-table,#rci-basic-table,#rci-practice-table,
   #rci-srb-table,#rci-crawford-table,#pre-predict-table,
   #pre-opiepredict-table,#change-analysis .change-overview-table,
-  #validity .pvt-table,
+  #validity .pvt-table,#validity .pvt-overview-table,
   .db-table,.methods-table,.es-examples-table{
     display:block !important;
     width:100% !important;
     overflow-x:auto !important;
     -webkit-overflow-scrolling:touch;
+  }
+
+  /* The overview table on the Validity About tab carries `overflow:visible`
+     so its two hover tooltips (`.pvt-overview-colh::before` at 320px and
+     `.pvt-overview-info::before` at 340px, both absolutely positioned inside
+     the table) can escape the table box. Making the table a scroll box takes
+     that away: `overflow-x:auto` forces the y axis to `auto` as well, so a
+     tooltip is clipped at the box edge.
+
+     That is accepted here rather than worked around. Below 900px the table
+     is 845 layout px against a 417px column, and the whole document used to
+     slide sideways with it; a hover affordance is pointer-only and is not
+     reachable on the touch devices this width mostly means. What is done for
+     it is the two rules below: the tooltip is narrowed to the viewport so it
+     cannot sit off-screen, and the row tooltip is flipped to open DOWNWARD,
+     because opening upward put it above the first row and hard against the
+     top edge of the new scroll box, where nothing can scroll it back. */
+  #validity .pvt-overview-colh::before,
+  #validity .pvt-overview-info::before{
+    width:min(320px, calc(100vw - 64px)) !important;
+  }
+  #validity .pvt-overview-info::before{
+    bottom:auto !important;
+    top:calc(100% + 8px) !important;
   }
 
   /* --- Horizontal control strips scroll rather than overflow -------- */
