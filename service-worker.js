@@ -7,7 +7,7 @@
    Bump CACHE_VERSION below whenever you ship changes you want to force-
    refresh — old caches will be deleted on activation. */
 
-const CACHE_VERSION = 'psyassist-0.10.0';
+const CACHE_VERSION = 'psyassist-0.10.1';
 
 /* Bare URLs (no ?v=...) — the SW also caches versioned variants on demand
    via the fetch handler below, so this list is just for first-paint speed. */
@@ -21,6 +21,7 @@ const PRECACHE_URLS = [
   './design-system.js',
   './app-effectsize-page.js',
   './app-viz-page.js',
+  './app-profile-page.js',
   './manifest.json',
   './icon.svg',
   './icon-maskable.svg'
@@ -58,8 +59,23 @@ self.addEventListener('fetch', event => {
      HTTP caching. */
   if (url.origin !== location.origin) return;
 
+  /* MATCH ON THE FULL URL, QUERY STRING INCLUDED.
+
+     This used to pass { ignoreSearch: true }, which made the ?v= mechanism
+     inert: a request for `app.js?v=20260910d` matched the precached bare
+     `app.js` and the stale copy was served, whatever the version string said.
+     CLAUDE.md calls ?v= and CACHE_VERSION "two separate mechanisms, both
+     needed" — with ignoreSearch only the second one did anything, so shipping
+     a change meant bumping CACHE_VERSION and hoping, and a ?v= bump alone
+     changed nothing at all.
+
+     With it removed, a new ?v= is a cache miss, is fetched, and is cached
+     under its own URL. The cost is one extra fetch per file per version, which
+     is exactly what a cache-buster is for. The bare URLs stay in the precache
+     list for first paint; the navigation fallback below still asks for
+     './index.html' bare, which is how it is stored. */
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then(cached => {
+    caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
         if (response && response.ok){

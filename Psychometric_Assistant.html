@@ -16904,7 +16904,6 @@ input[type="number"].ds-age-pop-input{
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-practice" role="menuitem">Practice Effect-Adjusted</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">McSweeney Regression-Based</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="profile" role="menuitem">Profile Analysis</button>
           </div>
         </div>
         <button type="button" class="topnav-item nav-item" data-target="validity" data-bucket="validity">
@@ -16940,6 +16939,16 @@ input[type="number"].ds-age-pop-input{
           </svg>
           <span>Score Charts</span>
         </button>
+        <button type="button" class="topnav-item nav-item" data-target="profile" data-bucket="profile">
+          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3,12 7,6 11,13 17,8"/>
+            <circle cx="3" cy="12" r="1.3"/>
+            <circle cx="7" cy="6" r="1.3"/>
+            <circle cx="11" cy="13" r="1.3"/>
+            <circle cx="17" cy="8" r="1.3"/>
+          </svg>
+          <span>Profile Analysis</span>
+        </button>
       </nav>
     </div>
   </div>
@@ -16962,11 +16971,11 @@ input[type="number"].ds-age-pop-input{
     <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">03</span>Change Analysis</div>
     <div class="nav-item" data-target="validity"><span class="nav-item-num">04</span>Performance Validity</div>
     <div class="nav-item" data-target="charts"><span class="nav-item-num">05</span>Score Charts</div>
-    <div class="nav-item" data-target="profile"><span class="nav-item-num">10</span>Profile Analysis</div>
-    <div class="nav-item" data-target="converter"><span class="nav-item-num">06</span>Score Converter</div>
-    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">07</span>Effect Size Tools</div>
-    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">08</span>Data</div>
-    <div class="nav-item" data-target="about"><span class="nav-item-num">09</span>Methods &amp; References</div>
+    <div class="nav-item" data-target="profile"><span class="nav-item-num">06</span>Profile Analysis</div>
+    <div class="nav-item" data-target="converter"><span class="nav-item-num">07</span>Score Converter</div>
+    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">08</span>Effect Size Tools</div>
+    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">09</span>Data</div>
+    <div class="nav-item" data-target="about"><span class="nav-item-num">10</span>Methods &amp; References</div>
   </nav>
 
   <div class="sidebar-foot">
@@ -30449,6 +30458,7 @@ refreshAll();
     'rci-crawford': 'change',
     'change-analysis': 'change',
     charts: 'charts',
+    profile: 'profile',
     validity: 'validity',
     premorbid: 'premorbid'
     // Norms (custom-tests) and Reference (about) live in the footer, not the top nav
@@ -30468,11 +30478,15 @@ refreshAll();
     'rci-crawford': 'Crawford Regression-Based',
     'change-analysis': 'Change Analysis',
     charts: 'Score Charts',
+    profile: 'Profile Analysis',
     validity: 'Performance Validity',
     premorbid: 'Premorbid Estimation',
     'custom-tests': 'Data',
-    about: 'Methods & References'
-  };
+    about: 'Methods & References',
+    /* Footer page, absent from TOPNAV_BUCKETS by design — but the brand row
+       still names every page it can land on. */
+    'privacy-use': 'Privacy & Use'
+  }
 
   function syncTopnav(){
     const active = document.querySelector('.section.active');
