@@ -788,7 +788,7 @@ check('the dead per-method formula blocks are gone from the Change Analysis page
      page not listed here has to be acknowledged, which is what the count was
      really buying. */
   const OWNS_A_DISCLOSURE = { validity: 8, charts: 1, profile: 1 };
-  const secs = [...html.matchAll(/<section class="section" id="([^"]+)"/g)]
+  const secs = [...html.matchAll(/<section class="section[^"]*" id="([^"]+)"/g)]
     .map(m => ({ id: m[1], at: m.index }));
   secs.push({ id: '<end>', at: html.length });
   const found = {};
@@ -8443,6 +8443,144 @@ check('the bundle carries the current content of its sources', () => {
   }
   return bad.length === 0 || bad.join('; ');
 });
+
+heading('46. Every page is actually reachable, and knows which nav item it is');
+
+/* THE PAGE SHIPPED UNREACHABLE IN PRACTICE, and none of §45's wiring checks
+   saw it. They asserted the section exists, the module loads, and two nav
+   entries point at it — all true, and all beside the point:
+
+     - one of those two entries was in the sidebar, which is 0x0 at desktop
+       width, so it renders nothing;
+     - the other was buried in the Change Analysis dropdown, five items down,
+       though Profile Analysis is a page in its own right like Effect Sizes
+       and Score Charts, not a change-analysis method;
+     - and TOPNAV_BUCKETS had no entry for it, so syncTopnav fell through to
+       'home' and the top bar highlighted HOME while the Profile page was on
+       screen.
+
+   "A nav element exists" is not the property worth asserting. These check the
+   properties that actually make a page usable, over EVERY section, so the next
+   page cannot repeat any of it. */
+
+check('every navigable section has a top-bar entry that is visible without a menu', () => {
+  const ids = [...HTML_SRC.matchAll(/<section class="section[^"]*" id="([^"]+)"/g)].map(m => m[1]);
+  /* Two live in the footer by design, and the top bar says so in a comment
+     beside TOPNAV_BUCKETS. Anything else must be in the top bar proper. */
+  const FOOTER_PAGES = new Set(['custom-tests', 'about', 'privacy-use']);
+  const bad = [];
+  for (const id of ids) {
+    if (FOOTER_PAGES.has(id)) continue;
+    const top = new RegExp('<button[^>]*class="topnav-item[^"]*"[^>]*data-target="' + id + '"').test(HTML_SRC);
+    const drop = new RegExp('<button[^>]*class="topnav-drop-item[^"]*"[^>]*data-target="' + id + '"').test(HTML_SRC);
+    /* A dropdown entry alone is not enough for a page that is not a member of
+       that dropdown's own group — it is reachable only by opening a menu that
+       names something else. */
+    if (!top && !drop) bad.push('#' + id + ' has no top-bar entry at all');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* syncTopnav reads TOPNAV_BUCKETS[id] and falls back to 'home'. A missing
+   entry is therefore silent and actively wrong: the top bar claims Home while
+   another page is on screen. Same for the brand-row title. */
+check('every section is in TOPNAV_BUCKETS and PAGE_TITLES', () => {
+  const ids = [...HTML_SRC.matchAll(/<section class="section[^"]*" id="([^"]+)"/g)].map(m => m[1]);
+  const buckets = APP_SRC.slice(APP_SRC.indexOf('const TOPNAV_BUCKETS = {'));
+  const bucketBody = buckets.slice(0, buckets.indexOf('};'));
+  const titles = APP_SRC.slice(APP_SRC.indexOf('const PAGE_TITLES = {'));
+  const titleBody = titles.slice(0, titles.indexOf('};'));
+  const has = (body, id) => new RegExp("(^|[{,\\s])'?" + id.replace(/-/g, '\\-') + "'?\\s*:").test(body);
+  const bad = [];
+  /* The footer pages are deliberately outside the top bar — the comment beside
+     TOPNAV_BUCKETS says so — so they need no bucket. They still need a title. */
+  const FOOTER_PAGES = new Set(['custom-tests', 'about', 'privacy-use']);
+  for (const id of ids) {
+    if (id === 'home') continue;               // the fallback IS home
+    if (!FOOTER_PAGES.has(id) && !has(bucketBody, id)) bad.push('#' + id + ' is not in TOPNAV_BUCKETS, so the top bar will highlight Home on it');
+    if (!has(titleBody, id)) bad.push('#' + id + ' is not in PAGE_TITLES, so the brand row has no name for it');
+  }
+  /* And every bucket named on a topnav button must be a value some section
+     maps to, or that button can never light up. */
+  const declared = new Set([...HTML_SRC.matchAll(/class="topnav-item[^"]*"[^>]*data-bucket="([^"]+)"/g)].map(m => m[1]));
+  for (const b of declared) {
+    if (!new RegExp(":\\s*'" + b + "'").test(bucketBody)) bad.push('the top-bar bucket "' + b + '" is never produced by any section');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The sidebar numbers are positions. Inserting a page mid-list without
+   renumbering leaves 05, 10, 06, 07 — which reads as missing pages. */
+check('the sidebar is numbered by position, with no gaps or repeats', () => {
+  const start = HTML_SRC.indexOf('<nav class="nav-list"');
+  const block = HTML_SRC.slice(start, HTML_SRC.indexOf('</nav>', start));
+  const nums = [...block.matchAll(/<span class="nav-item-num">(\d+)<\/span>/g)].map(m => m[1]);
+  const bad = [];
+  nums.forEach((n, i) => {
+    const want = String(i).padStart(2, '0');
+    if (n !== want) bad.push('entry ' + (i + 1) + ' is numbered ' + n + ', not ' + want);
+  });
+  /* Every sidebar entry must point at a real section, and every non-footer
+     section should be in the sidebar. */
+  const ids = [...HTML_SRC.matchAll(/<section class="section[^"]*" id="([^"]+)"/g)].map(m => m[1]);
+  /* #change-analysis is BUILT BY JS at runtime, so it is absent from the
+     markup and present in TOPNAV_BUCKETS. Either register counts. */
+  const buckets = APP_SRC.slice(APP_SRC.indexOf('const TOPNAV_BUCKETS = {'));
+  const bucketBody = buckets.slice(0, buckets.indexOf('};'));
+  for (const m of block.matchAll(/data-target="([^"]+)"/g)) {
+    const known = ids.includes(m[1])
+      || new RegExp("(^|[{,\\s])'?" + m[1].replace(/-/g, '\\-') + "'?\\s*:").test(bucketBody);
+    if (!known) bad.push('the sidebar points at #' + m[1] + ', which is neither a section nor a known bucket');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+heading('47. The service worker cannot serve a stale version');
+
+const SW_SRC = fs.readFileSync(path.join(ROOT, 'service-worker.js'), 'utf8');
+
+/* THE ?v= MECHANISM WAS INERT, and CLAUDE.md's shipping instructions depended
+   on it. The fetch handler matched with { ignoreSearch: true }, so a request
+   for `app.js?v=<new>` matched the precached bare `app.js` and the stale copy
+   was served whatever the version string said. Only CACHE_VERSION did anything,
+   which is why a change could be provably in the file, provably served, and
+   still not appear. */
+check('the fetch handler matches on the full URL, so ?v= actually busts', () => {
+  const bad = [];
+  /* Test the CALL, not the word — the comment above it in service-worker.js
+     explains the defect and necessarily names the option. */
+  const code = SW_SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  if (/ignoreSearch/.test(code)) {
+    bad.push('the cache lookup still ignores the query string, so ?v= changes nothing');
+  }
+  if (!/caches\.match\(event\.request\)/.test(SW_SRC)) {
+    bad.push('the fetch handler no longer matches on the request itself');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* A script the page loads but the worker never precaches still works — the
+   fetch handler picks it up — but it is missing from first paint and offline,
+   silently. The list and index.html must agree. */
+check('the precache list covers every script and stylesheet the page loads', () => {
+  const wanted = [
+    ...[...HTML_SRC.matchAll(/<script src="([^"?]+)/g)].map(m => m[1]),
+    ...[...HTML_SRC.matchAll(/<link rel="stylesheet" href="([^"?]+)/g)].map(m => m[1])
+  ].filter(u => !/^https?:/.test(u));
+  const bad = [];
+  for (const f of wanted) {
+    if (!SW_SRC.includes("'./" + f + "'")) bad.push(f + ' is loaded by index.html but never precached');
+  }
+  if (!wanted.length) bad.push('index.html appears to load nothing local, which cannot be right');
+  /* And nothing precached may have gone missing from disk. */
+  for (const m of SW_SRC.matchAll(/'\.\/([^']+)'/g)) {
+    const f = m[1];
+    if (!f || f === 'index.html') continue;
+    if (!fs.existsSync(path.join(ROOT, f))) bad.push(f + ' is precached but does not exist');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
 
 heading('45. The Profile Analysis page');
 

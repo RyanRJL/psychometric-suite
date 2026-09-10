@@ -8582,6 +8582,7 @@ refreshAll();
     'rci-crawford': 'change',
     'change-analysis': 'change',
     charts: 'charts',
+    profile: 'profile',
     validity: 'validity',
     premorbid: 'premorbid'
     // Norms (custom-tests) and Reference (about) live in the footer, not the top nav
@@ -8601,10 +8602,14 @@ refreshAll();
     'rci-crawford': 'Crawford Regression-Based',
     'change-analysis': 'Change Analysis',
     charts: 'Score Charts',
+    profile: 'Profile Analysis',
     validity: 'Performance Validity',
     premorbid: 'Premorbid Estimation',
     'custom-tests': 'Data',
-    about: 'Methods & References'
+    about: 'Methods & References',
+    /* Footer page, absent from TOPNAV_BUCKETS by design — but the brand row
+       still names every page it can land on. */
+    'privacy-use': 'Privacy & Use'
   };
 
   function syncTopnav(){

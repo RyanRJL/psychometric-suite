@@ -82,6 +82,15 @@ for (const k of await caches.keys()) await caches.delete(k);
 
 then navigate again. This bites roughly every second session.
 
+**And until 2026-09 the `?v=` half of the mechanism did nothing at all.** The fetch
+handler matched with `{ ignoreSearch: true }`, so a request for `app.js?v=<new>` matched
+the precached **bare** `app.js` and the stale copy was served whatever the version string
+said. Only `CACHE_VERSION` ever had an effect — which is precisely the symptom above,
+"provably in the file, provably served, and not on screen". `ignoreSearch` is gone;
+`check.js` §47 asserts the call, not the word, since the comment beside it necessarily
+names the option. §47 also asserts the precache list covers every script and stylesheet
+`index.html` loads — `app-profile-page.js` shipped missing from it.
+
 ### The CSS cascade will silently eat your rule
 
 Two stylesheets load in order: `styles.css` (9.1k lines, ~1600 `!important`) then
@@ -1121,9 +1130,45 @@ or more abnormal score **falls** as the correlations rise, while the percentage 
 several **rises**. An implementation mishandling the covariance breaks the pattern, not
 just the digits.
 
-**There is no UI yet, and that is a known state, not an oversight.** The engine and the
-matrix ship verified and unwired; `check.js` is currently their only caller. Whoever
-adds the UI should read the `check.js` §16/§17 note above first.
+The engine shipped verified but **unwired** for one commit, with `check.js` its only
+caller. It has a UI now — see the Profile Analysis page below — and the two sections
+immediately following record what wiring a page actually takes, which turned out to be
+four registrations rather than one.
+
+### Adding a page needs four registrations, not one
+
+The Profile Analysis page shipped **unreachable in practice**, and the wiring checks that
+existed did not see it. They asserted the section exists, the module loads, and two nav
+entries point at it — all true, and all beside the point:
+
+- one of those entries was the **sidebar**, which measures **0×0 at desktop width**, so it
+  renders nothing (the same wholesale-hidden-panel trap `#bat-age` hit);
+- the other was buried five items down the **Change Analysis dropdown**, though this is a
+  page in its own right like Effect Sizes and Score Charts, not a change-analysis method;
+- **`TOPNAV_BUCKETS` had no entry**, so `syncTopnav` fell through to `'home'` and the top
+  bar highlighted **Home** while the Profile page was on screen;
+- **`PAGE_TITLES` had no entry**, so the brand row had no name for it.
+
+So a page needs all four, and `check.js` §46 asserts them over **every** section rather
+than for one page:
+
+| Registration | Where | Symptom if missed |
+|---|---|---|
+| `<section class="section" id="…">` | `index.html` | `isNavigableSection` refuses to navigate |
+| a **top-level** `.topnav-item` with `data-bucket` | `index.html` | reachable only by opening a menu, or not at all |
+| `TOPNAV_BUCKETS[id]` | `app.js` | the top bar highlights Home instead |
+| `PAGE_TITLES[id]` | `app.js` | the brand row is blank |
+
+Plus `design-system.js`'s own `TITLE_MAP`, the module `<script>` tag, and the service
+worker's `PRECACHE_URLS`.
+
+Two facts that make a naive check wrong, both learned by writing one that failed:
+**`#change-analysis` is built by JS at runtime**, so it is absent from the markup and
+present only in `TOPNAV_BUCKETS`; and **`custom-tests`, `about` and `privacy-use` live in
+the footer**, deliberately outside the top bar, so they carry a title but no bucket.
+
+The **sidebar numbers are positions**, so inserting a page mid-list without renumbering
+leaves `05, 10, 06, 07` — which reads as missing pages. §46 asserts the sequence.
 
 ### The Profile Analysis page (`app-profile-page.js`, `#profile`)
 
@@ -1447,7 +1492,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 367 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 372 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
