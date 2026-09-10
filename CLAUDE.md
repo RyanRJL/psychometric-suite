@@ -132,6 +132,44 @@ guessing:
   .map(r => r.cssText)
 ```
 
+### `overflow:hidden` on a table silently kills a sticky header
+
+Score Tables and the four Change Analysis methods scroll inside their own box
+(`.table-viewport`, `styles.css`) so the control bar, the add-row buttons and
+the report chip stay put while long tables are worked. The header rows are
+`position:sticky` on `<thead>`.
+
+**It did not stick, and `position` computed as `sticky` the whole time.** Three
+separate `.input-table` rules in `styles.css` set `overflow:hidden`, each one
+clipping the table's own rounded corners — and an element with `overflow:hidden`
+**is a scroll container**. So the sticky header was sticking to the *table*,
+which never scrolls, rather than to the viewport, and scrolled clean out of the
+box. Nothing threw, and every computed property matched a working control.
+
+Found by bisecting the class list against a control table in the same parent:
+with `class="input-table"` removed the header stuck, with it present it did not.
+`.table-viewport .input-table{overflow:visible}` is the fix. **If a sticky
+header ever stops sticking, check every ancestor up to the scroll container for
+`overflow` — including the table itself.**
+
+Two things that follow, both learned the same way:
+
+- **The header background must be opaque or the rows scroll through it.** Every
+  header tint in this app is translucent over a white card, and
+  `#battery #bat-table thead th` carries `!important`, which no unprefixed
+  selector outranks. The opacity is supplied by `.table-viewport thead tr`
+  instead — nothing else in either stylesheet targets `thead tr`, so it needs no
+  `!important` and each cell's own tint layers on top exactly as designed. That
+  is the cascade rule below applied sideways: pick an element nobody has claimed.
+- **The four Change Analysis tables have a TWO-ROW header**
+  (`applyRciGroupedHeaders` inserts `.table-group-row` above the column row), so
+  sticky goes on `<thead>` rather than on `<th>`: two rows each stuck at `top:0`
+  would sit on top of one another. Sticking the thead moves both together
+  whatever the row count.
+
+The height cap is fixed px, not `vh`: `body{zoom:0.9}` scales vh-derived lengths
+too, so a vh cap renders 10% shorter than it reads.
+
 ### A large deletion will take its neighbours with it
 
 `app.js` ends feature code and top-level init code in the same flat file, with no
