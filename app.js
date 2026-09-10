@@ -3068,6 +3068,193 @@ function buildApaTableFromColumns(outId, columns, rows, groupLabelFn, groupDispl
   return `<table class="apa-table"><thead>${header}</thead><tbody>${body}</tbody></table>`;
 }
 
+/* ============================================================================
+   ABNORMALITY OF A SCORE PROFILE — Crawford, Garthwaite & Gault (2007)
+
+   "Estimating the percentage of the population with abnormally low scores (or
+   abnormally large score differences) on standardized neuropsychological test
+   batteries: A generic method with applications." Neuropsychology, 21, 419-430.
+
+   THE QUESTION THIS ANSWERS is the one a battery raises and a single row
+   cannot: a patient has three index scores below the 5th percentile — how
+   unusual is that? By definition 5% of the population falls below the 5th
+   percentile on ANY ONE measure, but across four correlated indices the
+   percentage showing at least one is 13.21%, not 5%. Reading each row on its
+   own overcalls impairment, and the paper's whole point is that the error is
+   large enough to change a conclusion.
+
+   THE METHOD, verbatim from the paper's Method section:
+     1. Cholesky-decompose R, the k x k correlation matrix (lower triangular).
+     2. Draw a vector z of k independent standard normal variates.
+     3. y = Cz is one observation from MVN(0, R) — one simulated person.
+     4. Repeat, tally, express as percentages.
+   Means and SDs are NOT inputs: the paper notes the transformation to a real
+   metric is linear and changes nothing, so everything runs in z units.
+
+   Three questions, three tallies, all from the same draws:
+     - LOW SCORES: count components below the criterion z.
+     - PAIRWISE DIFFERENCES: sdDiff = sqrt(2 - 2r) per pair (paper's eq. 1),
+       times the two-tailed criterion; the ABSOLUTE difference is tested,
+       because a large difference in either direction is the finding.
+     - DEVIATIONS FROM OWN MEAN: sdDev = sqrt(1 + Rbar - 2*mbarX) (eq. 2),
+       where Rbar is the mean of ALL k*k elements INCLUDING the diagonal
+       unities, and mbarX is the mean of X's own row. Also two-tailed.
+
+   WHY IT IS SEEDED. A clinical number that changes when you press the button
+   again is not reportable, and a check that flakes is worse than no check.
+   The generator is a plain xorshift with a fixed default seed, so the same
+   profile always returns the same percentages. Monte Carlo error is real and
+   is reported alongside (see profileAbnormalityStdErr), rather than hidden by
+   printing more decimal places than the method can support.
+   ============================================================================ */
+
+/* Lower-triangular Cholesky. Returns null if R is not positive definite —
+   which a transcription slip in a correlation matrix can easily cause, and
+   which must surface as "cannot compute" rather than as NaNs downstream. */
+function choleskyLower(R){
+  const k = R.length;
+  const C = Array.from({ length: k }, () => new Float64Array(k));
+  for (let i = 0; i < k; i++){
+    for (let j = 0; j <= i; j++){
+      let s = R[i][j];
+      for (let m = 0; m < j; m++) s -= C[i][m] * C[j][m];
+      if (i === j){
+        if (!(s > 0)) return null;          // not positive definite
+        C[i][i] = Math.sqrt(s);
+      } else {
+        C[i][j] = s / C[j][j];
+      }
+    }
+  }
+  return C;
+}
+
+/* xorshift128+ with Box-Muller. Deliberately not Math.random: the results
+   have to be reproducible across runs and across machines. */
+function makeNormalSampler(seed){
+  let s0 = (seed >>> 0) || 0x9E3779B9, s1 = 0x85EBCA6B;
+  for (let i = 0; i < 12; i++){                 // warm up off the seed
+    const t = s0 ^ (s0 << 11); s0 = s1;
+    s1 = (s1 ^ (s1 >>> 19) ^ t ^ (t >>> 8)) >>> 0;
+  }
+  let spare = null;
+  return function normal(){
+    if (spare !== null){ const v = spare; spare = null; return v; }
+    let u, v, w;
+    do {
+      const t1 = s0 ^ (s0 << 11); s0 = s1;
+      s1 = (s1 ^ (s1 >>> 19) ^ t1 ^ (t1 >>> 8)) >>> 0;
+      u = (s1 >>> 0) / 4294967296 * 2 - 1;
+      const t2 = s0 ^ (s0 << 11); s0 = s1;
+      s1 = (s1 ^ (s1 >>> 19) ^ t2 ^ (t2 >>> 8)) >>> 0;
+      v = (s1 >>> 0) / 4294967296 * 2 - 1;
+      w = u * u + v * v;
+    } while (w >= 1 || w === 0);
+    const f = Math.sqrt(-2 * Math.log(w) / w);
+    spare = v * f;
+    return u * f;
+  };
+}
+
+/* The mean of every element of R including the diagonal unities, and the mean
+   of each row. Both are eq. 2's inputs and both include the diagonal — the
+   paper says so explicitly, and excluding it is the obvious silent error. */
+function profileMatrixMeans(R){
+  const k = R.length;
+  const rowMean = new Float64Array(k);
+  let total = 0;
+  for (let i = 0; i < k; i++){
+    let s = 0;
+    for (let j = 0; j < k; j++) s += R[i][j];
+    rowMean[i] = s / k;
+    total += s;
+  }
+  return { grandMean: total / (k * k), rowMean };
+}
+
+/* Percentages of the population expected to show j or more of each kind of
+   abnormality, j running 1..k for scores and 1..pairs for differences.
+   Index 0 of each array is j = 1.
+
+   `lowZ` is the criterion for an abnormally LOW score as a standard normal
+   deviate (-1.645 for "below the 5th percentile", the paper's own default).
+   `diffZ` is the two-tailed criterion for an abnormal difference (1.960 for
+   "larger than 95% of the population, regardless of sign"). */
+function profileAbnormality(R, opts){
+  const o = opts || {};
+  const lowZ  = Number.isFinite(o.lowZ)  ? o.lowZ  : -1.645;
+  const diffZ = Number.isFinite(o.diffZ) ? o.diffZ : 1.960;
+  const trials = Number.isFinite(o.trials) ? o.trials : 200000;
+  const k = R.length;
+  const C = choleskyLower(R);
+  if (!C) return null;
+
+  const { grandMean, rowMean } = profileMatrixMeans(R);
+  // Per-pair and per-deviation thresholds, precomputed once.
+  const pairs = [];
+  for (let i = 0; i < k; i++){
+    for (let j = i + 1; j < k; j++){
+      pairs.push({ i, j, t: diffZ * Math.sqrt(2 - 2 * R[i][j]) });
+    }
+  }
+  const devT = new Float64Array(k);
+  for (let i = 0; i < k; i++){
+    devT[i] = diffZ * Math.sqrt(1 + grandMean - 2 * rowMean[i]);
+  }
+
+  const lowTally  = new Float64Array(k + 1);
+  const pairTally = new Float64Array(pairs.length + 1);
+  const devTally  = new Float64Array(k + 1);
+  const normal = makeNormalSampler(Number.isFinite(o.seed) ? o.seed : 20260910);
+  const z = new Float64Array(k), y = new Float64Array(k);
+
+  for (let t = 0; t < trials; t++){
+    for (let i = 0; i < k; i++) z[i] = normal();
+    for (let i = 0; i < k; i++){
+      let s = 0;
+      for (let m = 0; m <= i; m++) s += C[i][m] * z[m];
+      y[i] = s;
+    }
+    let nLow = 0, mean = 0;
+    for (let i = 0; i < k; i++){ if (y[i] < lowZ) nLow++; mean += y[i]; }
+    mean /= k;
+    lowTally[nLow]++;
+    let nPair = 0;
+    for (let p = 0; p < pairs.length; p++){
+      const q = pairs[p];
+      if (Math.abs(y[q.i] - y[q.j]) > q.t) nPair++;
+    }
+    pairTally[nPair]++;
+    let nDev = 0;
+    for (let i = 0; i < k; i++){ if (Math.abs(mean - y[i]) > devT[i]) nDev++; }
+    devTally[nDev]++;
+  }
+
+  // "j or more" is the upper tail of the tally, so accumulate downward.
+  const toAtLeast = (tally, n) => {
+    const out = new Array(n);
+    let run = 0;
+    for (let j = n; j >= 1; j--){ run += tally[j]; out[j - 1] = run / trials * 100; }
+    return out;
+  };
+  return {
+    trials,
+    lowScores:   toAtLeast(lowTally,  k),
+    pairwise:    toAtLeast(pairTally, pairs.length),
+    deviations:  toAtLeast(devTally,  k)
+  };
+}
+
+/* The Monte Carlo standard error of one reported percentage, in percentage
+   points. A simulated percentage is a binomial proportion, so this is exact
+   and is the honest width to quote it to: at 200,000 trials a percentage near
+   20 carries an SE of about 0.09, so a second decimal place is noise. */
+function profileAbnormalityStdErr(pct, trials){
+  if (!Number.isFinite(pct) || !Number.isFinite(trials) || trials <= 0) return null;
+  const p = pct / 100;
+  return Math.sqrt(p * (1 - p) / trials) * 100;
+}
+
 /* ============================================================
    APA TABLE NOTES — single source of truth
    ------------------------------------------------------------
@@ -3208,6 +3395,24 @@ const APA_NOTES = {
           ? `Asterisks mark scores falling below the premorbid estimate of ${ctx.premorbid} by more than the model's standard error of estimate: * beyond the 90% bound, ** beyond the 95% bound, *** beyond the 99% bound.`
           : `Asterisks mark scores below the premorbid estimate of ${ctx.premorbid}: * ≥ 1 SD, ** ≥ 1.5 SD, *** ≥ 2 SD.`)
       : ''
+  ],
+  /* PROFILE ANALYSIS. The exported table reports THIS PATIENT'S counts and
+     the base rate of each, so the note has to carry the three things a
+     reader needs to reproduce it: which criterion defined "abnormally low",
+     where the correlations came from, and that the base rates are simulated
+     rather than tabulated by the publisher.
+
+     It also states the scores, because the table itself reports counts and
+     a reader cannot otherwise check the counting. */
+  'prof': ctx => [
+    `Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases (Crawford, Garthwaite & Gault, 2007).`,
+    `An abnormally low Index score is one ${ctx.criterion}. Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.`,
+    'Index intercorrelations are the all-ages values of WAIS-IV Technical and Interpretive Manual (GB), Table 5.1.',
+    ctx.scores ? `Index scores entered: ${ctx.scores}.` : '',
+    /* NOT a percentile. A base rate here counts PEOPLE showing a number of
+       findings, not scores below a point, and the two get confused precisely
+       because both are printed as percentages. */
+    'A base rate is not a percentile: it counts people showing at least this many findings across the battery, not scores falling below a point on one measure.'
   ],
   'sdi': ctx => [
     'SD Δ = (retest − test) ÷ SD.',
@@ -8475,7 +8680,8 @@ const ReportBundle = (function(){
     'pre-estimates-apa':    'Premorbid · Estimates',
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
     'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted',
-    'pvt-apa':              'Performance Validity'
+    'pvt-apa':              'Performance Validity',
+    'prof-apa':             'Profile Analysis'
   };
   /* Method / tool names - combined with the detected test family to produce
      intelligent table titles like "Crawford Regression-Based Change: WAIS-IV". */
@@ -8489,7 +8695,8 @@ const ReportBundle = (function(){
     'pre-estimates-apa':    'Premorbid Cognitive Estimate',
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',
     'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved',
-    'pvt-apa':              'Performance Validity Indicators'
+    'pvt-apa':              'Performance Validity Indicators',
+    'prof-apa':             'Profile Abnormality'
   };
   /* Backwards alias - SOURCE_TITLES still referenced in a couple of places */
   const SOURCE_TITLES = SOURCE_METHOD_NAMES;

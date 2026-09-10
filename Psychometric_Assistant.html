@@ -16634,6 +16634,149 @@ input[type="number"].ds-age-pop-input{
     .change-context-grid{grid-template-columns:repeat(2,minmax(180px,1fr))}
     .change-method-tabs{grid-template-columns:repeat(3,minmax(170px,1fr))}
   }
+/* ============================================================================
+   PROFILE ANALYSIS PAGE (#profile)
+
+   Every class here is standalone and prefixed `prof-`. Nothing borrows a
+   name `styles.css` or the blocks above already own — the cascade trap in
+   CLAUDE.md is that a correct, more specific rule still loses to a
+   page-scoped selector carrying !important, and a fresh name sidesteps the
+   whole argument rather than winning it.
+   ============================================================================ */
+.prof-intro{
+  margin: 0 0 var(--ds-space-4);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-subtle);
+  line-height: var(--ds-leading-normal);
+  max-width: 76ch;
+}
+.prof-input-grid{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ds-space-3);
+}
+.prof-controls{
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ds-space-3);
+  margin-top: var(--ds-space-4);
+  flex-wrap: wrap;
+}
+.prof-controls .field{ min-width: 260px; }
+/* Also the JS hook the module reads scores through, so it is defined here
+   rather than left as a bare selector: an undefined class is indistinguishable
+   from a typo'd one, and check.js §44 fails on either. */
+.prof-score-input{ font-variant-numeric: tabular-nums; }
+
+/* One card per question the method answers. The COUNT is the headline and
+   the base rate sits under it: the count alone means nothing, and the
+   percentage alone is not about this patient. */
+.prof-cards{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-4);
+}
+.prof-card{
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-subtle);
+  padding: var(--ds-space-3) var(--ds-space-4);
+}
+.prof-card-label{
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  margin-bottom: var(--ds-space-2);
+}
+.prof-card-value{
+  font-size: 30px;
+  font-weight: var(--ds-weight-semibold);
+  line-height: 1.1;
+  color: var(--ds-text);
+  font-variant-numeric: tabular-nums;
+}
+.prof-card-desc{
+  margin-top: var(--ds-space-2);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-subtle);
+  line-height: var(--ds-leading-snug);
+}
+
+/* WHICH measures produced the count. A bare "2" sends the clinician back to
+   the table to work out which two, which is the one thing the page is
+   supposed to save them. */
+.prof-which-row{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-4);
+}
+.prof-which-label{
+  display: block;
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ds-text-faint);
+  margin-bottom: 4px;
+}
+.prof-which{
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text);
+  line-height: var(--ds-leading-snug);
+}
+.prof-which-none{ color: var(--ds-text-faint); font-style: italic; }
+
+.prof-table{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ds-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.prof-table th,
+.prof-table td{
+  padding: var(--ds-space-2) var(--ds-space-3);
+  text-align: right;
+  border-bottom: 1px solid var(--ds-border);
+}
+.prof-table th{
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-text-subtle);
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.prof-table .prof-th-label,
+.prof-table .prof-td-label{ text-align: left; white-space: normal; }
+.prof-table .prof-td-na{ color: var(--ds-text-faint); }
+/* The patient's own cell, marked in place rather than lifted out, so the
+   figure is read against the ones on either side of it. */
+.prof-table .prof-td-hit{
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-text);
+  background: var(--ds-surface-subtle);
+  box-shadow: inset 0 0 0 1px var(--ds-border-strong);
+}
+.prof-precision{
+  margin: var(--ds-space-3) 0 0;
+  font-size: var(--ds-text-xs);
+  color: var(--ds-text-subtle);
+  line-height: var(--ds-leading-normal);
+  max-width: 80ch;
+}
+.prof-empty{
+  padding: var(--ds-space-5);
+  text-align: center;
+  color: var(--ds-text-faint);
+  font-size: var(--ds-text-sm);
+}
+@media (max-width: 860px){
+  .prof-input-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 </style>
 
 
@@ -16761,6 +16904,7 @@ input[type="number"].ds-age-pop-input{
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-practice" role="menuitem">Practice Effect-Adjusted</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">McSweeney Regression-Based</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="profile" role="menuitem">Profile Analysis</button>
           </div>
         </div>
         <button type="button" class="topnav-item nav-item" data-target="validity" data-bucket="validity">
@@ -16818,6 +16962,7 @@ input[type="number"].ds-age-pop-input{
     <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">03</span>Change Analysis</div>
     <div class="nav-item" data-target="validity"><span class="nav-item-num">04</span>Performance Validity</div>
     <div class="nav-item" data-target="charts"><span class="nav-item-num">05</span>Score Charts</div>
+    <div class="nav-item" data-target="profile"><span class="nav-item-num">10</span>Profile Analysis</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">06</span>Score Converter</div>
     <div class="nav-item" data-target="effectsize"><span class="nav-item-num">07</span>Effect Size Tools</div>
     <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">08</span>Data</div>
@@ -17524,6 +17669,61 @@ input[type="number"].ds-age-pop-input{
       </div>
     </div>
 
+  </section>
+
+  <section class="section" id="profile">
+    <div class="eyebrow">Change &amp; Discrepancy · Profile Analysis</div>
+    <h1 class="section-title">Profile <em>Analysis</em></h1>
+    <p class="section-desc" style="margin-bottom:16px">How unusual is this pattern of WAIS-IV Index scores? Five per cent of people fall below the 5th percentile on any <em>one</em> Index &mdash; but 13.8% fall below it on at least one of the four. Crawford, Garthwaite &amp; Gault (2007).</p>
+
+    <div class="panel">
+      <div class="panel-kicker">WAIS-IV Index scores</div>
+      <p class="prof-intro">Enter all four Indices on the standard metric (M 100, SD 15). The population percentages below need no patient data and are shown regardless; the patient&rsquo;s own counts appear once all four are present.</p>
+      <div class="prof-input-grid" id="prof-inputs"></div>
+      <div class="prof-controls">
+        <div class="field">
+          <label>An abnormally low score is one&hellip;</label>
+          <select id="prof-criterion"></select>
+        </div>
+        <button class="btn btn-ghost" type="button" id="prof-clear">Clear scores</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-kicker">Results</div>
+      <div id="prof-results"></div>
+
+      <details class="formula-disclosure">
+        <summary>Method &amp; formulae</summary>
+        <div class="formula-body">
+          <p><strong>Crawford, J. R., Garthwaite, P. H., &amp; Gault, C. B. (2007).</strong> Estimating the percentage of the population with abnormally low scores (or abnormally large score differences) on standardized neuropsychological test batteries: A generic method with applications. <i>Neuropsychology, 21</i>, 419&ndash;430.</p>
+          <p>The only input the method requires is <strong>R</strong>, the matrix of correlations between the measures &mdash; no means, no standard deviations, no reliabilities. R is Cholesky-decomposed; a vector <i>z</i> of <i>k</i> independent standard normal variates is drawn and postmultiplied by the lower triangular decomposition <b>C</b>, so <b>y</b> = <b>C</b><i>z</i> is one observation from the multivariate normal distribution with covariance matrix R &mdash; one simulated member of the population. That is repeated and tallied.</p>
+          <p>Three quantities are counted on each simulated case:</p>
+          <ul>
+            <li><strong>Abnormally low scores</strong> &mdash; components falling below the selected criterion, expressed as a standard normal deviate (the 5th percentile is &minus;1.645).</li>
+            <li><strong>Abnormally large pairwise differences</strong> &mdash; for each of the <i>k</i>(<i>k</i>&minus;1)/2 pairs, |<i>y<sub>X</sub></i> &minus; <i>y<sub>Y</sub></i>| &gt; 1.960 &times; <i>s</i><sub>X&minus;Y</sub>, where <i>s</i><sub>X&minus;Y</sub> = &radic;(2 &minus; 2<i>r</i><sub>XY</sub>).</li>
+            <li><strong>Abnormally large deviations from the case&rsquo;s own mean</strong> &mdash; |<i>M</i> &minus; <i>y<sub>X</sub></i>| &gt; 1.960 &times; <i>s</i><sub>M&minus;X</sub>, where <i>s</i><sub>M&minus;X</sub> = &radic;(1 + <i>R&#772;</i> &minus; 2<i>m&#772;<sub>X</sub></i>). <i>R&#772;</i> is the mean of every element of R <em>including the diagonal unities</em>, and <i>m&#772;<sub>X</sub></i> is the mean of X&rsquo;s own row.</li>
+          </ul>
+          <p>Both difference tests are two-tailed: a large difference in either direction is the finding.</p>
+          <p><strong>Correlations.</strong> WAIS-IV Technical and Interpretive Manual (GB), Table 5.1, all-ages Index intercorrelations &mdash; VCI&ndash;PRI .61, VCI&ndash;WMI .64, VCI&ndash;PSI .45, PRI&ndash;WMI .62, PRI&ndash;PSI .52, WMI&ndash;PSI .51. The shaded corrected coefficients printed above that table&rsquo;s diagonal are a different quantity (each subtest against a composite it is itself part of, with the part-whole overlap removed) and are not used here.</p>
+          <p><strong>Why a binomial will not do.</strong> The binomial distribution answers this question only when the measures are uncorrelated. It overestimates the percentage showing one or more abnormal result and underestimates the percentage showing several &mdash; for four WAIS-IV Indices at the 5th percentile it gives 18.5% against a simulated 13.8%.</p>
+        </div>
+      </details>
+
+      <div class="info-box" style="margin-top:14px" data-apa-note="prof"></div>
+
+      <div class="apa-wrap">
+        <div class="apa-toolbar">
+          <div class="apa-toolbar-left"><span class="apa-toolbar-label">APA-formatted output</span></div>
+          <div></div>
+          <button class="btn" data-copy="prof-apa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+            Copy table
+          </button>
+        </div>
+        <div class="apa-table-container" id="prof-apa"></div>
+      </div>
+    </div>
   </section>
 
   <!-- ========== PERFORMANCE VALIDITY ========== -->
@@ -19297,6 +19497,117 @@ const REPORT_TEST_CATALOG = [
   { id:'rbans',   name:'RBANS',   families:['RBANS'],
     longName:'Repeatable Battery for the Assessment of Neuropsychological Status (RBANS Update)' },
 ];
+
+/* ============================================================
+   WAIS4_INTERCORR — the correlation matrix, which is the one input
+   Crawford, Garthwaite & Gault's (2007) profile method needs
+
+   That method estimates what percentage of the healthy population shows j or
+   more abnormally low scores (or abnormally large differences) across a
+   battery. Its Method section is explicit that R, the matrix of correlations
+   between the components, is the ONLY information required — no means, no SDs,
+   no reliabilities.
+
+   THIS IS A DIFFERENT KIND OF CORRELATION FROM EVERYTHING ELSE IN THIS FILE.
+   normDB's `r` is a measure's correlation with ITSELF on a second occasion —
+   a reliability. These are correlations BETWEEN measures on one occasion. They
+   are not interchangeable in either direction, and nothing that reads normDB
+   should ever reach for these.
+
+   Transcribed from the GB (UK) manual, matching the edition this app already
+   cites for Tables 4.1, 4.3 and C.4-C.5.
+   ============================================================ */
+const WAIS4_INTERCORR = {
+  source: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1 — Intercorrelations of Subtest, Process, and Composite Scores for All Ages',
+  /* Row/column order EXACTLY as the manual prints it. Nothing is re-sorted:
+     a transcription is checkable against the page only while it keeps the
+     page's order. */
+  order: ['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD', 'LN', 'FW', 'CO', 'CA', 'PCm', 'BDN', 'DSF', 'DSB', 'DSS', 'VCI', 'PRI', 'WMI', 'PSI', 'FSIQ'],
+  labels: {
+    'BD':  'Block Design',
+    'SI':  'Similarities',
+    'DS':  'Digit Span',
+    'MR':  'Matrix Reasoning',
+    'VC':  'Vocabulary',
+    'AR':  'Arithmetic',
+    'SS':  'Symbol Search',
+    'VP':  'Visual Puzzles',
+    'IN':  'Information',
+    'CD':  'Coding',
+    'LN':  'Letter-Number Sequencing',
+    'FW':  'Figure Weights',
+    'CO':  'Comprehension',
+    'CA':  'Cancellation',
+    'PCm': 'Picture Completion',
+    'BDN': 'Block Design No Time Bonus',
+    'DSF': 'Digit Span Forward',
+    'DSB': 'Digit Span Backward',
+    'DSS': 'Digit Span Sequencing',
+    'VCI': 'Verbal Comprehension Index',
+    'PRI': 'Perceptual Reasoning Index',
+    'WMI': 'Working Memory Index',
+    'PSI': 'Processing Speed Index',
+    'FSIQ': 'Full Scale IQ',
+  },
+  /* AGE-RESTRICTED ROWS. The manual's note: correlations for LN, FW and CA
+     are based only on examinees aged 16:0-69:11, those three measures being
+     normed to 69. Every other cell is the full 16-90 sample. */
+  restrictedTo16_69: ['LN', 'FW', 'CA'],
+  /* THE LOWER TRIANGLE, which is the uncorrected matrix and the only thing
+     the simulation may use. Keyed 'ROW|COL' with ROW after COL in `order`. */
+  r: {
+    'SI|BD':0.49,
+    'DS|BD':0.45, 'DS|SI':0.48,
+    'MR|BD':0.54, 'MR|SI':0.51, 'MR|DS':0.47,
+    'VC|BD':0.45, 'VC|SI':0.74, 'VC|DS':0.5, 'VC|MR':0.51,
+    'AR|BD':0.5, 'AR|SI':0.54, 'AR|DS':0.6, 'AR|MR':0.52, 'AR|VC':0.57,
+    'SS|BD':0.41, 'SS|SI':0.35, 'SS|DS':0.4, 'SS|MR':0.39, 'SS|VC':0.34, 'SS|AR':0.37,
+    'VP|BD':0.64, 'VP|SI':0.44, 'VP|DS':0.4, 'VP|MR':0.53, 'VP|VC':0.42, 'VP|AR':0.48, 'VP|SS':0.38,
+    'IN|BD':0.44, 'IN|SI':0.64, 'IN|DS':0.43, 'IN|MR':0.49, 'IN|VC':0.73, 'IN|AR':0.57, 'IN|SS':0.34, 'IN|VP':0.43,
+    'CD|BD':0.4, 'CD|SI':0.41, 'CD|DS':0.45, 'CD|MR':0.45, 'CD|VC':0.41, 'CD|AR':0.43, 'CD|SS':0.65, 'CD|VP':0.37, 'CD|IN':0.34,
+    'LN|BD':0.42, 'LN|SI':0.45, 'LN|DS':0.69, 'LN|MR':0.45, 'LN|VC':0.48, 'LN|AR':0.56, 'LN|SS':0.37, 'LN|VP':0.41, 'LN|IN':0.43, 'LN|CD':0.38,
+    'FW|BD':0.56, 'FW|SI':0.53, 'FW|DS':0.5, 'FW|MR':0.57, 'FW|VC':0.53, 'FW|AR':0.61, 'FW|SS':0.34, 'FW|VP':0.58, 'FW|IN':0.51, 'FW|CD':0.36, 'FW|LN':0.48,
+    'CO|BD':0.44, 'CO|SI':0.71, 'CO|DS':0.48, 'CO|MR':0.49, 'CO|VC':0.74, 'CO|AR':0.55, 'CO|SS':0.32, 'CO|VP':0.43, 'CO|IN':0.66, 'CO|CD':0.39, 'CO|LN':0.47, 'CO|FW':0.53,
+    'CA|BD':0.34, 'CA|SI':0.23, 'CA|DS':0.34, 'CA|MR':0.26, 'CA|VC':0.24, 'CA|AR':0.31, 'CA|SS':0.46, 'CA|VP':0.32, 'CA|IN':0.22, 'CA|CD':0.42, 'CA|LN':0.3, 'CA|FW':0.29, 'CA|CO':0.21,
+    'PCm|BD':0.49, 'PCm|SI':0.44, 'PCm|DS':0.39, 'PCm|MR':0.42, 'PCm|VC':0.39, 'PCm|AR':0.37, 'PCm|SS':0.41, 'PCm|VP':0.48, 'PCm|IN':0.41, 'PCm|CD':0.38, 'PCm|LN':0.37, 'PCm|FW':0.41, 'PCm|CO':0.4, 'PCm|CA':0.33,
+    'BDN|BD':0.97, 'BDN|SI':0.47, 'BDN|DS':0.45, 'BDN|MR':0.54, 'BDN|VC':0.44, 'BDN|AR':0.48, 'BDN|SS':0.4, 'BDN|VP':0.61, 'BDN|IN':0.43, 'BDN|CD':0.4, 'BDN|LN':0.41, 'BDN|FW':0.54, 'BDN|CO':0.44, 'BDN|CA':0.33, 'BDN|PCm':0.49,
+    'DSF|BD':0.29, 'DSF|SI':0.35, 'DSF|DS':0.79, 'DSF|MR':0.29, 'DSF|VC':0.36, 'DSF|AR':0.43, 'DSF|SS':0.25, 'DSF|VP':0.24, 'DSF|IN':0.31, 'DSF|CD':0.29, 'DSF|LN':0.5, 'DSF|FW':0.34, 'DSF|CO':0.32, 'DSF|CA':0.23, 'DSF|PCm':0.24, 'DSF|BDN':0.3,
+    'DSB|BD':0.37, 'DSB|SI':0.39, 'DSB|DS':0.83, 'DSB|MR':0.43, 'DSB|VC':0.43, 'DSB|AR':0.51, 'DSB|SS':0.31, 'DSB|VP':0.33, 'DSB|IN':0.36, 'DSB|CD':0.37, 'DSB|LN':0.59, 'DSB|FW':0.43, 'DSB|CO':0.39, 'DSB|CA':0.27, 'DSB|PCm':0.32, 'DSB|BDN':0.38, 'DSB|DSF':0.53,
+    'DSS|BD':0.42, 'DSS|SI':0.42, 'DSS|DS':0.79, 'DSS|MR':0.43, 'DSS|VC':0.42, 'DSS|AR':0.52, 'DSS|SS':0.4, 'DSS|VP':0.4, 'DSS|IN':0.37, 'DSS|CD':0.43, 'DSS|LN':0.59, 'DSS|FW':0.47, 'DSS|CO':0.43, 'DSS|CA':0.32, 'DSS|PCm':0.37, 'DSS|BDN':0.41, 'DSS|DSF':0.42, 'DSS|DSB':0.51,
+    'VCI|BD':0.51, 'VCI|SI':0.88, 'VCI|DS':0.53, 'VCI|MR':0.56, 'VCI|VC':0.92, 'VCI|AR':0.63, 'VCI|SS':0.38, 'VCI|VP':0.48, 'VCI|IN':0.89, 'VCI|CD':0.43, 'VCI|LN':0.51, 'VCI|FW':0.59, 'VCI|CO':0.79, 'VCI|CA':0.26, 'VCI|PCm':0.46, 'VCI|BDN':0.5, 'VCI|DSF':0.38, 'VCI|DSB':0.44, 'VCI|DSS':0.45,
+    'PRI|BD':0.86, 'PRI|SI':0.57, 'PRI|DS':0.52, 'PRI|MR':0.82, 'PRI|VC':0.55, 'PRI|AR':0.59, 'PRI|SS':0.47, 'PRI|VP':0.86, 'PRI|IN':0.54, 'PRI|CD':0.48, 'PRI|LN':0.5, 'PRI|FW':0.68, 'PRI|CO':0.54, 'PRI|CA':0.36, 'PRI|PCm':0.55, 'PRI|BDN':0.84, 'PRI|DSF':0.33, 'PRI|DSB':0.45, 'PRI|DSS':0.49, 'PRI|VCI':0.61,
+    'WMI|BD':0.53, 'WMI|SI':0.57, 'WMI|DS':0.9, 'WMI|MR':0.55, 'WMI|VC':0.6, 'WMI|AR':0.89, 'WMI|SS':0.43, 'WMI|VP':0.49, 'WMI|IN':0.56, 'WMI|CD':0.49, 'WMI|LN':0.7, 'WMI|FW':0.62, 'WMI|CO':0.57, 'WMI|CA':0.36, 'WMI|PCm':0.43, 'WMI|BDN':0.52, 'WMI|DSF':0.68, 'WMI|DSB':0.75, 'WMI|DSS':0.73, 'WMI|VCI':0.64, 'WMI|PRI':0.62,
+    'PSI|BD':0.45, 'PSI|SI':0.42, 'PSI|DS':0.47, 'PSI|MR':0.46, 'PSI|VC':0.41, 'PSI|AR':0.44, 'PSI|SS':0.91, 'PSI|VP':0.41, 'PSI|IN':0.37, 'PSI|CD':0.91, 'PSI|LN':0.41, 'PSI|FW':0.39, 'PSI|CO':0.39, 'PSI|CA':0.49, 'PSI|PCm':0.43, 'PSI|BDN':0.44, 'PSI|DSF':0.3, 'PSI|DSB':0.38, 'PSI|DSS':0.46, 'PSI|VCI':0.45, 'PSI|PRI':0.52, 'PSI|WMI':0.51,
+    'FSIQ|BD':0.73, 'FSIQ|SI':0.77, 'FSIQ|DS':0.72, 'FSIQ|MR':0.75, 'FSIQ|VC':0.78, 'FSIQ|AR':0.77, 'FSIQ|SS':0.64, 'FSIQ|VP':0.7, 'FSIQ|IN':0.75, 'FSIQ|CD':0.68, 'FSIQ|LN':0.64, 'FSIQ|FW':0.71, 'FSIQ|CO':0.71, 'FSIQ|CA':0.44, 'FSIQ|PCm':0.58, 'FSIQ|BDN':0.71, 'FSIQ|DSF':0.5, 'FSIQ|DSB':0.6, 'FSIQ|DSS':0.63, 'FSIQ|VCI':0.85, 'FSIQ|PRI':0.86, 'FSIQ|WMI':0.83, 'FSIQ|PSI':0.72,
+  },
+  /* THE SHADED UPPER TRIANGLE IS A DIFFERENT QUANTITY AND IS STORED APART.
+     Those 20 cells are each core subtest's correlation with a composite it
+     is itself part of, CORRECTED for that part-whole overlap. They are not
+     interchangeable with the cells above and must never be folded into the
+     matrix: doing so would put a corrected coefficient into a covariance
+     structure built from uncorrected ones. Stored because the manual prints
+     them, not because anything here consumes them yet. */
+  rCorrectedToComposite: {
+    'BD|PRI':0.67, 'BD|FSIQ':0.66,
+    'SI|VCI':0.74, 'SI|FSIQ':0.71,
+    'DS|WMI':0.6, 'DS|FSIQ':0.64,
+    'MR|PRI':0.59, 'MR|FSIQ':0.67,
+    'VC|VCI':0.81, 'VC|FSIQ':0.72,
+    'AR|WMI':0.6, 'AR|FSIQ':0.7,
+    'SS|PSI':0.65, 'SS|FSIQ':0.54,
+    'VP|PRI':0.66, 'VP|FSIQ':0.62,
+    'IN|VCI':0.73, 'IN|FSIQ':0.67,
+    'CD|PSI':0.65, 'CD|FSIQ':0.59,
+  },
+  /* The manual's own Mean/SD row. NOTE the composite entries are SUMS OF
+     SCALED SCORES (VCI 30.1/8.0 is three subtests summed, FSIQ 100.3/21.9
+     is ten), not index scores on 100/15. Correlations are unchanged by a
+     linear rescaling, so the matrix applies to the indices regardless —
+     but anything reading these two rows as index metrics would be wrong. */
+  mean: {'BD':10, 'SI':10, 'DS':10, 'MR':10.1, 'VC':10, 'AR':10, 'SS':10, 'VP':10, 'IN':10, 'CD':10, 'LN':10, 'FW':10.1, 'CO':10, 'CA':10, 'PCm':10, 'BDN':10.1, 'DSF':10, 'DSB':10.1, 'DSS':10, 'VCI':30.1, 'PRI':30.1, 'WMI':20.1, 'PSI':20, 'FSIQ':100.3},
+  sd:   {'BD':3.1, 'SI':2.9, 'DS':3, 'MR':3.1, 'VC':3, 'AR':3, 'SS':3.1, 'VP':3.1, 'IN':3.1, 'CD':3, 'LN':3, 'FW':3.1, 'CO':3.1, 'CA':3, 'PCm':3.1, 'BDN':3.1, 'DSF':3, 'DSB':3, 'DSS':3, 'VCI':8, 'PRI':7.8, 'WMI':5.4, 'PSI':5.5, 'FSIQ':21.9}
+};
+
 
 // ToPF Raw (0-70) → estimated FSIQ
 const TOPF_TO_FSIQ = [
@@ -24624,6 +24935,193 @@ function buildApaTableFromColumns(outId, columns, rows, groupLabelFn, groupDispl
   return `<table class="apa-table"><thead>${header}</thead><tbody>${body}</tbody></table>`;
 }
 
+/* ============================================================================
+   ABNORMALITY OF A SCORE PROFILE — Crawford, Garthwaite & Gault (2007)
+
+   "Estimating the percentage of the population with abnormally low scores (or
+   abnormally large score differences) on standardized neuropsychological test
+   batteries: A generic method with applications." Neuropsychology, 21, 419-430.
+
+   THE QUESTION THIS ANSWERS is the one a battery raises and a single row
+   cannot: a patient has three index scores below the 5th percentile — how
+   unusual is that? By definition 5% of the population falls below the 5th
+   percentile on ANY ONE measure, but across four correlated indices the
+   percentage showing at least one is 13.21%, not 5%. Reading each row on its
+   own overcalls impairment, and the paper's whole point is that the error is
+   large enough to change a conclusion.
+
+   THE METHOD, verbatim from the paper's Method section:
+     1. Cholesky-decompose R, the k x k correlation matrix (lower triangular).
+     2. Draw a vector z of k independent standard normal variates.
+     3. y = Cz is one observation from MVN(0, R) — one simulated person.
+     4. Repeat, tally, express as percentages.
+   Means and SDs are NOT inputs: the paper notes the transformation to a real
+   metric is linear and changes nothing, so everything runs in z units.
+
+   Three questions, three tallies, all from the same draws:
+     - LOW SCORES: count components below the criterion z.
+     - PAIRWISE DIFFERENCES: sdDiff = sqrt(2 - 2r) per pair (paper's eq. 1),
+       times the two-tailed criterion; the ABSOLUTE difference is tested,
+       because a large difference in either direction is the finding.
+     - DEVIATIONS FROM OWN MEAN: sdDev = sqrt(1 + Rbar - 2*mbarX) (eq. 2),
+       where Rbar is the mean of ALL k*k elements INCLUDING the diagonal
+       unities, and mbarX is the mean of X's own row. Also two-tailed.
+
+   WHY IT IS SEEDED. A clinical number that changes when you press the button
+   again is not reportable, and a check that flakes is worse than no check.
+   The generator is a plain xorshift with a fixed default seed, so the same
+   profile always returns the same percentages. Monte Carlo error is real and
+   is reported alongside (see profileAbnormalityStdErr), rather than hidden by
+   printing more decimal places than the method can support.
+   ============================================================================ */
+
+/* Lower-triangular Cholesky. Returns null if R is not positive definite —
+   which a transcription slip in a correlation matrix can easily cause, and
+   which must surface as "cannot compute" rather than as NaNs downstream. */
+function choleskyLower(R){
+  const k = R.length;
+  const C = Array.from({ length: k }, () => new Float64Array(k));
+  for (let i = 0; i < k; i++){
+    for (let j = 0; j <= i; j++){
+      let s = R[i][j];
+      for (let m = 0; m < j; m++) s -= C[i][m] * C[j][m];
+      if (i === j){
+        if (!(s > 0)) return null;          // not positive definite
+        C[i][i] = Math.sqrt(s);
+      } else {
+        C[i][j] = s / C[j][j];
+      }
+    }
+  }
+  return C;
+}
+
+/* xorshift128+ with Box-Muller. Deliberately not Math.random: the results
+   have to be reproducible across runs and across machines. */
+function makeNormalSampler(seed){
+  let s0 = (seed >>> 0) || 0x9E3779B9, s1 = 0x85EBCA6B;
+  for (let i = 0; i < 12; i++){                 // warm up off the seed
+    const t = s0 ^ (s0 << 11); s0 = s1;
+    s1 = (s1 ^ (s1 >>> 19) ^ t ^ (t >>> 8)) >>> 0;
+  }
+  let spare = null;
+  return function normal(){
+    if (spare !== null){ const v = spare; spare = null; return v; }
+    let u, v, w;
+    do {
+      const t1 = s0 ^ (s0 << 11); s0 = s1;
+      s1 = (s1 ^ (s1 >>> 19) ^ t1 ^ (t1 >>> 8)) >>> 0;
+      u = (s1 >>> 0) / 4294967296 * 2 - 1;
+      const t2 = s0 ^ (s0 << 11); s0 = s1;
+      s1 = (s1 ^ (s1 >>> 19) ^ t2 ^ (t2 >>> 8)) >>> 0;
+      v = (s1 >>> 0) / 4294967296 * 2 - 1;
+      w = u * u + v * v;
+    } while (w >= 1 || w === 0);
+    const f = Math.sqrt(-2 * Math.log(w) / w);
+    spare = v * f;
+    return u * f;
+  };
+}
+
+/* The mean of every element of R including the diagonal unities, and the mean
+   of each row. Both are eq. 2's inputs and both include the diagonal — the
+   paper says so explicitly, and excluding it is the obvious silent error. */
+function profileMatrixMeans(R){
+  const k = R.length;
+  const rowMean = new Float64Array(k);
+  let total = 0;
+  for (let i = 0; i < k; i++){
+    let s = 0;
+    for (let j = 0; j < k; j++) s += R[i][j];
+    rowMean[i] = s / k;
+    total += s;
+  }
+  return { grandMean: total / (k * k), rowMean };
+}
+
+/* Percentages of the population expected to show j or more of each kind of
+   abnormality, j running 1..k for scores and 1..pairs for differences.
+   Index 0 of each array is j = 1.
+
+   `lowZ` is the criterion for an abnormally LOW score as a standard normal
+   deviate (-1.645 for "below the 5th percentile", the paper's own default).
+   `diffZ` is the two-tailed criterion for an abnormal difference (1.960 for
+   "larger than 95% of the population, regardless of sign"). */
+function profileAbnormality(R, opts){
+  const o = opts || {};
+  const lowZ  = Number.isFinite(o.lowZ)  ? o.lowZ  : -1.645;
+  const diffZ = Number.isFinite(o.diffZ) ? o.diffZ : 1.960;
+  const trials = Number.isFinite(o.trials) ? o.trials : 200000;
+  const k = R.length;
+  const C = choleskyLower(R);
+  if (!C) return null;
+
+  const { grandMean, rowMean } = profileMatrixMeans(R);
+  // Per-pair and per-deviation thresholds, precomputed once.
+  const pairs = [];
+  for (let i = 0; i < k; i++){
+    for (let j = i + 1; j < k; j++){
+      pairs.push({ i, j, t: diffZ * Math.sqrt(2 - 2 * R[i][j]) });
+    }
+  }
+  const devT = new Float64Array(k);
+  for (let i = 0; i < k; i++){
+    devT[i] = diffZ * Math.sqrt(1 + grandMean - 2 * rowMean[i]);
+  }
+
+  const lowTally  = new Float64Array(k + 1);
+  const pairTally = new Float64Array(pairs.length + 1);
+  const devTally  = new Float64Array(k + 1);
+  const normal = makeNormalSampler(Number.isFinite(o.seed) ? o.seed : 20260910);
+  const z = new Float64Array(k), y = new Float64Array(k);
+
+  for (let t = 0; t < trials; t++){
+    for (let i = 0; i < k; i++) z[i] = normal();
+    for (let i = 0; i < k; i++){
+      let s = 0;
+      for (let m = 0; m <= i; m++) s += C[i][m] * z[m];
+      y[i] = s;
+    }
+    let nLow = 0, mean = 0;
+    for (let i = 0; i < k; i++){ if (y[i] < lowZ) nLow++; mean += y[i]; }
+    mean /= k;
+    lowTally[nLow]++;
+    let nPair = 0;
+    for (let p = 0; p < pairs.length; p++){
+      const q = pairs[p];
+      if (Math.abs(y[q.i] - y[q.j]) > q.t) nPair++;
+    }
+    pairTally[nPair]++;
+    let nDev = 0;
+    for (let i = 0; i < k; i++){ if (Math.abs(mean - y[i]) > devT[i]) nDev++; }
+    devTally[nDev]++;
+  }
+
+  // "j or more" is the upper tail of the tally, so accumulate downward.
+  const toAtLeast = (tally, n) => {
+    const out = new Array(n);
+    let run = 0;
+    for (let j = n; j >= 1; j--){ run += tally[j]; out[j - 1] = run / trials * 100; }
+    return out;
+  };
+  return {
+    trials,
+    lowScores:   toAtLeast(lowTally,  k),
+    pairwise:    toAtLeast(pairTally, pairs.length),
+    deviations:  toAtLeast(devTally,  k)
+  };
+}
+
+/* The Monte Carlo standard error of one reported percentage, in percentage
+   points. A simulated percentage is a binomial proportion, so this is exact
+   and is the honest width to quote it to: at 200,000 trials a percentage near
+   20 carries an SE of about 0.09, so a second decimal place is noise. */
+function profileAbnormalityStdErr(pct, trials){
+  if (!Number.isFinite(pct) || !Number.isFinite(trials) || trials <= 0) return null;
+  const p = pct / 100;
+  return Math.sqrt(p * (1 - p) / trials) * 100;
+}
+
 /* ============================================================
    APA TABLE NOTES — single source of truth
    ------------------------------------------------------------
@@ -24764,6 +25262,24 @@ const APA_NOTES = {
           ? `Asterisks mark scores falling below the premorbid estimate of ${ctx.premorbid} by more than the model's standard error of estimate: * beyond the 90% bound, ** beyond the 95% bound, *** beyond the 99% bound.`
           : `Asterisks mark scores below the premorbid estimate of ${ctx.premorbid}: * ≥ 1 SD, ** ≥ 1.5 SD, *** ≥ 2 SD.`)
       : ''
+  ],
+  /* PROFILE ANALYSIS. The exported table reports THIS PATIENT'S counts and
+     the base rate of each, so the note has to carry the three things a
+     reader needs to reproduce it: which criterion defined "abnormally low",
+     where the correlations came from, and that the base rates are simulated
+     rather than tabulated by the publisher.
+
+     It also states the scores, because the table itself reports counts and
+     a reader cannot otherwise check the counting. */
+  'prof': ctx => [
+    `Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases (Crawford, Garthwaite & Gault, 2007).`,
+    `An abnormally low Index score is one ${ctx.criterion}. Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.`,
+    'Index intercorrelations are the all-ages values of WAIS-IV Technical and Interpretive Manual (GB), Table 5.1.',
+    ctx.scores ? `Index scores entered: ${ctx.scores}.` : '',
+    /* NOT a percentile. A base rate here counts PEOPLE showing a number of
+       findings, not scores below a point, and the two get confused precisely
+       because both are printed as percentages. */
+    'A base rate is not a percentile: it counts people showing at least this many findings across the battery, not scores falling below a point on one measure.'
   ],
   'sdi': ctx => [
     'SD Δ = (retest − test) ÷ SD.',
@@ -30031,7 +30547,8 @@ const ReportBundle = (function(){
     'pre-estimates-apa':    'Premorbid · Estimates',
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
     'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted',
-    'pvt-apa':              'Performance Validity'
+    'pvt-apa':              'Performance Validity',
+    'prof-apa':             'Profile Analysis'
   };
   /* Method / tool names - combined with the detected test family to produce
      intelligent table titles like "Crawford Regression-Based Change: WAIS-IV". */
@@ -30045,7 +30562,8 @@ const ReportBundle = (function(){
     'pre-estimates-apa':    'Premorbid Cognitive Estimate',
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',
     'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved',
-    'pvt-apa':              'Performance Validity Indicators'
+    'pvt-apa':              'Performance Validity Indicators',
+    'prof-apa':             'Profile Abnormality'
   };
   /* Backwards alias - SOURCE_TITLES still referenced in a couple of places */
   const SOURCE_TITLES = SOURCE_METHOD_NAMES;
@@ -32552,7 +33070,6 @@ if (document.readyState === 'loading'){
 }
 
 </script>
-<script src="design-system.js?v=20260903g" defer></script>
 <script data-inlined-from="app-effectsize-page.js">
 /* =====================================================================
    Effect Size Tools - page module (#effectsize)
@@ -34812,6 +35329,387 @@ if (document.readyState === 'loading'){
 })();
 
 </script>
+<script data-inlined-from="app-profile-page.js">
+/* =====================================================================
+   Profile Analysis - page module (#profile)
+
+   Crawford, Garthwaite & Gault (2007), "Estimating the percentage of the
+   population with abnormally low scores (or abnormally large score
+   differences) on standardized neuropsychological test batteries: A
+   generic method with applications." Neuropsychology, 21, 419-430.
+
+   THE QUESTION. A battery raises one a single row cannot answer: this
+   patient has three index scores below the 5th percentile - how unusual
+   is that? By definition 5% of the population falls below the 5th
+   percentile on any ONE measure. Across the four correlated WAIS-IV
+   indices, 13.8% show at least one. Reading rows independently overcalls
+   impairment by enough to change a conclusion, which is the paper's own
+   argument for the method.
+
+   WHY THIS IS A PAGE AND NOT A VIEW. Every other calculator here is a
+   view of data entered elsewhere, and Score Charts is deliberately so.
+   This one is not, and the difference is real: the method needs the four
+   Index scores specifically, on their own metric, as a complete set.
+   Score Tables holds whatever subtests were administered, in any mixture,
+   and a profile computed from a partial or subtest-level table would be
+   answering a different question from the one the matrix describes. The
+   inputs here are therefore typed, and the page carries no other data.
+
+   THE ARITHMETIC IS NOT HERE. profileAbnormality() and the matrix live in
+   app.js and data.js, verified in check.js sections 42-43 against the
+   paper's Appendix, the exact binomial and all 12 rows of its Table 1.
+   This file decides what to ask for and how to say the answer.
+   ===================================================================== */
+(function(){
+  'use strict';
+
+  const section = document.getElementById('profile');
+  if (!section) return;
+
+  /* The four WAIS-IV Indices, in the manual's own order. Only Indices:
+     the stored matrix covers subtests and process scores too, but a
+     profile over a battery the clinician did not administer as a set is
+     not a question this page is entitled to answer. */
+  const PROF_INDICES = [
+    { key:'VCI', label:'Verbal Comprehension', short:'VCI' },
+    { key:'PRI', label:'Perceptual Reasoning', short:'PRI' },
+    { key:'WMI', label:'Working Memory',       short:'WMI' },
+    { key:'PSI', label:'Processing Speed',     short:'PSI' }
+  ];
+
+  /* The paper's own criteria, its default in bold on screen. `z` is the
+     standard normal deviate for an abnormally LOW score; the paper gives
+     -1.645, -1.282 and -1.0 explicitly and the other two follow from the
+     same definition. `pct` is the percentile each names, which is what a
+     clinician recognises. */
+  const PROF_CRITERIA = [
+    { id:'sd1',   label:'below 1 SD (15.9th percentile)', z:-1.0,    pct:'15.9th' },
+    { id:'p10',   label:'below the 10th percentile',      z:-1.282,  pct:'10th' },
+    { id:'p5',    label:'below the 5th percentile',       z:-1.645,  pct:'5th', isDefault:true },
+    { id:'p2',    label:'below the 2nd percentile',       z:-2.054,  pct:'2nd' },
+    { id:'p1',    label:'below the 1st percentile',       z:-2.326,  pct:'1st' }
+  ];
+  /* Differences are two-tailed - a large difference in either direction is
+     the finding - so this is the |z| beyond which a difference is called
+     abnormal, not a low-score criterion. The paper uses 1.960 throughout. */
+  const PROF_DIFF_Z = 1.960;
+  const PROF_TRIALS = 200000;
+
+  const profState = { criterion:'p5', scores:{} };
+
+  /* The simulation depends on the criterion and nothing else - scores do
+     not enter it - so a keystroke in a score box must not re-run it.
+     Cached per criterion, which makes typing free. */
+  const profCache = {};
+
+  function profEl(id){ return document.getElementById(id); }
+  function profNum(v){
+    if (v === null || v === undefined || v === '') return null;
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  function profCriterion(){
+    return PROF_CRITERIA.find(c => c.id === profState.criterion) || PROF_CRITERIA[2];
+  }
+
+  /* The four-Index submatrix, read out of the shipped WAIS4_INTERCORR at
+     the moment it is needed rather than copied here. One source: a second
+     literal would be a second thing to keep in step with Table 5.1. */
+  function profMatrix(){
+    if (typeof WAIS4_INTERCORR === 'undefined') return null;
+    const M = WAIS4_INTERCORR;
+    const pos = {};
+    M.order.forEach((n, i) => { pos[n] = i; });
+    const keys = PROF_INDICES.map(x => x.key);
+    const out = [];
+    for (let i = 0; i < keys.length; i++){
+      const row = [];
+      for (let j = 0; j < keys.length; j++){
+        if (i === j){ row.push(1); continue; }
+        const a = keys[i], b = keys[j];
+        const v = pos[a] > pos[b] ? M.r[a + '|' + b] : M.r[b + '|' + a];
+        if (!Number.isFinite(v)) return null;
+        row.push(v);
+      }
+      out.push(row);
+    }
+    return out;
+  }
+
+  function profSimulate(){
+    const c = profCriterion();
+    if (profCache[c.id]) return profCache[c.id];
+    const R = profMatrix();
+    if (!R || typeof profileAbnormality !== 'function') return null;
+    const res = profileAbnormality(R, { lowZ:c.z, diffZ:PROF_DIFF_Z, trials:PROF_TRIALS });
+    if (res) profCache[c.id] = res;
+    return res;
+  }
+
+  /* The patient's own counts, on exactly the definitions the simulation
+     used. Anything computed differently here would report a count against
+     a percentage that answers a different question. */
+  function profCounts(){
+    const R = profMatrix();
+    if (!R) return null;
+    const c = profCriterion();
+    const z = [], present = [];
+    PROF_INDICES.forEach((idx, i) => {
+      const v = profNum(profState.scores[idx.key]);
+      present[i] = v !== null;
+      z[i] = v === null ? null : (v - 100) / 15;
+    });
+    if (!present.every(Boolean)) return { complete:false };
+
+    let low = 0;
+    const lowWhich = [];
+    z.forEach((v, i) => { if (v < c.z){ low++; lowWhich.push(PROF_INDICES[i].short); } });
+
+    let pair = 0;
+    const pairWhich = [];
+    for (let i = 0; i < 4; i++){
+      for (let j = i + 1; j < 4; j++){
+        const t = PROF_DIFF_Z * Math.sqrt(2 - 2 * R[i][j]);
+        if (Math.abs(z[i] - z[j]) > t){
+          pair++;
+          pairWhich.push(PROF_INDICES[i].short + '–' + PROF_INDICES[j].short);
+        }
+      }
+    }
+
+    const means = (typeof profileMatrixMeans === 'function') ? profileMatrixMeans(R) : null;
+    let dev = 0;
+    const devWhich = [];
+    if (means){
+      const mean = z.reduce((a, b) => a + b, 0) / 4;
+      z.forEach((v, i) => {
+        const t = PROF_DIFF_Z * Math.sqrt(1 + means.grandMean - 2 * means.rowMean[i]);
+        if (Math.abs(mean - v) > t){ dev++; devWhich.push(PROF_INDICES[i].short); }
+      });
+    }
+    return { complete:true, low, lowWhich, pair, pairWhich, dev, devWhich };
+  }
+
+  /* "j or more" for a count of zero is the whole population, so it is not
+     a finding and must not be printed as one - "100% of people show 0 or
+     more" is true and useless. Zero gets its own sentence. */
+  function profPctFor(series, j){
+    if (!series || j < 1) return null;
+    const v = series[j - 1];
+    return Number.isFinite(v) ? v : null;
+  }
+  function profFmtPct(v){
+    if (v === null) return '—';
+    if (v > 0 && v < 0.01) return '< 0.01%';
+    return (v >= 10 ? v.toFixed(1) : v.toFixed(2)) + '%';
+  }
+
+  function profInputsHtml(){
+    return PROF_INDICES.map(idx =>
+      '<div class="field">'
+      + '<label>' + idx.label + ' <span class="hint">' + idx.short + '</span></label>'
+      + '<input type="number" class="prof-score-input" data-prof-index="' + idx.key + '" '
+      + 'min="40" max="160" step="1" inputmode="numeric" placeholder="e.g. 100" '
+      + 'aria-label="' + idx.label + ' Index score">'
+      + '</div>'
+    ).join('');
+  }
+
+  function profCriterionHtml(){
+    return PROF_CRITERIA.map(c =>
+      '<option value="' + c.id + '"' + (c.id === profState.criterion ? ' selected' : '') + '>'
+      + c.label + '</option>'
+    ).join('');
+  }
+
+  /* One card per question. The patient's count is the headline; the
+     percentage under it is what makes the count mean something. With no
+     scores entered the card still states the population figure for j = 1,
+     because that is the number a clinician most often wants and it needs
+     no patient data at all. */
+  function profResultCard(title, tip, count, series, unit){
+    const pct = count === null ? profPctFor(series, 1) : profPctFor(series, count);
+    let value, desc;
+    if (count === null){
+      value = profFmtPct(pct);
+      desc = 'of the population show one or more. Enter all four Index scores for this patient’s own count.';
+    } else if (count === 0){
+      value = '0';
+      desc = 'None of this patient’s ' + unit + ' meet the criterion.';
+    } else {
+      value = String(count);
+      desc = profFmtPct(pct) + ' of the population show ' + count + ' or more.';
+    }
+    return '<div class="prof-card" data-tooltip="' + escapeHtml(tip) + '">'
+      + '<div class="prof-card-label">' + escapeHtml(title) + '</div>'
+      + '<div class="prof-card-value">' + value + '</div>'
+      + '<div class="prof-card-desc">' + desc + '</div>'
+      + '</div>';
+  }
+
+  function profWhichHtml(which){
+    if (!which || !which.length) return '';
+    return '<div class="prof-which">' + escapeHtml(which.join(', ')) + '</div>';
+  }
+
+  /* The full distribution, so the clinician can see how steeply the
+     percentages fall rather than only the one cell their patient landed
+     in. The patient's own column is marked, not extracted. */
+  function profTableHtml(res, counts){
+    if (!res) return '';
+    const rows = [
+      { label:'Abnormally low Index scores', series:res.lowScores, n:4, got:counts && counts.complete ? counts.low : null },
+      { label:'Abnormally large pairwise differences', series:res.pairwise, n:6, got:counts && counts.complete ? counts.pair : null },
+      { label:'Abnormally large deviations from own mean', series:res.deviations, n:4, got:counts && counts.complete ? counts.dev : null }
+    ];
+    const maxJ = 6;
+    let head = '<tr><th class="prof-th-label">Percentage of the population showing…</th>';
+    for (let j = 1; j <= maxJ; j++) head += '<th>' + j + ' or more</th>';
+    head += '</tr>';
+    let body = '';
+    for (const r of rows){
+      body += '<tr><td class="prof-td-label">' + escapeHtml(r.label) + '</td>';
+      for (let j = 1; j <= maxJ; j++){
+        if (j > r.n){ body += '<td class="prof-td-na">—</td>'; continue; }
+        const cls = (r.got !== null && r.got === j) ? ' class="prof-td-hit"' : '';
+        body += '<td' + cls + '>' + profFmtPct(profPctFor(r.series, j)) + '</td>';
+      }
+      body += '</tr>';
+    }
+    return '<table class="prof-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+  }
+
+  /* THE MONTE CARLO ERROR IS SHOWN, not hidden behind decimal places. The
+     engine reports sqrt(p(1-p)/n), the exact sampling error of a
+     proportion; printing more digits than that supports would imply a
+     precision the method does not have. */
+  function profPrecisionHtml(res){
+    if (!res || typeof profileAbnormalityStdErr !== 'function') return '';
+    const se = profileAbnormalityStdErr(res.lowScores[0], res.trials);
+    if (!Number.isFinite(se)) return '';
+    return '<p class="prof-precision">Percentages are Monte Carlo estimates from '
+      + res.trials.toLocaleString() + ' simulated cases, so they carry a sampling error of about '
+      + '±' + se.toFixed(2) + ' percentage points at the largest value in this table. '
+      + 'The simulation is seeded, so the same profile always returns the same figures.</p>';
+  }
+
+  function renderProfile(){
+    const res = profSimulate();
+    const counts = profCounts();
+    const c = profCriterion();
+    const out = profEl('prof-results');
+    if (!out) return;
+
+    if (!res){
+      out.innerHTML = '<div class="prof-empty">The WAIS-IV intercorrelation matrix is unavailable, so no profile can be computed.</div>';
+      renderProfileApa();
+      return;
+    }
+    const complete = counts && counts.complete;
+    let html = '<div class="prof-cards">'
+      + profResultCard('Abnormally low Index scores',
+          'Index scores ' + c.label + '. Across four correlated Indices, showing one is far more common than the criterion alone suggests.',
+          complete ? counts.low : null, res.lowScores, 'Index scores')
+      + profResultCard('Abnormal pairwise differences',
+          'Differences between any two of the four Indices larger than 95% of the population shows, regardless of direction.',
+          complete ? counts.pair : null, res.pairwise, 'Index pairs')
+      + profResultCard('Abnormal deviations from own mean',
+          'Index scores differing from this patient’s own four-Index mean by more than 95% of the population does.',
+          complete ? counts.dev : null, res.deviations, 'Index scores')
+      + '</div>';
+    if (complete && (counts.lowWhich.length || counts.pairWhich.length || counts.devWhich.length)){
+      html += '<div class="prof-which-row">'
+        + '<div><span class="prof-which-label">Low</span>' + (counts.lowWhich.length ? profWhichHtml(counts.lowWhich) : '<div class="prof-which prof-which-none">none</div>') + '</div>'
+        + '<div><span class="prof-which-label">Differences</span>' + (counts.pairWhich.length ? profWhichHtml(counts.pairWhich) : '<div class="prof-which prof-which-none">none</div>') + '</div>'
+        + '<div><span class="prof-which-label">Deviations</span>' + (counts.devWhich.length ? profWhichHtml(counts.devWhich) : '<div class="prof-which prof-which-none">none</div>') + '</div>'
+        + '</div>';
+    }
+    html += profTableHtml(res, counts) + profPrecisionHtml(res);
+    out.innerHTML = html;
+    renderProfileApa();
+  }
+
+  /* THE APA TABLE IS THE PATIENT'S, NOT THE POPULATION'S, and it is
+     emitted only once all four scores are present.
+
+     The Working Report collects any container that holds an .apa-table, so
+     a renderer that writes its shell unconditionally offers an empty table
+     from every page - the defect CLAUDE.md records for renderOpiePredictApa.
+     A population table needs no patient data at all, so emitting one would
+     put a table in the report for a patient who has not been assessed. */
+  function renderProfileApa(){
+    const out = profEl('prof-apa');
+    if (!out) return;
+    const counts = profCounts();
+    const res = profSimulate();
+    if (!counts || !counts.complete || !res){
+      out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">'
+        + 'Enter all four Index scores to generate the APA table.</div>';
+      return;
+    }
+    const c = profCriterion();
+    const rows = [
+      ['Index scores ' + c.label, counts.low, profPctFor(res.lowScores, counts.low)],
+      ['Abnormally large pairwise differences', counts.pair, profPctFor(res.pairwise, counts.pair)],
+      ['Abnormally large deviations from own mean', counts.dev, profPctFor(res.deviations, counts.dev)]
+    ];
+    let body = '';
+    for (const [label, n, pct] of rows){
+      body += '<tr><td>' + escapeHtml(label) + '</td><td class="num">' + n + '</td>'
+        + '<td class="num">' + (n === 0 ? '—' : profFmtPct(pct)) + '</td></tr>';
+    }
+    const scoreLine = PROF_INDICES
+      .map(i => i.short + ' ' + profNum(profState.scores[i.key]))
+      .join(', ');
+    out.innerHTML =
+      '<div class="apa-table-num">Table 1</div>'
+      + '<div class="apa-table-title">Number of abnormal WAIS-IV Index findings and their base rates</div>'
+      + '<table class="apa-table"><thead><tr>'
+      + '<th>Finding</th><th class="num">Number observed</th><th class="num">Base rate</th>'
+      + '</tr></thead><tbody>' + body + '</tbody></table>'
+      + (typeof apaNoteHtml === 'function'
+          ? apaNoteHtml('prof', { criterion:c.label, pct:c.pct, trials:res.trials, scores:scoreLine })
+          : '');
+  }
+
+  /* Wiring. Inputs are read into profState and re-rendered in place: the
+     results block is a sibling of the inputs, never their parent, so a
+     re-render cannot take the focused box out from under the clinician. */
+  function setupProfile(){
+    const inputs = profEl('prof-inputs');
+    if (inputs) inputs.innerHTML = profInputsHtml();
+    const sel = profEl('prof-criterion');
+    if (sel) sel.innerHTML = profCriterionHtml();
+
+    section.addEventListener('input', e => {
+      const t = e.target;
+      if (t && t.dataset && t.dataset.profIndex){
+        profState.scores[t.dataset.profIndex] = t.value;
+        renderProfile();
+      }
+    });
+    section.addEventListener('change', e => {
+      if (e.target && e.target.id === 'prof-criterion'){
+        profState.criterion = e.target.value;
+        renderProfile();
+      }
+    });
+    const clear = profEl('prof-clear');
+    if (clear){
+      clear.addEventListener('click', () => {
+        profState.scores = {};
+        section.querySelectorAll('.prof-score-input').forEach(el => { el.value = ''; });
+        renderProfile();
+      });
+    }
+    renderProfile();
+  }
+
+  setupProfile();
+  window.renderProfile = renderProfile;
+})();
+
+</script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
@@ -35277,6 +36175,1215 @@ if (document.readyState === 'loading'){
 
   activateMethod('overview', { updateHash:false });
 })();
+</script>
+<script data-inlined-from="design-system.js">
+/* =============================================================================
+   PSYCHOMETRIC ASSISTANT - DESIGN SYSTEM JS (practice build)
+   Small enhancements that turn the SPA into something that feels
+   organisation-built rather than solo-coded:
+     1. Dynamic <title> per page         (Stripe / Linear convention)
+     2. Standardise scattered button microcopy
+     3. Mark page as ready (kills FOUC during stylesheet load)
+   ========================================================================== */
+
+(function(){
+  'use strict';
+
+  /* --- 1. Dynamic page titles ----------------------------------------------
+     Listens for nav-item clicks and updates the document title to:
+       "<Page name> - Psychometric Assistant"
+     Falls back gracefully if the page label can't be resolved. */
+  const SITE = 'Psychometric Assistant';
+  const TITLE_MAP = {
+    'home':           'Home',
+    'converter':      'Score Converter',
+    'battery':        'Score Tables',
+    'report-writer':  'Report Writer',
+    'effectsize':     'Effect Sizes',
+    'change-analysis':'Change Analysis',
+    'charts':         'Score Charts',
+    'profile':        'Profile Analysis',
+    'validity':       'Performance Validity',
+    'rci-basic':      'Standard Deviation Index',
+    'rci-practice':   'Simple Reliable Change',
+    'rci-srb':        'Practice-Adjusted',
+    'rci-mcsweeney':  'McSweeney Regression-Based',
+    'rci-crawford':   'Crawford Regression-Based',
+    'premorbid':      'Premorbid Estimation',
+    'about':          'Methods & References',
+    'custom-tests':   'Data',
+    'privacy-use':    'Privacy & use'
+  };
+
+  function setTitleForTarget(target){
+    const label = TITLE_MAP[target] || target;
+    document.title = `${label} - ${SITE}`;
+  }
+
+  function syncTitleFromActiveSection(){
+    const active = document.querySelector('section.section.active');
+    if (active && active.id) setTitleForTarget(active.id);
+  }
+
+  document.addEventListener('click', e => {
+    const navBtn = e.target.closest('[data-target]');
+    if (!navBtn) return;
+    const target = navBtn.dataset.target;
+    if (target) setTitleForTarget(target);
+  }, true);
+
+  /* Run once on load and on hash change so reloads land on the right title */
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', syncTitleFromActiveSection);
+  } else {
+    syncTitleFromActiveSection();
+  }
+  window.addEventListener('hashchange', syncTitleFromActiveSection);
+
+  /* --- 2. Microcopy standardisation ----------------------------------------
+     Swap the small handful of inconsistent button labels. Sentence case,
+     no period. Cheap to maintain - small explicit map. */
+  const COPY_REPLACEMENTS = [
+    [/^\s*\+\s*Add another subtest\s*$/i, '+ Add row'],
+    [/^\s*\+\s*Add test row\s*$/i,        '+ Add row'],
+    [/^\s*Clear all rows\s*$/i,           'Clear all'],
+    [/^\s*\+\s*Load example row\s*$/i,    'Load example']
+  ];
+
+  function applyMicrocopy(root){
+    if (!root) return;
+    const candidates = root.querySelectorAll('button, .btn, .add-row-btn');
+    candidates.forEach(el => {
+      // Only operate on buttons whose visible text matches the patterns.
+      // Don't touch elements with rich child structure (icons + text).
+      const txt = el.textContent.trim();
+      for (const [re, rep] of COPY_REPLACEMENTS){
+        if (re.test(txt)){
+          // Preserve any leading icon by replacing only the trailing text node
+          // when present; otherwise just set textContent.
+          const lastText = Array.from(el.childNodes).reverse().find(n => n.nodeType === 3);
+          if (lastText) lastText.textContent = ' ' + rep.replace(/^\+\s*/, '');
+          else el.textContent = rep;
+          break;
+        }
+      }
+    });
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => applyMicrocopy(document));
+  } else {
+    applyMicrocopy(document);
+  }
+
+  /* --- 3. Ready flag --------------------------------------------------------
+     Adds a class to <html> once everything has loaded. Useful hook for
+     fade-in transitions or for selectively suppressing animations until
+     the page has settled. */
+  window.addEventListener('load', () => {
+    document.documentElement.classList.add('ds-ready');
+  });
+
+  /* --- 4b. Inline control bar - Change Analysis pages ----------------------
+     For each Change Analysis sub-method (sdi, rci-basic, rci-practice,
+     rci-srb, rci-crawford), build an inline control bar that sits directly
+     above the data table and contains:
+       LEFT  - quick-add autofill search (over Subtest + norms columns)
+       RIGHT - 90/95% segmented toggle (over t(RB)/p result columns)
+     The bar is just a UI shell - it programmatically updates the original
+     hidden controls so all existing app logic keeps working. */
+  const CHANGE_METHODS = [
+    { id: 'sdi',           hasThreshold: true },
+    { id: 'rci-basic',     hasThreshold: true, hasCorrCorrToggle: true },
+    { id: 'rci-practice',  hasThreshold: true, hasCorrCorrToggle: true },
+    { id: 'rci-srb',       hasThreshold: true, hasCorrCorrToggle: true },
+    { id: 'rci-crawford',  hasThreshold: true, hasCorrCorrToggle: true }
+  ];
+
+  /* Compact button labels for threshold options. Maps the underlying
+     <option value> to a short visible label. SDI has 5 options
+     (two confidence intervals + three SD thresholds); the others have 2. */
+  const THRESHOLD_LABEL = {
+    '0.90': '90% CI',
+    '0.95': '95% CI',
+    '1':    '1 SD',
+    '1.5':  '1.5 SD',
+    '2':    '2 SD'
+  };
+
+  /* Score-type → group-row label. Used by updateScoresHeader() to
+     re-label the "Scores" column-group cell when the dropdown changes. */
+  const SCORE_LABEL = {
+    standard: 'Standard scores',
+    scaled:   'Scaled scores',
+    t:        'T-scores',
+    z:        'Z-scores',
+    raw:      'Raw scores'
+  };
+  const SCORE_LABEL_VALUES = Object.values(SCORE_LABEL);
+  function updateScoresHeader(methodId){
+    const table = document.getElementById(methodId + '-table');
+    if (!table) return;
+    const scoreSelect = methodId === 'sdi'
+      ? document.getElementById('sdi-type')
+      : document.querySelector('.rci-score-type[data-target="' + methodId + '"]');
+    if (!scoreSelect) return;
+    const label = SCORE_LABEL[scoreSelect.value] || 'Scores';
+    const groupRow = table.querySelector('thead .table-group-row');
+    if (!groupRow) return;
+    Array.from(groupRow.children).forEach(th => {
+      const text = (th.textContent || '').trim();
+      if (text === 'Scores' || SCORE_LABEL_VALUES.includes(text)){
+        th.textContent = label;
+      }
+    });
+  }
+  function thresholdLabel(opt){
+    return THRESHOLD_LABEL[opt.value] || opt.textContent.trim();
+  }
+
+  function buildInlineControlBar(method){
+    const section = document.getElementById(method.id);
+    if (!section) return;
+
+    /* Hide legacy panels - runs every call so it works even after the bar
+       is already built. Idempotent. The hide can fail on the first call
+       (consolidation hasn't wrapped panels yet) and succeed on a retry. */
+    const setupGrid = section.querySelector('.change-setup-grid');
+    if (setupGrid) setupGrid.classList.add('ds-legacy-hidden');
+    section.querySelectorAll(':scope > .panel').forEach(p => p.classList.add('ds-legacy-hidden'));
+
+    const table = section.querySelector('table.input-table');
+    if (!table) return;
+    if (section.querySelector('.ds-inline-bar')) return;     /* already built */
+
+    /* Locate the legacy controls we'll remote-control. Crawford & co use
+       class-based selectors; SDI uses ID-based. Try both. */
+    const sigSelect    = section.querySelector('.rci-cv, #sdi-cv');
+    const scoreSelect  = section.querySelector('.rci-score-type');
+    const familyInput  = section.querySelector('.combo-input.rci-family-input, .combo-input');
+    const familyList   = section.querySelector('.combo-list.rci-family-list, .combo-list');
+    const corrCheckbox = section.querySelector('.rci-use-corrected-r');
+
+    /* Build the bar - three sections: LEFT autofill, MIDDLE score type,
+       RIGHT threshold toggle. Each section omitted if its source isn't found.
+       The .combo class on the search wrapper is REQUIRED - there is a
+       global document mousedown listener (app.js ~2134) that closes any
+       open .combo-list when the click target's ancestor chain doesn't
+       include .combo. Without this class, every checkbox click would
+       collapse the dropdown before the change event registered. */
+    const bar = document.createElement('div');
+    bar.className = 'ds-inline-bar';
+    bar.innerHTML = `
+      <div class="ds-inline-bar-section ds-inline-bar-left">
+        ${familyInput ? `
+          <span class="ds-inline-bar-label">Quick add</span>
+          <div class="ds-inline-bar-search combo">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="7" cy="7" r="4.5"/>
+              <path d="M11 11l3 3"/>
+            </svg>
+            <input type="text" class="ds-inline-bar-input" placeholder="Search a test family (WAIS-IV, WMS-IV, RBANS…)" autocomplete="off">
+          </div>
+        ` : ''}
+      </div>
+      ${scoreSelect ? `
+        <div class="ds-inline-bar-section ds-inline-bar-middle">
+          <span class="ds-inline-bar-label">Score type</span>
+          <select class="ds-inline-bar-select" aria-label="Input score type">
+            ${[...scoreSelect.options].map(opt => `<option value="${opt.value}"${opt.value===scoreSelect.value?' selected':''}>${opt.textContent}</option>`).join('')}
+          </select>
+        </div>
+      ` : ''}
+      <div class="ds-inline-bar-section ds-inline-bar-right">
+        ${method.hasThreshold && sigSelect ? `
+          <span class="ds-inline-bar-label">Threshold</span>
+          <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Significance threshold">
+            ${[...sigSelect.options].map(opt => `
+              <button type="button" class="ds-inline-bar-toggle-btn" data-cv="${opt.value}" role="radio" title="${opt.textContent.trim().replace(/"/g,'&quot;')}">${thresholdLabel(opt)}</button>
+            `).join('')}
+          </div>
+        ` : ''}
+        ${method.hasCorrCorrToggle && corrCheckbox ? `
+          <label class="ds-inline-bar-corr-toggle" title="Use the corrected (attenuation-adjusted) test–retest correlation when available. Falls back to the raw r when corrected r is not provided for a given test.">
+            <input type="checkbox" class="ds-inline-bar-corr-input"${corrCheckbox.checked ? ' checked' : ''}>
+            <span>Corrected <em>r</em></span>
+          </label>
+        ` : ''}
+      </div>
+    `;
+    table.parentNode.insertBefore(bar, table);
+
+    /* Wire the autofill input → original (hidden) input */
+    if (familyInput && familyList){
+      const newInput = bar.querySelector('.ds-inline-bar-input');
+      const dropdownHost = bar.querySelector('.ds-inline-bar-search');
+      if (dropdownHost && familyList){
+        dropdownHost.appendChild(familyList);   /* re-parent the dropdown */
+      }
+      if (newInput){
+        const sync = (v) => {
+          familyInput.value = v;
+          familyInput.dispatchEvent(new Event('input',  { bubbles:true }));
+          familyInput.dispatchEvent(new Event('change', { bubbles:true }));
+        };
+        newInput.addEventListener('focus', () => {
+          familyInput.dispatchEvent(new Event('focus', { bubbles:true }));
+          familyList.classList.add('show');
+        });
+        newInput.addEventListener('blur',  () => setTimeout(() => {
+          if (!familyList.matches(':hover')) familyList.classList.remove('show');
+        }, 180));
+        newInput.addEventListener('input', () => sync(newInput.value));
+        newInput.addEventListener('keydown', e => {
+          familyInput.dispatchEvent(new KeyboardEvent('keydown', {
+            key: e.key, bubbles: true
+          }));
+          if (e.key === 'Escape') familyList.classList.remove('show');
+        });
+      }
+    }
+
+    /* Wire score-type dropdown → original (hidden) <select>.
+       Also sync the table's group-row "Scores" header to reflect the
+       chosen score type each time it changes. */
+    if (scoreSelect){
+      const newSelect = bar.querySelector('.ds-inline-bar-select');
+      if (newSelect){
+        newSelect.addEventListener('change', () => {
+          scoreSelect.value = newSelect.value;
+          scoreSelect.dispatchEvent(new Event('change', { bubbles:true }));
+          updateScoresHeader(method.id);
+        });
+        scoreSelect.addEventListener('change', () => {
+          if (newSelect.value !== scoreSelect.value) newSelect.value = scoreSelect.value;
+          updateScoresHeader(method.id);
+        });
+      }
+      /* Set the initial header text once on bar build */
+      updateScoresHeader(method.id);
+    }
+
+    /* Wire the corrected-r toggle → original (hidden) checkbox.
+       Two-way sync so calling code can flip the legacy box and the visible
+       toggle stays in lockstep. */
+    if (corrCheckbox && method.hasCorrCorrToggle){
+      const newCorr = bar.querySelector('.ds-inline-bar-corr-input');
+      if (newCorr){
+        newCorr.checked = !!corrCheckbox.checked;
+        newCorr.addEventListener('change', () => {
+          corrCheckbox.checked = newCorr.checked;
+          corrCheckbox.dispatchEvent(new Event('change', { bubbles:true }));
+        });
+        corrCheckbox.addEventListener('change', () => {
+          if (newCorr.checked !== corrCheckbox.checked) newCorr.checked = corrCheckbox.checked;
+        });
+      }
+    }
+
+    /* Wire the segmented threshold toggle → original (hidden) <select> */
+    if (sigSelect && method.hasThreshold){
+      const buttons = bar.querySelectorAll('.ds-inline-bar-toggle-btn');
+      const refresh = () => {
+        const v = sigSelect.value;
+        buttons.forEach(b => {
+          const active = b.dataset.cv === v;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+      };
+      buttons.forEach(b => {
+        b.addEventListener('click', () => {
+          sigSelect.value = b.dataset.cv;
+          sigSelect.dispatchEvent(new Event('change', { bubbles:true }));
+          refresh();
+        });
+      });
+      sigSelect.addEventListener('change', refresh);
+      refresh();
+    }
+
+    /* (legacy panel hiding already done at top of function) */
+  }
+
+  function buildAllChangeBars(){
+    CHANGE_METHODS.forEach(buildInlineControlBar);
+    buildBatteryInlineBar();
+  }
+
+  /* --- Battery / Neuropsych Tables inline bar -----------------------------
+     Same pattern as Change Analysis but four sections:
+       LEFT          Quick add search
+       MIDDLE-1      Classification (Wechsler / AACN - segmented toggle)
+       MIDDLE-2      Score Type (Scaled / Standard / T / Z - dropdown)
+       RIGHT         Premorbid (checkbox; score input appears when ticked)
+     Hides the original Configuration + Premorbid Comparison side panels
+     and the legacy bat-table-head autofill row. */
+  function buildBatteryInlineBar(){
+    const section = document.getElementById('battery');
+    if (!section) return;
+
+    /* Hide legacy chrome (always - idempotent) */
+    section.querySelectorAll('.bat-config-panel, .bat-premorbid-block, .bat-side-panels, .bat-table-head').forEach(el => {
+      el.classList.add('ds-legacy-hidden');
+    });
+
+    if (section.querySelector('.ds-inline-bar-battery')) return;          /* already built */
+
+    const familyInput   = document.getElementById('bat-family-input');
+    const familyList    = document.getElementById('bat-family-list');
+    const classSelect   = document.getElementById('bat-class');
+    const typeSelect    = document.getElementById('bat-type');
+    const premCheckbox  = document.getElementById('bat-prem-enable');
+    const premScoreInput= document.getElementById('bat-prem-score');
+    const table         = document.getElementById('bat-table');
+    if (!table) return;
+
+    const bar = document.createElement('div');
+    bar.className = 'ds-inline-bar ds-inline-bar-battery';
+    bar.innerHTML = `
+      <div class="ds-inline-bar-section ds-inline-bar-left">
+        ${familyInput ? `
+          <span class="ds-inline-bar-label">Quick add</span>
+          <div class="ds-inline-bar-search combo">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="7" cy="7" r="4.5"/>
+              <path d="M11 11l3 3"/>
+            </svg>
+            <input type="text" class="ds-inline-bar-input" placeholder="Search a test family…" autocomplete="off">
+          </div>
+        ` : ''}
+      </div>
+      <div class="ds-inline-bar-section ds-inline-bar-raw">
+        <button type="button" class="ds-inline-bar-toggle-btn" id="ds-bat-raw-toggle" aria-pressed="false">Show Raw</button>
+      </div>
+      <div class="ds-inline-bar-section">
+        <span class="ds-inline-bar-label">Score CI</span>
+        <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Score confidence interval">
+          <button type="button" class="ds-inline-bar-toggle-btn is-active" data-bat-ci="off" role="radio" aria-checked="true">Off</button>
+          <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci="90" role="radio" aria-checked="false">90%</button>
+          <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci="95" role="radio" aria-checked="false">95%</button>
+        </div>
+      </div>
+      <!-- Which coefficient the interval rests on. Revealed with the CI
+           toggle, because it drives nothing else on this page. "Published" is
+           the default and reproduces each manual's own printed interval; see
+           #bat-ci-basis in index.html.
+
+           This one belongs in the bar in a way the patient age never did: it
+           is a view setting for THIS table, not a property of the person. -->
+      <!-- THE TOOLTIPS ARE THE CONTROL'S ONLY EXPLANATION, so they carry the
+           whole answer rather than a restatement of the button label. Written
+           after a clinician read the two words and could not tell what either
+           did — "Published/Corrected" is meaningless without knowing that only
+           the r changes, and that it changes for almost no measures.
+
+           Newlines via &#10;, which native title honours. Kept as title rather
+           than a styled tooltip deliberately: this bar's sections have caused
+           enough trouble already, and title costs nothing in cascade risk,
+           needs no positioning maths (see the body{zoom:0.9} note in
+           CLAUDE.md), and is read out by screen readers. -->
+      <div class="ds-inline-bar-section ds-inline-bar-cibasis" hidden>
+        <span class="ds-inline-bar-label" title="Which reliability coefficient (r) the confidence intervals are built from.&#10;&#10;Every interval is score ± z × SD × √(1 − r), so this setting changes how wide the intervals are and nothing else. In practice it only affects D-KEFS and D-KEFS Advanced measures.">Reliability</span>
+        <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Reliability coefficient basis">
+          <button type="button" class="ds-inline-bar-toggle-btn is-active" data-bat-ci-basis="published" role="radio" aria-checked="true"
+            title="Uses each manual's own r, exactly as that manual uses it, so your intervals match the ones printed in the manual and anyone checking your report against the source will find agreement.&#10;&#10;The default. Leave it here unless you have a particular reason not to.">Published</button>
+          <button type="button" class="ds-inline-bar-toggle-btn" data-bat-ci-basis="corrected" role="radio" aria-checked="false"
+            title="Adjusts the manual's r to estimate what it would have been in the normative sample. Statistically tidier pairing, but the resulting number appears in no manual, so a reader checking your interval against the source will not be able to reproduce it.&#10;&#10;corrected r = 1 − (retest-sample SD² ÷ normative SD²) × (1 − r)&#10;&#10;Only D-KEFS and D-KEFS Advanced are affected, because every other manual already publishes a coefficient measured on its own normative sample, so there is nothing to adjust. That leaves 46 measures. At 95% it moves 13 printed margins (9 wider, 4 narrower) by at most 2 scaled-score points.&#10;&#10;If you use it, the note under the exported table says so.">Corrected</button>
+        </div>
+      </div>
+      <!-- No age slot. The patient age is #patient-age in the top bar: it is a
+           property of the person, not a view setting for this table, and it
+           belongs beside neither Show Raw nor Score CI. This bar holds view
+           settings only. -->
+      ${classSelect ? `
+        <div class="ds-inline-bar-section ds-inline-bar-right">
+          <span class="ds-inline-bar-label">Classification</span>
+          <div class="ds-inline-bar-toggle" role="radiogroup" aria-label="Classification system">
+            ${[...classSelect.options].map(opt => `
+              <button type="button" class="ds-inline-bar-toggle-btn" data-class="${opt.value}" role="radio">${opt.textContent.trim()}</button>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+    `;
+
+    /* Premorbid card - sits ABOVE the inline bar. Contains a header eyebrow,
+       description, checkbox to enable, and a score input that appears when
+       enabled. More descriptive than a single bar slot allowed. */
+    const premCard = document.createElement('div');
+    premCard.className = 'ds-prem-card' + (premCheckbox && premCheckbox.checked ? ' is-enabled' : '');
+    if (premCheckbox && premScoreInput){
+      premCard.innerHTML = `
+        <label class="ds-prem-card-header">
+          <input type="checkbox" class="ds-prem-card-checkbox"${premCheckbox.checked ? ' checked' : ''}>
+          <span class="ds-prem-card-mark" aria-hidden="true">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5,6.5 5,9 9.5,3.5"/></svg>
+          </span>
+          <span class="ds-inline-bar-label ds-prem-card-eyebrow">
+            Premorbid comparison
+            <span class="ds-prem-card-eyebrow-tag">(informal)</span>
+          </span>
+        </label>
+
+        <!-- Primary: autofill (replaced by status block when a link is active) -->
+        <div class="bat-prem-link-wrap" id="bat-prem-link-wrap">
+          <button type="button" class="bat-prem-link-btn" id="bat-prem-link-btn"${premCheckbox.checked ? '' : ' disabled'}
+                  aria-haspopup="true" aria-expanded="false"
+                  title="Pull an estimate from the Premorbid page (uses the lower CI bound as the comparison anchor)">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 7h10"/>
+              <polyline points="8,3 12,7 8,11"/>
+            </svg>
+            Autofill from Premorbid page
+          </button>
+          <div class="bat-prem-link-popover" id="bat-prem-link-popover" role="menu"></div>
+        </div>
+        <div class="bat-prem-link-status" id="bat-prem-link-status" hidden></div>
+
+        <span class="ds-prem-card-or" aria-hidden="true">or</span>
+
+        <!-- Secondary: manual entry -->
+        <div class="ds-prem-card-input-wrap">
+          <label class="ds-prem-card-input-label" for="ds-prem-card-score">Manual</label>
+          <input type="number" id="ds-prem-card-score" class="ds-prem-card-score" placeholder="e.g. 110" step="any"${premCheckbox.checked ? '' : ' disabled'} aria-label="Premorbid standard score">
+        </div>
+
+        <!-- Flagging method toggle -->
+        <div class="ds-prem-mode-row" id="ds-prem-mode-row">
+          <span class="ds-inline-bar-label">Flag if</span>
+          <div class="ds-inline-bar-toggle ds-prem-mode-toggle" role="radiogroup" aria-label="Flagging method">
+            <button type="button" class="ds-inline-bar-toggle-btn ds-prem-mode-btn is-active" data-prem-mode="sd" role="radio" aria-checked="true">SD Threshold</button>
+            <button type="button" class="ds-inline-bar-toggle-btn ds-prem-mode-btn" data-prem-mode="see" role="radio" aria-checked="false">CI Threshold</button>
+          </div>
+        </div>
+      `;
+    }
+    /* Insert: premorbid card, then note, then inline bar, then table */
+    const tableBlock = section.querySelector('.bat-table-block') || table;
+    if (premCheckbox && premScoreInput) tableBlock.parentNode.insertBefore(premCard, tableBlock);
+    const premNote = document.createElement('p');
+    premNote.className = 'ds-prem-note';
+    premNote.id = 'ds-prem-note';
+    premNote.innerHTML = 'Flagging scores below premorbid estimate &ensp;·&ensp; <strong>*</strong> ≥1 SD below &ensp;·&ensp; <strong>**</strong> ≥1.5 SD below &ensp;·&ensp; <strong>***</strong> ≥2 SD below';
+    if (premCheckbox && premScoreInput) tableBlock.parentNode.insertBefore(premNote, tableBlock);
+    tableBlock.parentNode.insertBefore(bar, tableBlock);
+
+    /* Wire Quick add - same pattern as Change Analysis */
+    if (familyInput && familyList){
+      const newInput = bar.querySelector('.ds-inline-bar-input');
+      const dropdownHost = bar.querySelector('.ds-inline-bar-search');
+      if (dropdownHost && familyList) dropdownHost.appendChild(familyList);
+      if (newInput){
+        newInput.addEventListener('focus', () => {
+          familyInput.dispatchEvent(new Event('focus', { bubbles:true }));
+          familyList.classList.add('show');
+        });
+        newInput.addEventListener('blur', () => setTimeout(() => {
+          if (!familyList.matches(':hover')) familyList.classList.remove('show');
+        }, 180));
+        newInput.addEventListener('input', () => {
+          familyInput.value = newInput.value;
+          familyInput.dispatchEvent(new Event('input',  { bubbles:true }));
+          familyInput.dispatchEvent(new Event('change', { bubbles:true }));
+        });
+        newInput.addEventListener('keydown', e => {
+          familyInput.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, bubbles: true }));
+          if (e.key === 'Escape') familyList.classList.remove('show');
+        });
+      }
+    }
+
+    /* Wire Classification toggle - `data-class` attribute is unique to the
+       class buttons (threshold buttons use `data-cv`), so a bare attribute
+       selector is the safest match regardless of where the section lives. */
+    if (classSelect){
+      const buttons = bar.querySelectorAll('.ds-inline-bar-toggle-btn[data-class]');
+      const refresh = () => {
+        const v = classSelect.value;
+        buttons.forEach(b => {
+          const active = b.dataset.class === v;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+      };
+      buttons.forEach(b => {
+        b.addEventListener('click', () => {
+          classSelect.value = b.dataset.class;
+          classSelect.dispatchEvent(new Event('change', { bubbles:true }));
+          refresh();
+        });
+      });
+      classSelect.addEventListener('change', refresh);
+      refresh();
+    }
+
+    /* Wire Score CI toggle */
+    const ciInput = document.getElementById('bat-ci-level');
+    const basisSlot = bar.querySelector('.ds-inline-bar-cibasis');
+    if (ciInput){
+      /* [data-bat-ci], not [data-bat-ci-basis] — the dataset key for the
+         latter is batCiBasis, so a loose attribute selector would sweep the
+         basis buttons into the CI radiogroup and the two would fight over
+         is-active. */
+      const ciBtns = bar.querySelectorAll('[data-bat-ci]:not([data-bat-ci-basis])');
+      const syncCi = () => {
+        const v = ciInput.value || 'off';
+        ciBtns.forEach(b => {
+          const active = b.dataset.batCi === v;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+        /* Offer the basis at the moment it starts mattering — it drives
+           nothing with the interval switched off. The patient age used to be
+           revealed here too; it now lives in the top bar and is always on
+           screen, because a field a clinician never saw was the defect. */
+        if (basisSlot) basisSlot.hidden = (v === 'off');
+      };
+      ciBtns.forEach(b => {
+        b.addEventListener('click', () => {
+          ciInput.value = b.dataset.batCi;
+          ciInput.dispatchEvent(new Event('change', { bubbles: true }));
+          syncCi();
+        });
+      });
+      ciInput.addEventListener('change', syncCi);
+      syncCi();
+    }
+
+    /* Wire the reliability-basis toggle. Same shape as the CI toggle above:
+       the hidden input is the state, the buttons only write to it, and the
+       'change' event is what app.js listens to — so the table and the Data
+       page both re-render from one source rather than from the button. */
+    const basisInput = document.getElementById('bat-ci-basis');
+    if (basisInput){
+      const basisBtns = bar.querySelectorAll('[data-bat-ci-basis]');
+      const syncBasis = () => {
+        const v = basisInput.value || 'published';
+        basisBtns.forEach(b => {
+          const active = b.dataset.batCiBasis === v;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+      };
+      basisBtns.forEach(b => {
+        b.addEventListener('click', () => {
+          basisInput.value = b.dataset.batCiBasis;
+          basisInput.dispatchEvent(new Event('change', { bubbles: true }));
+          syncBasis();
+        });
+      });
+      basisInput.addEventListener('change', syncBasis);
+      syncBasis();
+    }
+
+    /* Wire Raw column toggle */
+    if (table){
+      const rawBtn = bar.querySelector('#ds-bat-raw-toggle');
+      if (rawBtn){
+        const syncRaw = () => {
+          const visible = !table.classList.contains('raw-hidden');
+          rawBtn.textContent = visible ? 'Hide Raw' : 'Show Raw';
+          rawBtn.classList.toggle('is-active', visible);
+          rawBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+        };
+        rawBtn.addEventListener('click', () => {
+          table.classList.toggle('raw-hidden');
+          syncRaw();
+        });
+        syncRaw();
+      }
+    }
+
+    /* Wire Premorbid CARD checkbox + score input - card lives above the bar.
+       Checkbox controls whether the score input is enabled and the card
+       picks up its "is-enabled" treatment (lighter on rest, terracotta-tinted
+       when active). */
+    if (premCheckbox && premScoreInput){
+      const newCheckbox = premCard.querySelector('.ds-prem-card-checkbox');
+      const newScore    = premCard.querySelector('.ds-prem-card-score');
+      if (newCheckbox){
+        const syncFromOriginal = () => {
+          newCheckbox.checked = premCheckbox.checked;
+          if (newScore){
+            newScore.disabled = !premCheckbox.checked;
+            if (newScore.value !== premScoreInput.value) newScore.value = premScoreInput.value;
+          }
+          /* Keep the picker link button enable-state in sync with the checkbox */
+          const linkBtn = premCard.querySelector('#bat-prem-link-btn');
+          if (linkBtn) linkBtn.disabled = !premCheckbox.checked;
+          premCard.classList.toggle('is-enabled', premCheckbox.checked);
+        };
+        newCheckbox.addEventListener('change', () => {
+          premCheckbox.checked = newCheckbox.checked;
+          premCheckbox.dispatchEvent(new Event('change', { bubbles:true }));
+          syncFromOriginal();
+          if (newCheckbox.checked && newScore) setTimeout(() => newScore.focus(), 50);
+        });
+        premCheckbox.addEventListener('change', syncFromOriginal);
+        syncFromOriginal();
+      }
+      if (newScore){
+        newScore.addEventListener('input', () => {
+          premScoreInput.value = newScore.value;
+          premScoreInput.dispatchEvent(new Event('input', { bubbles:true }));
+          premScoreInput.dispatchEvent(new Event('change', { bubbles:true }));
+        });
+        premScoreInput.addEventListener('input', () => {
+          if (newScore.value !== premScoreInput.value) newScore.value = premScoreInput.value;
+        });
+      }
+
+      /* Wire flagging-method toggle */
+      const modeThreshold = document.getElementById('bat-prem-threshold');
+      if (modeThreshold){
+        const modeBtns = premCard.querySelectorAll('[data-prem-mode]');
+        const SD_NOTE  = 'Flagging scores below premorbid estimate &ensp;·&ensp; <strong>*</strong> ≥1 SD below &ensp;·&ensp; <strong>**</strong> ≥1.5 SD below &ensp;·&ensp; <strong>***</strong> ≥2 SD below';
+        const SEE_NOTE = 'Flagging scores outside the SEE of the premorbid estimate &ensp;·&ensp; <strong>*</strong> below 90% CI lower bound &ensp;·&ensp; <strong>**</strong> below 95% CI lower bound &ensp;·&ensp; <strong>***</strong> below 99% CI lower bound';
+        function syncModeUI(){
+          const mode = modeThreshold.value === 'see' ? 'see' : 'sd';
+          modeBtns.forEach(b => {
+            const active = b.dataset.premMode === mode;
+            b.classList.toggle('is-active', active);
+            b.setAttribute('aria-checked', active ? 'true' : 'false');
+          });
+          const noteEl = document.getElementById('ds-prem-note');
+          if (noteEl) noteEl.innerHTML = mode === 'see' ? SEE_NOTE : SD_NOTE;
+        }
+        /* Normalize legacy "stars" value */
+        if (modeThreshold.value !== 'see') modeThreshold.value = 'sd';
+        syncModeUI();
+        modeBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            modeThreshold.value = btn.dataset.premMode;
+            modeThreshold.dispatchEvent(new Event('change', { bubbles: true }));
+            syncModeUI();
+          });
+        });
+        modeThreshold.addEventListener('change', syncModeUI);
+      }
+    }
+  }
+
+  /* Use a MutationObserver on the change-analysis container so the bar
+     gets built whenever the SPA finishes consolidating its panels, AND
+     gets re-built if the user switches between sub-methods that may
+     re-render. Belt-and-braces: also fire on a few timeouts for the case
+     where the observer attaches AFTER the relevant mutations fire. */
+  function startChangeObserver(){
+    /* Run immediately in case panels are already in their final state */
+    buildAllChangeBars();
+
+    const watch = document.body;
+    if (!watch || typeof MutationObserver === 'undefined'){
+      /* Fallback: timer-based retries */
+      [100, 300, 600, 1200, 2400].forEach(ms => setTimeout(buildAllChangeBars, ms));
+      return;
+    }
+
+    let scheduled = false;
+    const observer = new MutationObserver(() => {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        buildAllChangeBars();
+      });
+    });
+    observer.observe(watch, { childList: true, subtree: true });
+
+    /* Belt-and-braces timer fires for cases the observer might miss */
+    [100, 300, 600, 1200, 2400, 5000].forEach(ms => setTimeout(buildAllChangeBars, ms));
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', startChangeObserver);
+  } else {
+    startChangeObserver();
+  }
+
+  /* --- 4e. Tag Simple RCI norm cells -------------------------------------
+     The Simple Reliable Change table (#rci-basic-table) is skipped by the
+     legacy setupNormsLockToggle, so its SD and r columns never get the
+     data-norm-cell="true" attribute. Tag them ourselves so the borderless
+     CSS rules in section 34 apply consistently. */
+  function tagSimpleRciNorms(){
+    const table = document.getElementById('rci-basic-table');
+    if (!table || !table.tBodies[0]) return;
+    /* Columns: 0=#, 1=Subtest, 2=SD, 3=r, 4=Date1, 5=Date2, 6=RCI, 7=p, 8=Outcome, 9=actions
+       The two norm cells are columns 2 and 3 (zero-indexed). */
+    const NORM_COLS = [2, 3];
+    /* Tag header row */
+    table.querySelectorAll('thead tr').forEach(row => {
+      Array.from(row.children).forEach((cell, i) => {
+        if (NORM_COLS.includes(i)) cell.dataset.normCell = 'true';
+      });
+    });
+    /* Tag body rows */
+    table.tBodies[0].querySelectorAll('tr').forEach(row => {
+      Array.from(row.children).forEach((cell, i) => {
+        if (NORM_COLS.includes(i)) cell.dataset.normCell = 'true';
+      });
+    });
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', tagSimpleRciNorms);
+  } else {
+    tagSimpleRciNorms();
+  }
+  /* Re-tag whenever rows are added/removed */
+  if (typeof MutationObserver !== 'undefined'){
+    const t = document.getElementById('rci-basic-table');
+    if (t && t.tBodies[0]){
+      new MutationObserver(tagSimpleRciNorms).observe(t.tBodies[0], { childList: true, subtree: true });
+    } else {
+      /* Try again after the SPA renders */
+      [200, 600, 1200, 2400].forEach(ms => setTimeout(tagSimpleRciNorms, ms));
+    }
+  }
+
+  /* --- 4d. Working Report chip - green orbit on nav-tab click --------------
+     Visual feedback: a green light sweeps around the chip's circumference
+     each time the user clicks a top-nav tab. One-shot 1.4s animation,
+     re-triggerable by removing/re-adding the class with a forced reflow. */
+  document.addEventListener('click', e => {
+    const navTab = e.target.closest('.topnav-item, .topnav-drop-item');
+    if (!navTab) return;
+    /* orbit trigger disabled — always-on rainbow ring replaces it */
+  }, true);
+
+  /* --- 4c. Remove the deprecated "Lock norms" feature ----------------------
+     The original app injects a Lock/Unlock pill into each Change Analysis
+     table's "Norms" group cell, defaults the table to "locked" (norms
+     faded + inputs disabled), and toggles via the pill. We've removed this
+     feature, so:
+       1. Strip the .norms-locked class from every input-table
+       2. Re-enable any norm-cell inputs that were `disabled`
+       3. Remove the Lock/Unlock pill if it's already in the DOM
+     CSS in section 33 hides any visual remnants. */
+  function clearNormsLock(){
+    document.querySelectorAll('.input-table.norms-locked').forEach(t => {
+      t.classList.remove('norms-locked');
+    });
+    document.querySelectorAll('.input-table [data-norm-cell="true"] input[disabled]').forEach(inp => {
+      inp.disabled = false;
+      inp.removeAttribute('disabled');
+    });
+    document.querySelectorAll('.norms-toggle-pill').forEach(p => p.remove());
+  }
+  /* Run on DOM ready and again on every mutation, so newly added rows /
+     re-rendered tables don't reapply the lock. */
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', clearNormsLock);
+  } else {
+    clearNormsLock();
+  }
+  if (typeof MutationObserver !== 'undefined'){
+    let nlScheduled = false;
+    new MutationObserver(() => {
+      if (nlScheduled) return;
+      nlScheduled = true;
+      requestAnimationFrame(() => {
+        nlScheduled = false;
+        clearNormsLock();
+      });
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'disabled'] });
+  }
+  /* Belt-and-braces timer fires too */
+  [200, 600, 1200].forEach(ms => setTimeout(clearNormsLock, ms));
+
+  /* --- 4. Chip auto-fade on scroll ------------------------------------------
+     While the user is actively scrolling (i.e. reading / working), the
+     Working Report chip recedes (opacity + slight scale-down) so it isn't
+     a hot spot on top of content. When scrolling stops for ~600ms or the
+     user scrolls back up, it returns to full presence. The drawer being
+     open suspends this entirely - chip stays fully visible. */
+  let scrollTimer = null;
+  let lastScrollY = window.scrollY;
+  const RECEDE_CLASS = 'ds-chip-recede';
+  const RECEDE_DELAY = 600;
+
+  function onScroll(){
+    const drawerOpen = document.querySelector('.rb-root.is-open');
+    if (drawerOpen){
+      document.body.classList.remove(RECEDE_CLASS);
+      return;
+    }
+    const dy = window.scrollY - lastScrollY;
+    lastScrollY = window.scrollY;
+    // Only recede on downward scroll - upward scroll restores immediately
+    if (dy > 2) document.body.classList.add(RECEDE_CLASS);
+    else if (dy < -2) document.body.classList.remove(RECEDE_CLASS);
+    // Reset timer - when scrolling stops, restore the chip
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      document.body.classList.remove(RECEDE_CLASS);
+    }, RECEDE_DELAY);
+  }
+  // Listen on whatever actually scrolls. The redesign moved the scroll
+  // container from `.main` (now overflow:visible) to the document, so binding
+  // to `.main` meant this handler never fired at all.
+  function attachChipFade(){
+    const mainEl = document.querySelector('.main');
+    const mainScrolls = mainEl && ['auto','scroll','overlay'].includes(getComputedStyle(mainEl).overflowY);
+    const target = mainScrolls ? mainEl : window;
+    target.addEventListener('scroll', onScroll, { passive: true });
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', attachChipFade);
+  } else {
+    attachChipFade();
+  }
+
+  // ============================================================================
+  // PREMORBID - 2-column layout (sticky inputs LEFT, tabbed tables RIGHT)
+  //
+  // Restructures the existing markup at runtime so this is a pure additive
+  // overlay (no HTML edits required, easy to revert by deleting this block).
+  // Also builds a minimalistic model-availability tick list inside the aside
+  // that updates live as the user fills in fields.
+  // ============================================================================
+
+  function restructurePremorbid(){
+    const sec = document.getElementById('premorbid');
+    if (!sec || sec.classList.contains('ds-prem-restructured')) return;
+
+    const tabs        = sec.querySelector('.pre-tabs');
+    const inputsTab   = sec.querySelector('#pre-inputs');
+    const inputsPanel = inputsTab && inputsTab.querySelector('.premorbid-input-panel');
+    const estimates   = sec.querySelector('#pre-estimates');
+    const predict     = sec.querySelector('#pre-predict');
+    const opiePredict = sec.querySelector('#pre-opiepredict');
+    const tabNav      = sec.querySelector('.pre-tab-nav');
+
+    if (!tabs || !inputsPanel || !estimates) return;
+
+    const layout = document.createElement('div');
+    layout.className = 'ds-prem-layout';
+    const aside = document.createElement('aside');
+    aside.className = 'ds-prem-aside';
+    const main  = document.createElement('div');
+    main.className = 'ds-prem-main';
+    layout.appendChild(aside);
+    layout.appendChild(main);
+
+    tabs.parentNode.insertBefore(layout, tabs);
+
+    aside.appendChild(inputsPanel);
+
+    // Shorten field labels for the compact aside layout. Map by input id so
+    // we don't depend on the source label text. Idempotent.
+    const labelMap = {
+      'pre-topf':  'ToPF Raw',
+      'pre-vc':    'Vocabulary',
+      'pre-mr':    'Matrix Reasoning',
+      'pre-sex':   'Sex',
+      'pre-occ':   'Occupation',
+      'pre-edu':   'Education (yrs)',
+      'pre-age':   'Age',
+      'pre-ci':    'Confidence',
+      'pre-title': 'Title'
+    };
+    Object.keys(labelMap).forEach(id => {
+      const ctrl = aside.querySelector('#' + id);
+      if (!ctrl) return;
+      const wrap = ctrl.closest('.field');
+      if (!wrap) return;
+      const lbl = wrap.querySelector('label');
+      if (!lbl) return;
+      const sub = lbl.querySelector('.pre-label-sub');
+      lbl.textContent = labelMap[id];
+      if (sub) lbl.appendChild(sub);
+    });
+    if (inputsTab) inputsTab.style.display = 'none';
+
+    main.appendChild(tabs);
+    if (estimates)   main.appendChild(estimates);
+    if (predict)     main.appendChild(predict);
+    if (opiePredict) main.appendChild(opiePredict);
+    if (tabNav)      main.appendChild(tabNav);
+
+    /* Replace the Confidence Interval <select> with a segmented toggle, matching
+       the threshold pills used on the Change Analysis bars. The original select
+       stays in place (visually hidden) so all downstream JS that reads its
+       value continues to work. */
+    const ciSel = aside.querySelector('#pre-ci');
+    if (ciSel && !aside.querySelector('.ds-prem-ci-toggle')){
+      const wrap = ciSel.closest('.field');
+      if (wrap){
+        const toggle = document.createElement('div');
+        toggle.className = 'ds-prem-ci-toggle ds-inline-bar-toggle';
+        toggle.setAttribute('role', 'radiogroup');
+        toggle.setAttribute('aria-label', 'Confidence interval');
+        Array.from(ciSel.options).forEach(opt => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'ds-inline-bar-toggle-btn';
+          btn.setAttribute('role', 'radio');
+          btn.dataset.val = opt.value;
+          btn.textContent = (opt.value === '0.95') ? '95%' : '90%';
+          btn.title = opt.textContent.trim();
+          toggle.appendChild(btn);
+        });
+        // Insert toggle after the label, before the select
+        ciSel.insertAdjacentElement('beforebegin', toggle);
+        // Hide the original select but keep it functional for state
+        ciSel.style.display = 'none';
+        const refresh = () => {
+          const v = ciSel.value;
+          toggle.querySelectorAll('button').forEach(b => {
+            const active = b.dataset.val === v;
+            b.classList.toggle('is-active', active);
+            b.setAttribute('aria-checked', active ? 'true' : 'false');
+          });
+        };
+        toggle.querySelectorAll('button').forEach(b => {
+          b.addEventListener('click', () => {
+            ciSel.value = b.dataset.val;
+            ciSel.dispatchEvent(new Event('change', { bubbles:true }));
+            refresh();
+          });
+        });
+        ciSel.addEventListener('change', refresh);
+        refresh();
+      }
+    }
+
+    const inputsTabBtn = tabs.querySelector('[data-pre-tab="inputs"]');
+    const estimatesBtn = tabs.querySelector('[data-pre-tab="estimates"]');
+    if (inputsTabBtn && inputsTabBtn.classList.contains('active') && estimatesBtn){
+      estimatesBtn.click();
+    }
+    if (inputsTabBtn && inputsTabBtn.parentNode){
+      inputsTabBtn.parentNode.removeChild(inputsTabBtn);
+    }
+
+    const ticks = document.createElement('div');
+    ticks.className = 'ds-prem-ticks';
+    ticks.id = 'ds-prem-ticks';
+    ticks.setAttribute('aria-live', 'polite');
+    ticks.innerHTML =
+      '<div class="ds-prem-ticks-head">'
+      + '<div class="ds-prem-ticks-eyebrow">Predictions</div>'
+      + '<div class="ds-prem-ticks-count" id="ds-prem-ticks-count">0 / 4</div>'
+      + '</div>'
+      + '<ul class="ds-prem-ticks-list">'
+      +   '<li class="ds-prem-ticks-row" data-model="topf-raw">'
+      +     '<span class="ds-prem-ticks-mark" aria-hidden="true"></span>'
+      +     '<span class="ds-prem-ticks-name">ToPF raw score</span>'
+      +   '</li>'
+      +   '<li class="ds-prem-ticks-row" data-model="topf-demo">'
+      +     '<span class="ds-prem-ticks-mark" aria-hidden="true"></span>'
+      +     '<span class="ds-prem-ticks-name">ToPF + Demographics</span>'
+      +   '</li>'
+      +   '<li class="ds-prem-ticks-row" data-model="crawford">'
+      +     '<span class="ds-prem-ticks-mark" aria-hidden="true"></span>'
+      +     '<span class="ds-prem-ticks-name">Crawford &amp; Allan</span>'
+      +   '</li>'
+      +   '<li class="ds-prem-ticks-row" data-model="opie4">'
+      +     '<span class="ds-prem-ticks-mark" aria-hidden="true"></span>'
+      +     '<span class="ds-prem-ticks-name">OPIE-4 prorated FSIQ</span>'
+      +   '</li>'
+      + '</ul>';
+    aside.appendChild(ticks);
+
+    sec.classList.add('ds-prem-restructured');
+  }
+
+  function premHas(id){
+    const el = document.getElementById(id);
+    if (!el) return false;
+    return (el.value || '').trim() !== '';
+  }
+  function updatePremorbidTicks(){
+    const list = document.getElementById('ds-prem-ticks');
+    if (!list) return;
+    const has = {
+      topf: premHas('pre-topf'), vc:  premHas('pre-vc'),  mr:  premHas('pre-mr'),
+      sex:  premHas('pre-sex'),  occ: premHas('pre-occ'), edu: premHas('pre-edu'),
+      age:  premHas('pre-age')
+    };
+    const ready = {
+      'topf-raw' : has.topf,
+      'topf-demo': has.topf && has.sex && has.occ && has.edu,
+      'crawford' : has.sex && has.occ && has.edu && has.age,
+      'opie4'    : has.age && (has.vc || has.mr)
+    };
+    let n = 0;
+    list.querySelectorAll('.ds-prem-ticks-row').forEach(row => {
+      const k = row.getAttribute('data-model');
+      const r = !!ready[k];
+      row.classList.toggle('is-ready', r);
+      if (r) n++;
+    });
+    const counter = document.getElementById('ds-prem-ticks-count');
+    if (counter){
+      counter.textContent = n + ' / 4';
+      counter.classList.toggle('is-all-ready', n === 4);
+    }
+  }
+  function bindPremorbidTicks(){
+    const ids = ['pre-topf','pre-vc','pre-mr','pre-sex','pre-occ','pre-edu','pre-age'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el || el.dataset.dsPremBound === '1') return;
+      el.dataset.dsPremBound = '1';
+      el.addEventListener('input',  updatePremorbidTicks);
+      el.addEventListener('change', updatePremorbidTicks);
+    });
+    updatePremorbidTicks();
+  }
+
+  function initPremorbidLayout(){
+    restructurePremorbid();
+    bindPremorbidTicks();
+  }
+
+  // ============================================================================
+  // COMBO DROPDOWNS - clamp height to available viewport space
+  // The legacy CSS used a fixed 330–520px max-height. On smaller viewports
+  // (or when the input sits low on the page) this clipped the bottom of the
+  // dropdown below the viewport, forcing the user to scroll the WINDOW.
+  // Solution: when a combo-list opens, measure its top position and set its
+  // max-height to (viewport − top − margin). The inner .combo-options gets a
+  // matching cap so its overflow-y still triggers.
+  // ============================================================================
+  function clampComboList(list){
+    if (!list || !list.classList.contains('show')) return;
+    const rect = list.getBoundingClientRect();
+    const margin = 16;
+    const available = Math.max(220, window.innerHeight - rect.top - margin);
+    // setProperty with 'important' so we beat the CSS `!important` cap
+    list.style.setProperty('max-height', available + 'px', 'important');
+    const opts = list.querySelector('.combo-options');
+    if (opts){
+      const footer = list.querySelector('.combo-footer');
+      const note   = list.querySelector('.combo-ageband-note');
+      const reserve = (footer ? footer.offsetHeight : 0)
+                    + (note   ? note.offsetHeight   : 0)
+                    + 12;
+      const optMax = Math.max(160, available - reserve);
+      opts.style.setProperty('max-height', optMax + 'px', 'important');
+    }
+  }
+  // Watch every combo-list for class changes (the legacy code toggles `show`)
+  function observeComboLists(){
+    document.querySelectorAll('.combo-list').forEach(list => {
+      if (list.dataset.dsComboObs === '1') return;
+      list.dataset.dsComboObs = '1';
+      const obs = new MutationObserver(() => {
+        if (list.classList.contains('show')) clampComboList(list);
+      });
+      obs.observe(list, { attributes: true, attributeFilter: ['class'] });
+    });
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', observeComboLists);
+  } else {
+    observeComboLists();
+  }
+  // Re-bind when new dropdowns are added later (SPA / dynamic re-render)
+  setTimeout(observeComboLists, 500);
+  setTimeout(observeComboLists, 1500);
+  // Re-clamp on window resize (open dropdown follows the new viewport)
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('.combo-list.show').forEach(clampComboList);
+  });
+
+  // Topnav dropdown shortcuts: items with data-pre-tab="..." should activate
+  // the matching tab inside the Premorbid section after navigation.
+  document.addEventListener('click', e => {
+    const item = e.target.closest('[data-pre-tab][data-target="premorbid"]');
+    if (!item) return;
+    const want = item.dataset.preTab;
+    // Defer so the SPA's section-switch logic has run.
+    setTimeout(() => {
+      const tabBtn = document.querySelector(
+        '#premorbid .pre-tabs [data-pre-tab="' + want + '"]'
+      );
+      if (tabBtn) tabBtn.click();
+    }, 0);
+  }, true);
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', initPremorbidLayout);
+  } else {
+    initPremorbidLayout();
+  }
+})();
+
+/* =============================================================================
+   HOME DIAL — which tool the hub is describing
+
+   The ring has nowhere to put a line of body copy beside each label, so the
+   description lives in the hub and only the active tool's is shown. That
+   reveal is driven from `data-active` on the stage rather than from `:hover`
+   and `:focus-visible` in CSS, for three reasons:
+
+     1. It is verifiable. A state pseudo-class could not be confirmed to
+        resolve when driving the real page here: a pointer over a node made
+        `matches(':hover')` true and keyboard focus made `matches(':focus-
+        visible')` true, yet in both cases the computed style stayed at the
+        base value, while a non-state control rule injected in the same
+        recalculation applied immediately. An attribute selector is ordinary
+        cascade with no state involved, so it can be driven and read back.
+
+     2. It works on touch, where there is no hover at all. A tap sets the
+        description before the click navigates.
+
+     3. It keeps one mechanism. The CSS still carries the :hover and
+        :focus-visible rules as well, so a browser that resolves them loses
+        nothing, but nothing depends on them.
+
+   Delegated on `document`, so this needs no element to exist when it runs and
+   cannot be broken by init ordering — the hazard recorded in CLAUDE.md, where
+   a top-level call to a missing function killed every statement after it.
+   ========================================================================== */
+(function(){
+  'use strict';
+
+  function stageOf(el){
+    return el && el.closest ? el.closest('.home-dial-stage') : null;
+  }
+
+  function setActive(node){
+    const stage = stageOf(node);
+    if (!stage) return;
+    const i = node.getAttribute('data-dial');
+    if (i == null) return;
+    stage.setAttribute('data-active', i);
+  }
+
+  function clearActive(stage){
+    if (stage) stage.removeAttribute('data-active');
+  }
+
+  /* pointerover/out rather than mouseenter/leave: those do not bubble, and
+     everything here is delegated. */
+  document.addEventListener('pointerover', e => {
+    const node = e.target.closest && e.target.closest('.home-dial-node');
+    if (node) setActive(node);
+  });
+
+  document.addEventListener('pointerout', e => {
+    const stage = stageOf(e.target);
+    if (!stage) return;
+    /* Only clear when the pointer has actually left the stage, not when it
+       crosses between a node's own children. */
+    if (!e.relatedTarget || !stage.contains(e.relatedTarget)) clearActive(stage);
+  });
+
+  document.addEventListener('focusin', e => {
+    const node = e.target.closest && e.target.closest('.home-dial-node');
+    if (node) setActive(node);
+  });
+
+  document.addEventListener('focusout', e => {
+    const stage = stageOf(e.target);
+    if (!stage) return;
+    if (!e.relatedTarget || !stage.contains(e.relatedTarget)) clearActive(stage);
+  });
+})();
+
 </script>
 </body></html>
 

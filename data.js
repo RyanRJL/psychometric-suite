@@ -53,6 +53,116 @@ const REPORT_TEST_CATALOG = [
     longName:'Repeatable Battery for the Assessment of Neuropsychological Status (RBANS Update)' },
 ];
 
+/* ============================================================
+   WAIS4_INTERCORR — the correlation matrix, which is the one input
+   Crawford, Garthwaite & Gault's (2007) profile method needs
+
+   That method estimates what percentage of the healthy population shows j or
+   more abnormally low scores (or abnormally large differences) across a
+   battery. Its Method section is explicit that R, the matrix of correlations
+   between the components, is the ONLY information required — no means, no SDs,
+   no reliabilities.
+
+   THIS IS A DIFFERENT KIND OF CORRELATION FROM EVERYTHING ELSE IN THIS FILE.
+   normDB's `r` is a measure's correlation with ITSELF on a second occasion —
+   a reliability. These are correlations BETWEEN measures on one occasion. They
+   are not interchangeable in either direction, and nothing that reads normDB
+   should ever reach for these.
+
+   Transcribed from the GB (UK) manual, matching the edition this app already
+   cites for Tables 4.1, 4.3 and C.4-C.5.
+   ============================================================ */
+const WAIS4_INTERCORR = {
+  source: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1 — Intercorrelations of Subtest, Process, and Composite Scores for All Ages',
+  /* Row/column order EXACTLY as the manual prints it. Nothing is re-sorted:
+     a transcription is checkable against the page only while it keeps the
+     page's order. */
+  order: ['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD', 'LN', 'FW', 'CO', 'CA', 'PCm', 'BDN', 'DSF', 'DSB', 'DSS', 'VCI', 'PRI', 'WMI', 'PSI', 'FSIQ'],
+  labels: {
+    'BD':  'Block Design',
+    'SI':  'Similarities',
+    'DS':  'Digit Span',
+    'MR':  'Matrix Reasoning',
+    'VC':  'Vocabulary',
+    'AR':  'Arithmetic',
+    'SS':  'Symbol Search',
+    'VP':  'Visual Puzzles',
+    'IN':  'Information',
+    'CD':  'Coding',
+    'LN':  'Letter-Number Sequencing',
+    'FW':  'Figure Weights',
+    'CO':  'Comprehension',
+    'CA':  'Cancellation',
+    'PCm': 'Picture Completion',
+    'BDN': 'Block Design No Time Bonus',
+    'DSF': 'Digit Span Forward',
+    'DSB': 'Digit Span Backward',
+    'DSS': 'Digit Span Sequencing',
+    'VCI': 'Verbal Comprehension Index',
+    'PRI': 'Perceptual Reasoning Index',
+    'WMI': 'Working Memory Index',
+    'PSI': 'Processing Speed Index',
+    'FSIQ': 'Full Scale IQ',
+  },
+  /* AGE-RESTRICTED ROWS. The manual's note: correlations for LN, FW and CA
+     are based only on examinees aged 16:0-69:11, those three measures being
+     normed to 69. Every other cell is the full 16-90 sample. */
+  restrictedTo16_69: ['LN', 'FW', 'CA'],
+  /* THE LOWER TRIANGLE, which is the uncorrected matrix and the only thing
+     the simulation may use. Keyed 'ROW|COL' with ROW after COL in `order`. */
+  r: {
+    'SI|BD':0.49,
+    'DS|BD':0.45, 'DS|SI':0.48,
+    'MR|BD':0.54, 'MR|SI':0.51, 'MR|DS':0.47,
+    'VC|BD':0.45, 'VC|SI':0.74, 'VC|DS':0.5, 'VC|MR':0.51,
+    'AR|BD':0.5, 'AR|SI':0.54, 'AR|DS':0.6, 'AR|MR':0.52, 'AR|VC':0.57,
+    'SS|BD':0.41, 'SS|SI':0.35, 'SS|DS':0.4, 'SS|MR':0.39, 'SS|VC':0.34, 'SS|AR':0.37,
+    'VP|BD':0.64, 'VP|SI':0.44, 'VP|DS':0.4, 'VP|MR':0.53, 'VP|VC':0.42, 'VP|AR':0.48, 'VP|SS':0.38,
+    'IN|BD':0.44, 'IN|SI':0.64, 'IN|DS':0.43, 'IN|MR':0.49, 'IN|VC':0.73, 'IN|AR':0.57, 'IN|SS':0.34, 'IN|VP':0.43,
+    'CD|BD':0.4, 'CD|SI':0.41, 'CD|DS':0.45, 'CD|MR':0.45, 'CD|VC':0.41, 'CD|AR':0.43, 'CD|SS':0.65, 'CD|VP':0.37, 'CD|IN':0.34,
+    'LN|BD':0.42, 'LN|SI':0.45, 'LN|DS':0.69, 'LN|MR':0.45, 'LN|VC':0.48, 'LN|AR':0.56, 'LN|SS':0.37, 'LN|VP':0.41, 'LN|IN':0.43, 'LN|CD':0.38,
+    'FW|BD':0.56, 'FW|SI':0.53, 'FW|DS':0.5, 'FW|MR':0.57, 'FW|VC':0.53, 'FW|AR':0.61, 'FW|SS':0.34, 'FW|VP':0.58, 'FW|IN':0.51, 'FW|CD':0.36, 'FW|LN':0.48,
+    'CO|BD':0.44, 'CO|SI':0.71, 'CO|DS':0.48, 'CO|MR':0.49, 'CO|VC':0.74, 'CO|AR':0.55, 'CO|SS':0.32, 'CO|VP':0.43, 'CO|IN':0.66, 'CO|CD':0.39, 'CO|LN':0.47, 'CO|FW':0.53,
+    'CA|BD':0.34, 'CA|SI':0.23, 'CA|DS':0.34, 'CA|MR':0.26, 'CA|VC':0.24, 'CA|AR':0.31, 'CA|SS':0.46, 'CA|VP':0.32, 'CA|IN':0.22, 'CA|CD':0.42, 'CA|LN':0.3, 'CA|FW':0.29, 'CA|CO':0.21,
+    'PCm|BD':0.49, 'PCm|SI':0.44, 'PCm|DS':0.39, 'PCm|MR':0.42, 'PCm|VC':0.39, 'PCm|AR':0.37, 'PCm|SS':0.41, 'PCm|VP':0.48, 'PCm|IN':0.41, 'PCm|CD':0.38, 'PCm|LN':0.37, 'PCm|FW':0.41, 'PCm|CO':0.4, 'PCm|CA':0.33,
+    'BDN|BD':0.97, 'BDN|SI':0.47, 'BDN|DS':0.45, 'BDN|MR':0.54, 'BDN|VC':0.44, 'BDN|AR':0.48, 'BDN|SS':0.4, 'BDN|VP':0.61, 'BDN|IN':0.43, 'BDN|CD':0.4, 'BDN|LN':0.41, 'BDN|FW':0.54, 'BDN|CO':0.44, 'BDN|CA':0.33, 'BDN|PCm':0.49,
+    'DSF|BD':0.29, 'DSF|SI':0.35, 'DSF|DS':0.79, 'DSF|MR':0.29, 'DSF|VC':0.36, 'DSF|AR':0.43, 'DSF|SS':0.25, 'DSF|VP':0.24, 'DSF|IN':0.31, 'DSF|CD':0.29, 'DSF|LN':0.5, 'DSF|FW':0.34, 'DSF|CO':0.32, 'DSF|CA':0.23, 'DSF|PCm':0.24, 'DSF|BDN':0.3,
+    'DSB|BD':0.37, 'DSB|SI':0.39, 'DSB|DS':0.83, 'DSB|MR':0.43, 'DSB|VC':0.43, 'DSB|AR':0.51, 'DSB|SS':0.31, 'DSB|VP':0.33, 'DSB|IN':0.36, 'DSB|CD':0.37, 'DSB|LN':0.59, 'DSB|FW':0.43, 'DSB|CO':0.39, 'DSB|CA':0.27, 'DSB|PCm':0.32, 'DSB|BDN':0.38, 'DSB|DSF':0.53,
+    'DSS|BD':0.42, 'DSS|SI':0.42, 'DSS|DS':0.79, 'DSS|MR':0.43, 'DSS|VC':0.42, 'DSS|AR':0.52, 'DSS|SS':0.4, 'DSS|VP':0.4, 'DSS|IN':0.37, 'DSS|CD':0.43, 'DSS|LN':0.59, 'DSS|FW':0.47, 'DSS|CO':0.43, 'DSS|CA':0.32, 'DSS|PCm':0.37, 'DSS|BDN':0.41, 'DSS|DSF':0.42, 'DSS|DSB':0.51,
+    'VCI|BD':0.51, 'VCI|SI':0.88, 'VCI|DS':0.53, 'VCI|MR':0.56, 'VCI|VC':0.92, 'VCI|AR':0.63, 'VCI|SS':0.38, 'VCI|VP':0.48, 'VCI|IN':0.89, 'VCI|CD':0.43, 'VCI|LN':0.51, 'VCI|FW':0.59, 'VCI|CO':0.79, 'VCI|CA':0.26, 'VCI|PCm':0.46, 'VCI|BDN':0.5, 'VCI|DSF':0.38, 'VCI|DSB':0.44, 'VCI|DSS':0.45,
+    'PRI|BD':0.86, 'PRI|SI':0.57, 'PRI|DS':0.52, 'PRI|MR':0.82, 'PRI|VC':0.55, 'PRI|AR':0.59, 'PRI|SS':0.47, 'PRI|VP':0.86, 'PRI|IN':0.54, 'PRI|CD':0.48, 'PRI|LN':0.5, 'PRI|FW':0.68, 'PRI|CO':0.54, 'PRI|CA':0.36, 'PRI|PCm':0.55, 'PRI|BDN':0.84, 'PRI|DSF':0.33, 'PRI|DSB':0.45, 'PRI|DSS':0.49, 'PRI|VCI':0.61,
+    'WMI|BD':0.53, 'WMI|SI':0.57, 'WMI|DS':0.9, 'WMI|MR':0.55, 'WMI|VC':0.6, 'WMI|AR':0.89, 'WMI|SS':0.43, 'WMI|VP':0.49, 'WMI|IN':0.56, 'WMI|CD':0.49, 'WMI|LN':0.7, 'WMI|FW':0.62, 'WMI|CO':0.57, 'WMI|CA':0.36, 'WMI|PCm':0.43, 'WMI|BDN':0.52, 'WMI|DSF':0.68, 'WMI|DSB':0.75, 'WMI|DSS':0.73, 'WMI|VCI':0.64, 'WMI|PRI':0.62,
+    'PSI|BD':0.45, 'PSI|SI':0.42, 'PSI|DS':0.47, 'PSI|MR':0.46, 'PSI|VC':0.41, 'PSI|AR':0.44, 'PSI|SS':0.91, 'PSI|VP':0.41, 'PSI|IN':0.37, 'PSI|CD':0.91, 'PSI|LN':0.41, 'PSI|FW':0.39, 'PSI|CO':0.39, 'PSI|CA':0.49, 'PSI|PCm':0.43, 'PSI|BDN':0.44, 'PSI|DSF':0.3, 'PSI|DSB':0.38, 'PSI|DSS':0.46, 'PSI|VCI':0.45, 'PSI|PRI':0.52, 'PSI|WMI':0.51,
+    'FSIQ|BD':0.73, 'FSIQ|SI':0.77, 'FSIQ|DS':0.72, 'FSIQ|MR':0.75, 'FSIQ|VC':0.78, 'FSIQ|AR':0.77, 'FSIQ|SS':0.64, 'FSIQ|VP':0.7, 'FSIQ|IN':0.75, 'FSIQ|CD':0.68, 'FSIQ|LN':0.64, 'FSIQ|FW':0.71, 'FSIQ|CO':0.71, 'FSIQ|CA':0.44, 'FSIQ|PCm':0.58, 'FSIQ|BDN':0.71, 'FSIQ|DSF':0.5, 'FSIQ|DSB':0.6, 'FSIQ|DSS':0.63, 'FSIQ|VCI':0.85, 'FSIQ|PRI':0.86, 'FSIQ|WMI':0.83, 'FSIQ|PSI':0.72,
+  },
+  /* THE SHADED UPPER TRIANGLE IS A DIFFERENT QUANTITY AND IS STORED APART.
+     Those 20 cells are each core subtest's correlation with a composite it
+     is itself part of, CORRECTED for that part-whole overlap. They are not
+     interchangeable with the cells above and must never be folded into the
+     matrix: doing so would put a corrected coefficient into a covariance
+     structure built from uncorrected ones. Stored because the manual prints
+     them, not because anything here consumes them yet. */
+  rCorrectedToComposite: {
+    'BD|PRI':0.67, 'BD|FSIQ':0.66,
+    'SI|VCI':0.74, 'SI|FSIQ':0.71,
+    'DS|WMI':0.6, 'DS|FSIQ':0.64,
+    'MR|PRI':0.59, 'MR|FSIQ':0.67,
+    'VC|VCI':0.81, 'VC|FSIQ':0.72,
+    'AR|WMI':0.6, 'AR|FSIQ':0.7,
+    'SS|PSI':0.65, 'SS|FSIQ':0.54,
+    'VP|PRI':0.66, 'VP|FSIQ':0.62,
+    'IN|VCI':0.73, 'IN|FSIQ':0.67,
+    'CD|PSI':0.65, 'CD|FSIQ':0.59,
+  },
+  /* The manual's own Mean/SD row. NOTE the composite entries are SUMS OF
+     SCALED SCORES (VCI 30.1/8.0 is three subtests summed, FSIQ 100.3/21.9
+     is ten), not index scores on 100/15. Correlations are unchanged by a
+     linear rescaling, so the matrix applies to the indices regardless —
+     but anything reading these two rows as index metrics would be wrong. */
+  mean: {'BD':10, 'SI':10, 'DS':10, 'MR':10.1, 'VC':10, 'AR':10, 'SS':10, 'VP':10, 'IN':10, 'CD':10, 'LN':10, 'FW':10.1, 'CO':10, 'CA':10, 'PCm':10, 'BDN':10.1, 'DSF':10, 'DSB':10.1, 'DSS':10, 'VCI':30.1, 'PRI':30.1, 'WMI':20.1, 'PSI':20, 'FSIQ':100.3},
+  sd:   {'BD':3.1, 'SI':2.9, 'DS':3, 'MR':3.1, 'VC':3, 'AR':3, 'SS':3.1, 'VP':3.1, 'IN':3.1, 'CD':3, 'LN':3, 'FW':3.1, 'CO':3.1, 'CA':3, 'PCm':3.1, 'BDN':3.1, 'DSF':3, 'DSB':3, 'DSS':3, 'VCI':8, 'PRI':7.8, 'WMI':5.4, 'PSI':5.5, 'FSIQ':21.9}
+};
+
 // ToPF Raw (0-70) → estimated FSIQ
 const TOPF_TO_FSIQ = [
   42,45,48,51,54,57,59,62,64,66,
