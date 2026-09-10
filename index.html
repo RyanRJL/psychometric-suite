@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260910g">
-<link rel="stylesheet" href="design-system.css?v=20260910g">
+<link rel="stylesheet" href="styles.css?v=20260910h">
+<link rel="stylesheet" href="design-system.css?v=20260910h">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1411,29 +1411,10 @@
   <section class="section" id="profile">
     <div class="eyebrow">Change &amp; Discrepancy · Profile Analysis</div>
     <h1 class="section-title">Profile <em>Analysis</em></h1>
-    <p class="section-desc">5% of people fall below the 5th percentile on any <em>one</em> measure &mdash; but 13.8% do on at least one of the four WAIS-IV Indices, and 24.9% on at least one of the ten core subtests. Crawford, Garthwaite &amp; Gault (2007).</p>
+    <p class="section-desc">How many scores are abnormal, and how many healthy people show that many. 13.8% show one below the 5th percentile across the four WAIS-IV Indices. Crawford, Garthwaite &amp; Gault (2007).</p>
 
     <div class="prof-layout">
-      <div class="prof-pane">
-        <div class="prof-pane-head">
-          <span class="panel-kicker">Measures administered</span>
-          <div class="prof-pane-actions">
-            <button class="btn btn-ghost btn-sm" type="button" id="prof-pull">Pull from Score Tables</button>
-            <button class="btn btn-ghost btn-sm" type="button" id="prof-clear">Clear</button>
-          </div>
-        </div>
-        <p class="prof-intro">Tick what was administered and score each one. Any set works &mdash; base rates are recomputed for exactly the measures chosen. A measure greys out when one already chosen contains it: <span id="prof-composition"></span>.</p>
-        <div class="prof-picker" id="prof-picker"></div>
-      </div>
-
-      <div class="prof-pane">
-        <div class="prof-pane-head">
-          <span class="panel-kicker">Result</span>
-          <div class="field prof-crit-field">
-            <select id="prof-criterion" aria-label="Criterion for an abnormally low score"></select>
-          </div>
-        </div>
-        <div id="prof-results"></div>
+      <div id="prof-results"></div>
 
         <details class="formula-disclosure">
           <summary>Method &amp; formulae</summary>
@@ -1453,7 +1434,7 @@
           </div>
         </details>
 
-        <div class="info-box" style="margin-top:14px" data-apa-note="prof"></div>
+        <div class="info-box" style="margin-top:10px" data-apa-note="prof"></div>
 
         <div class="apa-wrap">
           <div class="apa-toolbar">
@@ -1465,7 +1446,6 @@
             </button>
           </div>
           <div class="apa-table-container" id="prof-apa"></div>
-        </div>
       </div>
     </div>
   </section>
@@ -3186,12 +3166,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260910g"></script>
-<script src="app.js?v=20260910g"></script>
-<script src="design-system.js?v=20260910g" defer></script>
-<script src="app-effectsize-page.js?v=20260910g"></script>
-<script src="app-viz-page.js?v=20260910g"></script>
-<script src="app-profile-page.js?v=20260910g"></script>
+<script src="data.js?v=20260910h"></script>
+<script src="app.js?v=20260910h"></script>
+<script src="design-system.js?v=20260910h" defer></script>
+<script src="app-effectsize-page.js?v=20260910h"></script>
+<script src="app-viz-page.js?v=20260910h"></script>
+<script src="app-profile-page.js?v=20260910h"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

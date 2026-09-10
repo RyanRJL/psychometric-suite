@@ -2981,6 +2981,12 @@ function renderBattery(){
      pip AND the prompt; renderBattery() is what they all end in. */
   refreshPatientAgeIndicator();
   refreshBatteryAgePrompt();
+  /* Profile Analysis holds no scores of its own — it reads this table — so a
+     score typed here is the only thing that can change what it shows. The
+     module coalesces a burst of keystrokes and its simulation is cached on the
+     SELECTION, so a score-only edit is a cache hit; only the keystroke that
+     first scores a new measure costs a run. */
+  if (typeof profileScoresChanged === 'function') profileScoresChanged();
 }
 
 

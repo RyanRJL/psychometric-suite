@@ -18,7 +18,7 @@ Run these in order. Skipping step 2 or 3 means you are testing stale code.
 2. **Regenerate the bundle** — `Psychometric_Assistant.html` is committed and must be
    rebuilt or it goes out of sync with source:
    ```bash
-   ./bundle.ps1
+   node tools/bundle.js          # or ./bundle.ps1 on Windows
    ```
 3. **Bust the caches** — two separate mechanisms, both needed:
    - the `?v=…` query strings on the `<script>`/`<link>` tags in `index.html`
@@ -43,8 +43,23 @@ inferred: the committed bundle was copied alone into an empty directory and open
 `file://`; it requested `design-system.js` and the request failed.
 
 The bundle in the repo is fixed. **`bundle.ps1` itself is not — it is gitignored and
-local-only, so it could not be inspected or repaired from here.** If a rebuild
-reintroduces the external tag, that script is where the fault is. `check.js` §44 now
+local-only, so it could not be inspected or repaired from here.** If a rebuild with it
+reintroduces the external tag, that script is where the fault is.
+
+**`tools/bundle.js` is the committed replacement**, written because the PowerShell script
+could not be reached and the bundle had to be rebuilt anyway. It is ~30 lines of Node with
+no dependencies, it is *in* the repo so the next session can run it, and §44 checks its
+output rather than trusting it. Two things it has to get right, both learned by getting
+them wrong:
+
+- **`design-system.js` carries `defer`**, so it runs after parsing and after every
+  parser-inserted script. Inlining it where it sits would move it *earlier* and change the
+  order the app boots in, so deferred scripts are held back and emitted before `</body>`.
+- **It must be the document's own `</body>`.** `app.js` carries one inside a template
+  literal that builds an export document, and a plain `.replace(/<\/body>/, …)` injected
+  the whole app into that export. Use `lastIndexOf`.
+
+`check.js` §44
 asserts the property rather than the one file: no `<script src>` or
 `<link rel="stylesheet">` may point anywhere but Google Fonts, every script `index.html`
 loads must appear as `data-inlined-from` in the bundle, and one distinctive marker per
@@ -1172,10 +1187,29 @@ leaves `05, 10, 06, 07` — which reads as missing pages. §46 asserts the seque
 
 ### The Profile Analysis page (`app-profile-page.js`, `#profile`)
 
-Two panes on one screen: the measures administered on the left, the result on the right.
-The **picker** scrolls internally, never the page — at 1440 × 800 the picker and the
-result cards are both fully visible, and only the formula disclosure and the APA note sit
-below the fold.
+**The count and its base rate are the page.** The clinical claim this method makes is a
+count paired with a population figure — *2 of 4 are abnormally low; 4.37% of the
+population show 2 or more* — so each of the three questions gets a card carrying the
+count, the sentence that reports it, and **the population distribution of that count**:
+one bar per possible value, this patient's own bar solid, everything at or above it
+shaded. The shaded region *is* the base rate the sentence quotes, so how many and how rare
+are one picture rather than two numbers. §45 proves it as arithmetic — the bars are
+differenced out of the cumulative series the engine returns, they sum to 100%, and the
+shading at *j* equals the printed figure to 1e-9.
+
+The first version had the weights the other way round: a tall list of measures with a
+marker each took most of the page and the answer was a strip of small figures above it.
+The measures are the **input**. The count is the **output**, and the output is what this
+page exists to print. The input is now one **chip strip** — name and score per measure, the
+chip turning red when that score met the criterion, so the red chips *are* the ones the
+headline counted and the number can be checked by eye. Clicking a chip drops that measure
+out; it dims in place rather than vanishing, so the battery stays legible and the exclusion
+stays visible.
+
+At 1440 × 900 the Indices level fits exactly, with nothing below the fold. Ten subtests
+run to 983px and fifteen to 1003px — the overflow is the coarse-scaled-score caveat, the
+method disclosure and the note mirror; the cards themselves end around 450px at every
+level.
 
 #### Any set of measures — the fixed batteries were a misreading
 
@@ -1211,11 +1245,25 @@ process scores, so WMI conflicts with Digit Span Forward two levels down. `PROF_
 adds the one case neither contains the other: **Block Design No Time Bonus is the same
 administration rescored** (the matrix puts them at r = .97), so they are one measure here.
 
-A blocked measure is **greyed, not hidden**, with a title saying which selection blocks it
-— a measure missing from the list reads as unsupported, where the truth is that it cannot
-sit beside something already chosen. §45 drives the shipped `profConflicts` over every
-offered pair, asserts the six cases that must conflict and five that must not, and asserts
-the rule is symmetric.
+**Which means you are always choosing a level, and that is how the rule leaves the
+screen.** Greying the blocked measures was tried first: with the four Indices ticked it
+blocked ten of fourteen rows, each carrying its own line of explanation, and the page ran
+past the fold before the answer was reached. So the page asks which level is being
+profiled — **Indices / Subtests / Process scores** — and lists only that. Each level is
+**internally conflict-free by construction**, so nothing on screen can ever be blocked. The
+rule still runs underneath (`profDisabledBy`, applied on every sync); it simply has nothing
+left to block.
+
+**Full Scale IQ is deliberately not offered.** It contains ten of the fifteen subtests and
+all four Indices, so it has no level: every profile it could legally join — FSIQ with the
+five supplementary subtests, say — is one no clinician would run. Its absence is stated in
+the strip footer whenever Score Tables holds it, because an absence with no reason reads as
+missing data.
+
+§45 drives the shipped `profConflicts` over every offered pair, asserts the six cases that
+must conflict and five that must not, asserts the rule is symmetric, and — separately —
+asserts **no two measures on the same level overlap** and that FSIQ is on none of them. That
+second check is what makes the level list safe to edit.
 
 #### Metric is per measure, not per page
 
@@ -1240,19 +1288,35 @@ otherwise would be its own misstatement. §45 pins both halves and the condition
 (The other caveat, *"caution when the sample n is 300 or less"*, does not bite: the WAIS-IV
 standardisation sample is ~2,200.)
 
-#### Pulling from Score Tables is prefill, never binding
+#### Score Tables is the only source of scores — nothing is typed here
 
-Score Tables holds whatever was administered in whatever mixture; this page needs a
-coherent selection. So **Pull from Score Tables** fills each box where that measure has a
-score, ticks it, and marks it pulled — and the clinician can change or untick any of it.
-Nothing writes back; §45 asserts the page never assigns to `batteryRows` or calls
-`renderBattery`.
+There is **no score box on this page**. Every score is read from Score Tables, live, so a
+WAIS-IV score has exactly one home and the two can never disagree. The earlier version had
+a number box per measure and a **Pull from Score Tables** button beside it; that is a second
+home for the same value, and a prefill that the clinician then edits is a copy that silently
+diverges from the table the report is built on.
 
 Matched on the measure **name**, which is the same string in both files: **24 of the 28
 WAIS-IV names in `normDB` are Table 5.1 labels verbatim**. The four that are not are the
 Longest Span base-rate measures, which have no correlations and correctly cannot be
-profiled. The pull **skips anything that would conflict** with the current selection —
-Score Tables may legitimately hold both an Index and its subtests, and this page may not.
+profiled. A row whose group key names another instrument is refused however the row is
+titled, and seeded `isExample` rows are skipped.
+
+`profPull` is the **sole writer** of both the selection and the score cache, and it is
+rebuilt from scratch on every sync — §45 counts the writers and fails if a second one
+appears anywhere else in the module, dotted assignment included. Nothing writes back: the
+page never assigns to `batteryRows` and never calls `renderBattery`.
+
+**Which makes the live hook load-bearing.** With no entry of its own, the only thing that
+can change what this page shows is a score typed on Score Tables — and the exported table is
+collected into the Working Report by a `MutationObserver`, so a container that never mutates
+keeps filing an old count. `renderBattery` therefore ends by calling
+`profileScoresChanged()`, guarded by a `typeof` because it runs during init before the page
+module has loaded. The module **coalesces** a burst of keystrokes behind a 180ms timer, and
+the simulation is cached on the **selection**, so a score-only edit is a cache hit; only the
+keystroke that first scores a new measure costs a run. §45 pins the call, the guard, the
+coalescing and the re-render — without them the page goes stale in exactly the silent way
+§16/§17 exist for.
 
 #### The rest
 
@@ -1568,7 +1632,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 378 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 381 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
