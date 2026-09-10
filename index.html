@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260910j">
-<link rel="stylesheet" href="design-system.css?v=20260910j">
+<link rel="stylesheet" href="styles.css?v=20260910k">
+<link rel="stylesheet" href="design-system.css?v=20260910k">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -434,12 +434,10 @@
     table-layout:fixed;
     font-size:12px;
   }
+  /* The scroll box itself is .table-viewport (styles.css) - height cap,
+     sticky header, shared with Score Tables. This adds only the width. */
   .change-table-scroll{
     width:100%;
-    overflow-x:visible;
-    border:0;
-    background:transparent;
-    margin-top:8px;
   }
   .change-table-scroll .input-table{
     margin:0;
@@ -1142,6 +1140,10 @@
            CSS cascade note in CLAUDE.md. -->
       <div class="bat-age-required-bar" id="bat-age-required" hidden></div>
 
+      <!-- Table viewport: the table scrolls inside this box so the control
+           bar, the add-row buttons and the report drawer chip stay put. See
+           the TABLE VIEWPORT block in styles.css. -->
+      <div class="table-viewport">
       <table class="input-table raw-hidden" id="bat-table">
       <thead>
         <tr>
@@ -1157,6 +1159,7 @@
       </thead>
       <tbody></tbody>
     </table>
+      </div><!-- /table-viewport -->
       <div class="add-row-actions">
         <div class="bat-add-wrap">
           <button class="add-row-btn" id="bat-add">+ Add row</button>
@@ -3183,12 +3186,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260910j"></script>
-<script src="app.js?v=20260910j"></script>
-<script src="design-system.js?v=20260910j" defer></script>
-<script src="app-effectsize-page.js?v=20260910j"></script>
-<script src="app-viz-page.js?v=20260910j"></script>
-<script src="app-profile-page.js?v=20260910j"></script>
+<script src="data.js?v=20260910k"></script>
+<script src="app.js?v=20260910k"></script>
+<script src="design-system.js?v=20260910k" defer></script>
+<script src="app-effectsize-page.js?v=20260910k"></script>
+<script src="app-viz-page.js?v=20260910k"></script>
+<script src="app-profile-page.js?v=20260910k"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
@@ -3405,7 +3408,7 @@
   body.querySelectorAll('.input-table').forEach(table => {
     if (table.parentElement && table.parentElement.classList.contains('change-table-scroll')) return;
     const wrap = document.createElement('div');
-    wrap.className = 'change-table-scroll';
+    wrap.className = 'change-table-scroll table-viewport';
     table.parentNode.insertBefore(wrap, table);
     wrap.appendChild(table);
   });

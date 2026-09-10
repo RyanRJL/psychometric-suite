@@ -10649,3 +10649,88 @@ svg.rey-glyph{width:56px;height:56px}
   .rey-grid-6{grid-template-columns:repeat(3,minmax(0,90px))}
   .rey-glyph-text{font-size:42px}
 }
+
+/* ============================================================
+   TABLE VIEWPORT — the table scrolls, the page does not
+   ============================================================
+   Score Tables and the four Change Analysis methods run long enough that
+   reaching the last row scrolled the header, the inline control bar and the
+   add-row buttons off screen. The Score Converter's full table already
+   solved this (.conv-full-scroll): cap the height, scroll inside, pin the
+   header cells. This is the same shape, shared by both pages.
+
+   STANDALONE CLASS ON PURPOSE. Per the cascade note in CLAUDE.md, .input-table
+   is declared ~86 times in this file and again in design-system.css, so a
+   modifier on it would be a fight. .table-viewport is a new name on the
+   WRAPPER, touches nothing that already exists, and needs no !important.
+
+   The height is fixed px, not vh: body{zoom:0.9} scales vh-derived lengths
+   too, so a vh cap would render 10% shorter than it reads. 560 layout px is
+   ~504 visual px, which clears a 1440x900 screen with the control bar,
+   the APA drawer chip and the add-row buttons all still in view.
+
+   border-collapse:collapse means a sticky th's own border does not paint
+   while it is stuck, so the rule under the header is drawn with an inset
+   box-shadow instead. The th also needs an opaque background or the rows
+   scroll through it - .input-table th declares none. */
+.table-viewport{
+  max-height:560px;
+  overflow:auto;
+  border:1px solid var(--border-soft);
+  border-radius:var(--r-md);
+  background:var(--paper-card);
+  margin-top:8px;
+  overscroll-behavior:contain;
+}
+/* overflow:visible IS THE WHOLE FIX, and it took bisecting the class list to
+   find. Three separate .input-table rules in this file set `overflow:hidden`
+   - each one clipping the table's own rounded corners - and an element with
+   overflow:hidden is a scroll container. So the sticky <thead> was sticking
+   to the TABLE, which never scrolls, instead of to .table-viewport. It
+   scrolled clean out of the box with position:sticky computing correctly the
+   whole time, which is what made it look like a browser bug. Measured, not
+   inferred: with class="input-table" removed the header stuck; with it, it
+   did not.
+
+   The viewport now supplies the frame, so the table's own border, radius and
+   shadow go. Those three carry !important (page-scoped restyling layers), so
+   these have to as well - the one place in this block that needs it. */
+.table-viewport .input-table{
+  margin-top:0;
+  overflow:visible;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  border-collapse:separate;
+  border-spacing:0;
+}
+/* STICKY ON <thead>, NOT ON <th>. The four Change Analysis tables carry a
+   TWO-ROW header - applyRciGroupedHeaders inserts a .table-group-row above
+   the column row - and two rows each stuck at top:0 would sit on top of one
+   another. Sticking the thead moves both together whatever the row count.
+
+   The header also needs something OPAQUE behind it or the rows scroll
+   through it. Every header background in this app is a translucent tint
+   over a white card - `#battery #bat-table thead th` is rgba(20,15,5,.035)
+   !important, which no unprefixed selector can outrank - so the opacity is
+   supplied by the ROW instead of by the cells. Nothing else in either
+   stylesheet targets `thead tr`, so this needs no !important and no
+   specificity fight, and each cell's own tint layers on top of it exactly
+   as designed. That is the cascade rule in CLAUDE.md applied sideways:
+   pick an element nobody else has claimed. */
+.table-viewport thead{
+  position:sticky;
+  top:0;
+  z-index:3;
+}
+.table-viewport thead tr{
+  background:var(--paper-card);
+}
+/* The .table-group-row above it already carries an opaque !important
+   surface from design-system.css, so it needs nothing here.
+
+   One hairline under the stuck header. A collapsed border does not always
+   paint while the element is stuck, so it is drawn as an inset shadow. */
+.table-viewport thead tr:last-child th{
+  box-shadow:inset 0 -1px 0 var(--border-soft);
+}
