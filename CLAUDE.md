@@ -170,6 +170,15 @@ Two things that follow, both learned the same way:
 The height cap is fixed px, not `vh`: `body{zoom:0.9}` scales vh-derived lengths
 too, so a vh cap renders 10% shorter than it reads.
 
+**And a scroll box clips anything mounted inside it.** `design-system.js` builds
+each Change Analysis method's inline control bar and inserted it with
+`table.parentNode.insertBefore(bar, table)` — which, once the table was wrapped,
+put the Quick Add bar *inside* the viewport. Its dropdown was then cut off at
+the box edge, which is exactly what a scroll container is for. The bar now
+anchors on the wrapper when there is one. **If you mount a control near one of
+these tables, mount it above the box, not in it** — the same warning the APA
+toolbar carries, for a different reason.
+
 ### A large deletion will take its neighbours with it
 
 `app.js` ends feature code and top-level init code in the same flat file, with no
