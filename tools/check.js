@@ -45,7 +45,7 @@ vm.runInContext(
   fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8') +
     ';globalThis.__EXPORTS = { TOPF_TO_FSIQ, WAIS_COEF, WMS_COEF,' +
     ' OPIE_PRORATED_FSIQ, OPIE_PRORATED_GAI, OPIE_PRORATED_INDEX,' +
-    ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB,' +
+    ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB, WAIS4_INTERCORR,' +
     ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
@@ -7933,6 +7933,428 @@ check('the legend names the scheme the colour belongs to', () => {
   if (!/standard error of estimate/i.test(block)) bad.push('the legend does not say what the bounds are of');
   for (const pct of ['90', '95', '99']) {
     if (!new RegExp(pct + '%').test(block)) bad.push('the legend omits the ' + pct + '% bound');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+heading('42. Profile abnormality — Crawford, Garthwaite & Gault (2007)');
+
+/* WHAT THIS SECTION HAS TO CARRY. The method is a Monte Carlo simulation, so
+   there is no closed form to check the output against and no way to "derive"
+   an expected percentage by hand. Three things in the paper make it pinnable
+   anyway, and all three are used below:
+
+     1. The Appendix prints a 3x3 matrix WITH its Choleski decomposition, to
+        5 dp. That fixes the one deterministic step exactly.
+     2. Table 1's r-bar = 0 rows are the INDEPENDENT case, which is the exact
+        binomial. No simulation is needed for the expectation, so those cells
+        are pinned to arithmetic rather than to a printed figure.
+     3. Table 1's remaining rows are published Monte Carlo output. They are
+        compared within a tolerance DERIVED from the binomial standard error
+        of both simulations, never a tolerance picked to make it pass.
+
+   None of it needs the WAIS-IV matrix, which is why the engine could be
+   verified before that matrix existed. */
+
+function driveProfileEngine() {
+  const names = ['choleskyLower', 'makeNormalSampler', 'profileMatrixMeans',
+                 'profileAbnormality', 'profileAbnormalityStdErr'];
+  const src = names.map(n => extractFn(APP_SRC, n)).join('\n');
+  return new Function(src + '\nreturn {' + names.join(',') + '};')();
+}
+
+check('the Choleski step reproduces the paper\'s Appendix worked example', () => {
+  let E;
+  try { E = driveProfileEngine(); } catch (e) { return 'could not drive it: ' + e.message; }
+  const C = E.choleskyLower([[1, 0.6, 0.5], [0.6, 1, 0.4], [0.5, 0.4, 1]]);
+  if (!C) return 'the decomposition refused a positive-definite matrix';
+  /* The Appendix prints the lower triangle to 5 dp. Every cell, including the
+     zeros above the diagonal — a decomposition that filled those in would not
+     be lower triangular and the sampler would be drawing from the wrong
+     distribution. */
+  const want = [[1.00000, 0, 0], [0.60000, 0.80000, 0], [0.50000, 0.12500, 0.85696]];
+  const bad = [];
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (Math.abs(C[i][j] - want[i][j]) > 0.000005) {
+        bad.push('C[' + i + '][' + j + '] = ' + C[i][j].toFixed(5) + ', paper prints ' + want[i][j].toFixed(5));
+      }
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* A correlation matrix that is not positive definite has no square root, and
+   a transcription slip is the likeliest way to produce one. It must read as
+   "cannot compute" rather than propagate NaN into a printed percentage. */
+check('a matrix that is not positive definite is refused, not approximated', () => {
+  let E;
+  try { E = driveProfileEngine(); } catch (e) { return 'could not drive it: ' + e.message; }
+  // r = 1 off-diagonal on three variables is singular, not positive definite.
+  if (E.choleskyLower([[1, 1, 1], [1, 1, 1], [1, 1, 1]]) !== null) {
+    return 'a singular matrix was decomposed anyway';
+  }
+  // An impossible triple: X-Y and Y-Z near 1 but X-Z near -1.
+  if (E.choleskyLower([[1, 0.9, 0.9], [0.9, 1, -0.9], [0.9, -0.9, 1]]) !== null) {
+    return 'an inconsistent correlation matrix was decomposed anyway';
+  }
+  if (E.profileAbnormality([[1, 1, 1], [1, 1, 1], [1, 1, 1]], { trials: 100 }) !== null) {
+    return 'the simulation ran on a matrix it cannot sample from';
+  }
+  return true;
+});
+
+/* THE INDEPENDENT CASE IS EXACT, so it is derived here rather than copied.
+   With uncorrelated tests the number of abnormal scores is Binomial(k, p),
+   and the paper says so — it presents the binomial as the special case its
+   method generalises. Any error in the tally, the "j or more" accumulation or
+   the criterion would show up here first. */
+check('with uncorrelated tests the engine reproduces the exact binomial', () => {
+  let E;
+  try { E = driveProfileEngine(); } catch (e) { return 'could not drive it: ' + e.message; }
+  const choose = (n, r) => { let v = 1; for (let i = 0; i < r; i++) v = v * (n - i) / (i + 1); return v; };
+  const bad = [];
+  for (const k of [4, 6, 10]) {
+    const R = Array.from({ length: k }, (_, i) => Array.from({ length: k }, (_, j) => (i === j ? 1 : 0)));
+    const trials = 200000;
+    const got = E.profileAbnormality(R, { trials, seed: 12345 }).lowScores;
+    for (let j = 1; j <= k; j++) {
+      let exact = 0;
+      for (let i = j; i <= k; i++) exact += choose(k, i) * Math.pow(0.05, i) * Math.pow(0.95, k - i);
+      exact *= 100;
+      /* Tolerance is the simulation's OWN standard error, times 5. Not a
+         number chosen to fit: se = sqrt(p(1-p)/n) is the exact sampling error
+         of a proportion, and the engine publishes it as
+         profileAbnormalityStdErr — so this check also proves that helper
+         reports the right quantity. A floor keeps the near-zero tail cells
+         from demanding impossible precision. */
+      const se = E.profileAbnormalityStdErr(exact, trials);
+      const tol = Math.max(5 * se, 0.02);
+      if (Math.abs(got[j - 1] - exact) > tol) {
+        bad.push('k=' + k + ' j>=' + j + ': got ' + got[j - 1].toFixed(2) + ', binomial ' + exact.toFixed(2));
+      }
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Table 1 in full — 12 batteries built from synthetic matrices (every
+   off-diagonal set to the same r-bar), so it needs no publisher's data at all
+   and can pin the engine on its own. It is also the one place the paper shows
+   the method's behaviour BOTH ways: the percentage showing one or more
+   abnormal scores FALLS as the correlations rise, while the percentage
+   showing several RISES. An implementation that mishandled the covariance
+   would break that pattern, not just the digits. */
+check('all 12 rows of the paper\'s Table 1 reproduce within Monte Carlo error', () => {
+  let E;
+  try { E = driveProfileEngine(); } catch (e) { return 'could not drive it: ' + e.message; }
+  const T1 = {
+    '0|4':   [18.53, 1.40, 0.05, 0.00],
+    '0|6':   [26.49, 3.29, 0.22, 0.01, 0.00, 0.00],
+    '0|10':  [40.10, 8.64, 1.15, 0.10, 0.01, 0.00, 0.00, 0.00, 0.00, 0.00],
+    '0.3|4': [16.38, 3.09, 0.52, 0.06],
+    '0.3|6': [22.07, 5.89, 1.64, 0.41, 0.09, 0.01],
+    '0.3|10':[30.74, 11.54, 4.67, 1.94, 0.79, 0.31, 0.11, 0.04, 0.01, 0.00],
+    '0.5|4': [14.42, 4.14, 1.22, 0.26],
+    '0.5|6': [18.64, 6.89, 2.88, 1.19, 0.42, 0.10],
+    '0.5|10':[24.67, 11.55, 6.21, 3.52, 2.02, 1.13, 0.61, 0.29, 0.12, 0.03],
+    '0.7|4': [12.07, 4.99, 2.22, 0.80],
+    '0.7|6': [14.85, 7.26, 4.09, 2.31, 1.21, 0.49],
+    '0.7|10':[18.55, 10.54, 6.94, 4.83, 3.40, 2.38, 1.62, 1.06, 0.60, 0.26]
+  };
+  const PAPER_TRIALS = 1000000;      // the paper states one million
+  const OUR_TRIALS = 200000;
+  const bad = [];
+  const oneOrMore = {};
+  for (const key of Object.keys(T1)) {
+    const parts = key.split('|');
+    const rbar = parseFloat(parts[0]), k = parseInt(parts[1], 10);
+    const R = Array.from({ length: k }, (_, i) => Array.from({ length: k }, (_, j) => (i === j ? 1 : rbar)));
+    const got = E.profileAbnormality(R, { trials: OUR_TRIALS, seed: 12345 }).lowScores;
+    const want = T1[key];
+    oneOrMore[key] = got[0];
+    for (let j = 0; j < want.length; j++) {
+      /* BOTH simulations carry sampling error, so the band is the combined
+         standard error of the two, times 5, with a floor for the tail cells
+         the paper prints as 0.00. Nothing here is tuned: change either trial
+         count and the tolerance follows. */
+      const p = want[j] / 100;
+      const se = Math.sqrt(p * (1 - p) / PAPER_TRIALS + p * (1 - p) / OUR_TRIALS) * 100;
+      const tol = Math.max(5 * se, 0.03);
+      if (Math.abs(got[j] - want[j]) > tol) {
+        bad.push(key + ' j>=' + (j + 1) + ': got ' + got[j].toFixed(2) + ', paper ' + want[j].toFixed(2));
+      }
+    }
+  }
+  /* The paper's qualitative finding, asserted as a shape rather than as
+     digits: at a fixed battery size, MORE correlated tests mean FEWER people
+     showing at least one abnormal score. */
+  for (const k of ['4', '6', '10']) {
+    const seq = ['0', '0.3', '0.5', '0.7'].map(r => oneOrMore[r + '|' + k]);
+    for (let i = 1; i < seq.length; i++) {
+      if (!(seq[i] < seq[i - 1])) {
+        bad.push('k=' + k + ': the j>=1 percentage does not fall as r-bar rises');
+      }
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Equations 1 and 2 are printed in the paper and are easy to get subtly
+   wrong — eq. 2 in particular, where R-bar must include the diagonal unities.
+   Both are checked against their own definitions, computed here from a matrix
+   whose answer can be worked out by hand. */
+check('the difference and deviation SDs are the paper\'s equations 1 and 2', () => {
+  let E;
+  try { E = driveProfileEngine(); } catch (e) { return 'could not drive it: ' + e.message; }
+  const bad = [];
+  const R = [[1, 0.5, 0.5], [0.5, 1, 0.5], [0.5, 0.5, 1]];
+  const m = E.profileMatrixMeans(R);
+  /* Nine elements: three 1.0 on the diagonal and six 0.5, so the grand mean is
+     (3 + 3) / 9 = 0.6667. Excluding the diagonal would give 0.5, and eq. 2
+     would then understate every deviation SD. */
+  if (Math.abs(m.grandMean - 6 / 9) > 1e-12) {
+    bad.push('the grand mean is ' + m.grandMean.toFixed(4) + ', not ' + (6 / 9).toFixed(4) + ' — the diagonal unities are being dropped');
+  }
+  if (Math.abs(m.rowMean[0] - 2 / 3) > 1e-12) {
+    bad.push('a row mean excludes the variable\'s correlation with itself');
+  }
+  const src = extractFn(APP_SRC, 'profileAbnormality');
+  // eq. 1: sd(X-Y) = sqrt(2 - 2r)
+  if (!/Math\.sqrt\(2 - 2 \* R\[i\]\[j\]\)/.test(src)) {
+    bad.push('the pairwise SD is not sqrt(2 - 2r) as equation 1 prints it');
+  }
+  // eq. 2: sd(M-X) = sqrt(1 + Rbar - 2*mbarX)
+  if (!/Math\.sqrt\(1 \+ grandMean - 2 \* rowMean\[i\]\)/.test(src)) {
+    bad.push('the deviation SD is not sqrt(1 + Rbar - 2*mbarX) as equation 2 prints it');
+  }
+  /* Both differences are two-tailed — the paper says the ABSOLUTE value is
+     what is evaluated, a large difference in either direction being the
+     finding. A one-tailed test here would roughly halve every percentage. */
+  if (!/Math\.abs\(y\[q\.i\] - y\[q\.j\]\)/.test(src)) bad.push('pairwise differences are not evaluated in absolute value');
+  if (!/Math\.abs\(mean - y\[i\]\)/.test(src)) bad.push('deviations from the mean are not evaluated in absolute value');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* A clinical number that changes when the button is pressed again is not
+   reportable. The sampler is seeded for that reason, and the seeding is the
+   kind of thing a later refactor removes without noticing. */
+check('the same profile returns the same percentages every time', () => {
+  let E;
+  try { E = driveProfileEngine(); } catch (e) { return 'could not drive it: ' + e.message; }
+  const R = [[1, 0.6, 0.5, 0.4], [0.6, 1, 0.55, 0.45], [0.5, 0.55, 1, 0.5], [0.4, 0.45, 0.5, 1]];
+  const a = E.profileAbnormality(R, { trials: 20000 });
+  const b = E.profileAbnormality(R, { trials: 20000 });
+  if (JSON.stringify(a) !== JSON.stringify(b)) return 'two runs of the same profile disagree';
+  const c = E.profileAbnormality(R, { trials: 20000, seed: 999 });
+  if (JSON.stringify(a) === JSON.stringify(c)) return 'the seed has no effect, so the sampler is not actually seeded';
+  if (/Math\.random/.test(extractFn(APP_SRC, 'makeNormalSampler'))) {
+    return 'the sampler uses Math.random, so results cannot be reproduced';
+  }
+  return true;
+});
+
+heading('43. WAIS-IV Table 5.1 — the intercorrelation matrix');
+
+/* THE MATRIX IS A DIFFERENT KIND OF CORRELATION FROM normDB's, and the two
+   must not leak into one another. normDB's `r` is a measure's correlation
+   with ITSELF on a second occasion; these are correlations BETWEEN measures
+   on one occasion. Confusing them would put a reliability into a covariance
+   structure, or a between-measure correlation into a reliable-change formula. */
+
+check('the transcription is complete, symmetric-ready and in range', () => {
+  if (typeof D.WAIS4_INTERCORR === 'undefined') return 'WAIS4_INTERCORR is not defined in data.js';
+  const M = D.WAIS4_INTERCORR;
+  const bad = [];
+  const k = M.order.length;
+  if (k !== 24) bad.push('the order lists ' + k + ' measures, Table 5.1 prints 24');
+  /* A full lower triangle is k(k-1)/2 cells. A missing one would silently
+     become undefined and then NaN inside the decomposition. */
+  const wantCells = k * (k - 1) / 2;
+  const keys = Object.keys(M.r);
+  if (keys.length !== wantCells) bad.push('the lower triangle holds ' + keys.length + ' cells, not ' + wantCells);
+  const pos = {};
+  M.order.forEach((n, i) => { pos[n] = i; });
+  for (const key of keys) {
+    const ab = key.split('|');
+    if (!(ab[0] in pos) || !(ab[1] in pos)) { bad.push(key + ' names a measure not in `order`'); continue; }
+    /* Keyed ROW|COL with ROW strictly after COL, so every pair is stored once
+       and in one direction. Two spellings of one pair is how a matrix comes to
+       disagree with itself. */
+    if (!(pos[ab[0]] > pos[ab[1]])) bad.push(key + ' is not stored below the diagonal');
+    const v = M.r[key];
+    if (!(typeof v === 'number' && v > -1 && v < 1)) bad.push(key + ' = ' + v + ', not a correlation');
+  }
+  for (const n of M.order) if (!M.labels[n]) bad.push(n + ' has no label');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE SHADED UPPER TRIANGLE IS NOT PART OF THE MATRIX. The manual's own note:
+   "Uncorrected coefficients appear below the diagonal, and corrected
+   coefficients appear above the diagonal in the shaded area." Those corrected
+   cells are each core subtest against a composite it is itself part of, with
+   the part-whole overlap removed. Folding them in would mix two kinds of
+   coefficient inside one covariance structure. */
+check('the corrected part-whole cells are stored apart and never in the matrix', () => {
+  const M = D.WAIS4_INTERCORR;
+  const bad = [];
+  const cc = M.rCorrectedToComposite;
+  if (!cc) return 'the corrected cells were dropped rather than stored separately';
+  const n = Object.keys(cc).length;
+  /* Ten core subtests, each against its own index and against FSIQ. */
+  if (n !== 20) bad.push('there are ' + n + ' corrected cells, not the 20 the table shades');
+  const pos = {};
+  M.order.forEach((x, i) => { pos[x] = i; });
+  for (const key of Object.keys(cc)) {
+    if (key in M.r) bad.push(key + ' appears in BOTH the matrix and the corrected cells');
+    const ab = key.split('|');
+    if (!(pos[ab[0]] < pos[ab[1]])) bad.push(key + ' is not above the diagonal');
+    if (!/^(VCI|PRI|WMI|PSI|FSIQ)$/.test(ab[1])) bad.push(key + ' is not a subtest-to-composite cell');
+  }
+  /* The corrected coefficient must actually DIFFER from the uncorrected one,
+     or the two columns are the same data and this separation is theatre.
+     Vocabulary against VCI: .92 uncorrected, .81 corrected. */
+  if (!(M.r['VCI|VC'] > cc['VC|VCI'])) {
+    bad.push('the corrected VC-VCI coefficient is not lower than the uncorrected one, so the shading was misread');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The three age-restricted rows carry the manual's own footnote. Without it a
+   profile mixing them with the rest would silently pair a 16-69 coefficient
+   with a 16-90 one and say nothing. */
+check('the age-restricted measures are recorded as such', () => {
+  const M = D.WAIS4_INTERCORR;
+  const want = ['LN', 'FW', 'CA'];
+  const got = M.restrictedTo16_69 || [];
+  const bad = [];
+  for (const n of want) if (got.indexOf(n) === -1) bad.push(n + ' is not marked as 16:0-69:11 only');
+  for (const n of got) if (want.indexOf(n) === -1) bad.push(n + ' is marked age-restricted but the manual does not restrict it');
+  /* Those same three are the ones normDB caps at 69 for reliability-by-age
+     (WAIS-IV rInternalAgeMax), for the same reason: they are normed to 69.
+     Two files agreeing on this is corroboration, not duplication. */
+  if (!/rInternalAgeMax/.test(DATA_SRC)) bad.push('normDB no longer records an age ceiling to corroborate against');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE SIMULATION CANNOT CHECK THE TRANSCRIPTION, and finding that out is why
+   these two checks exist. Moving VCI-PRI from its published .61 to .31 — a
+   gross error, half the coefficient — shifts the percentage showing one or
+   more abnormally low index from 13.78 to 14.18, and the other two answers by
+   less than a point. The method is robust to error in R, which is a virtue
+   clinically and a hazard here: a corrupted matrix produces plausible output
+   and every downstream check still passes.
+
+   So the matrix is pinned directly, two ways: the Index x Index cells against
+   the printed page, and a structural property that no single typed value can
+   satisfy by accident. */
+
+/* The six cells the four-Index profile is actually built from, as Table 5.1
+   prints them. A duplicate of the data by design — check.js is the second
+   reader of the page, which is the only thing that catches a mis-keyed digit. */
+check('the four Index intercorrelations are Table 5.1 as printed', () => {
+  const M = D.WAIS4_INTERCORR;
+  const pos = {};
+  M.order.forEach((x, i) => { pos[x] = i; });
+  const g = (a, b) => (pos[a] > pos[b] ? M.r[a + '|' + b] : M.r[b + '|' + a]);
+  const WANT = { 'VCI|PRI': 0.61, 'VCI|WMI': 0.64, 'VCI|PSI': 0.45,
+                 'PRI|WMI': 0.62, 'PRI|PSI': 0.52, 'WMI|PSI': 0.51 };
+  const bad = [];
+  for (const key of Object.keys(WANT)) {
+    const ab = key.split('|');
+    const got = g(ab[0], ab[1]);
+    if (got !== WANT[key]) bad.push(key + ' = ' + got + ', Table 5.1 prints ' + WANT[key]);
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* A SHAPE THE TABLE MUST HAVE, derived from what the composites are rather
+   than typed in: every subtest correlates more highly with the Index it is a
+   part of than with any other Index. It holds for all 15 subtests that belong
+   to one, and it cannot survive a row or column being read off by one — which
+   is the transcription error a cell-by-cell pin of six values would miss. */
+check('every subtest correlates highest with the Index it belongs to', () => {
+  const M = D.WAIS4_INTERCORR;
+  const pos = {};
+  M.order.forEach((x, i) => { pos[x] = i; });
+  const g = (a, b) => (pos[a] > pos[b] ? M.r[a + '|' + b] : M.r[b + '|' + a]);
+  // WAIS-IV composition, core and supplementary alike.
+  const MEMBER = { SI:'VCI', VC:'VCI', IN:'VCI', CO:'VCI',
+                   BD:'PRI', MR:'PRI', VP:'PRI', FW:'PRI', PCm:'PRI',
+                   DS:'WMI', AR:'WMI', LN:'WMI',
+                   SS:'PSI', CD:'PSI', CA:'PSI' };
+  const IDX = ['VCI', 'PRI', 'WMI', 'PSI'];
+  const bad = [];
+  for (const st of Object.keys(MEMBER)) {
+    let best = null;
+    for (const ix of IDX) {
+      const v = g(st, ix);
+      if (!Number.isFinite(v)) { bad.push(st + ' has no correlation with ' + ix); continue; }
+      if (!best || v > best.v) best = { ix, v };
+    }
+    if (best && best.ix !== MEMBER[st]) {
+      bad.push(st + ' correlates highest with ' + best.ix + ' (' + best.v + '), not its own ' + MEMBER[st] + ' (' + g(st, MEMBER[st]) + ')');
+    }
+  }
+  /* And FSIQ, drawing on all four, must correlate more highly with each Index
+     than any Index does with another. */
+  for (const ix of IDX) {
+    for (let i = 0; i < IDX.length; i++) {
+      for (let j = i + 1; j < IDX.length; j++) {
+        if (!(g('FSIQ', ix) > g(IDX[i], IDX[j]))) {
+          bad.push('FSIQ-' + ix + ' does not exceed ' + IDX[i] + '-' + IDX[j] + ', so the composite block is misread');
+        }
+      }
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The whole point of storing the matrix. If the four-index submatrix cannot be
+   decomposed, nothing downstream can run — and a transcription slip is the
+   likeliest cause, so this is the check that would catch one. */
+check('the four Index scores form a usable, positive-definite matrix', () => {
+  let E;
+  try { E = driveProfileEngine(); } catch (e) { return 'could not drive it: ' + e.message; }
+  const M = D.WAIS4_INTERCORR;
+  const pos = {};
+  M.order.forEach((x, i) => { pos[x] = i; });
+  const pick = (a, b) => (pos[a] > pos[b] ? M.r[a + '|' + b] : M.r[b + '|' + a]);
+  const IDX = ['VCI', 'PRI', 'WMI', 'PSI'];
+  const R = IDX.map((a, i) => IDX.map((b, j) => (i === j ? 1 : pick(a, b))));
+  const bad = [];
+  for (const row of R) for (const v of row) if (!Number.isFinite(v)) bad.push('a cell of the four-index matrix is missing');
+  if (bad.length) return bad.join('; ');
+  if (!E.choleskyLower(R)) return 'the four-index matrix is not positive definite, which points to a transcription error';
+
+  const res = E.profileAbnormality(R, { trials: 200000, seed: 12345 });
+  /* CORROBORATION, NOT A PIN. The paper tabulates the WAIS-III, not the
+     WAIS-IV, so there is no published figure to assert against here. But the
+     two batteries' index intercorrelations are close, and the paper says so
+     explicitly, so the answers must land near its WAIS-III ones. This catches
+     a matrix read in the wrong order or off by a row — which would still
+     decompose, and would still produce plausible-looking output.
+
+     WAIS-III, from the paper: 13.21% show one or more index below the 5th
+     percentile, 20.20% one or more abnormal pairwise difference, 16.74% one
+     or more abnormal deviation from their own mean. A band of 3 percentage
+     points is wide enough that a real WAIS-IV/WAIS-III difference passes and
+     narrow enough that a scrambled matrix does not. */
+  const near = (got, waisIII, what) => {
+    if (Math.abs(got - waisIII) > 3) {
+      bad.push(what + ': ' + got.toFixed(2) + '% against ' + waisIII + '% on the WAIS-III, too far apart to be the same measure');
+    }
+  };
+  near(res.lowScores[0], 13.21, 'one or more abnormally low index');
+  near(res.pairwise[0], 20.20, 'one or more abnormal pairwise difference');
+  near(res.deviations[0], 16.74, 'one or more abnormal deviation from own mean');
+  /* Every "j or more" series must be non-increasing, by definition: showing
+     three abnormal scores means also showing two. */
+  for (const [name, arr] of [['low scores', res.lowScores], ['pairwise', res.pairwise], ['deviations', res.deviations]]) {
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i] > arr[i - 1] + 1e-9) bad.push('the ' + name + ' series rises at j=' + (i + 1) + ', which cannot happen');
+    }
   }
   return bad.length === 0 || bad.join('; ');
 });
