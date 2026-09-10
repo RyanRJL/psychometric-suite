@@ -34,6 +34,22 @@ Run these in order. Skipping step 2 or 3 means you are testing stale code.
 `Psychometric_Assistant.html`, stripping the `?v=` strings as it goes. Google Fonts stay
 as external links.
 
+**It was not doing that for `design-system.js`, and had not been for some time.** The
+committed bundle carried `<script src="design-system.js?v=20260903g" defer>` — an
+external reference, four cache versions stale — so the file was not self-contained at
+all. Copied anywhere on its own and opened, it 404s that request and loses every page
+title, the microcopy, the FOUC handling and the inline control bars. Proven rather than
+inferred: the committed bundle was copied alone into an empty directory and opened over
+`file://`; it requested `design-system.js` and the request failed.
+
+The bundle in the repo is fixed. **`bundle.ps1` itself is not — it is gitignored and
+local-only, so it could not be inspected or repaired from here.** If a rebuild
+reintroduces the external tag, that script is where the fault is. `check.js` §44 now
+asserts the property rather than the one file: no `<script src>` or
+`<link rel="stylesheet">` may point anywhere but Google Fonts, every script `index.html`
+loads must appear as `data-inlined-from` in the bundle, and one distinctive marker per
+source must be present so an un-rebuilt bundle fails loudly.
+
 ### Dev server
 
 `.claude/launch.json` defines a PowerShell static server (`.claude/serve.ps1`) on port
@@ -1109,6 +1125,40 @@ just the digits.
 matrix ship verified and unwired; `check.js` is currently their only caller. Whoever
 adds the UI should read the `check.js` §16/§17 note above first.
 
+### The Profile Analysis page (`app-profile-page.js`, `#profile`)
+
+The UI for `profileAbnormality` above. Four WAIS-IV Index boxes, a criterion selector,
+three result cards and the full distribution table.
+
+**It is the one page that is not a view of data entered elsewhere, and that is
+deliberate.** Score Charts is emphatically a view — every number it draws comes from the
+function the table itself calls, so screen and export cannot disagree — and the same
+argument was made for putting this on Score Tables. It does not hold: the method needs
+the four Indices *specifically, as a complete set, on their own metric*, while Score
+Tables holds whatever subtests were administered in whatever mixture. A profile computed
+from a partial or subtest-level table answers a different question from the one the
+matrix describes. So the inputs are typed, and the page carries no other data.
+
+- **The simulation is cached per criterion.** Scores do not enter it — only R and the
+  criterion do — so a keystroke in a score box must not re-run 200,000 trials. Changing
+  the criterion does.
+- **The APA table is the patient's, not the population's**, and is emitted only once all
+  four Indices are present. The population percentages need *no* patient data, so an
+  unguarded renderer would file a full-looking table for someone who has not been
+  assessed — worse than the empty-table defect `renderOpiePredictApa` had.
+- **A count of zero is never given a base rate.** "j or more" at j = 0 is the whole
+  population; "100% show 0 or more" is true, useless, and reads as a finding.
+- **The page computes nothing of its own** — no Cholesky, no correlation literal. §45
+  fails if a coefficient is written into it rather than read from `WAIS4_INTERCORR`, and
+  asserts the patient's counts use the same two equations the simulation does.
+- **The note says a base rate is not a percentile.** Both print as a percentage; one
+  counts *people showing this many findings across the battery*, the other counts *scores
+  below a point on one measure*.
+
+Verified by driving the real page and the bundle over `file://`: with VCI 105, PRI 98,
+WMI 72, PSI 68 it reports 2 low (WMI, PSI), 4 abnormal pairwise differences and 1
+deviation from own mean — each confirmed by hand against the stored correlations.
+
 ### `higherIsWorse` — measures where a high score is a bad result
 
 On CVLT-C error measures the standardised score runs with the error count: Table A.2
@@ -1397,7 +1447,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 358 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 367 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients

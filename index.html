@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260910c">
-<link rel="stylesheet" href="design-system.css?v=20260910c">
+<link rel="stylesheet" href="styles.css?v=20260910d">
+<link rel="stylesheet" href="design-system.css?v=20260910d">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -632,6 +632,7 @@
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-practice" role="menuitem">Practice Effect-Adjusted</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">McSweeney Regression-Based</button>
             <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="profile" role="menuitem">Profile Analysis</button>
           </div>
         </div>
         <button type="button" class="topnav-item nav-item" data-target="validity" data-bucket="validity">
@@ -689,6 +690,7 @@
     <div class="nav-item" data-target="change-analysis"><span class="nav-item-num">03</span>Change Analysis</div>
     <div class="nav-item" data-target="validity"><span class="nav-item-num">04</span>Performance Validity</div>
     <div class="nav-item" data-target="charts"><span class="nav-item-num">05</span>Score Charts</div>
+    <div class="nav-item" data-target="profile"><span class="nav-item-num">10</span>Profile Analysis</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">06</span>Score Converter</div>
     <div class="nav-item" data-target="effectsize"><span class="nav-item-num">07</span>Effect Size Tools</div>
     <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">08</span>Data</div>
@@ -1395,6 +1397,61 @@
       </div>
     </div>
 
+  </section>
+
+  <section class="section" id="profile">
+    <div class="eyebrow">Change &amp; Discrepancy · Profile Analysis</div>
+    <h1 class="section-title">Profile <em>Analysis</em></h1>
+    <p class="section-desc" style="margin-bottom:16px">How unusual is this pattern of WAIS-IV Index scores? Five per cent of people fall below the 5th percentile on any <em>one</em> Index &mdash; but 13.8% fall below it on at least one of the four. Crawford, Garthwaite &amp; Gault (2007).</p>
+
+    <div class="panel">
+      <div class="panel-kicker">WAIS-IV Index scores</div>
+      <p class="prof-intro">Enter all four Indices on the standard metric (M 100, SD 15). The population percentages below need no patient data and are shown regardless; the patient&rsquo;s own counts appear once all four are present.</p>
+      <div class="prof-input-grid" id="prof-inputs"></div>
+      <div class="prof-controls">
+        <div class="field">
+          <label>An abnormally low score is one&hellip;</label>
+          <select id="prof-criterion"></select>
+        </div>
+        <button class="btn btn-ghost" type="button" id="prof-clear">Clear scores</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-kicker">Results</div>
+      <div id="prof-results"></div>
+
+      <details class="formula-disclosure">
+        <summary>Method &amp; formulae</summary>
+        <div class="formula-body">
+          <p><strong>Crawford, J. R., Garthwaite, P. H., &amp; Gault, C. B. (2007).</strong> Estimating the percentage of the population with abnormally low scores (or abnormally large score differences) on standardized neuropsychological test batteries: A generic method with applications. <i>Neuropsychology, 21</i>, 419&ndash;430.</p>
+          <p>The only input the method requires is <strong>R</strong>, the matrix of correlations between the measures &mdash; no means, no standard deviations, no reliabilities. R is Cholesky-decomposed; a vector <i>z</i> of <i>k</i> independent standard normal variates is drawn and postmultiplied by the lower triangular decomposition <b>C</b>, so <b>y</b> = <b>C</b><i>z</i> is one observation from the multivariate normal distribution with covariance matrix R &mdash; one simulated member of the population. That is repeated and tallied.</p>
+          <p>Three quantities are counted on each simulated case:</p>
+          <ul>
+            <li><strong>Abnormally low scores</strong> &mdash; components falling below the selected criterion, expressed as a standard normal deviate (the 5th percentile is &minus;1.645).</li>
+            <li><strong>Abnormally large pairwise differences</strong> &mdash; for each of the <i>k</i>(<i>k</i>&minus;1)/2 pairs, |<i>y<sub>X</sub></i> &minus; <i>y<sub>Y</sub></i>| &gt; 1.960 &times; <i>s</i><sub>X&minus;Y</sub>, where <i>s</i><sub>X&minus;Y</sub> = &radic;(2 &minus; 2<i>r</i><sub>XY</sub>).</li>
+            <li><strong>Abnormally large deviations from the case&rsquo;s own mean</strong> &mdash; |<i>M</i> &minus; <i>y<sub>X</sub></i>| &gt; 1.960 &times; <i>s</i><sub>M&minus;X</sub>, where <i>s</i><sub>M&minus;X</sub> = &radic;(1 + <i>R&#772;</i> &minus; 2<i>m&#772;<sub>X</sub></i>). <i>R&#772;</i> is the mean of every element of R <em>including the diagonal unities</em>, and <i>m&#772;<sub>X</sub></i> is the mean of X&rsquo;s own row.</li>
+          </ul>
+          <p>Both difference tests are two-tailed: a large difference in either direction is the finding.</p>
+          <p><strong>Correlations.</strong> WAIS-IV Technical and Interpretive Manual (GB), Table 5.1, all-ages Index intercorrelations &mdash; VCI&ndash;PRI .61, VCI&ndash;WMI .64, VCI&ndash;PSI .45, PRI&ndash;WMI .62, PRI&ndash;PSI .52, WMI&ndash;PSI .51. The shaded corrected coefficients printed above that table&rsquo;s diagonal are a different quantity (each subtest against a composite it is itself part of, with the part-whole overlap removed) and are not used here.</p>
+          <p><strong>Why a binomial will not do.</strong> The binomial distribution answers this question only when the measures are uncorrelated. It overestimates the percentage showing one or more abnormal result and underestimates the percentage showing several &mdash; for four WAIS-IV Indices at the 5th percentile it gives 18.5% against a simulated 13.8%.</p>
+        </div>
+      </details>
+
+      <div class="info-box" style="margin-top:14px" data-apa-note="prof"></div>
+
+      <div class="apa-wrap">
+        <div class="apa-toolbar">
+          <div class="apa-toolbar-left"><span class="apa-toolbar-label">APA-formatted output</span></div>
+          <div></div>
+          <button class="btn" data-copy="prof-apa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
+            Copy table
+          </button>
+        </div>
+        <div class="apa-table-container" id="prof-apa"></div>
+      </div>
+    </div>
   </section>
 
   <!-- ========== PERFORMANCE VALIDITY ========== -->
@@ -3113,11 +3170,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260910c"></script>
-<script src="app.js?v=20260910c"></script>
-<script src="design-system.js?v=20260910c" defer></script>
-<script src="app-effectsize-page.js?v=20260910c"></script>
-<script src="app-viz-page.js?v=20260910c"></script>
+<script src="data.js?v=20260910d"></script>
+<script src="app.js?v=20260910d"></script>
+<script src="design-system.js?v=20260910d" defer></script>
+<script src="app-effectsize-page.js?v=20260910d"></script>
+<script src="app-viz-page.js?v=20260910d"></script>
+<script src="app-profile-page.js?v=20260910d"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

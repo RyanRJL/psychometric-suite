@@ -23,6 +23,7 @@
     'effectsize':     'Effect Sizes',
     'change-analysis':'Change Analysis',
     'charts':         'Score Charts',
+    'profile':        'Profile Analysis',
     'validity':       'Performance Validity',
     'rci-basic':      'Standard Deviation Index',
     'rci-practice':   'Simple Reliable Change',

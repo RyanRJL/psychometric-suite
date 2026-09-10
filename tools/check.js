@@ -774,19 +774,44 @@ check('the (N−1)/(N−2) factor is what separates Crawford SEE from McSweeney 
 check('the dead per-method formula blocks are gone from the Change Analysis page', () => {
   // They were display:none from the moment the five methods were consolidated,
   // so their text could drift from the code unseen — and did, on Crawford.
-  // The Score Charts disclosure is live and must stay.
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  /* The Performance Validity page's disclosures are LIVE (its tabs are
-     plain show/hide panels, not a consolidation that strands them), so they
-     are not the hazard this check exists for. Count outside that section. */
-  const vStart = html.indexOf('<section class="section" id="validity">');
-  const vEnd = vStart === -1 ? -1 : html.indexOf('</section>', vStart);
-  const outside = vStart === -1 ? html : html.slice(0, vStart) + html.slice(vEnd);
-  const all = [...outside.matchAll(/<details class="formula-disclosure"/g)].length;
-  if (all !== 1) return outside.match(/View formula/) ? 'a per-method "View formula" block is back' : 'expected exactly the Score Charts disclosure outside #validity, found ' + all;
-  if (!/#charts[\s\S]{0,80}|id="charts"/.test(html)) return 'Score Charts section not found';
-  if (/#change-analysis \.formula-disclosure/.test(html)) return 'the page-scoped CSS for the deleted blocks is back';
-  return true;
+
+  /* THIS USED TO COUNT DISCLOSURES GLOBALLY and require exactly one, which
+     made the project's own rule unshippable: CLAUDE.md says every calculator
+     prints its formula in a formula-disclosure block, so the second page to
+     do so failed a check meant to guard something else entirely. The hazard
+     was never "more than one disclosure exists" — it was "a disclosure sits
+     on a page whose panels are consolidated, where nothing renders it and its
+     text drifts unseen". So it is asserted per section now.
+
+     The roster is explicit rather than a count: a disclosure appearing on a
+     page not listed here has to be acknowledged, which is what the count was
+     really buying. */
+  const OWNS_A_DISCLOSURE = { validity: 8, charts: 1, profile: 1 };
+  const secs = [...html.matchAll(/<section class="section" id="([^"]+)"/g)]
+    .map(m => ({ id: m[1], at: m.index }));
+  secs.push({ id: '<end>', at: html.length });
+  const found = {};
+  for (let i = 0; i < secs.length - 1; i++) {
+    const n = (html.slice(secs[i].at, secs[i + 1].at)
+      .match(/<details class="formula-disclosure"/g) || []).length;
+    if (n) found[secs[i].id] = n;
+  }
+  const bad = [];
+  /* The original hazard, stated directly. */
+  if (found['change-analysis']) bad.push('a formula-disclosure is back on the Change Analysis page');
+  if (/View formula/.test(html)) bad.push('a per-method "View formula" block is back');
+  if (/#change-analysis \.formula-disclosure/.test(html)) bad.push('the page-scoped CSS for the deleted blocks is back');
+  for (const id of Object.keys(found)) {
+    if (!(id in OWNS_A_DISCLOSURE)) bad.push('#' + id + ' has a formula-disclosure but is not on the roster');
+    else if (found[id] !== OWNS_A_DISCLOSURE[id]) {
+      bad.push('#' + id + ' has ' + found[id] + ' disclosures, the roster says ' + OWNS_A_DISCLOSURE[id]);
+    }
+  }
+  for (const id of Object.keys(OWNS_A_DISCLOSURE)) {
+    if (!(id in found)) bad.push('#' + id + ' lost its formula-disclosure');
+  }
+  return bad.length === 0 || bad.join('; ');
 });
 
 /* ==========================================================================
@@ -8355,6 +8380,230 @@ check('the four Index scores form a usable, positive-definite matrix', () => {
     for (let i = 1; i < arr.length; i++) {
       if (arr[i] > arr[i - 1] + 1e-9) bad.push('the ' + name + ' series rises at j=' + (i + 1) + ', which cannot happen');
     }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+heading('44. The committed bundle is self-contained');
+
+/* THE BUNDLE'S WHOLE PURPOSE is that the tool works by double-clicking one
+   file. It was not doing so: `design-system.js` had never been inlined, and
+   the bundle carried `<script src="design-system.js?v=20260903g" defer>` —
+   an external reference, at a `?v=` four versions stale. Moved anywhere on
+   its own, the file 404s that request and loses every page title, the
+   microcopy, the FOUC handling and the inline control bars.
+
+   Proven rather than assumed: the committed bundle was copied alone into an
+   empty directory and opened over file://. It requested design-system.js and
+   the request failed; the rebuilt one makes no external request at all.
+
+   This asserts the property, not the one file that broke it. */
+check('the bundle inlines every local script and stylesheet', () => {
+  const bundle = fs.readFileSync(path.join(ROOT, 'Psychometric_Assistant.html'), 'utf8');
+  const bad = [];
+  /* Google Fonts stay external by design and are the ONLY thing allowed to. */
+  /* Scripts and STYLESHEETS only. A PWA manifest and the icon links are
+     external by nature — there is nothing to inline — and neither carries
+     any of the app's behaviour. */
+  for (const m of bundle.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)) {
+    if (!/^https:\/\/fonts\./.test(m[1])) bad.push('<script> still points at ' + m[1]);
+  }
+  for (const m of bundle.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*\bhref="([^"]+)"/g)) {
+    if (!/^https:\/\/fonts\./.test(m[1])) bad.push('<link rel=stylesheet> still points at ' + m[1]);
+  }
+  /* And every source file index.html loads must actually be present inside it,
+     so a new module cannot be added to the page and forgotten in the bundle. */
+  const wanted = [...HTML_SRC.matchAll(/<script src="([^"?]+)/g)].map(m => m[1]);
+  for (const f of wanted) {
+    if (!bundle.includes('data-inlined-from="' + f + '"')) bad.push(f + ' is not inlined in the bundle');
+  }
+  if (!wanted.length) bad.push('index.html appears to load no local scripts, which cannot be right');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The bundle is committed, so it can silently fall behind its sources. A full
+   text comparison is not possible — the bundler strips `?v=` strings and
+   rewrites tags — but the substance of each source must be in there. */
+check('the bundle carries the current content of its sources', () => {
+  const bundle = fs.readFileSync(path.join(ROOT, 'Psychometric_Assistant.html'), 'utf8');
+  const bad = [];
+  /* One distinctive, recently-changed marker per source file. Cheap, and it
+     catches the common failure: editing a source and not rebuilding. */
+  const MARKERS = {
+    'data.js': 'WAIS4_INTERCORR',
+    'app.js': 'function profileAbnormality',
+    'design-system.js': "'profile':        'Profile Analysis'",
+    'app-profile-page.js': 'function renderProfileApa',
+    'app-viz-page.js': 'function vizPrePanelSvg',
+    'design-system.css': '.prof-card{'
+  };
+  for (const [file, marker] of Object.entries(MARKERS)) {
+    if (!bundle.includes(marker)) bad.push(file + ' looks stale in the bundle (no "' + marker + '")');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+heading('45. The Profile Analysis page');
+
+const PROF_SRC = fs.readFileSync(path.join(ROOT, 'app-profile-page.js'), 'utf8');
+
+/* A page that is present in the markup but never loaded, or loaded but never
+   reachable from the nav, is the failure mode CLAUDE.md's §16/§17 note exists
+   for: no error, no warning, and nothing on screen. */
+check('the page is declared, loaded and reachable from the navigation', () => {
+  const bad = [];
+  if (!/<section class="section" id="profile">/.test(HTML_SRC)) bad.push('the #profile section is missing from index.html');
+  if (!/<script src="app-profile-page\.js/.test(HTML_SRC)) bad.push('the module is never loaded');
+  /* Loaded AFTER app.js and data.js, which define profileAbnormality and
+     WAIS4_INTERCORR — the module calls both at setup time. */
+  const iData = HTML_SRC.indexOf('src="data.js');
+  const iApp = HTML_SRC.indexOf('src="app.js');
+  const iProf = HTML_SRC.indexOf('src="app-profile-page.js');
+  if (iProf !== -1 && (iProf < iData || iProf < iApp)) bad.push('the module loads before the globals it needs');
+  const navs = (HTML_SRC.match(/data-target="profile"/g) || []).length;
+  if (navs < 2) bad.push('the page has ' + navs + ' nav entries; it needs the top bar and the sidebar');
+  if (!/'profile':\s*'Profile Analysis'/.test(fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8'))) {
+    bad.push('design-system.js has no page title for it, so the header would be blank');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE ARITHMETIC MUST NOT BE RE-IMPLEMENTED HERE. app.js holds the engine and
+   check.js §42 pins it against the paper; a second copy on the page would be
+   unpinned and free to drift. Likewise the matrix: a literal here would be a
+   second thing to keep in step with Table 5.1. */
+check('the page computes nothing of its own', () => {
+  const bad = [];
+  if (!/profileAbnormality\(/.test(PROF_SRC)) bad.push('the page does not call the shipped engine');
+  if (!/WAIS4_INTERCORR/.test(PROF_SRC)) bad.push('the page does not read the shipped matrix');
+  if (/choleskyLower\s*\(|function\s+cholesky/i.test(PROF_SRC)) bad.push('the page decomposes the matrix itself');
+  /* No hard-coded correlation: every number the profile rests on comes out of
+     data.js. .61 / .64 / .45 / .62 / .52 / .51 must appear nowhere here. */
+  for (const r of ['0.61', '0.64', '0.45', '0.62', '0.52', '0.51', '.61', '.64']) {
+    if (new RegExp('[^\\d]' + r.replace('.', '\\.') + '[^\\d]').test(PROF_SRC)) {
+      bad.push('a correlation (' + r + ') is written into the page instead of read from the matrix');
+      break;
+    }
+  }
+  /* The criterion deviates ARE the page's to hold — they are definitions of a
+     percentile, not data — but the paper's own three must be right. */
+  for (const [pct, z] of [['5th', '-1.645'], ['10th', '-1.282'], ['15.9th', '-1.0']]) {
+    if (!PROF_SRC.includes(z)) bad.push('the ' + pct + '-percentile criterion is not ' + z + ' as the paper states');
+  }
+  if (!/1\.960/.test(PROF_SRC)) bad.push('the two-tailed difference criterion is not 1.960');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE APA TABLE IS THE PATIENT'S. The Working Report collects any container
+   holding an .apa-table, so a renderer that emits its shell unconditionally
+   puts an empty table in every report — the renderOpiePredictApa defect
+   CLAUDE.md records. Here it would be worse than empty: the population
+   percentages need no patient data at all, so an unguarded renderer would
+   file a full-looking table for a patient who has not been assessed. */
+check('the exported table is emitted only once all four Indices are entered', () => {
+  const bad = [];
+  const fn = extractFn(PROF_SRC, 'renderProfileApa');
+  if (!/counts\.complete/.test(fn)) bad.push('the renderer does not test for a complete set of scores');
+  const guard = fn.indexOf('complete');
+  const table = fn.indexOf('apa-table');
+  if (guard === -1 || table === -1 || guard > table) bad.push('the guard does not precede the table');
+  if (!/return;/.test(fn.slice(guard, table === -1 ? undefined : table))) {
+    bad.push('the renderer falls through to writing a table when scores are missing');
+  }
+  /* And the guard has to be genuinely unsatisfiable without input: `complete`
+     is set only when every index is present. */
+  const counts = extractFn(PROF_SRC, 'profCounts');
+  if (!/present\.every\(Boolean\)/.test(counts)) bad.push('a partial profile can still report as complete');
+  if (!/'prof-apa':/.test(APP_SRC)) bad.push('the source is not registered with the Working Report');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Counting and simulating must use ONE definition of each abnormality, or the
+   page reports a count against a percentage answering a different question. */
+check('the patient\'s counts use the same definitions as the simulation', () => {
+  const counts = extractFn(PROF_SRC, 'profCounts');
+  const engine = extractFn(APP_SRC, 'profileAbnormality');
+  const bad = [];
+  // eq. 1 in both
+  if (!/Math\.sqrt\(2 - 2 \* R\[i\]\[j\]\)/.test(counts)) bad.push('the pairwise threshold on the page is not sqrt(2 - 2r)');
+  if (!/Math\.sqrt\(2 - 2 \* R\[i\]\[j\]\)/.test(engine)) bad.push('the pairwise threshold in the engine is not sqrt(2 - 2r)');
+  // eq. 2 in both, and the page must ask the SHIPPED helper for the means
+  if (!/profileMatrixMeans/.test(counts)) bad.push('the page computes the matrix means itself rather than asking the shipped helper');
+  if (!/1 \+ means\.grandMean - 2 \* means\.rowMean\[i\]/.test(counts)) bad.push('the deviation threshold on the page is not sqrt(1 + Rbar - 2*mbarX)');
+  // both tails, both places
+  if (!/Math\.abs\(z\[i\] - z\[j\]\)/.test(counts)) bad.push('pairwise differences are not counted in absolute value');
+  if (!/Math\.abs\(mean - v\)/.test(counts)) bad.push('deviations are not counted in absolute value');
+  /* Index scores are converted on the standard metric, not on whatever the
+     Score Tables page happens to be set to. */
+  if (!/- 100\) \/ 15/.test(counts)) bad.push('Index scores are not converted as M 100 / SD 15');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* "j or more" at j = 0 is the whole population. Printing "100% show 0 or more"
+   is true, useless, and reads as a finding. */
+check('a count of zero is not reported as a base rate', () => {
+  const bad = [];
+  const pct = extractFn(PROF_SRC, 'profPctFor');
+  if (!/j < 1/.test(pct)) bad.push('profPctFor does not refuse j = 0');
+  const card = extractFn(PROF_SRC, 'profResultCard');
+  if (!/count === 0/.test(card)) bad.push('the result card has no branch for a count of zero');
+  const apa = extractFn(PROF_SRC, 'renderProfileApa');
+  if (!/n === 0 \? '—'/.test(apa)) bad.push('the exported table prints a base rate against a count of zero');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The note is the only place the exported table says what defined "abnormal",
+   where the correlations came from, and that the figures are simulated. */
+check('the APA note carries the criterion, the source and the method', () => {
+  if (!/'prof':\s*ctx =>/.test(APP_SRC)) return 'there is no prof entry in APA_NOTES';
+  const note = APP_SRC.slice(APP_SRC.indexOf("'prof': ctx => ["));
+  const body = note.slice(0, note.indexOf('],'));
+  const bad = [];
+  if (!/Crawford, Garthwaite & Gault, 2007/.test(body)) bad.push('the note does not cite the method');
+  if (!/Table 5\.1/.test(body)) bad.push('the note does not name the source of the correlations');
+  if (!/Monte Carlo/.test(body)) bad.push('the note does not say the base rates are simulated');
+  if (!/ctx\.criterion/.test(body)) bad.push('the note does not state which criterion was used');
+  /* A base rate here counts PEOPLE with j findings; a percentile counts
+     scores below a point. Both print as a percentage, which is exactly why
+     the exported table has to distinguish them. */
+  if (!/not a percentile/i.test(body)) bad.push('the note does not distinguish a base rate from a percentile');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Standalone `prof-` classes only. The cascade trap: a correct, more specific
+   rule still loses to a page-scoped selector carrying !important, so a fresh
+   name sidesteps the argument rather than winning it. */
+check('the page styles borrow no class the rest of the app owns', () => {
+  const ds = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const styles = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
+  const bad = [];
+  const used = new Set();
+  for (const m of PROF_SRC.matchAll(/class="([^"]+)"/g)) {
+    for (const c of m[1].split(/\s+/)) if (c) used.add(c);
+  }
+  for (const m of HTML_SRC.slice(
+    HTML_SRC.indexOf('<section class="section" id="profile">'),
+    HTML_SRC.indexOf('</section>', HTML_SRC.indexOf('<section class="section" id="profile">'))
+  ).matchAll(/class="([^"]+)"/g)) {
+    for (const c of m[1].split(/\s+/)) if (c) used.add(c);
+  }
+  /* Shared shell classes the page is MEANT to reuse — the whole point of the
+     design system. Anything else new must carry the prefix. */
+  const SHARED = new Set(['section', 'eyebrow', 'section-title', 'panel', 'panel-kicker',
+    'field', 'hint', 'info-box', 'apa-wrap', 'apa-toolbar', 'apa-toolbar-left',
+    'apa-toolbar-label', 'apa-table-container', 'apa-table', 'apa-table-num',
+    'apa-table-title', 'btn', 'btn-ghost', 'formula-disclosure', 'formula-body',
+    'section-desc', 'num', 'nav-item', 'topnav-drop-item', 'nav-item-num']);
+  for (const c of used) {
+    if (SHARED.has(c) || c.startsWith('prof-')) continue;
+    bad.push('the page uses "' + c + '", which is neither prefixed nor a shared shell class');
+  }
+  /* And every prof- class it uses must actually be defined, or it renders
+     unstyled with nothing to say so. */
+  for (const c of used) {
+    if (!c.startsWith('prof-')) continue;
+    if (!ds.includes('.' + c) && !styles.includes('.' + c)) bad.push('.' + c + ' is used but never defined');
   }
   return bad.length === 0 || bad.join('; ');
 });

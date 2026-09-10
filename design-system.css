@@ -5472,3 +5472,147 @@ input[type="number"].ds-age-pop-input{
   #battery .bat-prem-link-wrap{flex:1 1 100% !important;min-width:0 !important}
   #battery .bat-prem-link-btn{max-width:100% !important}
 }
+
+
+/* ============================================================================
+   PROFILE ANALYSIS PAGE (#profile)
+
+   Every class here is standalone and prefixed `prof-`. Nothing borrows a
+   name `styles.css` or the blocks above already own — the cascade trap in
+   CLAUDE.md is that a correct, more specific rule still loses to a
+   page-scoped selector carrying !important, and a fresh name sidesteps the
+   whole argument rather than winning it.
+   ============================================================================ */
+.prof-intro{
+  margin: 0 0 var(--ds-space-4);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-subtle);
+  line-height: var(--ds-leading-normal);
+  max-width: 76ch;
+}
+.prof-input-grid{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ds-space-3);
+}
+.prof-controls{
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ds-space-3);
+  margin-top: var(--ds-space-4);
+  flex-wrap: wrap;
+}
+.prof-controls .field{ min-width: 260px; }
+/* Also the JS hook the module reads scores through, so it is defined here
+   rather than left as a bare selector: an undefined class is indistinguishable
+   from a typo'd one, and check.js §44 fails on either. */
+.prof-score-input{ font-variant-numeric: tabular-nums; }
+
+/* One card per question the method answers. The COUNT is the headline and
+   the base rate sits under it: the count alone means nothing, and the
+   percentage alone is not about this patient. */
+.prof-cards{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-4);
+}
+.prof-card{
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-subtle);
+  padding: var(--ds-space-3) var(--ds-space-4);
+}
+.prof-card-label{
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ds-text-subtle);
+  margin-bottom: var(--ds-space-2);
+}
+.prof-card-value{
+  font-size: 30px;
+  font-weight: var(--ds-weight-semibold);
+  line-height: 1.1;
+  color: var(--ds-text);
+  font-variant-numeric: tabular-nums;
+}
+.prof-card-desc{
+  margin-top: var(--ds-space-2);
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text-subtle);
+  line-height: var(--ds-leading-snug);
+}
+
+/* WHICH measures produced the count. A bare "2" sends the clinician back to
+   the table to work out which two, which is the one thing the page is
+   supposed to save them. */
+.prof-which-row{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-4);
+}
+.prof-which-label{
+  display: block;
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ds-text-faint);
+  margin-bottom: 4px;
+}
+.prof-which{
+  font-size: var(--ds-text-sm);
+  color: var(--ds-text);
+  line-height: var(--ds-leading-snug);
+}
+.prof-which-none{ color: var(--ds-text-faint); font-style: italic; }
+
+.prof-table{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ds-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.prof-table th,
+.prof-table td{
+  padding: var(--ds-space-2) var(--ds-space-3);
+  text-align: right;
+  border-bottom: 1px solid var(--ds-border);
+}
+.prof-table th{
+  font-size: var(--ds-text-xs);
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-text-subtle);
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.prof-table .prof-th-label,
+.prof-table .prof-td-label{ text-align: left; white-space: normal; }
+.prof-table .prof-td-na{ color: var(--ds-text-faint); }
+/* The patient's own cell, marked in place rather than lifted out, so the
+   figure is read against the ones on either side of it. */
+.prof-table .prof-td-hit{
+  font-weight: var(--ds-weight-semibold);
+  color: var(--ds-text);
+  background: var(--ds-surface-subtle);
+  box-shadow: inset 0 0 0 1px var(--ds-border-strong);
+}
+.prof-precision{
+  margin: var(--ds-space-3) 0 0;
+  font-size: var(--ds-text-xs);
+  color: var(--ds-text-subtle);
+  line-height: var(--ds-leading-normal);
+  max-width: 80ch;
+}
+.prof-empty{
+  padding: var(--ds-space-5);
+  text-align: center;
+  color: var(--ds-text-faint);
+  font-size: var(--ds-text-sm);
+}
+@media (max-width: 860px){
+  .prof-input-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

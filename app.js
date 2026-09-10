@@ -3396,6 +3396,24 @@ const APA_NOTES = {
           : `Asterisks mark scores below the premorbid estimate of ${ctx.premorbid}: * ≥ 1 SD, ** ≥ 1.5 SD, *** ≥ 2 SD.`)
       : ''
   ],
+  /* PROFILE ANALYSIS. The exported table reports THIS PATIENT'S counts and
+     the base rate of each, so the note has to carry the three things a
+     reader needs to reproduce it: which criterion defined "abnormally low",
+     where the correlations came from, and that the base rates are simulated
+     rather than tabulated by the publisher.
+
+     It also states the scores, because the table itself reports counts and
+     a reader cannot otherwise check the counting. */
+  'prof': ctx => [
+    `Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases (Crawford, Garthwaite & Gault, 2007).`,
+    `An abnormally low Index score is one ${ctx.criterion}. Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.`,
+    'Index intercorrelations are the all-ages values of WAIS-IV Technical and Interpretive Manual (GB), Table 5.1.',
+    ctx.scores ? `Index scores entered: ${ctx.scores}.` : '',
+    /* NOT a percentile. A base rate here counts PEOPLE showing a number of
+       findings, not scores below a point, and the two get confused precisely
+       because both are printed as percentages. */
+    'A base rate is not a percentile: it counts people showing at least this many findings across the battery, not scores falling below a point on one measure.'
+  ],
   'sdi': ctx => [
     'SD Δ = (retest − test) ÷ SD.',
     ctx.mixedTypes ? 'Scores are reported in their native standardised metric.' : '',
@@ -8662,7 +8680,8 @@ const ReportBundle = (function(){
     'pre-estimates-apa':    'Premorbid · Estimates',
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
     'pre-opiepredict-apa':  'Premorbid · OPIE-4 Predicted',
-    'pvt-apa':              'Performance Validity'
+    'pvt-apa':              'Performance Validity',
+    'prof-apa':             'Profile Analysis'
   };
   /* Method / tool names - combined with the detected test family to produce
      intelligent table titles like "Crawford Regression-Based Change: WAIS-IV". */
@@ -8676,7 +8695,8 @@ const ReportBundle = (function(){
     'pre-estimates-apa':    'Premorbid Cognitive Estimate',
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',
     'pre-opiepredict-apa':  'OPIE-4-Predicted vs Achieved',
-    'pvt-apa':              'Performance Validity Indicators'
+    'pvt-apa':              'Performance Validity Indicators',
+    'prof-apa':             'Profile Abnormality'
   };
   /* Backwards alias - SOURCE_TITLES still referenced in a couple of places */
   const SOURCE_TITLES = SOURCE_METHOD_NAMES;
