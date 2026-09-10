@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260910e">
-<link rel="stylesheet" href="design-system.css?v=20260910e">
+<link rel="stylesheet" href="styles.css?v=20260910f">
+<link rel="stylesheet" href="design-system.css?v=20260910f">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1414,16 +1414,21 @@
     <p class="section-desc" style="margin-bottom:16px">How unusual is this pattern of WAIS-IV Index scores? Five per cent of people fall below the 5th percentile on any <em>one</em> Index &mdash; but 13.8% fall below it on at least one of the four. Crawford, Garthwaite &amp; Gault (2007).</p>
 
     <div class="panel">
-      <div class="panel-kicker">WAIS-IV Index scores</div>
-      <p class="prof-intro">Enter all four Indices on the standard metric (M 100, SD 15). The population percentages below need no patient data and are shown regardless; the patient&rsquo;s own counts appear once all four are present.</p>
-      <div class="prof-input-grid" id="prof-inputs"></div>
-      <div class="prof-controls">
+      <div class="panel-kicker">WAIS-IV scores</div>
+      <p class="prof-intro">Pick the set that was administered, then enter every measure in it. The population percentages below need no patient data and are shown regardless; the patient&rsquo;s own counts appear once the set is complete. <strong>A set never mixes a subtest with a composite it is part of</strong> &mdash; <span id="prof-composition"></span>, so profiling both would put a variable and a piece of itself in one covariance structure.</p>
+      <div class="prof-controls prof-controls-top">
+        <div class="field">
+          <label>Measures administered</label>
+          <select id="prof-set"></select>
+        </div>
         <div class="field">
           <label>An abnormally low score is one&hellip;</label>
           <select id="prof-criterion"></select>
         </div>
         <button class="btn btn-ghost" type="button" id="prof-clear">Clear scores</button>
       </div>
+      <p class="prof-metric-note" id="prof-metric-note"></p>
+      <div class="prof-input-grid prof-input-grid-narrow" id="prof-inputs"></div>
     </div>
 
     <div class="panel">
@@ -3179,12 +3184,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260910e"></script>
-<script src="app.js?v=20260910e"></script>
-<script src="design-system.js?v=20260910e" defer></script>
-<script src="app-effectsize-page.js?v=20260910e"></script>
-<script src="app-viz-page.js?v=20260910e"></script>
-<script src="app-profile-page.js?v=20260910e"></script>
+<script src="data.js?v=20260910f"></script>
+<script src="app.js?v=20260910f"></script>
+<script src="design-system.js?v=20260910f" defer></script>
+<script src="app-effectsize-page.js?v=20260910f"></script>
+<script src="app-viz-page.js?v=20260910f"></script>
+<script src="app-profile-page.js?v=20260910f"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

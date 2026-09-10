@@ -1172,8 +1172,44 @@ leaves `05, 10, 06, 07` — which reads as missing pages. §46 asserts the seque
 
 ### The Profile Analysis page (`app-profile-page.js`, `#profile`)
 
-The UI for `profileAbnormality` above. Four WAIS-IV Index boxes, a criterion selector,
-three result cards and the full distribution table.
+The UI for `profileAbnormality` above. A set selector, its score boxes, a criterion
+selector, three result cards and the distribution table.
+
+**Three fixed sets, and the constraint is why they are fixed.** A profile must never hold
+a subtest and a composite that subtest is *part of* — VCI **is** Similarities + Vocabulary
++ Information + Comprehension, so a profile holding both puts a variable and a piece of
+itself in one covariance structure. Crawford's own programs analyse Index scores **or**
+subtests for exactly that reason. Fixed sets make an invalid profile unassemblable;
+`PROF_COMPOSED_OF` states the composition and `check.js` §45 derives the rule from it, so
+a fourth set has to satisfy it rather than be trusted.
+
+| Set | k | Metric | % with ≥1 score below the 5th percentile |
+|---|---|---|---|
+| Four Index scores | 4 | M 100, SD 15 | **13.8%** |
+| Ten core subtests | 10 | scaled, M 10, SD 3 | **24.9%** |
+| Core + supplementary | 15 | scaled, M 10, SD 3 | **31.3%** |
+
+That column is the argument for the extension: nearly **one in three** people given a full
+battery has at least one subtest below the 5th percentile, and at 15 measures **80%** show
+at least one abnormally large pairwise difference. Reading a single low subtest as a
+finding is the error the method exists to prevent, and the Index-only version could not
+show it.
+
+- **Each set carries its own metric**, so the conversion to z is per set. A single
+  hard-coded `(v − 100) / 15` would score a scaled 8 as z = −6.1 and call every subtest
+  profile catastrophic. §45 fails if a metric is hard-coded.
+- **Changing the set clears the scores**, deliberately: a 10 typed as a scaled subtest is
+  an Index of 10, off the bottom of that scale, so carrying values across would silently
+  reinterpret every one of them.
+- **The simulation is cached on set *and* criterion.** The 15-measure run costs ~200 ms
+  and compares 105 pairs per simulated case, so a keystroke must not trigger it.
+- **The distribution table caps at 10 columns** and says so. 15 measures give 105 possible
+  pairs; the cards always carry the patient's own count whatever j they landed on.
+- **Letter-Number Sequencing, Figure Weights and Cancellation are normed to 69**, so the
+  15-measure set carries an age caveat on screen and in the exported note. The roster is
+  read from `WAIS4_INTERCORR.restrictedTo16_69`, not restated.
+- **`PROF_COMPOSED_OF` is load-bearing, not decorative**: the on-screen sentence explaining
+  the rule is built from it, so the text cannot drift from the constraint it describes.
 
 **It is the one page that is not a view of data entered elsewhere, and that is
 deliberate.** Score Charts is emphatically a view — every number it draws comes from the
@@ -1196,13 +1232,23 @@ matrix describes. So the inputs are typed, and the page carries no other data.
 - **The page computes nothing of its own** — no Cholesky, no correlation literal. §45
   fails if a coefficient is written into it rather than read from `WAIS4_INTERCORR`, and
   asserts the patient's counts use the same two equations the simulation does.
+- **Every `prof*` name used in the module must be declared in it**, and every declared name
+  used. This is §17's idea applied to the page module, and it exists because the mistake
+  was made twice while building the sets: a block replacement took `PROF_CRITERIA` out
+  along with the block above it, leaving two live references to a name that no longer
+  existed. `node --check` cannot see it — the syntax is fine — and in a self-contained
+  IIFE the ReferenceError means the whole page silently does nothing. It escaped once
+  because the criterion *values* vanished with the declaration and a different check
+  tested for those; renaming the const instead of deleting it passed everything.
 - **The note says a base rate is not a percentile.** Both print as a percentage; one
   counts *people showing this many findings across the battery*, the other counts *scores
   below a point on one measure*.
 
-Verified by driving the real page and the bundle over `file://`: with VCI 105, PRI 98,
-WMI 72, PSI 68 it reports 2 low (WMI, PSI), 4 abnormal pairwise differences and 1
-deviation from own mean — each confirmed by hand against the stored correlations.
+Verified by driving the real page and the bundle over `file://` on all three sets. Indices
+at VCI 105 / PRI 98 / WMI 72 / PSI 68 give 2 low (WMI, PSI), 4 abnormal pairwise
+differences and 1 deviation from own mean. Core subtests with Digit Span 5 give exactly 1
+low — z = (5 − 10) / 3 = −1.667, the only value past −1.645 — against a population figure
+of 25.0%. Each confirmed by hand against the stored correlations.
 
 ### `higherIsWorse` — measures where a high score is a bad result
 
@@ -1492,7 +1538,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 372 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 375 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients

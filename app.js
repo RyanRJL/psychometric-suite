@@ -3406,8 +3406,13 @@ const APA_NOTES = {
      a reader cannot otherwise check the counting. */
   'prof': ctx => [
     `Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases (Crawford, Garthwaite & Gault, 2007).`,
-    `An abnormally low Index score is one ${ctx.criterion}. Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.`,
-    'Index intercorrelations are the all-ages values of WAIS-IV Technical and Interpretive Manual (GB), Table 5.1.',
+    `Computed over ${ctx.k} measures: ${ctx.setLabel} (${ctx.metric}).`,
+    `An abnormally low score is one ${ctx.criterion}. Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.`,
+    'Intercorrelations are the all-ages values of WAIS-IV Technical and Interpretive Manual (GB), Table 5.1.',
+    /* A profile mixing 16-69 measures with 16-90 ones is reading part of its
+       covariance structure off a narrower sample. The exported table has to
+       carry that, because nothing else on the page travels with it. */
+    ctx.restricted ? `${ctx.restricted} ${ctx.restricted.indexOf(',') === -1 ? 'is' : 'are'} normed for ages 16:0-69:11 only; above that age the correlations used for ${ctx.restricted.indexOf(',') === -1 ? 'it' : 'them'} come from a narrower sample.` : '',
     ctx.scores ? `Index scores entered: ${ctx.scores}.` : '',
     /* NOT a percentile. A base rate here counts PEOPLE showing a number of
        findings, not scores below a point, and the two get confused precisely
