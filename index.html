@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260910i">
-<link rel="stylesheet" href="design-system.css?v=20260910i">
+<link rel="stylesheet" href="styles.css?v=20260910j">
+<link rel="stylesheet" href="design-system.css?v=20260910j">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -720,9 +720,10 @@
 
 
     <!-- ========== THE DIAL ==============================================
-         Seven tools on a ring rather than in a grid. The grid orphaned its
-         last card at every column count that divides seven, which is none
-         of them but one and seven.
+         Eight tools on a ring rather than in a grid. It was seven, whose only
+         divisors are one and seven, so a grid orphaned its last card at every
+         column count. The ring does not care how many there are: the nodes are
+         placed by --a, one 360/n step apart.
 
          Two things about this markup are load-bearing:
 
@@ -786,8 +787,9 @@
           <p class="home-dial-desc" id="dial-desc-2" data-dial-desc="2">Build APA-formatted report tables with confidence-interval columns and premorbid comparison.</p>
           <p class="home-dial-desc" id="dial-desc-3" data-dial-desc="3">Evaluate test-retest change across five methods, from descriptive SDI to Crawford regression.</p>
           <p class="home-dial-desc" id="dial-desc-4" data-dial-desc="4">Chart scores entered elsewhere in the suite against classification and reliable-change bands.</p>
-          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
-          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
+          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Ask how many of a patient&rsquo;s scores are abnormal &mdash; and how many healthy people show that many.</p>
+          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
+          <p class="home-dial-desc" id="dial-desc-7" data-dial-desc="7">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
         </div>
         <button class="home-dial-node" data-dial="0" aria-describedby="dial-desc-0" style="--a:0deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
@@ -800,7 +802,7 @@
           <span class="home-dial-label">Performance Validity</span>
         </button>
 
-        <button class="home-dial-node" data-dial="1" aria-describedby="dial-desc-1" style="--a:51.4286deg"
+        <button class="home-dial-node" data-dial="1" aria-describedby="dial-desc-1" style="--a:45deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;premorbid&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -815,7 +817,7 @@
           <span class="home-dial-label">Premorbid Estimation</span>
         </button>
 
-        <button class="home-dial-node" data-dial="2" aria-describedby="dial-desc-2" style="--a:102.8571deg"
+        <button class="home-dial-node" data-dial="2" aria-describedby="dial-desc-2" style="--a:90deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;battery&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -827,7 +829,7 @@
           <span class="home-dial-label">Score Tables</span>
         </button>
 
-        <button class="home-dial-node" data-dial="3" aria-describedby="dial-desc-3" style="--a:154.2857deg"
+        <button class="home-dial-node" data-dial="3" aria-describedby="dial-desc-3" style="--a:135deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;change-analysis&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -838,7 +840,7 @@
           <span class="home-dial-label">Change Analysis</span>
         </button>
 
-        <button class="home-dial-node" data-dial="4" aria-describedby="dial-desc-4" style="--a:205.7143deg"
+        <button class="home-dial-node" data-dial="4" aria-describedby="dial-desc-4" style="--a:180deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;charts&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -851,7 +853,22 @@
           <span class="home-dial-label">Score Charts</span>
         </button>
 
-        <button class="home-dial-node" data-dial="5" aria-describedby="dial-desc-5" style="--a:257.1429deg"
+        <!-- Profile Analysis. Sits after Score Charts because it is the question
+             a clinician asks once the scores are on the table and drawn: how many
+             of them are abnormal, and how many healthy people show that many. -->
+        <button class="home-dial-node" data-dial="5" aria-describedby="dial-desc-5" style="--a:225deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;profile&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="2.5" y1="14.5" x2="19.5" y2="14.5" stroke-dasharray="2 2"/>
+              <polyline points="4,7 8.5,10.5 13,17.5 18,15"/>
+              <circle cx="13" cy="17.5" r="1.9" fill="currentColor" stroke="none"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Profile Analysis</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="6" aria-describedby="dial-desc-6" style="--a:270deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -865,7 +882,7 @@
           <span class="home-dial-label">Effect Size Tools</span>
         </button>
 
-        <button class="home-dial-node" data-dial="6" aria-describedby="dial-desc-6" style="--a:308.5714deg"
+        <button class="home-dial-node" data-dial="7" aria-describedby="dial-desc-7" style="--a:315deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;converter&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -3166,12 +3183,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260910i"></script>
-<script src="app.js?v=20260910i"></script>
-<script src="design-system.js?v=20260910i" defer></script>
-<script src="app-effectsize-page.js?v=20260910i"></script>
-<script src="app-viz-page.js?v=20260910i"></script>
-<script src="app-profile-page.js?v=20260910i"></script>
+<script src="data.js?v=20260910j"></script>
+<script src="app.js?v=20260910j"></script>
+<script src="design-system.js?v=20260910j" defer></script>
+<script src="app-effectsize-page.js?v=20260910j"></script>
+<script src="app-viz-page.js?v=20260910j"></script>
+<script src="app-profile-page.js?v=20260910j"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

@@ -5149,35 +5149,23 @@ input[type="number"].ds-age-pop-input{
    It is also what makes the dial work on touch, where there is no hover. */
 .home-dial-stage[data-active] .home-dial-hub-rest{ opacity: 0 !important; }
 
-.home-dial-stage[data-active="0"] .home-dial-desc[data-dial-desc="0"],
-.home-dial-stage[data-active="1"] .home-dial-desc[data-dial-desc="1"],
-.home-dial-stage[data-active="2"] .home-dial-desc[data-dial-desc="2"],
-.home-dial-stage[data-active="3"] .home-dial-desc[data-dial-desc="3"],
-.home-dial-stage[data-active="4"] .home-dial-desc[data-dial-desc="4"],
-.home-dial-stage[data-active="5"] .home-dial-desc[data-dial-desc="5"],
-.home-dial-stage[data-active="6"] .home-dial-desc[data-dial-desc="6"]{
-  opacity: 1 !important;
-}
+/* ONE RULE PER EFFECT, NOT ONE PER NODE. These were three blocks of seven
+   selectors pairing `[data-active="N"]` on the stage with `[data-dial="N"]` on
+   the node — so adding an eighth tool meant editing three CSS blocks that
+   nothing pointed at from the markup, and a miss would have shipped a node
+   that simply never lit up or explained itself. The JS now marks the active
+   node and its description with `data-on`, which is one selector each and
+   cannot fall behind the number of nodes. `[data-active]` on the stage stays:
+   the hub's rest state needs to know only that SOMETHING is active. */
+.home-dial-desc[data-on]{ opacity: 1 !important; }
 
-.home-dial-stage[data-active="0"] .home-dial-node[data-dial="0"] .home-dial-dot,
-.home-dial-stage[data-active="1"] .home-dial-node[data-dial="1"] .home-dial-dot,
-.home-dial-stage[data-active="2"] .home-dial-node[data-dial="2"] .home-dial-dot,
-.home-dial-stage[data-active="3"] .home-dial-node[data-dial="3"] .home-dial-dot,
-.home-dial-stage[data-active="4"] .home-dial-node[data-dial="4"] .home-dial-dot,
-.home-dial-stage[data-active="5"] .home-dial-node[data-dial="5"] .home-dial-dot,
-.home-dial-stage[data-active="6"] .home-dial-node[data-dial="6"] .home-dial-dot{
+.home-dial-node[data-on] .home-dial-dot{
   border-color: var(--ds-primary) !important;
   box-shadow: 0 4px 14px rgba(156,61,42,0.16), 0 1px 4px rgba(20,15,8,0.06) !important;
   transform: translateY(-2px) !important;
 }
 
-.home-dial-stage[data-active="0"] .home-dial-node[data-dial="0"] .home-dial-label,
-.home-dial-stage[data-active="1"] .home-dial-node[data-dial="1"] .home-dial-label,
-.home-dial-stage[data-active="2"] .home-dial-node[data-dial="2"] .home-dial-label,
-.home-dial-stage[data-active="3"] .home-dial-node[data-dial="3"] .home-dial-label,
-.home-dial-stage[data-active="4"] .home-dial-node[data-dial="4"] .home-dial-label,
-.home-dial-stage[data-active="5"] .home-dial-node[data-dial="5"] .home-dial-label,
-.home-dial-stage[data-active="6"] .home-dial-node[data-dial="6"] .home-dial-label{
+.home-dial-node[data-on] .home-dial-label{
   color: var(--ds-primary) !important;
 }
 
@@ -5488,6 +5476,28 @@ input[type="number"].ds-age-pop-input{
    selector carrying !important, and a fresh name sidesteps the argument rather
    than winning it.
    ============================================================================ */
+/* THE PAGE NAME LIVES IN THE TOP BAR, so the in-markup eyebrow and h1 are
+   hidden here exactly as they are on every other page — #battery, #validity,
+   #premorbid, #effectsize and the rest each carry this pair. This page shipped
+   without them, so it alone wore a 92px hero that no other page has, which is
+   what made it look like a different app. The description survives as one
+   compact italic line, the same treatment #battery and #validity give theirs.
+   check.js §46 now asserts the pair over every navigable section, so the next
+   page cannot miss it the way this one did. */
+#profile > .eyebrow,
+#profile > .section-title{ display: none !important; }
+/* !important throughout, matching how #battery and #validity write theirs:
+   the base `.section-desc` at this layer already carries it, so a rule without
+   it loses on the cascade however specific it is — the trap in CLAUDE.md. */
+#profile > .section-desc{
+  font-size: var(--ds-text-xs) !important;
+  font-style: italic !important;
+  color: var(--ds-text-subtle) !important;
+  line-height: var(--ds-leading-normal) !important;
+  max-width: 92ch;
+  margin: 0 0 var(--ds-space-3) !important;
+}
+
 .prof-layout{ display: block; }
 
 /* ---- the input strip: what went in ---- */
@@ -5562,13 +5572,13 @@ input[type="number"].ds-age-pop-input{
 .prof-foot-link{ color: var(--ds-primary); font-weight: 500; cursor: pointer; white-space: nowrap; }
 
 /* ---- the answer cards ---- */
-.prof-cards{ display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ds-space-3); }
+.prof-cards{ display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ds-space-4); }
 .prof-card{
   background: var(--ds-surface);
   border: 1px solid var(--ds-border);
   border-radius: var(--ds-radius-lg);
   box-shadow: var(--ds-shadow-1);
-  padding: 11px 14px 8px;
+  padding: 14px 17px 13px;
   display: flex; flex-direction: column; min-width: 0;
 }
 .prof-card-label{
@@ -5576,11 +5586,11 @@ input[type="number"].ds-age-pop-input{
   color: var(--ds-text-subtle); margin-bottom: 7px; min-height: 20px;
 }
 .prof-card-count{ display: flex; align-items: baseline; gap: 7px; }
-.prof-card-n{ font-size: 32px; font-weight: 600; line-height: .95; letter-spacing: -.025em; }
+.prof-card-n{ font-size: 36px; font-weight: 600; line-height: .95; letter-spacing: -.025em; }
 .prof-card-of{ font-size: var(--ds-text-sm); color: var(--ds-text-subtle); }
 .prof-card-lede{
   font-size: var(--ds-text-sm); color: var(--ds-text-muted);
-  line-height: var(--ds-leading-snug); margin: 4px 0 7px; min-height: 20px;
+  line-height: var(--ds-leading-snug); margin: 5px 0 12px; min-height: 20px;
 }
 .prof-card.prof-quiet .prof-card-n{ color: var(--ds-text-faint); }
 
@@ -5591,14 +5601,14 @@ input[type="number"].ds-age-pop-input{
 .prof-dist{ margin-top: auto; }
 .prof-dist-title{
   font-size: var(--ds-text-2xs, 10.5px); letter-spacing: .04em; text-transform: uppercase;
-  color: var(--ds-text-faint); margin-bottom: 4px;
+  color: var(--ds-text-faint); margin-bottom: 7px;
 }
 .prof-bars{
-  display: flex; align-items: flex-end; gap: 2px; height: 46px;
+  display: flex; align-items: flex-end; gap: 3px; height: 70px;
   border-bottom: 1px solid var(--ds-border-strong);
 }
 .prof-bar{
-  flex: 1 1 0; min-width: 0; min-height: 2px;
+  flex: 1 1 0; min-width: 0; min-height: 2px; align-self: flex-end;
   background: var(--ds-border); border-radius: 2px 2px 0 0;
 }
 .prof-bar.prof-tail{ background: var(--ds-primary-tint); }
@@ -5608,7 +5618,25 @@ input[type="number"].ds-age-pop-input{
   flex: 1 1 0; min-width: 0; text-align: center; overflow: hidden; white-space: nowrap;
   font-size: 9.5px; color: var(--ds-text-faint);
 }
-.prof-xaxis span.prof-here{ color: var(--ds-primary); font-weight: 600; }
+/* The caret is what finds the patient's bar. P(0) sets the scale, so at four
+   Indices the bar itself is 2px tall and height cannot carry the mark. */
+.prof-xaxis span.prof-here{ color: var(--ds-primary); font-weight: 600; position: relative; }
+.prof-xaxis span.prof-here::before{
+  content: ''; position: absolute; left: 50%; top: -5px; transform: translateX(-50%);
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-bottom: 4px solid var(--ds-primary);
+}
+
+/* The claim at full width: the whole population, split at this patient's count.
+   4.37% is 4.37% of the bar, read rather than inferred from column heights. */
+.prof-tailbar{
+  margin-top: 12px; height: 12px; border-radius: var(--ds-radius-full);
+  background: var(--ds-surface-emphasis); overflow: hidden;
+}
+.prof-tailbar-fill{
+  display: block; height: 100%; background: var(--ds-primary);
+  border-radius: var(--ds-radius-full);
+}
 .prof-read{
   margin-top: 7px; display: flex; gap: 7px; align-items: flex-start;
   font-size: var(--ds-text-sm); color: var(--ds-text-muted);
@@ -5616,10 +5644,6 @@ input[type="number"].ds-age-pop-input{
 }
 .prof-read b{ color: var(--ds-text); font-weight: 600; font-size: var(--ds-text-base); }
 .prof-read-none{ color: var(--ds-text-faint); }
-.prof-swatch{
-  flex: 0 0 auto; width: 9px; height: 9px; border-radius: 2px; margin-top: 4px;
-  background: var(--ds-primary-tint); box-shadow: inset 0 0 0 1px var(--ds-primary);
-}
 .prof-se{ color: var(--ds-text-faint); font-size: var(--ds-text-xs); white-space: nowrap; }
 
 /* ---- caveats, disclosure, empty states ---- */
@@ -5633,10 +5657,25 @@ input[type="number"].ds-age-pop-input{
   line-height: var(--ds-leading-normal);
 }
 .prof-caveat p + p{ margin-top: 6px; }
-.prof-details{ margin-top: var(--ds-space-1); border-top: 1px solid var(--ds-border); padding-top: 8px; }
+/* THE SAME PILL THE METHOD DISCLOSURE WEARS. These two sit one above the
+   other at the foot of the page, and a bare line of grey text beside a pill
+   read as an unstyled leftover rather than as the second of a pair. */
+.prof-details{ margin-top: var(--ds-space-3); }
 .prof-details > summary{
-  cursor: pointer; font-size: var(--ds-text-xs); color: var(--ds-text-subtle); list-style: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none; list-style: none;
+  font-size: var(--ds-text-xs); font-weight: 500;
+  color: var(--ds-primary);
+  border: 1px solid rgba(156, 61, 42, 0.20);
+  background: var(--ds-primary-tint);
+  border-radius: var(--ds-radius-full);
+  padding: 6px 12px;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease);
 }
+.prof-details > summary::-webkit-details-marker{ display: none; }
+.prof-details > summary::before{ content: '\25A5'; font-size: 12px; line-height: 1; }
+.prof-details > summary:hover{ border-color: rgba(156, 61, 42, 0.34); }
 .prof-details-body{ padding-top: var(--ds-space-2); overflow-x: auto; }
 .prof-table{ border-collapse: collapse; width: 100%; font-size: var(--ds-text-xs); }
 .prof-table th, .prof-table td{

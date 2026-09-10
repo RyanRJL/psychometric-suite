@@ -1166,16 +1166,36 @@
     return el && el.closest ? el.closest('.home-dial-stage') : null;
   }
 
+  /* `data-on` MARKS THE ACTIVE NODE AND ITS DESCRIPTION DIRECTLY, so the CSS
+     is one rule per effect instead of one selector per node. It used to pair
+     `[data-active="N"]` on the stage with `[data-dial="N"]`, three blocks of
+     seven selectors that the markup pointed at from nowhere — adding a tool
+     meant remembering to extend all three, and forgetting would ship a node
+     that never lit up or explained itself, with no error. `data-active` stays
+     on the stage because the hub's rest state needs to know only that
+     something is active, not which. */
+  function markOn(stage, node){
+    stage.querySelectorAll('[data-on]').forEach(el => el.removeAttribute('data-on'));
+    if (!node) return;
+    node.setAttribute('data-on', '');
+    const desc = stage.querySelector('.home-dial-desc[data-dial-desc="'
+      + node.getAttribute('data-dial') + '"]');
+    if (desc) desc.setAttribute('data-on', '');
+  }
+
   function setActive(node){
     const stage = stageOf(node);
     if (!stage) return;
     const i = node.getAttribute('data-dial');
     if (i == null) return;
     stage.setAttribute('data-active', i);
+    markOn(stage, node);
   }
 
   function clearActive(stage){
-    if (stage) stage.removeAttribute('data-active');
+    if (!stage) return;
+    stage.removeAttribute('data-active');
+    markOn(stage, null);
   }
 
   /* pointerover/out rather than mouseenter/leave: those do not bubble, and
