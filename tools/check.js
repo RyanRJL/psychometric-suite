@@ -1768,7 +1768,11 @@ check('SRB and Crawford treat r as a regression slope, so cannot use corrected r
    ========================================================================== */
 heading('17. Called functions exist');
 
-const PROJECT_SCRIPTS = ['app.js', 'design-system.js', 'app-effectsize-page.js', 'app-viz-page.js', 'data.js'];
+/* app-profile-page.js was missing here, so §16-17 never scanned the one module
+   that is a self-contained IIFE with a ReferenceError as its only symptom. It
+   is a shipped script and belongs in the set. */
+const PROJECT_SCRIPTS = ['app.js', 'design-system.js', 'app-effectsize-page.js',
+                         'app-viz-page.js', 'app-profile-page.js', 'data.js'];
 
 /* Comments are not call sites. Without this, a comment recording WHY a
    function was removed - which is exactly the documentation this outage
@@ -8839,19 +8843,56 @@ check('every score is read from Score Tables and none is entered on the page', (
   return bad.length === 0 || bad.join('; ');
 });
 
-/* THE PAGE GOES STALE SILENTLY WITHOUT THIS. With no score entry of its own,
-   the only thing that can change what the page shows is a score typed on Score
-   Tables — and the exported table is collected into the Working Report by a
-   MutationObserver, so a container that never mutates keeps filing an old
-   count. renderBattery is where every path that touches a row ends. */
+/* THE PAGE GOES STALE SILENTLY WITHOUT THIS, AND IT SHIPPED STALE ONCE.
+
+   With no score entry of its own, the only thing that can change what the page
+   shows is a score typed on Score Tables. The first version hooked
+   renderBattery — which is the wrong function, and the check asserting it was
+   wrong the same way. A score keystroke updates the row IN PLACE, so the caret
+   is not thrown away, and ends in renderBatteryApa; renderBattery runs only
+   when rows are added or removed. So Quick Add synced the page while every row
+   was still blank, the scores were then typed, and the Profile page went on
+   saying "No WAIS-IV scores yet" with a full WAIS-IV on the table.
+
+   This check therefore follows the keystroke rather than naming a function:
+   find the handler bound to the row inputs, take the renderer it ends in, and
+   require the hook to be in THAT. */
 check('a score typed on Score Tables reaches the page', () => {
   const bad = [];
-  const rb = extractFn(APP_SRC, 'renderBattery');
-  if (!/profileScoresChanged\(\)/.test(rb)) bad.push('renderBattery does not notify the profile page');
-  if (!/typeof profileScoresChanged === 'function'/.test(rb)) {
-    bad.push('the call is unguarded, so it throws before the module has loaded');
+  /* The listener bound to the score/raw/name inputs — the literal keystroke
+     path, located by the selector the app itself uses to bind it. */
+  const at = APP_SRC.indexOf("tbody.querySelectorAll('input[data-r]')");
+  if (at === -1) return 'the row-input listener could not be found, so the keystroke path cannot be followed';
+  const handler = APP_SRC.slice(at, APP_SRC.indexOf('\n  });', at));
+  if (!/\.addEventListener\('input'/.test(handler)) bad.push('the row inputs no longer listen for input');
+  /* Whatever render function that handler calls must carry the hook. */
+  const called = [...handler.matchAll(/\b(render[A-Za-z0-9_]*)\(\)/g)].map(m => m[1]);
+  if (!called.length) bad.push('the keystroke handler calls no renderer at all');
+  const carries = called.filter(fn => /profileScoresChanged\(\)/.test(extractFn(APP_SRC, fn) || ''));
+  if (called.length && !carries.length) {
+    bad.push('a typed score reaches ' + [...new Set(called)].join('/')
+      + ', none of which notifies the profile page — this is the renderBattery mistake again');
   }
+  for (const fn of carries) {
+    if (!new RegExp("typeof profileScoresChanged === 'function'").test(extractFn(APP_SRC, fn))) {
+      bad.push('the call in ' + fn + ' is unguarded, so it throws before the module has loaded');
+    }
+  }
+  /* Adding or removing rows must reach it too. renderBattery ends in
+     renderBatteryApa, so one hook covers both — but only while it does. */
+  const rb = extractFn(APP_SRC, 'renderBattery');
+  const reaches = /profileScoresChanged\(\)/.test(rb)
+    || carries.some(fn => new RegExp('\\b' + fn + '\\(\\)').test(rb));
+  if (!reaches) bad.push('adding or removing a row never notifies the profile page');
+  /* And arriving on the page is its own event: nothing on Score Tables fires
+     when the clinician merely navigates, so a page stale on arrival would show
+     an empty state over a full table. */
+  const nav = extractFn(APP_SRC, 'navigateTo');
+  if (!/renderProfile\(\)/.test(nav)) bad.push('navigating to the page does not refresh it');
+  if (!/'profile'/.test(nav)) bad.push('the refresh on navigation is not scoped to the profile page');
+
   if (!/window\.profileScoresChanged\s*=/.test(PROF_SRC)) bad.push('the module never exposes the hook');
+  if (!/window\.renderProfile\s*=/.test(PROF_SRC)) bad.push('the module never exposes its renderer');
   const fn = extractFn(PROF_SRC, 'profileScoresChanged');
   if (!/setTimeout/.test(fn) || !/clearTimeout/.test(fn)) {
     bad.push('the sync is not coalesced, so every keystroke on Score Tables could re-simulate');

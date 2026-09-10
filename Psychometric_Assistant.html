@@ -22406,6 +22406,11 @@ function navigateTo(target, opts){
        long after init. */
     if (typeof refreshPatientAgeIndicator === 'function') refreshPatientAgeIndicator();
     if (typeof refreshBatteryAgePrompt === 'function') refreshBatteryAgePrompt();
+    /* Profile Analysis reads its scores from Score Tables and re-renders when one
+       changes — but arriving on the page is its own event, and a page that is
+       stale on arrival is the whole failure this belt-and-braces call closes. It
+       is cheap: the simulation is cached on the selection. */
+    if (target === 'profile' && typeof renderProfile === 'function') renderProfile();
     /* The popover is anchored to a control on Score Tables, so it cannot
        survive a page change — its anchor goes with it. */
   };
@@ -24891,12 +24896,6 @@ function renderBattery(){
      pip AND the prompt; renderBattery() is what they all end in. */
   refreshPatientAgeIndicator();
   refreshBatteryAgePrompt();
-  /* Profile Analysis holds no scores of its own — it reads this table — so a
-     score typed here is the only thing that can change what it shows. The
-     module coalesces a burst of keystrokes and its simulation is cached on the
-     SELECTION, so a score-only edit is a cache hit; only the keystroke that
-     first scores a new measure costs a run. */
-  if (typeof profileScoresChanged === 'function') profileScoresChanged();
 }
 
 
@@ -25467,7 +25466,21 @@ function renderStaticApaNotes(){
 }
 document.addEventListener('DOMContentLoaded', renderStaticApaNotes);
 
+/* THE HOOK BELONGS HERE, NOT IN renderBattery. A score keystroke updates the
+   row IN PLACE — so the caret is not thrown away — and ends in renderBatteryApa,
+   never in renderBattery, which runs only when rows are added or removed. The
+   hook shipped in renderBattery and so never fired on a typed score: rows loaded
+   from Quick Add synced while still blank, the scores were then typed, and the
+   Profile page went on showing "No WAIS-IV scores yet".
+
+   renderBattery ends by calling this too, so one hook covers both paths.
+   Profile Analysis holds no scores of its own — it reads this table — so this is
+   the only thing that can change what it shows. The module coalesces a burst of
+   keystrokes behind a timer and its simulation is cached on the SELECTION, so a
+   score-only edit is a cache hit; only the keystroke that first scores a new
+   measure costs a run. */
 function renderBatteryApa(){
+  if (typeof profileScoresChanged === 'function') profileScoresChanged();
   const cls      = document.getElementById('bat-class').value;
   const title    = document.getElementById('bat-title').value || 'Test scores';
   const out      = document.getElementById('bat-apa');
