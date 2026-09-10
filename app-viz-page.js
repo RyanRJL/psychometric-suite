@@ -913,7 +913,13 @@
         hi: vizPreCellNum('pred-' + c.idx + '-hi'),
         achieved: vizPreAchieved(c.idx),
         diffText: (document.getElementById('diff-' + c.idx) || {}).textContent || '',
-        brText: (document.getElementById('br-' + c.idx) || {}).textContent || ''
+        brText: (document.getElementById('br-' + c.idx) || {}).textContent || '',
+        /* The model's own standard error of estimate, carried so the panel can
+           grade the shortfall on the SAME tiers the Score Tables asterisks use
+           (premorbidSeeTier). Read off the coefficient table rather than the
+           rendered row: the printed interval is at the page's selected CI
+           level, while the tiers are fixed at 90/95/99. */
+        see: Number.isFinite(c.see) ? c.see : null
       });
     }
     return out;
@@ -939,7 +945,8 @@
         hi: Math.round(r.val) + margin,
         achieved: ach,
         diffText: diff == null ? '' : (diff > 0 ? '+' : '') + diff,
-        brText: diff == null ? '' : opieBaseRateFor(r.key, diff)
+        brText: diff == null ? '' : opieBaseRateFor(r.key, diff),
+        see: Number.isFinite(r.see) ? r.see : null
       });
     }
     return out;
@@ -961,8 +968,23 @@
       const midY = rowY + ROW_H / 2;
       const pRound = Math.round(row.predicted);
 
+      /* THE SHORTFALL TIER, from the shipped premorbidSeeTier — the same
+         function batteryPremorbidStars asks, so a row the Score Tables page
+         marks ** cannot be graded differently here. One-sided: a score at or
+         above its prediction takes tier 0 and stays neutral ink, because
+         "exceeds the estimate" is not a finding this app asserts.
+
+         Guarded by typeof: this module loads after app.js, but a harness that
+         loads the page module alone must degrade to an uncoloured chart rather
+         than throw and take the whole Score Charts page with it. */
+      const tier = (typeof premorbidSeeTier === 'function' && row.achieved != null)
+        ? premorbidSeeTier(row.achieved, row.predicted, row.see)
+        : 0;
+      const tierCls = tier ? ` viz-pre-short-${tier}` : '';
+      const stars = tier ? '\u2009' + '*'.repeat(tier) : '';
+
       let g = `<title>${escapeHtml(row.label)}: predicted ${pRound}${row.lo != null ? ` (${row.lo}–${row.hi})` : ''}` +
-              `${row.achieved != null ? `, achieved ${row.achieved}, difference ${row.diffText}${row.brText ? `, base rate ${row.brText}` : ''}` : ', no achieved score entered'}</title>`;
+              `${row.achieved != null ? `, achieved ${row.achieved}, difference ${row.diffText}${row.brText ? `, base rate ${row.brText}` : ''}${tier ? `, ${['', '90', '95', '99'][tier]}% shortfall` : ''}` : ', no achieved score entered'}</title>`;
       g += `<text class="viz-row-name" x="${COL_CHANGE.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(row.label, 26))}</text>`;
       g += `<text class="viz-row-score" x="${COL_CHANGE.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${pRound}${row.achieved != null ? ` → ${row.achieved}` : ''}</text>`;
 
@@ -973,12 +995,20 @@
              `<line class="viz-whisker" x1="${x0}" y1="${midY - 5}" x2="${x0}" y2="${midY + 5}"/>` +
              `<line class="viz-whisker" x1="${x1}" y1="${midY - 5}" x2="${x1}" y2="${midY + 5}"/>`;
       }
+      /* The gap drawn as a LENGTH, not left to be measured between two dots.
+         Same .viz-link-line the Change Analysis panel already uses for its
+         test-to-retest pair, so the two panels read the same way. Emitted
+         before the dots so they sit on top of it. */
+      if (row.achieved != null){
+        const px = vizXd(row.predicted, axis), ax = vizXd(row.achieved, axis);
+        g += `<line class="viz-link-line${tierCls}" x1="${px.toFixed(1)}" y1="${midY}" x2="${ax.toFixed(1)}" y2="${midY}"/>`;
+      }
       g += `<circle class="viz-dot-open" cx="${vizXd(row.predicted, axis).toFixed(1)}" cy="${midY}" r="5"/>`;
       if (row.achieved != null){
-        g += `<circle class="viz-dot" cx="${vizXd(row.achieved, axis).toFixed(1)}" cy="${midY}" r="5.5"/>`;
+        g += `<circle class="viz-dot${tierCls}" cx="${vizXd(row.achieved, axis).toFixed(1)}" cy="${midY}" r="5.5"/>`;
       }
       const right = row.achieved != null
-        ? `${row.diffText}${row.brText && row.brText !== '-' ? ` · ${row.brText}` : ''}`
+        ? `${row.diffText}${stars}${row.brText && row.brText !== '-' ? ` · ${row.brText}` : ''}`
         : 'awaiting achieved score';
       g += `<text class="viz-row-fact" x="${COL_CHANGE.rightX}" y="${midY + 4.5}">${escapeHtml(right)}</text>`;
       svg += `<g class="viz-row">${g}</g>`;
@@ -1008,7 +1038,10 @@
       cards.push({ title:'OPIE-4-predicted WAIS-IV', html: vizPanel('OPIE-4-predicted WAIS-IV', vizPrePanelSvg(opie),
         'OPIE-4 is illustrative only for UK use: the coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US education, ethnicity and region terms that are not applied, so every patient is scored at the US reference category. Its base rates are empirical.') });
     }
-    const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> predicted, with its ${escapeHtml(ciPct)} prediction interval shaded · <span class="viz-legend-filled">●</span> achieved · thin line marks the population mean of 100. Enter achieved scores on the premorbid page; rows without one show the prediction alone.</p>`;
+    /* The colour is NAMED as the table's asterisk scheme rather than described
+       as severity. A reader must be able to tell that the ink and the stars on
+       the Score Tables row are one claim, not two. */
+    const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> predicted, with its ${escapeHtml(ciPct)} prediction interval shaded · <span class="viz-legend-filled">●</span> achieved, joined to its prediction by a line · thin line marks the population mean of 100. Where the achieved score falls short, the line and dot are graded by the same three tiers the Score Tables asterisks use — <span class="viz-legend-t1">* beyond the 90% bound</span>, <span class="viz-legend-t2">** beyond 95%</span>, <span class="viz-legend-t3">*** beyond 99%</span> of the model's standard error of estimate. A score at or above its prediction stays neutral. Enter achieved scores on the premorbid page; rows without one show the prediction alone.</p>`;
     return { key:'premorbid', label:'Premorbid', ctrl:null, legend, cards, empty:'' };
   }
 

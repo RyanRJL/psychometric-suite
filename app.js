@@ -1631,6 +1631,30 @@ function getBatteryPremorbidComparison(){
        *** below estimate − 2.576·SEE   (99% CI lower bound)
    SEE mode silently falls back to SD mode when SEE is not available.    */
 const PREMORBID_CI_Z = { ninety: 1.645, ninetyFive: 1.960, ninetyNine: 2.576 };
+/* The SEE tier, factored out of batteryPremorbidStars' SEE branch so a second
+   consumer cannot invent thresholds of its own.
+
+   Score Charts' premorbid panel grades each row by how far the achieved score
+   falls below its prediction. The obvious way to grade it — a point count, so
+   many points green, so many amber — would be an unpublished cut-off printed
+   beside published ones. This app already has a cited three-tier scheme for
+   exactly this comparison (PREMORBID_CI_Z, the 90/95/99% bounds), and the
+   Score Tables asterisks are it. One source, so a chart and a table looking at
+   the same shortfall cannot grade it differently.
+
+   ONE-SIDED, deliberately. The stars mean "falls short of the premorbid
+   estimate"; a score ABOVE the estimate is not a finding this app asserts, so
+   it takes tier 0 and no colour. Returns 0-3, never a label — the caller
+   decides whether that reads as stars or as ink. */
+function premorbidSeeTier(achieved, estimate, see){
+  if (!Number.isFinite(achieved) || !Number.isFinite(estimate)) return 0;
+  if (!Number.isFinite(see) || see <= 0) return 0;
+  if (achieved <= estimate - PREMORBID_CI_Z.ninetyNine * see) return 3;
+  if (achieved <= estimate - PREMORBID_CI_Z.ninetyFive * see) return 2;
+  if (achieved <= estimate - PREMORBID_CI_Z.ninety     * see) return 1;
+  return 0;
+}
+const PREMORBID_TIER_STARS = ['', '*', '**', '***'];
 /* The EFFECTIVE premorbid flagging mode, which is not always the selected one:
    SEE mode silently falls back to SD mode when the linked model has no usable
    SEE. Every consumer must ask this function rather than reading the control
@@ -1643,13 +1667,7 @@ function batteryPremorbidMode(prem){
 function batteryPremorbidStars(ss, prem){
   if (!prem || !Number.isFinite(ss) || !Number.isFinite(prem.estimate)) return '';
   if (batteryPremorbidMode(prem) === 'see'){
-    const t90 = prem.estimate - PREMORBID_CI_Z.ninety      * prem.see;
-    const t95 = prem.estimate - PREMORBID_CI_Z.ninetyFive  * prem.see;
-    const t99 = prem.estimate - PREMORBID_CI_Z.ninetyNine  * prem.see;
-    if (ss <= t99) return '***';
-    if (ss <= t95) return '**';
-    if (ss <= t90) return '*';
-    return '';
+    return PREMORBID_TIER_STARS[premorbidSeeTier(ss, prem.estimate, prem.see)];
   }
   const diffSd = (prem.estimate - ss) / 15;
   if (diffSd >= 2)   return '***';

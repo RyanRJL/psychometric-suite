@@ -7785,6 +7785,159 @@ check('a version mismatch reaches the exported table, not just the screen', () =
 });
 
 
+heading('41. Score Charts grades a premorbid shortfall on the asterisk tiers');
+
+/* THE POINT OF THE SECTION. The premorbid panel colours a row by how far the
+   achieved score fell below its prediction. A chart of that kind normally
+   invents its own ramp — so many points green, so many amber — which would put
+   an unpublished cut-off beside published ones. This app already grades the
+   same comparison, with the Score Tables asterisks, on PREMORBID_CI_Z.
+
+   These checks assert the two are ONE thing: one function, thresholds derived
+   from the stored z values rather than restated, and the chart holding no
+   numbers of its own. */
+
+/* The tier function is pure string-free arithmetic with no DOM, so it is
+   DRIVEN rather than re-implemented. The expectations are derived from
+   PREMORBID_CI_Z as read out of app.js — nothing here is a typed-in number. */
+function drivePremorbidTier() {
+  const z = APP_SRC.match(/const PREMORBID_CI_Z = \{([^}]*)\};/);
+  if (!z) throw new Error('PREMORBID_CI_Z not found in app.js');
+  return new Function(
+    'const PREMORBID_CI_Z = {' + z[1] + '};\n'
+    + extractFn(APP_SRC, 'premorbidSeeTier') + '\n'
+    + 'return { tier: premorbidSeeTier, Z: PREMORBID_CI_Z };'
+  )();
+}
+
+check('the tiers sit exactly on the 90 / 95 / 99% bounds of the model SEE', () => {
+  let d;
+  try { d = drivePremorbidTier(); } catch (e) { return 'could not drive it: ' + e.message; }
+  const est = 100, see = 8;
+  const bad = [];
+  const want = [['ninety', 1], ['ninetyFive', 2], ['ninetyNine', 3]];
+  for (const [key, tier] of want) {
+    const bound = est - d.Z[key] * see;
+    // AT the bound is inside the tier (the shipped comparison is <=)
+    const at = d.tier(bound, est, see);
+    if (at !== tier) bad.push('a score exactly on the ' + key + ' bound gives tier ' + at + ', not ' + tier);
+    // a hair above the bound must fall to the tier below
+    const above = d.tier(bound + 0.01, est, see);
+    if (above !== tier - 1) bad.push('just above the ' + key + ' bound gives tier ' + above + ', not ' + (tier - 1));
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ONE-SIDED, and this is the half most easily lost. The stars mean "falls
+   short of the premorbid estimate". Grading a score ABOVE its prediction would
+   have the chart assert something the app does not — the same ground on which
+   Change Analysis reports significance without direction. */
+check('a score at or above its prediction is never graded', () => {
+  let d;
+  try { d = drivePremorbidTier(); } catch (e) { return 'could not drive it: ' + e.message; }
+  const bad = [];
+  for (const ach of [100, 101, 115, 140]) {
+    const t = d.tier(ach, 100, 8);
+    if (t !== 0) bad.push('an achieved score of ' + ach + ' against a prediction of 100 grades ' + t);
+  }
+  /* No SEE, no tier: the scheme is defined in SEE units, and falling back to
+     a point count would be the invented cut-off this whole section exists to
+     prevent. */
+  for (const see of [null, undefined, 0, -3, NaN]) {
+    if (d.tier(60, 100, see) !== 0) bad.push('a shortfall is graded with a SEE of ' + see);
+  }
+  if (d.tier(null, 100, 8) !== 0 || d.tier(60, null, 8) !== 0) {
+    bad.push('a missing score or prediction is graded rather than skipped');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Two consumers, one function. If batteryPremorbidStars restates the
+   thresholds, the table and the chart can drift apart while both look right. */
+check('the table asterisks and the chart grade come from the same function', () => {
+  const stars = extractFn(APP_SRC, 'batteryPremorbidStars');
+  const bad = [];
+  if (!/premorbidSeeTier/.test(stars)) {
+    bad.push('batteryPremorbidStars no longer delegates to premorbidSeeTier');
+  }
+  /* Its SEE branch must hold no arithmetic of its own. The SD branch keeps
+     its own thresholds and is not in question — those are SD multiples, a
+     different published scheme. */
+  if (/PREMORBID_CI_Z\.(ninety|ninetyFive|ninetyNine)\s*\*/.test(stars)) {
+    bad.push('batteryPremorbidStars computes SEE bounds again instead of asking for the tier');
+  }
+  const viz = fs.readFileSync(path.join(ROOT, 'app-viz-page.js'), 'utf8');
+  if (!/premorbidSeeTier/.test(viz)) {
+    bad.push('the Score Charts premorbid panel does not use the shared tier function');
+  }
+  if (/PREMORBID_CI_Z/.test(viz)) {
+    bad.push('the chart reads the z values directly rather than asking for a tier');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the premorbid panel joins each prediction to its achieved score', () => {
+  const viz = fs.readFileSync(path.join(ROOT, 'app-viz-page.js'), 'utf8');
+  const panel = extractFn(viz, 'vizPrePanelSvg');
+  const bad = [];
+  if (!/viz-link-line/.test(panel)) {
+    bad.push('the gap is drawn as two dots with nothing joining them');
+  }
+  /* The same class the Change Analysis panel already uses for its
+     test-to-retest pair, so one page does not invent a second idiom. */
+  const rci = extractFn(viz, 'vizRciPanelSvg');
+  if (!/viz-link-line/.test(rci)) {
+    bad.push('the Change Analysis panel no longer uses the shared link class');
+  }
+  /* Emitted only where there IS an achieved score — a line to nowhere would
+     read as a zero-length gap rather than as a missing measurement. */
+  if (!/row\.achieved != null[\s\S]{0,240}viz-link-line/.test(panel)) {
+    bad.push('the link line is drawn without checking for an achieved score');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* A grade the stylesheet does not define is a grade that renders as ordinary
+   ink — the chart would silently stop saying anything. */
+check('every tier the chart emits has a rule in the stylesheet', () => {
+  const ds = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const bad = [];
+  for (const t of [1, 2, 3]) {
+    if (!new RegExp('\\.viz-pre-short-' + t + '\\{').test(ds.replace(/\s+/g, ''))) {
+      bad.push('no rule for tier ' + t);
+    }
+    if (!new RegExp('\\.viz-legend-t' + t + '\\{').test(ds.replace(/\s+/g, ''))) {
+      bad.push('no legend swatch for tier ' + t);
+    }
+  }
+  /* Scoped under .viz-svg so a tier outranks .viz-dot on SPECIFICITY rather
+     than on source order — .viz-dot is a class this same file owns, and a
+     flat .viz-pre-short-N would tie with it and be decided by position. */
+  if (!/\.viz-svg\s+\.viz-pre-short-1/.test(ds)) {
+    bad.push('the tier rules are not scoped above .viz-dot, so the grade depends on rule order');
+  }
+  /* There is no tier 0 rule and there must not be: an ungraded row is
+     ordinary ink, not a fourth colour. */
+  if (/viz-pre-short-0/.test(ds)) bad.push('a tier 0 colour exists, so "no shortfall" reads as a grade');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The legend has to NAME the asterisk scheme. Describing the colour as
+   severity alone would let a reader take the ink and the stars on the same
+   row as two separate claims. */
+check('the legend names the scheme the colour belongs to', () => {
+  const viz = fs.readFileSync(path.join(ROOT, 'app-viz-page.js'), 'utf8');
+  const block = extractFn(viz, 'vizPremorbidBlockHtml');
+  const bad = [];
+  if (!/asterisk/i.test(block)) bad.push('the legend does not tie the colour to the table asterisks');
+  if (!/standard error of estimate/i.test(block)) bad.push('the legend does not say what the bounds are of');
+  for (const pct of ['90', '95', '99']) {
+    if (!new RegExp(pct + '%').test(block)) bad.push('the legend omits the ' + pct + '% bound');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

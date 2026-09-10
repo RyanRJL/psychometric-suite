@@ -4271,6 +4271,33 @@ input[type="text"].ds-inline-bar-input{
 .viz-rci-band{ fill: var(--ds-text); opacity: 0.07; }
 .viz-rci-expected{ stroke: var(--ds-border-strong); stroke-width: 1; }
 .viz-link-line{ stroke: var(--ds-text-faint); stroke-width: 1.5; }
+
+/* PREMORBID SHORTFALL TIERS — the Score Tables asterisk scheme, as ink.
+
+   Three tiers because PREMORBID_CI_Z has three (90 / 95 / 99% of the model's
+   SEE); the app grades this comparison nowhere else, so a point-count ramp
+   here would be an unpublished cut-off sitting beside published ones.
+
+   An amber-to-red ramp, NOT a traffic light: there is no green tier, because
+   tier 0 is "no shortfall to report" and takes the panel's ordinary ink. The
+   colour says how far below the prediction the score fell, which is a
+   magnitude, not a verdict.
+
+   Scoped under .viz-svg so a tier beats .viz-dot (0-1-0) on specificity
+   rather than on source order — .viz-dot is a class this file already owns,
+   and matching its specificity would leave the grade hostage to where these
+   rules happen to sit in the file. */
+.viz-svg .viz-pre-short-1{ fill: #C4863A; stroke: var(--ds-surface); }
+.viz-svg .viz-pre-short-2{ fill: var(--ds-warning); stroke: var(--ds-surface); }
+.viz-svg .viz-pre-short-3{ fill: var(--ds-destructive); stroke: var(--ds-surface); }
+/* The link line takes the grade as STROKE and keeps no fill, so the same three
+   class names serve both marks. */
+.viz-svg line.viz-pre-short-1{ stroke: #C4863A; stroke-width: 2; fill: none; }
+.viz-svg line.viz-pre-short-2{ stroke: var(--ds-warning); stroke-width: 2; fill: none; }
+.viz-svg line.viz-pre-short-3{ stroke: var(--ds-destructive); stroke-width: 2; fill: none; }
+.viz-legend-t1{ color: #C4863A; font-weight: 600; }
+.viz-legend-t2{ color: var(--ds-warning); font-weight: 600; }
+.viz-legend-t3{ color: var(--ds-destructive); font-weight: 600; }
 /* Baseline for a raw-score dot: a hairline, not a band - a band would imply
    a range the raw view deliberately does not assert. */
 .viz-raw-rule{ stroke: var(--ds-border); stroke-width: 1; }
