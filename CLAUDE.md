@@ -1307,16 +1307,36 @@ rebuilt from scratch on every sync — §45 counts the writers and fails if a se
 appears anywhere else in the module, dotted assignment included. Nothing writes back: the
 page never assigns to `batteryRows` and never calls `renderBattery`.
 
-**Which makes the live hook load-bearing.** With no entry of its own, the only thing that
-can change what this page shows is a score typed on Score Tables — and the exported table is
-collected into the Working Report by a `MutationObserver`, so a container that never mutates
-keeps filing an old count. `renderBattery` therefore ends by calling
-`profileScoresChanged()`, guarded by a `typeof` because it runs during init before the page
-module has loaded. The module **coalesces** a burst of keystrokes behind a 180ms timer, and
-the simulation is cached on the **selection**, so a score-only edit is a cache hit; only the
-keystroke that first scores a new measure costs a run. §45 pins the call, the guard, the
-coalescing and the re-render — without them the page goes stale in exactly the silent way
-§16/§17 exist for.
+**Which makes the live hook load-bearing — and it shipped in the wrong function.** With no
+entry of its own, the only thing that can change what this page shows is a score typed on
+Score Tables, and the exported table is collected into the Working Report by a
+`MutationObserver`, so a container that never mutates keeps filing an old count.
+
+The hook went into `renderBattery`, which is **not on the keystroke path**. A score
+keystroke updates the row **in place** — the `refreshOpieDerived` pattern, so the caret is
+not thrown away — and ends in **`renderBatteryApa`**; `renderBattery` runs only when rows
+are **added or removed**. So Quick Add loaded a WAIS-IV family and synced the page while
+every row was still blank, the clinician then typed the scores, and the Profile page went
+on saying *"No WAIS-IV scores yet"* with a full WAIS-IV on the table. Reported from real
+use, reproduced by driving the real inputs.
+
+The hook now sits in **`renderBatteryApa`**, which `renderBattery` also ends in, so one
+call covers both paths. `navigateTo` additionally re-renders the page on arrival: nothing
+on Score Tables fires when the clinician merely navigates, and a page stale on arrival is
+the whole failure. The module **coalesces** a burst of keystrokes behind a 180ms timer and
+the simulation is cached on the **selection**, so a score-only edit is a cache hit; only
+the keystroke that first scores a new measure costs a run.
+
+**The check was wrong the same way the code was**, which is the lesson worth keeping: it
+asserted `renderBattery` calls the hook, so it agreed with the bug. It now **follows the
+keystroke** instead of naming a function — it locates the listener bound to
+`input[data-r]`, takes whichever `render*` function that handler ends in, and requires the
+hook to be in *that*. Reintroducing the original fault fails it. §45 also pins the
+navigation refresh, the `typeof` guard, the coalescing and both `window.` exports.
+
+**`app-profile-page.js` was also missing from `PROJECT_SCRIPTS`**, so §16/§17 had never
+scanned the one module that is a self-contained IIFE with a silent `ReferenceError` as its
+only symptom. It is in the set now.
 
 #### The rest
 
