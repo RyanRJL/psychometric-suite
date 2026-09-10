@@ -1130,9 +1130,10 @@ or more abnormal score **falls** as the correlations rise, while the percentage 
 several **rises**. An implementation mishandling the covariance breaks the pattern, not
 just the digits.
 
-**There is no UI yet, and that is a known state, not an oversight.** The engine and the
-matrix ship verified and unwired; `check.js` is currently their only caller. Whoever
-adds the UI should read the `check.js` §16/§17 note above first.
+The engine shipped verified but **unwired** for one commit, with `check.js` its only
+caller. It has a UI now — see the Profile Analysis page below — and the two sections
+immediately following record what wiring a page actually takes, which turned out to be
+four registrations rather than one.
 
 ### Adding a page needs four registrations, not one
 
