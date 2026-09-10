@@ -3406,7 +3406,16 @@ const APA_NOTES = {
      a reader cannot otherwise check the counting. */
   'prof': ctx => [
     `Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases (Crawford, Garthwaite & Gault, 2007).`,
-    `Computed over ${ctx.k} measures: ${ctx.setLabel} (${ctx.metric}).`,
+    `Computed over the ${ctx.k} measures listed below.`,
+    /* THE PAPER'S OWN LIMITATION, and it applies to every subtest profile.
+       Multivariate normality assumes continuous scores; the authors note that
+       a limited range of scaled scores - a scaled point being a third of an SD
+       - costs accuracy, in contrast to Index scores. The page says so on
+       screen, and the exported table has to carry it too, because nothing
+       else on the page travels with it. */
+    ctx.coarse
+      ? 'The method assumes continuous scores. Scaled scores have a limited range - one scaled point is a third of a standard deviation - so these estimates are less accurate than they would be for Index scores (Crawford, Garthwaite & Gault, 2007, p. 428).'
+      : '',
     `An abnormally low score is one ${ctx.criterion}. Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.`,
     'Intercorrelations are the all-ages values of WAIS-IV Technical and Interpretive Manual (GB), Table 5.1.',
     /* A profile mixing 16-69 measures with 16-90 ones is reading part of its

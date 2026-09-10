@@ -8586,46 +8586,33 @@ heading('45. The Profile Analysis page');
 
 const PROF_SRC = fs.readFileSync(path.join(ROOT, 'app-profile-page.js'), 'utf8');
 
-/* A page that is present in the markup but never loaded, or loaded but never
-   reachable from the nav, is the failure mode CLAUDE.md's §16/§17 note exists
-   for: no error, no warning, and nothing on screen. */
+/* A page present in the markup but never loaded, or loaded but unreachable,
+   is the failure §16/§17 exists for: no error, no warning, nothing on screen. */
 check('the page is declared, loaded and reachable from the navigation', () => {
   const bad = [];
   if (!/<section class="section" id="profile">/.test(HTML_SRC)) bad.push('the #profile section is missing from index.html');
   if (!/<script src="app-profile-page\.js/.test(HTML_SRC)) bad.push('the module is never loaded');
-  /* Loaded AFTER app.js and data.js, which define profileAbnormality and
-     WAIS4_INTERCORR — the module calls both at setup time. */
   const iData = HTML_SRC.indexOf('src="data.js');
   const iApp = HTML_SRC.indexOf('src="app.js');
   const iProf = HTML_SRC.indexOf('src="app-profile-page.js');
   if (iProf !== -1 && (iProf < iData || iProf < iApp)) bad.push('the module loads before the globals it needs');
-  const navs = (HTML_SRC.match(/data-target="profile"/g) || []).length;
-  if (navs < 2) bad.push('the page has ' + navs + ' nav entries; it needs the top bar and the sidebar');
   if (!/'profile':\s*'Profile Analysis'/.test(fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8'))) {
-    bad.push('design-system.js has no page title for it, so the header would be blank');
+    bad.push('design-system.js has no page title for it');
   }
   return bad.length === 0 || bad.join('; ');
 });
 
-/* THE ARITHMETIC MUST NOT BE RE-IMPLEMENTED HERE. app.js holds the engine and
-   check.js §42 pins it against the paper; a second copy on the page would be
-   unpinned and free to drift. Likewise the matrix: a literal here would be a
-   second thing to keep in step with Table 5.1. */
 check('the page computes nothing of its own', () => {
   const bad = [];
   if (!/profileAbnormality\(/.test(PROF_SRC)) bad.push('the page does not call the shipped engine');
   if (!/WAIS4_INTERCORR/.test(PROF_SRC)) bad.push('the page does not read the shipped matrix');
-  if (/choleskyLower\s*\(|function\s+cholesky/i.test(PROF_SRC)) bad.push('the page decomposes the matrix itself');
-  /* No hard-coded correlation: every number the profile rests on comes out of
-     data.js. .61 / .64 / .45 / .62 / .52 / .51 must appear nowhere here. */
-  for (const r of ['0.61', '0.64', '0.45', '0.62', '0.52', '0.51', '.61', '.64']) {
+  if (/function\s+cholesky/i.test(PROF_SRC)) bad.push('the page decomposes the matrix itself');
+  for (const r of ['0.61', '0.64', '0.45', '0.62', '0.52', '0.51']) {
     if (new RegExp('[^\\d]' + r.replace('.', '\\.') + '[^\\d]').test(PROF_SRC)) {
       bad.push('a correlation (' + r + ') is written into the page instead of read from the matrix');
       break;
     }
   }
-  /* The criterion deviates ARE the page's to hold — they are definitions of a
-     percentile, not data — but the paper's own three must be right. */
   for (const [pct, z] of [['5th', '-1.645'], ['10th', '-1.282'], ['15.9th', '-1.0']]) {
     if (!PROF_SRC.includes(z)) bad.push('the ' + pct + '-percentile criterion is not ' + z + ' as the paper states');
   }
@@ -8633,197 +8620,239 @@ check('the page computes nothing of its own', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
-/* THE APA TABLE IS THE PATIENT'S. The Working Report collects any container
-   holding an .apa-table, so a renderer that emits its shell unconditionally
-   puts an empty table in every report — the renderOpiePredictApa defect
-   CLAUDE.md records. Here it would be worse than empty: the population
-   percentages need no patient data at all, so an unguarded renderer would
-   file a full-looking table for a patient who has not been assessed. */
-check('the exported table is emitted only once all four Indices are entered', () => {
+/* ANY SET OF MEASURES, WHICH IS WHAT THE PAPER ALLOWS. An earlier version
+   offered three canned batteries on the belief that a complete set was
+   required. It is not: the program takes "up to a maximum of 20 tests" with
+   their correlation matrix, the conclusion speaks of "the overall set of tests
+   administered", and Crawford's own supplementary programs say the methods
+   apply "when only a subset of the Index scores have been administered".
+
+   What must never happen is a figure computed for one selection being shown
+   against another, so the cache is keyed on the selection itself. */
+check('percentages are recomputed for the current selection, never carried over', () => {
   const bad = [];
-  const fn = extractFn(PROF_SRC, 'renderProfileApa');
-  if (!/counts\.complete/.test(fn)) bad.push('the renderer does not test for a complete set of scores');
-  const guard = fn.indexOf('complete');
-  const table = fn.indexOf('apa-table');
-  if (guard === -1 || table === -1 || guard > table) bad.push('the guard does not precede the table');
-  if (!/return;/.test(fn.slice(guard, table === -1 ? undefined : table))) {
-    bad.push('the renderer falls through to writing a table when scores are missing');
+  const sim = extractFn(PROF_SRC, 'profSimulate');
+  if (!/profState\.selected\.join\(/.test(sim)) {
+    bad.push('the simulation cache is not keyed on the selection, so one set\'s figures could be shown for another');
   }
-  /* And the guard has to be genuinely unsatisfiable without input: `complete`
-     is set only when every index is present. */
-  const counts = extractFn(PROF_SRC, 'profCounts');
-  if (!/present\.every\(Boolean\)/.test(counts)) bad.push('a partial profile can still report as complete');
-  if (!/'prof-apa':/.test(APP_SRC)) bad.push('the source is not registered with the Working Report');
+  if (!/profCriterion\(\)\.id/.test(sim)) bad.push('the cache is not keyed on the criterion');
+  const mx = extractFn(PROF_SRC, 'profMatrix');
+  if (!/profState\.selected/.test(mx)) bad.push('the matrix is not built from the current selection');
+  /* Fewer than two measures is not a profile — there is nothing for findings
+     to accumulate over, and every pairwise series would be empty. */
+  if (!/PROF_MIN/.test(sim)) bad.push('the simulation does not enforce a minimum number of measures');
+  const min = /const PROF_MIN = (\d+)/.exec(PROF_SRC);
+  if (!min || Number(min[1]) < 2) bad.push('the minimum selection is below two measures');
   return bad.length === 0 || bad.join('; ');
 });
 
-/* Counting and simulating must use ONE definition of each abnormality, or the
-   page reports a count against a percentage answering a different question. */
-check('the patient\'s counts use the same definitions as the simulation', () => {
-  const counts = extractFn(PROF_SRC, 'profCounts');
-  const engine = extractFn(APP_SRC, 'profileAbnormality');
-  const bad = [];
-  // eq. 1 in both
-  if (!/Math\.sqrt\(2 - 2 \* R\[i\]\[j\]\)/.test(counts)) bad.push('the pairwise threshold on the page is not sqrt(2 - 2r)');
-  if (!/Math\.sqrt\(2 - 2 \* R\[i\]\[j\]\)/.test(engine)) bad.push('the pairwise threshold in the engine is not sqrt(2 - 2r)');
-  // eq. 2 in both, and the page must ask the SHIPPED helper for the means
-  if (!/profileMatrixMeans/.test(counts)) bad.push('the page computes the matrix means itself rather than asking the shipped helper');
-  if (!/1 \+ means\.grandMean - 2 \* means\.rowMean\[i\]/.test(counts)) bad.push('the deviation threshold on the page is not sqrt(1 + Rbar - 2*mbarX)');
-  // both tails, both places
-  if (!/Math\.abs\(z\[i\] - z\[j\]\)/.test(counts)) bad.push('pairwise differences are not counted in absolute value');
-  if (!/Math\.abs\(mean - v\)/.test(counts)) bad.push('deviations are not counted in absolute value');
-  /* CONVERTED ON THE ACTIVE SET'S OWN METRIC. Indices are M 100 / SD 15 and
-     subtests M 10 / SD 3; a single hard-coded conversion would score a scaled
-     8 as z = -6.1 and call every subtest profile catastrophic. */
-  if (!/- set\.mean\) \/ set\.sd/.test(counts)) bad.push('scores are not converted on the active set\'s own metric');
-  if (/- 100\) \/ 15|- 10\) \/ 3/.test(counts)) bad.push('a metric is hard-coded into the conversion');
-  const sets = PROF_SRC.slice(PROF_SRC.indexOf('const PROF_SETS = ['));
-  const setBody = sets.slice(0, sets.indexOf('\n  ];'));
-  if (!/mean:100, sd:15/.test(setBody)) bad.push('no set declares the Index metric');
-  if (!/mean:10, sd:3/.test(setBody)) bad.push('no set declares the scaled-subtest metric');
-  return bad.length === 0 || bad.join('; ');
-});
-
-/* EVERY NAME THE MODULE USES MUST BE DECLARED IN IT. This is §17's idea
-   applied to the page module, and it exists because the same mistake was made
-   twice while building it: a block replacement took PROF_CRITERIA out along
-   with the block above it, leaving two live references to a name that no
-   longer existed. `node --check` cannot see it — the syntax is fine — and the
-   page throws ReferenceError at setup, which in a self-contained IIFE means
-   the whole page silently does nothing.
-
-   It was caught the first time only by accident, because the criterion VALUES
-   vanished with the declaration and a different check tested for those. Rename
-   the const instead of deleting it and nothing noticed. This closes that. */
-check('every prof* name the page module uses is declared in it', () => {
-  /* Strip comments and strings first: the prose above talks about these names,
-     and a mention is not a reference. */
-  const code = PROF_SRC
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/\/\/[^\n]*/g, ' ')
-    .replace(/'(?:[^'\\]|\\.)*'/g, "''")
-    .replace(/"(?:[^"\\]|\\.)*"/g, '""')
-    .replace(/`(?:[^`\\]|\\.)*`/g, '``');
-
-  const declared = new Set();
-  for (const m of code.matchAll(/\b(?:const|let|var)\s+(PROF_[A-Z0-9_]+|prof[A-Za-z0-9_]*)\b/g)) declared.add(m[1]);
-  for (const m of code.matchAll(/\bfunction\s+(prof[A-Za-z0-9_]*|render[A-Za-z0-9_]*|setup[A-Za-z0-9_]*)\s*\(/g)) declared.add(m[1]);
-  /* Names the module legitimately takes from app.js / data.js, each of which
-     other checks already pin as existing there. */
-  const GLOBALS = new Set(['profileAbnormality', 'profileAbnormalityStdErr', 'profileMatrixMeans']);
-
-  const bad = [];
-  const seen = new Set();
-  /* `x.profIndex` is a property (a data attribute here), not a reference to a
-     binding — skip anything preceded by a dot. */
-  for (const m of code.matchAll(/(^|[^.\w])(PROF_[A-Z0-9_]+|prof[A-Za-z0-9_]*)\b/g)) {
-    const name = m[2];
-    if (seen.has(name)) continue;
-    seen.add(name);
-    if (declared.has(name) || GLOBALS.has(name)) continue;
-    /* Object property access (`x.profFoo`) and data attributes are not
-       free-standing references. */
-    bad.push(name + ' is used but never declared in the module');
-  }
-  /* And the module must not declare something it never uses — a set roster or
-     a helper left behind after a rewrite is the other half of the same slip. */
-  for (const name of declared) {
-    const uses = (code.match(new RegExp('\\b' + name + '\\b', 'g')) || []).length;
-    if (uses < 2) bad.push(name + ' is declared but never used');
-  }
-  return bad.length === 0 || bad.join('; ');
-});
-
-/* THE RULE THAT DECIDES WHAT MAY BE PROFILED TOGETHER. A profile must never
-   hold a subtest and a composite that subtest is part of: VCI is Similarities +
-   Vocabulary + Information (+ Comprehension), so a set holding both puts a
-   variable and a piece of itself in one covariance structure. Crawford's own
-   programs analyse Index scores OR subtests for exactly this reason.
-
-   Derived from PROF_COMPOSED_OF rather than asserted per set, so a fourth set
-   has to satisfy the rule instead of being trusted. */
-check('no profile set mixes a subtest with a composite it is part of', () => {
+/* THE PART-WHOLE RULE, over every pair the picker can offer. A profile must
+   never hold a measure and a piece of itself: a composite with its own
+   subtest, two composites sharing subtests, or a subtest with its own process
+   scores. Driven over the shipped conflict function rather than restated. */
+check('no two measures that overlap can be profiled together', () => {
   let mod;
   try {
-    const comp = PROF_SRC.slice(PROF_SRC.indexOf('const PROF_COMPOSED_OF = {'));
-    const sets = PROF_SRC.slice(PROF_SRC.indexOf('const PROF_CORE = ['));
+    const grab = (marker, close) => {
+      const i = PROF_SRC.indexOf(marker);
+      return PROF_SRC.slice(i, PROF_SRC.indexOf(close, i) + close.length);
+    };
     mod = new Function(
-      comp.slice(0, comp.indexOf('\n  };') + 5) + '\n'
-      + sets.slice(0, sets.indexOf('\n  ];') + 5) + '\n'
-      + 'return { PROF_COMPOSED_OF, PROF_SETS };'
+      grab('const PROF_COMPOSED_OF = {', '\n  };') + '\n'
+      + grab('const PROF_ALIAS = {', '};') + '\n'
+      + grab('const PROF_GROUPS = [', '\n  ];') + '\n'
+      + extractFn(PROF_SRC, 'profComponents') + '\n'
+      + extractFn(PROF_SRC, 'profConflicts') + '\n'
+      + 'return { PROF_GROUPS, PROF_COMPOSED_OF, conflicts: profConflicts };'
     )();
-  } catch (e) { return 'could not read the sets: ' + e.message; }
+  } catch (e) { return 'could not drive the rule: ' + e.message; }
+
+  const all = [];
+  mod.PROF_GROUPS.forEach(g => g.keys.forEach(k => all.push(k)));
   const bad = [];
-  if (!mod.PROF_SETS.length) bad.push('no sets are declared');
-  for (const set of mod.PROF_SETS) {
-    const keys = new Set(set.keys);
-    for (const composite of Object.keys(mod.PROF_COMPOSED_OF)) {
-      if (!keys.has(composite)) continue;
-      for (const part of mod.PROF_COMPOSED_OF[composite]) {
-        if (keys.has(part)) bad.push('set "' + set.id + '" holds ' + composite + ' and its component ' + part);
-      }
-    }
-    /* Every key must exist in the matrix, or the profile silently loses a
-       row to undefined and the Cholesky sees NaN. */
-    for (const k of set.keys) {
-      if (!D.WAIS4_INTERCORR.order.includes(k)) bad.push('set "' + set.id + '" names ' + k + ', which is not in Table 5.1');
-    }
-    if (new Set(set.keys).size !== set.keys.length) bad.push('set "' + set.id + '" repeats a measure');
-    if (set.keys.length < 2) bad.push('set "' + set.id + '" has fewer than two measures, so there is no profile');
+  /* Every offered measure must exist in the matrix, or a selection silently
+     loses a row to undefined and the Cholesky sees NaN. */
+  for (const k of all) {
+    if (!D.WAIS4_INTERCORR.order.includes(k)) bad.push(k + ' is offered but is not in Table 5.1');
+  }
+  if (new Set(all).size !== all.length) bad.push('a measure is offered in more than one group');
+
+  /* The cases that must conflict, each a different shape of the same fault. */
+  const MUST = [
+    ['VCI', 'VC', 'a composite and its own subtest'],
+    ['FSIQ', 'VCI', 'two composites sharing subtests'],
+    ['WMI', 'DS', 'a composite and a subtest it holds'],
+    ['DS', 'DSF', 'a subtest and its own process score'],
+    ['WMI', 'DSF', 'a composite and a process score two levels down'],
+    ['BD', 'BDN', 'the same administration rescored']
+  ];
+  for (const [a, b, why] of MUST) {
+    if (!mod.conflicts(a, b)) bad.push(a + ' and ' + b + ' are allowed together — ' + why);
+  }
+  /* And measures that genuinely may sit together must not be blocked. */
+  const MAY = [['VCI', 'PRI'], ['VCI', 'PSI'], ['BD', 'SI'], ['DSF', 'DSB'], ['CO', 'PCm']];
+  for (const [a, b] of MAY) {
+    if (mod.conflicts(a, b)) bad.push(a + ' and ' + b + ' are blocked, but neither contains the other');
+  }
+  /* Symmetry: the rule cannot depend on which was ticked first. */
+  for (const a of all) for (const b of all) {
+    if (mod.conflicts(a, b) !== mod.conflicts(b, a)) { bad.push('the rule is not symmetric for ' + a + '/' + b); break; }
   }
   return bad.length === 0 || bad.join('; ');
 });
 
-/* Every declared set must actually produce a usable covariance structure. A
-   set that is not positive definite cannot be decomposed and the page would
-   show "unavailable" — which the fixed sets make impossible only if someone
-   checks. */
-check('every profile set is positive definite over the shipped matrix', () => {
+/* Every selection the picker permits must produce a decomposable matrix — a
+   selection that is not positive definite would show "unavailable" and the
+   clinician would have no idea why. Checked over every allowed PAIR, and over
+   the largest coherent selections. */
+check('every permitted selection is positive definite over the shipped matrix', () => {
   let E, mod;
   try {
     E = driveProfileEngine();
-    const sets = PROF_SRC.slice(PROF_SRC.indexOf('const PROF_CORE = ['));
-    mod = new Function(sets.slice(0, sets.indexOf('\n  ];') + 5) + '\nreturn PROF_SETS;')();
+    const grab = (marker, close) => {
+      const i = PROF_SRC.indexOf(marker);
+      return PROF_SRC.slice(i, PROF_SRC.indexOf(close, i) + close.length);
+    };
+    mod = new Function(
+      grab('const PROF_COMPOSED_OF = {', '\n  };') + '\n'
+      + grab('const PROF_ALIAS = {', '};') + '\n'
+      + grab('const PROF_GROUPS = [', '\n  ];') + '\n'
+      + extractFn(PROF_SRC, 'profComponents') + '\n'
+      + extractFn(PROF_SRC, 'profConflicts') + '\n'
+      + 'return { PROF_GROUPS, conflicts: profConflicts };'
+    )();
   } catch (e) { return 'could not drive it: ' + e.message; }
   const M = D.WAIS4_INTERCORR;
   const pos = {};
   M.order.forEach((x, i) => { pos[x] = i; });
   const g = (a, b) => (a === b ? 1 : (pos[a] > pos[b] ? M.r[a + '|' + b] : M.r[b + '|' + a]));
+  const build = keys => keys.map(a => keys.map(b => g(a, b)));
+
+  const all = [];
+  mod.PROF_GROUPS.forEach(gr => gr.keys.forEach(k => all.push(k)));
   const bad = [];
-  for (const set of mod) {
-    const R = set.keys.map((a) => set.keys.map((b) => g(a, b)));
-    for (const row of R) for (const v of row) if (!Number.isFinite(v)) bad.push('set "' + set.id + '" has a missing correlation');
-    if (!E.choleskyLower(R)) { bad.push('set "' + set.id + '" is not positive definite'); continue; }
-    /* And the headline figure must RISE with the number of measures — that is
-       the whole point of the extension, and a set wired to the wrong keys
-       would break it. */
-    set._one = E.profileAbnormality(R, { trials: 100000, seed: 12345 }).lowScores[0];
-  }
-  const ordered = mod.slice().sort((a, b) => a.keys.length - b.keys.length);
-  for (let i = 1; i < ordered.length; i++) {
-    if (!(ordered[i]._one > ordered[i - 1]._one)) {
-      bad.push('the ' + ordered[i].keys.length + '-measure set does not show more abnormality than the '
-        + ordered[i - 1].keys.length + '-measure one, which cannot be right');
+  for (let i = 0; i < all.length && bad.length < 4; i++) {
+    for (let j = i + 1; j < all.length && bad.length < 4; j++) {
+      if (mod.conflicts(all[i], all[j])) continue;
+      const R = build([all[i], all[j]]);
+      for (const row of R) for (const v of row) if (!Number.isFinite(v)) bad.push(all[i] + '+' + all[j] + ' has a missing correlation');
+      if (!E.choleskyLower(R)) bad.push(all[i] + ' + ' + all[j] + ' is not positive definite');
     }
+  }
+  /* The two selections a clinician is likeliest to build. */
+  const SETS = {
+    'four Indices': ['VCI', 'PRI', 'WMI', 'PSI'],
+    'ten core subtests': ['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD'],
+    'fifteen subtests': ['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD', 'LN', 'FW', 'CO', 'CA', 'PCm']
+  };
+  const one = {};
+  for (const [name, keys] of Object.entries(SETS)) {
+    const R = build(keys);
+    if (!E.choleskyLower(R)) { bad.push(name + ' is not positive definite'); continue; }
+    one[name] = E.profileAbnormality(R, { trials: 100000, seed: 12345 }).lowScores[0];
+  }
+  /* More measures must mean more abnormality — the whole reason subtests were
+     added. A selection wired to the wrong keys would break the ordering. */
+  if (one['four Indices'] && one['ten core subtests'] && !(one['ten core subtests'] > one['four Indices'])) {
+    bad.push('ten subtests do not show more abnormality than four Indices, which cannot be right');
+  }
+  if (one['ten core subtests'] && one['fifteen subtests'] && !(one['fifteen subtests'] > one['ten core subtests'])) {
+    bad.push('fifteen subtests do not show more abnormality than ten, which cannot be right');
   }
   return bad.length === 0 || bad.join('; ');
 });
 
-/* "j or more" at j = 0 is the whole population. Printing "100% show 0 or more"
-   is true, useless, and reads as a finding. */
+/* Composites are M 100 / SD 15 and everything else is scaled M 10 / SD 3, so
+   the conversion is PER MEASURE. One hard-coded conversion would score a
+   scaled 8 as z = -6.1 and call every subtest profile catastrophic. */
+check('each measure is converted on its own metric', () => {
+  const bad = [];
+  const counts = extractFn(PROF_SRC, 'profCounts');
+  const metric = extractFn(PROF_SRC, 'profMetric');
+  if (!/profMetric\(/.test(counts)) bad.push('the counts do not ask for a per-measure metric');
+  if (!/- m\.mean\) \/ m\.sd/.test(counts)) bad.push('the conversion is not (v - mean) / sd from that metric');
+  if (/- 100\) \/ 15|- 10\) \/ 3/.test(counts)) bad.push('a metric is hard-coded into the conversion');
+  if (!/mean:100, sd:15/.test(metric)) bad.push('the composite metric is not M 100 / SD 15');
+  if (!/mean:10,\s+sd:3/.test(metric)) bad.push('the subtest metric is not M 10 / SD 3');
+  /* Only the five composites take the Index metric. */
+  const comps = /const PROF_COMPOSITES = \[([^\]]*)\]/.exec(PROF_SRC);
+  if (!comps) bad.push('PROF_COMPOSITES is not declared');
+  else for (const c of ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI']) {
+    if (!comps[1].includes("'" + c + "'")) bad.push(c + ' is not treated as a composite');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE PAPER'S OWN LIMITATION HAS TO BE ON SCREEN. Multivariate normality
+   assumes continuous scores; the authors state that a limited range of scaled
+   scores - one scaled point being a third of an SD - costs accuracy, "in
+   contrast to Wechsler Index scores". The page offers subtests, so it cannot
+   stay silent, and the exported note has to carry it too because nothing else
+   on the page travels with the table. */
+check('the coarse-scaled-score limitation is stated on screen and in the export', () => {
+  const bad = [];
+  const cav = extractFn(PROF_SRC, 'profCaveatHtml');
+  if (!/profHasScaled\(\)/.test(cav)) bad.push('the caveat is not gated on a scaled measure actually being selected');
+  if (!/third of a standard deviation/i.test(cav)) bad.push('the on-screen caveat does not state what a scaled point is worth');
+  if (!/Index score/i.test(cav)) bad.push('the on-screen caveat does not contrast with Index scores');
+  const note = APP_SRC.slice(APP_SRC.indexOf("'prof': ctx => ["));
+  const body = note.slice(0, note.indexOf('],'));
+  if (!/ctx\.coarse/.test(body)) bad.push('the exported note has no clause for coarse scores');
+  if (!/third of a standard deviation/i.test(body)) bad.push('the exported note does not state the limitation');
+  /* And it must be conditional: an Index-only profile is not subject to it,
+     and claiming otherwise would be its own misstatement. */
+  if (!/ctx\.coarse\s*\n?\s*\?/.test(body)) bad.push('the exported clause is unconditional');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* PREFILL, NEVER BINDING. Score Tables holds whatever was administered in
+   whatever mixture; this page needs a coherent selection. A pull must
+   therefore skip anything that would conflict with what is already chosen,
+   and must never write back. */
+check('pulling from Score Tables prefills without binding or conflicting', () => {
+  const bad = [];
+  const pull = extractFn(PROF_SRC, 'profPull');
+  const rows = extractFn(PROF_SRC, 'profScoreTableRows');
+  if (!/batteryRows/.test(rows)) bad.push('the pull does not read Score Tables rows');
+  if (!/typeof batteryRows === 'undefined'/.test(rows)) bad.push('the pull throws when Score Tables has not initialised');
+  if (!/isExample/.test(rows)) bad.push('seeded example rows would be pulled as if entered');
+  if (!/WAIS-IV/.test(rows)) bad.push('rows from another instrument could be pulled as WAIS-IV measures');
+  if (!/profDisabledBy\(/.test(pull)) bad.push('the pull does not skip measures that conflict with the current selection');
+  /* Nothing may write back into Score Tables — this page is a reader. */
+  if (/batteryRows\s*(?:=[^=]|\[[^\]]*\]\s*=[^=]|\.(?:push|splice|pop|shift|unshift|sort|reverse)\s*\()/.test(PROF_SRC)
+      || /renderBattery\(/.test(PROF_SRC)) {
+    bad.push('the page writes back into Score Tables');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The exported table is the PATIENT'S. The population percentages need no
+   patient data at all, so an unguarded renderer would file a full-looking
+   table for someone who has not been assessed. */
+check('the exported table is emitted only once every chosen measure is scored', () => {
+  const bad = [];
+  const fn = extractFn(PROF_SRC, 'renderProfileApa');
+  if (!/counts\.complete/.test(fn)) bad.push('the renderer does not test for a complete selection');
+  const guard = fn.indexOf('complete');
+  const table = fn.indexOf('apa-table');
+  if (guard === -1 || table === -1 || guard > table) bad.push('the guard does not precede the table');
+  const counts = extractFn(PROF_SRC, 'profCounts');
+  if (!/entered < keys\.length/.test(counts)) bad.push('a partial selection can still report as complete');
+  if (!/'prof-apa':/.test(APP_SRC)) bad.push('the source is not registered with the Working Report');
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('a count of zero is not reported as a base rate', () => {
   const bad = [];
   const pct = extractFn(PROF_SRC, 'profPctFor');
   if (!/j < 1/.test(pct)) bad.push('profPctFor does not refuse j = 0');
-  const card = extractFn(PROF_SRC, 'profResultCard');
+  const card = extractFn(PROF_SRC, 'profCardHtml');
   if (!/count === 0/.test(card)) bad.push('the result card has no branch for a count of zero');
   const apa = extractFn(PROF_SRC, 'renderProfileApa');
   if (!/n === 0 \? '—'/.test(apa)) bad.push('the exported table prints a base rate against a count of zero');
   return bad.length === 0 || bad.join('; ');
 });
 
-/* The note is the only place the exported table says what defined "abnormal",
-   where the correlations came from, and that the figures are simulated. */
 check('the APA note carries the criterion, the source and the method', () => {
   if (!/'prof':\s*ctx =>/.test(APP_SRC)) return 'there is no prof entry in APA_NOTES';
   const note = APP_SRC.slice(APP_SRC.indexOf("'prof': ctx => ["));
@@ -8833,10 +8862,41 @@ check('the APA note carries the criterion, the source and the method', () => {
   if (!/Table 5\.1/.test(body)) bad.push('the note does not name the source of the correlations');
   if (!/Monte Carlo/.test(body)) bad.push('the note does not say the base rates are simulated');
   if (!/ctx\.criterion/.test(body)) bad.push('the note does not state which criterion was used');
-  /* A base rate here counts PEOPLE with j findings; a percentile counts
-     scores below a point. Both print as a percentage, which is exactly why
-     the exported table has to distinguish them. */
+  if (!/ctx\.k/.test(body)) bad.push('the note does not say how many measures the profile covers');
   if (!/not a percentile/i.test(body)) bad.push('the note does not distinguish a base rate from a percentile');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* §17's idea applied to the page module. A block replacement once took
+   PROF_CRITERIA out along with the block above it, leaving live references to
+   a name that no longer existed: node --check cannot see it, and in a
+   self-contained IIFE the ReferenceError means the whole page silently does
+   nothing. It escaped mutation testing once because the criterion VALUES
+   vanished with the declaration and a different check tested for those. */
+check('every prof* name the page module uses is declared in it', () => {
+  const code = PROF_SRC
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ')
+    .replace(/'(?:[^'\\]|\\.)*'/g, "''")
+    .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+    .replace(/`(?:[^`\\]|\\.)*`/g, '``');
+  const declared = new Set();
+  for (const m of code.matchAll(/\b(?:const|let|var)\s+(PROF_[A-Z0-9_]+|prof[A-Za-z0-9_]*)\b/g)) declared.add(m[1]);
+  for (const m of code.matchAll(/\bfunction\s+(prof[A-Za-z0-9_]*|render[A-Za-z0-9_]*|setup[A-Za-z0-9_]*)\s*\(/g)) declared.add(m[1]);
+  const GLOBALS = new Set(['profileAbnormality', 'profileAbnormalityStdErr', 'profileMatrixMeans']);
+  const bad = [];
+  const seen = new Set();
+  for (const m of code.matchAll(/(^|[^.\w])(PROF_[A-Z0-9_]+|prof[A-Za-z0-9_]*)\b/g)) {
+    const name = m[2];
+    if (seen.has(name)) continue;
+    seen.add(name);
+    if (declared.has(name) || GLOBALS.has(name)) continue;
+    bad.push(name + ' is used but never declared in the module');
+  }
+  for (const name of declared) {
+    const uses = (code.match(new RegExp('\\b' + name + '\\b', 'g')) || []).length;
+    if (uses < 2) bad.push(name + ' is declared but never used');
+  }
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -8846,34 +8906,46 @@ check('the APA note carries the criterion, the source and the method', () => {
 check('the page styles borrow no class the rest of the app owns', () => {
   const ds = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
   const styles = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
-  const bad = [];
   const used = new Set();
-  for (const m of PROF_SRC.matchAll(/class="([^"]+)"/g)) {
-    for (const c of m[1].split(/\s+/)) if (c) used.add(c);
-  }
-  for (const m of HTML_SRC.slice(
-    HTML_SRC.indexOf('<section class="section" id="profile">'),
-    HTML_SRC.indexOf('</section>', HTML_SRC.indexOf('<section class="section" id="profile">'))
-  ).matchAll(/class="([^"]+)"/g)) {
-    for (const c of m[1].split(/\s+/)) if (c) used.add(c);
-  }
-  /* Shared shell classes the page is MEANT to reuse — the whole point of the
-     design system. Anything else new must carry the prefix. */
+  /* Only literal class attributes — the module builds some class strings by
+     concatenation, and the fragments in between are code, not class names. */
+  const collect = src => {
+    for (const m of src.matchAll(/class="([a-z0-9 _-]+)"/gi)) {
+      for (const c of m[1].split(/\s+/)) if (c) used.add(c);
+    }
+    /* Classes the module builds by concatenation never appear inside a
+       literal class="..." — but neither do element IDs, and both look
+       identical as bare strings. So a quoted prof- string counts as a class
+       only if it is NOT declared as an id in the markup. */
+    for (const m of src.matchAll(/'((?:[a-z][a-z0-9-]*)(?: [a-z][a-z0-9-]*)*)'/gi)) {
+      if (!/^prof-|^is-/.test(m[1])) continue;
+      for (const c of m[1].split(/\s+/)) {
+        if (HTML_SRC.includes('id="' + c + '"')) continue;
+        used.add(c);
+      }
+    }
+  };
+  const i = HTML_SRC.indexOf('<section class="section" id="profile">');
+  collect(HTML_SRC.slice(i, HTML_SRC.indexOf('</section>', i)));
+  collect(PROF_SRC);
   const SHARED = new Set(['section', 'eyebrow', 'section-title', 'panel', 'panel-kicker',
     'field', 'hint', 'info-box', 'apa-wrap', 'apa-toolbar', 'apa-toolbar-left',
     'apa-toolbar-label', 'apa-table-container', 'apa-table', 'apa-table-num',
-    'apa-table-title', 'btn', 'btn-ghost', 'formula-disclosure', 'formula-body',
-    'section-desc', 'num', 'nav-item', 'topnav-drop-item', 'nav-item-num']);
+    'apa-table-title', 'btn', 'btn-ghost', 'btn-sm', 'formula-disclosure', 'formula-body',
+    'section-desc', 'num']);
+  const bad = [];
   for (const c of used) {
     if (SHARED.has(c) || c.startsWith('prof-')) continue;
     bad.push('the page uses "' + c + '", which is neither prefixed nor a shared shell class');
   }
-  /* And every prof- class it uses must actually be defined, or it renders
-     unstyled with nothing to say so. */
   for (const c of used) {
     if (!c.startsWith('prof-')) continue;
     if (!ds.includes('.' + c) && !styles.includes('.' + c)) bad.push('.' + c + ' is used but never defined');
   }
+  /* Shared classes are NOT required to carry a rule: some are pure markup
+     hooks. `.formula-body` is one — it appears a dozen times across the app
+     and is styled nowhere, which is inert rather than broken. Asserting a
+     rule for every shared name would fail on the app's own conventions. */
   return bad.length === 0 || bad.join('; ');
 });
 

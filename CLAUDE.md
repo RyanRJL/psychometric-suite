@@ -1172,83 +1172,113 @@ leaves `05, 10, 06, 07` — which reads as missing pages. §46 asserts the seque
 
 ### The Profile Analysis page (`app-profile-page.js`, `#profile`)
 
-The UI for `profileAbnormality` above. A set selector, its score boxes, a criterion
-selector, three result cards and the distribution table.
+Two panes on one screen: the measures administered on the left, the result on the right.
+The **picker** scrolls internally, never the page — at 1440 × 800 the picker and the
+result cards are both fully visible, and only the formula disclosure and the APA note sit
+below the fold.
 
-**Three fixed sets, and the constraint is why they are fixed.** A profile must never hold
-a subtest and a composite that subtest is *part of* — VCI **is** Similarities + Vocabulary
-+ Information + Comprehension, so a profile holding both puts a variable and a piece of
-itself in one covariance structure. Crawford's own programs analyse Index scores **or**
-subtests for exactly that reason. Fixed sets make an invalid profile unassemblable;
-`PROF_COMPOSED_OF` states the composition and `check.js` §45 derives the rule from it, so
-a fourth set has to satisfy it rather than be trusted.
+#### Any set of measures — the fixed batteries were a misreading
 
-| Set | k | Metric | % with ≥1 score below the 5th percentile |
-|---|---|---|---|
-| Four Index scores | 4 | M 100, SD 15 | **13.8%** |
-| Ten core subtests | 10 | scaled, M 10, SD 3 | **24.9%** |
-| Core + supplementary | 15 | scaled, M 10, SD 3 | **31.3%** |
+An earlier version offered three canned sets (4 Indices / 10 core / 15) on the belief that
+the method needed a complete battery. **It does not, and the paper says so three times:**
 
-That column is the argument for the extension: nearly **one in three** people given a full
-battery has at least one subtest below the 5th percentile, and at 15 measures **80%** show
-at least one abnormally large pairwise difference. Reading a single low subtest as a
-finding is the error the method exists to prevent, and the Index-only version could not
-show it.
+- the program *"requires the user to specify the number of tests in the battery (up to a
+  maximum of 20 tests)… and enter the correlation between tests in the form of a lower
+  triangular matrix"* — an arbitrary *k*;
+- the conclusion speaks of abnormality *"from among the overall set of tests
+  administered"*;
+- and Crawford's own supplementary programs state the methods apply *"when only a subset
+  of the Index scores have been administered"*.
 
-- **Each set carries its own metric**, so the conversion to z is per set. A single
-  hard-coded `(v − 100) / 15` would score a scaled 8 as z = −6.1 and call every subtest
-  profile catastrophic. §45 fails if a metric is hard-coded.
-- **Changing the set clears the scores**, deliberately: a 10 typed as a scaled subtest is
-  an Index of 10, off the bottom of that scale, so carrying values across would silently
-  reinterpret every one of them.
-- **The simulation is cached on set *and* criterion.** The 15-measure run costs ~200 ms
-  and compares 105 pairs per simulated case, so a keystroke must not trigger it.
-- **The distribution table caps at 10 columns** and says so. 15 measures give 105 possible
-  pairs; the cards always carry the patient's own count whatever j they landed on.
-- **Letter-Number Sequencing, Figure Weights and Cancellation are normed to 69**, so the
-  15-measure set carries an age caveat on screen and in the exported note. The roster is
-  read from `WAIS4_INTERCORR.restrictedTo16_69`, not restated.
-- **`PROF_COMPOSED_OF` is load-bearing, not decorative**: the on-screen sentence explaining
-  the rule is built from it, so the text cannot drift from the constraint it describes.
+The requirement is only that R covers the measures in hand. So the clinician ticks what
+was administered and R is the sub-matrix over exactly those. **What cannot be done is
+quote a ten-measure figure for seven measures**, which is why `profSimulate` keys its
+cache on `profState.selected.join(',')` — §45 fails if that keying is removed.
 
-**It is the one page that is not a view of data entered elsewhere, and that is
-deliberate.** Score Charts is emphatically a view — every number it draws comes from the
-function the table itself calls, so screen and export cannot disagree — and the same
-argument was made for putting this on Score Tables. It does not hold: the method needs
-the four Indices *specifically, as a complete set, on their own metric*, while Score
-Tables holds whatever subtests were administered in whatever mixture. A profile computed
-from a partial or subtest-level table answers a different question from the one the
-matrix describes. So the inputs are typed, and the page carries no other data.
+#### One rule, three shapes of the same fault
 
-- **The simulation is cached per criterion.** Scores do not enter it — only R and the
-  criterion do — so a keystroke in a score box must not re-run 200,000 trials. Changing
-  the criterion does.
-- **The APA table is the patient's, not the population's**, and is emitted only once all
-  four Indices are present. The population percentages need *no* patient data, so an
-  unguarded renderer would file a full-looking table for someone who has not been
-  assessed — worse than the empty-table defect `renderOpiePredictApa` had.
-- **A count of zero is never given a base rate.** "j or more" at j = 0 is the whole
-  population; "100% show 0 or more" is true, useless, and reads as a finding.
-- **The page computes nothing of its own** — no Cholesky, no correlation literal. §45
-  fails if a coefficient is written into it rather than read from `WAIS4_INTERCORR`, and
-  asserts the patient's counts use the same two equations the simulation does.
+A profile must never hold a measure and a piece of itself. Two measures conflict when
+their **component sets intersect**, which catches all three cases at once:
+
+| Case | Example |
+|---|---|
+| a composite and its own subtest | VCI + Vocabulary |
+| two composites sharing subtests | FSIQ + VCI |
+| a subtest and its own process scores | Digit Span + Digit Span Forward |
+
+Expansion is **recursive** — WMI holds Digit Span, which holds the three Digit Span
+process scores, so WMI conflicts with Digit Span Forward two levels down. `PROF_ALIAS`
+adds the one case neither contains the other: **Block Design No Time Bonus is the same
+administration rescored** (the matrix puts them at r = .97), so they are one measure here.
+
+A blocked measure is **greyed, not hidden**, with a title saying which selection blocks it
+— a measure missing from the list reads as unsupported, where the truth is that it cannot
+sit beside something already chosen. §45 drives the shipped `profConflicts` over every
+offered pair, asserts the six cases that must conflict and five that must not, and asserts
+the rule is symmetric.
+
+#### Metric is per measure, not per page
+
+Composites are M 100 / SD 15; every subtest and process score is scaled M 10 / SD 3. One
+hard-coded conversion would score a scaled 8 as z = −6.1 and call every subtest profile
+catastrophic. §45 fails if a metric is hard-coded into `profCounts`.
+
+#### The paper's own limitation, which the page has to carry
+
+Multivariate normality assumes **continuous** scores. Crawford, Garthwaite & Gault:
+
+> *"if the tests in a battery have a limited number of possible raw scores… or scaled
+> scores, the accuracy of the estimates will suffer. For example, in contrast to Wechsler
+> Index scores, Wechsler subtest scaled scores have a limited range of scores (the
+> distances between scaled score points represent one third of a standard deviation)."*
+
+So **a subtest-level profile is the rougher reading**, by the authors' own statement. The
+page says so whenever a scaled measure is selected, and the exported note carries the same
+clause — **conditionally**, since an Index-only profile is not subject to it and claiming
+otherwise would be its own misstatement. §45 pins both halves and the conditionality.
+
+(The other caveat, *"caution when the sample n is 300 or less"*, does not bite: the WAIS-IV
+standardisation sample is ~2,200.)
+
+#### Pulling from Score Tables is prefill, never binding
+
+Score Tables holds whatever was administered in whatever mixture; this page needs a
+coherent selection. So **Pull from Score Tables** fills each box where that measure has a
+score, ticks it, and marks it pulled — and the clinician can change or untick any of it.
+Nothing writes back; §45 asserts the page never assigns to `batteryRows` or calls
+`renderBattery`.
+
+Matched on the measure **name**, which is the same string in both files: **24 of the 28
+WAIS-IV names in `normDB` are Table 5.1 labels verbatim**. The four that are not are the
+Longest Span base-rate measures, which have no correlations and correctly cannot be
+profiled. The pull **skips anything that would conflict** with the current selection —
+Score Tables may legitimately hold both an Index and its subtests, and this page may not.
+
+#### The rest
+
+- **The APA table is the patient's**, emitted only once every chosen measure has a score.
+  The population percentages need no patient data, so an unguarded renderer would file a
+  full-looking table for someone who has not been assessed.
+- **A count of zero never gets a base rate** — "100% show 0 or more" is true, useless, and
+  reads as a finding.
+- **Fewer than two measures is not a profile**; there is nothing for findings to
+  accumulate over. `PROF_MIN` is 2 and §45 pins it.
+- **The distribution table is folded away** behind a disclosure. It is context; the cards
+  carry this patient's own count whatever *j* they landed on.
 - **Every `prof*` name used in the module must be declared in it**, and every declared name
-  used. This is §17's idea applied to the page module, and it exists because the mistake
-  was made twice while building the sets: a block replacement took `PROF_CRITERIA` out
-  along with the block above it, leaving two live references to a name that no longer
-  existed. `node --check` cannot see it — the syntax is fine — and in a self-contained
-  IIFE the ReferenceError means the whole page silently does nothing. It escaped once
-  because the criterion *values* vanished with the declaration and a different check
-  tested for those; renaming the const instead of deleting it passed everything.
-- **The note says a base rate is not a percentile.** Both print as a percentage; one
-  counts *people showing this many findings across the battery*, the other counts *scores
-  below a point on one measure*.
+  used — §17's idea applied to the page module. It exists because a block replacement took
+  `PROF_CRITERIA` out along with the block above it, twice, leaving live references to a
+  name that no longer existed. `node --check` cannot see it, and in a self-contained IIFE
+  the `ReferenceError` means the whole page silently does nothing.
 
-Verified by driving the real page and the bundle over `file://` on all three sets. Indices
-at VCI 105 / PRI 98 / WMI 72 / PSI 68 give 2 low (WMI, PSI), 4 abnormal pairwise
-differences and 1 deviation from own mean. Core subtests with Digit Span 5 give exactly 1
-low — z = (5 − 10) / 3 = −1.667, the only value past −1.645 — against a population figure
-of 25.0%. Each confirmed by hand against the stored correlations.
+Verified by driving the real page and the bundle over `file://`. Four Indices at VCI 105 /
+PRI 98 / WMI 72 / PSI 68 give 2 low and 4 abnormal pairwise differences. Three arbitrary
+subtests (Block Design 9, Digit Span 5, Coding 6) give 1 low against a population figure
+of 12.3% — a selection the fixed-set version could not express at all.
+
+**`.formula-body` is used a dozen times across the app and is styled nowhere.** Inert
+rather than broken, and left alone; §45 therefore does not require a shared class to carry
+a rule.
 
 ### `higherIsWorse` — measures where a high score is a bad result
 
@@ -1538,7 +1568,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 375 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 378 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
