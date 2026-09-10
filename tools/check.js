@@ -8805,24 +8805,147 @@ check('the coarse-scaled-score limitation is stated on screen and in the export'
   return bad.length === 0 || bad.join('; ');
 });
 
-/* PREFILL, NEVER BINDING. Score Tables holds whatever was administered in
-   whatever mixture; this page needs a coherent selection. A pull must
-   therefore skip anything that would conflict with what is already chosen,
-   and must never write back. */
-check('pulling from Score Tables prefills without binding or conflicting', () => {
+/* SCORE TABLES IS THE ONLY SOURCE OF SCORES. The page holds none of its own —
+   there is no box to type into — so a WAIS-IV score has exactly one home and
+   the two can never disagree. profPull is the only writer of the selection and
+   of the score cache, and nothing here writes back: this page reads Score
+   Tables, it never edits it. */
+check('every score is read from Score Tables and none is entered on the page', () => {
   const bad = [];
   const pull = extractFn(PROF_SRC, 'profPull');
   const rows = extractFn(PROF_SRC, 'profScoreTableRows');
-  if (!/batteryRows/.test(rows)) bad.push('the pull does not read Score Tables rows');
-  if (!/typeof batteryRows === 'undefined'/.test(rows)) bad.push('the pull throws when Score Tables has not initialised');
-  if (!/isExample/.test(rows)) bad.push('seeded example rows would be pulled as if entered');
-  if (!/WAIS-IV/.test(rows)) bad.push('rows from another instrument could be pulled as WAIS-IV measures');
-  if (!/profDisabledBy\(/.test(pull)) bad.push('the pull does not skip measures that conflict with the current selection');
-  /* Nothing may write back into Score Tables — this page is a reader. */
+  if (!/batteryRows/.test(rows)) bad.push('the page does not read Score Tables rows');
+  if (!/typeof batteryRows === 'undefined'/.test(rows)) bad.push('it throws when Score Tables has not initialised');
+  if (!/isExample/.test(rows)) bad.push('seeded example rows would be read as if entered');
+  if (!/WAIS-IV/.test(rows)) bad.push('rows from another instrument could be read as WAIS-IV measures');
+  if (!/profDisabledBy\(/.test(pull)) bad.push('the sync does not apply the part-whole rule');
+  /* No score input anywhere on the page: not in the markup, not built by the
+     module. An input here would be the second home this redesign removed. */
+  const i = HTML_SRC.indexOf('<section class="section" id="profile">');
+  const markup = HTML_SRC.slice(i, HTML_SRC.indexOf('</section>', i));
+  if (/<input\b/i.test(markup)) bad.push('the markup still carries an input');
+  if (/<input\b/i.test(PROF_SRC)) bad.push('the module still builds an input');
+  /* And exactly one writer of the score cache, so a stray assignment cannot
+     reintroduce page-local scores that Score Tables never saw. */
+  const WRITE = /profState\.scores(?:\s*=|\s*\[[^\]]*\]\s*=|\.[A-Za-z_$][\w$]*\s*=)(?!=)/g;
+  const writers = (PROF_SRC.match(WRITE) || []).length;
+  const inPull = (pull.match(WRITE) || []).length;
+  if (writers !== inPull || inPull < 2) bad.push('profPull is not the sole writer of the score cache');
+  /* Nothing may write back into Score Tables. */
   if (/batteryRows\s*(?:=[^=]|\[[^\]]*\]\s*=[^=]|\.(?:push|splice|pop|shift|unshift|sort|reverse)\s*\()/.test(PROF_SRC)
       || /renderBattery\(/.test(PROF_SRC)) {
     bad.push('the page writes back into Score Tables');
   }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE PAGE GOES STALE SILENTLY WITHOUT THIS. With no score entry of its own,
+   the only thing that can change what the page shows is a score typed on Score
+   Tables — and the exported table is collected into the Working Report by a
+   MutationObserver, so a container that never mutates keeps filing an old
+   count. renderBattery is where every path that touches a row ends. */
+check('a score typed on Score Tables reaches the page', () => {
+  const bad = [];
+  const rb = extractFn(APP_SRC, 'renderBattery');
+  if (!/profileScoresChanged\(\)/.test(rb)) bad.push('renderBattery does not notify the profile page');
+  if (!/typeof profileScoresChanged === 'function'/.test(rb)) {
+    bad.push('the call is unguarded, so it throws before the module has loaded');
+  }
+  if (!/window\.profileScoresChanged\s*=/.test(PROF_SRC)) bad.push('the module never exposes the hook');
+  const fn = extractFn(PROF_SRC, 'profileScoresChanged');
+  if (!/setTimeout/.test(fn) || !/clearTimeout/.test(fn)) {
+    bad.push('the sync is not coalesced, so every keystroke on Score Tables could re-simulate');
+  }
+  if (!/renderProfile\(\)/.test(fn)) bad.push('the hook does not re-render the page');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE PART-WHOLE RULE MEANS YOU ARE ALWAYS CHOOSING A LEVEL, and that is the
+   whole reason the greyed-out picker went away: with the four Indices ticked
+   it blocked ten of fourteen rows and explained each one. Each offered level
+   must therefore be INTERNALLY conflict-free, so nothing on screen can ever be
+   blocked. Asserted over the shipped rule rather than trusted to the list. */
+check('no level can hold two measures that overlap', () => {
+  let mod;
+  try {
+    const grab = (marker, close) => {
+      const i = PROF_SRC.indexOf(marker);
+      return PROF_SRC.slice(i, PROF_SRC.indexOf(close, i) + close.length);
+    };
+    mod = new Function(
+      grab('const PROF_COMPOSED_OF = {', '\n  };') + '\n'
+      + grab('const PROF_ALIAS = {', '};') + '\n'
+      + grab('const PROF_GROUPS = [', '\n  ];') + '\n'
+      + extractFn(PROF_SRC, 'profComponents') + '\n'
+      + extractFn(PROF_SRC, 'profConflicts') + '\n'
+      + 'return { PROF_GROUPS, conflicts: profConflicts };'
+    )();
+  } catch (e) { return 'could not drive the rule: ' + e.message; }
+  const bad = [];
+  for (const g of mod.PROF_GROUPS) {
+    if (g.keys.length < 2) bad.push(g.id + ' cannot form a profile at all');
+    for (let i = 0; i < g.keys.length; i++) {
+      for (let j = i + 1; j < g.keys.length; j++) {
+        if (mod.conflicts(g.keys[i], g.keys[j])) {
+          bad.push(g.keys[i] + ' and ' + g.keys[j] + ' are offered on the same level but overlap');
+        }
+      }
+    }
+  }
+  /* FSIQ contains ten subtests and all four Indices, so it has no level. It
+     must not be offered, or the level it joined would be blocked on sight. */
+  const all = [];
+  mod.PROF_GROUPS.forEach(g => g.keys.forEach(k => all.push(k)));
+  if (all.includes('FSIQ')) bad.push('Full Scale IQ is offered, but it overlaps every level');
+  if (!/Full Scale IQ contains every other measure/.test(PROF_SRC)) {
+    bad.push('its absence is never explained on screen, so it reads as missing data');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE COUNT AND ITS BASE RATE ARE ONE PICTURE. Each card draws the population
+   distribution of that count with the patient's own bar marked and everything
+   at or above it shaded — the shaded region IS the percentage the sentence
+   quotes. The bars are DIFFERENCED out of the cumulative series the engine
+   returns, so an error there would draw a distribution that does not match the
+   figure printed beside it. Checked as arithmetic, not by reading the markup. */
+check('the distribution drawn is the one the quoted base rate comes from', () => {
+  let point, E;
+  try {
+    point = new Function(extractFn(PROF_SRC, 'profPointDist') + '\nreturn profPointDist;')();
+    E = driveProfileEngine();
+  } catch (e) { return 'could not drive it: ' + e.message; }
+  const M = D.WAIS4_INTERCORR;
+  const pos = {};
+  M.order.forEach((x, i) => { pos[x] = i; });
+  const g = (a, b) => (a === b ? 1 : (pos[a] > pos[b] ? M.r[a + '|' + b] : M.r[b + '|' + a]));
+  const keys = ['VCI', 'PRI', 'WMI', 'PSI'];
+  const R = keys.map(a => keys.map(b => g(a, b)));
+  const res = E.profileAbnormality(R, { lowZ: -1.645, diffZ: 1.960, trials: 100000, seed: 12345 });
+  const bad = [];
+  const dist = point(res.lowScores, keys.length);
+  /* A distribution over 0..k is exhaustive. */
+  const total = dist.reduce((a, b) => a + b, 0);
+  if (Math.abs(total - 100) > 1e-6) bad.push('the bars sum to ' + total.toFixed(4) + '%, not 100%');
+  for (const v of dist) if (!(v >= -1e-9)) bad.push('a bar has negative mass, so the differencing is inverted');
+  /* And the shaded tail must equal the quoted figure exactly: the base rate
+     for j is the sum of the bars from j upward. */
+  for (let j = 1; j <= keys.length; j++) {
+    let tail = 0;
+    for (let x = j; x <= keys.length; x++) tail += dist[x];
+    if (Math.abs(tail - res.lowScores[j - 1]) > 1e-9) {
+      bad.push('the shading at ' + j + ' is ' + tail.toFixed(4) + '% but the sentence quotes '
+        + res.lowScores[j - 1].toFixed(4) + '%');
+    }
+  }
+  /* Nothing is shaded at a count of zero — the same rule that refuses to quote
+     a base rate there, made visual. "100% show 0 or more" is not a finding. */
+  const draw = extractFn(PROF_SRC, 'profDistHtml');
+  if (!/here > 0 && j > here/.test(draw)) bad.push('a count of zero would shade the whole distribution');
+  /* The axis must always reach the patient's own count, or the marked bar
+     falls off the end of a trimmed chart. */
+  const trim = extractFn(PROF_SRC, 'profDistTrim');
+  if (!/Math\.max\([^)]*here/.test(trim)) bad.push('trimming the empty tail can cut off the patient\'s own bar');
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -8916,11 +9039,14 @@ check('the page styles borrow no class the rest of the app owns', () => {
     /* Classes the module builds by concatenation never appear inside a
        literal class="..." — but neither do element IDs, and both look
        identical as bare strings. So a quoted prof- string counts as a class
-       only if it is NOT declared as an id in the markup. */
-    for (const m of src.matchAll(/'((?:[a-z][a-z0-9-]*)(?: [a-z][a-z0-9-]*)*)'/gi)) {
+       only if it is NOT declared as an id, in the markup OR in the module,
+       which now builds the criterion control itself. The optional leading
+       space matters: a modifier is appended as ' prof-low', and without it
+       every appended modifier escaped this check unnoticed. */
+    for (const m of src.matchAll(/'\s?((?:[a-z][a-z0-9-]*)(?: [a-z][a-z0-9-]*)*)'/gi)) {
       if (!/^prof-|^is-/.test(m[1])) continue;
       for (const c of m[1].split(/\s+/)) {
-        if (HTML_SRC.includes('id="' + c + '"')) continue;
+        if (HTML_SRC.includes('id="' + c + '"') || PROF_SRC.includes('id="' + c + '"')) continue;
         used.add(c);
       }
     }
