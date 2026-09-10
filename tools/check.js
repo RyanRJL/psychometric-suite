@@ -8672,9 +8672,140 @@ check('the patient\'s counts use the same definitions as the simulation', () => 
   // both tails, both places
   if (!/Math\.abs\(z\[i\] - z\[j\]\)/.test(counts)) bad.push('pairwise differences are not counted in absolute value');
   if (!/Math\.abs\(mean - v\)/.test(counts)) bad.push('deviations are not counted in absolute value');
-  /* Index scores are converted on the standard metric, not on whatever the
-     Score Tables page happens to be set to. */
-  if (!/- 100\) \/ 15/.test(counts)) bad.push('Index scores are not converted as M 100 / SD 15');
+  /* CONVERTED ON THE ACTIVE SET'S OWN METRIC. Indices are M 100 / SD 15 and
+     subtests M 10 / SD 3; a single hard-coded conversion would score a scaled
+     8 as z = -6.1 and call every subtest profile catastrophic. */
+  if (!/- set\.mean\) \/ set\.sd/.test(counts)) bad.push('scores are not converted on the active set\'s own metric');
+  if (/- 100\) \/ 15|- 10\) \/ 3/.test(counts)) bad.push('a metric is hard-coded into the conversion');
+  const sets = PROF_SRC.slice(PROF_SRC.indexOf('const PROF_SETS = ['));
+  const setBody = sets.slice(0, sets.indexOf('\n  ];'));
+  if (!/mean:100, sd:15/.test(setBody)) bad.push('no set declares the Index metric');
+  if (!/mean:10, sd:3/.test(setBody)) bad.push('no set declares the scaled-subtest metric');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* EVERY NAME THE MODULE USES MUST BE DECLARED IN IT. This is §17's idea
+   applied to the page module, and it exists because the same mistake was made
+   twice while building it: a block replacement took PROF_CRITERIA out along
+   with the block above it, leaving two live references to a name that no
+   longer existed. `node --check` cannot see it — the syntax is fine — and the
+   page throws ReferenceError at setup, which in a self-contained IIFE means
+   the whole page silently does nothing.
+
+   It was caught the first time only by accident, because the criterion VALUES
+   vanished with the declaration and a different check tested for those. Rename
+   the const instead of deleting it and nothing noticed. This closes that. */
+check('every prof* name the page module uses is declared in it', () => {
+  /* Strip comments and strings first: the prose above talks about these names,
+     and a mention is not a reference. */
+  const code = PROF_SRC
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ')
+    .replace(/'(?:[^'\\]|\\.)*'/g, "''")
+    .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+    .replace(/`(?:[^`\\]|\\.)*`/g, '``');
+
+  const declared = new Set();
+  for (const m of code.matchAll(/\b(?:const|let|var)\s+(PROF_[A-Z0-9_]+|prof[A-Za-z0-9_]*)\b/g)) declared.add(m[1]);
+  for (const m of code.matchAll(/\bfunction\s+(prof[A-Za-z0-9_]*|render[A-Za-z0-9_]*|setup[A-Za-z0-9_]*)\s*\(/g)) declared.add(m[1]);
+  /* Names the module legitimately takes from app.js / data.js, each of which
+     other checks already pin as existing there. */
+  const GLOBALS = new Set(['profileAbnormality', 'profileAbnormalityStdErr', 'profileMatrixMeans']);
+
+  const bad = [];
+  const seen = new Set();
+  /* `x.profIndex` is a property (a data attribute here), not a reference to a
+     binding — skip anything preceded by a dot. */
+  for (const m of code.matchAll(/(^|[^.\w])(PROF_[A-Z0-9_]+|prof[A-Za-z0-9_]*)\b/g)) {
+    const name = m[2];
+    if (seen.has(name)) continue;
+    seen.add(name);
+    if (declared.has(name) || GLOBALS.has(name)) continue;
+    /* Object property access (`x.profFoo`) and data attributes are not
+       free-standing references. */
+    bad.push(name + ' is used but never declared in the module');
+  }
+  /* And the module must not declare something it never uses — a set roster or
+     a helper left behind after a rewrite is the other half of the same slip. */
+  for (const name of declared) {
+    const uses = (code.match(new RegExp('\\b' + name + '\\b', 'g')) || []).length;
+    if (uses < 2) bad.push(name + ' is declared but never used');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE RULE THAT DECIDES WHAT MAY BE PROFILED TOGETHER. A profile must never
+   hold a subtest and a composite that subtest is part of: VCI is Similarities +
+   Vocabulary + Information (+ Comprehension), so a set holding both puts a
+   variable and a piece of itself in one covariance structure. Crawford's own
+   programs analyse Index scores OR subtests for exactly this reason.
+
+   Derived from PROF_COMPOSED_OF rather than asserted per set, so a fourth set
+   has to satisfy the rule instead of being trusted. */
+check('no profile set mixes a subtest with a composite it is part of', () => {
+  let mod;
+  try {
+    const comp = PROF_SRC.slice(PROF_SRC.indexOf('const PROF_COMPOSED_OF = {'));
+    const sets = PROF_SRC.slice(PROF_SRC.indexOf('const PROF_CORE = ['));
+    mod = new Function(
+      comp.slice(0, comp.indexOf('\n  };') + 5) + '\n'
+      + sets.slice(0, sets.indexOf('\n  ];') + 5) + '\n'
+      + 'return { PROF_COMPOSED_OF, PROF_SETS };'
+    )();
+  } catch (e) { return 'could not read the sets: ' + e.message; }
+  const bad = [];
+  if (!mod.PROF_SETS.length) bad.push('no sets are declared');
+  for (const set of mod.PROF_SETS) {
+    const keys = new Set(set.keys);
+    for (const composite of Object.keys(mod.PROF_COMPOSED_OF)) {
+      if (!keys.has(composite)) continue;
+      for (const part of mod.PROF_COMPOSED_OF[composite]) {
+        if (keys.has(part)) bad.push('set "' + set.id + '" holds ' + composite + ' and its component ' + part);
+      }
+    }
+    /* Every key must exist in the matrix, or the profile silently loses a
+       row to undefined and the Cholesky sees NaN. */
+    for (const k of set.keys) {
+      if (!D.WAIS4_INTERCORR.order.includes(k)) bad.push('set "' + set.id + '" names ' + k + ', which is not in Table 5.1');
+    }
+    if (new Set(set.keys).size !== set.keys.length) bad.push('set "' + set.id + '" repeats a measure');
+    if (set.keys.length < 2) bad.push('set "' + set.id + '" has fewer than two measures, so there is no profile');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Every declared set must actually produce a usable covariance structure. A
+   set that is not positive definite cannot be decomposed and the page would
+   show "unavailable" — which the fixed sets make impossible only if someone
+   checks. */
+check('every profile set is positive definite over the shipped matrix', () => {
+  let E, mod;
+  try {
+    E = driveProfileEngine();
+    const sets = PROF_SRC.slice(PROF_SRC.indexOf('const PROF_CORE = ['));
+    mod = new Function(sets.slice(0, sets.indexOf('\n  ];') + 5) + '\nreturn PROF_SETS;')();
+  } catch (e) { return 'could not drive it: ' + e.message; }
+  const M = D.WAIS4_INTERCORR;
+  const pos = {};
+  M.order.forEach((x, i) => { pos[x] = i; });
+  const g = (a, b) => (a === b ? 1 : (pos[a] > pos[b] ? M.r[a + '|' + b] : M.r[b + '|' + a]));
+  const bad = [];
+  for (const set of mod) {
+    const R = set.keys.map((a) => set.keys.map((b) => g(a, b)));
+    for (const row of R) for (const v of row) if (!Number.isFinite(v)) bad.push('set "' + set.id + '" has a missing correlation');
+    if (!E.choleskyLower(R)) { bad.push('set "' + set.id + '" is not positive definite'); continue; }
+    /* And the headline figure must RISE with the number of measures — that is
+       the whole point of the extension, and a set wired to the wrong keys
+       would break it. */
+    set._one = E.profileAbnormality(R, { trials: 100000, seed: 12345 }).lowScores[0];
+  }
+  const ordered = mod.slice().sort((a, b) => a.keys.length - b.keys.length);
+  for (let i = 1; i < ordered.length; i++) {
+    if (!(ordered[i]._one > ordered[i - 1]._one)) {
+      bad.push('the ' + ordered[i].keys.length + '-measure set does not show more abnormality than the '
+        + ordered[i - 1].keys.length + '-measure one, which cannot be right');
+    }
+  }
   return bad.length === 0 || bad.join('; ');
 });
 

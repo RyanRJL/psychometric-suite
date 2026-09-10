@@ -5490,10 +5490,31 @@ input[type="number"].ds-age-pop-input{
   line-height: var(--ds-leading-normal);
   max-width: 76ch;
 }
+/* Four Indices sit comfortably in four columns; ten or fifteen subtests do
+   not — at four columns the 15-measure set is four rows deep and reads as a
+   wall. The wide variant packs to the available width instead. */
 .prof-input-grid{
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--ds-space-3);
+}
+.prof-input-grid-narrow{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.prof-input-grid-wide{ grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.prof-metric-note{
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-text-faint);
+}
+.prof-controls-top{ margin-top: 0; margin-bottom: var(--ds-space-3); }
+/* Not --ds-warning: nothing is wrong. The coefficients are the publisher's own,
+   for a sample that stops at 69, and the note says which. */
+.prof-caveat{
+  margin: var(--ds-space-3) 0 0;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-left: 3px solid var(--ds-border-strong);
+  background: var(--ds-surface-subtle);
+  font-size: var(--ds-text-xs);
+  color: var(--ds-text-subtle);
+  line-height: var(--ds-leading-normal);
 }
 .prof-controls{
   display: flex;
