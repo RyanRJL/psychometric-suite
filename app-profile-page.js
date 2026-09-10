@@ -388,14 +388,19 @@
     const every = top <= 12 ? 1 : Math.ceil((top + 1) / 8);
     let bars = '', axis = '';
     for (let j = 0; j <= top; j++){
-      const h = max > 0 ? Math.max(2, Math.round(dist[j] / max * 44)) : 2;
+      const h = max > 0 ? Math.max(2, Math.round(dist[j] / max * 100)) : 2;
       /* The patient's own bar solid, everything above it shaded: the
          shaded region is the base rate the sentence quotes. Nothing is
          shaded at a count of zero, which is quoted no base rate. */
       const cls = j === here ? 'prof-bar prof-here'
                 : (here > 0 && j > here ? 'prof-bar prof-tail' : 'prof-bar');
-      bars += '<div class="' + cls + '" style="height:' + h + 'px" title="'
+      bars += '<div class="' + cls + '" style="height:' + h + '%" title="'
         + escapeHtml('exactly ' + j + ' — ' + profFmtPct(dist[j]) + ' of the population') + '"></div>';
+      /* A CARET, BECAUSE HEIGHT ALONE CANNOT FIND THIS BAR. Most people show
+         none, so P(0) sets the scale and every bar that matters is a hairline
+         beside it - at four Indices the patient's own bar was 2px. Rescaling
+         to make it visible would misstate the distribution, so the marker goes
+         under the axis instead, where it costs the shape nothing. */
       axis += '<span' + (j === here ? ' class="prof-here"' : '') + '>'
         + (j === here || j % every === 0 ? j : '') + '</span>';
     }
@@ -403,6 +408,18 @@
       + escapeHtml(unit) + ' are abnormal</div>'
       + '<div class="prof-bars">' + bars + '</div>'
       + '<div class="prof-xaxis">' + axis + '</div></div>';
+  }
+
+  /* THE CLAIM ITSELF, AT FULL WIDTH. The per-count chart above shows the
+     shape; this shows the sentence. One bar for the whole population, split at
+     this patient's count, with everything at or beyond it shaded - so a base
+     rate of 4.37% is 4.37% of the bar, read directly rather than inferred from
+     a stack of columns whose scale is set by P(0). */
+  function profTailBarHtml(pct){
+    if (!Number.isFinite(pct)) return '';
+    const w = Math.max(0.6, Math.min(100, pct));   // a hairline still has to be visible
+    return '<div class="prof-tailbar" title="' + escapeHtml(profFmtPct(pct)
+      + ' of the population') + '"><span class="prof-tailbar-fill" style="width:' + w + '%"></span></div>';
   }
 
   /* THE CARD IS THE PAGE: a count, the sentence that reports it, and the
@@ -423,7 +440,8 @@
         + (count === 1 ? ' is' : ' are') + ' abnormal.';
     const read = count === 0
       ? '<div class="prof-read prof-read-none">No base rate is quoted for a count of zero.</div>'
-      : '<div class="prof-read"><span class="prof-swatch"></span><span><b>' + profFmtPct(pct)
+      : profTailBarHtml(pct)
+        + '<div class="prof-read"><span><b>' + profFmtPct(pct)
         + '</b> of the population show ' + count + ' or more'
         + (Number.isFinite(se) ? ' <span class="prof-se">± ' + se.toFixed(2) + '</span>' : '')
         + '</span></div>';

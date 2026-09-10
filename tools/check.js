@@ -1340,6 +1340,84 @@ check('the premorbid anchor is read unrounded, not scraped from the table', () =
   return true;
 });
 
+/* APA_NOTES is an object literal; brace-match it and run it in a vm so the
+   checks drive the shipped builders rather than a copy of them. */
+function extractApaNotes(){
+  const start = APP_SRC.indexOf('const APA_NOTES = {');
+  if (start === -1) return 'could not locate APA_NOTES in app.js';
+  let depth = 0, src = null;
+  for (let j = APP_SRC.indexOf('{', start); j < APP_SRC.length; j++) {
+    if (APP_SRC[j] === '{') depth++;
+    else if (APP_SRC[j] === '}') { depth--; if (depth === 0) { src = APP_SRC.slice(start, j + 1); break; } }
+  }
+  if (!src) return 'unbalanced braces in APA_NOTES';
+  const c = {}; vm.createContext(c);
+  try { vm.runInContext(src + ';globalThis.__N = APA_NOTES;', c); }
+  catch (e) { return 'APA_NOTES did not evaluate: ' + e.message; }
+  return c.__N;
+}
+
+/* NO NOTE MAY PRINT A HOLE WHERE A VALUE SHOULD BE.
+
+   renderStaticApaNotes mirrors every note into the on-screen info-box with
+   `{ onScreen: true }` and nothing else — no trial count, no criterion, no
+   threshold — because the mirror exists to state the method, not this
+   patient's run. An unguarded `${ctx.trials}` therefore reached a clinician as
+   "estimated by Monte Carlo simulation over NaN cases", and three more notes
+   said "threshold = undefined" and "based on undefined × SEE". Found on the
+   Profile page and then project-wide, which is the CLAUDE.md working rule:
+   check whether an apparent defect is one place or everywhere.
+
+   On-screen text is a contract. A sentence with nothing to interpolate must be
+   DROPPED — the one licensed on-screen difference — never printed with a hole
+   in it. Driven over the shipped object with an empty context, so the rule
+   holds for every note and every future caller, not just the mirror. */
+check('no APA note prints a placeholder when its context is empty', () => {
+  const notes = extractApaNotes();
+  if (typeof notes === 'string') return notes;
+  const HOLE = /\bNaN\b|\bundefined\b|\bnull\b|\[object Object\]/;
+  const bad = [];
+  for (const [id, build] of Object.entries(notes)) {
+    for (const ctx of [{ onScreen: true }, {}]) {
+      let text;
+      try { text = build(ctx).filter(Boolean).join(' '); }
+      catch (e) { bad.push(id + ' throws on an empty context: ' + e.message); continue; }
+      const hit = HOLE.exec(text);
+      if (hit) bad.push(id + ' prints "' + hit[0] + '" with no context');
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* AND THE EXPORT STAYS THE SUPERSET. Guarding a sentence is only correct if it
+   still appears when the value IS supplied — a guard that silently emptied the
+   exported note would trade a visible fault for an invisible one. */
+check('a guarded sentence still reaches the exported note', () => {
+  const notes = extractApaNotes();
+  if (typeof notes === 'string') return notes;
+  const bad = [];
+  const CASES = [
+    ['prof', { trials: 200000, k: 4, criterion: 'below the 5th percentile' },
+      [/200,000 cases/, /over the 4 measures/, /one below the 5th percentile/]],
+    ['rci', { thresholdLabel: '1.96 SD' }, [/Reliable change threshold = 1\.96 SD/]],
+    ['sdi', { thresholdLabel: '1.65 SD' }, [/Significance threshold = 1\.65 SD/]],
+    ['pre-estimates', { ciMultiplier: '1.96' }, [/based on 1\.96 . SEE/]]
+  ];
+  for (const [id, ctx, wants] of CASES) {
+    if (!notes[id]) { bad.push('there is no ' + id + ' note'); continue; }
+    const text = notes[id](ctx).filter(Boolean).join(' ');
+    for (const want of wants) {
+      if (!want.test(text)) bad.push(id + ' drops ' + want + ' even when the value is given');
+    }
+    /* The mirror must be a strict subset: everything it says, the export says. */
+    const onScreen = notes[id]({ ...ctx, onScreen: true }).filter(Boolean);
+    for (const line of onScreen) {
+      if (!text.includes(line)) bad.push(id + ' says something on screen that the export does not');
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('the battery APA note describes the flagging mode actually in force', () => {
   // APA_NOTES is an object literal; brace-match it the same way as a function.
   const start = APP_SRC.indexOf('const APA_NOTES = {');
@@ -8510,6 +8588,112 @@ check('every section is in TOPNAV_BUCKETS and PAGE_TITLES', () => {
   for (const b of declared) {
     if (!new RegExp(":\\s*'" + b + "'").test(bucketBody)) bad.push('the top-bar bucket "' + b + '" is never produced by any section');
   }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE PAGE NAME LIVES IN THE TOP BAR, so every page hides its own in-markup
+   eyebrow and h1 — #battery, #validity, #premorbid, #effectsize and the rest
+   each carry that pair in a stylesheet. It is a fifth registration nobody
+   wrote down, and Profile Analysis missed it: it alone wore a ~92px hero, and
+   the page read as belonging to a different app. Asserted over EVERY section
+   that carries the markup, so the next page cannot miss it either.
+
+   The exemptions are real pages, not oversights: #home's h1 is its only
+   heading and lives inside the dial hub, and the footer pages are read as
+   documents rather than used as tools. */
+check('every page hides its own eyebrow and title — the top bar carries the name', () => {
+  const ds = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const styles = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
+  /* index.html carries an inline <style> too, and it is where the five Change
+     Analysis method panels are hidden — by `.change-method-panel`, a class the
+     inline script adds at runtime rather than one the markup declares. So the
+     corpus is all three, and a class the app puts ON a section counts as a
+     scope alongside its id. */
+  const css = ds + '\n' + styles + '\n' + HTML_SRC;
+  /* The five Change Analysis method panels are moved into #change-analysis at
+     runtime and stripped of `section`, so they are hidden as a group by
+     `.change-method-panel > .section-title`. Their ids come from the SAME
+     array the inline script loops over — derived, not restated, so a sixth
+     method has to be hidden rather than slip past a hard-coded list. An
+     earlier version let any runtime class satisfy any section, which made the
+     whole check vacuous: removing #profile's own rule still passed. */
+  const methodSrc = HTML_SRC.slice(HTML_SRC.indexOf('const methods = ['));
+  const METHOD_IDS = new Set(
+    [...methodSrc.slice(0, methodSrc.indexOf('\n  ];')).matchAll(/id:'([a-z-]+)'/g)].map(m => m[1]));
+  if (!METHOD_IDS.size) return 'the Change Analysis method roster could not be read';
+  const EXEMPT = new Set(['home', 'about', 'privacy-use', 'custom-tests', 'data']);
+  const bad = [];
+  for (const m of HTML_SRC.matchAll(/<section class="(section[^"]*)" id="([^"]+)">([\s\S]*?)<\/section>/g)) {
+    const [, cls, id, body] = m;
+    if (EXEMPT.has(id)) continue;
+    /* Only pages that actually declare the markup can be asked to hide it. */
+    const head = body.slice(0, body.indexOf('</h1>') + 5);
+    if (!/<h1 class="section-title"/.test(head)) continue;
+    /* The rule may be written against the id OR against a class the section
+       carries: the five Change Analysis method panels are hidden together by
+       `.change-method-panel > .section-title`, which is one rule for five
+       pages and is right. Either spelling satisfies this. */
+    const scopes = ['#' + id]
+      .concat(cls.split(/\s+/).filter(c => c && c !== 'section' && c !== 'active'))
+      .concat(METHOD_IDS.has(id) ? ['change-method-panel'] : [])
+      .map(sc => (sc[0] === '#' ? sc : '\\.' + sc));
+    const hidden = what => scopes.some(sc =>
+      new RegExp(sc + '\\s*>\\s*\\.' + what + '\\b', 'i').test(css));
+    if (!hidden('section-title')) bad.push('#' + id + ' still shows its own <h1>, which the top bar already states');
+    if (/<div class="eyebrow"/.test(head) && !hidden('eyebrow')) {
+      bad.push('#' + id + ' still shows its own eyebrow');
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE DIAL IS THE ONLY WAY INTO A TOOL FROM THE HOME PAGE. A node needs a
+   description to reveal, a nav target that exists, and its share of the ring —
+   and the reveal used to need three enumerated CSS blocks per node, which is
+   the wiring this check replaced with `data-on`. */
+check('every home-dial node is complete: description, target and angle', () => {
+  const home = HTML_SRC.slice(HTML_SRC.indexOf('<div class="home-dial">'));
+  const stage = home.slice(0, home.indexOf('</section>'));
+  const nodes = [...stage.matchAll(/data-dial="(\d+)"[^>]*aria-describedby="dial-desc-(\d+)"[^>]*style="--a:([\d.]+)deg"[\s\S]{0,220}?data-target=&quot;([a-z-]+)&quot;/g)]
+    .map(m => ({ i: +m[1], desc: +m[2], a: +m[3], target: m[4] }));
+  const descs = [...stage.matchAll(/data-dial-desc="(\d+)"/g)].map(m => +m[1]);
+  const bad = [];
+  if (!nodes.length) return 'no dial nodes could be parsed';
+  if (nodes.length !== descs.length) {
+    bad.push(nodes.length + ' nodes but ' + descs.length + ' descriptions — one would reveal nothing');
+  }
+  /* Indices run 0..n-1 with no gaps, and each node points at its own text. */
+  nodes.forEach((n, k) => {
+    if (n.i !== k) bad.push('node ' + k + ' is numbered ' + n.i);
+    if (n.desc !== n.i) bad.push('node ' + n.i + ' describes itself with dial-desc-' + n.desc);
+    if (!descs.includes(n.i)) bad.push('node ' + n.i + ' has no description in the hub');
+    /* One 360/n step apart: the ring does not care how many there are, but it
+       does care that they are evenly spread. */
+    const want = 360 / nodes.length * k;
+    if (Math.abs(n.a - want) > 0.01) {
+      bad.push('node ' + n.i + ' sits at ' + n.a + 'deg, not the ' + want.toFixed(4) + 'deg an ' + nodes.length + '-node ring needs');
+    }
+    if (!new RegExp('<section class="section[^"]*" id="' + n.target + '">').test(HTML_SRC)
+        && !new RegExp("'" + n.target + "':").test(APP_SRC)) {
+      bad.push('node ' + n.i + ' points at #' + n.target + ', which is not a section');
+    }
+  });
+  /* Profile Analysis is a tool in its own right and has to be reachable here:
+     it shipped absent from the dial while every other page was on it. */
+  if (!nodes.some(n => n.target === 'profile')) bad.push('Profile Analysis is missing from the dial');
+  /* The reveal must not go back to one selector per node. */
+  const css = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  if (/\[data-active="\d"\]\s*\.home-dial-node\[data-dial="\d"\]/.test(css)) {
+    bad.push('the dial reveal is enumerated per node again, so an added tool can silently miss it');
+  }
+  if (!/\.home-dial-desc\[data-on\]/.test(css)) bad.push('the description reveal has no data-on rule');
+  /* And it must actually be SET, on both halves: merely mentioning the
+     attribute passed while the line that marked the node had been deleted. */
+  const dsjs = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
+  const marker = extractFn(dsjs, 'markOn') || '';
+  if (!/node\.setAttribute\('data-on'/.test(marker)) bad.push('the active node is never marked, so it never lights up');
+  if (!/desc\.setAttribute\('data-on'/.test(marker)) bad.push('the active description is never marked, so no description ever shows');
+  if (!/removeAttribute\('data-on'\)/.test(marker)) bad.push('the previous mark is never cleared, so every hovered description stacks up');
   return bad.length === 0 || bad.join('; ');
 });
 

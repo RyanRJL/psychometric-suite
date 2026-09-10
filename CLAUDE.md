@@ -1150,7 +1150,7 @@ caller. It has a UI now — see the Profile Analysis page below — and the two 
 immediately following record what wiring a page actually takes, which turned out to be
 four registrations rather than one.
 
-### Adding a page needs four registrations, not one
+### Adding a page needs five registrations, not one
 
 The Profile Analysis page shipped **unreachable in practice**, and the wiring checks that
 existed did not see it. They asserted the section exists, the module loads, and two nav
@@ -1164,8 +1164,17 @@ entries point at it — all true, and all beside the point:
   bar highlighted **Home** while the Profile page was on screen;
 - **`PAGE_TITLES` had no entry**, so the brand row had no name for it.
 
-So a page needs all four, and `check.js` §46 asserts them over **every** section rather
-than for one page:
+A fifth was found later, the same way: **every page hides its own eyebrow and `<h1>`**,
+because the page name is already in the top bar. `#battery`, `#validity`, `#premorbid`,
+`#effectsize` and the five Change Analysis panels each carry that pair in a stylesheet,
+and Profile Analysis did not — so it alone wore a ~92px hero and read as belonging to a
+different app. Nobody had written the rule down; it lived only in eight separate
+stylesheet blocks.
+
+And a sixth for a tool page: **the home dial**. Profile Analysis was reachable from the
+top bar and absent from the ring every other tool sits on.
+
+`check.js` §46 asserts all of it over **every** section rather than for one page:
 
 | Registration | Where | Symptom if missed |
 |---|---|---|
@@ -1173,6 +1182,15 @@ than for one page:
 | a **top-level** `.topnav-item` with `data-bucket` | `index.html` | reachable only by opening a menu, or not at all |
 | `TOPNAV_BUCKETS[id]` | `app.js` | the top bar highlights Home instead |
 | `PAGE_TITLES[id]` | `app.js` | the brand row is blank |
+| `#id > .eyebrow, #id > .section-title{display:none}` | a stylesheet | the page wears a hero no other page has |
+| a `.home-dial-node` | `index.html` | the tool is missing from the home page |
+
+The hero check has to allow a **class-scoped** spelling as well as an id-scoped one: the
+five Change Analysis method panels are hidden together by `.change-method-panel >
+.section-title`, which is one rule for five pages and is right. Their ids are read from
+the **same `methods` array the inline script loops over**, not restated — the first
+version let any runtime class satisfy any section, which made the whole check vacuous
+(deleting `#profile`'s own rule still passed). Verified by exactly that mutation.
 
 Plus `design-system.js`'s own `TITLE_MAP`, the module `<script>` tag, and the service
 worker's `PRECACHE_URLS`.
@@ -1184,6 +1202,24 @@ the footer**, deliberately outside the top bar, so they carry a title but no buc
 
 The **sidebar numbers are positions**, so inserting a page mid-list without renumbering
 leaves `05, 10, 06, 07` — which reads as missing pages. §46 asserts the sequence.
+
+#### The home dial takes any number of tools, but it used to take exactly seven
+
+Adding Profile Analysis made it eight, and the nodes are one `360/n` step apart — the
+ring does not care how many there are, so the only markup change is `--a` per node.
+
+**What did care was the reveal.** Hovering a node lit its dot and showed its description
+through three CSS blocks of *seven selectors each*, pairing `[data-active="N"]` on the
+stage with `[data-dial="N"]` on the node. The markup pointed at those from nowhere, so
+an eighth tool meant remembering to extend all three, and forgetting would have shipped a
+node that never lit up and never explained itself — no error, nothing to grep.
+
+The JS now marks the active node **and its description** with `data-on`, so the CSS is
+one rule per effect and cannot fall behind the number of nodes. `[data-active]` stays on
+the stage because the hub's rest state needs to know only that *something* is active.
+§46 drives the roster — every node numbered in sequence, describing itself, pointing at a
+real section, and sitting at its `360/n` angle — and fails if the enumeration comes back
+or if `markOn` stops setting, or clearing, either half.
 
 ### The Profile Analysis page (`app-profile-page.js`, `#profile`)
 
@@ -1206,10 +1242,20 @@ headline counted and the number can be checked by eye. Clicking a chip drops tha
 out; it dims in place rather than vanishing, so the battery stays legible and the exclusion
 stays visible.
 
-At 1440 × 900 the Indices level fits exactly, with nothing below the fold. Ten subtests
-run to 983px and fifteen to 1003px — the overflow is the coarse-scaled-score caveat, the
-method disclosure and the note mirror; the cards themselves end around 450px at every
-level.
+**Two views per card, because one is not enough.** The per-count columns show the shape,
+and a **full-width tail bar** underneath shows the claim: the whole population, split at
+this patient's count, with everything at or beyond it filled. A base rate of 4.37% is
+4.37% of that bar, read directly. It exists because the columns alone could not carry it —
+most people show none, so P(0) sets the scale and every bar that matters is a hairline
+beside it. At four Indices the patient's own bar was **2px tall**. Rescaling to make it
+visible would misstate the distribution, so the patient's column is found by a **caret
+under the axis** instead, where it costs the shape nothing.
+
+**The page hides its own eyebrow and `<h1>`**, like every other page — see the
+registrations section above. It shipped without that pair, wearing a ~92px hero no other
+page has, which is what made it look like a different app. At 1440 × 900 the Indices
+level now fits exactly with nothing below the fold; ten subtests run to ~1014px, the
+overflow being the coarse-scaled-score caveat, the two disclosures and the note mirror.
 
 #### Any set of measures — the fixed batteries were a misreading
 
@@ -1609,6 +1655,27 @@ exported copy is the one that leaves the app, so it keeps the caveat uncondition
 `check.js` §15 pins all four halves — export keeps it, mirror drops it, caution-box still
 exists, and the flag still reaches the note (without which the split is inert).
 
+**A sentence with nothing to interpolate must be DROPPED, never printed with a hole in
+it.** `renderStaticApaNotes` mirrors every note with `{ onScreen: true }` and *nothing
+else* — no trial count, no criterion, no threshold — because the mirror states the
+method, not this patient's run. An unguarded `${ctx.trials}` therefore reached a
+clinician as *"estimated by Monte Carlo simulation over **NaN** cases"* and *"the
+**undefined** measures listed below"*, under a real table.
+
+Found on the Profile page and then, per the working rule, checked project-wide: **four of
+the eight notes** were doing it — `prof`, `rci` and `sdi` (*"threshold = undefined"*) and
+`pre-estimates` (*"based on undefined × SEE"*). Every interpolation is now guarded on its
+own **value**, not on `ctx.onScreen`, so no future caller can reintroduce it. Where only
+half a sentence needed context it was **split into two**, never reworded — the exported
+note joins them with a space and reads exactly as before, and the mirror drops only the
+half whose value the page already states beside it.
+
+Two checks, both driving the shipped `APA_NOTES` in a vm: no note may print
+`NaN`/`undefined`/`null` on an empty context, and a guarded sentence must still appear
+when the value *is* supplied — a guard that silently emptied the export would trade a
+visible fault for an invisible one. The second also asserts the mirror is a strict
+subset of the export.
+
 **OPIE-4 is labelled illustrative-only for UK use.** The coefficients reproduce
 Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US
 education, ethnicity and region terms that are not applied, so every patient is scored at
@@ -1652,7 +1719,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 381 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 385 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients

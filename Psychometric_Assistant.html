@@ -15834,35 +15834,23 @@ input[type="number"].ds-age-pop-input{
    It is also what makes the dial work on touch, where there is no hover. */
 .home-dial-stage[data-active] .home-dial-hub-rest{ opacity: 0 !important; }
 
-.home-dial-stage[data-active="0"] .home-dial-desc[data-dial-desc="0"],
-.home-dial-stage[data-active="1"] .home-dial-desc[data-dial-desc="1"],
-.home-dial-stage[data-active="2"] .home-dial-desc[data-dial-desc="2"],
-.home-dial-stage[data-active="3"] .home-dial-desc[data-dial-desc="3"],
-.home-dial-stage[data-active="4"] .home-dial-desc[data-dial-desc="4"],
-.home-dial-stage[data-active="5"] .home-dial-desc[data-dial-desc="5"],
-.home-dial-stage[data-active="6"] .home-dial-desc[data-dial-desc="6"]{
-  opacity: 1 !important;
-}
+/* ONE RULE PER EFFECT, NOT ONE PER NODE. These were three blocks of seven
+   selectors pairing `[data-active="N"]` on the stage with `[data-dial="N"]` on
+   the node — so adding an eighth tool meant editing three CSS blocks that
+   nothing pointed at from the markup, and a miss would have shipped a node
+   that simply never lit up or explained itself. The JS now marks the active
+   node and its description with `data-on`, which is one selector each and
+   cannot fall behind the number of nodes. `[data-active]` on the stage stays:
+   the hub's rest state needs to know only that SOMETHING is active. */
+.home-dial-desc[data-on]{ opacity: 1 !important; }
 
-.home-dial-stage[data-active="0"] .home-dial-node[data-dial="0"] .home-dial-dot,
-.home-dial-stage[data-active="1"] .home-dial-node[data-dial="1"] .home-dial-dot,
-.home-dial-stage[data-active="2"] .home-dial-node[data-dial="2"] .home-dial-dot,
-.home-dial-stage[data-active="3"] .home-dial-node[data-dial="3"] .home-dial-dot,
-.home-dial-stage[data-active="4"] .home-dial-node[data-dial="4"] .home-dial-dot,
-.home-dial-stage[data-active="5"] .home-dial-node[data-dial="5"] .home-dial-dot,
-.home-dial-stage[data-active="6"] .home-dial-node[data-dial="6"] .home-dial-dot{
+.home-dial-node[data-on] .home-dial-dot{
   border-color: var(--ds-primary) !important;
   box-shadow: 0 4px 14px rgba(156,61,42,0.16), 0 1px 4px rgba(20,15,8,0.06) !important;
   transform: translateY(-2px) !important;
 }
 
-.home-dial-stage[data-active="0"] .home-dial-node[data-dial="0"] .home-dial-label,
-.home-dial-stage[data-active="1"] .home-dial-node[data-dial="1"] .home-dial-label,
-.home-dial-stage[data-active="2"] .home-dial-node[data-dial="2"] .home-dial-label,
-.home-dial-stage[data-active="3"] .home-dial-node[data-dial="3"] .home-dial-label,
-.home-dial-stage[data-active="4"] .home-dial-node[data-dial="4"] .home-dial-label,
-.home-dial-stage[data-active="5"] .home-dial-node[data-dial="5"] .home-dial-label,
-.home-dial-stage[data-active="6"] .home-dial-node[data-dial="6"] .home-dial-label{
+.home-dial-node[data-on] .home-dial-label{
   color: var(--ds-primary) !important;
 }
 
@@ -16173,6 +16161,28 @@ input[type="number"].ds-age-pop-input{
    selector carrying !important, and a fresh name sidesteps the argument rather
    than winning it.
    ============================================================================ */
+/* THE PAGE NAME LIVES IN THE TOP BAR, so the in-markup eyebrow and h1 are
+   hidden here exactly as they are on every other page — #battery, #validity,
+   #premorbid, #effectsize and the rest each carry this pair. This page shipped
+   without them, so it alone wore a 92px hero that no other page has, which is
+   what made it look like a different app. The description survives as one
+   compact italic line, the same treatment #battery and #validity give theirs.
+   check.js §46 now asserts the pair over every navigable section, so the next
+   page cannot miss it the way this one did. */
+#profile > .eyebrow,
+#profile > .section-title{ display: none !important; }
+/* !important throughout, matching how #battery and #validity write theirs:
+   the base `.section-desc` at this layer already carries it, so a rule without
+   it loses on the cascade however specific it is — the trap in CLAUDE.md. */
+#profile > .section-desc{
+  font-size: var(--ds-text-xs) !important;
+  font-style: italic !important;
+  color: var(--ds-text-subtle) !important;
+  line-height: var(--ds-leading-normal) !important;
+  max-width: 92ch;
+  margin: 0 0 var(--ds-space-3) !important;
+}
+
 .prof-layout{ display: block; }
 
 /* ---- the input strip: what went in ---- */
@@ -16247,13 +16257,13 @@ input[type="number"].ds-age-pop-input{
 .prof-foot-link{ color: var(--ds-primary); font-weight: 500; cursor: pointer; white-space: nowrap; }
 
 /* ---- the answer cards ---- */
-.prof-cards{ display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ds-space-3); }
+.prof-cards{ display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ds-space-4); }
 .prof-card{
   background: var(--ds-surface);
   border: 1px solid var(--ds-border);
   border-radius: var(--ds-radius-lg);
   box-shadow: var(--ds-shadow-1);
-  padding: 11px 14px 8px;
+  padding: 14px 17px 13px;
   display: flex; flex-direction: column; min-width: 0;
 }
 .prof-card-label{
@@ -16261,11 +16271,11 @@ input[type="number"].ds-age-pop-input{
   color: var(--ds-text-subtle); margin-bottom: 7px; min-height: 20px;
 }
 .prof-card-count{ display: flex; align-items: baseline; gap: 7px; }
-.prof-card-n{ font-size: 32px; font-weight: 600; line-height: .95; letter-spacing: -.025em; }
+.prof-card-n{ font-size: 36px; font-weight: 600; line-height: .95; letter-spacing: -.025em; }
 .prof-card-of{ font-size: var(--ds-text-sm); color: var(--ds-text-subtle); }
 .prof-card-lede{
   font-size: var(--ds-text-sm); color: var(--ds-text-muted);
-  line-height: var(--ds-leading-snug); margin: 4px 0 7px; min-height: 20px;
+  line-height: var(--ds-leading-snug); margin: 5px 0 12px; min-height: 20px;
 }
 .prof-card.prof-quiet .prof-card-n{ color: var(--ds-text-faint); }
 
@@ -16276,14 +16286,14 @@ input[type="number"].ds-age-pop-input{
 .prof-dist{ margin-top: auto; }
 .prof-dist-title{
   font-size: var(--ds-text-2xs, 10.5px); letter-spacing: .04em; text-transform: uppercase;
-  color: var(--ds-text-faint); margin-bottom: 4px;
+  color: var(--ds-text-faint); margin-bottom: 7px;
 }
 .prof-bars{
-  display: flex; align-items: flex-end; gap: 2px; height: 46px;
+  display: flex; align-items: flex-end; gap: 3px; height: 70px;
   border-bottom: 1px solid var(--ds-border-strong);
 }
 .prof-bar{
-  flex: 1 1 0; min-width: 0; min-height: 2px;
+  flex: 1 1 0; min-width: 0; min-height: 2px; align-self: flex-end;
   background: var(--ds-border); border-radius: 2px 2px 0 0;
 }
 .prof-bar.prof-tail{ background: var(--ds-primary-tint); }
@@ -16293,7 +16303,25 @@ input[type="number"].ds-age-pop-input{
   flex: 1 1 0; min-width: 0; text-align: center; overflow: hidden; white-space: nowrap;
   font-size: 9.5px; color: var(--ds-text-faint);
 }
-.prof-xaxis span.prof-here{ color: var(--ds-primary); font-weight: 600; }
+/* The caret is what finds the patient's bar. P(0) sets the scale, so at four
+   Indices the bar itself is 2px tall and height cannot carry the mark. */
+.prof-xaxis span.prof-here{ color: var(--ds-primary); font-weight: 600; position: relative; }
+.prof-xaxis span.prof-here::before{
+  content: ''; position: absolute; left: 50%; top: -5px; transform: translateX(-50%);
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-bottom: 4px solid var(--ds-primary);
+}
+
+/* The claim at full width: the whole population, split at this patient's count.
+   4.37% is 4.37% of the bar, read rather than inferred from column heights. */
+.prof-tailbar{
+  margin-top: 12px; height: 12px; border-radius: var(--ds-radius-full);
+  background: var(--ds-surface-emphasis); overflow: hidden;
+}
+.prof-tailbar-fill{
+  display: block; height: 100%; background: var(--ds-primary);
+  border-radius: var(--ds-radius-full);
+}
 .prof-read{
   margin-top: 7px; display: flex; gap: 7px; align-items: flex-start;
   font-size: var(--ds-text-sm); color: var(--ds-text-muted);
@@ -16301,10 +16329,6 @@ input[type="number"].ds-age-pop-input{
 }
 .prof-read b{ color: var(--ds-text); font-weight: 600; font-size: var(--ds-text-base); }
 .prof-read-none{ color: var(--ds-text-faint); }
-.prof-swatch{
-  flex: 0 0 auto; width: 9px; height: 9px; border-radius: 2px; margin-top: 4px;
-  background: var(--ds-primary-tint); box-shadow: inset 0 0 0 1px var(--ds-primary);
-}
 .prof-se{ color: var(--ds-text-faint); font-size: var(--ds-text-xs); white-space: nowrap; }
 
 /* ---- caveats, disclosure, empty states ---- */
@@ -16318,10 +16342,25 @@ input[type="number"].ds-age-pop-input{
   line-height: var(--ds-leading-normal);
 }
 .prof-caveat p + p{ margin-top: 6px; }
-.prof-details{ margin-top: var(--ds-space-1); border-top: 1px solid var(--ds-border); padding-top: 8px; }
+/* THE SAME PILL THE METHOD DISCLOSURE WEARS. These two sit one above the
+   other at the foot of the page, and a bare line of grey text beside a pill
+   read as an unstyled leftover rather than as the second of a pair. */
+.prof-details{ margin-top: var(--ds-space-3); }
 .prof-details > summary{
-  cursor: pointer; font-size: var(--ds-text-xs); color: var(--ds-text-subtle); list-style: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none; list-style: none;
+  font-size: var(--ds-text-xs); font-weight: 500;
+  color: var(--ds-primary);
+  border: 1px solid rgba(156, 61, 42, 0.20);
+  background: var(--ds-primary-tint);
+  border-radius: var(--ds-radius-full);
+  padding: 6px 12px;
+  transition: background var(--ds-duration-fast) var(--ds-ease),
+              border-color var(--ds-duration-fast) var(--ds-ease);
 }
+.prof-details > summary::-webkit-details-marker{ display: none; }
+.prof-details > summary::before{ content: '\25A5'; font-size: 12px; line-height: 1; }
+.prof-details > summary:hover{ border-color: rgba(156, 61, 42, 0.34); }
 .prof-details-body{ padding-top: var(--ds-space-2); overflow-x: auto; }
 .prof-table{ border-collapse: collapse; width: 100%; font-size: var(--ds-text-xs); }
 .prof-table th, .prof-table td{
@@ -17041,9 +17080,10 @@ input[type="number"].ds-age-pop-input{
 
 
     <!-- ========== THE DIAL ==============================================
-         Seven tools on a ring rather than in a grid. The grid orphaned its
-         last card at every column count that divides seven, which is none
-         of them but one and seven.
+         Eight tools on a ring rather than in a grid. It was seven, whose only
+         divisors are one and seven, so a grid orphaned its last card at every
+         column count. The ring does not care how many there are: the nodes are
+         placed by --a, one 360/n step apart.
 
          Two things about this markup are load-bearing:
 
@@ -17107,8 +17147,9 @@ input[type="number"].ds-age-pop-input{
           <p class="home-dial-desc" id="dial-desc-2" data-dial-desc="2">Build APA-formatted report tables with confidence-interval columns and premorbid comparison.</p>
           <p class="home-dial-desc" id="dial-desc-3" data-dial-desc="3">Evaluate test-retest change across five methods, from descriptive SDI to Crawford regression.</p>
           <p class="home-dial-desc" id="dial-desc-4" data-dial-desc="4">Chart scores entered elsewhere in the suite against classification and reliable-change bands.</p>
-          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
-          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
+          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Ask how many of a patient&rsquo;s scores are abnormal &mdash; and how many healthy people show that many.</p>
+          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
+          <p class="home-dial-desc" id="dial-desc-7" data-dial-desc="7">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
         </div>
         <button class="home-dial-node" data-dial="0" aria-describedby="dial-desc-0" style="--a:0deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
@@ -17121,7 +17162,7 @@ input[type="number"].ds-age-pop-input{
           <span class="home-dial-label">Performance Validity</span>
         </button>
 
-        <button class="home-dial-node" data-dial="1" aria-describedby="dial-desc-1" style="--a:51.4286deg"
+        <button class="home-dial-node" data-dial="1" aria-describedby="dial-desc-1" style="--a:45deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;premorbid&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17136,7 +17177,7 @@ input[type="number"].ds-age-pop-input{
           <span class="home-dial-label">Premorbid Estimation</span>
         </button>
 
-        <button class="home-dial-node" data-dial="2" aria-describedby="dial-desc-2" style="--a:102.8571deg"
+        <button class="home-dial-node" data-dial="2" aria-describedby="dial-desc-2" style="--a:90deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;battery&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17148,7 +17189,7 @@ input[type="number"].ds-age-pop-input{
           <span class="home-dial-label">Score Tables</span>
         </button>
 
-        <button class="home-dial-node" data-dial="3" aria-describedby="dial-desc-3" style="--a:154.2857deg"
+        <button class="home-dial-node" data-dial="3" aria-describedby="dial-desc-3" style="--a:135deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;change-analysis&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17159,7 +17200,7 @@ input[type="number"].ds-age-pop-input{
           <span class="home-dial-label">Change Analysis</span>
         </button>
 
-        <button class="home-dial-node" data-dial="4" aria-describedby="dial-desc-4" style="--a:205.7143deg"
+        <button class="home-dial-node" data-dial="4" aria-describedby="dial-desc-4" style="--a:180deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;charts&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17172,7 +17213,22 @@ input[type="number"].ds-age-pop-input{
           <span class="home-dial-label">Score Charts</span>
         </button>
 
-        <button class="home-dial-node" data-dial="5" aria-describedby="dial-desc-5" style="--a:257.1429deg"
+        <!-- Profile Analysis. Sits after Score Charts because it is the question
+             a clinician asks once the scores are on the table and drawn: how many
+             of them are abnormal, and how many healthy people show that many. -->
+        <button class="home-dial-node" data-dial="5" aria-describedby="dial-desc-5" style="--a:225deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;profile&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="2.5" y1="14.5" x2="19.5" y2="14.5" stroke-dasharray="2 2"/>
+              <polyline points="4,7 8.5,10.5 13,17.5 18,15"/>
+              <circle cx="13" cy="17.5" r="1.9" fill="currentColor" stroke="none"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Profile Analysis</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="6" aria-describedby="dial-desc-6" style="--a:270deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17186,7 +17242,7 @@ input[type="number"].ds-age-pop-input{
           <span class="home-dial-label">Effect Size Tools</span>
         </button>
 
-        <button class="home-dial-node" data-dial="6" aria-describedby="dial-desc-6" style="--a:308.5714deg"
+        <button class="home-dial-node" data-dial="7" aria-describedby="dial-desc-7" style="--a:315deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;converter&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -25320,8 +25376,18 @@ const APA_NOTES = {
      It also states the scores, because the table itself reports counts and
      a reader cannot otherwise check the counting. */
   'prof': ctx => [
-    `Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases (Crawford, Garthwaite & Gault, 2007).`,
-    `Computed over the ${ctx.k} measures listed below.`,
+    /* A SENTENCE WITH NOTHING TO INTERPOLATE IS DROPPED, NEVER PRINTED WITH A
+       HOLE IN IT. renderStaticApaNotes mirrors every note with `{onScreen:true}`
+       and nothing else, so an unguarded `${ctx.trials}` put "over NaN cases" and
+       "the undefined measures listed below" on screen under a real patient's
+       table. Dropping is the licensed on-screen difference and both are stated
+       in full beside the note anyway - the trial count in the precision
+       disclosure, the measure count in the chip strip's own footer. Gated on the
+       VALUE rather than on ctx.onScreen so no other caller can reintroduce it. */
+    Number.isFinite(ctx.trials)
+      ? `Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases (Crawford, Garthwaite & Gault, 2007).`
+      : 'Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation (Crawford, Garthwaite & Gault, 2007).',
+    ctx.k ? `Computed over the ${ctx.k} measures listed below.` : '',
     /* THE PAPER'S OWN LIMITATION, and it applies to every subtest profile.
        Multivariate normality assumes continuous scores; the authors note that
        a limited range of scaled scores - a scaled point being a third of an SD
@@ -25331,7 +25397,11 @@ const APA_NOTES = {
     ctx.coarse
       ? 'The method assumes continuous scores. Scaled scores have a limited range - one scaled point is a third of a standard deviation - so these estimates are less accurate than they would be for Index scores (Crawford, Garthwaite & Gault, 2007, p. 428).'
       : '',
-    `An abnormally low score is one ${ctx.criterion}. Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.`,
+    /* Split rather than reworded: the exported note joins these with a space
+       and reads exactly as it did, while the mirror can drop only the half
+       that needs the criterion - which the selector above the note states. */
+    ctx.criterion ? `An abnormally low score is one ${ctx.criterion}.` : '',
+    'Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.',
     'Intercorrelations are the all-ages values of WAIS-IV Technical and Interpretive Manual (GB), Table 5.1.',
     /* A profile mixing 16-69 measures with 16-90 ones is reading part of its
        covariance structure off a narrower sample. The exported table has to
@@ -25352,19 +25422,19 @@ const APA_NOTES = {
     ctx.hasRawInIndexMode
       ? 'Raw-score measures are not scored in index mode, which divides by the metric’s SD; use raw mode, which divides by the normative SD entered for each measure.'
       : '',
-    `Significance threshold = ${ctx.thresholdLabel}.`,
+    ctx.thresholdLabel ? `Significance threshold = ${ctx.thresholdLabel}.` : '',
     '<i>p</i>-values are two-tailed.'
   ],
   'rci': ctx => [
     ctx.methodSentence,
-    `Reliable change threshold = ${ctx.thresholdLabel}.`,
+    ctx.thresholdLabel ? `Reliable change threshold = ${ctx.thresholdLabel}.` : '',
     ctx.rSentence,
     ctx.formSentence,
     '<i>p</i>-values are two-tailed.'
   ],
   'pre-estimates': ctx => [
     'FSIQ = Full Scale IQ estimate.',
-    `CI = confidence interval based on ${ctx.ciMultiplier} × SEE.`,
+    ctx.ciMultiplier ? `CI = confidence interval based on ${ctx.ciMultiplier} × SEE.` : '',
     '<i>r</i> = predictor-criterion correlation. SEE = standard error of estimate.'
   ],
   'pre-predict': () => [
@@ -35799,14 +35869,19 @@ if (document.readyState === 'loading'){
     const every = top <= 12 ? 1 : Math.ceil((top + 1) / 8);
     let bars = '', axis = '';
     for (let j = 0; j <= top; j++){
-      const h = max > 0 ? Math.max(2, Math.round(dist[j] / max * 44)) : 2;
+      const h = max > 0 ? Math.max(2, Math.round(dist[j] / max * 100)) : 2;
       /* The patient's own bar solid, everything above it shaded: the
          shaded region is the base rate the sentence quotes. Nothing is
          shaded at a count of zero, which is quoted no base rate. */
       const cls = j === here ? 'prof-bar prof-here'
                 : (here > 0 && j > here ? 'prof-bar prof-tail' : 'prof-bar');
-      bars += '<div class="' + cls + '" style="height:' + h + 'px" title="'
+      bars += '<div class="' + cls + '" style="height:' + h + '%" title="'
         + escapeHtml('exactly ' + j + ' — ' + profFmtPct(dist[j]) + ' of the population') + '"></div>';
+      /* A CARET, BECAUSE HEIGHT ALONE CANNOT FIND THIS BAR. Most people show
+         none, so P(0) sets the scale and every bar that matters is a hairline
+         beside it - at four Indices the patient's own bar was 2px. Rescaling
+         to make it visible would misstate the distribution, so the marker goes
+         under the axis instead, where it costs the shape nothing. */
       axis += '<span' + (j === here ? ' class="prof-here"' : '') + '>'
         + (j === here || j % every === 0 ? j : '') + '</span>';
     }
@@ -35814,6 +35889,18 @@ if (document.readyState === 'loading'){
       + escapeHtml(unit) + ' are abnormal</div>'
       + '<div class="prof-bars">' + bars + '</div>'
       + '<div class="prof-xaxis">' + axis + '</div></div>';
+  }
+
+  /* THE CLAIM ITSELF, AT FULL WIDTH. The per-count chart above shows the
+     shape; this shows the sentence. One bar for the whole population, split at
+     this patient's count, with everything at or beyond it shaded - so a base
+     rate of 4.37% is 4.37% of the bar, read directly rather than inferred from
+     a stack of columns whose scale is set by P(0). */
+  function profTailBarHtml(pct){
+    if (!Number.isFinite(pct)) return '';
+    const w = Math.max(0.6, Math.min(100, pct));   // a hairline still has to be visible
+    return '<div class="prof-tailbar" title="' + escapeHtml(profFmtPct(pct)
+      + ' of the population') + '"><span class="prof-tailbar-fill" style="width:' + w + '%"></span></div>';
   }
 
   /* THE CARD IS THE PAGE: a count, the sentence that reports it, and the
@@ -35834,7 +35921,8 @@ if (document.readyState === 'loading'){
         + (count === 1 ? ' is' : ' are') + ' abnormal.';
     const read = count === 0
       ? '<div class="prof-read prof-read-none">No base rate is quoted for a count of zero.</div>'
-      : '<div class="prof-read"><span class="prof-swatch"></span><span><b>' + profFmtPct(pct)
+      : profTailBarHtml(pct)
+        + '<div class="prof-read"><span><b>' + profFmtPct(pct)
         + '</b> of the population show ' + count + ' or more'
         + (Number.isFinite(se) ? ' <span class="prof-se">± ' + se.toFixed(2) + '</span>' : '')
         + '</span></div>';
@@ -37752,16 +37840,36 @@ if (document.readyState === 'loading'){
     return el && el.closest ? el.closest('.home-dial-stage') : null;
   }
 
+  /* `data-on` MARKS THE ACTIVE NODE AND ITS DESCRIPTION DIRECTLY, so the CSS
+     is one rule per effect instead of one selector per node. It used to pair
+     `[data-active="N"]` on the stage with `[data-dial="N"]`, three blocks of
+     seven selectors that the markup pointed at from nowhere — adding a tool
+     meant remembering to extend all three, and forgetting would ship a node
+     that never lit up or explained itself, with no error. `data-active` stays
+     on the stage because the hub's rest state needs to know only that
+     something is active, not which. */
+  function markOn(stage, node){
+    stage.querySelectorAll('[data-on]').forEach(el => el.removeAttribute('data-on'));
+    if (!node) return;
+    node.setAttribute('data-on', '');
+    const desc = stage.querySelector('.home-dial-desc[data-dial-desc="'
+      + node.getAttribute('data-dial') + '"]');
+    if (desc) desc.setAttribute('data-on', '');
+  }
+
   function setActive(node){
     const stage = stageOf(node);
     if (!stage) return;
     const i = node.getAttribute('data-dial');
     if (i == null) return;
     stage.setAttribute('data-active', i);
+    markOn(stage, node);
   }
 
   function clearActive(stage){
-    if (stage) stage.removeAttribute('data-active');
+    if (!stage) return;
+    stage.removeAttribute('data-active');
+    markOn(stage, null);
   }
 
   /* pointerover/out rather than mouseenter/leave: those do not bubble, and

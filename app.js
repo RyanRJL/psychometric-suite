@@ -3410,8 +3410,18 @@ const APA_NOTES = {
      It also states the scores, because the table itself reports counts and
      a reader cannot otherwise check the counting. */
   'prof': ctx => [
-    `Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases (Crawford, Garthwaite & Gault, 2007).`,
-    `Computed over the ${ctx.k} measures listed below.`,
+    /* A SENTENCE WITH NOTHING TO INTERPOLATE IS DROPPED, NEVER PRINTED WITH A
+       HOLE IN IT. renderStaticApaNotes mirrors every note with `{onScreen:true}`
+       and nothing else, so an unguarded `${ctx.trials}` put "over NaN cases" and
+       "the undefined measures listed below" on screen under a real patient's
+       table. Dropping is the licensed on-screen difference and both are stated
+       in full beside the note anyway - the trial count in the precision
+       disclosure, the measure count in the chip strip's own footer. Gated on the
+       VALUE rather than on ctx.onScreen so no other caller can reintroduce it. */
+    Number.isFinite(ctx.trials)
+      ? `Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases (Crawford, Garthwaite & Gault, 2007).`
+      : 'Base rates are the percentage of the healthy population expected to show at least as many such findings, estimated by Monte Carlo simulation (Crawford, Garthwaite & Gault, 2007).',
+    ctx.k ? `Computed over the ${ctx.k} measures listed below.` : '',
     /* THE PAPER'S OWN LIMITATION, and it applies to every subtest profile.
        Multivariate normality assumes continuous scores; the authors note that
        a limited range of scaled scores - a scaled point being a third of an SD
@@ -3421,7 +3431,11 @@ const APA_NOTES = {
     ctx.coarse
       ? 'The method assumes continuous scores. Scaled scores have a limited range - one scaled point is a third of a standard deviation - so these estimates are less accurate than they would be for Index scores (Crawford, Garthwaite & Gault, 2007, p. 428).'
       : '',
-    `An abnormally low score is one ${ctx.criterion}. Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.`,
+    /* Split rather than reworded: the exported note joins these with a space
+       and reads exactly as it did, while the mirror can drop only the half
+       that needs the criterion - which the selector above the note states. */
+    ctx.criterion ? `An abnormally low score is one ${ctx.criterion}.` : '',
+    'Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.',
     'Intercorrelations are the all-ages values of WAIS-IV Technical and Interpretive Manual (GB), Table 5.1.',
     /* A profile mixing 16-69 measures with 16-90 ones is reading part of its
        covariance structure off a narrower sample. The exported table has to
@@ -3442,19 +3456,19 @@ const APA_NOTES = {
     ctx.hasRawInIndexMode
       ? 'Raw-score measures are not scored in index mode, which divides by the metric’s SD; use raw mode, which divides by the normative SD entered for each measure.'
       : '',
-    `Significance threshold = ${ctx.thresholdLabel}.`,
+    ctx.thresholdLabel ? `Significance threshold = ${ctx.thresholdLabel}.` : '',
     '<i>p</i>-values are two-tailed.'
   ],
   'rci': ctx => [
     ctx.methodSentence,
-    `Reliable change threshold = ${ctx.thresholdLabel}.`,
+    ctx.thresholdLabel ? `Reliable change threshold = ${ctx.thresholdLabel}.` : '',
     ctx.rSentence,
     ctx.formSentence,
     '<i>p</i>-values are two-tailed.'
   ],
   'pre-estimates': ctx => [
     'FSIQ = Full Scale IQ estimate.',
-    `CI = confidence interval based on ${ctx.ciMultiplier} × SEE.`,
+    ctx.ciMultiplier ? `CI = confidence interval based on ${ctx.ciMultiplier} × SEE.` : '',
     '<i>r</i> = predictor-criterion correlation. SEE = standard error of estimate.'
   ],
   'pre-predict': () => [
