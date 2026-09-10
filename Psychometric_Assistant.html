@@ -14957,6 +14957,33 @@ input[type="text"].ds-inline-bar-input{
 .viz-rci-band{ fill: var(--ds-text); opacity: 0.07; }
 .viz-rci-expected{ stroke: var(--ds-border-strong); stroke-width: 1; }
 .viz-link-line{ stroke: var(--ds-text-faint); stroke-width: 1.5; }
+
+/* PREMORBID SHORTFALL TIERS — the Score Tables asterisk scheme, as ink.
+
+   Three tiers because PREMORBID_CI_Z has three (90 / 95 / 99% of the model's
+   SEE); the app grades this comparison nowhere else, so a point-count ramp
+   here would be an unpublished cut-off sitting beside published ones.
+
+   An amber-to-red ramp, NOT a traffic light: there is no green tier, because
+   tier 0 is "no shortfall to report" and takes the panel's ordinary ink. The
+   colour says how far below the prediction the score fell, which is a
+   magnitude, not a verdict.
+
+   Scoped under .viz-svg so a tier beats .viz-dot (0-1-0) on specificity
+   rather than on source order — .viz-dot is a class this file already owns,
+   and matching its specificity would leave the grade hostage to where these
+   rules happen to sit in the file. */
+.viz-svg .viz-pre-short-1{ fill: #C4863A; stroke: var(--ds-surface); }
+.viz-svg .viz-pre-short-2{ fill: var(--ds-warning); stroke: var(--ds-surface); }
+.viz-svg .viz-pre-short-3{ fill: var(--ds-destructive); stroke: var(--ds-surface); }
+/* The link line takes the grade as STROKE and keeps no fill, so the same three
+   class names serve both marks. */
+.viz-svg line.viz-pre-short-1{ stroke: #C4863A; stroke-width: 2; fill: none; }
+.viz-svg line.viz-pre-short-2{ stroke: var(--ds-warning); stroke-width: 2; fill: none; }
+.viz-svg line.viz-pre-short-3{ stroke: var(--ds-destructive); stroke-width: 2; fill: none; }
+.viz-legend-t1{ color: #C4863A; font-weight: 600; }
+.viz-legend-t2{ color: var(--ds-warning); font-weight: 600; }
+.viz-legend-t3{ color: var(--ds-destructive); font-weight: 600; }
 /* Baseline for a raw-score dot: a hairline, not a band - a band would imply
    a range the raw view deliberately does not assert. */
 .viz-raw-rule{ stroke: var(--ds-border); stroke-width: 1; }
@@ -23160,6 +23187,30 @@ function getBatteryPremorbidComparison(){
        *** below estimate − 2.576·SEE   (99% CI lower bound)
    SEE mode silently falls back to SD mode when SEE is not available.    */
 const PREMORBID_CI_Z = { ninety: 1.645, ninetyFive: 1.960, ninetyNine: 2.576 };
+/* The SEE tier, factored out of batteryPremorbidStars' SEE branch so a second
+   consumer cannot invent thresholds of its own.
+
+   Score Charts' premorbid panel grades each row by how far the achieved score
+   falls below its prediction. The obvious way to grade it — a point count, so
+   many points green, so many amber — would be an unpublished cut-off printed
+   beside published ones. This app already has a cited three-tier scheme for
+   exactly this comparison (PREMORBID_CI_Z, the 90/95/99% bounds), and the
+   Score Tables asterisks are it. One source, so a chart and a table looking at
+   the same shortfall cannot grade it differently.
+
+   ONE-SIDED, deliberately. The stars mean "falls short of the premorbid
+   estimate"; a score ABOVE the estimate is not a finding this app asserts, so
+   it takes tier 0 and no colour. Returns 0-3, never a label — the caller
+   decides whether that reads as stars or as ink. */
+function premorbidSeeTier(achieved, estimate, see){
+  if (!Number.isFinite(achieved) || !Number.isFinite(estimate)) return 0;
+  if (!Number.isFinite(see) || see <= 0) return 0;
+  if (achieved <= estimate - PREMORBID_CI_Z.ninetyNine * see) return 3;
+  if (achieved <= estimate - PREMORBID_CI_Z.ninetyFive * see) return 2;
+  if (achieved <= estimate - PREMORBID_CI_Z.ninety     * see) return 1;
+  return 0;
+}
+const PREMORBID_TIER_STARS = ['', '*', '**', '***'];
 /* The EFFECTIVE premorbid flagging mode, which is not always the selected one:
    SEE mode silently falls back to SD mode when the linked model has no usable
    SEE. Every consumer must ask this function rather than reading the control
@@ -23172,13 +23223,7 @@ function batteryPremorbidMode(prem){
 function batteryPremorbidStars(ss, prem){
   if (!prem || !Number.isFinite(ss) || !Number.isFinite(prem.estimate)) return '';
   if (batteryPremorbidMode(prem) === 'see'){
-    const t90 = prem.estimate - PREMORBID_CI_Z.ninety      * prem.see;
-    const t95 = prem.estimate - PREMORBID_CI_Z.ninetyFive  * prem.see;
-    const t99 = prem.estimate - PREMORBID_CI_Z.ninetyNine  * prem.see;
-    if (ss <= t99) return '***';
-    if (ss <= t95) return '**';
-    if (ss <= t90) return '*';
-    return '';
+    return PREMORBID_TIER_STARS[premorbidSeeTier(ss, prem.estimate, prem.see)];
   }
   const diffSd = (prem.estimate - ss) / 15;
   if (diffSd >= 2)   return '***';
@@ -30447,12 +30492,44 @@ const ReportBundle = (function(){
         if (cleaned) return cleaned;
       }
     }
-    // 2. Scan the full text for any known abbreviation as a fallback
-    const allText = tmp.textContent || '';
+    /* 2. The table's own TITLE, before the body. A split item has had its
+          group row removed — the family name became the title — so the title
+          is the item's own statement of what it holds, while the body carries
+          text this table merely cites.
+
+          That distinction is the whole point of asking it first. The Score
+          Tables note names the WAIS-IV Administration and Scoring Manual as
+          the source of the base-rate column, so a table holding BOTH a
+          WAIS-IV Longest Span section and a WMS-IV one shipped that string
+          into every split item, and the WMS-IV item resolved to WAIS-IV and
+          merged under it — a Wechsler memory battery printed as a sub-section
+          of the intelligence scale. */
+    const titleText = (tmp.querySelector('.apa-table-title')?.textContent) || '';
+    const fromTitle = firstFamilyInText(titleText);
+    if (fromTitle) return fromTitle;
+    // 3. Scan the full text for any known abbreviation as a last resort.
+    return firstFamilyInText(tmp.textContent || '');
+  }
+  /* EARLIEST OCCURRENCE, not first pattern in the list. Scanning
+     TEST_FAMILY_PATTERNS in order returns whichever abbreviation happens to sit
+     highest in that array, wherever it appears in the text — so 'WAIS-IV'
+     (index 5) beat 'WMS-IV' (index 9) even when the WMS mention came first and
+     the WAIS one was a citation in the note. Position in the text is what
+     actually says which instrument the table is about.
+
+     Ties go to the LONGER pattern, which preserves the array's other job: at
+     the same offset 'WAIS-IV' must win over the bare 'WAIS'. */
+  function firstFamilyInText(text){
+    if (!text) return null;
+    let best = null;
     for (const fam of TEST_FAMILY_PATTERNS){
-      if (allText.includes(fam)) return fam;
+      const at = text.indexOf(fam);
+      if (at < 0) continue;
+      if (!best || at < best.at || (at === best.at && fam.length > best.fam.length)){
+        best = { fam, at };
+      }
     }
-    return null;
+    return best ? best.fam : null;
   }
   function pillLabelFor(html, sourceId){
     const parentId = (sourceId || '').split('::')[0];
@@ -34224,7 +34301,13 @@ if (document.readyState === 'loading'){
         hi: vizPreCellNum('pred-' + c.idx + '-hi'),
         achieved: vizPreAchieved(c.idx),
         diffText: (document.getElementById('diff-' + c.idx) || {}).textContent || '',
-        brText: (document.getElementById('br-' + c.idx) || {}).textContent || ''
+        brText: (document.getElementById('br-' + c.idx) || {}).textContent || '',
+        /* The model's own standard error of estimate, carried so the panel can
+           grade the shortfall on the SAME tiers the Score Tables asterisks use
+           (premorbidSeeTier). Read off the coefficient table rather than the
+           rendered row: the printed interval is at the page's selected CI
+           level, while the tiers are fixed at 90/95/99. */
+        see: Number.isFinite(c.see) ? c.see : null
       });
     }
     return out;
@@ -34250,7 +34333,8 @@ if (document.readyState === 'loading'){
         hi: Math.round(r.val) + margin,
         achieved: ach,
         diffText: diff == null ? '' : (diff > 0 ? '+' : '') + diff,
-        brText: diff == null ? '' : opieBaseRateFor(r.key, diff)
+        brText: diff == null ? '' : opieBaseRateFor(r.key, diff),
+        see: Number.isFinite(r.see) ? r.see : null
       });
     }
     return out;
@@ -34272,8 +34356,23 @@ if (document.readyState === 'loading'){
       const midY = rowY + ROW_H / 2;
       const pRound = Math.round(row.predicted);
 
+      /* THE SHORTFALL TIER, from the shipped premorbidSeeTier — the same
+         function batteryPremorbidStars asks, so a row the Score Tables page
+         marks ** cannot be graded differently here. One-sided: a score at or
+         above its prediction takes tier 0 and stays neutral ink, because
+         "exceeds the estimate" is not a finding this app asserts.
+
+         Guarded by typeof: this module loads after app.js, but a harness that
+         loads the page module alone must degrade to an uncoloured chart rather
+         than throw and take the whole Score Charts page with it. */
+      const tier = (typeof premorbidSeeTier === 'function' && row.achieved != null)
+        ? premorbidSeeTier(row.achieved, row.predicted, row.see)
+        : 0;
+      const tierCls = tier ? ` viz-pre-short-${tier}` : '';
+      const stars = tier ? '\u2009' + '*'.repeat(tier) : '';
+
       let g = `<title>${escapeHtml(row.label)}: predicted ${pRound}${row.lo != null ? ` (${row.lo}–${row.hi})` : ''}` +
-              `${row.achieved != null ? `, achieved ${row.achieved}, difference ${row.diffText}${row.brText ? `, base rate ${row.brText}` : ''}` : ', no achieved score entered'}</title>`;
+              `${row.achieved != null ? `, achieved ${row.achieved}, difference ${row.diffText}${row.brText ? `, base rate ${row.brText}` : ''}${tier ? `, ${['', '90', '95', '99'][tier]}% shortfall` : ''}` : ', no achieved score entered'}</title>`;
       g += `<text class="viz-row-name" x="${COL_CHANGE.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(row.label, 26))}</text>`;
       g += `<text class="viz-row-score" x="${COL_CHANGE.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${pRound}${row.achieved != null ? ` → ${row.achieved}` : ''}</text>`;
 
@@ -34284,12 +34383,20 @@ if (document.readyState === 'loading'){
              `<line class="viz-whisker" x1="${x0}" y1="${midY - 5}" x2="${x0}" y2="${midY + 5}"/>` +
              `<line class="viz-whisker" x1="${x1}" y1="${midY - 5}" x2="${x1}" y2="${midY + 5}"/>`;
       }
+      /* The gap drawn as a LENGTH, not left to be measured between two dots.
+         Same .viz-link-line the Change Analysis panel already uses for its
+         test-to-retest pair, so the two panels read the same way. Emitted
+         before the dots so they sit on top of it. */
+      if (row.achieved != null){
+        const px = vizXd(row.predicted, axis), ax = vizXd(row.achieved, axis);
+        g += `<line class="viz-link-line${tierCls}" x1="${px.toFixed(1)}" y1="${midY}" x2="${ax.toFixed(1)}" y2="${midY}"/>`;
+      }
       g += `<circle class="viz-dot-open" cx="${vizXd(row.predicted, axis).toFixed(1)}" cy="${midY}" r="5"/>`;
       if (row.achieved != null){
-        g += `<circle class="viz-dot" cx="${vizXd(row.achieved, axis).toFixed(1)}" cy="${midY}" r="5.5"/>`;
+        g += `<circle class="viz-dot${tierCls}" cx="${vizXd(row.achieved, axis).toFixed(1)}" cy="${midY}" r="5.5"/>`;
       }
       const right = row.achieved != null
-        ? `${row.diffText}${row.brText && row.brText !== '-' ? ` · ${row.brText}` : ''}`
+        ? `${row.diffText}${stars}${row.brText && row.brText !== '-' ? ` · ${row.brText}` : ''}`
         : 'awaiting achieved score';
       g += `<text class="viz-row-fact" x="${COL_CHANGE.rightX}" y="${midY + 4.5}">${escapeHtml(right)}</text>`;
       svg += `<g class="viz-row">${g}</g>`;
@@ -34319,7 +34426,10 @@ if (document.readyState === 'loading'){
       cards.push({ title:'OPIE-4-predicted WAIS-IV', html: vizPanel('OPIE-4-predicted WAIS-IV', vizPrePanelSvg(opie),
         'OPIE-4 is illustrative only for UK use: the coefficients reproduce Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US education, ethnicity and region terms that are not applied, so every patient is scored at the US reference category. Its base rates are empirical.') });
     }
-    const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> predicted, with its ${escapeHtml(ciPct)} prediction interval shaded · <span class="viz-legend-filled">●</span> achieved · thin line marks the population mean of 100. Enter achieved scores on the premorbid page; rows without one show the prediction alone.</p>`;
+    /* The colour is NAMED as the table's asterisk scheme rather than described
+       as severity. A reader must be able to tell that the ink and the stars on
+       the Score Tables row are one claim, not two. */
+    const legend = `<p class="viz-legend"><span class="viz-legend-open">○</span> predicted, with its ${escapeHtml(ciPct)} prediction interval shaded · <span class="viz-legend-filled">●</span> achieved, joined to its prediction by a line · thin line marks the population mean of 100. Where the achieved score falls short, the line and dot are graded by the same three tiers the Score Tables asterisks use — <span class="viz-legend-t1">* beyond the 90% bound</span>, <span class="viz-legend-t2">** beyond 95%</span>, <span class="viz-legend-t3">*** beyond 99%</span> of the model's standard error of estimate. A score at or above its prediction stays neutral. Enter achieved scores on the premorbid page; rows without one show the prediction alone.</p>`;
     return { key:'premorbid', label:'Premorbid', ctrl:null, legend, cards, empty:'' };
   }
 

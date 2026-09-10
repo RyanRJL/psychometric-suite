@@ -1631,6 +1631,30 @@ function getBatteryPremorbidComparison(){
        *** below estimate − 2.576·SEE   (99% CI lower bound)
    SEE mode silently falls back to SD mode when SEE is not available.    */
 const PREMORBID_CI_Z = { ninety: 1.645, ninetyFive: 1.960, ninetyNine: 2.576 };
+/* The SEE tier, factored out of batteryPremorbidStars' SEE branch so a second
+   consumer cannot invent thresholds of its own.
+
+   Score Charts' premorbid panel grades each row by how far the achieved score
+   falls below its prediction. The obvious way to grade it — a point count, so
+   many points green, so many amber — would be an unpublished cut-off printed
+   beside published ones. This app already has a cited three-tier scheme for
+   exactly this comparison (PREMORBID_CI_Z, the 90/95/99% bounds), and the
+   Score Tables asterisks are it. One source, so a chart and a table looking at
+   the same shortfall cannot grade it differently.
+
+   ONE-SIDED, deliberately. The stars mean "falls short of the premorbid
+   estimate"; a score ABOVE the estimate is not a finding this app asserts, so
+   it takes tier 0 and no colour. Returns 0-3, never a label — the caller
+   decides whether that reads as stars or as ink. */
+function premorbidSeeTier(achieved, estimate, see){
+  if (!Number.isFinite(achieved) || !Number.isFinite(estimate)) return 0;
+  if (!Number.isFinite(see) || see <= 0) return 0;
+  if (achieved <= estimate - PREMORBID_CI_Z.ninetyNine * see) return 3;
+  if (achieved <= estimate - PREMORBID_CI_Z.ninetyFive * see) return 2;
+  if (achieved <= estimate - PREMORBID_CI_Z.ninety     * see) return 1;
+  return 0;
+}
+const PREMORBID_TIER_STARS = ['', '*', '**', '***'];
 /* The EFFECTIVE premorbid flagging mode, which is not always the selected one:
    SEE mode silently falls back to SD mode when the linked model has no usable
    SEE. Every consumer must ask this function rather than reading the control
@@ -1643,13 +1667,7 @@ function batteryPremorbidMode(prem){
 function batteryPremorbidStars(ss, prem){
   if (!prem || !Number.isFinite(ss) || !Number.isFinite(prem.estimate)) return '';
   if (batteryPremorbidMode(prem) === 'see'){
-    const t90 = prem.estimate - PREMORBID_CI_Z.ninety      * prem.see;
-    const t95 = prem.estimate - PREMORBID_CI_Z.ninetyFive  * prem.see;
-    const t99 = prem.estimate - PREMORBID_CI_Z.ninetyNine  * prem.see;
-    if (ss <= t99) return '***';
-    if (ss <= t95) return '**';
-    if (ss <= t90) return '*';
-    return '';
+    return PREMORBID_TIER_STARS[premorbidSeeTier(ss, prem.estimate, prem.see)];
   }
   const diffSd = (prem.estimate - ss) / 15;
   if (diffSd >= 2)   return '***';
@@ -8918,12 +8936,44 @@ const ReportBundle = (function(){
         if (cleaned) return cleaned;
       }
     }
-    // 2. Scan the full text for any known abbreviation as a fallback
-    const allText = tmp.textContent || '';
+    /* 2. The table's own TITLE, before the body. A split item has had its
+          group row removed — the family name became the title — so the title
+          is the item's own statement of what it holds, while the body carries
+          text this table merely cites.
+
+          That distinction is the whole point of asking it first. The Score
+          Tables note names the WAIS-IV Administration and Scoring Manual as
+          the source of the base-rate column, so a table holding BOTH a
+          WAIS-IV Longest Span section and a WMS-IV one shipped that string
+          into every split item, and the WMS-IV item resolved to WAIS-IV and
+          merged under it — a Wechsler memory battery printed as a sub-section
+          of the intelligence scale. */
+    const titleText = (tmp.querySelector('.apa-table-title')?.textContent) || '';
+    const fromTitle = firstFamilyInText(titleText);
+    if (fromTitle) return fromTitle;
+    // 3. Scan the full text for any known abbreviation as a last resort.
+    return firstFamilyInText(tmp.textContent || '');
+  }
+  /* EARLIEST OCCURRENCE, not first pattern in the list. Scanning
+     TEST_FAMILY_PATTERNS in order returns whichever abbreviation happens to sit
+     highest in that array, wherever it appears in the text — so 'WAIS-IV'
+     (index 5) beat 'WMS-IV' (index 9) even when the WMS mention came first and
+     the WAIS one was a citation in the note. Position in the text is what
+     actually says which instrument the table is about.
+
+     Ties go to the LONGER pattern, which preserves the array's other job: at
+     the same offset 'WAIS-IV' must win over the bare 'WAIS'. */
+  function firstFamilyInText(text){
+    if (!text) return null;
+    let best = null;
     for (const fam of TEST_FAMILY_PATTERNS){
-      if (allText.includes(fam)) return fam;
+      const at = text.indexOf(fam);
+      if (at < 0) continue;
+      if (!best || at < best.at || (at === best.at && fam.length > best.fam.length)){
+        best = { fam, at };
+      }
     }
-    return null;
+    return best ? best.fam : null;
   }
   function pillLabelFor(html, sourceId){
     const parentId = (sourceId || '').split('::')[0];

@@ -2836,6 +2836,72 @@ check('detectTestFamily reads only a group row\'s FIRST cell', () => {
     || 'it no longer takes the first cell of each group row';
 });
 
+/* THE FAMILY SCAN MUST RANK BY POSITION IN THE TEXT, NOT POSITION IN THE LIST.
+
+   A split item has had its group row removed — the family name became the
+   item's title — so detectTestFamily falls through to the text scan, and the
+   text it scans includes the APA note. The Score Tables note cites the
+   "WAIS-IV Administration and Scoring Manual" as the source of the base-rate
+   column, so a table holding a WAIS-IV Longest Span section AND a WMS-IV one
+   put that string into every split item. Scanning TEST_FAMILY_PATTERNS in
+   array order then returned WAIS-IV (index 5) for the WMS-IV item, because
+   WMS-IV sits at index 9 — and the two items merged, printing a Wechsler
+   memory battery as a sub-section of the intelligence scale.
+
+   The real function is driven rather than re-implemented: it is pure string
+   work with no DOM, and a second copy of the rule would agree with itself. */
+check('the family scan ranks by position in the text, not position in the list', () => {
+  const patterns = APP_SRC.match(/const TEST_FAMILY_PATTERNS = \[([\s\S]*?)\];/);
+  if (!patterns) return 'TEST_FAMILY_PATTERNS not found in app.js';
+  let firstFamilyInText;
+  try {
+    firstFamilyInText = new Function(
+      'const TEST_FAMILY_PATTERNS = [' + patterns[1] + '];\n'
+      + extractFn(APP_SRC, 'firstFamilyInText') + '\n'
+      + 'return firstFamilyInText;'
+    )();
+  } catch (e) {
+    return 'firstFamilyInText could not be driven: ' + e.message;
+  }
+  const note = 'Base rate = percentage of the normative sample obtaining the same '
+             + 'score or higher (WAIS-IV Administration and Scoring Manual, '
+             + 'Tables C.4-C.5).';
+  const bad = [];
+  // The live case: a WMS-IV split item carrying the WAIS-IV base-rate citation.
+  const wms = firstFamilyInText('Score Tables: WMS-IV Subtests\nLogical Memory I\n' + note);
+  if (wms !== 'WMS-IV') {
+    bad.push('a WMS-IV table citing the WAIS-IV manual resolves to ' + wms);
+  }
+  // The mirror: a WAIS-IV table must still resolve to WAIS-IV.
+  const wais = firstFamilyInText('Score Tables: WAIS-IV Core Subtests\nDigit Span\n' + note);
+  if (wais !== 'WAIS-IV') bad.push('a WAIS-IV table resolves to ' + wais);
+  /* Ties still go to the longer pattern, which is the array order's other job:
+     at the same offset the specific edition must beat the bare abbreviation. */
+  if (firstFamilyInText('WAIS-IV Indices') !== 'WAIS-IV') {
+    bad.push('a bare abbreviation now beats its own edition at the same offset');
+  }
+  if (firstFamilyInText('no instrument here') !== null) {
+    bad.push('text naming no instrument no longer returns null');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The title is the item's own statement of what it holds; the body carries
+   text the table merely cites. Asking the body first is what let a citation
+   outrank the subject, so the order is the fix and has to stay pinned. */
+check('detectTestFamily asks the table title before the table body', () => {
+  const src = extractFn(APP_SRC, 'detectTestFamily');
+  const title = src.indexOf('apa-table-title');
+  const body = src.indexOf('tmp.textContent');
+  if (title === -1) return 'it no longer consults the table title at all';
+  if (body === -1) return 'it no longer falls back to the table body';
+  if (title > body) return 'the body is scanned before the title, so a cited instrument outranks the subject';
+  if (/for \(const fam of TEST_FAMILY_PATTERNS\)\s*\{\s*if \(allText\.includes/.test(src)) {
+    return 'it scans the pattern array in order again';
+  }
+  return true;
+});
+
 check('merging a battery preserves a section\'s own column label', () => {
   const src = extractFn(APP_SRC, 'buildMergedTableHtml');
   const bad = [];
@@ -7715,6 +7781,159 @@ check('a version mismatch reaches the exported table, not just the screen', () =
   /* The CVLT-3 states its own in a dedicated clause, so it must be excluded
      here or the export says it twice. */
   if (!/tab !== 'cvlt3'/.test(APP_SRC)) bad.push('the CVLT-3 caveat would be printed twice in the export');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+heading('41. Score Charts grades a premorbid shortfall on the asterisk tiers');
+
+/* THE POINT OF THE SECTION. The premorbid panel colours a row by how far the
+   achieved score fell below its prediction. A chart of that kind normally
+   invents its own ramp — so many points green, so many amber — which would put
+   an unpublished cut-off beside published ones. This app already grades the
+   same comparison, with the Score Tables asterisks, on PREMORBID_CI_Z.
+
+   These checks assert the two are ONE thing: one function, thresholds derived
+   from the stored z values rather than restated, and the chart holding no
+   numbers of its own. */
+
+/* The tier function is pure string-free arithmetic with no DOM, so it is
+   DRIVEN rather than re-implemented. The expectations are derived from
+   PREMORBID_CI_Z as read out of app.js — nothing here is a typed-in number. */
+function drivePremorbidTier() {
+  const z = APP_SRC.match(/const PREMORBID_CI_Z = \{([^}]*)\};/);
+  if (!z) throw new Error('PREMORBID_CI_Z not found in app.js');
+  return new Function(
+    'const PREMORBID_CI_Z = {' + z[1] + '};\n'
+    + extractFn(APP_SRC, 'premorbidSeeTier') + '\n'
+    + 'return { tier: premorbidSeeTier, Z: PREMORBID_CI_Z };'
+  )();
+}
+
+check('the tiers sit exactly on the 90 / 95 / 99% bounds of the model SEE', () => {
+  let d;
+  try { d = drivePremorbidTier(); } catch (e) { return 'could not drive it: ' + e.message; }
+  const est = 100, see = 8;
+  const bad = [];
+  const want = [['ninety', 1], ['ninetyFive', 2], ['ninetyNine', 3]];
+  for (const [key, tier] of want) {
+    const bound = est - d.Z[key] * see;
+    // AT the bound is inside the tier (the shipped comparison is <=)
+    const at = d.tier(bound, est, see);
+    if (at !== tier) bad.push('a score exactly on the ' + key + ' bound gives tier ' + at + ', not ' + tier);
+    // a hair above the bound must fall to the tier below
+    const above = d.tier(bound + 0.01, est, see);
+    if (above !== tier - 1) bad.push('just above the ' + key + ' bound gives tier ' + above + ', not ' + (tier - 1));
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ONE-SIDED, and this is the half most easily lost. The stars mean "falls
+   short of the premorbid estimate". Grading a score ABOVE its prediction would
+   have the chart assert something the app does not — the same ground on which
+   Change Analysis reports significance without direction. */
+check('a score at or above its prediction is never graded', () => {
+  let d;
+  try { d = drivePremorbidTier(); } catch (e) { return 'could not drive it: ' + e.message; }
+  const bad = [];
+  for (const ach of [100, 101, 115, 140]) {
+    const t = d.tier(ach, 100, 8);
+    if (t !== 0) bad.push('an achieved score of ' + ach + ' against a prediction of 100 grades ' + t);
+  }
+  /* No SEE, no tier: the scheme is defined in SEE units, and falling back to
+     a point count would be the invented cut-off this whole section exists to
+     prevent. */
+  for (const see of [null, undefined, 0, -3, NaN]) {
+    if (d.tier(60, 100, see) !== 0) bad.push('a shortfall is graded with a SEE of ' + see);
+  }
+  if (d.tier(null, 100, 8) !== 0 || d.tier(60, null, 8) !== 0) {
+    bad.push('a missing score or prediction is graded rather than skipped');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Two consumers, one function. If batteryPremorbidStars restates the
+   thresholds, the table and the chart can drift apart while both look right. */
+check('the table asterisks and the chart grade come from the same function', () => {
+  const stars = extractFn(APP_SRC, 'batteryPremorbidStars');
+  const bad = [];
+  if (!/premorbidSeeTier/.test(stars)) {
+    bad.push('batteryPremorbidStars no longer delegates to premorbidSeeTier');
+  }
+  /* Its SEE branch must hold no arithmetic of its own. The SD branch keeps
+     its own thresholds and is not in question — those are SD multiples, a
+     different published scheme. */
+  if (/PREMORBID_CI_Z\.(ninety|ninetyFive|ninetyNine)\s*\*/.test(stars)) {
+    bad.push('batteryPremorbidStars computes SEE bounds again instead of asking for the tier');
+  }
+  const viz = fs.readFileSync(path.join(ROOT, 'app-viz-page.js'), 'utf8');
+  if (!/premorbidSeeTier/.test(viz)) {
+    bad.push('the Score Charts premorbid panel does not use the shared tier function');
+  }
+  if (/PREMORBID_CI_Z/.test(viz)) {
+    bad.push('the chart reads the z values directly rather than asking for a tier');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the premorbid panel joins each prediction to its achieved score', () => {
+  const viz = fs.readFileSync(path.join(ROOT, 'app-viz-page.js'), 'utf8');
+  const panel = extractFn(viz, 'vizPrePanelSvg');
+  const bad = [];
+  if (!/viz-link-line/.test(panel)) {
+    bad.push('the gap is drawn as two dots with nothing joining them');
+  }
+  /* The same class the Change Analysis panel already uses for its
+     test-to-retest pair, so one page does not invent a second idiom. */
+  const rci = extractFn(viz, 'vizRciPanelSvg');
+  if (!/viz-link-line/.test(rci)) {
+    bad.push('the Change Analysis panel no longer uses the shared link class');
+  }
+  /* Emitted only where there IS an achieved score — a line to nowhere would
+     read as a zero-length gap rather than as a missing measurement. */
+  if (!/row\.achieved != null[\s\S]{0,240}viz-link-line/.test(panel)) {
+    bad.push('the link line is drawn without checking for an achieved score');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* A grade the stylesheet does not define is a grade that renders as ordinary
+   ink — the chart would silently stop saying anything. */
+check('every tier the chart emits has a rule in the stylesheet', () => {
+  const ds = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const bad = [];
+  for (const t of [1, 2, 3]) {
+    if (!new RegExp('\\.viz-pre-short-' + t + '\\{').test(ds.replace(/\s+/g, ''))) {
+      bad.push('no rule for tier ' + t);
+    }
+    if (!new RegExp('\\.viz-legend-t' + t + '\\{').test(ds.replace(/\s+/g, ''))) {
+      bad.push('no legend swatch for tier ' + t);
+    }
+  }
+  /* Scoped under .viz-svg so a tier outranks .viz-dot on SPECIFICITY rather
+     than on source order — .viz-dot is a class this same file owns, and a
+     flat .viz-pre-short-N would tie with it and be decided by position. */
+  if (!/\.viz-svg\s+\.viz-pre-short-1/.test(ds)) {
+    bad.push('the tier rules are not scoped above .viz-dot, so the grade depends on rule order');
+  }
+  /* There is no tier 0 rule and there must not be: an ungraded row is
+     ordinary ink, not a fourth colour. */
+  if (/viz-pre-short-0/.test(ds)) bad.push('a tier 0 colour exists, so "no shortfall" reads as a grade');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The legend has to NAME the asterisk scheme. Describing the colour as
+   severity alone would let a reader take the ink and the stars on the same
+   row as two separate claims. */
+check('the legend names the scheme the colour belongs to', () => {
+  const viz = fs.readFileSync(path.join(ROOT, 'app-viz-page.js'), 'utf8');
+  const block = extractFn(viz, 'vizPremorbidBlockHtml');
+  const bad = [];
+  if (!/asterisk/i.test(block)) bad.push('the legend does not tie the colour to the table asterisks');
+  if (!/standard error of estimate/i.test(block)) bad.push('the legend does not say what the bounds are of');
+  for (const pct of ['90', '95', '99']) {
+    if (!new RegExp(pct + '%').test(block)) bad.push('the legend omits the ' + pct + '% bound');
+  }
   return bad.length === 0 || bad.join('; ');
 });
 
