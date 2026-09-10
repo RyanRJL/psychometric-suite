@@ -8918,12 +8918,44 @@ const ReportBundle = (function(){
         if (cleaned) return cleaned;
       }
     }
-    // 2. Scan the full text for any known abbreviation as a fallback
-    const allText = tmp.textContent || '';
+    /* 2. The table's own TITLE, before the body. A split item has had its
+          group row removed — the family name became the title — so the title
+          is the item's own statement of what it holds, while the body carries
+          text this table merely cites.
+
+          That distinction is the whole point of asking it first. The Score
+          Tables note names the WAIS-IV Administration and Scoring Manual as
+          the source of the base-rate column, so a table holding BOTH a
+          WAIS-IV Longest Span section and a WMS-IV one shipped that string
+          into every split item, and the WMS-IV item resolved to WAIS-IV and
+          merged under it — a Wechsler memory battery printed as a sub-section
+          of the intelligence scale. */
+    const titleText = (tmp.querySelector('.apa-table-title')?.textContent) || '';
+    const fromTitle = firstFamilyInText(titleText);
+    if (fromTitle) return fromTitle;
+    // 3. Scan the full text for any known abbreviation as a last resort.
+    return firstFamilyInText(tmp.textContent || '');
+  }
+  /* EARLIEST OCCURRENCE, not first pattern in the list. Scanning
+     TEST_FAMILY_PATTERNS in order returns whichever abbreviation happens to sit
+     highest in that array, wherever it appears in the text — so 'WAIS-IV'
+     (index 5) beat 'WMS-IV' (index 9) even when the WMS mention came first and
+     the WAIS one was a citation in the note. Position in the text is what
+     actually says which instrument the table is about.
+
+     Ties go to the LONGER pattern, which preserves the array's other job: at
+     the same offset 'WAIS-IV' must win over the bare 'WAIS'. */
+  function firstFamilyInText(text){
+    if (!text) return null;
+    let best = null;
     for (const fam of TEST_FAMILY_PATTERNS){
-      if (allText.includes(fam)) return fam;
+      const at = text.indexOf(fam);
+      if (at < 0) continue;
+      if (!best || at < best.at || (at === best.at && fam.length > best.fam.length)){
+        best = { fam, at };
+      }
     }
-    return null;
+    return best ? best.fam : null;
   }
   function pillLabelFor(html, sourceId){
     const parentId = (sourceId || '').split('::')[0];

@@ -2836,6 +2836,72 @@ check('detectTestFamily reads only a group row\'s FIRST cell', () => {
     || 'it no longer takes the first cell of each group row';
 });
 
+/* THE FAMILY SCAN MUST RANK BY POSITION IN THE TEXT, NOT POSITION IN THE LIST.
+
+   A split item has had its group row removed — the family name became the
+   item's title — so detectTestFamily falls through to the text scan, and the
+   text it scans includes the APA note. The Score Tables note cites the
+   "WAIS-IV Administration and Scoring Manual" as the source of the base-rate
+   column, so a table holding a WAIS-IV Longest Span section AND a WMS-IV one
+   put that string into every split item. Scanning TEST_FAMILY_PATTERNS in
+   array order then returned WAIS-IV (index 5) for the WMS-IV item, because
+   WMS-IV sits at index 9 — and the two items merged, printing a Wechsler
+   memory battery as a sub-section of the intelligence scale.
+
+   The real function is driven rather than re-implemented: it is pure string
+   work with no DOM, and a second copy of the rule would agree with itself. */
+check('the family scan ranks by position in the text, not position in the list', () => {
+  const patterns = APP_SRC.match(/const TEST_FAMILY_PATTERNS = \[([\s\S]*?)\];/);
+  if (!patterns) return 'TEST_FAMILY_PATTERNS not found in app.js';
+  let firstFamilyInText;
+  try {
+    firstFamilyInText = new Function(
+      'const TEST_FAMILY_PATTERNS = [' + patterns[1] + '];\n'
+      + extractFn(APP_SRC, 'firstFamilyInText') + '\n'
+      + 'return firstFamilyInText;'
+    )();
+  } catch (e) {
+    return 'firstFamilyInText could not be driven: ' + e.message;
+  }
+  const note = 'Base rate = percentage of the normative sample obtaining the same '
+             + 'score or higher (WAIS-IV Administration and Scoring Manual, '
+             + 'Tables C.4-C.5).';
+  const bad = [];
+  // The live case: a WMS-IV split item carrying the WAIS-IV base-rate citation.
+  const wms = firstFamilyInText('Score Tables: WMS-IV Subtests\nLogical Memory I\n' + note);
+  if (wms !== 'WMS-IV') {
+    bad.push('a WMS-IV table citing the WAIS-IV manual resolves to ' + wms);
+  }
+  // The mirror: a WAIS-IV table must still resolve to WAIS-IV.
+  const wais = firstFamilyInText('Score Tables: WAIS-IV Core Subtests\nDigit Span\n' + note);
+  if (wais !== 'WAIS-IV') bad.push('a WAIS-IV table resolves to ' + wais);
+  /* Ties still go to the longer pattern, which is the array order's other job:
+     at the same offset the specific edition must beat the bare abbreviation. */
+  if (firstFamilyInText('WAIS-IV Indices') !== 'WAIS-IV') {
+    bad.push('a bare abbreviation now beats its own edition at the same offset');
+  }
+  if (firstFamilyInText('no instrument here') !== null) {
+    bad.push('text naming no instrument no longer returns null');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The title is the item's own statement of what it holds; the body carries
+   text the table merely cites. Asking the body first is what let a citation
+   outrank the subject, so the order is the fix and has to stay pinned. */
+check('detectTestFamily asks the table title before the table body', () => {
+  const src = extractFn(APP_SRC, 'detectTestFamily');
+  const title = src.indexOf('apa-table-title');
+  const body = src.indexOf('tmp.textContent');
+  if (title === -1) return 'it no longer consults the table title at all';
+  if (body === -1) return 'it no longer falls back to the table body';
+  if (title > body) return 'the body is scanned before the title, so a cited instrument outranks the subject';
+  if (/for \(const fam of TEST_FAMILY_PATTERNS\)\s*\{\s*if \(allText\.includes/.test(src)) {
+    return 'it scans the pattern array in order again';
+  }
+  return true;
+});
+
 check('merging a battery preserves a section\'s own column label', () => {
   const src = extractFn(APP_SRC, 'buildMergedTableHtml');
   const bad = [];
