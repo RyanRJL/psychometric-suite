@@ -74,6 +74,11 @@ const REPORT_TEST_CATALOG = [
    ============================================================ */
 const WAIS4_INTERCORR = {
   source: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1 — Intercorrelations of Subtest, Process, and Composite Scores for All Ages',
+  /* `source` is the table's full printed title, for anyone reading this file.
+     `citation` is what the exported APA note prints: enough to find the table
+     and no more, because a note is read under a clinical table rather than
+     browsed. Both name a published table, and check.js asserts it of each. */
+  citation: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1',
   /* Row/column order EXACTLY as the manual prints it. Nothing is re-sorted:
      a transcription is checkable against the page only while it keeps the
      page's order. */
@@ -213,6 +218,7 @@ const WAIS4_INTERCORR = {
 const WMS4_INTERCORR = {
   adult: {
     source: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.1 — Intercorrelations of Subtest, Process, and Index Scores in the Normative Sample (Adult Battery)',
+    citation: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.1 (Adult Battery)',
     battery: 'Adult',
     ageBand: 'Ages 16-69',
     order: ['LM1', 'LM2', 'VPA1', 'VPA2', 'VPAWR', 'DE1', 'DE1C', 'DE1S', 'DE2', 'DE2C', 'DE2S', 'VR1', 'VR2', 'SA', 'SSP', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
@@ -285,6 +291,7 @@ const WMS4_INTERCORR = {
   },
   older: {
     source: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.2 — Intercorrelations of Subtest, Process, and Index Scores in the Normative Sample (Older Adult Battery)',
+    citation: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.2 (Older Adult Battery)',
     battery: 'Older Adult',
     ageBand: 'Ages 65-90',
     order: ['LM1', 'LM2', 'VPA1', 'VPA2', 'VPAWR', 'VR1', 'VR2', 'SSP', 'AMI', 'VMI', 'IMI', 'DMI'],

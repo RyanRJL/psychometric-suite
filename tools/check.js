@@ -1397,8 +1397,11 @@ check('a guarded sentence still reaches the exported note', () => {
   if (typeof notes === 'string') return notes;
   const bad = [];
   const CASES = [
-    ['prof', { trials: 200000, k: 4, criterion: 'below the 5th percentile' },
-      [/200,000 cases/, /over the 4 measures/, /one below the 5th percentile/]],
+    ['prof', { trials: 200000, k: 4, criterion: 'below the 5th percentile', diffPct: '98%',
+               matrixSource: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1',
+               scoreKind: 'Index scores', scores: 'VCI 105' },
+      [/200,000 Monte Carlo cases/, /over the 4 measures/, /Abnormally low = below the 5th percentile/,
+       /larger than 98% of the population/, /Table 5\.1\./, /Index scores entered: VCI 105/]],
     ['rci', { thresholdLabel: '1.96 SD' }, [/Reliable change threshold = 1\.96 SD/]],
     ['sdi', { thresholdLabel: '1.65 SD' }, [/Significance threshold = 1\.65 SD/]],
     ['pre-estimates', { ciMultiplier: '1.96' }, [/based on 1\.96 . SEE/]]
