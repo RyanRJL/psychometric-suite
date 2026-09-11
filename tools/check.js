@@ -1754,7 +1754,7 @@ const INIT_CALLS = [
   'renderConverter', 'setupPreTabs', 'buildPredictTable',
   'setupPremorbidListeners', 'calcPremorbid', 'calcPredict',
   'calcOpiePredict', 'wireBatteryAutofill', 'wireSdiAutofill',
-  'setupPvtPage', 'refreshAll'
+  'setupPvtPage', 'refreshAll', 'setupTableViewportFit'
 ];
 
 check('every init function app.js defines is also invoked at top level', () => {

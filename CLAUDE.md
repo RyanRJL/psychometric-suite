@@ -170,6 +170,55 @@ Two things that follow, both learned the same way:
 The height cap is fixed px, not `vh`: `body{zoom:0.9}` scales vh-derived lengths
 too, so a vh cap renders 10% shorter than it reads.
 
+**The cap is measured against the window, not fixed.** `fitTableViewports()`
+(`app.js`) reads where the content *below* each box currently ends, sees how far
+past the fold that is, and takes exactly that much off the box. The sum is
+deliberately **relative** rather than modelled: working out the margins, padding
+and control rows under each box would be a second copy of the layout that drifts
+from the real one, and changing a box's `max-height` moves everything below it by
+the same amount and nothing else — so one pass lands exactly, with no iteration.
+The stylesheet's `max-height` is only the no-JS fallback.
+
+Both halves of the zoom split are in that one function: every rect is **visual**
+px, `style.maxHeight` is **layout** px, so the subtraction happens in visual px
+and the result is divided by `pageZoomFactor()` once, at the point of writing.
+`TABLE_VIEWPORT_MIN` is the floor — on a short window the honest answer is that
+the table does not fit, and a 40px sliver is worse than a page that scrolls.
+
+Three things that bit while wiring it, all found by driving the real page:
+
+- **`var`, not `let`, for the three module variables.** The block sits near the
+  end of `app.js`, but `renderBattery()` — which ends in `renderBatteryApa`,
+  which schedules a fit — runs much earlier in the init sequence. A `let` is in
+  the temporal dead zone until its own line runs, so the app threw
+  `Cannot access 'tableViewportPending' before initialization` on boot and every
+  top-level statement after it stopped. `node --check` cannot see it.
+- **The scans re-run on every pass.** `app.js` is a plain script at the top of
+  the document and the five Change Analysis panels are built by an inline script
+  **below** it, so at init there is not one `.change-method-panel` or wrapped
+  table in the DOM. A one-shot scan found nothing and left those four tables on
+  the fallback cap for ever. Both scans are idempotent via a dataset flag.
+- **The `ResizeObserver` watches the TABLE, never the box.** The box's height is
+  what this code writes, so observing it would feed its own output back in.
+
+### `display:flex` on a table cell inflates the row
+
+The Change Analysis rows were 44.2px against the Score Converter's 28px for the
+same information. Padding was part of it; the rest was one declaration.
+`td.row-actions{display:flex}` takes the cell out of the table's box tree — the
+browser wraps it in an anonymous cell — and that anonymous box was setting the
+row height: **40.6px against a tallest real cell of 29.6px**. Proven by toggling
+that single declaration at runtime and watching the row collapse. The cell holds
+one `×` button, so a centred `table-cell` does the same job for nothing.
+
+With that and the padding, rows are **29.8px (Score Tables) and 29.6px (Change
+Analysis)**, against the converter's 28px. **No font size was changed** — the
+text is still 13px, larger than the converter's 12px. The density overrides are
+the one place here that must carry page-scoped selectors *and* `!important`:
+they are overriding `#battery #bat-table tbody td{padding:8px 12px!important}`
+and its Change Analysis counterpart, which nothing unprefixed can reach.
+
+
 **And a scroll box clips anything mounted inside it.** `design-system.js` builds
 each Change Analysis method's inline control bar and inserted it with
 `table.parentNode.insertBefore(bar, table)` — which, once the table was wrapped,

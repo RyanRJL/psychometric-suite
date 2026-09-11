@@ -10734,3 +10734,54 @@ svg.rey-glyph{width:56px;height:56px}
 .table-viewport thead tr:last-child th{
   box-shadow:inset 0 -1px 0 var(--border-soft);
 }
+
+/* ------------------------------------------------------------------
+   TABLE VIEWPORT · DENSITY
+   ------------------------------------------------------------------
+   The Score Converter's full table fits a row into 28px; Score Tables
+   took 42.7px and Change Analysis 44.2px for the same information
+   (measured at 1440x900). The difference is not the text - it is the
+   input boxes and the padding stacked around them: an 8px cell pad
+   above and below a 27.4px input.
+
+   Nothing here changes a font size. The row loses the padding it was
+   not using: cells to 4px, inputs to 3px on a 1.2 line-height. The
+   text stays at 13px, which is larger than the converter's 12px, so
+   a score is no harder to read than it was.
+
+   THESE HAVE TO CARRY PAGE-SCOPED SELECTORS AND !important, which is
+   normally the thing CLAUDE.md warns against. They are overriding
+   `#battery #bat-table tbody td{padding:8px 12px!important}` and its
+   Change Analysis counterpart - both page-scoped and both !important,
+   so nothing unprefixed can reach them. The scope is still the
+   standalone .table-viewport class, so no other page is touched. */
+#battery .table-viewport #bat-table tbody td,
+#change-analysis .table-viewport .input-table tbody td{
+  padding-top:4px !important;
+  padding-bottom:4px !important;
+}
+#battery .table-viewport #bat-table thead th,
+#change-analysis .table-viewport .input-table thead th{
+  padding-top:6px !important;
+  padding-bottom:6px !important;
+}
+#battery .table-viewport #bat-table td input,
+#battery .table-viewport #bat-table td select,
+#change-analysis .table-viewport .input-table td input,
+#change-analysis .table-viewport .input-table td select{
+  padding-top:3px !important;
+  padding-bottom:3px !important;
+  line-height:1.2 !important;
+}
+
+/* `display:flex` on a table cell takes it OUT of the table's box tree - the
+   browser wraps it in an anonymous cell - and on the Change Analysis tables
+   that anonymous box was setting the row height: 40.6px against a tallest
+   real cell of 29.6px. Measured by toggling this one declaration at runtime
+   and watching the row collapse. The cell holds a single × button, so a
+   centred table-cell does the same job with none of the cost. */
+#change-analysis .table-viewport .input-table td.row-actions{
+  display:table-cell !important;
+  text-align:center !important;
+  vertical-align:middle !important;
+}

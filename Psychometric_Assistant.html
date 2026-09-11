@@ -10766,6 +10766,57 @@ svg.rey-glyph{width:56px;height:56px}
 .table-viewport thead tr:last-child th{
   box-shadow:inset 0 -1px 0 var(--border-soft);
 }
+
+/* ------------------------------------------------------------------
+   TABLE VIEWPORT · DENSITY
+   ------------------------------------------------------------------
+   The Score Converter's full table fits a row into 28px; Score Tables
+   took 42.7px and Change Analysis 44.2px for the same information
+   (measured at 1440x900). The difference is not the text - it is the
+   input boxes and the padding stacked around them: an 8px cell pad
+   above and below a 27.4px input.
+
+   Nothing here changes a font size. The row loses the padding it was
+   not using: cells to 4px, inputs to 3px on a 1.2 line-height. The
+   text stays at 13px, which is larger than the converter's 12px, so
+   a score is no harder to read than it was.
+
+   THESE HAVE TO CARRY PAGE-SCOPED SELECTORS AND !important, which is
+   normally the thing CLAUDE.md warns against. They are overriding
+   `#battery #bat-table tbody td{padding:8px 12px!important}` and its
+   Change Analysis counterpart - both page-scoped and both !important,
+   so nothing unprefixed can reach them. The scope is still the
+   standalone .table-viewport class, so no other page is touched. */
+#battery .table-viewport #bat-table tbody td,
+#change-analysis .table-viewport .input-table tbody td{
+  padding-top:4px !important;
+  padding-bottom:4px !important;
+}
+#battery .table-viewport #bat-table thead th,
+#change-analysis .table-viewport .input-table thead th{
+  padding-top:6px !important;
+  padding-bottom:6px !important;
+}
+#battery .table-viewport #bat-table td input,
+#battery .table-viewport #bat-table td select,
+#change-analysis .table-viewport .input-table td input,
+#change-analysis .table-viewport .input-table td select{
+  padding-top:3px !important;
+  padding-bottom:3px !important;
+  line-height:1.2 !important;
+}
+
+/* `display:flex` on a table cell takes it OUT of the table's box tree - the
+   browser wraps it in an anonymous cell - and on the Change Analysis tables
+   that anonymous box was setting the row height: 40.6px against a tallest
+   real cell of 29.6px. Measured by toggling this one declaration at runtime
+   and watching the row collapse. The cell holds a single × button, so a
+   centred table-cell does the same job with none of the cost. */
+#change-analysis .table-viewport .input-table td.row-actions{
+  display:table-cell !important;
+  text-align:center !important;
+  vertical-align:middle !important;
+}
 </style>
 <style data-inlined-from="design-system.css">
 /* =============================================================================
@@ -22555,6 +22606,10 @@ function navigateTo(target, opts){
        stale on arrival is the whole failure this belt-and-braces call closes. It
        is cheap: the simulation is cached on the selection. */
     if (target === 'profile' && typeof renderProfile === 'function') renderProfile();
+    /* Re-fit the scrolling table boxes. A box on a hidden page measures 0
+       and is skipped, so the page being arrived at is the only place its
+       own cap can be computed. */
+    if (typeof refreshTableViewportFit === 'function') refreshTableViewportFit();
     /* The popover is anchored to a control on Score Tables, so it cannot
        survive a page change — its anchor goes with it. */
   };
@@ -25639,6 +25694,9 @@ document.addEventListener('DOMContentLoaded', renderStaticApaNotes);
    measure costs a run. */
 function renderBatteryApa(){
   if (typeof profileScoresChanged === 'function') profileScoresChanged();
+  /* Rows come and go through renderBattery, which ends here — same single
+     hook the Profile page uses, for the same reason. */
+  if (typeof scheduleTableViewportFit === 'function') scheduleTableViewportFit();
   const cls      = document.getElementById('bat-class').value;
   const title    = document.getElementById('bat-title').value || 'Test scores';
   const out      = document.getElementById('bat-apa');
@@ -30430,8 +30488,145 @@ wireSdiAutofill();
 // Performance Validity page
 setupPvtPage();
 
+/* ============================================================
+   TABLE VIEWPORT FIT — the box ends where the window ends
+   ============================================================
+   .table-viewport (styles.css) caps the Score Tables and Change Analysis
+   tables so the table scrolls rather than the page. A fixed cap cannot be
+   right on every machine: 560px leaves a laptop with dead space below the
+   fold on a tall monitor and pushes the add-row buttons off-screen on a
+   short one. So the cap is measured, per box, against the actual window.
+
+   The sum is deliberately RELATIVE rather than modelled. Working out the
+   margins, paddings and control rows that sit below each box would be a
+   second copy of the layout that drifts from the real one. Instead: read
+   where the content below the box currently ENDS, see how far past the
+   fold that is, and take exactly that much off the box. Changing a box's
+   max-height moves everything below it by the same amount and nothing
+   else, so one pass lands exactly - no iteration, no settling.
+
+   BOTH HALVES OF THE ZOOM SPLIT ARE HERE, which is the thing to get right:
+   every measured rect is VISUAL px (body{zoom:0.9} has already been
+   applied), and style.maxHeight is LAYOUT px (the browser applies the zoom
+   itself). The subtraction happens in visual px and the result is divided
+   by pageZoomFactor() once, at the point of writing. Mixing them is silent
+   and systematic - see the popover post-mortem in CLAUDE.md.
+
+   The floor matters as much as the fit. On a short window the honest
+   answer is that the table cannot fit, and a 40px sliver would be worse
+   than useless, so the box stops shrinking at TABLE_VIEWPORT_MIN and the
+   page scrolls the way it always did. */
+const TABLE_VIEWPORT_MIN = 220;   /* layout px — below this, let the page scroll */
+const TABLE_VIEWPORT_GAP = 16;    /* visual px — breathing room under the last control */
+
+/* `var`, DELIBERATELY, and the only three in this neighbourhood. This block
+   sits near the end of app.js, but renderBattery() — which ends in
+   renderBatteryApa, which schedules a fit — is called much earlier in the
+   init sequence. A `let` is in the temporal dead zone until its own line
+   runs, so the app threw `Cannot access 'tableViewportPending' before
+   initialization` on boot and every top-level statement after it stopped.
+   That is the init-tail hazard in CLAUDE.md wearing a new hat, and it was
+   caught by driving the real page rather than by node --check. `var` hoists
+   as undefined, which every reader here already handles. */
+var tableViewportRO = null;
+var tableViewportPanelMO = null;
+var tableViewportPending = null;
+
+function fitTableViewports(){
+  const z = typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1;
+
+  document.querySelectorAll('.table-viewport').forEach(box => {
+    const rect = box.getBoundingClientRect();
+    if (!rect.height) return;               /* the page it lives on is hidden */
+
+    /* Where the content below this box currently ends. The parent is
+       included so a panel's own bottom padding counts; ancestors above it
+       are not, because those run to the footer. */
+    let tail = rect.bottom;
+    const parentRect = box.parentElement && box.parentElement.getBoundingClientRect();
+    if (parentRect && parentRect.height) tail = Math.max(tail, parentRect.bottom);
+    for (let el = box.nextElementSibling; el; el = el.nextElementSibling){
+      const r = el.getBoundingClientRect();
+      if (r.height) tail = Math.max(tail, r.bottom);
+    }
+
+    const over   = tail - (window.innerHeight - TABLE_VIEWPORT_GAP);
+    const target = Math.max(TABLE_VIEWPORT_MIN, Math.round((rect.height - over) / z));
+
+    /* Write only on a real change: an unconditional write on every resize
+       tick is a layout thrash for no visible difference. */
+    const current = parseFloat(box.style.maxHeight);
+    if (!Number.isFinite(current) || Math.abs(current - target) > 1){
+      box.style.maxHeight = target + 'px';
+    }
+  });
+}
+
+function observeTableViewportTables(){
+  if (!tableViewportRO) return;
+  /* The TABLE is observed, never the box: the box's max-height is what this
+     module writes, so observing it would feed its own output straight back
+     in. A table's height changes only when rows are added or removed. */
+  document.querySelectorAll('.table-viewport table').forEach(table => {
+    if (table.dataset.tvObserved) return;
+    table.dataset.tvObserved = '1';
+    tableViewportRO.observe(table);
+  });
+}
+
+function observeChangeMethodPanels(){
+  if (!tableViewportPanelMO) return;
+  /* Switching method tabs shows a different panel without any navigation and
+     without touching a table, so neither navigateTo nor the ResizeObserver
+     fires. The panel's own class is the only thing that changes — the same
+     signal watchMethodPanels reads for the consent card. */
+  document.querySelectorAll('.change-method-panel').forEach(panel => {
+    if (panel.dataset.tvPanelObserved) return;
+    panel.dataset.tvPanelObserved = '1';
+    tableViewportPanelMO.observe(panel, { attributes:true, attributeFilter:['class'] });
+  });
+}
+
+/* RE-SCANNED ON EVERY PASS, NOT ONCE AT INIT. app.js is a plain script at the
+   top of the document and the five Change Analysis panels are built by an
+   inline script BELOW it, so at the moment this module initialises there is
+   not a single .change-method-panel or wrapped table in the DOM. A one-shot
+   scan found nothing, attached nothing, and left those four tables on the
+   stylesheet's fallback cap for ever. Both scans are idempotent (a dataset
+   flag per element), so re-running them costs a querySelectorAll. */
+function refreshTableViewportFit(){
+  observeTableViewportTables();
+  observeChangeMethodPanels();
+  fitTableViewports();
+}
+
+function setupTableViewportFit(){
+  if (typeof ResizeObserver === 'function' && !tableViewportRO){
+    tableViewportRO = new ResizeObserver(() => scheduleTableViewportFit());
+  }
+  if (typeof MutationObserver === 'function' && !tableViewportPanelMO){
+    tableViewportPanelMO = new MutationObserver(() => scheduleTableViewportFit());
+  }
+  window.addEventListener('resize', scheduleTableViewportFit);
+  /* One pass after everything below app.js has run and laid out. */
+  window.addEventListener('load', scheduleTableViewportFit);
+  scheduleTableViewportFit();
+}
+
+function scheduleTableViewportFit(){
+  if (tableViewportPending) cancelAnimationFrame(tableViewportPending);
+  tableViewportPending = requestAnimationFrame(() => {
+    tableViewportPending = null;
+    refreshTableViewportFit();
+  });
+}
+window.fitTableViewports = fitTableViewports;
+
 // Final initialization
 refreshAll();
+
+// Size the scrolling table boxes to the window (see the banner above)
+setupTableViewportFit();
 
 /* ---------- GLOBAL CLEAR — Topbar "New patient" button ----------
    Wipes every tool's session data in one action: battery rows, SDI rows,
