@@ -45,7 +45,7 @@ vm.runInContext(
   fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8') +
     ';globalThis.__EXPORTS = { TOPF_TO_FSIQ, WAIS_COEF, WMS_COEF,' +
     ' OPIE_PRORATED_FSIQ, OPIE_PRORATED_GAI, OPIE_PRORATED_INDEX,' +
-    ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB, WAIS4_INTERCORR,' +
+    ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB, WAIS4_INTERCORR, WMS4_INTERCORR,' +
     ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
@@ -8467,6 +8467,160 @@ check('the four Index scores form a usable, positive-definite matrix', () => {
 });
 
 
+heading('48. WMS-IV Tables 4.1 and 4.2 — the intercorrelation matrices');
+
+/* SAME QUANTITY AS §43, TWO BATTERIES. The Adult battery (Table 4.1, 20 x 20)
+   is normed 16-69; the Older Adult battery (Table 4.2, 12 x 12) is normed
+   65-90 and does not administer Designs, Spatial Addition or the VWMI. Ages
+   65-69 are normed in both, so the age cannot pick the battery - the
+   clinician did, when they chose what to administer.
+
+   The simulation cannot check a transcription. §43 records the mutation that
+   proved it: halving a published cell moved the answer by under half a point
+   and every other check stayed green. So these matrices are pinned the same
+   way - verbatim cells, plus structural properties no single mistyped value
+   can satisfy by accident - and neither pin is the simulation. */
+
+check('both batteries are complete, symmetric-ready and in range', () => {
+  if (typeof D.WMS4_INTERCORR === 'undefined') return 'WMS4_INTERCORR is not defined in data.js';
+  const bad = [];
+  const SIZE = { adult: 20, older: 12 };
+  for (const b of ['adult', 'older']) {
+    const M = D.WMS4_INTERCORR[b];
+    if (!M) { bad.push(b + ' is missing'); continue; }
+    const k = M.order.length;
+    if (k !== SIZE[b]) bad.push(b + ' lists ' + k + ' measures, the manual prints ' + SIZE[b]);
+    const want = k * (k - 1) / 2;
+    const got = Object.keys(M.r).length;
+    if (got !== want) bad.push(b + ' holds ' + got + ' cells, a full lower triangle is ' + want);
+    const pos = {};
+    M.order.forEach((x, i) => { pos[x] = i; });
+    for (const key of Object.keys(M.r)) {
+      const [a, c] = key.split('|');
+      /* One spelling per pair, ROW strictly after COL, or the matrix comes
+         to disagree with itself. */
+      if (pos[a] === undefined || pos[c] === undefined) { bad.push(b + ': ' + key + ' names a measure not in order'); continue; }
+      if (!(pos[a] > pos[c])) bad.push(b + ': ' + key + ' is keyed the wrong way round');
+      const v = M.r[key];
+      if (!(v > -1 && v < 1)) bad.push(b + ': ' + key + ' = ' + v + ' is not a correlation');
+    }
+    for (const x of M.order) if (!M.labels[x]) bad.push(b + ': ' + x + ' has no label');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE VERBATIM PIN, and it is a deliberate duplicate of the data: check.js
+   being the second reader of the printed page is the only thing that catches
+   a mis-keyed digit. The index block of each table, every cell. */
+check('the index-by-index cells are the printed ones', () => {
+  const bad = [];
+  const PRINTED = {
+    adult: { 'VMI|AMI':0.48, 'VWMI|AMI':0.48, 'VWMI|VMI':0.64, 'IMI|AMI':0.84, 'IMI|VMI':0.83,
+             'IMI|VWMI':0.67, 'DMI|AMI':0.83, 'DMI|VMI':0.83, 'DMI|VWMI':0.59, 'DMI|IMI':0.87 },
+    older: { 'VMI|AMI':0.46, 'IMI|AMI':0.90, 'IMI|VMI':0.72, 'DMI|AMI':0.90, 'DMI|VMI':0.72,
+             'DMI|IMI':0.86 }
+  };
+  for (const b of ['adult', 'older']) {
+    const M = D.WMS4_INTERCORR[b];
+    for (const [key, want] of Object.entries(PRINTED[b])) {
+      const got = M.r[key];
+      if (got !== want) bad.push(b + ' ' + key + ' is ' + got + ', the manual prints ' + want);
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE STRUCTURAL PIN. A row or column read off by one, or the two triangles
+   swapped, breaks these; a cell-by-cell pin of the index block would not
+   catch either.
+
+   1. Every subtest correlates more highly with each index it belongs to than
+      with any index it does not. True on both batteries, 0 violations.
+   2. Every corrected cell in the shaded upper triangle is LOWER than the
+      uncorrected cell for the same pair - 18 of 18 adult, 12 of 12 older.
+      That is what a part-whole correction does, so it also proves the two
+      triangles have not been read the wrong way round.
+   3. The corrected cells appear for exactly those subtest-index pairs where
+      the subtest is IN the index. That is the manual stating the composition
+      cell by cell, and it is what the page's own PROF_COMPOSED_OF claims. */
+check('the shape of both tables matches what the manual says they are', () => {
+  const bad = [];
+  const MEMBERS = {
+    adult: { AMI:['LM1','LM2','VPA1','VPA2'], VMI:['DE1','DE2','VR1','VR2'], VWMI:['SA','SSP'],
+             IMI:['LM1','VPA1','DE1','VR1'], DMI:['LM2','VPA2','DE2','VR2'] },
+    older: { AMI:['LM1','LM2','VPA1','VPA2'], VMI:['VR1','VR2'],
+             IMI:['LM1','VPA1','VR1'], DMI:['LM2','VPA2','VR2'] }
+  };
+  for (const b of ['adult', 'older']) {
+    const M = D.WMS4_INTERCORR[b];
+    const pos = {};
+    M.order.forEach((x, i) => { pos[x] = i; });
+    const g = (a, c) => (a === c ? 1 : (pos[a] > pos[c] ? M.r[a + '|' + c] : M.r[c + '|' + a]));
+    const idx = Object.keys(MEMBERS[b]);
+
+    for (const t of M.order) {
+      if (idx.includes(t)) continue;
+      const own = idx.filter(i => MEMBERS[b][i].includes(t));
+      for (const mine of own) {
+        for (const other of idx) {
+          if (own.includes(other)) continue;
+          if (!(g(t, mine) > g(t, other))) {
+            bad.push(b + ': ' + t + ' correlates ' + g(t, mine) + ' with its own ' + mine
+                     + ' but ' + g(t, other) + ' with ' + other);
+          }
+        }
+      }
+    }
+    const corr = M.rCorrectedToComposite || {};
+    for (const [key, v] of Object.entries(corr)) {
+      const [t, i] = key.split('|');
+      if (!(v < g(t, i))) bad.push(b + ': the corrected ' + key + ' (' + v + ') is not below the uncorrected ' + g(t, i));
+      if (!MEMBERS[b][i] || !MEMBERS[b][i].includes(t)) {
+        bad.push(b + ': a corrected cell is printed for ' + key + ', but ' + t + ' is not part of ' + i);
+      }
+    }
+    /* And every membership the page relies on has its corrected cell, so the
+       list cannot quietly gain a subtest the manual does not put there. */
+    for (const i of idx) for (const t of MEMBERS[b][i]) {
+      if (corr[t + '|' + i] === undefined) bad.push(b + ': ' + t + ' is claimed to be part of ' + i + ', but no corrected cell is printed for it');
+    }
+    /* The Mean row is a sum of scaled scores, so it counts the members: the
+       arithmetic the composition was read off in the first place. */
+    for (const i of idx) {
+      const n = MEMBERS[b][i].length;
+      if (Math.abs(M.mean[i] - 10 * n) > 0.5) {
+        bad.push(b + ': ' + i + ' has mean ' + M.mean[i] + ', which is not ' + n + ' subtests summed');
+      }
+    }
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE TWO BATTERIES ARE DIFFERENT SAMPLES, which is the entire argument for
+   keeping them apart rather than collapsing the 12 shared measures into one
+   matrix. §30 asserts the same thing of normDB's reliabilities. */
+check('the batteries disagree on the measures they share', () => {
+  const A = D.WMS4_INTERCORR.adult, O = D.WMS4_INTERCORR.older;
+  const shared = O.order.filter(x => A.order.includes(x));
+  if (shared.length !== 12) return 'the batteries share ' + shared.length + ' measures, expected 12';
+  const gg = M => {
+    const pos = {}; M.order.forEach((x, i) => { pos[x] = i; });
+    return (a, c) => (a === c ? 1 : (pos[a] > pos[c] ? M.r[a + '|' + c] : M.r[c + '|' + a]));
+  };
+  const ga = gg(A), go = gg(O);
+  let differ = 0, total = 0;
+  for (let i = 0; i < shared.length; i++) {
+    for (let j = i + 1; j < shared.length; j++) {
+      total++;
+      if (ga(shared[i], shared[j]) !== go(shared[i], shared[j])) differ++;
+    }
+  }
+  /* If these ever matched throughout, one battery would have been
+     transcribed over the other. */
+  if (differ < total / 2) return 'only ' + differ + ' of ' + total + ' shared cells differ between the batteries';
+  return true;
+});
+
 heading('44. The committed bundle is self-contained');
 
 /* THE BUNDLE'S WHOLE PURPOSE is that the tool works by double-clicking one
@@ -8889,57 +9043,116 @@ check('percentages are recomputed for the current selection, never carried over'
   return bad.length === 0 || bad.join('; ');
 });
 
+/* THE RULE LAYER, DRIVEN PER INSTRUMENT. The page now profiles WAIS-IV and
+   both WMS-IV batteries, and every rule below is per instrument: the
+   composition map, the aliases, the levels and the matrix all change with the
+   tab. profComponents reads profState.instrument, so the stub carries one -
+   setting it is exactly what the page's own tab click does.
+
+   The matrices come from the shipped registry's own `matrix()` closures, with
+   the real data.js globals in scope, rather than from a list restated here:
+   a check that named the matrices itself could not notice a tab pointing at
+   the wrong one. */
+function driveProfRules() {
+  const grab = (marker, close) => {
+    const i = PROF_SRC.indexOf(marker);
+    return PROF_SRC.slice(i, PROF_SRC.indexOf(close, i) + close.length);
+  };
+  const mod = new Function('WAIS4_INTERCORR', 'WMS4_INTERCORR',
+    'const profState = { instrument: null };\n'
+    + grab('const PROF_COMPOSED_OF = {', '\n  };') + '\n'
+    + grab('const PROF_ALIAS = {', '};') + '\n'
+    + grab('const PROF_INSTRUMENTS = [', '\n  ];') + '\n'
+    + extractFn(PROF_SRC, 'profInstrument') + '\n'
+    + extractFn(PROF_SRC, 'profComponents') + '\n'
+    + extractFn(PROF_SRC, 'profConflicts') + '\n'
+    + 'return { PROF_INSTRUMENTS, PROF_COMPOSED_OF, conflicts: profConflicts,'
+    + '         use: id => { profState.instrument = id; } };'
+  )(D.WAIS4_INTERCORR, D.WMS4_INTERCORR);
+  /* Every instrument, its measures and its matrix, in one shape the checks
+     below can loop over. */
+  mod.each = () => mod.PROF_INSTRUMENTS.map(inst => {
+    mod.use(inst.id);
+    const keys = [];
+    inst.levels.forEach(l => l.keys.forEach(k => { if (!keys.includes(k)) keys.push(k); }));
+    return { inst, keys, M: inst.matrix() };
+  });
+  return mod;
+}
+
 /* THE PART-WHOLE RULE, over every pair the picker can offer. A profile must
    never hold a measure and a piece of itself: a composite with its own
    subtest, two composites sharing subtests, or a subtest with its own process
    scores. Driven over the shipped conflict function rather than restated. */
 check('no two measures that overlap can be profiled together', () => {
   let mod;
-  try {
-    const grab = (marker, close) => {
-      const i = PROF_SRC.indexOf(marker);
-      return PROF_SRC.slice(i, PROF_SRC.indexOf(close, i) + close.length);
-    };
-    mod = new Function(
-      grab('const PROF_COMPOSED_OF = {', '\n  };') + '\n'
-      + grab('const PROF_ALIAS = {', '};') + '\n'
-      + grab('const PROF_GROUPS = [', '\n  ];') + '\n'
-      + extractFn(PROF_SRC, 'profComponents') + '\n'
-      + extractFn(PROF_SRC, 'profConflicts') + '\n'
-      + 'return { PROF_GROUPS, PROF_COMPOSED_OF, conflicts: profConflicts };'
-    )();
-  } catch (e) { return 'could not drive the rule: ' + e.message; }
-
-  const all = [];
-  mod.PROF_GROUPS.forEach(g => g.keys.forEach(k => all.push(k)));
+  try { mod = driveProfRules(); } catch (e) { return 'could not drive the rule: ' + e.message; }
   const bad = [];
-  /* Every offered measure must exist in the matrix, or a selection silently
-     loses a row to undefined and the Cholesky sees NaN. */
-  for (const k of all) {
-    if (!D.WAIS4_INTERCORR.order.includes(k)) bad.push(k + ' is offered but is not in Table 5.1');
-  }
-  if (new Set(all).size !== all.length) bad.push('a measure is offered in more than one group');
 
-  /* The cases that must conflict, each a different shape of the same fault. */
-  const MUST = [
-    ['VCI', 'VC', 'a composite and its own subtest'],
-    ['FSIQ', 'VCI', 'two composites sharing subtests'],
-    ['WMI', 'DS', 'a composite and a subtest it holds'],
-    ['DS', 'DSF', 'a subtest and its own process score'],
-    ['WMI', 'DSF', 'a composite and a process score two levels down'],
-    ['BD', 'BDN', 'the same administration rescored']
-  ];
-  for (const [a, b, why] of MUST) {
-    if (!mod.conflicts(a, b)) bad.push(a + ' and ' + b + ' are allowed together — ' + why);
+  /* The cases that must conflict, each a different shape of the same fault,
+     and the ones that must not. WMS-IV brings a shape WAIS-IV does not have:
+     its indices CROSS, so AMI (auditory) and IMI (immediate) share Logical
+     Memory I and can never be profiled together - which is the whole reason
+     that instrument gets two index levels. */
+  const MUST = {
+    wais4: [
+      ['VCI', 'VC', 'a composite and its own subtest'],
+      ['FSIQ', 'VCI', 'two composites sharing subtests'],
+      ['WMI', 'DS', 'a composite and a subtest it holds'],
+      ['DS', 'DSF', 'a subtest and its own process score'],
+      ['WMI', 'DSF', 'a composite and a process score two levels down'],
+      ['BD', 'BDN', 'the same administration rescored']
+    ],
+    wms4: [
+      ['AMI', 'LM1', 'an index and its own subtest'],
+      ['AMI', 'IMI', 'two indices sharing subtests - the modality and delay splits cross'],
+      ['VMI', 'DMI', 'two indices sharing subtests'],
+      ['DE1', 'DE1C', 'a subtest and its own process score'],
+      ['VMI', 'DE1S', 'an index and a process score two levels down'],
+      ['VPA2', 'VPAWR', 'a subtest and its own process score'],
+      ['AMI', 'VPAWR', 'an index and a process score two levels down']
+    ],
+    wms4o: [
+      ['AMI', 'LM1', 'an index and its own subtest'],
+      ['AMI', 'IMI', 'two indices sharing subtests'],
+      ['VMI', 'IMI', 'two indices sharing Visual Reproduction I'],
+      ['VPA2', 'VPAWR', 'a subtest and its own process score']
+    ]
+  };
+  const MAY = {
+    wais4: [['VCI', 'PRI'], ['VCI', 'PSI'], ['BD', 'SI'], ['DSF', 'DSB'], ['CO', 'PCm']],
+    /* VWMI is orthogonal to BOTH index splits - Spatial Addition and Symbol
+       Span sit in no other index - which is why it is offered on each. */
+    wms4:  [['AMI', 'VMI'], ['AMI', 'VWMI'], ['IMI', 'VWMI'], ['IMI', 'DMI'],
+            ['LM1', 'VPA1'], ['DE1C', 'DE1S'], ['SA', 'SSP'], ['LM1', 'DE2']],
+    /* Symbol Span belongs to no index in this battery, so it clashes with
+       none of them - the manual prints no corrected cell for it. */
+    wms4o: [['AMI', 'VMI'], ['IMI', 'DMI'], ['AMI', 'SSP'], ['VMI', 'SSP'], ['LM1', 'VR2']]
+  };
+
+  for (const { inst, keys, M } of mod.each()) {
+    if (!M) { bad.push(inst.id + ' has no matrix'); continue; }
+    /* Every offered measure must exist in that instrument's own matrix, or a
+       selection silently loses a row to undefined and the Cholesky sees NaN. */
+    for (const k of keys) {
+      if (!M.order.includes(k)) bad.push(inst.id + ': ' + k + ' is offered but is not in ' + M.source.slice(0, 60));
+    }
+    mod.use(inst.id);
+    for (const [a, b, why] of (MUST[inst.id] || [])) {
+      if (!mod.conflicts(a, b)) bad.push(inst.id + ': ' + a + ' and ' + b + ' are allowed together — ' + why);
+    }
+    for (const [a, b] of (MAY[inst.id] || [])) {
+      if (mod.conflicts(a, b)) bad.push(inst.id + ': ' + a + ' and ' + b + ' are blocked, but neither contains the other');
+    }
+    /* Symmetry: the rule cannot depend on which was ticked first. */
+    for (const a of keys) for (const b of keys) {
+      if (mod.conflicts(a, b) !== mod.conflicts(b, a)) { bad.push(inst.id + ': the rule is not symmetric for ' + a + '/' + b); break; }
+    }
   }
-  /* And measures that genuinely may sit together must not be blocked. */
-  const MAY = [['VCI', 'PRI'], ['VCI', 'PSI'], ['BD', 'SI'], ['DSF', 'DSB'], ['CO', 'PCm']];
-  for (const [a, b] of MAY) {
-    if (mod.conflicts(a, b)) bad.push(a + ' and ' + b + ' are blocked, but neither contains the other');
-  }
-  /* Symmetry: the rule cannot depend on which was ticked first. */
-  for (const a of all) for (const b of all) {
-    if (mod.conflicts(a, b) !== mod.conflicts(b, a)) { bad.push('the rule is not symmetric for ' + a + '/' + b); break; }
+  /* Every instrument in the registry must carry a MUST list here, or adding a
+     fourth would pass this check without a single case being stated. */
+  for (const { inst } of mod.each()) {
+    if (!MUST[inst.id]) bad.push(inst.id + ' has no conflict cases pinned');
   }
   return bad.length === 0 || bad.join('; ');
 });
@@ -8950,57 +9163,52 @@ check('no two measures that overlap can be profiled together', () => {
    the largest coherent selections. */
 check('every permitted selection is positive definite over the shipped matrix', () => {
   let E, mod;
-  try {
-    E = driveProfileEngine();
-    const grab = (marker, close) => {
-      const i = PROF_SRC.indexOf(marker);
-      return PROF_SRC.slice(i, PROF_SRC.indexOf(close, i) + close.length);
-    };
-    mod = new Function(
-      grab('const PROF_COMPOSED_OF = {', '\n  };') + '\n'
-      + grab('const PROF_ALIAS = {', '};') + '\n'
-      + grab('const PROF_GROUPS = [', '\n  ];') + '\n'
-      + extractFn(PROF_SRC, 'profComponents') + '\n'
-      + extractFn(PROF_SRC, 'profConflicts') + '\n'
-      + 'return { PROF_GROUPS, conflicts: profConflicts };'
-    )();
-  } catch (e) { return 'could not drive it: ' + e.message; }
-  const M = D.WAIS4_INTERCORR;
-  const pos = {};
-  M.order.forEach((x, i) => { pos[x] = i; });
-  const g = (a, b) => (a === b ? 1 : (pos[a] > pos[b] ? M.r[a + '|' + b] : M.r[b + '|' + a]));
-  const build = keys => keys.map(a => keys.map(b => g(a, b)));
-
-  const all = [];
-  mod.PROF_GROUPS.forEach(gr => gr.keys.forEach(k => all.push(k)));
+  try { E = driveProfileEngine(); mod = driveProfRules(); }
+  catch (e) { return 'could not drive it: ' + e.message; }
   const bad = [];
-  for (let i = 0; i < all.length && bad.length < 4; i++) {
-    for (let j = i + 1; j < all.length && bad.length < 4; j++) {
-      if (mod.conflicts(all[i], all[j])) continue;
-      const R = build([all[i], all[j]]);
-      for (const row of R) for (const v of row) if (!Number.isFinite(v)) bad.push(all[i] + '+' + all[j] + ' has a missing correlation');
-      if (!E.choleskyLower(R)) bad.push(all[i] + ' + ' + all[j] + ' is not positive definite');
+  const one = {};
+
+  for (const { inst, keys, M } of mod.each()) {
+    if (!M) { bad.push(inst.id + ' has no matrix'); continue; }
+    mod.use(inst.id);
+    const pos = {};
+    M.order.forEach((x, i) => { pos[x] = i; });
+    const g = (a, b) => (a === b ? 1 : (pos[a] > pos[b] ? M.r[a + '|' + b] : M.r[b + '|' + a]));
+    const build = ks => ks.map(a => ks.map(b => g(a, b)));
+
+    for (let i = 0; i < keys.length && bad.length < 6; i++) {
+      for (let j = i + 1; j < keys.length && bad.length < 6; j++) {
+        if (mod.conflicts(keys[i], keys[j])) continue;
+        const R = build([keys[i], keys[j]]);
+        for (const row of R) for (const v of row) {
+          if (!Number.isFinite(v)) bad.push(inst.id + ': ' + keys[i] + '+' + keys[j] + ' has a missing correlation');
+        }
+        if (!E.choleskyLower(R)) bad.push(inst.id + ': ' + keys[i] + ' + ' + keys[j] + ' is not positive definite');
+      }
+    }
+    /* AND EVERY LEVEL WHOLE, which is the selection the page actually builds
+       when a full battery is on Score Tables. A level is offered as one set,
+       so a set that will not decompose would show "unavailable" with nothing
+       on screen to explain it. */
+    for (const l of inst.levels) {
+      if (l.keys.length < 2) continue;
+      const R = build(l.keys);
+      if (!E.choleskyLower(R)) { bad.push(inst.id + '/' + l.id + ' is not positive definite'); continue; }
+      one[inst.id + '/' + l.id] = E.profileAbnormality(R, { trials: 100000, seed: 12345 }).lowScores[0];
     }
   }
-  /* The two selections a clinician is likeliest to build. */
-  const SETS = {
-    'four Indices': ['VCI', 'PRI', 'WMI', 'PSI'],
-    'ten core subtests': ['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD'],
-    'fifteen subtests': ['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD', 'LN', 'FW', 'CO', 'CA', 'PCm']
-  };
-  const one = {};
-  for (const [name, keys] of Object.entries(SETS)) {
-    const R = build(keys);
-    if (!E.choleskyLower(R)) { bad.push(name + ' is not positive definite'); continue; }
-    one[name] = E.profileAbnormality(R, { trials: 100000, seed: 12345 }).lowScores[0];
-  }
-  /* More measures must mean more abnormality — the whole reason subtests were
-     added. A selection wired to the wrong keys would break the ordering. */
-  if (one['four Indices'] && one['ten core subtests'] && !(one['ten core subtests'] > one['four Indices'])) {
-    bad.push('ten subtests do not show more abnormality than four Indices, which cannot be right');
-  }
-  if (one['ten core subtests'] && one['fifteen subtests'] && !(one['fifteen subtests'] > one['ten core subtests'])) {
-    bad.push('fifteen subtests do not show more abnormality than ten, which cannot be right');
+
+  /* More measures must mean more abnormality — the whole reason subtests are
+     offered at all. A level wired to the wrong keys, or to another
+     instrument's matrix, would break the ordering. */
+  const ORDER = [
+    ['wais4/w4-indices', 'wais4/w4-subtests', 'four Indices against fifteen subtests'],
+    ['wms4/wm-mod', 'wms4/wm-sub', 'three WMS-IV indices against ten subtests'],
+    ['wms4o/wo-mod', 'wms4o/wo-sub', 'two Older Adult indices against seven subtests']
+  ];
+  for (const [small, big, why] of ORDER) {
+    if (one[small] === undefined || one[big] === undefined) { bad.push('a level is missing for ' + why); continue; }
+    if (!(one[big] > one[small])) bad.push(why + ': the larger set shows no more abnormality, which cannot be right');
   }
   return bad.length === 0 || bad.join('; ');
 });
@@ -9017,11 +9225,34 @@ check('each measure is converted on its own metric', () => {
   if (/- 100\) \/ 15|- 10\) \/ 3/.test(counts)) bad.push('a metric is hard-coded into the conversion');
   if (!/mean:100, sd:15/.test(metric)) bad.push('the composite metric is not M 100 / SD 15');
   if (!/mean:10,\s+sd:3/.test(metric)) bad.push('the subtest metric is not M 10 / SD 3');
-  /* Only the five composites take the Index metric. */
-  const comps = /const PROF_COMPOSITES = \[([^\]]*)\]/.exec(PROF_SRC);
-  if (!comps) bad.push('PROF_COMPOSITES is not declared');
-  else for (const c of ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI']) {
-    if (!comps[1].includes("'" + c + "'")) bad.push(c + ' is not treated as a composite');
+  /* WHICH MEASURES TAKE THE INDEX METRIC IS PER INSTRUMENT, since WAIS-IV's
+     composites and WMS-IV's indices share no names. Driven over the shipped
+     registry: every composite named here must be declared, and - the half
+     that actually bites - no subtest may be, which is what would put a
+     scaled 8 through the 100/15 conversion. */
+  if (!/profIsComposite\(/.test(metric)) bad.push('the metric does not ask the instrument which measures are composites');
+  let mod = null;
+  try { mod = driveProfRules(); } catch (e) { bad.push('could not drive the registry: ' + e.message); }
+  if (mod) {
+    const MUST = { wais4: ['VCI', 'PRI', 'WMI', 'PSI'], wms4: ['AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
+                   wms4o: ['AMI', 'VMI', 'IMI', 'DMI'] };
+    for (const { inst, keys } of mod.each()) {
+      for (const c of (MUST[inst.id] || [])) {
+        if (!inst.composites.includes(c)) bad.push(inst.id + ': ' + c + ' is not treated as a composite');
+      }
+      if (!MUST[inst.id]) bad.push(inst.id + ' has no composites pinned');
+      /* A measure the instrument's own matrix shows on a scaled metric must
+         not be listed as a composite. The manual's Mean row settles it: an
+         index there is a SUM of scaled scores and runs well above 10. */
+      const M = inst.matrix();
+      for (const k of keys) {
+        const isComp = inst.composites.includes(k);
+        const m = M && M.mean && M.mean[k];
+        if (!Number.isFinite(m)) continue;
+        if (isComp && m < 15) bad.push(inst.id + ': ' + k + ' is called a composite but is on a scaled metric');
+        if (!isComp && m > 15) bad.push(inst.id + ': ' + k + ' is scored as a subtest but is a composite');
+      }
+    }
   }
   return bad.length === 0 || bad.join('; ');
 });
@@ -9056,11 +9287,32 @@ check('the coarse-scaled-score limitation is stated on screen and in the export'
 check('every score is read from Score Tables and none is entered on the page', () => {
   const bad = [];
   const pull = extractFn(PROF_SRC, 'profPull');
-  const rows = extractFn(PROF_SRC, 'profScoreTableRows');
+  const rows = extractFn(PROF_SRC, 'profScoreTableRowsFor');
   if (!/batteryRows/.test(rows)) bad.push('the page does not read Score Tables rows');
   if (!/typeof batteryRows === 'undefined'/.test(rows)) bad.push('it throws when Score Tables has not initialised');
   if (!/isExample/.test(rows)) bad.push('seeded example rows would be read as if entered');
-  if (!/WAIS-IV/.test(rows)) bad.push('rows from another instrument could be read as WAIS-IV measures');
+  /* THE GROUP KEY DECIDES WHICH INSTRUMENT A ROW BELONGS TO, and it has to,
+     because the two WMS-IV batteries carry identical measure names against
+     different normative samples and different matrices. A row with no group
+     key must be refused rather than guessed at. */
+  if (!/inst\.groupRe\.test\(group\)/.test(rows)) bad.push('rows are not filtered by the instrument’s own group pattern');
+  if (!/if \(!group \|\|/.test(rows)) bad.push('a row with no group key is accepted and could land on any instrument');
+  /* And the patterns must match the database they are filtering. Driven over
+     the shipped normDB: every instrument must claim at least one real group,
+     and no group may answer to two instruments - which is exactly how an
+     Older Adult score could be scored on the Adult matrix. */
+  try {
+    const insts = driveProfRules().PROF_INSTRUMENTS;
+    const claimed = {};
+    for (const g of Object.keys(D.normDB)) {
+      const hits = insts.filter(x => x.groupRe.test(g));
+      if (hits.length > 1) bad.push('normDB group "' + g + '" is claimed by ' + hits.map(h => h.id).join(' and '));
+      if (hits.length === 1) claimed[hits[0].id] = (claimed[hits[0].id] || 0) + 1;
+    }
+    for (const x of insts) {
+      if (!claimed[x.id]) bad.push(x.id + ' matches no group in normDB, so it can never hold a score');
+    }
+  } catch (e) { bad.push('could not drive the instrument patterns: ' + e.message); }
   if (!/profDisabledBy\(/.test(pull)) bad.push('the sync does not apply the part-whole rule');
   /* No score input anywhere on the page: not in the markup, not built by the
      module. An input here would be the second home this redesign removed. */
@@ -9147,35 +9399,34 @@ check('a score typed on Score Tables reaches the page', () => {
    blocked. Asserted over the shipped rule rather than trusted to the list. */
 check('no level can hold two measures that overlap', () => {
   let mod;
-  try {
-    const grab = (marker, close) => {
-      const i = PROF_SRC.indexOf(marker);
-      return PROF_SRC.slice(i, PROF_SRC.indexOf(close, i) + close.length);
-    };
-    mod = new Function(
-      grab('const PROF_COMPOSED_OF = {', '\n  };') + '\n'
-      + grab('const PROF_ALIAS = {', '};') + '\n'
-      + grab('const PROF_GROUPS = [', '\n  ];') + '\n'
-      + extractFn(PROF_SRC, 'profComponents') + '\n'
-      + extractFn(PROF_SRC, 'profConflicts') + '\n'
-      + 'return { PROF_GROUPS, conflicts: profConflicts };'
-    )();
-  } catch (e) { return 'could not drive the rule: ' + e.message; }
+  try { mod = driveProfRules(); } catch (e) { return 'could not drive the rule: ' + e.message; }
   const bad = [];
-  for (const g of mod.PROF_GROUPS) {
-    if (g.keys.length < 2) bad.push(g.id + ' cannot form a profile at all');
-    for (let i = 0; i < g.keys.length; i++) {
-      for (let j = i + 1; j < g.keys.length; j++) {
-        if (mod.conflicts(g.keys[i], g.keys[j])) {
-          bad.push(g.keys[i] + ' and ' + g.keys[j] + ' are offered on the same level but overlap');
+  const seenLevelIds = new Set();
+  for (const { inst } of mod.each()) {
+    mod.use(inst.id);
+    for (const g of inst.levels) {
+      /* Level ids are page state, so two instruments sharing one would put a
+         tab on another instrument's level. */
+      if (seenLevelIds.has(g.id)) bad.push('level id ' + g.id + ' is used by more than one instrument');
+      seenLevelIds.add(g.id);
+      for (let i = 0; i < g.keys.length; i++) {
+        for (let j = i + 1; j < g.keys.length; j++) {
+          if (mod.conflicts(g.keys[i], g.keys[j])) {
+            bad.push(inst.id + ': ' + g.keys[i] + ' and ' + g.keys[j] + ' are offered on the same level but overlap');
+          }
         }
       }
     }
+    /* Every instrument must be able to form at least one profile, or its tab
+       leads to a page that can never compute. */
+    if (!inst.levels.some(g => g.keys.length >= 2)) bad.push(inst.id + ' has no level that can form a profile');
   }
   /* FSIQ contains ten subtests and all four Indices, so it has no level. It
      must not be offered, or the level it joined would be blocked on sight. */
+  mod.use('wais4');
   const all = [];
-  mod.PROF_GROUPS.forEach(g => g.keys.forEach(k => all.push(k)));
+  (mod.PROF_INSTRUMENTS.find(x => x.id === 'wais4') || { levels: [] })
+    .levels.forEach(g => g.keys.forEach(k => all.push(k)));
   if (all.includes('FSIQ')) bad.push('Full Scale IQ is offered, but it overlaps every level');
   if (!/Full Scale IQ contains every other measure/.test(PROF_SRC)) {
     bad.push('its absence is never explained on screen, so it reads as missing data');
@@ -9262,7 +9513,18 @@ check('the APA note carries the criterion, the source and the method', () => {
   const body = note.slice(0, note.indexOf('],'));
   const bad = [];
   if (!/Crawford, Garthwaite & Gault, 2007/.test(body)) bad.push('the note does not cite the method');
-  if (!/Table 5\.1/.test(body)) bad.push('the note does not name the source of the correlations');
+  /* THE SOURCE IS THE MATRIX'S OWN, not a table number written into the note:
+     three matrices are now reachable (WAIS-IV Table 5.1, WMS-IV Tables 4.1
+     and 4.2) and a literal would misstate two of them. So the note must
+     interpolate it, the page must pass it, and every shipped matrix must
+     carry a source that actually names a published table. */
+  if (!/ctx\.matrixSource/.test(body)) bad.push('the note does not name the source of the correlations');
+  if (!/matrixSource:/.test(PROF_SRC)) bad.push('the page never passes the matrix source to the note');
+  try {
+    for (const { inst, M } of driveProfRules().each()) {
+      if (!M || !/Table \d/.test(M.source || '')) bad.push(inst.id + "'s matrix names no published table");
+    }
+  } catch (e) { bad.push('could not read the matrices: ' + e.message); }
   if (!/Monte Carlo/.test(body)) bad.push('the note does not say the base rates are simulated');
   if (!/ctx\.criterion/.test(body)) bad.push('the note does not state which criterion was used');
   if (!/ctx\.k/.test(body)) bad.push('the note does not say how many measures the profile covers');

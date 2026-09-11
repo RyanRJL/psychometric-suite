@@ -5509,6 +5509,25 @@ input[type="number"].ds-age-pop-input{
   overflow: hidden;
   margin-bottom: var(--ds-space-3);
 }
+/* The instrument tabs, above the level row and visually senior to it: the
+   battery is a bigger choice than the level, and the two rows of pills read
+   as one control if they are styled alike. Standalone class names, per the
+   cascade rule - nothing else in either stylesheet touches .prof-inst. */
+.prof-insts{
+  display: flex; flex-wrap: wrap; gap: var(--ds-space-2);
+  padding: 8px 14px; border-bottom: 1px solid var(--ds-border);
+  background: var(--ds-surface-sunken, transparent);
+}
+.prof-inst{
+  font: inherit; font-size: var(--ds-text-sm); padding: 4px 12px;
+  border: 1px solid var(--ds-border-strong); border-radius: var(--ds-radius-full);
+  background: var(--ds-surface); color: var(--ds-text-subtle);
+  cursor: pointer; white-space: nowrap;
+}
+.prof-inst.prof-on{
+  background: var(--ds-text); color: var(--ds-surface);
+  border-color: var(--ds-text); font-weight: 500;
+}
 .prof-strip-head{
   display: flex; align-items: center; justify-content: space-between;
   gap: var(--ds-space-3); flex-wrap: wrap;

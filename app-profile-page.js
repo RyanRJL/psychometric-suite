@@ -25,10 +25,29 @@
    its base rate are the OUTPUT, and the output is what this page exists
    to print.
 
+   THREE INSTRUMENTS, ONE PER TAB. WAIS-IV (Table 5.1), WMS-IV Adult
+   (Table 4.1) and WMS-IV Older Adult (Table 4.2). The two WMS-IV
+   batteries are separate entries rather than one instrument with an age
+   switch: they are different normative samples with different measure
+   lists and different coefficients, ages 65-69 are normed in both, and
+   the clinician already chose between them when they chose what to
+   administer. The group key on the Score Tables row carries that choice,
+   so the tab is read from the data rather than asked for again. Only
+   instruments Score Tables actually holds a score for get a tab, and a
+   lone instrument gets none at all.
+
+   WMS-IV also bends the level rule that WAIS-IV set. Its five indices
+   are not a partition of its subtests - AMI/VMI/VWMI split them by
+   modality and IMI/DMI split the SAME subtests by delay - so AMI and IMI
+   share Logical Memory I and can never be profiled together. It
+   therefore gets two index levels where WAIS-IV needs one. Nothing about
+   the rule changed; an instrument that indexes its subtests twice simply
+   has two conflict-free ways to read them.
+
    NOTHING IS TYPED HERE. Every score is read from Score Tables, live -
-   see profScoreTableRows. The page holds no score of its own, so there
-   is no second place a WAIS-IV score can live and no way for the two to
-   disagree. The measures that went in are a single strip of chips: a
+   see profScoreTableRowsFor. The page holds no score of its own, so there
+   is no second place a WAIS-IV or WMS-IV score can live and no way for
+   the two to disagree. The measures that went in are a single strip of chips: a
    chip turns red when that score met the criterion, so the red chips are
    exactly the ones the headline counted. Clicking a chip drops it out.
 
@@ -44,9 +63,10 @@
    figure for seven measures, so profSimulate keys its cache on the
    selection itself and nothing is carried over.
 
-   THE ARITHMETIC IS NOT HERE. profileAbnormality() and the matrix live
-   in app.js and data.js, verified in check.js sections 42-43 against the
-   paper's Appendix, the exact binomial and all 12 rows of its Table 1.
+   THE ARITHMETIC IS NOT HERE. profileAbnormality() and the matrices live
+   in app.js and data.js, verified in check.js sections 42, 43 and 48 -
+   the engine against the paper's Appendix, the exact binomial and all 12
+   rows of its Table 1; each matrix against its own printed page.
    ===================================================================== */
 (function(){
   'use strict';
@@ -69,22 +89,65 @@
      this reason. Expansion is recursive: WMI holds Digit Span, which
      itself holds the three Digit Span process scores. */
   const PROF_COMPOSED_OF = {
-    VCI:  ['SI', 'VC', 'IN', 'CO'],
-    PRI:  ['BD', 'MR', 'VP', 'FW', 'PCm'],
-    WMI:  ['DS', 'AR', 'LN'],
-    PSI:  ['SS', 'CD', 'CA'],
-    FSIQ: ['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD'],
-    DS:   ['DSF', 'DSB', 'DSS']
+    wais4: {
+      VCI:  ['SI', 'VC', 'IN', 'CO'],
+      PRI:  ['BD', 'MR', 'VP', 'FW', 'PCm'],
+      WMI:  ['DS', 'AR', 'LN'],
+      PSI:  ['SS', 'CD', 'CA'],
+      FSIQ: ['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD'],
+      DS:   ['DSF', 'DSB', 'DSS']
+    },
+    /* WMS-IV, ADULT BATTERY. Its five indices are NOT a partition of its
+       subtests - they cross. AMI and VMI split them by modality, IMI and DMI
+       split the SAME subtests by delay, so AMI and IMI both hold Logical
+       Memory I and can never share a profile. That is not a quirk of this
+       page: it is the part-whole rule meeting an instrument that indexes its
+       subtests twice, and it is why WMS-IV gets two index levels where
+       WAIS-IV needs one.
+
+       Composition is not taken on trust. The manual's own Mean row is a sum
+       of scaled scores, so it counts the subtests in each index: adult AMI
+       40.0 and IMI 40.1 are four subtests each, VWMI 20.0 is two. And the
+       shaded upper triangle prints a corrected coefficient for exactly those
+       pairs where a subtest sits inside an index - LM I has one against AMI
+       and IMI and against nothing else, SA has one against VWMI alone - which
+       is the manual stating the membership cell by cell. check.js drives
+       both rather than restating this list. */
+    wms4: {
+      AMI:  ['LM1', 'LM2', 'VPA1', 'VPA2'],
+      VMI:  ['DE1', 'DE2', 'VR1', 'VR2'],
+      VWMI: ['SA', 'SSP'],
+      IMI:  ['LM1', 'VPA1', 'DE1', 'VR1'],
+      DMI:  ['LM2', 'VPA2', 'DE2', 'VR2'],
+      /* Process scores sit inside the subtest they are scored from, exactly
+         as the three Digit Span process scores do on WAIS-IV. */
+      VPA2: ['VPAWR'],
+      DE1:  ['DE1C', 'DE1S'],
+      DE2:  ['DE2C', 'DE2S']
+    },
+    /* OLDER ADULT BATTERY. Designs, Spatial Addition and the VWMI are not
+       administered, so VMI is the two Visual Reproduction subtests and Symbol
+       Span belongs to no index at all - which the manual confirms by printing
+       no corrected cell for it. */
+    wms4o: {
+      AMI:  ['LM1', 'LM2', 'VPA1', 'VPA2'],
+      VMI:  ['VR1', 'VR2'],
+      IMI:  ['LM1', 'VPA1', 'VR1'],
+      DMI:  ['LM2', 'VPA2', 'VR2'],
+      VPA2: ['VPAWR']
+    }
   };
   /* Block Design No Time Bonus is the SAME administration rescored - the
      matrix puts them at r = .97 - so they are one measure for this
-     purpose even though neither contains the other. */
-  const PROF_ALIAS = { BDN: 'BD' };
+     purpose even though neither contains the other. WMS-IV has no such
+     pair: every process score there is a part, not a rescoring. */
+  const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {} };
 
   function profComponents(key, seen){
-    const k = PROF_ALIAS[key] || key;
+    const inst = profState.instrument;
+    const k = (PROF_ALIAS[inst] || {})[key] || key;
     const out = seen || new Set();
-    const parts = PROF_COMPOSED_OF[k];
+    const parts = (PROF_COMPOSED_OF[inst] || {})[k];
     if (!parts){ out.add(k); return out; }
     parts.forEach(p => profComponents(p, out));
     return out;
@@ -118,19 +181,77 @@
      subtests, say) is one no clinician would run. It is named in the
      footer when Score Tables holds it, so its absence reads as a rule
      rather than as missing data. */
-  const PROF_GROUPS = [
-    { id:'indices',  label:'Indices',        keys:['VCI', 'PRI', 'WMI', 'PSI'] },
-    { id:'subtests', label:'Subtests',
-      keys:['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD', 'LN', 'FW', 'CO', 'CA', 'PCm'] },
-    { id:'process',  label:'Process scores', keys:['BDN', 'DSF', 'DSB', 'DSS'] }
+  const PROF_INSTRUMENTS = [
+    { id:'wais4', label:'WAIS-IV', name:'WAIS-IV',
+      /* The group key is what decides the instrument, never the row title:
+         a custom test called "Vocabulary" is not a WAIS-IV subtest. */
+      groupRe: /WAIS-IV/,
+      composites: ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI'],
+      matrix: () => (typeof WAIS4_INTERCORR !== 'undefined') ? WAIS4_INTERCORR : null,
+      levels: [
+        { id:'w4-indices',  label:'Indices',        keys:['VCI', 'PRI', 'WMI', 'PSI'] },
+        { id:'w4-subtests', label:'Subtests',
+          keys:['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD', 'LN', 'FW', 'CO', 'CA', 'PCm'] },
+        { id:'w4-process',  label:'Process scores', keys:['BDN', 'DSF', 'DSB', 'DSS'] }
+      ] },
+    /* TWO BATTERIES, TWO ENTRIES, because they are two normative samples with
+       two matrices and two measure lists - the separation normDB already
+       makes. Ages 65-69 are normed in both, so the age cannot choose: the
+       battery is whichever group the clinician picked on Score Tables, which
+       is what the group key holds. */
+    { id:'wms4', label:'WMS-IV · Adult battery', name:'WMS-IV',
+      groupRe: /^WMS-IV .*Ages 16-69/,
+      composites: ['AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
+      matrix: () => (typeof WMS4_INTERCORR !== 'undefined') ? WMS4_INTERCORR.adult : null,
+      /* THE INDICES NEED TWO LEVELS. AMI/VMI/VWMI split the battery by
+         modality and IMI/DMI split the same subtests by delay, so the five
+         cannot be profiled together - AMI and IMI share Logical Memory I and
+         Verbal Paired Associates I. Each list below is internally
+         conflict-free, which is the invariant check.js asserts rather than
+         trusting the lists.
+
+         VWMI appears in both because it is orthogonal to each split: Spatial
+         Addition and Symbol Span are in no other index, so it conflicts with
+         nothing on either level and leaving it out would cost a measure for
+         no reason. */
+      levels: [
+        { id:'wm-mod',  label:'Indices by modality',  keys:['AMI', 'VMI', 'VWMI'] },
+        { id:'wm-time', label:'Indices by delay',     keys:['IMI', 'DMI', 'VWMI'] },
+        { id:'wm-sub',  label:'Subtests',
+          keys:['LM1', 'LM2', 'VPA1', 'VPA2', 'DE1', 'DE2', 'VR1', 'VR2', 'SA', 'SSP'] },
+        { id:'wm-proc', label:'Process scores',
+          keys:['VPAWR', 'DE1C', 'DE1S', 'DE2C', 'DE2S'] }
+      ] },
+    { id:'wms4o', label:'WMS-IV · Older Adult battery', name:'WMS-IV',
+      groupRe: /^WMS-IV .*Ages 65-90/,
+      composites: ['AMI', 'VMI', 'IMI', 'DMI'],
+      matrix: () => (typeof WMS4_INTERCORR !== 'undefined') ? WMS4_INTERCORR.older : null,
+      levels: [
+        { id:'wo-mod',  label:'Indices by modality',  keys:['AMI', 'VMI'] },
+        { id:'wo-time', label:'Indices by delay',     keys:['IMI', 'DMI'] },
+        { id:'wo-sub',  label:'Subtests',
+          keys:['LM1', 'LM2', 'VPA1', 'VPA2', 'VR1', 'VR2', 'SSP'] },
+        /* One process score is published for this battery, so this level can
+           never reach PROF_MIN. It is listed anyway: profLevelsHtml hides a
+           level with nothing scored and disables one holding a single
+           measure, which reads as "one is not a profile" rather than as an
+           omission. */
+        { id:'wo-proc', label:'Process scores', keys:['VPAWR'] }
+      ] }
   ];
-  const PROF_COMPOSITES = ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI'];
+  function profInstrument(){
+    return PROF_INSTRUMENTS.find(x => x.id === profState.instrument) || PROF_INSTRUMENTS[0];
+  }
+  function profLevels(){ return profInstrument().levels; }
 
   /* Composites are M 100 / SD 15; everything else is a scaled score,
      M 10 / SD 3. Per measure, not per page: a single conversion would
      score a scaled 8 as z = -6.1 and call every subtest catastrophic. */
+  function profIsComposite(key){
+    return profInstrument().composites.indexOf(key) !== -1;
+  }
   function profMetric(key){
-    return PROF_COMPOSITES.indexOf(key) !== -1
+    return profIsComposite(key)
       ? { mean:100, sd:15, label:'Index', min:40, max:160 }
       : { mean:10,  sd:3,  label:'scaled', min:1,  max:19 };
   }
@@ -183,7 +304,7 @@
      second store: profPull rewrites it wholesale and nothing else ever
      assigns to it. `excluded` is per level and clears when the level
      changes, the levels having no measures in common. */
-  const profState = { criterion:'p5', level:'indices', selected:[], scores:{}, excluded:{} };
+  const profState = { criterion:'p5', instrument:'wais4', level:'w4-indices', selected:[], scores:{}, excluded:{} };
 
   /* Keyed on the SELECTION and the criterion. Scores do not enter the
      simulation, so a score changing on Score Tables must never re-run it
@@ -201,7 +322,7 @@
     return PROF_CRITERIA.find(c => c.id === profState.criterion) || PROF_CRITERIA[2];
   }
   function profMatrixObj(){
-    return (typeof WAIS4_INTERCORR !== 'undefined') ? WAIS4_INTERCORR : null;
+    try { return profInstrument().matrix() || null; } catch (e){ return null; }
   }
   function profLabel(key){
     const M = profMatrixObj();
@@ -210,10 +331,11 @@
   /* An Index is universally known by its acronym and its full name is
      three words long, so the chip carries whichever reads shorter. */
   function profShortLabel(key){
-    return PROF_COMPOSITES.indexOf(key) !== -1 ? key : profLabel(key);
+    return profIsComposite(key) ? key : profLabel(key);
   }
   function profGroup(id){
-    return PROF_GROUPS.find(g => g.id === id) || PROF_GROUPS[0];
+    const L = profLevels();
+    return L.find(g => g.id === id) || L[0];
   }
   function profRestricted(){
     const M = profMatrixObj();
@@ -223,7 +345,7 @@
   /* Any selected measure that is not a composite is a scaled score, and
      the paper's own limitation applies to those - see profCaveatHtml. */
   function profHasScaled(){
-    return profState.selected.some(k => PROF_COMPOSITES.indexOf(k) === -1);
+    return profState.selected.some(k => !profIsComposite(k));
   }
   function profDisabledBy(key){
     for (const s of profState.selected){
@@ -257,7 +379,7 @@
 
   function profSimulate(){
     if (profState.selected.length < PROF_MIN) return null;
-    const key = profState.selected.join(',') + '|' + profCriterion().id;
+    const key = profState.instrument + '|' + profState.selected.join(',') + '|' + profCriterion().id;
     if (profCache[key]) return profCache[key];
     const R = profMatrix();
     if (!R || typeof profileAbnormality !== 'function') return null;
@@ -318,10 +440,13 @@
      Matched on the measure NAME, which is the same string in both files:
      24 of the 28 WAIS-IV names in normDB are Table 5.1 labels verbatim.
      The four that are not are the Longest Span base-rate measures, which
-     have no correlations and correctly cannot be profiled. */
-  function profScoreTableRows(){
+     have no correlations and correctly cannot be profiled. WMS-IV is
+     matched the same way, and its matrix carries normDB's spelling rather
+     than the manual's column heads ("Designs I - Content" for the printed
+     "DE I Content") for exactly this reason: the name is the join. */
+  function profScoreTableRowsFor(inst){
     if (typeof batteryRows === 'undefined' || !Array.isArray(batteryRows)) return {};
-    const M = profMatrixObj();
+    const M = inst.matrix ? inst.matrix() : null;
     if (!M) return {};
     const byName = {};
     M.order.forEach(k => { byName[M.labels[k]] = k; });
@@ -332,13 +457,27 @@
       if (!key) return;
       const v = profNum(r.score);
       if (v === null) return;
-      /* A group key naming another instrument cannot be a WAIS-IV
-         measure however the row is titled. */
+      /* THE GROUP KEY DECIDES, NOT THE ROW TITLE. A row named "Logical
+         Memory I" is a WMS-IV Adult measure only if it was taken from the
+         Ages 16-69 group; the Older Adult battery carries the same measure
+         names against a different normative sample and a different matrix,
+         and a custom test may carry any name at all. A row with no group
+         key cannot be placed and is refused rather than guessed at. */
       const group = (typeof batteryGroupKeyOf === 'function') ? batteryGroupKeyOf(r) : '';
-      if (group && !/WAIS-IV/.test(group)) return;
+      if (!group || !inst.groupRe.test(group)) return;
       out[key] = v;
     });
     return out;
+  }
+  function profScoreTableRows(){
+    return profScoreTableRowsFor(profInstrument());
+  }
+  /* Which instruments Score Tables actually holds something for, in the
+     registry's own order. The tabs are built from this, so an instrument
+     with nothing entered never appears. */
+  function profInstrumentsFound(){
+    return PROF_INSTRUMENTS.map(inst => ({ inst, found:profScoreTableRowsFor(inst) }))
+      .filter(x => Object.keys(x.found).length > 0);
   }
 
   /* Rebuild the selection from Score Tables. Returns the number of
@@ -350,13 +489,22 @@
      change, and it costs nothing. Nothing here writes back - this page
      is a reader of Score Tables, never an editor of it. */
   function profPull(){
+    /* THE INSTRUMENT FIRST, and only when the current one has nothing:
+       a clinician who has chosen a tab keeps it while it holds a score,
+       exactly as they keep a level. Landing on the page with only WMS-IV
+       entered must not show an empty WAIS-IV. */
+    if (!Object.keys(profScoreTableRows()).length){
+      const alt = profInstrumentsFound()[0];
+      if (alt && alt.inst.id !== profState.instrument) profSetInstrument(alt.inst.id);
+    }
     const found = profScoreTableRows();
     /* Fall to the first level that can actually form a profile, so
        landing on the page with only subtests entered does not show an
        empty Indices level. Only when the current level has nothing. */
     if (profAvailable(profState.level, found).length === 0){
-      const alt = PROF_GROUPS.find(g => profAvailable(g.id, found).length >= PROF_MIN)
-               || PROF_GROUPS.find(g => profAvailable(g.id, found).length > 0);
+      const L = profLevels();
+      const alt = L.find(g => profAvailable(g.id, found).length >= PROF_MIN)
+               || L.find(g => profAvailable(g.id, found).length > 0);
       if (alt && alt.id !== profState.level){ profState.level = alt.id; profState.excluded = {}; }
     }
     profState.selected = [];
@@ -369,6 +517,16 @@
     });
     return profState.selected.length;
   }
+  /* Switching instrument resets the level too: a level id belongs to one
+     instrument, and every exclusion was a judgement about a measure in the
+     one being left. */
+  function profSetInstrument(id){
+    if (id === profState.instrument) return;
+    profState.instrument = id;
+    profState.level = profLevels()[0].id;
+    profState.excluded = {};
+  }
+
   /* The measures at a level that Score Tables actually holds a score
      for, in the matrix's own order. */
   function profAvailable(levelId, found){
@@ -506,9 +664,25 @@
     }).join('');
   }
 
+  /* ONE TAB PER INSTRUMENT SCORED, and none at all when only one is - a
+     single tab is a label pretending to be a control. The battery is named
+     on the tab (Adult / Older Adult) because the two are different normative
+     samples that share every measure name, so the tab is the only thing on
+     screen that says which was used. */
+  function profInstrumentsHtml(){
+    const list = profInstrumentsFound();
+    if (list.length < 2) return '';
+    return '<div class="prof-insts">' + list.map(x => {
+      const on = x.inst.id === profState.instrument;
+      return '<button type="button" class="prof-inst' + (on ? ' prof-on' : '') + '"'
+        + ' data-prof-inst="' + x.inst.id + '">' + escapeHtml(x.inst.label)
+        + ' (' + Object.keys(x.found).length + ')</button>';
+    }).join('') + '</div>';
+  }
+
   function profLevelsHtml(){
     const found = profScoreTableRows();
-    return PROF_GROUPS.map(g => {
+    return profLevels().map(g => {
       const n = profAvailable(g.id, found).length;
       if (!n) return '';
       const on = g.id === profState.level;
@@ -592,10 +766,13 @@
     const avail = profAvailable(profState.level, found);
     const bits = [profState.selected.length + ' of ' + avail.length + ' included · read from Score Tables, '
       + 'nothing is typed on this page'];
-    if (PROF_GROUPS.length > 1){
-      bits.push('an Index and its own subtests cannot share a profile, so each level is profiled separately');
+    if (profLevels().length > 1){
+      bits.push('an index and its own subtests cannot share a profile, so each level is profiled separately');
     }
-    if (found.FSIQ !== undefined){
+    /* An absence with no stated reason reads as missing data, so each
+       measure the instrument deliberately withholds says why, and only
+       while Score Tables actually holds it. */
+    if (profState.instrument === 'wais4' && found.FSIQ !== undefined){
       bits.push('Full Scale IQ contains every other measure, so it cannot join a profile');
     }
     return '<div class="prof-foot"><span>' + escapeHtml(bits.join(' · ')) + '</span>'
@@ -612,10 +789,11 @@
     /* Nothing to profile: the honest state is a pointer at where scores
        live, not an empty set of cards. */
     if (!Object.keys(found).length){
+      const names = [...new Set(PROF_INSTRUMENTS.map(x => x.name))].join(' or ');
       out.innerHTML = '<div class="prof-empty">'
-        + '<div class="prof-empty-h">No WAIS-IV scores yet</div>'
+        + '<div class="prof-empty-h">No ' + escapeHtml(names) + ' scores yet</div>'
         + '<p class="prof-empty-p">A profile is built from scores already entered on Score Tables. '
-        + 'Add a WAIS-IV measure there and it appears here.</p>'
+        + 'Add a ' + escapeHtml(names) + ' measure there and it appears here.</p>'
         + '<button class="btn" type="button" data-prof-goto="battery">Go to Score Tables</button></div>';
       renderProfileApa();
       return;
@@ -627,6 +805,7 @@
     const complete = !!(counts && counts.complete && res);
 
     let html = '<div class="prof-strip">'
+      + profInstrumentsHtml()
       + '<div class="prof-strip-head">'
         + '<span class="prof-lvls">' + profLevelsHtml() + '</span>'
         + '<span class="prof-crit">Abnormal means <select id="prof-criterion" '
@@ -694,12 +873,15 @@
       body += '<tr><td>' + escapeHtml(label) + '</td><td class="num">' + n + '</td>'
         + '<td class="num">' + (n === 0 ? '—' : profFmtPct(pct)) + '</td></tr>';
     }
+    const inst = profInstrument();
+    const M = profMatrixObj();
     const scoreLine = profState.selected
       .map(k => profLabel(k) + ' ' + profNum(profState.scores[k]))
       .join(', ');
     out.innerHTML =
       '<div class="apa-table-num">Table 1</div>'
-      + '<div class="apa-table-title">Number of abnormal WAIS-IV findings and their base rates</div>'
+      + '<div class="apa-table-title">Number of abnormal ' + escapeHtml(inst.name)
+        + ' findings and their base rates</div>'
       + '<table class="apa-table"><thead><tr>'
       + '<th>Finding</th><th class="num">Number observed</th><th class="num">Base rate</th>'
       + '</tr></thead><tbody>' + body + '</tbody></table>'
@@ -707,8 +889,10 @@
           ? apaNoteHtml('prof', { criterion:c.label, pct:c.pct, diffPct:c.diffPct, trials:res.trials, scores:scoreLine,
                                   k:profState.selected.length,
                                   metric:profHasScaled() ? 'scaled scores among them' : 'Index scores',
+                                  scoreKind:profHasScaled() ? 'Scores' : 'Index scores',
                                   coarse:profHasScaled(),
-                                  restricted:profRestricted().map(profLabel).join(', ') })
+                                  restricted:profRestricted().map(profLabel).join(', '),
+                                  matrixSource:(M && M.source) || '' })
           : '');
   }
 
@@ -727,9 +911,14 @@
   /* ---------- wiring ---------- */
   function setupProfile(){
     section.addEventListener('click', e => {
-      const t = e.target.closest ? e.target.closest('[data-prof-level],[data-prof-chip],[data-prof-goto]') : null;
+      const t = e.target.closest
+        ? e.target.closest('[data-prof-inst],[data-prof-level],[data-prof-chip],[data-prof-goto]') : null;
       if (!t) return;
-      if (t.dataset.profLevel){
+      if (t.dataset.profInst){
+        if (t.dataset.profInst === profState.instrument) return;
+        profSetInstrument(t.dataset.profInst);
+        renderProfile();
+      } else if (t.dataset.profLevel){
         if (t.dataset.profLevel === profState.level) return;
         profState.level = t.dataset.profLevel;
         profState.excluded = {};   // the levels share no measures
