@@ -3439,7 +3439,15 @@ const APA_NOTES = {
        and reads exactly as it did, while the mirror can drop only the half
        that needs the criterion - which the selector above the note states. */
     ctx.criterion ? `An abnormally low score is one ${ctx.criterion}.` : '',
-    'Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.',
+    /* THE SAME CRITERION, TWO-TAILED - the paper's program applies the
+       selected criterion to differences and deviations as well, so this
+       sentence has to follow the selector rather than state 95% whatever it
+       is set to. Guarded on the VALUE, and the ungated half still names the
+       two-tailed convention, so a caller with no context (the on-screen
+       mirror) states the method without printing a hole. */
+    ctx.diffPct
+      ? `Differences and deviations are two-tailed and abnormal when larger than ${ctx.diffPct} of the population shows, regardless of direction.`
+      : 'Differences and deviations are two-tailed and abnormal when larger than the same percentage of the population shows, regardless of direction.',
     'Intercorrelations are the all-ages values of WAIS-IV Technical and Interpretive Manual (GB), Table 5.1.',
     /* A profile mixing 16-69 measures with 16-90 ones is reading part of its
        covariance structure off a narrower sample. The exported table has to

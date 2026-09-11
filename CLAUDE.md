@@ -1407,6 +1407,33 @@ must conflict and five that must not, asserts the rule is symmetric, and — sep
 asserts **no two measures on the same level overlap** and that FSIQ is on none of them. That
 second check is what makes the level list safe to edit.
 
+#### One criterion, three cards
+
+The five entries in `PROF_CRITERIA` are the five rows of the paper's Tables 2 and 3
+verbatim (15.9th / 10th / 5th / 2nd / 1st), and 5% is the default because the paper says
+so in both table notes: *"We define abnormality as a score falling below the 5th
+percentile, and for this reason we have presented these results in bold."* The paper's
+generic program offers ten criteria, adding 1.5 SD (6.6th) and 2 SD (2.28th); the five
+here are the ones its published tables use, so every one of them is citable.
+
+**The criterion also governs differences and deviations, and for a while it did not.**
+`PROF_DIFF_Z` was a page-level `1.960`, so the low-score card followed the selector while
+the other two stayed at 5% whatever it was set to. The paper's program does the opposite:
+*"the criterion selected by the user to define an abnormally low score is also used to
+define abnormally large pairwise differences and abnormally large deviations… a difference
+(or deviation) that is exceeded by less than 5% of the normal population, regardless of
+sign."* Each criterion now carries its own `diffZ`, the deviate cutting the **same** tail
+area in two halves — `Φ⁻¹(1 − Φ(z)/2)` — and `diffPct` (84.1 / 90 / 95 / 98 / 99%), which
+is the wording the cards and the exported note use.
+
+**At the default the two readings are identical**, which is exactly why nothing on screen
+showed the fault: only a clinician who moved the selector ever saw a 1%-criterion count of
+low scores reported beside 5%-criterion counts of differences, under one note claiming one
+criterion. `check.js` §45 pins the relation arithmetically rather than against a printed
+figure — only the 5% row appears in the paper for all three questions — and asserts the
+value reaches `profSimulate` and both counts in `profCounts`, so a page-level constant
+cannot come back.
+
 #### Metric is per measure, not per page
 
 Composites are M 100 / SD 15; every subtest and process score is scaled M 10 / SD 3. One

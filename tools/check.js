@@ -8804,7 +8804,62 @@ check('the page computes nothing of its own', () => {
   for (const [pct, z] of [['5th', '-1.645'], ['10th', '-1.282'], ['15.9th', '-1.0']]) {
     if (!PROF_SRC.includes(z)) bad.push('the ' + pct + '-percentile criterion is not ' + z + ' as the paper states');
   }
-  if (!/1\.960/.test(PROF_SRC)) bad.push('the two-tailed difference criterion is not 1.960');
+  if (!/diffZ:1\.960/.test(PROF_SRC)) bad.push('the 5th-percentile two-tailed difference criterion is not 1.960');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE DIFFERENCE CRITERION FOLLOWS THE SELECTOR, which is what the paper's
+   own program does: "For simplicity, the criterion selected by the user to
+   define an abnormally low score is also used to define abnormally large
+   pairwise differences and abnormally large deviations from individuals' mean
+   scores... a difference (or deviation) that is exceeded by less than 5% of
+   the normal population, regardless of sign."
+
+   It shipped hard-coded at 1.960, so the low-score card followed the selector
+   and the other two cards stayed at 5% whatever it was set to - at the 1st
+   percentile the exported table reported a 1%-criterion count of low scores
+   beside 5%-criterion counts of differences, under one note claiming one
+   criterion. At the default the two readings agree exactly, which is why
+   nothing on screen showed it.
+
+   Pinned as arithmetic rather than against a printed figure: the two-tailed
+   deviate must cut the SAME tail area the low-score deviate cuts in one tail,
+   so diffZ = Phi-inverse(1 - Phi(z)/2). Only the 5% row appears in the paper
+   (its Tables 4-7 tabulate differences at 25/15/10/<5/2/1%), so the rest are
+   held by the relation, not by a number typed twice. */
+check('the difference criterion follows the low-score criterion (Crawford et al., 2007)', () => {
+  const inv = (p) => {
+    let lo = -6, hi = 6;
+    for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2; if (normCDF(m) < p) lo = m; else hi = m; }
+    return (lo + hi) / 2;
+  };
+  const rows = [...PROF_SRC.matchAll(
+    /\{\s*id:'([a-z0-9]+)'[^}]*?z:(-?[\d.]+)[^}]*?diffZ:([\d.]+),\s*diffPct:'([\d.]+)%'/g)];
+  if (rows.length !== 5) return 'found ' + rows.length + ' criteria with a diffZ, expected 5';
+  const bad = [];
+  for (const [, id, zs, ds, ps] of rows) {
+    const z = parseFloat(zs), diffZ = parseFloat(ds), tail = normCDF(z);
+    const want = inv(1 - tail / 2);
+    if (Math.abs(diffZ - want) > 0.0015) {
+      bad.push(id + ': diffZ ' + diffZ + ' cuts a different tail from z ' + z + ' (needs ' + want.toFixed(4) + ')');
+    }
+    /* The words on the card and in the exported note, which must agree with
+       the deviate they describe: a difference is abnormal when it exceeds
+       (100 - p)% of the population. */
+    const wantPct = 100 - tail * 100;
+    if (Math.abs(parseFloat(ps) - wantPct) > 0.06) {
+      bad.push(id + ': the card says "' + ps + '%" where the criterion is ' + wantPct.toFixed(1) + '%');
+    }
+  }
+  /* And it has to REACH the simulation and the patient's own counts, or the
+     table would be one criterion and the note another. */
+  if (/PROF_DIFF_Z/.test(PROF_SRC)) bad.push('a page-level constant still overrides the per-criterion value');
+  const sim = extractFn(PROF_SRC, 'profSimulate');
+  if (!/diffZ:\s*c\.diffZ/.test(sim)) bad.push('the simulation does not take the criterion\'s diffZ');
+  const cnt = extractFn(PROF_SRC, 'profCounts');
+  if ((cnt.match(/c\.diffZ/g) || []).length !== 2) {
+    bad.push("the patient's pairwise and deviation counts do not both use the criterion's diffZ");
+  }
   return bad.length === 0 || bad.join('; ');
 });
 

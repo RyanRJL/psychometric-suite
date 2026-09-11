@@ -135,14 +135,47 @@
       : { mean:10,  sd:3,  label:'scaled', min:1,  max:19 };
   }
 
+  /* THE FIVE ROWS OF THE PAPER'S OWN TABLES 2 AND 3, in its own order:
+     "a range of (increasingly stringent) definitions of abnormality were
+     applied, ranging from a score that was more than one standard deviation
+     below the mean (i.e., below the 15.9th percentile) to a score that fell
+     below the 1st percentile." The default is 5%, which is the two statements
+     the paper makes in both table notes: "We define abnormality as a score
+     falling below the 5th percentile, and for this reason we have presented
+     these results in bold."
+
+     `diffZ` IS THE SAME CRITERION, TWO-TAILED, and it follows the selector
+     rather than sitting at 1.960 for every row - the paper's program does
+     exactly this: "For simplicity, the criterion selected by the user to
+     define an abnormally low score is also used to define abnormally large
+     pairwise differences and abnormally large deviations from individuals'
+     mean scores. For example, if an abnormally low score is defined as a
+     score falling below the 5th percentile, then an abnormally large pairwise
+     difference (or deviation) is defined as a difference (or deviation) that
+     is exceeded by less than 5% of the normal population, regardless of sign."
+
+     So `diffZ` is the deviate cutting the SAME tail area in two halves,
+     Phi-inverse(1 - p/2) where p = Phi(z) is the low-score tail. It is a
+     stored constant rather than a derivation because each value is a standard
+     normal deviate anyone can check against a table, and because the pairing
+     is the thing under test - deriving it here and in check.js would be one
+     formula agreeing with itself. The arithmetic, to 4 dp:
+
+       z -1.0    p 15.8655%  ->  1.4101   (tail 84.1% of the population)
+       z -1.282  p  9.9921%  ->  1.6452                    90%
+       z -1.645  p  4.9985%  ->  1.9601                    95%   <- the paper's
+       z -2.054  p  1.9988%  ->  2.3266                    98%
+       z -2.326  p  1.0009%  ->  2.5755                    99%
+
+     `diffPct` is that tail as the percentage the difference must EXCEED, which
+     is what the cards and the exported note say in words. */
   const PROF_CRITERIA = [
-    { id:'sd1', label:'below 1 SD (15.9th percentile)', z:-1.0,   pct:'15.9th' },
-    { id:'p10', label:'below the 10th percentile',      z:-1.282, pct:'10th' },
-    { id:'p5',  label:'below the 5th percentile',       z:-1.645, pct:'5th' },
-    { id:'p2',  label:'below the 2nd percentile',       z:-2.054, pct:'2nd' },
-    { id:'p1',  label:'below the 1st percentile',       z:-2.326, pct:'1st' }
+    { id:'sd1', label:'below 1 SD (15.9th percentile)', z:-1.0,   pct:'15.9th', diffZ:1.410, diffPct:'84.1%' },
+    { id:'p10', label:'below the 10th percentile',      z:-1.282, pct:'10th',   diffZ:1.645, diffPct:'90%' },
+    { id:'p5',  label:'below the 5th percentile',       z:-1.645, pct:'5th',    diffZ:1.960, diffPct:'95%' },
+    { id:'p2',  label:'below the 2nd percentile',       z:-2.054, pct:'2nd',    diffZ:2.326, diffPct:'98%' },
+    { id:'p1',  label:'below the 1st percentile',       z:-2.326, pct:'1st',    diffZ:2.576, diffPct:'99%' }
   ];
-  const PROF_DIFF_Z = 1.960;   // two-tailed; a large difference either way is the finding
   const PROF_TRIALS = 200000;
   const PROF_MIN = 2;          // one measure is not a profile
 
@@ -229,7 +262,7 @@
     const R = profMatrix();
     if (!R || typeof profileAbnormality !== 'function') return null;
     const c = profCriterion();
-    const res = profileAbnormality(R, { lowZ:c.z, diffZ:PROF_DIFF_Z, trials:PROF_TRIALS });
+    const res = profileAbnormality(R, { lowZ:c.z, diffZ:c.diffZ, trials:PROF_TRIALS });
     if (res) profCache[key] = res;
     return res;
   }
@@ -262,7 +295,7 @@
     let pair = 0;
     for (let i = 0; i < keys.length; i++){
       for (let j = i + 1; j < keys.length; j++){
-        const t = PROF_DIFF_Z * Math.sqrt(2 - 2 * R[i][j]);
+        const t = c.diffZ * Math.sqrt(2 - 2 * R[i][j]);
         if (Math.abs(z[i] - z[j]) > t) pair++;
       }
     }
@@ -272,7 +305,7 @@
     if (means){
       const mean = z.reduce((a, b) => a + b, 0) / keys.length;
       z.forEach((v, i) => {
-        const t = PROF_DIFF_Z * Math.sqrt(1 + means.grandMean - 2 * means.rowMean[i]);
+        const t = c.diffZ * Math.sqrt(1 + means.grandMean - 2 * means.rowMean[i]);
         if (Math.abs(mean - v) > t) dev++;
       });
     }
@@ -615,10 +648,10 @@
             'Scores ' + c.label + '. Across ' + k + ' correlated measures, showing one is far more common than the criterion alone suggests.',
             counts.low, counts.k, res.lowScores, counts.k, 'scores', 'score')
         + profCardHtml('Abnormal pairwise differences',
-            'Differences between any two of the ' + k + ' measures larger than 95% of the population shows, regardless of direction.',
+            'Differences between any two of the ' + k + ' measures larger than ' + c.diffPct + ' of the population shows, regardless of direction.',
             counts.pair, counts.pairs, res.pairwise, counts.pairs, 'pairs', 'pair')
         + profCardHtml('Abnormal deviations from own mean',
-            'Scores differing from this patient’s own mean across the set by more than 95% of the population does.',
+            'Scores differing from this patient’s own mean across the set by more than ' + c.diffPct + ' of the population does.',
             counts.dev, counts.k, res.deviations, counts.k, 'scores', 'score')
         + '</div>';
       html += profCaveatHtml();
@@ -671,7 +704,7 @@
       + '<th>Finding</th><th class="num">Number observed</th><th class="num">Base rate</th>'
       + '</tr></thead><tbody>' + body + '</tbody></table>'
       + (typeof apaNoteHtml === 'function'
-          ? apaNoteHtml('prof', { criterion:c.label, pct:c.pct, trials:res.trials, scores:scoreLine,
+          ? apaNoteHtml('prof', { criterion:c.label, pct:c.pct, diffPct:c.diffPct, trials:res.trials, scores:scoreLine,
                                   k:profState.selected.length,
                                   metric:profHasScaled() ? 'scaled scores among them' : 'Index scores',
                                   coarse:profHasScaled(),
