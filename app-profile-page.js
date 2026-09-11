@@ -892,7 +892,11 @@
                                   scoreKind:profHasScaled() ? 'Scores' : 'Index scores',
                                   coarse:profHasScaled(),
                                   restricted:profRestricted().map(profLabel).join(', '),
-                                  matrixSource:(M && M.source) || '' })
+                                  /* The SHORT form - see `citation` in data.js.
+                                     Falls back to the full title rather than to
+                                     nothing, so a matrix without one still names
+                                     its table. */
+                                  matrixSource:(M && (M.citation || M.source)) || '' })
           : '');
   }
 

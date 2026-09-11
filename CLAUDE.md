@@ -1422,9 +1422,24 @@ Score Tables, so the name is the join. The manual's abbreviations are the keys.
 
 Two pieces of on-screen text stopped being literals when the second instrument arrived,
 and both would otherwise have misstated two pages in three: the APA note's source sentence
-now interpolates the **matrix's own `source`** (§45 asserts every shipped matrix names a
+now interpolates the **matrix's own citation** (§45 asserts every shipped matrix names a
 published table), and "Index scores entered" becomes "Scores entered" on a subtest or
 process-score profile.
+
+Each matrix carries **both** `source` and `citation` — the full printed title for anyone
+reading `data.js`, and the short form the exported note prints (`WMS-IV Technical and
+Interpretive Manual (GB), Table 4.1 (Adult Battery)`). The page passes `citation || source`,
+so a matrix without one still names its table.
+
+#### The note is written as definitions, not prose
+
+`prof` ran to **136 words** against 15 for the SD Index — most of it restating in a sentence
+what `=` states in a character, plus the matrix's full 25-word printed title. It is now ~70
+words of prose (the rest is the score list, which is data), in the `sdi` / `pre-predict`
+shape: `Base rate = …`, `Abnormally low = …`, `Abnormal difference or deviation = …`,
+`Intercorrelations: …`. **Every claim survived the trim; only the joining words went**, so
+nothing here may be shortened further by dropping a clause — a note is read under a clinical
+table, where length is what stops it being read at all, but each sentence is load-bearing.
 
 #### One rule, three shapes of the same fault
 
