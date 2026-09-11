@@ -3439,13 +3439,33 @@ const APA_NOTES = {
        and reads exactly as it did, while the mirror can drop only the half
        that needs the criterion - which the selector above the note states. */
     ctx.criterion ? `An abnormally low score is one ${ctx.criterion}.` : '',
-    'Differences and deviations are two-tailed and abnormal when larger than 95% of the population shows, regardless of direction.',
-    'Intercorrelations are the all-ages values of WAIS-IV Technical and Interpretive Manual (GB), Table 5.1.',
+    /* THE SAME CRITERION, TWO-TAILED - the paper's program applies the
+       selected criterion to differences and deviations as well, so this
+       sentence has to follow the selector rather than state 95% whatever it
+       is set to. Guarded on the VALUE, and the ungated half still names the
+       two-tailed convention, so a caller with no context (the on-screen
+       mirror) states the method without printing a hole. */
+    ctx.diffPct
+      ? `Differences and deviations are two-tailed and abnormal when larger than ${ctx.diffPct} of the population shows, regardless of direction.`
+      : 'Differences and deviations are two-tailed and abnormal when larger than the same percentage of the population shows, regardless of direction.',
+    /* WHICH MATRIX, IN THE MATRIX'S OWN WORDS. The page profiles WAIS-IV and
+       either WMS-IV battery, and the two WMS-IV batteries share every measure
+       name against different normative samples - so a note that named one
+       table unconditionally would misstate the source on two pages out of
+       three. The string is the matrix's own `source`, guarded on its value,
+       with a sourceless fallback that claims no table at all. */
+    ctx.matrixSource
+      ? `Intercorrelations are those of ${ctx.matrixSource}.`
+      : 'Intercorrelations are the published normative-sample values for the battery profiled.',
     /* A profile mixing 16-69 measures with 16-90 ones is reading part of its
        covariance structure off a narrower sample. The exported table has to
        carry that, because nothing else on the page travels with it. */
     ctx.restricted ? `${ctx.restricted} ${ctx.restricted.indexOf(',') === -1 ? 'is' : 'are'} normed for ages 16:0-69:11 only; above that age the correlations used for ${ctx.restricted.indexOf(',') === -1 ? 'it' : 'them'} come from a narrower sample.` : '',
-    ctx.scores ? `Index scores entered: ${ctx.scores}.` : '',
+    /* "Index scores entered" is false on a subtest or process-score profile,
+       and the note has to name what it lists. ctx.scoreKind carries the word;
+       with no context at all the neutral one is used, since the sentence is
+       dropped anyway when there are no scores to list. */
+    ctx.scores ? `${ctx.scoreKind || 'Scores'} entered: ${ctx.scores}.` : '',
     /* NOT a percentile. A base rate here counts PEOPLE showing a number of
        findings, not scores below a point, and the two get confused precisely
        because both are printed as percentages. */

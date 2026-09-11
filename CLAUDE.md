@@ -280,7 +280,7 @@ the page is branded Iverson (2001) in six places.
 
 | File | Lines | Role |
 |---|---|---|
-| `data.js` | 1.8k | All constants, coefficients, lookup tables and `normDB`. Plain script, defines globals. Loads first. |
+| `data.js` | 2.6k | All constants, coefficients, lookup tables and `normDB`. Plain script, defines globals. Loads first. |
 | `app.js` | 8.2k | Every calculator. 218 top-level functions, 11 section banners. |
 | `design-system.js` | 1.1k | Page titles, microcopy, FOUC handling, the inline control bars. |
 | `app-effectsize-page.js` | 0.8k | The effect-size calculator, self-contained. |
@@ -289,7 +289,7 @@ the page is branded Iverson (2001) in six places.
 | `styles.css` | 9.2k | Original stylesheet. |
 | `design-system.css` | 4.5k | Later restyling layer that overrides the above. |
 | `service-worker.js` | 80 | Cache-first PWA worker. |
-| `tools/check.js` | 4.7k | Headless numeric regression checks. Larger than every source file but `app.js`, `index.html` and the two stylesheets — the pinned source tables account for most of it. |
+| `tools/check.js` | 9.6k | Headless numeric regression checks. Larger than every source file but `app.js`, `index.html` and the two stylesheets — the pinned source tables account for most of it. |
 
 The **Report Writer** — a page that generated descriptive narrative prose from
 entered scores, ~2.3k lines in `app.js` plus ~2.0k in `design-system.js` — was
@@ -1371,6 +1371,61 @@ was administered and R is the sub-matrix over exactly those. **What cannot be do
 quote a ten-measure figure for seven measures**, which is why `profSimulate` keys its
 cache on `profState.selected.join(',')` — §45 fails if that keying is removed.
 
+#### Three instruments: WAIS-IV and both WMS-IV batteries
+
+`WMS4_INTERCORR` (`data.js`) holds WMS-IV Technical Manual Tables 4.1 (Adult, 20 × 20) and
+4.2 (Older Adult, 12 × 12), the same quantity as `WAIS4_INTERCORR` and with the same
+shaded-upper-triangle split — uncorrected below the diagonal, corrected above.
+
+**Two batteries, two entries, not one instrument with an age switch.** They are different
+normative samples: the Older Adult battery does not administer Designs, Spatial Addition
+or the VWMI, and ages 65-69 are normed in **both** with different coefficients (Visual
+Reproduction I against VMI is .79 adult and .91 older). Age cannot choose. The clinician
+chose when they decided what to administer, and normDB records that in the group key
+(`· Ages 16-69` / `· Ages 65-90`) — which is what `profScoreTableRowsFor` reads. Same
+`separateBattery` rule normDB already applies; §45 drives the patterns over the shipped
+`normDB` and fails if any group is claimed by two instruments or by none.
+
+**`PROF_INSTRUMENTS` is the registry** — matrix, group pattern, composites and levels per
+instrument. A tab appears only for an instrument Score Tables holds a score for, and a
+lone instrument gets no tab at all: one tab is a label pretending to be a control.
+
+**WMS-IV needs two index levels, and that is the part-whole rule meeting a different
+instrument, not an exception to it.** WAIS-IV's four Indices partition its subtests.
+WMS-IV's five do not: AMI/VMI/VWMI split the battery by modality and IMI/DMI split *the
+same subtests* by delay, so AMI and IMI both hold Logical Memory I and can never share a
+profile. Hence **Indices by modality** and **Indices by delay**. VWMI sits on both because
+it is orthogonal to each split — Spatial Addition and Symbol Span are in no other index —
+and leaving it off one would cost a measure for no reason.
+
+**The composition was read off the manual, not assumed.** Two independent readings agree
+and §48 drives both: the Mean row is a **sum of scaled scores**, so it counts the members
+(adult AMI 40.0 and IMI 40.1 are four subtests each, VWMI 20.0 is two, older VMI 20.0 is
+two); and the shaded triangle prints a corrected cell for **exactly** the subtest-index
+pairs where the subtest is inside the index — Logical Memory I has one against AMI and IMI
+and nothing else, Spatial Addition against VWMI alone, and Symbol Span on the Older Adult
+battery has none at all, which is the manual saying it belongs to no index there.
+
+**The simulation cannot check a transcription** — §43 records the mutation that proved it,
+a halved coefficient moving the answer by under half a point. So §48 pins the matrices
+twice over and neither pin is the simulation: the index block of each table **verbatim**,
+plus two structural properties no single mistyped cell can satisfy — every subtest
+correlates more highly with each index it belongs to than with any index it does not, and
+every corrected cell is **lower** than its uncorrected counterpart (30 of 30), which also
+proves the two triangles were not read the wrong way round. A fourth check asserts the
+batteries **disagree** on the 12 measures they share, since agreement throughout would mean
+one was transcribed over the other.
+
+**`labels` carry normDB's spelling, not the manual's column heads** (`Designs I - Content`
+for the printed `DE I Content`): the page matches scores to measures **by name** against
+Score Tables, so the name is the join. The manual's abbreviations are the keys.
+
+Two pieces of on-screen text stopped being literals when the second instrument arrived,
+and both would otherwise have misstated two pages in three: the APA note's source sentence
+now interpolates the **matrix's own `source`** (§45 asserts every shipped matrix names a
+published table), and "Index scores entered" becomes "Scores entered" on a subtest or
+process-score profile.
+
 #### One rule, three shapes of the same fault
 
 A profile must never hold a measure and a piece of itself. Two measures conflict when
@@ -1406,6 +1461,33 @@ missing data.
 must conflict and five that must not, asserts the rule is symmetric, and — separately —
 asserts **no two measures on the same level overlap** and that FSIQ is on none of them. That
 second check is what makes the level list safe to edit.
+
+#### One criterion, three cards
+
+The five entries in `PROF_CRITERIA` are the five rows of the paper's Tables 2 and 3
+verbatim (15.9th / 10th / 5th / 2nd / 1st), and 5% is the default because the paper says
+so in both table notes: *"We define abnormality as a score falling below the 5th
+percentile, and for this reason we have presented these results in bold."* The paper's
+generic program offers ten criteria, adding 1.5 SD (6.6th) and 2 SD (2.28th); the five
+here are the ones its published tables use, so every one of them is citable.
+
+**The criterion also governs differences and deviations, and for a while it did not.**
+`PROF_DIFF_Z` was a page-level `1.960`, so the low-score card followed the selector while
+the other two stayed at 5% whatever it was set to. The paper's program does the opposite:
+*"the criterion selected by the user to define an abnormally low score is also used to
+define abnormally large pairwise differences and abnormally large deviations… a difference
+(or deviation) that is exceeded by less than 5% of the normal population, regardless of
+sign."* Each criterion now carries its own `diffZ`, the deviate cutting the **same** tail
+area in two halves — `Φ⁻¹(1 − Φ(z)/2)` — and `diffPct` (84.1 / 90 / 95 / 98 / 99%), which
+is the wording the cards and the exported note use.
+
+**At the default the two readings are identical**, which is exactly why nothing on screen
+showed the fault: only a clinician who moved the selector ever saw a 1%-criterion count of
+low scores reported beside 5%-criterion counts of differences, under one note claiming one
+criterion. `check.js` §45 pins the relation arithmetically rather than against a printed
+figure — only the 5% row appears in the paper for all three questions — and asserts the
+value reaches `profSimulate` and both counts in `profCounts`, so a page-level constant
+cannot come back.
 
 #### Metric is per measure, not per page
 
@@ -1815,9 +1897,9 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 385 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 390 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
-Tables 4.5 (§4) and 4.1/4.3 (§28), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
+Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
 pinned to Table eA5.8, worked OPIE
 predictions, reliable-change thresholds and direction-neutral outcome labels, base-rate

@@ -163,6 +163,178 @@ const WAIS4_INTERCORR = {
   sd:   {'BD':3.1, 'SI':2.9, 'DS':3, 'MR':3.1, 'VC':3, 'AR':3, 'SS':3.1, 'VP':3.1, 'IN':3.1, 'CD':3, 'LN':3, 'FW':3.1, 'CO':3.1, 'CA':3, 'PCm':3.1, 'BDN':3.1, 'DSF':3, 'DSB':3, 'DSS':3, 'VCI':8, 'PRI':7.8, 'WMI':5.4, 'PSI':5.5, 'FSIQ':21.9}
 };
 
+
+/* ============================================================
+   WMS4_INTERCORR — the same quantity as WAIS4_INTERCORR above, for WMS-IV
+
+   Transcribed from WMS-IV Technical and Interpretive Manual (GB), Tables 4.1
+   (Adult Battery, 20 x 20) and 4.2 (Older Adult Battery, 12 x 12). Same note
+   under both: "Uncorrected coefficients appear below the diagonal, and
+   corrected coefficients appear above the diagonal in the shaded area." Only
+   the lower triangle may enter the simulation, exactly as for WAIS-IV.
+
+   TWO BATTERIES, NOT TWO AGE BANDS, and this is the whole reason the object
+   has two halves rather than one matrix. The Adult battery is normed 16-69;
+   the Older Adult battery is normed 65-90 and drops Designs, Spatial Addition
+   and the VWMI entirely, leaving 8 measures and 4 indices. Ages 65-69 are
+   normed in BOTH, with different coefficients — Logical Memory I against the
+   AMI is .82 adult and .82 older, but VR I against VMI is .79 against .91 —
+   so age cannot pick the battery. The clinician picked it when they decided
+   what to administer, and normDB records that choice in the group key
+   (`· Ages 16-69` / `· Ages 65-90`), which is what the Profile page reads.
+   This is the same `separateBattery` rule normDB already applies.
+
+   The corrected upper triangle is each subtest against an index it is itself
+   part of, part-whole overlap removed, and is stored apart in
+   `rCorrectedToComposite` for the same reason as WAIS-IV: a corrected
+   coefficient inside a covariance structure built from uncorrected ones would
+   be a different quantity.
+
+   That split is also the transcription proof, and it is stronger here than
+   the one WAIS-IV gets. Every one of the 18 (adult) and 12 (older) corrected
+   cells is LOWER than the uncorrected cell for the same pair — 30 of 30 — so
+   the two triangles cannot have been read the wrong way round. And every
+   subtest correlates more highly with each index it belongs to than with any
+   index it does not, on both batteries, which no single mistyped cell can
+   satisfy by accident. check.js §48 asserts both.
+
+   `labels` are normDB's own measure names rather than the manual's column
+   heads ("Designs I - Content" for the printed "DE I Content"), because the
+   Profile page matches scores to measures BY NAME against Score Tables, and
+   Score Tables is fed from normDB. The manual's own abbreviations are the
+   keys.
+
+   Means and SDs are the manual's own row and are unused, as for WAIS-IV: the
+   index entries are SUMS OF SCALED SCORES (adult AMI 40.0/9.9 is four
+   subtests summed), not index scores on 100/15. They are also the arithmetic
+   that settles which subtests each index holds, and check.js §48 uses them
+   that way rather than taking the composition on trust.
+   ============================================================ */
+const WMS4_INTERCORR = {
+  adult: {
+    source: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.1 — Intercorrelations of Subtest, Process, and Index Scores in the Normative Sample (Adult Battery)',
+    battery: 'Adult',
+    ageBand: 'Ages 16-69',
+    order: ['LM1', 'LM2', 'VPA1', 'VPA2', 'VPAWR', 'DE1', 'DE1C', 'DE1S', 'DE2', 'DE2C', 'DE2S', 'VR1', 'VR2', 'SA', 'SSP', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
+    labels: {
+      'LM1': 'Logical Memory I',
+      'LM2': 'Logical Memory II',
+      'VPA1': 'Verbal Paired Associates I',
+      'VPA2': 'Verbal Paired Associates II',
+      'VPAWR': 'Verbal Paired Associates II - Word Recall',
+      'DE1': 'Designs I',
+      'DE1C': 'Designs I - Content',
+      'DE1S': 'Designs I - Spatial',
+      'DE2': 'Designs II',
+      'DE2C': 'Designs II - Content',
+      'DE2S': 'Designs II - Spatial',
+      'VR1': 'Visual Reproduction I',
+      'VR2': 'Visual Reproduction II',
+      'SA': 'Spatial Addition',
+      'SSP': 'Symbol Span',
+      'AMI': 'Auditory Memory Index',
+      'VMI': 'Visual Memory Index',
+      'VWMI': 'Visual Working Memory Index',
+      'IMI': 'Immediate Memory Index',
+      'DMI': 'Delayed Memory Index',
+    },
+    restrictedTo16_69: [],
+    r: {
+      'LM2|LM1':0.87,
+      'VPA1|LM1':0.44, 'VPA1|LM2':0.43,
+      'VPA2|LM1':0.4, 'VPA2|LM2':0.42, 'VPA2|VPA1':0.84,
+      'VPAWR|LM1':0.37, 'VPAWR|LM2':0.37, 'VPAWR|VPA1':0.63, 'VPAWR|VPA2':0.67,
+      'DE1|LM1':0.27, 'DE1|LM2':0.23, 'DE1|VPA1':0.33, 'DE1|VPA2':0.35, 'DE1|VPAWR':0.33,
+      'DE1C|LM1':0.25, 'DE1C|LM2':0.2, 'DE1C|VPA1':0.26, 'DE1C|VPA2':0.27, 'DE1C|VPAWR':0.3, 'DE1C|DE1':0.83,
+      'DE1S|LM1':0.23, 'DE1S|LM2':0.2, 'DE1S|VPA1':0.28, 'DE1S|VPA2':0.27, 'DE1S|VPAWR':0.23, 'DE1S|DE1':0.76, 'DE1S|DE1C':0.46,
+      'DE2|LM1':0.25, 'DE2|LM2':0.23, 'DE2|VPA1':0.32, 'DE2|VPA2':0.34, 'DE2|VPAWR':0.32, 'DE2|DE1':0.74, 'DE2|DE1C':0.66, 'DE2|DE1S':0.55,
+      'DE2C|LM1':0.22, 'DE2C|LM2':0.19, 'DE2C|VPA1':0.25, 'DE2C|VPA2':0.26, 'DE2C|VPAWR':0.29, 'DE2C|DE1':0.67, 'DE2C|DE1C':0.73, 'DE2C|DE1S':0.41, 'DE2C|DE2':0.81,
+      'DE2S|LM1':0.21, 'DE2S|LM2':0.19, 'DE2S|VPA1':0.21, 'DE2S|VPA2':0.22, 'DE2S|VPAWR':0.19, 'DE2S|DE1':0.48, 'DE2S|DE1C':0.38, 'DE2S|DE1S':0.53, 'DE2S|DE2':0.76, 'DE2S|DE2C':0.42,
+      'VR1|LM1':0.33, 'VR1|LM2':0.3, 'VR1|VPA1':0.35, 'VR1|VPA2':0.36, 'VR1|VPAWR':0.42, 'VR1|DE1':0.47, 'VR1|DE1C':0.39, 'VR1|DE1S':0.37, 'VR1|DE2':0.4, 'VR1|DE2C':0.35, 'VR1|DE2S':0.27,
+      'VR2|LM1':0.31, 'VR2|LM2':0.32, 'VR2|VPA1':0.32, 'VR2|VPA2':0.34, 'VR2|VPAWR':0.38, 'VR2|DE1':0.41, 'VR2|DE1C':0.35, 'VR2|DE1S':0.34, 'VR2|DE2':0.38, 'VR2|DE2C':0.32, 'VR2|DE2S':0.3, 'VR2|VR1':0.62,
+      'SA|LM1':0.3, 'SA|LM2':0.22, 'SA|VPA1':0.31, 'SA|VPA2':0.33, 'SA|VPAWR':0.39, 'SA|DE1':0.44, 'SA|DE1C':0.36, 'SA|DE1S':0.37, 'SA|DE2':0.38, 'SA|DE2C':0.35, 'SA|DE2S':0.26, 'SA|VR1':0.45, 'SA|VR2':0.34,
+      'SSP|LM1':0.37, 'SSP|LM2':0.33, 'SSP|VPA1':0.39, 'SSP|VPA2':0.41, 'SSP|VPAWR':0.43, 'SSP|DE1':0.5, 'SSP|DE1C':0.43, 'SSP|DE1S':0.39, 'SSP|DE2':0.42, 'SSP|DE2C':0.38, 'SSP|DE2S':0.3, 'SSP|VR1':0.5, 'SSP|VR2':0.41, 'SSP|SA':0.43,
+      'AMI|LM1':0.83, 'AMI|LM2':0.83, 'AMI|VPA1':0.83, 'AMI|VPA2':0.81, 'AMI|VPAWR':0.62, 'AMI|DE1':0.36, 'AMI|DE1C':0.3, 'AMI|DE1S':0.3, 'AMI|DE2':0.34, 'AMI|DE2C':0.28, 'AMI|DE2S':0.25, 'AMI|VR1':0.4, 'AMI|VR2':0.39, 'AMI|SA':0.35, 'AMI|SSP':0.46,
+      'VMI|LM1':0.36, 'VMI|LM2':0.34, 'VMI|VPA1':0.42, 'VMI|VPA2':0.44, 'VMI|VPAWR':0.46, 'VMI|DE1':0.83, 'VMI|DE1C':0.7, 'VMI|DE1S':0.64, 'VMI|DE2':0.79, 'VMI|DE2C':0.68, 'VMI|DE2S':0.57, 'VMI|VR1':0.79, 'VMI|VR2':0.77, 'VMI|SA':0.51, 'VMI|SSP':0.58, 'VMI|AMI':0.48,
+      'VWMI|LM1':0.39, 'VWMI|LM2':0.32, 'VWMI|VPA1':0.41, 'VWMI|VPA2':0.44, 'VWMI|VPAWR':0.48, 'VWMI|DE1':0.56, 'VWMI|DE1C':0.47, 'VWMI|DE1S':0.45, 'VWMI|DE2':0.48, 'VWMI|DE2C':0.43, 'VWMI|DE2S':0.33, 'VWMI|VR1':0.56, 'VWMI|VR2':0.44, 'VWMI|SA':0.85, 'VWMI|SSP':0.85, 'VWMI|AMI':0.48, 'VWMI|VMI':0.64,
+      'IMI|LM1':0.71, 'IMI|LM2':0.63, 'IMI|VPA1':0.73, 'IMI|VPA2':0.67, 'IMI|VPAWR':0.6, 'IMI|DE1':0.72, 'IMI|DE1C':0.6, 'IMI|DE1S':0.57, 'IMI|DE2':0.59, 'IMI|DE2C':0.51, 'IMI|DE2S':0.4, 'IMI|VR1':0.75, 'IMI|VR2':0.58, 'IMI|SA':0.52, 'IMI|SSP':0.61, 'IMI|AMI':0.84, 'IMI|VMI':0.83, 'IMI|VWMI':0.67,
+      'DMI|LM1':0.64, 'DMI|LM2':0.69, 'DMI|VPA1':0.67, 'DMI|VPA2':0.74, 'DMI|VPAWR':0.61, 'DMI|DE1':0.61, 'DMI|DE1C':0.53, 'DMI|DE1S':0.49, 'DMI|DE2':0.69, 'DMI|DE2C':0.56, 'DMI|DE2S':0.52, 'DMI|VR1':0.59, 'DMI|VR2':0.72, 'DMI|SA':0.46, 'DMI|SSP':0.55, 'DMI|AMI':0.83, 'DMI|VMI':0.83, 'DMI|VWMI':0.59, 'DMI|IMI':0.87,
+    },
+    rCorrectedToComposite: {
+      'LM1|AMI':0.68,
+      'LM1|IMI':0.45,
+      'LM2|AMI':0.68,
+      'LM2|DMI':0.42,
+      'VPA1|AMI':0.68,
+      'VPA1|IMI':0.5,
+      'VPA2|AMI':0.65,
+      'VPA2|DMI':0.49,
+      'DE1|VMI':0.67,
+      'DE1|IMI':0.47,
+      'DE2|VMI':0.61,
+      'DE2|DMI':0.41,
+      'VR1|VMI':0.61,
+      'VR1|IMI':0.51,
+      'VR2|VMI':0.57,
+      'VR2|DMI':0.46,
+      'SA|VWMI':0.43,
+      'SSP|VWMI':0.43,
+    },
+    mean: {'LM1':10, 'LM2':10, 'VPA1':10, 'VPA2':10, 'VPAWR':10, 'DE1':10, 'DE1C':10, 'DE1S':10, 'DE2':10, 'DE2C':10, 'DE2S':10, 'VR1':10.1, 'VR2':10, 'SA':10, 'SSP':10, 'AMI':40, 'VMI':40.1, 'VWMI':20, 'IMI':40.1, 'DMI':40},
+    sd:   {'LM1':3, 'LM2':3, 'VPA1':3, 'VPA2':3, 'VPAWR':3, 'DE1':3, 'DE1C':3, 'DE1S':3, 'DE2':3, 'DE2C':3, 'DE2S':3, 'VR1':3.1, 'VR2':3.1, 'SA':3, 'SSP':3, 'AMI':9.9, 'VMI':9.6, 'VWMI':5.1, 'IMI':8.8, 'DMI':8.6}
+  },
+  older: {
+    source: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.2 — Intercorrelations of Subtest, Process, and Index Scores in the Normative Sample (Older Adult Battery)',
+    battery: 'Older Adult',
+    ageBand: 'Ages 65-90',
+    order: ['LM1', 'LM2', 'VPA1', 'VPA2', 'VPAWR', 'VR1', 'VR2', 'SSP', 'AMI', 'VMI', 'IMI', 'DMI'],
+    labels: {
+      'LM1': 'Logical Memory I',
+      'LM2': 'Logical Memory II',
+      'VPA1': 'Verbal Paired Associates I',
+      'VPA2': 'Verbal Paired Associates II',
+      'VPAWR': 'Verbal Paired Associates II - Word Recall',
+      'VR1': 'Visual Reproduction I',
+      'VR2': 'Visual Reproduction II',
+      'SSP': 'Symbol Span',
+      'AMI': 'Auditory Memory Index',
+      'VMI': 'Visual Memory Index',
+      'IMI': 'Immediate Memory Index',
+      'DMI': 'Delayed Memory Index',
+    },
+    restrictedTo16_69: [],
+    r: {
+      'LM2|LM1':0.82,
+      'VPA1|LM1':0.48, 'VPA1|LM2':0.55,
+      'VPA2|LM1':0.45, 'VPA2|LM2':0.54, 'VPA2|VPA1':0.85,
+      'VPAWR|LM1':0.5, 'VPAWR|LM2':0.56, 'VPAWR|VPA1':0.66, 'VPAWR|VPA2':0.68,
+      'VR1|LM1':0.36, 'VR1|LM2':0.35, 'VR1|VPA1':0.4, 'VR1|VPA2':0.39, 'VR1|VPAWR':0.38,
+      'VR2|LM1':0.27, 'VR2|LM2':0.33, 'VR2|VPA1':0.37, 'VR2|VPA2':0.36, 'VR2|VPAWR':0.38, 'VR2|VR1':0.66,
+      'SSP|LM1':0.4, 'SSP|LM2':0.36, 'SSP|VPA1':0.4, 'SSP|VPA2':0.4, 'SSP|VPAWR':0.46, 'SSP|VR1':0.52, 'SSP|VR2':0.42,
+      'AMI|LM1':0.82, 'AMI|LM2':0.86, 'AMI|VPA1':0.86, 'AMI|VPA2':0.84, 'AMI|VPAWR':0.71, 'AMI|VR1':0.44, 'AMI|VR2':0.39, 'AMI|SSP':0.46,
+      'VMI|LM1':0.35, 'VMI|LM2':0.37, 'VMI|VPA1':0.42, 'VMI|VPA2':0.41, 'VMI|VPAWR':0.42, 'VMI|VR1':0.91, 'VMI|VR2':0.91, 'VMI|SSP':0.52, 'VMI|AMI':0.46,
+      'IMI|LM1':0.79, 'IMI|LM2':0.73, 'IMI|VPA1':0.8, 'IMI|VPA2':0.72, 'IMI|VPAWR':0.65, 'IMI|VR1':0.75, 'IMI|VR2':0.55, 'IMI|SSP':0.56, 'IMI|AMI':0.9, 'IMI|VMI':0.72,
+      'DMI|LM1':0.67, 'DMI|LM2':0.81, 'DMI|VPA1':0.76, 'DMI|VPA2':0.82, 'DMI|VPAWR':0.69, 'DMI|VR1':0.59, 'DMI|VR2':0.72, 'DMI|SSP':0.51, 'DMI|AMI':0.9, 'DMI|VMI':0.72, 'DMI|IMI':0.86,
+    },
+    rCorrectedToComposite: {
+      'LM1|AMI':0.67,
+      'LM1|IMI':0.51,
+      'LM2|AMI':0.74,
+      'LM2|DMI':0.53,
+      'VPA1|AMI':0.73,
+      'VPA1|IMI':0.53,
+      'VPA2|AMI':0.72,
+      'VPA2|DMI':0.56,
+      'VR1|VMI':0.66,
+      'VR1|IMI':0.44,
+      'VR2|VMI':0.66,
+      'VR2|DMI':0.39,
+    },
+    mean: {'LM1':10, 'LM2':10, 'VPA1':10, 'VPA2':10, 'VPAWR':10, 'VR1':10, 'VR2':10, 'SSP':10, 'AMI':40.1, 'VMI':20, 'IMI':30, 'DMI':30},
+    sd:   {'LM1':3, 'LM2':3.1, 'VPA1':3, 'VPA2':3, 'VPAWR':3, 'VR1':3, 'VR2':2.9, 'SSP':3, 'AMI':10.2, 'VMI':5.4, 'IMI':7.1, 'DMI':7}
+  },
+};
+
 // ToPF Raw (0-70) → estimated FSIQ
 const TOPF_TO_FSIQ = [
   42,45,48,51,54,57,59,62,64,66,
