@@ -605,7 +605,7 @@
       const cls = j === here ? 'prof-bar prof-here'
                 : (here > 0 && j > here ? 'prof-bar prof-tail' : 'prof-bar');
       bars += '<div class="' + cls + '" style="height:' + h + '%" title="'
-        + escapeHtml('exactly ' + j + ' — ' + profFmtPct(dist[j]) + ' of the population') + '"></div>';
+        + escapeHtml('exactly ' + j + ': ' + profFmtPct(dist[j]) + ' of the population') + '"></div>';
       /* A CARET, BECAUSE HEIGHT ALONE CANNOT FIND THIS BAR. Most people show
          none, so P(0) sets the scale and every bar that matters is a hairline
          beside it - at four Indices the patient's own bar was 2px. Rescaling
@@ -614,7 +614,7 @@
       axis += '<span' + (j === here ? ' class="prof-here"' : '') + '>'
         + (j === here || j % every === 0 ? j : '') + '</span>';
     }
-    return '<div class="prof-dist"><div class="prof-dist-title">Population — how many '
+    return '<div class="prof-dist"><div class="prof-dist-title">Population: how many '
       + escapeHtml(unit) + ' are abnormal</div>'
       + '<div class="prof-bars">' + bars + '</div>'
       + '<div class="prof-xaxis">' + axis + '</div></div>';
@@ -774,7 +774,7 @@
     const se = profileAbnormalityStdErr(res.lowScores[0], res.trials);
     if (!Number.isFinite(se)) return '';
     return '<p class="prof-precision">Monte Carlo estimates from ' + res.trials.toLocaleString()
-      + ' simulated cases — sampling error about ±' + se.toFixed(2)
+      + ' simulated cases. Sampling error is about ±' + se.toFixed(2)
       + ' percentage points at the largest value here. Seeded, so the same profile always returns the same figures.</p>';
   }
 
