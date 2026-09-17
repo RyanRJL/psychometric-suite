@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260911d">
-<link rel="stylesheet" href="design-system.css?v=20260911d">
+<link rel="stylesheet" href="styles.css?v=20260917a">
+<link rel="stylesheet" href="design-system.css?v=20260917a">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1439,18 +1439,8 @@
         <details class="formula-disclosure">
           <summary>Method &amp; formulae</summary>
           <div class="formula-body">
-            <p><strong>Crawford, J. R., Garthwaite, P. H., &amp; Gault, C. B. (2007).</strong> Estimating the percentage of the population with abnormally low scores (or abnormally large score differences) on standardized neuropsychological test batteries: A generic method with applications. <i>Neuropsychology, 21</i>, 419&ndash;430.</p>
-            <p>The only input the method requires is <strong>R</strong>, the matrix of correlations between the measures &mdash; no means, no standard deviations, no reliabilities. R is Cholesky-decomposed; a vector <i>z</i> of <i>k</i> independent standard normal variates is drawn and postmultiplied by the lower triangular decomposition <b>C</b>, so <b>y</b> = <b>C</b><i>z</i> is one observation from the multivariate normal distribution with covariance matrix R &mdash; one simulated member of the population. That is repeated and tallied.</p>
-            <p>Three quantities are counted on each simulated case:</p>
-            <ul>
-              <li><strong>Abnormally low scores</strong> &mdash; components below the selected criterion as a standard normal deviate (the 5th percentile is &minus;1.645).</li>
-              <li><strong>Abnormally large pairwise differences</strong> &mdash; for each of the <i>k</i>(<i>k</i>&minus;1)/2 pairs, |<i>y<sub>X</sub></i> &minus; <i>y<sub>Y</sub></i>| &gt; 1.960 &times; &radic;(2 &minus; 2<i>r</i><sub>XY</sub>).</li>
-              <li><strong>Abnormally large deviations from the case&rsquo;s own mean</strong> &mdash; |<i>M</i> &minus; <i>y<sub>X</sub></i>| &gt; 1.960 &times; &radic;(1 + <i>R&#772;</i> &minus; 2<i>m&#772;<sub>X</sub></i>), where <i>R&#772;</i> is the mean of every element of R <em>including the diagonal unities</em>.</li>
-            </ul>
-            <p>Both difference tests are two-tailed: a large difference in either direction is the finding.</p>
-            <p><strong>Any set of measures, not a fixed battery.</strong> The paper&rsquo;s program takes an arbitrary number of tests &mdash; &ldquo;up to a maximum of 20&rdquo; &mdash; with their correlation matrix, and its conclusion speaks of abnormality &ldquo;from among the overall set of tests administered&rdquo;. Crawford&rsquo;s own supplementary programs state that the methods apply &ldquo;when only a subset of the Index scores have been administered&rdquo;. What cannot be done is quote a ten-measure figure for seven measures, so every percentage here is recomputed for the current selection.</p>
-            <p><strong>Correlations.</strong> WAIS-IV Technical and Interpretive Manual (GB), Table 5.1, all-ages values. The shaded corrected coefficients printed above that table&rsquo;s diagonal are a different quantity (each subtest against a composite it is itself part of, with the part-whole overlap removed) and are not used here.</p>
-            <p><strong>Why a binomial will not do.</strong> It answers this question only when the measures are uncorrelated. It overestimates the percentage showing one or more abnormal result and underestimates the percentage showing several &mdash; for four WAIS-IV Indices at the 5th percentile it gives 18.5% against a simulated 13.8%.</p>
+            <p><strong>R</strong>, the matrix of correlations between the chosen measures, is the only input the method needs &mdash; no means, no standard deviations, no reliabilities (Crawford, Garthwaite &amp; Gault, 2007). R is Cholesky-decomposed into <b>C</b>; each simulated person is <b>y</b> = <b>C</b><i>z</i> for a fresh vector <i>z</i> of <i>k</i> independent standard normal deviates, and three counts are tallied per person: scores below the criterion (the 5th percentile is <i>z</i> = &minus;1.645); each of the <i>k</i>(<i>k</i>&minus;1)/2 pairwise differences where |<i>y<sub>X</sub></i> &minus; <i>y<sub>Y</sub></i>| &gt; <i>z</i><sub>2</sub> &times; &radic;(2 &minus; 2<i>r</i><sub>XY</sub>); and deviations from the person&rsquo;s own mean where |<i>M</i> &minus; <i>y<sub>X</sub></i>| &gt; <i>z</i><sub>2</sub> &times; &radic;(1 + <i>R&#772;</i> &minus; 2<i>m&#772;<sub>X</sub></i>). <i>z</i><sub>2</sub> is the same criterion two-tailed (1.960 at the 5th percentile), and <i>R&#772;</i> averages every element of R <em>including the diagonal unities</em>. The base rate is the percentage of simulated people showing <i>j</i> or more.</p>
+            <p>Correlations are the publisher&rsquo;s own normative-sample values, named in the note beneath the table; the corrected coefficients printed in the shaded upper triangle are a different quantity and are not used. Any set of measures may be profiled, and every percentage is recomputed for the current selection &mdash; a ten-measure figure does not describe seven. A binomial answers this question only for uncorrelated measures: across four WAIS-IV Indices at the 5th percentile it gives 18.5% against a simulated 13.8%.</p>
           </div>
         </details>
 
@@ -2875,7 +2865,7 @@
 
     <h3 class="methods-h3">What this tool does</h3>
     <p class="section-body-text">
-      Eight working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Performance Validity</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Size Tools</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
+      Nine working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Profile Analysis</strong>, <strong>Performance Validity</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Size Tools</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
     </p>
     <p class="section-body-text">
       The auto-fill normative database holds published parameters for seven instrument families — D-KEFS (original and Advanced), WAIS-IV, WMS-IV, WISC-V, CVLT-3, CVLT-C and the RBANS — with the retest sample size <i>N</i> where the publisher reports one. <i>N</i> is required for the Crawford &amp; Garthwaite method and may need entering by hand where it is unavailable. Clinicians should verify every imported parameter against the current manual, and against local service standards, before interpreting it.
@@ -3004,6 +2994,17 @@
       Outcomes are reported as significance only — "Reliable change" or "No reliable change" — never as improvement or decline. The database holds many measures on which a higher score is the worse result (intrusions, perseverations, errors, false positives), and carries no score-direction flag, so reading a clinical direction off the sign of the statistic would assert the wrong conclusion for all of them. The signed statistic is displayed alongside, so the direction stays visible without the app interpreting it.
     </p>
 
+    <h3 class="methods-h3">Profile analysis</h3>
+    <p class="section-body-text">
+      A battery raises a question no single row answers: this patient has two scores below the 5th percentile &mdash; how unusual is that? By definition 5% of the population falls below the 5th percentile on any <em>one</em> measure, but across several correlated measures a low score somewhere is common. Reading rows independently overcalls impairment: 13.8% of healthy adults show at least one abnormally low score across the four WAIS-IV Indices, and 24.9% across ten core subtests. The <strong>Profile Analysis</strong> page reports the count and the percentage of the healthy population showing that many or more (Crawford, Garthwaite &amp; Gault, 2007).
+    </p>
+    <p class="section-body-text">
+      Three questions are answered from one simulation: how many scores are abnormally low, how many pairwise differences between measures are abnormally large, and how many measures deviate abnormally from the patient&rsquo;s own mean across the battery. The criterion is chosen by the clinician from the five the paper tabulates (below 1 SD, or below the 10th, 5th, 2nd or 1st percentile) and governs all three &mdash; a difference or deviation is abnormal when larger than the same percentage of the population shows, in either direction. Simulations are seeded, so a figure quoted in a report does not change when the page is reopened, and the sampling error of each percentage is stated beside it.
+    </p>
+    <p class="section-body-text">
+      The only input is the correlation matrix over the measures administered, taken from the publisher&rsquo;s normative sample: WAIS-IV Technical and Interpretive Manual (GB) Table 5.1, or WMS-IV Technical and Interpretive Manual (GB) Table 4.1 (Adult battery) or 4.2 (Older Adult battery). Scores are read from Score Tables rather than entered here, so the two cannot disagree. A profile may not hold both a measure and a part of itself &mdash; an index and its own subtest, two indices sharing subtests, a subtest and its own process scores &mdash; so each instrument is profiled one level at a time. Where a publisher&rsquo;s indices cross, as WMS-IV&rsquo;s do (auditory and visual against immediate and delayed), the two readings are offered separately. Index scores give the more accurate estimate: the authors note that scaled scores are coarse, one point being a third of a standard deviation, so a subtest-level profile is the rougher reading and says so on screen and in the exported note.
+    </p>
+
     <h3 class="methods-h3">Performance validity</h3>
     <p class="section-body-text">
       Six measures, each scored against its published cut-off: two RBANS-embedded indices — the <strong>Effort Index</strong> (Silverberg et al., 2007) and the <strong>Effort Scale</strong> (Novitski et al., 2012) — two WAIS-embedded ones — <strong>Reliable Digit Span</strong> (Greiffenstein et al., 1994; cut-offs per Schroeder et al., 2012) and the <strong>Digit Span indices</strong> (Iverson &amp; Tulsky, 2003; Axelrod et al., 2006) — and two stand-alone tests, the <strong>Rey 15-Item</strong> with recognition trial (Boone et al., 2002) and the <strong>TOMM</strong> (Tombaugh, 1996; cut-off accuracy per Martin et al., 2020). Every result is a cut-off comparison only, reported with the published sensitivity and specificity at the chosen cut-off; the app issues no verdict on the protocol, because no single indicator supports one.
@@ -3049,6 +3050,7 @@
       <p>Cohen, J. (1988). <i>Statistical power analysis for the behavioral sciences</i> (2nd ed.). Hillsdale, NJ: Lawrence Erlbaum.</p>
       <p>Crawford, J. R., &amp; Allan, K. M. (1997). Estimating premorbid WAIS–R IQ with demographic variables: Regression equations derived from a UK sample. <i>The Clinical Neuropsychologist, 11</i>(2), 192–197.</p>
       <p>Crawford, J. R., &amp; Garthwaite, P. H. (2007). Using regression equations built from summary data in the neuropsychological assessment of the individual case. <i>Neuropsychology, 21</i>(5), 611–620.</p>
+      <p>Crawford, J. R., Garthwaite, P. H., &amp; Gault, C. B. (2007). Estimating the percentage of the population with abnormally low scores (or abnormally large score differences) on standardized neuropsychological test batteries: A generic method with applications. <i>Neuropsychology, 21</i>(4), 419&ndash;430.</p>
       <p>Crawford, J. R., Millar, J., &amp; Milne, A. B. (2001). Estimating premorbid IQ from demographic variables: A comparison of a regression equation vs. clinical judgement. <i>British Journal of Clinical Psychology, 40</i>(1), 97–105.</p>
       <p>Guilmette, T. J., Sweet, J. J., Hebben, N., Koltai, D., Mahone, E. M., Spiegler, B. J., Stucky, K., Westerveld, M., &amp; Conference Participants. (2020). American Academy of Clinical Neuropsychology consensus conference statement on uniform labeling of performance test scores. <i>The Clinical Neuropsychologist, 34</i>(3), 437–453.</p>
       <p>Iverson, G. L. (2001). Interpreting change on the WAIS-III/WMS-III in clinical samples. <i>Archives of Clinical Neuropsychology, 16</i>(2), 183–191.</p>
@@ -3186,12 +3188,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260911d"></script>
-<script src="app.js?v=20260911d"></script>
-<script src="design-system.js?v=20260911d" defer></script>
-<script src="app-effectsize-page.js?v=20260911d"></script>
-<script src="app-viz-page.js?v=20260911d"></script>
-<script src="app-profile-page.js?v=20260911d"></script>
+<script src="data.js?v=20260917a"></script>
+<script src="app.js?v=20260917a"></script>
+<script src="design-system.js?v=20260917a" defer></script>
+<script src="app-effectsize-page.js?v=20260917a"></script>
+<script src="app-viz-page.js?v=20260917a"></script>
+<script src="app-profile-page.js?v=20260917a"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
