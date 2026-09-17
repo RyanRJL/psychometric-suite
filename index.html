@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260917c">
-<link rel="stylesheet" href="design-system.css?v=20260917c">
+<link rel="stylesheet" href="styles.css?v=20260917d">
+<link rel="stylesheet" href="design-system.css?v=20260917d">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1439,14 +1439,15 @@
         <details class="formula-disclosure">
           <summary>Method &amp; formulae</summary>
           <div class="formula-body">
-            <p><strong>R</strong>, the matrix of correlations between the chosen measures, is the only input the method needs &mdash; no means, no standard deviations, no reliabilities (Crawford, Garthwaite &amp; Gault, 2007). R is Cholesky-decomposed into <b>C</b>, and each simulated person is <b>y</b> = <b>C</b><i>z</i> for a fresh vector <i>z</i> of <i>k</i> independent standard normal deviates. Three counts are tallied per person:</p>
+            <p><strong>A healthy population is simulated, then counted.</strong> The only input is <strong>R</strong>, the matrix of correlations between the measures administered &mdash; no means, no standard deviations, no reliabilities (Crawford, Garthwaite &amp; Gault, 2007). Each simulated person gets a full set of <i>z</i> scores, drawn so that across the population the measures correlate exactly as the manual reports. (R is Cholesky-decomposed into a lower triangular <b>C</b>; each person is <b>y</b> = <b>C</b><i>z</i> for a fresh vector <i>z</i> of <i>k</i> independent standard normal deviates.)</p>
+            <p>Each of them is then counted three ways, on the criterion selected above:</p>
             <ul>
-              <li><strong>Low scores</strong> &mdash; components below the criterion (the 5th percentile is <i>z</i> = &minus;1.645).</li>
-              <li><strong>Pairwise differences</strong> &mdash; of the <i>k</i>(<i>k</i>&minus;1)/2 pairs, those where |<i>y<sub>X</sub></i> &minus; <i>y<sub>Y</sub></i>| &gt; <i>z</i><sub>2</sub> &times; &radic;(2 &minus; 2<i>r</i><sub>XY</sub>).</li>
-              <li><strong>Deviations from the person&rsquo;s own mean</strong> &mdash; those where |<i>M</i> &minus; <i>y<sub>X</sub></i>| &gt; <i>z</i><sub>2</sub> &times; &radic;(1 + <i>R&#772;</i> &minus; 2<i>m&#772;<sub>X</sub></i>).</li>
+              <li><strong>Abnormally low scores</strong> &mdash; measures below the criterion; the 5th percentile is <i>z</i> = &minus;1.645.</li>
+              <li><strong>Abnormally large differences between two measures</strong> &mdash; of the <i>k</i>(<i>k</i>&minus;1)/2 possible pairs, those whose gap exceeds <i>z</i><sub>2</sub> &times; &radic;(2 &minus; 2<i>r</i><sub>XY</sub>), <i>r</i><sub>XY</sub> being the published correlation between the two. Closely correlated measures qualify on a smaller gap.</li>
+              <li><strong>Abnormally large deviations from the person&rsquo;s own mean</strong> &mdash; a measure differing from that person&rsquo;s average across the set by more than <i>z</i><sub>2</sub> &times; &radic;(1 + <i>R&#772;</i> &minus; 2<i>m&#772;<sub>X</sub></i>), where <i>R&#772;</i> is the mean of every element of R <em>including the 1s on the diagonal</em> and <i>m&#772;<sub>X</sub></i> the mean of that measure&rsquo;s row.</li>
             </ul>
-            <p><i>z</i><sub>2</sub> is the same criterion two-tailed (1.960 at the 5th percentile), and <i>R&#772;</i> averages every element of R <em>including the diagonal unities</em>. The base rate is the percentage of simulated people showing <i>j</i> or more.</p>
-            <p>Correlations are the publisher&rsquo;s own normative-sample values, named in the note beneath the table; the corrected coefficients printed in the shaded upper triangle are a different quantity and are not used. Any set of measures may be profiled, and every percentage is recomputed for the current selection &mdash; a ten-measure figure does not describe seven. A binomial answers this question only for uncorrelated measures: across four WAIS-IV Indices at the 5th percentile it gives 18.5% against a simulated 13.8%.</p>
+            <p><i>z</i><sub>2</sub> is the same criterion two-tailed &mdash; 1.960 at the 5th percentile &mdash; a difference in either direction being the finding. <strong>The base rate is a count of people, not of scores:</strong> the percentage of the simulated population showing as many such results as this patient, or more.</p>
+            <p>Correlations are the publisher&rsquo;s own normative-sample values, named in the note beneath the table, and the figures are recomputed for whatever is selected &mdash; a ten-measure base rate does not describe seven. <strong>Treating the measures as independent would overstate how unusual one low score is:</strong> a binomial gives 18.5% across four WAIS-IV Indices at the 5th percentile where the simulation gives 13.8%.</p>
           </div>
         </details>
 
@@ -3194,12 +3195,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260917c"></script>
-<script src="app.js?v=20260917c"></script>
-<script src="design-system.js?v=20260917c" defer></script>
-<script src="app-effectsize-page.js?v=20260917c"></script>
-<script src="app-viz-page.js?v=20260917c"></script>
-<script src="app-profile-page.js?v=20260917c"></script>
+<script src="data.js?v=20260917d"></script>
+<script src="app.js?v=20260917d"></script>
+<script src="design-system.js?v=20260917d" defer></script>
+<script src="app-effectsize-page.js?v=20260917d"></script>
+<script src="app-viz-page.js?v=20260917d"></script>
+<script src="app-profile-page.js?v=20260917d"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
