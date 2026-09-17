@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260917a">
-<link rel="stylesheet" href="design-system.css?v=20260917a">
+<link rel="stylesheet" href="styles.css?v=20260917b">
+<link rel="stylesheet" href="design-system.css?v=20260917b">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1439,7 +1439,13 @@
         <details class="formula-disclosure">
           <summary>Method &amp; formulae</summary>
           <div class="formula-body">
-            <p><strong>R</strong>, the matrix of correlations between the chosen measures, is the only input the method needs &mdash; no means, no standard deviations, no reliabilities (Crawford, Garthwaite &amp; Gault, 2007). R is Cholesky-decomposed into <b>C</b>; each simulated person is <b>y</b> = <b>C</b><i>z</i> for a fresh vector <i>z</i> of <i>k</i> independent standard normal deviates, and three counts are tallied per person: scores below the criterion (the 5th percentile is <i>z</i> = &minus;1.645); each of the <i>k</i>(<i>k</i>&minus;1)/2 pairwise differences where |<i>y<sub>X</sub></i> &minus; <i>y<sub>Y</sub></i>| &gt; <i>z</i><sub>2</sub> &times; &radic;(2 &minus; 2<i>r</i><sub>XY</sub>); and deviations from the person&rsquo;s own mean where |<i>M</i> &minus; <i>y<sub>X</sub></i>| &gt; <i>z</i><sub>2</sub> &times; &radic;(1 + <i>R&#772;</i> &minus; 2<i>m&#772;<sub>X</sub></i>). <i>z</i><sub>2</sub> is the same criterion two-tailed (1.960 at the 5th percentile), and <i>R&#772;</i> averages every element of R <em>including the diagonal unities</em>. The base rate is the percentage of simulated people showing <i>j</i> or more.</p>
+            <p><strong>R</strong>, the matrix of correlations between the chosen measures, is the only input the method needs &mdash; no means, no standard deviations, no reliabilities (Crawford, Garthwaite &amp; Gault, 2007). R is Cholesky-decomposed into <b>C</b>, and each simulated person is <b>y</b> = <b>C</b><i>z</i> for a fresh vector <i>z</i> of <i>k</i> independent standard normal deviates. Three counts are tallied per person:</p>
+            <ul>
+              <li><strong>Low scores</strong> &mdash; components below the criterion (the 5th percentile is <i>z</i> = &minus;1.645).</li>
+              <li><strong>Pairwise differences</strong> &mdash; of the <i>k</i>(<i>k</i>&minus;1)/2 pairs, those where |<i>y<sub>X</sub></i> &minus; <i>y<sub>Y</sub></i>| &gt; <i>z</i><sub>2</sub> &times; &radic;(2 &minus; 2<i>r</i><sub>XY</sub>).</li>
+              <li><strong>Deviations from the person&rsquo;s own mean</strong> &mdash; those where |<i>M</i> &minus; <i>y<sub>X</sub></i>| &gt; <i>z</i><sub>2</sub> &times; &radic;(1 + <i>R&#772;</i> &minus; 2<i>m&#772;<sub>X</sub></i>).</li>
+            </ul>
+            <p><i>z</i><sub>2</sub> is the same criterion two-tailed (1.960 at the 5th percentile), and <i>R&#772;</i> averages every element of R <em>including the diagonal unities</em>. The base rate is the percentage of simulated people showing <i>j</i> or more.</p>
             <p>Correlations are the publisher&rsquo;s own normative-sample values, named in the note beneath the table; the corrected coefficients printed in the shaded upper triangle are a different quantity and are not used. Any set of measures may be profiled, and every percentage is recomputed for the current selection &mdash; a ten-measure figure does not describe seven. A binomial answers this question only for uncorrelated measures: across four WAIS-IV Indices at the 5th percentile it gives 18.5% against a simulated 13.8%.</p>
           </div>
         </details>
@@ -3188,12 +3194,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260917a"></script>
-<script src="app.js?v=20260917a"></script>
-<script src="design-system.js?v=20260917a" defer></script>
-<script src="app-effectsize-page.js?v=20260917a"></script>
-<script src="app-viz-page.js?v=20260917a"></script>
-<script src="app-profile-page.js?v=20260917a"></script>
+<script src="data.js?v=20260917b"></script>
+<script src="app.js?v=20260917b"></script>
+<script src="design-system.js?v=20260917b" defer></script>
+<script src="app-effectsize-page.js?v=20260917b"></script>
+<script src="app-viz-page.js?v=20260917b"></script>
+<script src="app-profile-page.js?v=20260917b"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
