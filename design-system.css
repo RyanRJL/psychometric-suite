@@ -1429,6 +1429,44 @@ kbd, .ds-kbd{
   border-color: var(--ds-border) !important;
 }
 
+/* THE DISCLOSURE BODY, WHICH WAS STYLED NOWHERE AT ALL.
+
+   CLAUDE.md recorded `.formula-body` as "used a dozen times and styled
+   nowhere - inert rather than broken", and left it alone. It is not inert:
+   with no rules, the opened block is unpadded full-bleed body text against
+   the page, its paragraphs separated only by the browser default, sitting
+   directly under a `.info-box` note that IS a panel. On Profile Analysis the
+   result was a wall of text wider and denser than the note beneath it.
+
+   So it takes the note's own treatment - one surface, one border, the same
+   type size and colour - and the two blocks now read as siblings. Every
+   disclosure in the app gains it, which is the point: ten blocks were
+   relying on one class that did nothing.
+
+   `.formula-body` is a standalone name that neither stylesheet had claimed,
+   so this needs no `!important` and cannot be outranked by a page-scoped
+   block. The gap rule is `> * + *` rather than a margin on `p`, so a table
+   or a list spaces the same way a paragraph does. */
+.formula-body{
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  padding: 14px 16px;
+  font-size: var(--ds-text-sm);
+  line-height: 1.6;
+  color: var(--ds-text-subtle);
+}
+.formula-body > * + *{ margin-top: 10px; }
+.formula-body p{ margin: 0; }
+.formula-body strong,
+.formula-body b{ color: var(--ds-text); font-weight: 600; }
+/* The formulae themselves: a list of inequalities is read one at a time, so
+   it is spaced like rows rather than like prose. */
+.formula-body ul{ margin: 0; padding-left: 20px; }
+.formula-body li{ margin: 0; }
+.formula-body li + li{ margin-top: 6px; }
+.formula-body table{ margin-top: 10px; }
+
 /* Auto-fill search wrapper — drop the panel chrome entirely; the input
    field itself does all the visual work */
 .autofill-panel{

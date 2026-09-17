@@ -1623,9 +1623,22 @@ PRI 98 / WMI 72 / PSI 68 give 2 low and 4 abnormal pairwise differences. Three a
 subtests (Block Design 9, Digit Span 5, Coding 6) give 1 low against a population figure
 of 12.3% — a selection the fixed-set version could not express at all.
 
-**`.formula-body` is used a dozen times across the app and is styled nowhere.** Inert
-rather than broken, and left alone; §45 therefore does not require a shared class to carry
-a rule.
+**`.formula-body` was used a dozen times across the app and styled nowhere — and that was
+not inert, as this file used to claim.** With no rules at all, an opened disclosure is
+unpadded full-bleed body text sitting directly beneath a `.info-box` note that *is* a
+panel: on Profile Analysis it rendered wider and denser than the note under it, which is
+what made a 245-word block read as a wall. It now takes the note's own treatment — one
+surface, one border, the same size and colour — so the two read as siblings, and all ten
+disclosures gained it at once. The name was claimed by neither stylesheet, so the rule
+needs no `!important` and cannot be outranked by a page-scoped block. Spacing is
+`> * + *`, not a margin on `p`, so a table or a list spaces like a paragraph — the PVT
+weighting table sits inside one of these.
+
+**And the three formulae are a list, not a sentence.** Trimming the prose was right;
+folding three inequalities into one run-on sentence was not, because a formula is read one
+at a time. Lead paragraph, three bullets, then the symbols defined — same length, scannable.
+§45 does not require a shared class to carry a rule, which is what let the missing styling
+sit unnoticed.
 
 ### `higherIsWorse` — measures where a high score is a bad result
 
