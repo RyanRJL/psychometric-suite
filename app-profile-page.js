@@ -535,10 +535,29 @@
   }
 
   /* ---------- rendering ---------- */
+  /* PRINT ONLY THE DIGITS THE SIMULATION CAN RESOLVE. These percentages are
+     Monte Carlo estimates, so each carries a sampling error of
+     sqrt(p(1-p)/n) - about 0.05 points at 4%, 0.08 at 14%, 0.11 at 50%. The
+     old rule was a fixed 2 dp below 10% and 1 dp above, which printed 4.37%
+     where the method could not distinguish 4.37 from 4.42: a digit of noise,
+     in a table that goes into a report someone may be cross-examined on.
+
+     So the rounding STEP is the finest of 1, 0.1 and 0.01 that is still at
+     least as coarse as the standard error. 13.78 prints as 13.8%, 4.37 as
+     4.4%, 0.16 stays 0.16% because at that size the error is 0.009. The
+     printed figure gains a digit when the trial count rises, and loses one
+     if it falls, without anything here being retuned.
+
+     Screen and export share this function, so a report and the page it was
+     read off cannot round differently. */
   function profFmtPct(v){
     if (v === null || v === undefined) return '—';
     if (v > 0 && v < 0.01) return '< 0.01%';
-    return (v >= 10 ? v.toFixed(1) : v.toFixed(2)) + '%';
+    const se = (typeof profileAbnormalityStdErr === 'function')
+      ? profileAbnormalityStdErr(v, PROF_TRIALS) : null;
+    let dp = 2;
+    if (Number.isFinite(se)) dp = se <= 0.01 ? 2 : (se <= 0.1 ? 1 : 0);
+    return v.toFixed(dp) + '%';
   }
   /* series[j-1] is the percentage showing j OR MORE. j = 0 is refused:
      "100% show 0 or more" is true, useless, and reads as a finding. */
@@ -863,10 +882,13 @@
       return;
     }
     const c = profCriterion();
+    /* THE ROW LABELS ARE READ BY WHOEVER RECEIVES THE REPORT, not by the
+       clinician who has the page in front of them: "pairwise" is the paper's
+       word for a comparison between two measures, and saying so costs nothing. */
     const rows = [
       ['Scores ' + c.label, counts.low, profPctFor(res.lowScores, counts.low)],
-      ['Abnormally large pairwise differences', counts.pair, profPctFor(res.pairwise, counts.pair)],
-      ['Abnormally large deviations from own mean', counts.dev, profPctFor(res.deviations, counts.dev)]
+      ['Abnormally large differences between two measures', counts.pair, profPctFor(res.pairwise, counts.pair)],
+      ['Abnormally large deviations from this patient\u2019s own mean', counts.dev, profPctFor(res.deviations, counts.dev)]
     ];
     let body = '';
     for (const [label, n, pct] of rows){
@@ -880,10 +902,10 @@
       .join(', ');
     out.innerHTML =
       '<div class="apa-table-num">Table 1</div>'
-      + '<div class="apa-table-title">Number of abnormal ' + escapeHtml(inst.name)
-        + ' findings and their base rates</div>'
+      + '<div class="apa-table-title">Abnormal ' + escapeHtml(inst.name)
+        + ' results and how common they are in the healthy population</div>'
       + '<table class="apa-table"><thead><tr>'
-      + '<th>Finding</th><th class="num">Number observed</th><th class="num">Base rate</th>'
+      + '<th>Result</th><th class="num">Number observed</th><th class="num">Base rate</th>'
       + '</tr></thead><tbody>' + body + '</tbody></table>'
       + (typeof apaNoteHtml === 'function'
           ? apaNoteHtml('prof', { criterion:c.label, pct:c.pct, diffPct:c.diffPct, trials:res.trials, scores:scoreLine,

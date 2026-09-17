@@ -3405,72 +3405,76 @@ const APA_NOTES = {
           : `Asterisks mark scores below the premorbid estimate of ${ctx.premorbid}: * ≥ 1 SD, ** ≥ 1.5 SD, *** ≥ 2 SD.`)
       : ''
   ],
-  /* PROFILE ANALYSIS. The exported table reports THIS PATIENT'S counts and
-     the base rate of each, so the note has to carry the four things a reader
-     needs to reproduce it: which criterion defined "abnormally low", the
-     two-tailed criterion for a difference, where the correlations came from,
-     and that the base rates are simulated rather than tabulated by the
-     publisher. It also lists the scores, because the table reports counts and
-     a reader cannot otherwise check the counting.
+  /* PROFILE ANALYSIS.
 
-     WRITTEN AS DEFINITIONS, like `sdi` and `pre-predict`, not as prose. The
-     first version ran to 136 words against 15 for the SD Index, most of it
-     restating in a sentence what "=" states in a character - and a note is
-     read under a clinical table, where length is what stops it being read at
-     all. Every claim above survives the trim; only the joining words went, so
-     nothing here may be shortened further by dropping a clause. */
+     WRITTEN FOR WHOEVER RECEIVES THE REPORT, which is not the clinician who
+     has this page in front of them. The note travels out of the app on a
+     table that may be read by another psychologist, a solicitor or a court,
+     and it is the only thing that travels with it. So it answers their
+     questions, in their order: what does this percentage mean, what counted
+     as abnormal, where does it come from, and what were the scores.
+
+     The first version answered the developer's questions instead. It opened
+     "Base rates are the percentage of the healthy population expected to show
+     at least as many such findings, estimated by Monte Carlo simulation over
+     200,000 cases", led with the machinery, called results "findings", and
+     ended by warning that a base rate is not a percentile - a caution about
+     two internal terms rather than a statement about this patient. The claims
+     were all correct and all present; the reader was the wrong one.
+
+     What a reader actually needs, and the two things that changed:
+
+       - THE COMPARISON GROUP AND THE SET. "4.4% of healthy people show two or
+         more such results across these 3 measures" is the sentence the number
+         means. Both halves matter: a base rate over four indices is not the
+         base rate over ten subtests, and the note is where the set is named.
+       - MODELLED, NOT OBSERVED. These percentages are simulated from the
+         publisher's correlation matrix; no standardisation sample was counted.
+         A reader cross-checking the manual will not find them in it, and that
+         has to be stated rather than discovered - the same rule the Score
+         Tables note follows for a derived coefficient. */
   'prof': ctx => [
     /* A SENTENCE WITH NOTHING TO INTERPOLATE IS DROPPED, NEVER PRINTED WITH A
        HOLE IN IT. renderStaticApaNotes mirrors every note with `{onScreen:true}`
-       and nothing else, so an unguarded `${ctx.trials}` put "over NaN cases" and
-       "the undefined measures listed below" on screen under a real patient's
-       table. Dropping is the licensed on-screen difference and both are stated
-       in full beside the note anyway - the trial count in the precision
-       disclosure, the measure count in the chip strip's own footer. Gated on the
+       and nothing else, so an unguarded `${ctx.k}` put "across the same
+       undefined measures" on screen under a real patient's table. Gated on the
        VALUE rather than on ctx.onScreen so no other caller can reintroduce it. */
-    Number.isFinite(ctx.trials)
-      ? `Base rate = % of the healthy population showing this many findings or more; ${Number(ctx.trials).toLocaleString()} Monte Carlo cases (Crawford, Garthwaite & Gault, 2007).`
-      : 'Base rate = % of the healthy population showing this many findings or more, by Monte Carlo simulation (Crawford, Garthwaite & Gault, 2007).',
-    ctx.k ? `Computed over the ${ctx.k} measures listed below.` : '',
-    ctx.criterion ? `Abnormally low = ${ctx.criterion}.` : '',
+    ctx.k
+      ? `Base rate = the percentage of healthy people expected to show at least this many such results across the same ${ctx.k} measures, listed below. It is not a percentile for any one score.`
+      : 'Base rate = the percentage of healthy people expected to show at least this many such results across the measures listed below. It is not a percentile for any one score.',
+    ctx.criterion ? `A score is abnormally low ${ctx.criterion}.` : '',
     /* THE SAME CRITERION, TWO-TAILED - the paper's program applies the
        selected criterion to differences and deviations as well, so this
-       follows the selector rather than stating 95% whatever it is set to.
-       Guarded on the VALUE, and the ungated half still names the two-tailed
-       convention, so a caller with no context (the on-screen mirror) states
-       the method without printing a hole. */
+       follows the selector rather than stating 95% whatever it is set to. */
     ctx.diffPct
-      ? `Abnormal difference or deviation = larger than ${ctx.diffPct} of the population shows, either direction.`
-      : 'Abnormal difference or deviation = larger than the same percentage of the population shows, either direction.',
+      ? `A difference or deviation is abnormal when it is larger than ${ctx.diffPct} of healthy people show, in either direction.`
+      : 'A difference or deviation is abnormal when it is larger than the same percentage of healthy people show, in either direction.',
+    /* MODELLED RATHER THAN OBSERVED, AND FROM WHICH TABLE. Three matrices are
+       reachable (WAIS-IV Table 5.1, WMS-IV Tables 4.1 and 4.2) and the two
+       WMS-IV batteries share every measure name against different normative
+       samples, so a note naming one table unconditionally would misstate the
+       source on two profiles in three. The trial count stays because it is
+       what the rounding rests on, and the sentence says so - a reader asking
+       "how precise is 4.4%?" is answered without a second sentence. */
+    ctx.matrixSource && Number.isFinite(ctx.trials)
+      ? `Base rates are modelled rather than counted: they are estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases from the intercorrelations published in ${ctx.matrixSource}, and are rounded to the precision that simulation supports (Crawford, Garthwaite & Gault, 2007).`
+      : 'Base rates are modelled rather than counted: they are estimated by Monte Carlo simulation from the published intercorrelations for the battery profiled (Crawford, Garthwaite & Gault, 2007).',
     /* THE PAPER'S OWN LIMITATION, and it lands on every subtest profile:
        multivariate normality assumes continuous scores, and the authors note
        that a limited range of scaled scores costs accuracy, in contrast to
-       index scores. The exported table has to carry it because nothing else
-       on the page travels with it. */
+       index scores. */
     ctx.coarse
       ? 'Scaled scores are coarse - one point is a third of a standard deviation - so these estimates are less accurate than for index scores (Crawford et al., 2007, p. 428).'
       : '',
-    /* WHICH MATRIX, IN THE MATRIX'S OWN WORDS. Three are reachable (WAIS-IV
-       Table 5.1, WMS-IV Tables 4.1 and 4.2) and the two WMS-IV batteries share
-       every measure name against different normative samples, so a note naming
-       one table unconditionally would misstate the source on two profiles in
-       three. The page passes the matrix's own short `citation`; the fallback
-       claims no table at all. */
-    ctx.matrixSource
-      ? `Intercorrelations: ${ctx.matrixSource}.`
-      : 'Intercorrelations: the published normative-sample values for the battery profiled.',
     /* A profile mixing 16-69 measures with 16-90 ones reads part of its
        covariance structure off a narrower sample. */
     ctx.restricted
       ? `${ctx.restricted} ${ctx.restricted.indexOf(',') === -1 ? 'is' : 'are'} normed to age 69 only; above that, ${ctx.restricted.indexOf(',') === -1 ? 'its' : 'their'} correlations come from a narrower sample.`
       : '',
-    /* "Index scores" is false on a subtest or process-score profile, so the
-       word comes from the page. */
-    ctx.scores ? `${ctx.scoreKind || 'Scores'} entered: ${ctx.scores}.` : '',
-    /* NOT a percentile. A base rate here counts PEOPLE showing a number of
-       findings, not scores below a point, and the two get confused precisely
-       because both are printed as percentages. */
-    'A base rate is not a percentile: it counts people showing this many findings, not scores below a point on one measure.'
+    /* The scores themselves, because the table reports counts and a reader
+       cannot otherwise check the counting. "Index scores" is false on a
+       subtest or process-score profile, so the word comes from the page. */
+    ctx.scores ? `${ctx.scoreKind || 'Scores'} entered: ${ctx.scores}.` : ''
   ],
   'sdi': ctx => [
     'SD Δ = (retest − test) ÷ SD.',

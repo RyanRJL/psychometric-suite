@@ -1397,11 +1397,16 @@ check('a guarded sentence still reaches the exported note', () => {
   if (typeof notes === 'string') return notes;
   const bad = [];
   const CASES = [
+    /* PIN THE VALUE, NOT THE SENTENCE. These used to quote the phrasing
+       around each interpolation, so rewriting the note for clarity broke a
+       check that was never about the wording - twice. What must hold is that
+       every value a caller supplies still reaches the exported note; how the
+       sentence carrying it reads is a separate question, and §45 asks it. */
     ['prof', { trials: 200000, k: 4, criterion: 'below the 5th percentile', diffPct: '98%',
                matrixSource: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1',
                scoreKind: 'Index scores', scores: 'VCI 105' },
-      [/200,000 Monte Carlo cases/, /over the 4 measures/, /Abnormally low = below the 5th percentile/,
-       /larger than 98% of the population/, /Table 5\.1\./, /Index scores entered: VCI 105/]],
+      [/200,000/, /\b4 measures\b/, /below the 5th percentile/, /\b98%/, /Table 5\.1/,
+       /Index scores entered: VCI 105/]],
     ['rci', { thresholdLabel: '1.96 SD' }, [/Reliable change threshold = 1\.96 SD/]],
     ['sdi', { thresholdLabel: '1.65 SD' }, [/Significance threshold = 1\.65 SD/]],
     ['pre-estimates', { ciMultiplier: '1.96' }, [/based on 1\.96 . SEE/]]
@@ -9496,6 +9501,63 @@ check('the exported table is emitted only once every chosen measure is scored', 
   const counts = extractFn(PROF_SRC, 'profCounts');
   if (!/entered < keys\.length/.test(counts)) bad.push('a partial selection can still report as complete');
   if (!/'prof-apa':/.test(APP_SRC)) bad.push('the source is not registered with the Working Report');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* A PRINTED PERCENTAGE MUST NOT CLAIM PRECISION THE SIMULATION HAS NOT GOT.
+   Every base rate here is a Monte Carlo estimate carrying a sampling error of
+   sqrt(p(1-p)/n) - 0.05 points at 4%, 0.08 at 14%, 0.11 at 50%. The old rule
+   was a flat 2 dp below 10% and 1 dp above, so 4.37% was printed where the
+   method cannot separate 4.37 from 4.42. That is a digit of noise on a table
+   that goes into a report, and the note now states the rounding, which makes
+   it a claim rather than a detail.
+
+   Asserted as arithmetic over the shipped formatter and the shipped standard
+   error, not against printed strings: the rounding STEP must be at least the
+   standard error at that percentage, and must not be needlessly coarser than
+   it either, or the figure loses a digit it had earned. */
+check('base rates are printed only to the precision the simulation supports', () => {
+  let E, fmt;
+  try {
+    E = driveProfileEngine();
+    const trials = /const PROF_TRIALS = (\d+)/.exec(PROF_SRC);
+    if (!trials) return 'PROF_TRIALS is not declared';
+    fmt = new Function('profileAbnormalityStdErr', 'PROF_TRIALS',
+      extractFn(PROF_SRC, 'profFmtPct') + '\nreturn profFmtPct;'
+    )(E.profileAbnormalityStdErr, Number(trials[1]));
+    var N = Number(trials[1]);
+  } catch (e) { return 'could not drive the formatter: ' + e.message; }
+
+  const bad = [];
+  if (!/profileAbnormalityStdErr/.test(extractFn(PROF_SRC, 'profFmtPct'))) {
+    bad.push('the formatter does not ask the shipped standard error how many digits it may print');
+  }
+  for (const p of [0.011, 0.05, 0.16, 0.9, 1.97, 4.37, 7.69, 13.78, 20.2, 35.15, 50, 65.65, 99.2]) {
+    const out = fmt(p);
+    const m = /^([\d.]+)%$/.exec(out);
+    if (!m) { bad.push(p + ' printed as "' + out + '"'); continue; }
+    const dp = (m[1].split('.')[1] || '').length;
+    const step = Math.pow(10, -dp);
+    const se = Math.sqrt(p * (100 - p) / N);
+    if (step < se) {
+      bad.push(p + '% prints as ' + out + ', a step of ' + step + ' against a sampling error of ' + se.toFixed(3));
+    }
+    /* And not coarser than it needs to be: one step finer must be below the
+       error, or a real digit was thrown away. */
+    if (dp < 2 && step / 10 >= se) {
+      bad.push(p + '% prints as ' + out + ', but the simulation resolves a further digit');
+    }
+    if (Math.abs(parseFloat(m[1]) - p) > step) bad.push(p + '% prints as ' + out + ', which is not that number');
+  }
+  /* The floor stays: a percentage that rounds to nothing must not print 0.00%,
+     which would assert that no one in the population shows this. */
+  if (fmt(0.004) !== '< 0.01%') bad.push('a percentage below 0.01 prints as "' + fmt(0.004) + '" rather than "< 0.01%"');
+  if (fmt(null) !== '\u2014') bad.push('a missing percentage does not print a dash');
+
+  /* The note says the figures are rounded this way, so the two must not part. */
+  const note = APP_SRC.slice(APP_SRC.indexOf("'prof': ctx => ["));
+  const body = note.slice(0, note.indexOf('],'));
+  if (!/rounded to the precision/.test(body)) bad.push('the exported note no longer states that the figures are rounded to what the simulation supports');
   return bad.length === 0 || bad.join('; ');
 });
 

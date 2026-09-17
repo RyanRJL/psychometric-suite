@@ -1431,6 +1431,46 @@ reading `data.js`, and the short form the exported note prints (`WMS-IV Technica
 Interpretive Manual (GB), Table 4.1 (Adult Battery)`). The page passes `citation || source`,
 so a matrix without one still names its table.
 
+#### The note is written for whoever receives the report
+
+**Not for the clinician, and certainly not for the developer.** The exported table may be
+read by another psychologist, a solicitor or a court, and the note is the only thing that
+travels with it. The first version answered the developer's questions in the developer's
+order — it opened with *"Base rates are the percentage of the healthy population expected
+to show at least as many such findings, estimated by Monte Carlo simulation over 200,000
+cases"*, led with the machinery, called results "findings", and closed by warning that a
+base rate is not a percentile, which is a caution about two internal terms rather than a
+statement about this patient. Every claim was correct and present; the reader was the wrong
+one.
+
+It now answers the recipient's questions in their order: what this percentage means, what
+counted as abnormal, where it comes from, and what the scores were. Two things changed
+rather than being tidied:
+
+- **The comparison group and the set are in the first sentence.** *"the percentage of
+  healthy people expected to show at least this many such results across the same 4
+  measures"* is what the number means, and both halves matter — a base rate over four
+  indices is not the base rate over ten subtests, and the note is where the set is named.
+- **Modelled, not observed.** These percentages are simulated from the publisher's
+  correlation matrix; no standardisation sample was ever counted. A reader cross-checking
+  the manual will not find them in it, so the note says so — the same rule the Score Tables
+  note follows for a derived coefficient.
+
+##### And the printed figure must not claim precision the simulation has not got
+
+`profFmtPct` printed a flat 2 dp below 10% and 1 dp above, so a base rate came out as
+**4.37%** when the Monte Carlo error at that size is **0.05 points** — the method cannot
+separate 4.37 from 4.42. That is a digit of noise on a table someone may be cross-examined
+on.
+
+The rounding **step** is now the finest of 1, 0.1 and 0.01 that is still at least as coarse
+as `sqrt(p(1−p)/n)`: 13.78 prints as 13.8%, 4.37 as 4.4%, and 0.16 keeps both digits because
+its error is 0.009. The printed figure gains a digit if the trial count rises and loses one
+if it falls, with nothing retuned. Screen and export share the one formatter, so a report and
+the page it was read off cannot round differently, and the note states the rounding — which
+makes it a claim. §45 pins it as arithmetic over the shipped formatter and the shipped
+standard error, in both directions: never finer than the error, and never needlessly coarser.
+
 #### The note is written as definitions, not prose
 
 `prof` ran to **136 words** against 15 for the SD Index — most of it restating in a sentence
@@ -1949,7 +1989,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 390 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 391 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
