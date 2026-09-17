@@ -9936,6 +9936,8 @@ body.rb-docked-active{padding-right:0}
   white-space:nowrap;
 }
 .pvt-overview-th.is-measure{text-align:left;padding-left:24px}
+/* A heading centred over a left-aligned column floats free of it. */
+.pvt-overview-th.is-left{text-align:left}
 .pvt-overview-colh{
   position:relative;
   display:inline-block;
@@ -10066,14 +10068,44 @@ body.rb-docked-active{padding-right:0}
   text-align:center;
   white-space:nowrap;
 }
-.pvt-overview-acc{white-space:normal;min-width:170px}
+/* Text columns read left-aligned. Centring a two-line cell of running text
+   leaves both lines ragged on both edges, which is most of what made this
+   table look untidy beside the Change Analysis one — whose data columns are
+   single glyphs, where centring is right. */
+.pvt-overview-derived,
+.pvt-overview-acc{text-align:left}
+.pvt-overview-derived{white-space:normal;min-width:190px}
+.pvt-overview-inst{
+  display:block;
+  font-size:12.5px;
+  color:#3F3B35;
+  line-height:1.3;
+}
+.pvt-overview-acc{white-space:nowrap;min-width:180px}
+.pvt-overview-accsub{
+  display:block;
+  font-size:11.5px;
+  color:#6E6860;
+}
+/* The independence grouping is a label, not a measurement, so it takes a
+   pill — it reads as one token per row instead of a column of loose words. */
+.pvt-overview-pill{
+  display:inline-block;
+  padding:3px 9px;
+  border-radius:999px;
+  background:rgba(20,15,5,0.05);
+  font-size:11px;
+  font-weight:500;
+  color:#4D4840;
+  white-space:nowrap;
+}
 .pvt-overview-cut{
   display:block;
   font-family:var(--mono);
   font-size:11px;
   font-weight:600;
   color:#1A1A1A;
-  margin-bottom:1px;
+  margin-bottom:2px;
 }
 .pvt-overview-arrow{width:34px;color:#BCB6AD;text-align:center}
 .pvt-overview-arrow svg{width:14px;height:14px;display:inline-block;vertical-align:middle}
@@ -10101,9 +10133,12 @@ body.rb-docked-active{padding-right:0}
   box-shadow:0 6px 18px rgba(20,15,5,0.05);
   padding:24px;
 }
-/* On the Summary tab the rail would restate the table beside it. */
-.pvt-sheet.is-summary{grid-template-columns:minmax(0,1fr)}
-.pvt-sheet.is-summary .pvt-rail{display:none}
+/* On the Summary tab the rail would restate the table beside it, and on
+   About it would list the same seven measures the About table lists. */
+.pvt-sheet.is-summary,
+.pvt-sheet.is-about{grid-template-columns:minmax(0,1fr)}
+.pvt-sheet.is-summary .pvt-rail,
+.pvt-sheet.is-about .pvt-rail{display:none}
 .pvt-sheet-main{min-width:0}
 @media (max-width:1180px){
   .pvt-sheet{grid-template-columns:minmax(0,1fr)}
@@ -10563,14 +10598,16 @@ body.rb-docked-active{padding-right:0}
   line-height:1.5;
 }
 .pvt-overview-derived{line-height:1.35}
+/* One meta line under the instrument: kind, edition, caveat, joined by
+   middots. It was three stacked lines, which set the row height. */
 .pvt-overview-sub{
   display:block;
-  font-size:9.5px;
+  font-size:10.5px;
   color:#9E9A93;
-  line-height:1.35;
-  margin-top:1px;
+  line-height:1.4;
+  margin-top:2px;
 }
-.pvt-overview-sub.is-warn{color:#9c3d2a}
+.pvt-overview-sub .is-warn{color:#9c3d2a}
 
 /* ---------- Rey 15-Item administration overlay ----------
    Mounted on <body> (position:fixed against a transformed ancestor is the

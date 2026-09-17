@@ -8242,6 +8242,10 @@ function switchPvtTab(name){
     c.classList.toggle('active', c.id === 'pvt-' + name));
   /* The rail would restate the Summary tab's own table beside it. */
   document.querySelector('#validity .pvt-sheet')?.classList.toggle('is-summary', name === 'summary');
+  /* Same on About: the rail would list the same seven measures the About
+     table already lists, saying "not scored" against each, and take 260px
+     off a table that is the whole tab. */
+  document.querySelector('#validity .pvt-sheet')?.classList.toggle('is-about', name === 'about');
   renderPvtRail();
 }
 
@@ -8298,6 +8302,21 @@ function renderPvtAboutPanel(){
       spec: t2 ? (t2.specRange || String(t2.spec).replace('0.', '.')) : '—',
       desc: 'Fifty-item forced-choice picture recognition; robust to most genuine impairment, though specificity falls in dementia.' }
   ];
+  /* The provenance cell used to stack up to three lines - instrument,
+     "edition not recorded" or the version caveat, then the embedded /
+     stand-alone kind - which on three of the seven rows made the column
+     three deep and set the row height for the whole table. Every word is
+     kept; they now sit on ONE meta line under the instrument, joined by a
+     middot, with the caveat carrying the warning colour by itself. */
+  function derivedCell(r){
+    const i = PVT_INSTRUMENTS[r.tab] || {};
+    const meta = [];
+    if (i.kind || r.source) meta.push(`<span>${i.kind || r.source}</span>`);
+    if (i.unspecified) meta.push('<span>edition not recorded</span>');
+    if (i.mismatch) meta.push('<span class="is-warn">version caveat, see the measure</span>');
+    return `<span class="pvt-overview-inst">${i.derived || r.source}</span>` +
+      (meta.length ? `<span class="pvt-overview-sub">${meta.join(' · ')}</span>` : '');
+  }
   const body = rows.map(r => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
     <td class="pvt-overview-measure">
       <div class="pvt-overview-titlerow">
@@ -8306,23 +8325,20 @@ function renderPvtAboutPanel(){
       </div>
       <span class="pvt-overview-cite">${r.cite}</span>
     </td>
-    <td class="pvt-overview-cell pvt-overview-derived">${(PVT_INSTRUMENTS[r.tab] || {}).derived || r.source}${
-      (PVT_INSTRUMENTS[r.tab] || {}).unspecified ? '<span class="pvt-overview-sub">edition not recorded</span>' : ''}${
-      (PVT_INSTRUMENTS[r.tab] || {}).mismatch ? '<span class="pvt-overview-sub is-warn">version caveat, see the measure</span>' : ''}<span class="pvt-overview-sub">${
-      (PVT_INSTRUMENTS[r.tab] || {}).kind || r.source}</span></td>
-    <td class="pvt-overview-cell">${r.group}</td>
+    <td class="pvt-overview-cell pvt-overview-derived">${derivedCell(r)}</td>
+    <td class="pvt-overview-cell pvt-overview-counts"><span class="pvt-overview-pill">${r.group}</span></td>
     <td class="pvt-overview-cell pvt-overview-acc">${r.acc
-      ? `<span class="pvt-overview-cut">${r.cut}</span>${r.acc}`
-      : `<span class="pvt-overview-cut">${r.cut}</span>sens. ${r.sens} · spec. ${r.spec}`}</td>
+      ? `<span class="pvt-overview-cut">${r.cut}</span><span class="pvt-overview-accsub">${r.acc}</span>`
+      : `<span class="pvt-overview-cut">${r.cut}</span><span class="pvt-overview-accsub">sens. ${r.sens} · spec. ${r.spec}</span>`}</td>
     <td class="pvt-overview-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></td>
   </tr>`).join('');
   el.innerHTML = `<div class="pvt-overview-wrap">
     <table class="pvt-overview-table">
       <thead><tr>
         <th class="pvt-overview-th is-measure">Measure</th>
-        <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The instrument and edition each cut-off was calibrated on. Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity. A cut-off derived on one edition does not automatically transfer to another.">Derived on</span></th>
+        <th class="pvt-overview-th is-left"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The instrument and edition each cut-off was calibrated on. Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity. A cut-off derived on one edition does not automatically transfer to another.">Derived on</span></th>
         <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="Measures derived from the same administration of the same instrument share error and are not independent evidence: each named group counts as ONE indicator in the aggregation.">Counts as</span></th>
-        <th class="pvt-overview-th"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="Published accuracy at the cut-off named in the cell — the same figures printed beside each measure's cut-off selector.">Accuracy at default cut-off</span></th>
+        <th class="pvt-overview-th is-left"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="Published accuracy at the cut-off named in the cell — the same figures printed beside each measure's cut-off selector.">Accuracy at default cut-off</span></th>
         <th aria-hidden="true"></th>
       </tr></thead>
       <tbody>${body}</tbody>
