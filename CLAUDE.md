@@ -1505,6 +1505,30 @@ The rule this follows, for the next page: **the disclosure is what a reader need
 reproduce the number in front of them; anything explaining why the method is the right one
 goes on the Methods page.**
 
+##### Its reader is the clinician, not the developer — and that cost 85 words back
+
+The trimmed version was still written to whoever wrote the code. It opened *"R, the matrix
+of correlations… is the only input the method needs"*, then *"R is Cholesky-decomposed into
+C, and each simulated person is y = Cz"* — the linear algebra as the headline — and the
+bullets named symbols (`z₂`, `r_XY`, `R̄`) without saying what any of them is in the
+clinician's own terms. It is a **disclosure**, not a spec: the person opening it is a
+neuropsychologist asking how a percentage on their screen was arrived at.
+
+It now opens with what is actually happening — *"A healthy population is simulated, then
+counted"* — and the Cholesky step is a parenthesis, where it belongs: it is how the
+simulation is implemented, not what it claims. Every symbol is defined where it is used
+(`r_XY` is the published correlation between those two measures; `R̄` averages every element
+of R including the 1s on the diagonal), the base rate is named as **a count of people, not
+of scores**, and the binomial paragraph now says *why* it misleads rather than only that it
+does — correlated measures, so a person low on one index is more likely than chance to be
+low on another.
+
+**245 → 330 words, deliberately.** The earlier trim was right about the essay and wrong to
+buy the last of it with comprehension; the house range runs 80–441 and this block carries
+three formulae. A shorter disclosure that a clinician cannot follow is not shorter, it is
+unread. What must not come back is the *essay* — headed paragraphs arguing the method's
+merits, which live on the Methods page.
+
 #### One rule, three shapes of the same fault
 
 A profile must never hold a measure and a piece of itself. Two measures conflict when
