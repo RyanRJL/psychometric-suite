@@ -1441,6 +1441,30 @@ shape: `Base rate = …`, `Abnormally low = …`, `Abnormal difference or deviat
 nothing here may be shortened further by dropping a clause — a note is read under a clinical
 table, where length is what stops it being read at all, but each sentence is load-bearing.
 
+#### The disclosure states the formulae; the Methods page carries the argument
+
+The page's `formula-disclosure` had grown into an essay — six paragraphs, ~430 words, with
+the "any set of measures" reasoning, the correlation provenance and the binomial comparison
+each given a headed paragraph of its own. Every other disclosure in the app is one or two
+compact paragraphs that **print the formula and cite the source** (80–222 words; the Rey-15
+threshold block is the one longer exception, and it is deriving a number). It is now 245
+words: the three inequalities with their symbols defined, then one paragraph for the source,
+the recomputed-per-selection rule and the binomial contrast.
+
+**The argument moved rather than being deleted.** Profile Analysis had no entry on
+**Methods & References** at all — not in the page list, not in the methods column, and
+Crawford, Garthwaite & Gault (2007) was absent from the reference list, which had only the
+*other* Crawford & Garthwaite 2007 paper (the regression method for Change Analysis). All
+four are there now, and the methods entry is where the prose belongs: why reading rows
+independently overcalls impairment, what the three questions are, that the criterion governs
+all three, the seeded simulation, the matrix sources for both instruments, the one-level-at-
+a-time rule and why WMS-IV gets two index readings, and the authors' own scaled-score caveat.
+At 377 words it sits beside Change analysis (364) and Performance validity (314).
+
+The rule this follows, for the next page: **the disclosure is what a reader needs to
+reproduce the number in front of them; anything explaining why the method is the right one
+goes on the Methods page.**
+
 #### One rule, three shapes of the same fault
 
 A profile must never hold a measure and a piece of itself. Two measures conflict when
