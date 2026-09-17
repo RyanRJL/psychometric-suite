@@ -3457,8 +3457,8 @@ const APA_NOTES = {
        what the rounding rests on, and the sentence says so - a reader asking
        "how precise is 4.4%?" is answered without a second sentence. */
     ctx.matrixSource && Number.isFinite(ctx.trials)
-      ? `Base rates are modelled rather than counted: they are estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases from the intercorrelations published in ${ctx.matrixSource}, and are rounded to the precision that simulation supports (Crawford, Garthwaite & Gault, 2007).`
-      : 'Base rates are modelled rather than counted: they are estimated by Monte Carlo simulation from the published intercorrelations for the battery profiled (Crawford, Garthwaite & Gault, 2007).',
+      ? `Base rates are modelled, not counted directly: they come from a Monte Carlo simulation of ${Number(ctx.trials).toLocaleString()} cases using the intercorrelations published in ${ctx.matrixSource}, rounded to the precision the simulation supports (Crawford, Garthwaite & Gault, 2007).`
+      : 'Base rates are modelled, not counted directly: they come from a Monte Carlo simulation using the published intercorrelations for the battery profiled (Crawford, Garthwaite & Gault, 2007).',
     /* THE PAPER'S OWN LIMITATION, and it lands on every subtest profile:
        multivariate normality assumes continuous scores, and the authors note
        that a limited range of scaled scores costs accuracy, in contrast to

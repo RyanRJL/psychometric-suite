@@ -17338,7 +17338,7 @@ input[type="number"].ds-age-pop-input{
           <p class="home-dial-desc" id="dial-desc-2" data-dial-desc="2">Build APA-formatted report tables with confidence-interval columns and premorbid comparison.</p>
           <p class="home-dial-desc" id="dial-desc-3" data-dial-desc="3">Evaluate test-retest change across five methods, from descriptive SDI to Crawford regression.</p>
           <p class="home-dial-desc" id="dial-desc-4" data-dial-desc="4">Chart scores entered elsewhere in the suite against classification and reliable-change bands.</p>
-          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Ask how many of a patient&rsquo;s scores are abnormal &mdash; and how many healthy people show that many.</p>
+          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Ask how many of a patient&rsquo;s scores are abnormal, and how many healthy people show that many.</p>
           <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
           <p class="home-dial-desc" id="dial-desc-7" data-dial-desc="7">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
         </div>
@@ -17992,15 +17992,15 @@ input[type="number"].ds-age-pop-input{
         <details class="formula-disclosure">
           <summary>Method &amp; formulae</summary>
           <div class="formula-body">
-            <p><strong>A healthy population is simulated, then counted.</strong> The only input is <strong>R</strong>, the matrix of correlations between the measures administered &mdash; no means, no standard deviations, no reliabilities (Crawford, Garthwaite &amp; Gault, 2007). Each simulated person gets a full set of <i>z</i> scores, drawn so that across the population the measures correlate exactly as the manual reports. (R is Cholesky-decomposed into a lower triangular <b>C</b>; each person is <b>y</b> = <b>C</b><i>z</i> for a fresh vector <i>z</i> of <i>k</i> independent standard normal deviates.)</p>
-            <p>Each of them is then counted three ways, on the criterion selected above:</p>
+            <p><strong>A healthy population is simulated, then counted.</strong> The only input is <strong>R</strong>, the matrix of correlations between the measures administered. No means, no standard deviations, no reliabilities (Crawford, Garthwaite &amp; Gault, 2007). Each simulated person gets a full set of <i>z</i> scores, drawn so that across the population the measures correlate exactly as the manual reports. (R is Cholesky-decomposed into a lower triangular <b>C</b>; each person is <b>y</b> = <b>C</b><i>z</i> for a fresh vector <i>z</i> of <i>k</i> independent standard normal deviates.)</p>
+            <p>Each simulated person is then counted three ways, on the criterion selected above:</p>
             <ul>
-              <li><strong>Abnormally low scores</strong> &mdash; measures below the criterion; the 5th percentile is <i>z</i> = &minus;1.645.</li>
-              <li><strong>Abnormally large differences between two measures</strong> &mdash; of the <i>k</i>(<i>k</i>&minus;1)/2 possible pairs, those whose gap exceeds <i>z</i><sub>2</sub> &times; &radic;(2 &minus; 2<i>r</i><sub>XY</sub>), <i>r</i><sub>XY</sub> being the published correlation between the two. Closely correlated measures qualify on a smaller gap.</li>
-              <li><strong>Abnormally large deviations from the person&rsquo;s own mean</strong> &mdash; a measure differing from that person&rsquo;s average across the set by more than <i>z</i><sub>2</sub> &times; &radic;(1 + <i>R&#772;</i> &minus; 2<i>m&#772;<sub>X</sub></i>), where <i>R&#772;</i> is the mean of every element of R <em>including the 1s on the diagonal</em> and <i>m&#772;<sub>X</sub></i> the mean of that measure&rsquo;s row.</li>
+              <li><strong>Abnormally low scores:</strong> measures below the criterion. The 5th percentile is <i>z</i> = &minus;1.645.</li>
+              <li><strong>Abnormally large differences between two measures:</strong> of the <i>k</i>(<i>k</i>&minus;1)/2 possible pairs, those whose gap exceeds <i>z</i><sub>2</sub> &times; &radic;(2 &minus; 2<i>r</i><sub>XY</sub>), where <i>r</i><sub>XY</sub> is the published correlation between the two. Closely correlated measures qualify on a smaller gap.</li>
+              <li><strong>Abnormally large deviations from the person&rsquo;s own mean:</strong> a measure differing from that person&rsquo;s average across the set by more than <i>z</i><sub>2</sub> &times; &radic;(1 + <i>R&#772;</i> &minus; 2<i>m&#772;<sub>X</sub></i>), where <i>R&#772;</i> is the mean of every element of R <em>including the 1s on the diagonal</em> and <i>m&#772;<sub>X</sub></i> is the mean of that measure&rsquo;s row.</li>
             </ul>
-            <p><i>z</i><sub>2</sub> is the same criterion two-tailed &mdash; 1.960 at the 5th percentile &mdash; a difference in either direction being the finding. <strong>The base rate is a count of people, not of scores:</strong> the percentage of the simulated population showing as many such results as this patient, or more.</p>
-            <p>Correlations are the publisher&rsquo;s own normative-sample values, named in the note beneath the table, and the figures are recomputed for whatever is selected &mdash; a ten-measure base rate does not describe seven. <strong>Treating the measures as independent would overstate how unusual one low score is:</strong> a binomial gives 18.5% across four WAIS-IV Indices at the 5th percentile where the simulation gives 13.8%.</p>
+            <p><i>z</i><sub>2</sub> is the same criterion, two-tailed (1.960 at the 5th percentile), because a difference in either direction counts. <strong>The base rate is a count of people, not of scores:</strong> the percentage of the simulated population showing as many such results as this patient, or more.</p>
+            <p>Correlations are the publisher&rsquo;s own normative-sample values, named in the note beneath the table. The figures are recomputed for whatever measures are selected; a ten-measure base rate does not describe seven. <strong>Treating the measures as independent would overstate how unusual one low score is:</strong> a binomial gives 18.5% across four WAIS-IV Indices at the 5th percentile, where the simulation gives 13.8%.</p>
           </div>
         </details>
 
@@ -19556,13 +19556,13 @@ input[type="number"].ds-age-pop-input{
 
     <h3 class="methods-h3">Profile analysis</h3>
     <p class="section-body-text">
-      A battery raises a question no single row answers: this patient has two scores below the 5th percentile &mdash; how unusual is that? By definition 5% of the population falls below the 5th percentile on any <em>one</em> measure, but across several correlated measures a low score somewhere is common. Reading rows independently overcalls impairment: 13.8% of healthy adults show at least one abnormally low score across the four WAIS-IV Indices, and 24.9% across ten core subtests. The <strong>Profile Analysis</strong> page reports the count and the percentage of the healthy population showing that many or more (Crawford, Garthwaite &amp; Gault, 2007).
+      A battery raises a question no single row answers: this patient has two scores below the 5th percentile, so how unusual is that? By definition 5% of the population falls below the 5th percentile on any <em>one</em> measure, but across several correlated measures a low score somewhere is common. Reading rows independently overcalls impairment: 13.8% of healthy adults show at least one abnormally low score across the four WAIS-IV Indices, and 24.9% across ten core subtests. The <strong>Profile Analysis</strong> page reports the count and the percentage of the healthy population showing that many or more (Crawford, Garthwaite &amp; Gault, 2007).
     </p>
     <p class="section-body-text">
-      Three questions are answered from one simulation: how many scores are abnormally low, how many pairwise differences between measures are abnormally large, and how many measures deviate abnormally from the patient&rsquo;s own mean across the battery. The criterion is chosen by the clinician from the five the paper tabulates (below 1 SD, or below the 10th, 5th, 2nd or 1st percentile) and governs all three &mdash; a difference or deviation is abnormal when larger than the same percentage of the population shows, in either direction. Simulations are seeded, so a figure quoted in a report does not change when the page is reopened, and the sampling error of each percentage is stated beside it.
+      Three questions are answered from one simulation: how many scores are abnormally low, how many pairwise differences between measures are abnormally large, and how many measures deviate abnormally from the patient&rsquo;s own mean across the battery. The criterion is chosen by the clinician from the five the paper tabulates (below 1 SD, or below the 10th, 5th, 2nd or 1st percentile) and governs all three. A difference or deviation is abnormal when larger than the same percentage of the population shows, in either direction. Simulations are seeded, so a figure quoted in a report does not change when the page is reopened, and the sampling error of each percentage is stated beside it.
     </p>
     <p class="section-body-text">
-      The only input is the correlation matrix over the measures administered, taken from the publisher&rsquo;s normative sample: WAIS-IV Technical and Interpretive Manual (GB) Table 5.1, or WMS-IV Technical and Interpretive Manual (GB) Table 4.1 (Adult battery) or 4.2 (Older Adult battery). Scores are read from Score Tables rather than entered here, so the two cannot disagree. A profile may not hold both a measure and a part of itself &mdash; an index and its own subtest, two indices sharing subtests, a subtest and its own process scores &mdash; so each instrument is profiled one level at a time. Where a publisher&rsquo;s indices cross, as WMS-IV&rsquo;s do (auditory and visual against immediate and delayed), the two readings are offered separately. Index scores give the more accurate estimate: the authors note that scaled scores are coarse, one point being a third of a standard deviation, so a subtest-level profile is the rougher reading and says so on screen and in the exported note.
+      The only input is the correlation matrix over the measures administered, taken from the publisher&rsquo;s normative sample: WAIS-IV Technical and Interpretive Manual (GB) Table 5.1, or WMS-IV Technical and Interpretive Manual (GB) Table 4.1 (Adult battery) or 4.2 (Older Adult battery). Scores are read from Score Tables rather than entered here, so the two cannot disagree. A profile may not hold both a measure and a part of itself (an index and its own subtest, two indices sharing subtests, or a subtest and its own process scores), so each instrument is profiled one level at a time. Where a publisher&rsquo;s indices cross, as WMS-IV&rsquo;s do (auditory and visual against immediate and delayed), the two readings are offered separately. Index scores give the more accurate estimate: the authors note that scaled scores are coarse, one point being a third of a standard deviation, so a subtest-level profile is the rougher reading and says so on screen and in the exported note.
     </p>
 
     <h3 class="methods-h3">Performance validity</h3>
@@ -25807,8 +25807,8 @@ const APA_NOTES = {
        what the rounding rests on, and the sentence says so - a reader asking
        "how precise is 4.4%?" is answered without a second sentence. */
     ctx.matrixSource && Number.isFinite(ctx.trials)
-      ? `Base rates are modelled rather than counted: they are estimated by Monte Carlo simulation over ${Number(ctx.trials).toLocaleString()} cases from the intercorrelations published in ${ctx.matrixSource}, and are rounded to the precision that simulation supports (Crawford, Garthwaite & Gault, 2007).`
-      : 'Base rates are modelled rather than counted: they are estimated by Monte Carlo simulation from the published intercorrelations for the battery profiled (Crawford, Garthwaite & Gault, 2007).',
+      ? `Base rates are modelled, not counted directly: they come from a Monte Carlo simulation of ${Number(ctx.trials).toLocaleString()} cases using the intercorrelations published in ${ctx.matrixSource}, rounded to the precision the simulation supports (Crawford, Garthwaite & Gault, 2007).`
+      : 'Base rates are modelled, not counted directly: they come from a Monte Carlo simulation using the published intercorrelations for the battery profiled (Crawford, Garthwaite & Gault, 2007).',
     /* THE PAPER'S OWN LIMITATION, and it lands on every subtest profile:
        multivariate normality assumes continuous scores, and the authors note
        that a limited range of scaled scores costs accuracy, in contrast to
@@ -36639,7 +36639,7 @@ if (document.readyState === 'loading'){
       const cls = j === here ? 'prof-bar prof-here'
                 : (here > 0 && j > here ? 'prof-bar prof-tail' : 'prof-bar');
       bars += '<div class="' + cls + '" style="height:' + h + '%" title="'
-        + escapeHtml('exactly ' + j + ' — ' + profFmtPct(dist[j]) + ' of the population') + '"></div>';
+        + escapeHtml('exactly ' + j + ': ' + profFmtPct(dist[j]) + ' of the population') + '"></div>';
       /* A CARET, BECAUSE HEIGHT ALONE CANNOT FIND THIS BAR. Most people show
          none, so P(0) sets the scale and every bar that matters is a hairline
          beside it - at four Indices the patient's own bar was 2px. Rescaling
@@ -36648,7 +36648,7 @@ if (document.readyState === 'loading'){
       axis += '<span' + (j === here ? ' class="prof-here"' : '') + '>'
         + (j === here || j % every === 0 ? j : '') + '</span>';
     }
-    return '<div class="prof-dist"><div class="prof-dist-title">Population — how many '
+    return '<div class="prof-dist"><div class="prof-dist-title">Population: how many '
       + escapeHtml(unit) + ' are abnormal</div>'
       + '<div class="prof-bars">' + bars + '</div>'
       + '<div class="prof-xaxis">' + axis + '</div></div>';
@@ -36808,7 +36808,7 @@ if (document.readyState === 'loading'){
     const se = profileAbnormalityStdErr(res.lowScores[0], res.trials);
     if (!Number.isFinite(se)) return '';
     return '<p class="prof-precision">Monte Carlo estimates from ' + res.trials.toLocaleString()
-      + ' simulated cases — sampling error about ±' + se.toFixed(2)
+      + ' simulated cases. Sampling error is about ±' + se.toFixed(2)
       + ' percentage points at the largest value here. Seeded, so the same profile always returns the same figures.</p>';
   }
 
