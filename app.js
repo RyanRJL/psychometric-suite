@@ -3353,9 +3353,26 @@ function profileAbnormalityStdErr(pct, trials){
    Keep them short. These are pasted into a report, where an over-long
    note costs the clinician more to trim than it saves. State what a
    reader cannot infer from the column headers, and nothing else.
+
+   THE TEST FOR A SENTENCE: would a reader of the exported table misread
+   it without this? Then state the fact, not the reason; the reason goes
+   in the comment beside it or on the Methods page. No advice to the
+   clinician ("enter an age…"): the reader of the export cannot act on
+   it. Sibling cases share one sentence with a list. check.js §51
+   renders every note with every condition on and holds each to a word
+   ceiling, so a new sentence has to pay for itself.
    ============================================================ */
 const APA_NOTES = {
-  'bat': ctx => [
+  'bat': ctx => {
+    /* The three reasons an interval can be blank share one sentence, listing
+       only those present; they were three sentences and 64 words. */
+    const noCi = [
+      ctx.blankCiBaseRate ? 'longest-span measures (scored from a base-rate table)' : '',
+      ctx.blankCiNonePublished ? 'measures absent from their manual\'s reliability table' : '',
+      ctx.blankCiManual ? 'measures entered by hand' : ''
+    ].filter(Boolean);
+    const noCiList = noCi.length > 1 ? noCi.slice(0, -1).join(', ') + ' or ' + noCi[noCi.length - 1] : noCi[0];
+    return [
     `Classification follows ${ctx.classification === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.`,
     /* A mixed table labels each family's Score column in its heading row, so
        it needs no sentence here; only rows that heading cannot label carry a
@@ -3367,7 +3384,7 @@ const APA_NOTES = {
        cells read as an oversight rather than as the deliberate refusal they
        are. */
     ctx.hasRaw
-      ? 'Raw-score measures are reported as obtained; percentile and classification are not derived, as these measures are not on a standardised metric.'
+      ? 'Raw scores are not converted, so carry no percentile or classification.'
       : '',
     /* Names the source, because these percentiles come from a published table
        rather than from a metric conversion, and says which direction they run
@@ -3377,14 +3394,14 @@ const APA_NOTES = {
        in its own column heading. Defines the direction, which is the opposite
        of the percentile column above it. */
     ctx.hasBaseRates
-      ? 'Base rate = percentage of the normative sample obtaining the same score or higher (WAIS-IV Administration and Scoring Manual, Tables C.4–C.5). A higher base rate indicates a more common, and therefore lower, score.'
+      ? 'Base rate = percentage of the normative sample scoring the same or higher (WAIS-IV Administration and Scoring Manual, Tables C.4–C.5), so a higher base rate means a lower score.'
       : '',
     /* A BLANK BASE RATE SAYS WHY, as a blank interval does below. The base
        rate is read from an age-banded table, so it is withheld with no age on
        record, and where the manual publishes no band for the age (Longest
        Letter-Number Sequence stops at 69). The span is still printed. */
     ctx.baseRateNoAge
-      ? 'No patient age was entered, so base rates are not reported; they are published by age band.'
+      ? 'Base rates are not reported, as no patient age was entered.'
       : '',
     ctx.baseRateOutOfBand
       ? 'A base rate is not reported where the manual publishes none for the patient\'s age.'
@@ -3394,7 +3411,7 @@ const APA_NOTES = {
     /* Without this the pairing of a high percentile with a low classification
        reads as a contradiction rather than as the convention it is. */
     ctx.hasHigherIsWorse
-      ? 'On error measures (perseverations, intrusions, false positives) a higher score indicates more errors. Percentiles are reported as obtained; classifications describe performance, so a high percentile corresponds to a low classification.'
+      ? 'On error measures (perseverations, intrusions, false positives) a higher score means more errors, so a high percentile pairs with a low classification.'
       : '',
     // States the BASIS, not just the level; without it a reader comparing
     // against the manual has no way to know why the numbers differ. Names the
@@ -3407,7 +3424,7 @@ const APA_NOTES = {
     // publisher reports internal consistency at all. Full rationale is in
     // Methods & References.
     ctx.ciLevel && ctx.ciLevel !== 'off'
-      ? `Confidence intervals are ${ctx.ciLevel}%, calculated as the obtained score ± z × SEM, where SEM = SD × √(1 − r) on the normative standard deviation of the reported metric. The reliability r is the coefficient each test's manual uses for its own published intervals: internal consistency where the publisher reports one, otherwise the test–retest coefficient.`
+      ? `${ctx.ciLevel}% CI = score ± z × SEM, SEM = normative SD × √(1 − r), where r is the coefficient each manual uses for its own intervals (internal consistency where published, otherwise retest or alternate-form).`
       : '',
     /* THE SENTENCE ABOVE IS FALSE WITHOUT THIS ONE, on any table holding a
        measure whose publisher tabulates reliability BY AGE BAND while no age
@@ -3427,7 +3444,7 @@ const APA_NOTES = {
        used anyway. batteryBasisPresent asks the shipped resolver at the age
        actually in force, so it cannot disagree with the printed intervals. */
     ctx.ageBandNotSelected
-      ? 'One or more measures here publish their reliability by age band. No patient age was entered, so the published all-ages or test–retest coefficient was used for those measures instead; entering an age narrows their intervals.'
+      ? 'No patient age was entered, so measures with reliability published by age band use the all-ages or retest coefficient.'
       : '',
     /* A BLANK INTERVAL MUST SAY WHY IT IS BLANK. Every other deliberate blank
        in this table already carries a sentence — the raw percentile above and
@@ -3439,15 +3456,7 @@ const APA_NOTES = {
        Sourced from resolveCiReliability rather than getBatteryRowReliability,
        because the latter collapses both to null and the distinction is the
        whole point of the sentence. */
-    ctx.blankCiBaseRate
-      ? 'Longest-span measures are scored from a published base-rate table rather than by conversion, and have no reliability coefficient, so no confidence interval is shown for them.'
-      : '',
-    ctx.blankCiNonePublished
-      ? 'Where a measure is absent from its manual\'s reliability table, no coefficient is available and no confidence interval is shown for it.'
-      : '',
-    ctx.blankCiManual
-      ? 'Measures entered by hand carry no reliability coefficient, so no confidence interval is shown for them.'
-      : '',
+    noCi.length ? `No confidence interval is shown for ${noCiList}, as none has a reliability coefficient.` : '',
     /* NO SENTENCE FOR THE UNCORRECTED PAIRING. It used to have one, and it has
        been moved wholesale to Methods & References.
 
@@ -3472,7 +3481,7 @@ const APA_NOTES = {
        published coefficient and nothing was in fact corrected. Same rule the
        age sentence below follows. */
     ctx.hasDerivedR
-      ? 'Coefficients for measures whose manual publishes no normative-sample reliability have been corrected to the normative sample\'s variability for this table. These are not the values those manuals print, so the intervals concerned differ from the published ones.'
+      ? 'Some coefficients were corrected to the normative sample\'s variability for this table, so those intervals differ from the published ones.'
       : '',
     /* Which age band the coefficients were drawn from. Without this the
        interval cannot be reproduced from the manual, because for these
@@ -3489,7 +3498,7 @@ const APA_NOTES = {
        says everything a reader must know to reproduce the row. Which
        coefficient each fallback resolves to is on the Methods page. */
     ctx.ciAge != null
-      ? `For measures whose published reliability is tabulated by age, coefficients are those for age ${ctx.ciAge}, or the publisher's all-ages figure where that age falls outside a measure's normed range.`
+      ? `Where reliability is published by age, coefficients are those for age ${ctx.ciAge}, or the all-ages figure outside a measure's normed range.`
       : '',
     // Must follow the EFFECTIVE flagging mode (batteryPremorbidMode). This
     // previously described the SD thresholds unconditionally, so with SEE
@@ -3497,12 +3506,13 @@ const APA_NOTES = {
     // own table meant.
     ctx.premorbid != null
       ? (ctx.premorbidMode === 'see'
-          ? `Asterisks mark scores falling below the premorbid estimate of ${ctx.premorbid} by more than the model's standard error of estimate: * beyond the 90% bound, ** beyond the 95% bound, *** beyond the 99% bound.`
+          ? `Asterisks mark scores below the premorbid estimate of ${ctx.premorbid} beyond the 90% (*), 95% (**) or 99% (***) bound of its standard error of estimate.`
           : `Asterisks mark scores below the premorbid estimate of ${ctx.premorbid}: * ≥ 1 SD, ** ≥ 1.5 SD, *** ≥ 2 SD.`)
       : '',
     /* Specific notes, last, per APA: the key to each superscript metric mark. */
     Array.isArray(ctx.metricMarks) && ctx.metricMarks.length ? ctx.metricMarks.join('. ') + '.' : ''
-  ],
+    ];
+  },
   /* PROFILE ANALYSIS.
 
      WRITTEN FOR WHOEVER RECEIVES THE REPORT, which is not the clinician who
@@ -3538,8 +3548,8 @@ const APA_NOTES = {
        undefined measures" on screen under a real patient's table. Gated on the
        VALUE rather than on ctx.onScreen so no other caller can reintroduce it. */
     ctx.k
-      ? `Base rate = the percentage of healthy people expected to show at least this many such results across the same ${ctx.k} measures, listed below. It is not a percentile for any one score.`
-      : 'Base rate = the percentage of healthy people expected to show at least this many such results across the measures listed below. It is not a percentile for any one score.',
+      ? `Base rate = the percentage of healthy people expected to show at least this many such results across the same ${ctx.k} measures, listed below.`
+      : 'Base rate = the percentage of healthy people expected to show at least this many such results across the measures listed below.',
     ctx.criterion ? `A score is abnormally low ${ctx.criterion}.` : '',
     /* THE SAME CRITERION, TWO-TAILED - the paper's program applies the
        selected criterion to differences and deviations as well, so this
@@ -3555,14 +3565,14 @@ const APA_NOTES = {
        what the rounding rests on, and the sentence says so - a reader asking
        "how precise is 4.4%?" is answered without a second sentence. */
     ctx.matrixSource && Number.isFinite(ctx.trials)
-      ? `Base rates are modelled, not counted directly: they come from a Monte Carlo simulation of ${Number(ctx.trials).toLocaleString()} cases using the intercorrelations published in ${ctx.matrixSource}, rounded to the precision the simulation supports (Crawford, Garthwaite & Gault, 2007).`
-      : 'Base rates are modelled, not counted directly: they come from a Monte Carlo simulation using the published intercorrelations for the battery profiled (Crawford, Garthwaite & Gault, 2007).',
+      ? `Base rates are modelled, not counted: a Monte Carlo simulation of ${Number(ctx.trials).toLocaleString()} cases on the intercorrelations in ${ctx.matrixSource} (Crawford, Garthwaite & Gault, 2007), rounded to the precision the simulation supports.`
+      : 'Base rates are modelled, not counted: a Monte Carlo simulation on the published intercorrelations for the battery profiled (Crawford, Garthwaite & Gault, 2007).',
     /* THE PAPER'S OWN LIMITATION, and it lands on every subtest profile:
        multivariate normality assumes continuous scores, and the authors note
        that a limited range of scaled scores costs accuracy, in contrast to
        index scores. */
     ctx.coarse
-      ? 'Scaled scores are coarse - one point is a third of a standard deviation - so these estimates are less accurate than for index scores (Crawford et al., 2007, p. 428).'
+      ? 'Scaled scores are coarse (one point is a third of a standard deviation), so these estimates are less accurate than for index scores (Crawford et al., 2007, p. 428).'
       : '',
     /* A profile mixing 16-69 measures with 16-90 ones reads part of its
        covariance structure off a narrower sample. */
@@ -3581,7 +3591,7 @@ const APA_NOTES = {
        nothing. Say so, and say where they DO work, rather than leaving a row
        of blanks with no explanation. */
     ctx.hasRawInIndexMode
-      ? 'Raw-score measures are not scored in index mode, which divides by the metric’s SD; use raw mode, which divides by the normative SD entered for each measure.'
+      ? 'Raw-score measures are not scored in index mode, which has no metric SD to divide by.'
       : '',
     ctx.thresholdLabel ? `Significance threshold = ${ctx.thresholdLabel}.` : '',
     '<i>p</i>-values are two-tailed.'
@@ -3601,7 +3611,10 @@ const APA_NOTES = {
   'pre-predict': () => [
     'WAIS-IV indices are predicted from ToPF, education and sex; WMS-IV indices from ToPF and age.',
     'Difference = Achieved − Predicted.',
-    'Base rate = published % at or below this discrepancy (ToPF-UK manual, negative discrepancies only). The manual derives these from a normal model with SD = SEE rather than from observed standardisation-sample frequencies.'
+    /* How the manual derived these (a normal model on the SEE) is on the page
+       above the table and on the Methods page. The figures are the manual's
+       own, so a reader cross-checking finds them there. */
+    'Base rate = published % at or below this discrepancy (ToPF-UK manual, negative discrepancies only).'
   ],
   /* Performance Validity page — one note under the single combined table.
 
@@ -3641,25 +3654,27 @@ const APA_NOTES = {
       (ctx.onScreen || !sources.length) ? '' : `Sources: ${sources.join('; ')}.`,
       '"Fail" = score beyond the published cut-off, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent indicators (Larrabee, 2014).',
       ctx.hasDashes
-        ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks an index whose source publishes a base rate or an AUC rather than a pair.'
+        ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks a source that publishes a base rate or AUC instead.'
         : 'Sensitivity and specificity are the published values at the applied cut-off.',
       /* The population Shura et al. restrict EI > 0 to, and the worst
          published specificity, travel with the table. */
       ctx.eiScreening
-        ? 'The Effort Index is scored at the > 0 screening cut-off, which Shura et al. (2018) recommend for patients under 65 without severe neurological impairment; pooled specificity was .91, but .66 in the derivation study’s mixed clinical sample (Silverberg et al., 2007).'
+        ? 'The Effort Index uses the > 0 screening cut-off, recommended for patients under 65 without severe neurological impairment (Shura et al., 2018); specificity was .91 pooled but .66 in a mixed clinical sample (Silverberg et al., 2007).'
         : '',
       ctx.eiOlder
-        ? 'The Effort Index is scored at the > 2 cut-off, which Shura et al. (2018) suggest for older and military or veteran samples.'
+        ? 'The Effort Index uses the > 2 cut-off, suggested for older and military or veteran samples (Shura et al., 2018).'
         : '',
       shared.length ? `Indices sharing a subtest count as one indicator: ${shared.join(' and ')}.` : '',
       /* The CVLT-3 is the one measure here with no published cut-off, so an
          exported table must say where its threshold came from — otherwise
          the Cut-off column implies the manual printed one. */
       ctx.hasCvlt3 && !ctx.cvlt3Borrowed
-        ? 'The CVLT-3 Forced Choice manual publishes base rates by age band, not a cut-off; its threshold is the rarest score whose published base rate is at or below the stated per-test false-positive criterion, so it varies with age.'
+        ? 'The CVLT-3 Forced Choice manual publishes base rates by age band, not a cut-off; the threshold is the rarest score whose base rate is within the per-test false-positive criterion, so it varies with age.'
         : '',
+      /* The citation and the CVLT-3 base-rate source are already on the
+         Sources line; what it cannot say is that the manual has no cut-off. */
       ctx.cvlt3Borrowed
-        ? `The CVLT-3 manual publishes no cut-off for Forced Choice Recognition; the cut-off and accuracy applied here are CVLT-II figures (${ctx.cvlt3Cite}), the trial being structurally identical across editions. The base rate shown is the CVLT-3 manual's own.`
+        ? 'The CVLT-3 manual publishes no Forced Choice cut-off; the cut-off and accuracy applied here are CVLT-II figures.'
         : '',
       /* A cut-off derived on one edition of a test does not automatically
          transfer to another, and the exported table is where a reviewer
@@ -3677,7 +3692,7 @@ const APA_NOTES = {
   },
   'pre-opiepredict': () => [
     'OPIE-4 prorated scores are predicted from age and sex with Vocabulary and/or Matrix Reasoning.',
-    '<span class="uk-caution-red">Illustrative only in a UK context as this is derived from US regression equations. The numbers should not be considered to be accurate in a UK context.</span> The published equations also use US education, ethnicity and region terms which are not applied, so every patient is scored at the US reference category (12th-grade high-school graduate, not African-American, not resident in the US West). These estimates would likely run high for patients who left school early and low for graduates.'
+    '<span class="uk-caution-red">Illustrative only in a UK context as this is derived from US regression equations. The numbers should not be considered to be accurate in a UK context.</span> The equations\' US education, ethnicity and region terms are not applied, so every patient is scored at the US reference category (12th-grade graduate, not African-American, not US West); estimates likely run high for early school leavers and low for graduates.'
   ]
 };
 /* Render a registered note as its APA block. Returns '' when every sentence
@@ -5138,11 +5153,10 @@ function renderRciApa(method){
   }
   const rbansAA  = valid.some(r => /^RBANS\b/i.test(r.group || '') && !isAltFormFamily(r.group || ''));
   const rbansAlt = valid.some(r => /^RBANS\b/i.test(r.group || '') &&  isAltFormFamily(r.group || ''));
-  if (rbansAA){
-    formParts.push('RBANS Update coefficients are Form A retest reliabilities (Randolph, 2012).');
-  }
-  if (rbansAlt){
-    formParts.push('RBANS Update coefficients are Form A to B/C/D alternate-form reliabilities (Randolph, 2012).');
+  // One sentence when both kinds are present, not two with the same subject and citation.
+  const rbansKinds = [rbansAA ? 'Form A retest' : '', rbansAlt ? 'Form A to B/C/D alternate-form' : ''].filter(Boolean);
+  if (rbansKinds.length){
+    formParts.push(`RBANS Update coefficients are ${rbansKinds.join(' and ')} reliabilities (Randolph, 2012).`);
   }
   out.innerHTML = `
     <div class="apa-table-num">Table 1</div>
@@ -8222,7 +8236,7 @@ function renderPvtApa(){
       versionCaveats: (typeof PVT_INSTRUMENTS === 'object' ? Object.keys(PVT_INSTRUMENTS) : [])
         .filter(tab => PVT_INSTRUMENTS[tab].mismatch && tab !== 'cvlt3')
         .filter(tab => rows.some(r => r.id === tab || r.id.startsWith(tab + '-') || (tab === 'ds' && r.id.startsWith('ds'))))
-        .map(tab => PVT_INSTRUMENTS[tab].mismatch),
+        .map(tab => PVT_INSTRUMENTS[tab].noteMismatch || PVT_INSTRUMENTS[tab].mismatch),
       hasTomm: rows.some(r => r.group === 'tomm'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
@@ -10590,6 +10604,7 @@ const ReportBundle = (function(){
         await navigator.clipboard.writeText(plain);
       }
       if (typeof exportToast === 'function') exportToast(`✓ ${blocks.length} table${blocks.length===1?'':'s'} copied`);
+      markExported();
       if (typeof flashCopiedButton === 'function') flashCopiedButton(rootEl && rootEl.querySelector('[data-rb-action="copy"]'));
       maybeShowKofiToast();
     } catch(e){
@@ -10644,6 +10659,7 @@ const ReportBundle = (function(){
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 100);
     if (typeof showToast === 'function') showToast('✓ CSV downloaded - opens in Excel');
+    markExported();
     maybeShowKofiToast();
   }
   function exportWord(){
@@ -10680,6 +10696,7 @@ ${buildReportHtmlBody()}
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 100);
     if (typeof showToast === 'function') showToast('✓ Word document downloaded');
+    markExported();
     maybeShowKofiToast();
   }
 
@@ -11702,8 +11719,76 @@ ${buildReportHtmlBody()}
   /* "+ Add to report" buttons removed - adds are automatic via MutationObserver.
      If a saved bundle from before still references these IDs, they're harmless. */
 
+  /* ---------- leaving the tab ----------
+     Report items live in sessionStorage and the tables are held nowhere, so
+     closing the tab loses the patient's work. A page cannot word the browser's
+     leave dialog or add buttons to it: on beforeunload it may only ask for the
+     browser's own generic "Leave site?". So that dialog is the warning, and
+     choosing to stay brings up this card with the export. The timer set during
+     beforeunload runs only if the page survives, which is only after "Stay".
+
+     Asked only while the report holds something not yet exported. After an
+     export, closing is the expected next step and a prompt there is noise.
+     Nothing is asked of an empty report: no data, nothing to lose. */
+  /* The report survives a reload (sessionStorage), so the record that it was
+     exported has to as well, or a reload after an export prompts again. A
+     hash rather than a second copy of the patient's tables. */
+  const EXPORTED_KEY = 'workingReport_exportedSig';
+  let exportedSig = null;
+  try { exportedSig = sessionStorage.getItem(EXPORTED_KEY); } catch(e){}
+  function itemsSig(){
+    const s = JSON.stringify(state.items);
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return s.length + ':' + h;
+  }
+  function markExported(){
+    exportedSig = itemsSig();
+    try { sessionStorage.setItem(EXPORTED_KEY, exportedSig); } catch(e){}
+    hideLeaveCard();
+  }
+  function hasUnexported(){ return state.items.length > 0 && itemsSig() !== exportedSig; }
+  function onBeforeUnload(e){
+    if (!hasUnexported()) return;
+    e.preventDefault();
+    e.returnValue = '';
+    setTimeout(showLeaveCard, 0);
+  }
+  function hideLeaveCard(){
+    document.querySelector('.leave-card-backdrop')?.remove();
+  }
+  function showLeaveCard(){
+    if (document.querySelector('.leave-card-backdrop')) return;
+    const n = state.items.length;
+    const back = document.createElement('div');
+    back.className = 'leave-card-backdrop';
+    back.innerHTML = `
+      <div class="leave-card" role="alertdialog" aria-modal="true" aria-labelledby="leave-card-title" aria-describedby="leave-card-body">
+        <h2 class="leave-card-title" id="leave-card-title">Nothing is saved when this tab closes</h2>
+        <p class="leave-card-body" id="leave-card-body">Closing the tab clears every table and the working report (${n} table${n === 1 ? '' : 's'}). Export the report first if you need it.</p>
+        <div class="leave-card-actions">
+          <button type="button" class="leave-card-btn is-primary" data-leave="word">Export to Word</button>
+          <button type="button" class="leave-card-btn" data-leave="copy">Copy report</button>
+          <button type="button" class="leave-card-btn is-quiet" data-leave="stay">Keep working</button>
+        </div>
+      </div>`;
+    back.addEventListener('click', e => {
+      const b = e.target.closest('[data-leave]');
+      if (b){
+        const act = b.dataset.leave;
+        if (act === 'word') exportWord();
+        else if (act === 'copy') copyAll();
+        hideLeaveCard();
+      } else if (e.target === back) hideLeaveCard();
+    });
+    back.addEventListener('keydown', e => { if (e.key === 'Escape') hideLeaveCard(); });
+    document.body.appendChild(back);
+    back.querySelector('[data-leave="word"]')?.focus();
+  }
+
   /* ---------- init ---------- */
   function init(){
+    window.addEventListener('beforeunload', onBeforeUnload);
     load();
     injectUI();
     bindEvents();
@@ -11741,7 +11826,8 @@ ${buildReportHtmlBody()}
   }
 
   return { init, addOrReplace, remove, clear, clearSilent, setSuppressed, isSuppressed, copyAll, exportWord, exportExcel, open, close, toggle, showKofiPrompt: maybeShowKofiToast,
-           acceptSource, isSourceAccepted, isConsentGated, resetConsent, refreshConsentControls };
+           acceptSource, isSourceAccepted, isConsentGated, resetConsent, refreshConsentControls,
+           hasUnexported, showLeaveCard };
 })();
 
 if (document.readyState === 'loading'){

@@ -313,6 +313,26 @@ Do not confuse the Report Writer with the **Working Report bundle**
 (`app.js`, "WORKING REPORT BUNDLE v2"), which is live and collects APA tables from
 every calculator into a drawer.
 
+#### Closing the tab loses the work, so the app asks
+
+Report items live in `sessionStorage` (a reload keeps them, closing the tab does not) and
+the tables are held nowhere. **A page cannot word the browser's leave dialog or add
+buttons to it**: on `beforeunload` it may only request the browser's own generic "Leave
+site?". So that dialog is the warning, and choosing to stay brings up `.leave-card`
+(`ReportBundle.showLeaveCard`) with Export to Word / Copy report / Keep working. The timer
+set inside `beforeunload` fires only if the page survives, which is what makes "stayed"
+detectable.
+
+It asks only while the report holds something **not yet exported** (`hasUnexported`): an
+empty report has nothing to lose, and closing straight after an export is the expected next
+step. Every export path calls `markExported`, and the exported state is a hash in
+`sessionStorage` so it survives the same reload the report does. A failed copy does not
+count. `check.js` §52 pins the gate, the three export paths and the binding.
+
+The preview pane denies clipboard write outright (`permissions.query` returns `denied`),
+so Copy fails there for every caller. To test the success path, stand in a resolving
+`navigator.clipboard` and click for real.
+
 #### Collection is automatic, except on the four Change Analysis methods
 
 A `MutationObserver` per APA container collects a tool's table the moment one
@@ -1299,6 +1319,14 @@ the footer**, deliberately outside the top bar, so they carry a title but no buc
 The **sidebar numbers are positions**, so inserting a page mid-list without renumbering
 leaves `05, 10, 06, 07` — which reads as missing pages. §46 asserts the sequence.
 
+**The top bar is full.** Profile Analysis made nine top-level tabs, and at the old 18px
+padding they ran 124px past the 1320px bar at every window width, so the nav sat off to the
+right of the brand row. It is now 10px padding with `justify-content:safe center` (centred
+when the row fits, start-aligned rather than clipped on the left when it does not), the
+icons drop below 1180px and the padding tightens to 6px below 1020px. Measured in the
+browser at 1920, 1440, 1180, 1100, 1020 and 905. A tenth top-level tab will not fit: put it
+in a dropdown, or re-measure.
+
 #### The home dial takes any number of tools, but it used to take exactly seven
 
 Adding Profile Analysis made it eight, and the nodes are one `360/n` step apart — the
@@ -1920,6 +1948,11 @@ Because OPIE-4 codes Female as 0, defaulting a blank sex field to 0 silently ret
 same way it gates on age. Never default a coded categorical to 0 without checking what 0
 means.
 
+**Classification defaults to AACN** (Guilmette et al., 2020; owner decision, 2026-09).
+The default is whichever option `#bat-class` starts on (`value="aan"`, first and
+`selected`); nothing persists the choice, and Score Charts reads the same select. §52
+pins it.
+
 **Score types** are `standard` (M 100, SD 15), `t` (50/10), `scaled` (10/3), `z` (0/1).
 `rowScoreType(row)` resolves per-row overrides against the page default.
 
@@ -1942,12 +1975,40 @@ Each note is rendered **twice**: into the exported table, and into the on-screen
 that mirrors it (`renderStaticApaNotes`, via `data-apa-note`). `ctx.onScreen` — passed only
 by the mirror — is the **one licensed difference** between the two. A note may use it to
 **drop** a sentence the surrounding page already states in full; it may not add, soften or
-reword one, so the exported note stays the superset. One note uses it: `pre-opiepredict`
-suppresses the UK caveat on screen, because the `.caution-box` at the top of that tab says
-the same thing at greater length and two statements of one caveat read as two caveats. The
-exported copy is the one that leaves the app, so it keeps the caveat unconditionally.
-`check.js` §15 pins all four halves — export keeps it, mirror drops it, caution-box still
-exists, and the flag still reaches the note (without which the split is inert).
+reword one, so the exported note stays the superset. One note uses it: `pvt` drops its
+Sources line on screen, because the tab strip and the on-page references state every source
+in full. (`pre-opiepredict` used to drop its UK caveat on screen; since 2026-08 the note is
+the caveat, sits above the table, and both copies are identical. `check.js` §15 asserts
+that identity.)
+
+#### Keeping notes short
+
+The notes grow one justified sentence at a time and none is ever removed, so they bloat
+and the owner has had to ask for trims repeatedly. The 2026-09 audit took the Score Tables
+note from **379 to 248 words** and Performance Validity from **344 to 277**, with every
+condition switched on. The rules, in the comment at the top of `APA_NOTES` as well:
+
+- **The test for a sentence:** would a reader of the *exported* table misread it without
+  this? If not, it does not go in.
+- **State the fact, not the reason.** The reason goes in the code comment or on Methods &
+  References.
+- **No advice to the clinician** ("entering an age narrows…", "record which variant…"). The
+  reader of the export cannot act on it. `PVT_INSTRUMENTS` carries `noteMismatch` beside
+  `mismatch` for exactly this: the card speaks to the clinician, the note to the reader.
+- **Sibling cases share one sentence with a list.** The three reasons a CI can be blank
+  were three sentences (64 words); they are one.
+- **Cite each source once.** The PVT Sources line already names the CVLT-II cut-off source,
+  so the borrowed-cut-off sentence no longer repeats it.
+
+`check.js` §51 renders every note with **every** condition on and holds each to a word
+ceiling (the post-audit length rounded up to 5). It also fails if a note reads a `ctx.`
+key its worst case never sets, so a new flag cannot add an uncounted sentence. Proven by
+mutation both ways. Raising a ceiling is allowed, with the reason in the commit message.
+
+The audit also found a regression: the Score Tables CI sentence said "otherwise the
+test–retest coefficient", which is false for CVLT-3 (alternate-form, Manual Table 3.4).
+`4014da8` had reworded the earlier "retest or alternate-form" back into the error the
+comment beside it records fixing. It says "retest or alternate-form" again.
 
 **A sentence with nothing to interpolate must be DROPPED, never printed with a hole in
 it.** `renderStaticApaNotes` mirrors every note with `{ onScreen: true }` and *nothing
@@ -2013,7 +2074,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 391 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 409 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -2022,8 +2083,9 @@ predictions, reliable-change thresholds and direction-neutral outcome labels, ba
 provenance and monotonicity, percentile-tail clamping, the effect-size calculator,
 Score Tables confidence intervals, documentation contracts, wiring (§16–17), the
 raw-score metric (§18), the Norms Database view (§32), age-band filtering of the
-family dropdowns (§33), consent gating on the Change Analysis methods (§34) and the
-empty-state guard on every premorbid APA renderer (§35).
+family dropdowns (§33), consent gating on the Change Analysis methods (§34), the
+empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
+tab-close prompt and AACN default (§52).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

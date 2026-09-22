@@ -241,7 +241,7 @@
       const rowY = HEADER_H + i * ROW_H;
       const yOf = p => rowY + (ROW_H - 3) - (p / 100) * (ROW_H - 6);
       const v = parseFloat(r.score);
-      const cls = document.getElementById('bat-class')?.value || 'wechsler';
+      const cls = document.getElementById('bat-class')?.value || 'aan';
       const details = batteryClassificationDetails(r, cls);
       const spans = Object.keys(entry.baseRates).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
 
@@ -1327,7 +1327,7 @@
 
   function renderVizPage(){
     vizSetGeometry();
-    const cls = document.getElementById('bat-class')?.value || 'wechsler';
+    const cls = document.getElementById('bat-class')?.value || 'aan';
     const ciLevel = document.getElementById('bat-ci-level')?.value || 'off';
     const settingsText = vizSettingsText(cls, ciLevel);
 

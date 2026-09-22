@@ -9647,7 +9647,11 @@ check('the APA note carries the criterion, the source and the method', () => {
   if (!/Monte Carlo/.test(body)) bad.push('the note does not say the base rates are simulated');
   if (!/ctx\.criterion/.test(body)) bad.push('the note does not state which criterion was used');
   if (!/ctx\.k/.test(body)) bad.push('the note does not say how many measures the profile covers');
-  if (!/not a percentile/i.test(body)) bad.push('the note does not distinguish a base rate from a percentile');
+  /* The definition is what keeps a base rate from being read as a percentile:
+     a percentage of PEOPLE showing at least this many results. The separate
+     "It is not a percentile" sentence it replaced was a caution about two
+     internal terms, and went in the 2026-09 note audit. */
+  if (!/percentage of healthy people expected to show at least this many/i.test(body)) bad.push('the note does not define the base rate as a count of people');
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -10123,6 +10127,114 @@ check('overtyping the shared Change Analysis example makes it the clinician\'s r
     bad.push('the claim touches consent itself; only data entry in the handler may accept a method');
   }
   return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+
+heading('51. APA notes stay short');
+
+/* THE NOTES GROW ONE JUSTIFIED SENTENCE AT A TIME. Every fix that added a
+   conditional sentence was right on its own terms, and none removed one, so
+   by 2026-09 the Score Tables note ran to 351 words and the validity note to
+   304 with every condition true. They are pasted into reports; a note that
+   long is not read, and trimming it falls to the clinician each time.
+
+   So each note is rendered with EVERY condition on, which no real table
+   quite reaches (some flags exclude each other), and held to a ceiling. The
+   ceiling is the post-audit length rounded up to the next 5 words, so a
+   rewording has a little room and a new sentence does not: it has to be
+   paid for by cutting another. Raise a ceiling only with the reason in the
+   commit message.
+
+   The context must switch on every `ctx.` key the note reads, or a new flag
+   would add a sentence this check never sees. Data-length content (the
+   score list, the superscript key) is held to a fixed stand-in, because its
+   length is the table's and not the note's prose. */
+check('every APA note, with every condition on, is within its word ceiling', () => {
+  const notes = extractApaNotes();
+  if (typeof notes === 'string') return notes;
+  const I = D.PVT_INSTRUMENTS;
+  const caveats = Object.keys(I).filter(t => I[t].mismatch && t !== 'cvlt3').map(t => I[t].noteMismatch || I[t].mismatch);
+  const BAT = { classification: 'aan', hasRaw: 1, hasBaseRates: 1, baseRateNoAge: 1, baseRateOutOfBand: 1,
+    hasHigherIsWorse: 1, ciLevel: '95', ageBandNotSelected: 1, blankCiBaseRate: 1, blankCiNonePublished: 1,
+    blankCiManual: 1, hasDerivedR: 1, ciAge: 45, premorbid: '102', premorbidMode: 'see', metricMarks: ['a', 'b'] };
+  const PVT = { hasEi: 1, hasEs: 1, hasRds: 1, hasDs: 1, hasRey: 1, hasCvlt3: 1, cvlt3Borrowed: 1,
+    cvlt3Cite: 'Schwartz et al., 2016', hasTomm: 1, bothRbans: 1, bothDigitSpan: 1, hasDashes: 1,
+    eiScreening: 1, eiOlder: 1, versionCaveats: caveats, esGated: 1 };
+  const CASES = {
+    'bat': [BAT, { ...BAT, premorbidMode: 'sd' }],
+    'pvt': [PVT, { ...PVT, cvlt3Borrowed: 0 }],
+    'prof': [{ k: 10, criterion: 'below the 5th percentile', diffPct: '95%', trials: 200000,
+               matrixSource: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1', coarse: 1,
+               restricted: 'Letter-Number Sequencing, Figure Weights', scoreKind: 'Scores', scores: 'x' }],
+    'sdi': [{ mixedTypes: 1, hasRawInIndexMode: 1, thresholdLabel: '1.96 SD' }],
+    'rci': [{ methodSentence: 'RCI (z) is computed per Iverson (2001), adjusted for practice effects.',
+              thresholdLabel: '95% (z = 1.96)',
+              rSentence: 'Corrected (attenuation-adjusted) test-retest <i>r</i> was used where published; raw <i>r</i> for 5 tests.',
+              formSentence: 'CVLT-3 coefficients are alternate-form reliabilities (Delis et al., 2017). RBANS Update coefficients are Form A retest and Form A to B/C/D alternate-form reliabilities (Randolph, 2012).' }],
+    'pre-estimates': [{ ciMultiplier: '1.96' }],
+    'pre-predict': [{}],
+    'pre-opiepredict': [{}]
+  };
+  const CEILING = { 'bat': 250, 'pvt': 280, 'prof': 140, 'sdi': 40, 'rci': 60, 'pre-estimates': 25, 'pre-predict': 35, 'pre-opiepredict': 85 };
+  const words = s => s.replace(/<[^>]+>/g, '').split(/\s+/).filter(Boolean).length;
+  const bad = [];
+  for (const id of Object.keys(notes)) {
+    if (!CASES[id]) { bad.push(id + ' has no worst case here, so nothing limits its length'); continue; }
+    /* Every key the note reads must be switched on by at least one case. */
+    const start = APP_SRC.indexOf("  '" + id + "': ");
+    const next = APP_SRC.slice(start + 4).search(/\n  '[\w-]+': |\n\};/);
+    const body = APP_SRC.slice(start, start + 4 + next);
+    const read = [...new Set([...body.matchAll(/ctx\.(\w+)/g)].map(m => m[1]))].filter(k => k !== 'onScreen');
+    const given = new Set(CASES[id].flatMap(c => Object.keys(c)));
+    const missing = read.filter(k => !given.has(k));
+    if (missing.length) bad.push(id + ' reads ' + missing.join(', ') + ', which the worst case never sets');
+    const n = Math.max(...CASES[id].map(c => words(notes[id](c).filter(Boolean).join(' '))));
+    if (process.env.APA_WORDS) console.log('      ' + id + ': ' + n + ' words');
+    if (!(n <= CEILING[id])) bad.push(id + ' is ' + n + ' words against a ceiling of ' + CEILING[id]);
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+heading('52. Leaving the tab, and the default classification');
+
+/* Report items live in sessionStorage and the tables nowhere, so closing the
+   tab loses the work. The browser's own leave dialog is the only warning a
+   page can raise on close; the export offer follows it if the clinician
+   stays. Pinned: the prompt fires only for an unexported report, every export
+   path marks the report exported, and the card is reached from the handler. */
+check('closing the tab with an unexported report asks first, then offers the export', () => {
+  const bad = [];
+  const start = APP_SRC.indexOf('const ReportBundle = (function(){');
+  const rb = start < 0 ? '' : APP_SRC.slice(start);
+  if (!rb) return 'could not locate ReportBundle';
+  const handler = (rb.match(/function onBeforeUnload\(e\)\{[\s\S]*?\n  \}/) || [''])[0];
+  if (!/if \(!hasUnexported\(\)\) return;/.test(handler)) bad.push('the leave prompt is not gated on an unexported report');
+  if (!/e\.preventDefault\(\)/.test(handler) || !/e\.returnValue = ''/.test(handler)) bad.push('the handler no longer asks the browser to confirm');
+  if (!/setTimeout\(showLeaveCard, 0\)/.test(handler)) bad.push('staying no longer brings up the export card');
+  if (!/window\.addEventListener\('beforeunload', onBeforeUnload\)/.test(rb)) bad.push('the handler is never bound');
+  if (!/return state\.items\.length > 0 && itemsSig\(\) !== exportedSig;/.test(rb)) bad.push('an empty or already-exported report would still prompt');
+  for (const fn of ['copyAll', 'exportWord', 'exportExcel']) {
+    const m = rb.match(new RegExp('(async )?function ' + fn + '\\(\\)\\{[\\s\\S]*?\\n  \\}'));
+    if (!m || !/markExported\(\)/.test(m[0])) bad.push(fn + ' does not mark the report exported, so closing after it would still prompt');
+  }
+  if (/leave-card-btn[^'"]*btn-/.test(rb)) bad.push('the card borrows a shared button class the cascade can reach');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Owner decision, 2026-09: AACN uniform labelling (Guilmette et al., 2020) is
+   the default. The default is whichever option the select starts on, and
+   Score Charts falls back to the same value if the select is ever missing. */
+check('the default classification is AACN', () => {
+  const bad = [];
+  const sel = (HTML_SRC.match(/<select id="bat-class">[\s\S]*?<\/select>/) || [''])[0];
+  const opts = [...sel.matchAll(/<option value="(\w+)"( selected)?>/g)];
+  if (!opts.length) return 'could not read the classification select';
+  if (opts[0][1] !== 'aan' || !opts[0][2]) bad.push('the select does not start on AACN');
+  if (opts.filter(o => o[2]).length !== 1) bad.push('more than one option is marked selected');
+  const viz = fs.readFileSync(path.join(ROOT, 'app-viz-page.js'), 'utf8');
+  if (/getElementById\('bat-class'\)\?\.value \|\| 'wechsler'/.test(viz)) bad.push('Score Charts still falls back to Wechsler');
+  return bad.length === 0 || bad.join('; ');
 });
 
 

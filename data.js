@@ -2614,12 +2614,16 @@ const PVT_INSTRUMENTS = {
   rds: {
     kind: 'Embedded', derived: 'WAIS-R, WAIS-III and WAIS-IV',
     detail: 'Digit Span, Forward and Backward trials.',
-    mismatch: 'Classic Reliable Digit Span is Forward + Backward only. The WAIS-IV and WAIS-5 subtest adds a Sequencing trial, which is NOT included here; sequencing-inclusive variants exist but carry different cut-offs. Record which variant was scored.'
+    mismatch: 'Classic Reliable Digit Span is Forward + Backward only. The WAIS-IV and WAIS-5 subtest adds a Sequencing trial, which is NOT included here; sequencing-inclusive variants exist but carry different cut-offs. Record which variant was scored.',
+    /* The card speaks to the clinician; the APA note to whoever reads the
+       report, who needs the fact and not the instruction. */
+    noteMismatch: 'Reliable Digit Span is Forward + Backward only, excluding the WAIS-IV/WAIS-5 Sequencing trial.'
   },
   ds: {
     kind: 'Embedded', derived: 'WAIS-III',
     detail: 'Age-corrected scaled score, Vocabulary − Digit Span, and longest spans.',
-    mismatch: 'Both sources are WAIS-III. A WAIS-IV or WAIS-5 age-corrected scaled score includes Sequencing in the composite, so it is not on the identical metric these cut-offs were derived on.'
+    mismatch: 'Both sources are WAIS-III. A WAIS-IV or WAIS-5 age-corrected scaled score includes Sequencing in the composite, so it is not on the identical metric these cut-offs were derived on.',
+    noteMismatch: 'The Digit Span cut-offs are WAIS-III; a WAIS-IV/WAIS-5 scaled score includes Sequencing.'
   },
   rey15: {
     kind: 'Stand-alone', derived: 'Rey 15-Item with the Boone recognition trial',
