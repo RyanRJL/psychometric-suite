@@ -30730,16 +30730,13 @@ function switchPvtTab(name){
   pvtSyncDesc(name);
   renderPvtRail();
 }
-/* About gets a one-line description, as the Change Analysis overview does;
-   the full one returns on every measure tab. Its "no single index is a
-   verdict" is carried on About by the table's footer. */
+/* About carries no description, as the Change Analysis overview does not;
+   the full one shows on every measure tab. Its "no single index is a
+   verdict" is carried on About by the table's footer. An inline display
+   rather than [hidden], so no stylesheet display rule can outrank it. */
 function pvtSyncDesc(name){
   const desc = document.querySelector('#validity > .section-desc');
-  if (!desc) return;
-  if (desc.dataset.full === undefined) desc.dataset.full = desc.innerHTML;
-  desc.innerHTML = name === 'about'
-    ? 'Choose a measure below to score it against its published cut-offs.'
-    : desc.dataset.full;
+  if (desc) desc.style.display = name === 'about' ? 'none' : '';
 }
 
 function clearPvt(){
@@ -37563,11 +37560,12 @@ if (document.readyState === 'loading'){
     });
     if (id === 'overview'){
       if (mainEyebrow) mainEyebrow.textContent = 'About';
-      if (mainDesc) mainDesc.innerHTML = 'Choose the method below that best fits your data and rigour requirements.';
+      /* No description on About: the comparison table is self-explanatory. */
+      if (mainDesc){ mainDesc.innerHTML = ''; mainDesc.style.display = 'none'; }
     } else {
       const method = methods.find(item => item.id === id);
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
-      if (mainDesc && method) mainDesc.innerHTML = method.source;
+      if (mainDesc && method){ mainDesc.innerHTML = method.source; mainDesc.style.display = ''; }
     }
     // Shared data: re-render the RCI method we just switched to, so scores/norms
     // entered on any other method appear here too (single shared data set).

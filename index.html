@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260922l">
-<link rel="stylesheet" href="design-system.css?v=20260922l">
+<link rel="stylesheet" href="styles.css?v=20260922m">
+<link rel="stylesheet" href="design-system.css?v=20260922m">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -3200,12 +3200,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260922l"></script>
-<script src="app.js?v=20260922l"></script>
-<script src="design-system.js?v=20260922l" defer></script>
-<script src="app-effectsize-page.js?v=20260922l"></script>
-<script src="app-viz-page.js?v=20260922l"></script>
-<script src="app-profile-page.js?v=20260922l"></script>
+<script src="data.js?v=20260922m"></script>
+<script src="app.js?v=20260922m"></script>
+<script src="design-system.js?v=20260922m" defer></script>
+<script src="app-effectsize-page.js?v=20260922m"></script>
+<script src="app-viz-page.js?v=20260922m"></script>
+<script src="app-profile-page.js?v=20260922m"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
@@ -3595,11 +3595,12 @@
     });
     if (id === 'overview'){
       if (mainEyebrow) mainEyebrow.textContent = 'About';
-      if (mainDesc) mainDesc.innerHTML = 'Choose the method below that best fits your data and rigour requirements.';
+      /* No description on About: the comparison table is self-explanatory. */
+      if (mainDesc){ mainDesc.innerHTML = ''; mainDesc.style.display = 'none'; }
     } else {
       const method = methods.find(item => item.id === id);
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
-      if (mainDesc && method) mainDesc.innerHTML = method.source;
+      if (mainDesc && method){ mainDesc.innerHTML = method.source; mainDesc.style.display = ''; }
     }
     // Shared data: re-render the RCI method we just switched to, so scores/norms
     // entered on any other method appear here too (single shared data set).

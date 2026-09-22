@@ -8277,16 +8277,13 @@ function switchPvtTab(name){
   pvtSyncDesc(name);
   renderPvtRail();
 }
-/* About gets a one-line description, as the Change Analysis overview does;
-   the full one returns on every measure tab. Its "no single index is a
-   verdict" is carried on About by the table's footer. */
+/* About carries no description, as the Change Analysis overview does not;
+   the full one shows on every measure tab. Its "no single index is a
+   verdict" is carried on About by the table's footer. An inline display
+   rather than [hidden], so no stylesheet display rule can outrank it. */
 function pvtSyncDesc(name){
   const desc = document.querySelector('#validity > .section-desc');
-  if (!desc) return;
-  if (desc.dataset.full === undefined) desc.dataset.full = desc.innerHTML;
-  desc.innerHTML = name === 'about'
-    ? 'Choose a measure below to score it against its published cut-offs.'
-    : desc.dataset.full;
+  if (desc) desc.style.display = name === 'about' ? 'none' : '';
 }
 
 function clearPvt(){
