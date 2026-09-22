@@ -2207,8 +2207,12 @@ const PVT_EI_WEIGHTS = {
    cut-off score of 1" means a score of 1 flags, i.e. > 0. This was > 1
    until 2026-09, a Table 3 row the paper tabulates but never recommends. */
 const PVT_EI_CUTOFFS = { standard: 3, sensitive: 0 };
-/* Shown on screen whenever the > 0 cut-off is selected. */
-const PVT_EI_SCREENING_CAUTION = 'At > 0 a third of genuine clinical patients flag (specificity .66, Silverberg et al., 2007, Table 1). The authors recommend it only to screen post-acute mild TBI, not as grounds for a finding.';
+/* Shown on screen whenever the > 0 cut-off is selected. Shura et al. (2018)
+   recommend EI >= 1 (this > 0) "for patients who are younger than 65 and
+   without severe neurological impairments", and EI >= 3 for elderly and
+   military or veteran samples. The .66 is Silverberg's own Table 1 and stays
+   named because it is the worst published case, not the typical one. */
+const PVT_EI_SCREENING_CAUTION = 'Pooled specificity at > 0 is .91 across four studies (Shura et al., 2018), but was .66 in the derivation study’s mixed clinical sample (Silverberg et al., 2007). Shura et al. recommend it for patients under 65 without severe neurological impairment, and a stricter cut-off for older and military or veteran samples.';
 
 /* Novitski et al. (2012). ES = (List Recognition - [List Recall + Story
    Recall + Figure Recall]) + Digit Span, all raw. LOWER is more suspicious.
@@ -2257,16 +2261,18 @@ const PVT_TOMM_CUTOFFS = [
 const PVT_BASE_RATES = [0.10, 0.20, 0.30, 0.40, 0.50];
 
 /* Published classification accuracy for the selectable cut-offs, shown on
-   screen and in the APA export. Strings, not numbers, because the sources
+   screen and in the APA export. Strings, not numbers, because some sources
    publish RANGES (across samples or statistical methods) and the app renders
    what the source prints:
-   - EI (Silverberg et al., 2007): at > 3, specificity .94 in the mixed
-     clinical derivation sample rising to 1.00 in mild TBI and controls
-     (Tables 1 and 3); sensitivity .46-.71 across the clinical, simulated-
-     naive and simulated-coached malingering groups (Table 3). At > 0,
-     specificity .66 (derivation, Table 1) to .781 (mild TBI) and .964
-     (controls); sensitivity .857-.958 (Table 3). The .66 means a third of
-     genuine clinical patients flag, which is why > 0 is screening-only.
+   - EI: the POOLED meta-analytic estimate, Shura et al. (2018) Table 7
+     (bivariate HSROC). Shura writes cut-offs as "EI >= n", so this app's
+     > 3 is their EI >= 4 (6 studies: sens .44, spec .92) and > 0 is their
+     EI >= 1 (4 studies: sens .59, spec .91). The full-sample row, not the
+     subgroups: the .27-.40 / .95-.98 sometimes quoted for > 3 is the range
+     of the four subgroup rows beneath it. Until 2026-09 these were
+     Silverberg et al.'s (2007) derivation figures (> 3: .46-.71 / .94-1.00),
+     which Shura et al. found to be an outlier outside the SROC prediction
+     region. Silverberg still defines the weights and the cut-offs.
    - RDS (Schroeder et al., 2012): global rates by weighted average and
      Bayesian method — at <= 6, sensitivity .30/.35 and specificity .96/.97;
      at <= 7, sensitivity .48/.58 and specificity .82/.85.
@@ -2278,8 +2284,8 @@ const PVT_BASE_RATES = [0.10, 0.20, 0.30, 0.40, 0.50];
      none exists. The APA table prints dashes and the note explains.
    TOMM accuracy lives on PVT_TOMM_CUTOFFS above. Pinned by check.js §38. */
 const PVT_EI_ACCURACY = {
-  standard:  { sens: '.46–.71', spec: '.94–1.00' },
-  sensitive: { sens: '.86–.96', spec: '.66–.96' }
+  standard:  { sens: '.44', spec: '.92' },
+  sensitive: { sens: '.59', spec: '.91' }
 };
 const PVT_RDS_ACCURACY = {
   conservative: { sens: '.30–.35', spec: '.96–.97' },

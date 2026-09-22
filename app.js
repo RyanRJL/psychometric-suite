@@ -3521,7 +3521,7 @@ const APA_NOTES = {
      never says "EI" was pure length. */
   'pvt': ctx => {
     const sources = [];
-    if (ctx.hasEi)   sources.push('Effort Index (Silverberg et al., 2007)');
+    if (ctx.hasEi)   sources.push('Effort Index (Silverberg et al., 2007; accuracy Shura et al., 2018)');
     if (ctx.hasEs)   sources.push('Effort Scale (Novitski et al., 2012)');
     if (ctx.hasRds)  sources.push('Reliable Digit Span (Greiffenstein et al., 1994)');
     if (ctx.hasDs)   sources.push('Digit Span indices (Iverson & Tulsky, 2003; Axelrod et al., 2006, WAIS-III)');
@@ -3545,10 +3545,10 @@ const APA_NOTES = {
       ctx.hasDashes
         ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks an index whose source publishes a base rate or an AUC rather than a pair.'
         : 'Sensitivity and specificity are the published values at the applied cut-off.',
-      /* EI > 0 flags a third of genuine clinical patients (Table 1), so the
-         restriction the authors attach to it travels with the table. */
+      /* The population Shura et al. restrict EI > 0 to, and the worst
+         published specificity, travel with the table. */
       ctx.eiScreening
-        ? 'The Effort Index is scored at the > 0 screening cut-off, which Silverberg et al. (2007) recommend only for screening post-acute mild TBI; at that cut-off specificity was .66 in their mixed clinical sample.'
+        ? 'The Effort Index is scored at the > 0 screening cut-off, which Shura et al. (2018) recommend for patients under 65 without severe neurological impairment; pooled specificity was .91, but .66 in the derivation study’s mixed clinical sample (Silverberg et al., 2007).'
         : '',
       shared.length ? `Indices sharing a subtest count as one indicator: ${shared.join(' and ')}.` : '',
       /* The CVLT-3 is the one measure here with no published cut-off, so an
@@ -7756,7 +7756,7 @@ function getPvtSummaryRows(){
   const ei = getPvtEi();
   if (ei.ei !== undefined) rows.push({
     id: 'ei', group: 'rbans', measure: 'RBANS Effort Index',
-    score: String(ei.ei), cutoff: `> ${ei.cut}${ei.cutKey === 'sensitive' ? ' (mild TBI screening)' : ''}`,
+    score: String(ei.ei), cutoff: `> ${ei.cut}${ei.cutKey === 'sensitive' ? ' (screening, under 65)' : ''}`,
     sens: PVT_EI_ACCURACY[ei.cutKey].sens, spec: PVT_EI_ACCURACY[ei.cutKey].spec,
     result: pvtStatusWord(ei.fail), fail: ei.fail
   });
@@ -8097,8 +8097,8 @@ function renderPvtAccuracy(){
   const eiEl = document.getElementById('pvt-ei-accuracy');
   if (eiEl){
     const key = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
-    eiEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_EI_ACCURACY[key].sens} · spec. ${PVT_EI_ACCURACY[key].spec} (Silverberg et al., 2007)${
-      key === 'sensitive' ? '. Screening post-acute mild TBI only.' : ''}`;
+    eiEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_EI_ACCURACY[key].sens} · spec. ${PVT_EI_ACCURACY[key].spec} (Shura et al., 2018, pooled)${
+      key === 'sensitive' ? '. Under 65 without severe neurological impairment only.' : ''}`;
   }
   const dsEl = document.getElementById('pvt-ds-accuracy');
   if (dsEl){
@@ -8283,7 +8283,7 @@ function renderPvtAboutPanel(){
   if (!el) return;
   const t2 = PVT_TOMM_CUTOFFS.find(c => c.id === 't2-45');
   const rows = [
-    { tab: 'ei', title: 'Effort Index', cite: 'Silverberg et al. (2007)',
+    { tab: 'ei', title: 'Effort Index', cite: 'Silverberg et al. (2007); Shura et al. (2018)',
       source: 'RBANS embedded', group: 'RBANS', cut: 'EI &gt; 3',
       sens: PVT_EI_ACCURACY.standard.sens, spec: PVT_EI_ACCURACY.standard.spec,
       desc: 'Weighted sum of the Digit Span and List Recognition raw scores (0–12); higher = less credible.' },

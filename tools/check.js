@@ -7127,39 +7127,35 @@ check('shipped TOMM evaluation: default cut-offs, failure direction, Bayes wirin
 
 
 check('published accuracy strings match their sources, and reach screen and export', () => {
-  /* PINNED: Silverberg et al. (2007) Tables 1 & 3 — at > 3 specificity .94
-     (derivation) to 1.00 (mTBI/controls), sensitivity .464-.708 across the
-     three malingering groups; at > 0 specificity .66-.964, sensitivity
-     .857-.958 (ranges DERIVED below from the tables, not restated). Schroeder et al. (2012) Tables 2 & 4 — global weighted/
+  /* PINNED: EI accuracy is Shura et al. (2018) Table 7, the pooled
+     full-sample row, mapped by the app's cut-off (see below). Schroeder et al. (2012) Tables 2 & 4 — global weighted/
      Bayesian rates. The ES deliberately has NO pair: its published
      discrimination is ROC AUC .908 (vs .608 for the EI). */
   const bad = [];
   const eq = (got, want, name) => { if (got !== want) bad.push(name + ' drifted: ' + got); };
-  /* Silverberg et al. (2007): Table 1 is the derivation-sample specificity
-     (N = 103); Table 3 gives specificity in mTBI and controls, then
-     sensitivity in clinical, sim-naive and sim-coached malingerers. Each
-     printed range is min-max of those cells at 2 dp, so a range pointing at
-     the wrong cut-off's row fails here. */
-  const T1 = { 0: .66, 1: .75, 2: .84, 3: .94 };
-  const T3 = {
-    0: { spec: [.781, .964], sens: [.933, .958, .857] },
-    1: { spec: [.813, .964], sens: [.667, .917, .750] },
-    2: { spec: [.906, .964], sens: [.667, .792, .500] },
-    3: { spec: [1.00, 1.00], sens: [.533, .708, .464] }
-  };
+  /* Shura et al. (2018) Table 7, pooled full-sample rows, as printed. Shura
+     writes "EI >= n", so the app's "> c" reads row c + 1. Keyed by that
+     mapping rather than restated per option, so the accuracy cannot drift
+     onto a neighbouring row: Silverberg's > 1 vs > 0 slip was exactly that.
+     The subgroup rows (No Simulators, Age < 65, Military) are deliberately
+     not used; they are what the ".27-.40 / .95-.98" quoted for > 3 ranges over. */
+  const T7 = { 1: [.59, .91], 2: [.62, .86], 3: [.48, .93], 4: [.44, .92], 5: [.23, .96] };
   const f2 = v => v.toFixed(2).replace(/^0/, '');
-  const span = a => f2(Math.min(...a)) + '–' + f2(Math.max(...a));
   ['standard', 'sensitive'].forEach(k => {
     const c = D.PVT_EI_CUTOFFS[k];
-    eq(D.PVT_EI_ACCURACY[k].sens, span(T3[c].sens), `EI > ${c} sensitivity`);
-    eq(D.PVT_EI_ACCURACY[k].spec, span([T1[c], ...T3[c].spec]), `EI > ${c} specificity`);
+    eq(D.PVT_EI_ACCURACY[k].sens, f2(T7[c + 1][0]), `EI > ${c} sensitivity (Shura EI >= ${c + 1})`);
+    eq(D.PVT_EI_ACCURACY[k].spec, f2(T7[c + 1][1]), `EI > ${c} specificity (Shura EI >= ${c + 1})`);
   });
   /* The screening cut-off's restriction must be on screen and in the export. */
-  if (typeof D.PVT_EI_SCREENING_CAUTION !== 'string' || !/mild TBI/.test(D.PVT_EI_SCREENING_CAUTION)
-      || !/\.66/.test(D.PVT_EI_SCREENING_CAUTION)) bad.push('the EI > 0 caution lost its mild-TBI restriction or its .66');
+  const cau = D.PVT_EI_SCREENING_CAUTION;
+  if (typeof cau !== 'string' || !/under 65/.test(cau) || !/\.91/.test(cau) || !/\.66/.test(cau)
+      || !/Shura/.test(cau)) bad.push('the EI > 0 caution lost its under-65 restriction, its .91/.66 or its Shura citation');
   if (!/PVT_EI_SCREENING_CAUTION/.test(extractFn(APP_SRC, 'renderPvtEi'))) bad.push('renderPvtEi no longer shows the screening caution');
   if (!/ctx\.eiScreening/.test(APP_SRC) || !/eiScreening:/.test(extractFn(APP_SRC, 'renderPvtApa'))) bad.push('the APA note no longer carries the screening restriction');
-  if (!/EI &gt; 0 · screening, post-acute mild TBI only/.test(HTML_SRC)) bad.push('the cut-off selector no longer names the > 0 screening restriction');
+  if (!/EI &gt; 0 · screening, under 65 without severe neurological impairment/.test(HTML_SRC)) bad.push('the cut-off selector no longer names the > 0 screening restriction');
+  if (!/Accuracy: Shura et al\. \(2018\)/.test(HTML_SRC)) bad.push('the EI tab no longer cites Shura et al. (2018) for its accuracy');
+  if ((HTML_SRC.match(/<p>Shura, R\. D\./g) || []).length !== 2) bad.push('Shura et al. (2018) is missing from a references list');
+  if (!/Shura et al\., 2018/.test(extractFn(APP_SRC, 'renderPvtAccuracy'))) bad.push('the live accuracy line no longer names Shura et al. (2018)');
   /* TOMM rows print their own point values. The abstract's ranges pool
      Trial 2 with Retention, so a range on a Trial 2 row misdescribes it. */
   D.PVT_TOMM_CUTOFFS.forEach(c => {
