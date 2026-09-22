@@ -18540,7 +18540,7 @@ input[type="number"].ds-age-pop-input{
             <details class="formula-disclosure">
               <summary>Why ≥ 2, and when to demand more</summary>
               <div class="formula-body">
-                <p>Monte Carlo warnings that false positives climb steeply with more tests overestimate the problem: genuine patients' PVT scores are skewed and at-ceiling rather than multivariate-normal, so real failures cluster differently than random normal data predict. Two practical rules follow. <em>Independence is required.</em> Indices sharing subtests are correlated, so failing one raises the odds of failing another: the Effort Index and Effort Scale here are computed from the same RBANS subtests and count as <strong>one</strong> indicator, and RDS also loads on digit span. <em>The false positives that do occur are the severely impaired.</em> All six non-malingering cases failing ≥ 2 of 7 in Larrabee's sample had severe TBI with prolonged coma, complicated mild TBI, or stroke with a lesion on CT, and most failed only just inside the invalid range (RDS 7, WCST failure-to-maintain-set 2). So weigh the count against clinical and neurological coherence, and lean on high-specificity forced-choice measures, before reading two failures as probable invalidity in a genuinely impaired examinee (Larrabee, 2014).</p>
+                <p>Monte Carlo warnings that false positives climb steeply with more tests overestimate the problem: genuine patients' PVT scores are skewed and at-ceiling rather than multivariate-normal, so real failures cluster differently than random normal data predict. Two practical rules follow. <em>Independence is required.</em> Indices sharing subtests are correlated, so failing one raises the odds of failing another: the Effort Index and Effort Scale here are computed from the same RBANS subtests and count as <strong>one</strong> indicator, and RDS also loads on digit span. <em>The false positives that do occur are the severely impaired.</em> All six non-malingering cases failing ≥ 2 of 7 in Larrabee's sample had severe TBI with prolonged coma, complicated mild TBI, or stroke with a lesion on CT, and many of their failures fell only just inside the invalid range (RDS 7, WCST failure-to-maintain-set 2). So weigh the count against clinical and neurological coherence, and lean on high-specificity forced-choice measures, before reading two failures as probable invalidity in a genuinely impaired examinee (Larrabee, 2014).</p>
               </div>
             </details>
           </div>
@@ -22204,7 +22204,11 @@ const REY15_RECOGNITION_ROWS = [
 /* How each id draws: a glyph is set in type, a shape is stroked. */
 const REY15_SHAPES = ['circle', 'square', 'triangle', 'diamond', 'pentagon', 'parallelogram', 'rule1', 'rule2', 'rule3'];
 
-/* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
+/* VERIFIED against Larrabee (2014) Table 4, 2026-09: 48/54, 40/41, 88/95;
+   52/54, 36/41, 88/95; 54/54, 26/41, 80/95. The indicators were six PVTs
+   (VFD, Finger Tapping, RDS, CVMT, CRM, WCST FMS) and one SVT (MMPI-2 FBS).
+   Schroeder et al.'s textbook calls them "seven PVTs"; the paper does not.
+   Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
 const PVT_AGGREGATION = [
   { threshold: '≥ 2 of 7 failures', spec: 88.9, sens: 97.6, correct: 92.6 },

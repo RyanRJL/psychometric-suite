@@ -2411,7 +2411,11 @@ const REY15_RECOGNITION_ROWS = [
 /* How each id draws: a glyph is set in type, a shape is stroked. */
 const REY15_SHAPES = ['circle', 'square', 'triangle', 'diamond', 'pentagon', 'parallelogram', 'rule1', 'rule2', 'rule3'];
 
-/* Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
+/* VERIFIED against Larrabee (2014) Table 4, 2026-09: 48/54, 40/41, 88/95;
+   52/54, 36/41, 88/95; 54/54, 26/41, 80/95. The indicators were six PVTs
+   (VFD, Finger Tapping, RDS, CVMT, CRM, WCST FMS) and one SVT (MMPI-2 FBS).
+   Schroeder et al.'s textbook calls them "seven PVTs"; the paper does not.
+   Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
 const PVT_AGGREGATION = [
   { threshold: '≥ 2 of 7 failures', spec: 88.9, sens: 97.6, correct: 92.6 },
