@@ -25,10 +25,13 @@
     'charts':         'Score Charts',
     'profile':        'Profile Analysis',
     'validity':       'Performance Validity',
-    'rci-basic':      'Standard Deviation Index',
-    'rci-practice':   'Simple Reliable Change',
-    'rci-srb':        'Practice-Adjusted',
-    'rci-mcsweeney':  'McSweeney Regression-Based',
+    /* Keyed on the ids the Change Analysis menu actually targets. These were
+       shifted one place (rci-basic titled "Standard Deviation Index", and so
+       on down), sdi had no entry and rci-mcsweeney matched no page. */
+    'sdi':            'Standard Deviation Index',
+    'rci-basic':      'Simple Reliable Change',
+    'rci-practice':   'Practice Effect-Adjusted',
+    'rci-srb':        'McSweeney Regression-Based',
     'rci-crawford':   'Crawford Regression-Based',
     'premorbid':      'Premorbid Estimation',
     'about':          'Methods & References',
@@ -46,8 +49,11 @@
     if (active && active.id) setTitleForTarget(active.id);
   }
 
+  /* .nav-item only. The Change Analysis panels' own CI selects and date
+     fields carry data-target too (naming the method they belong to), so a
+     click on one retitled the tab. */
   document.addEventListener('click', e => {
-    const navBtn = e.target.closest('[data-target]');
+    const navBtn = e.target.closest('.nav-item[data-target]');
     if (!navBtn) return;
     const target = navBtn.dataset.target;
     if (target) setTitleForTarget(target);
@@ -60,6 +66,20 @@
     syncTitleFromActiveSection();
   }
   window.addEventListener('hashchange', syncTitleFromActiveSection);
+  /* And whenever the active section actually changes. Clicks and hashchange do
+     not cover every route: a reload onto #battery activates the page AFTER the
+     load-time sync above has run, which left the tab titled "Home" on Score
+     Tables. Watching the class is the one signal every route shares. */
+  function watchActiveSection(){
+    const obs = new MutationObserver(syncTitleFromActiveSection);
+    document.querySelectorAll('section.section').forEach(s =>
+      obs.observe(s, { attributes: true, attributeFilter: ['class'] }));
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', watchActiveSection);
+  } else {
+    watchActiveSection();
+  }
 
   /* --- 2. Microcopy standardisation ----------------------------------------
      Swap the small handful of inconsistent button labels. Sentence case,
@@ -670,6 +690,13 @@
         const modeBtns = premCard.querySelectorAll('[data-prem-mode]');
         const SD_NOTE  = 'Flagging scores below premorbid estimate &ensp;·&ensp; <strong>*</strong> ≥1 SD below &ensp;·&ensp; <strong>**</strong> ≥1.5 SD below &ensp;·&ensp; <strong>***</strong> ≥2 SD below';
         const SEE_NOTE = 'Flagging scores outside the SEE of the premorbid estimate &ensp;·&ensp; <strong>*</strong> below 90% CI lower bound &ensp;·&ensp; <strong>**</strong> below 95% CI lower bound &ensp;·&ensp; <strong>***</strong> below 99% CI lower bound';
+        /* CI flagging needs the linked model's SEE. With a typed estimate, or
+           none, app.js flags by SD instead (batteryPremorbidMode), and so does
+           the exported note. This legend used to follow the BUTTON, so it
+           described CI bounds over asterisks that were SD-based: screen and
+           export disagreeing about what the stars mean. The button still shows
+           the choice; the legend states what is in force. */
+        const SEE_FALLBACK_NOTE = '<strong>CI threshold needs an estimate linked from the Premorbid page</strong> (it uses that model&rsquo;s SEE). Until one is linked, flagging uses SD &ensp;·&ensp; <strong>*</strong> ≥1 SD below &ensp;·&ensp; <strong>**</strong> ≥1.5 SD below &ensp;·&ensp; <strong>***</strong> ≥2 SD below';
         function syncModeUI(){
           const mode = modeThreshold.value === 'see' ? 'see' : 'sd';
           modeBtns.forEach(b => {
@@ -677,9 +704,17 @@
             b.classList.toggle('is-active', active);
             b.setAttribute('aria-checked', active ? 'true' : 'false');
           });
+          const effective = (typeof batteryPremorbidMode === 'function' && typeof getBatteryPremorbidComparison === 'function')
+            ? batteryPremorbidMode(getBatteryPremorbidComparison())
+            : mode;
           const noteEl = document.getElementById('ds-prem-note');
-          if (noteEl) noteEl.innerHTML = mode === 'see' ? SEE_NOTE : SD_NOTE;
+          if (noteEl) noteEl.innerHTML = mode === 'sd' ? SD_NOTE
+                                       : effective === 'see' ? SEE_NOTE
+                                       : SEE_FALLBACK_NOTE;
         }
+        window.dsSyncPremNote = syncModeUI;
+        premScoreInput.addEventListener('input', syncModeUI);
+        premCheckbox.addEventListener('change', syncModeUI);
         /* Normalize legacy "stars" value */
         if (modeThreshold.value !== 'see') modeThreshold.value = 'sd';
         syncModeUI();

@@ -1989,9 +1989,19 @@ body .change-setup-grid,
   gap: var(--ds-space-3);
   min-width: 0;
 }
+/* The search needs a floor, and the bar has to be allowed to wrap onto a
+   second line to honour it. Without both, at 1024px wide with Score CI on
+   (which adds the Reliability control), the Quick Add search shrank to 0px and
+   could not be typed into. Wide windows are unaffected: nothing wraps until
+   the controls genuinely do not fit on one line. */
+.ds-inline-bar{
+  flex-wrap: wrap;
+  row-gap: var(--ds-space-2);
+}
 .ds-inline-bar-left{
   flex: 1;
   max-width: 680px;
+  min-width: 240px;
 }
 .ds-inline-bar-right{
   margin-left: auto;                      /* pin threshold to the right edge */
@@ -3055,6 +3065,18 @@ input[type="text"].ds-inline-bar-input{
 .combo-indented-row .combo-item.combo-indented input{
   margin: 0 6px 0 0 !important;
 }
+/* Search filtering. filterFamilyListEl hid items with an inline display:none,
+   which the pill rule above overrides with display:inline-flex !important, so
+   typing "WAIS" left every other family's age-band pills on screen with their
+   headings gone: rows of unlabelled "Ages 16-69 / Ages 65-90" choices. The
+   filter now also sets this class, and the selectors here outrank the pill
+   and row rules above. A row whose pills are all filtered out goes too, or it
+   leaves an empty padded strip. */
+.combo-list .combo-item.is-filtered-out,
+.combo-indented-row .combo-item.combo-indented.is-filtered-out,
+.combo-list .combo-indented-row.is-filtered-out{
+  display: none !important;
+}
 
 /* ============================================================================
    33c. CHANGE-ANALYSIS / SDI input rows — match compact Neuropsych Tables
@@ -3775,11 +3797,15 @@ input[type="text"].ds-inline-bar-input{
   padding-top: 14px;
   border-top: 1px solid rgba(20,15,5,0.08);
 }
+/* min-width is the button's own width. At 0 the wrapper shrank below its
+   nowrap 206px button between roughly 900 and 1100px wide, and the button
+   ran over the "OR" label beside it. The phone-width rule further down still
+   resets this to 0 and gives the button a row of its own. */
 .bat-prem-link-wrap{
   position: relative;
   display: inline-flex;
   flex: 1;
-  min-width: 0;
+  min-width: max-content;
 }
 .bat-prem-link-btn{
   display: inline-flex;

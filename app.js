@@ -419,7 +419,13 @@ function runPageTransition(swap){
   if (document.startViewTransition){
     ++navAnimToken;                 // cancel any in-flight fallback animation
     main.classList.remove('is-leaving', 'is-entering');
-    document.startViewTransition(() => swap());
+    /* A transition superseded by the next navigation, or skipped while the tab
+       is hidden, rejects `ready` with an AbortError. Nothing is wrong when it
+       does, so it is not left to surface as an uncaught promise rejection.
+       Only `ready`: an error thrown by swap() itself still reaches the
+       console through updateCallbackDone and finished. */
+    const vt = document.startViewTransition(() => swap());
+    if (vt && vt.ready) vt.ready.catch(() => {});
     return;
   }
 
@@ -1360,7 +1366,20 @@ let batteryRows = [];
    group while it is being renamed — and so two tests can share a name (or be
    left unnamed) without silently merging into one block. */
 let batteryGroupSeq = 0;
-function batteryGroupKeyOf(r){ return (r && (r.groupKey || r.group)) || ''; }
+/* A BASE-RATE FAMILY IS KEYED ON THE FAMILY, NOT THE BAND. Its rows are
+   re-banded to the patient's age one MEASURE at a time (renderBattery), and a
+   measure the manual does not publish at that age keeps its old band: Longest
+   Letter-Number Sequence stops at 65-69 while its siblings run to 85-90. Keyed
+   on the band, a 72-year-old's Longest Span table split into two sections with
+   the same heading, and the Working Report, which files a split table under
+   its heading, kept only the second: the three scored spans vanished from the
+   report and the one unscored row stayed. */
+function batteryGroupKeyOf(r){
+  if (!r) return '';
+  if (r.groupKey) return r.groupKey;
+  const g = r.group || '';
+  return (g && hasAgeBandSuffix(g) && familyGroupIsBaseRate(g)) ? familyBaseName(g) : g;
+}
 function batteryGroupNameOf(key){
   const row = batteryRows.find(r => batteryGroupKeyOf(r) === key);
   return row ? (row.group || '') : '';
@@ -1374,6 +1393,28 @@ function batteryGroupLabel(key){
   const name = batteryGroupNameOf(key);
   if (name) return stripAgeRange(name);
   return batteryGroupIsCustom(key) ? 'Untitled test' : '';
+}
+
+/* THE SEEDED EXAMPLE ROW BECOMES THE CLINICIAN'S ROW THE MOMENT THEY TYPE IN IT.
+
+   It looks exactly like a real row, so overtyping it is the natural first move.
+   But isExample survived the edit, and every consumer skips example rows, so a
+   subtest typed there scored on screen (premorbid asterisks and all) while the
+   APA table, the Working Report and Score Charts never saw it. Its seeded raw
+   score of 25 also stayed attached, hidden with the Raw column off.
+
+   So the first keystroke converts it: the flag goes, and the seeded values in
+   the OTHER fields are blanked, on screen and in state, because the example's
+   numbers are not this patient's. The field being typed in is written by the
+   caller as usual. */
+function claimBatteryExampleRow(row, field, tr){
+  delete row.isExample;
+  ['name', 'raw', 'score'].forEach(k => {
+    if (k === field) return;
+    row[k] = '';
+    const el = tr && tr.querySelector(`input[data-f="${k}"]`);
+    if (el) el.value = '';
+  });
 }
 
 function batteryAddRow(initial){
@@ -1759,23 +1800,28 @@ function updatePremorbidLinkStatus(){
   const ci    = scoreEl.dataset.ciLabel;
   const clearBtn = '<button type="button" class="bat-prem-link-clear" id="bat-prem-link-clear" aria-label="Unlink premorbid estimate">×</button>';
   const linkActive = (Number.isFinite(see) && see > 0 && Number.isFinite(est) && label) || (Number.isFinite(lo) && label);
+  syncPremorbidFlagNote();
 
   /* When the link is active, hide the autofill button (mutually
      exclusive with the status block in the source row). */
   if (linkWrap) linkWrap.style.display = linkActive ? 'none' : '';
 
   if (Number.isFinite(see) && see > 0 && Number.isFinite(est) && label){
-    const mode = batteryPremorbidMode({ see });
-    let t1, t2, t3;
-    if (mode === 'see'){
-      t1 = Math.round(est - 1.645 * see);
-      t2 = Math.round(est - 1.960 * see);
-      t3 = Math.round(est - 2.576 * see);
-    } else {
-      t1 = Math.round(est - 1.0 * 15);
-      t2 = Math.round(est - 1.5 * 15);
-      t3 = Math.round(est - 2.0 * 15);
-    }
+    /* THE LEGEND MUST STATE THE CUT-OFF THE ASTERISKS ACTUALLY USE, so it
+       asks batteryPremorbidStars rather than restating the inequality: the
+       highest whole score that still earns each tier, found by stepping down
+       from the estimate. It used to round the ROUNDED estimate instead, and at
+       an estimate of 104.6 read "* <=90" while a score of 90 (0.97 SD below)
+       correctly got no asterisk. Asking the one predicate also settles every
+       floating-point boundary the same way the table does. */
+    const exact = parseFloat(scoreEl.dataset.estimateExact);
+    const prem = { estimate: Number.isFinite(exact) ? exact : est, see };
+    const cut = tier => {
+      let s = Math.floor(prem.estimate);
+      while (s > prem.estimate - 200 && batteryPremorbidStars(s, prem).length < tier) s--;
+      return s;
+    };
+    const t1 = cut(1), t2 = cut(2), t3 = cut(3);
     statusEl.innerHTML =
       '<span class="bat-prem-link-status-body">' +
         `<strong>${escapeHtml(label)}</strong> ${Math.round(est)}` +
@@ -1799,6 +1845,12 @@ function updatePremorbidLinkStatus(){
   }
   statusEl.innerHTML = '';
   statusEl.hidden = true;
+}
+/* The flagging legend under the premorbid card (design-system.js) follows the
+   EFFECTIVE mode, and linking or unlinking an estimate changes that mode
+   without touching the threshold control it otherwise listens to. */
+function syncPremorbidFlagNote(){
+  if (typeof window.dsSyncPremNote === 'function') window.dsSyncPremNote();
 }
 function clearPremorbidLink(){
   const scoreEl = document.getElementById('bat-prem-score');
@@ -1856,10 +1908,11 @@ function openPremorbidLinkPopover(){
       '<div class="bat-prem-link-empty">No estimates yet. Open the <strong>Premorbid</strong> page and enter inputs to generate a model.</div>';
   } else {
     popover.innerHTML = options.map((o, i) => {
-      const range = (o.lo != null && o.hi != null) ? `${o.lo}–${o.hi}` : '—';
+      // A model with no SEE has no interval: say nothing rather than print a dash.
+      const range = (o.lo != null && o.hi != null) ? ` · ${getPremorbidCiLevel()} ${o.lo}–${o.hi}` : '';
       return `<button type="button" class="bat-prem-link-option" data-idx="${i}">` +
         `<span class="bat-prem-link-option-name">${escapeHtml(o.label)}</span>` +
-        `<span class="bat-prem-link-option-stats">FSIQ ${Math.round(o.fsiq)} · ${getPremorbidCiLevel()} ${range}</span>` +
+        `<span class="bat-prem-link-option-stats">FSIQ ${Math.round(o.fsiq)}${range}</span>` +
       '</button>';
     }).join('');
     popover.querySelectorAll('.bat-prem-link-option').forEach(btn => {
@@ -2850,6 +2903,15 @@ function renderBattery(){
     }
   });
   document.getElementById('bat-table').classList.toggle('raw-forced', hasBaseRateRows);
+  /* The empty state is a real full-width row. It used to be a ::before on the
+     empty tbody, which table layout wraps in an anonymous cell in the FIRST
+     column, so the message ran one word per line down the narrow # column. */
+  if (!batteryRows.length){
+    const empty = document.createElement('tr');
+    empty.className = 'bat-empty-row';
+    empty.innerHTML = '<td colspan="8"><div class="bat-empty-msg">No subtests yet. Use the search field above to autofill a test family, or click + Add row to enter one by hand.</div></td>';
+    tbody.appendChild(empty);
+  }
   let lastGroup = null;
   batteryRows.forEach((r, i) => {
     // Inject a group header when the group changes
@@ -2910,7 +2972,7 @@ function renderBattery(){
     const abbr = isBr ? '' : scoreTypeAbbr(rowType);
     const typeTag = abbr ? `<span class="bat-row-type-tag">(${abbr})</span>` : '';
     const scoreCell = isBr
-      ? `<td class="bat-score-na-cell"><input type="number" disabled class="bat-score-na" title="Raw-score measure: enter the span in the Raw Score column — the base rate is read from the published table." aria-label="Not applicable — raw-score measure"></td>`
+      ? `<td class="bat-score-na-cell"><input type="number" disabled class="bat-score-na" title="Raw-score measure: enter the span in the Raw Score column. The base rate is read from the published table." aria-label="Not applicable: raw-score measure"></td>`
       : `<td><input type="number" step="any" data-r="${i}" data-f="score" value="${escapeAttr(r.score)}"></td>`;
     tr.innerHTML = `
       <td class="row-num">${i+1}${typeTag}</td>
@@ -2931,23 +2993,37 @@ function renderBattery(){
   tbody.querySelectorAll('[data-add-to-group]').forEach(b => {
     b.addEventListener('click', () => batteryAddRowToGroup(b.dataset.addToGroup));
   });
-  // Renaming a custom test updates state and the APA preview on every keystroke,
-  // but defers the full table rebuild to blur so the caret is not thrown away.
+  /* Renaming a custom test updates state and the APA preview on every
+     keystroke, and needs no table rebuild at all: nothing else on screen shows
+     the name. It used to rebuild on BLUR, which destroyed whatever the blur was
+     moving to. Tab or Enter after naming a new test left focus on <body>, and a
+     click on another cell was swallowed, so the obvious next step (typing the
+     first subtest) needed a second click. Tab and Enter now go straight to the
+     group's first subtest name. */
   tbody.querySelectorAll('[data-group-rename]').forEach(inp => {
     inp.addEventListener('input', e => {
       batteryRenameGroup(e.target.dataset.groupRename, e.target.value);
       renderBatteryApa();
     });
-    inp.addEventListener('blur', () => renderBattery());
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+    inp.addEventListener('keydown', e => {
+      if ((e.key !== 'Enter' && e.key !== 'Tab') || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
+      const key = e.target.dataset.groupRename;
+      const first = batteryRows.findIndex(r => batteryGroupKeyOf(r) === key);
+      const target = first >= 0 ? tbody.querySelector(`input[data-r="${first}"][data-f="name"]`) : null;
+      if (!target) return;
+      e.preventDefault();
+      target.focus();
+      target.select();
+    });
   });
   // In-place updates while typing. Scoped to data-r cells so the group-header
   // name inputs (which carry no row index) don't fall through to here.
   tbody.querySelectorAll('input[data-r]').forEach(inp => {
     inp.addEventListener('input', e => {
       const i = +e.target.dataset.r, f = e.target.dataset.f;
-      batteryRows[i][f] = e.target.value;
       const tr = e.target.closest('tr');
+      if (batteryRows[i].isExample) claimBatteryExampleRow(batteryRows[i], f, tr);
+      batteryRows[i][f] = e.target.value;
       const rowType = rowScoreType(batteryRows[i]);
       const z = toZ(batteryRows[i].score, rowType);
       const cells = tr.querySelectorAll('.computed');
@@ -3299,6 +3375,16 @@ const APA_NOTES = {
     ctx.hasBaseRates
       ? 'Base rate = percentage of the normative sample obtaining the same score or higher (WAIS-IV Administration and Scoring Manual, Tables C.4–C.5). A higher base rate indicates a more common, and therefore lower, score.'
       : '',
+    /* A BLANK BASE RATE SAYS WHY, as a blank interval does below. The base
+       rate is read from an age-banded table, so it is withheld with no age on
+       record, and where the manual publishes no band for the age (Longest
+       Letter-Number Sequence stops at 69). The span is still printed. */
+    ctx.baseRateNoAge
+      ? 'No patient age was entered, so base rates are not reported; they are published by age band.'
+      : '',
+    ctx.baseRateOutOfBand
+      ? 'A base rate is not reported where the manual publishes none for the patient\'s age.'
+      : '',
     /* Without this the em-dash in the classification column reads as missing
        data rather than as a deliberate refusal. */
     /* Without this the pairing of a high percentile with a low classification
@@ -3354,6 +3440,9 @@ const APA_NOTES = {
       : '',
     ctx.blankCiNonePublished
       ? 'Where a measure is absent from its manual\'s reliability table, no coefficient is available and no confidence interval is shown for it.'
+      : '',
+    ctx.blankCiManual
+      ? 'Measures entered by hand carry no reliability coefficient, so no confidence interval is shown for them.'
       : '',
     /* NO SENTENCE FOR THE UNCORRECTED PAIRING. It used to have one, and it has
        been moved wholesale to Methods & References.
@@ -3633,7 +3722,17 @@ function renderBatteryApa(){
   const out      = document.getElementById('bat-apa');
   const ciLevel  = document.getElementById('bat-ci-level')?.value || 'off';
   const rawHidden = document.getElementById('bat-table')?.classList.contains('raw-hidden') ?? true;
-  const valid    = batteryRows.filter(r => r.name && !r.isExample);
+  /* ONLY ROWS WITH SOMETHING ENTERED ARE THE PATIENT'S. Quick Add loads a
+     whole family, and a clinician rarely gives all of it, so exporting every
+     NAMED row filed the unadministered subtests as blank rows, and a family
+     just added with nothing typed yet went into the Working Report as a table
+     of dashes: the unconditional-shell fault CLAUDE.md records for OPIE-4.
+     A row counts once it has a score, or a raw value the export will actually
+     print: always for a base-rate row, whose entry IS the raw span, otherwise
+     only while the Raw column is shown. */
+  const hasNum = v => v !== '' && v != null && Number.isFinite(parseFloat(v));
+  const valid    = batteryRows.filter(r => r.name && !r.isExample
+    && (hasNum(r.score) || (hasNum(r.raw) && (!rawHidden || batteryBaseRateEntry(r)))));
   const completed = valid.filter(r => r.score !== '' && !isNaN(r.score));
   const types    = new Set((completed.length ? completed : valid).map(r => rowScoreType(r)));
   const headerLabel = types.size === 1 ? scoreTypeLabel([...types][0]) : 'Score';
@@ -3663,10 +3762,16 @@ function renderBatteryApa(){
   ];
   updateApaColumnControls('bat-apa', columns, renderBatteryApa);
   if (valid.length === 0){
-    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Add or select at least one subtest to preview the APA table.</div>';
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter at least one subtest with a score to preview the APA table.</div>';
     return;
   }
   const prem = getBatteryPremorbidComparison();
+  /* A hand-entered row (no database entry) has no reliability coefficient, so
+     its interval is blank. Distinct from "none published", which is a database
+     measure its manual's reliability table omits. */
+  const mergedDb = typeof getMergedDB === 'function' ? getMergedDB() : {};
+  const fromDatabase = r => !!(r.group && mergedDb[r.group] && mergedDb[r.group][r.name]);
+  const baseRateState = s => valid.some(r => batteryBaseRateEntry(r) && hasNum(r.raw) && batteryBaseRateAgeState(r) === s);
   out.innerHTML = `
     <div class="apa-table-num">Table 1</div>
     <div class="apa-table-title">${escapeHtml(title)}</div>
@@ -3693,6 +3798,12 @@ function renderBatteryApa(){
       /* Why a blank interval is blank. Two reasons, never merged. */
       blankCiBaseRate:      ciLevel !== 'off' && batteryBlankCiReasons(valid).baseRate,
       blankCiNonePublished: ciLevel !== 'off' && batteryBlankCiReasons(valid).nonePublished,
+      blankCiManual: ciLevel !== 'off' && valid.some(r => hasNum(r.score) && !fromDatabase(r)),
+      /* A base-rate row whose span is printed but whose base rate is withheld
+         by the age gate. The cell is blank in the export (the on-screen hint
+         never leaves the app), so the note says why. */
+      baseRateNoAge:      baseRateState('no-age'),
+      baseRateOutOfBand:  baseRateState('out-of-band'),
       /* The corrected reading is a departure from every manual cited in this
          table, so it is the one thing here a reader most needs told. Asked the
          same way and for the same reason: the control being on does not mean a
@@ -3717,7 +3828,10 @@ function loadFamilyIntoBattery(family){
   }
   // If the family is already on the table, append only the subtests that aren't
   // there yet, so tests added to a custom family later can still be pulled in.
-  const present = new Set(batteryRows.filter(r => batteryGroupKeyOf(r) === family).map(r => r.name));
+  /* Compared by KEY, not by group name: a base-rate family's rows may sit in
+     several bands once re-banded, and all of them are this family. */
+  const familyKey = batteryGroupKeyOf({ group: family });
+  const present = new Set(batteryRows.filter(r => batteryGroupKeyOf(r) === familyKey).map(r => r.name));
   const missing = names.filter(n => !present.has(n));
   if (!missing.length){
     showToast(`${family} is already loaded`, true);
@@ -3738,7 +3852,7 @@ function loadFamilyIntoBattery(family){
     // Slot the new subtests in beneath the group's existing rows so they land
     // under the header that is already there rather than starting a second one.
     let lastIdx = -1;
-    batteryRows.forEach((r, i) => { if (batteryGroupKeyOf(r) === family) lastIdx = i; });
+    batteryRows.forEach((r, i) => { if (batteryGroupKeyOf(r) === familyKey) lastIdx = i; });
     batteryRows.splice(lastIdx + 1, 0, ...newRows);
   } else {
     // Sweep out the stale placeholder row that sits below the example before
@@ -5339,9 +5453,19 @@ document.querySelectorAll('.rci-family-input').forEach(inp => {
 function filterFamilyListEl(list, q){
   const ql = q.toLowerCase().trim();
   // Show/hide individual items; also match against the full family value (base name + age band)
+  /* The class as well as the inline style: the age-band pills carry
+     display:inline-flex !important in design-system.css, which beats an inline
+     display:none, so without it the pills stayed on screen after their
+     headings were filtered away. The rule for .is-filtered-out outranks it. */
   list.querySelectorAll('.combo-item').forEach(it => {
     const familyVal = (it.dataset.family || '').toLowerCase();
-    it.style.display = !ql || familyVal.includes(ql) ? '' : 'none';
+    const hide = !!ql && !familyVal.includes(ql);
+    it.style.display = hide ? 'none' : '';
+    it.classList.toggle('is-filtered-out', hide);
+  });
+  list.querySelectorAll('.combo-indented-row').forEach(row => {
+    const items = [...row.querySelectorAll('.combo-item')];
+    row.classList.toggle('is-filtered-out', items.length > 0 && items.every(it => it.classList.contains('is-filtered-out')));
   });
   // Show a group heading only when at least one of its sibling items is visible
   list.querySelectorAll('.combo-group-heading').forEach(heading => {
@@ -8631,6 +8755,24 @@ setupTableViewportFit();
 
     // Battery / Neuropsych Tables
     try { batteryRows.length = 0; renderBattery(); } catch(e){}
+    /* Score Tables' premorbid comparison is the last patient's estimate. It
+       survived this button: the checkbox stayed ticked, the box kept the
+       figure and the link kept its model and SEE, so the next patient's
+       scores were starred against someone else's premorbid ability. Clearing
+       the box through its own input event also drops the link metadata
+       (see the bat-prem-score listener), and the card mirrors follow. */
+    try {
+      const premScore = document.getElementById('bat-prem-score');
+      if (premScore){
+        premScore.value = '';
+        premScore.dispatchEvent(new Event('input', { bubbles:true }));
+      }
+      const premEnable = document.getElementById('bat-prem-enable');
+      if (premEnable && premEnable.checked){
+        premEnable.checked = false;
+        premEnable.dispatchEvent(new Event('change', { bubbles:true }));
+      }
+    } catch(e){}
     // SDI
     try { if (typeof clearSdi === 'function') clearSdi(); } catch(e){}
     // All four RCI methods
@@ -9481,17 +9623,29 @@ const ReportBundle = (function(){
      groups are present, return a per-group array of { name, html } so each
      test family becomes its own table in the report. Returns [] when 0 or 1
      groups (in which case the caller treats it as a single merged table). */
+  /* The split item holding rows entered outside any test family. */
+  const LOOSE_SECTION_NAME = 'Other measures';
   function extractGroupsFromHtml(html, sourceId){
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
     const tbody = tmp.querySelector('table tbody');
     if (!tbody) return [];
 
+    /* ROWS THAT BELONG TO NO FAMILY. A hand-entered row carries no group, and
+       both table builders mark every grouped row .apa-grouped-row, so a row
+       without it is ungrouped wherever it sits. They used to be walked as if
+       every row followed a group: ungrouped rows ABOVE the first family were
+       dropped from the report altogether, and ones BELOW a family were filed
+       under it (a hand-entered Rey AVLT printed as a WAIS-IV Index). They now
+       collect into one section of their own, placed where the first of them
+       appears. It only exists once the table is splitting anyway (two or more
+       families), so a table of one family plus loose rows stays one item, as
+       before. */
     const sections = [];
     let current = null;
+    let loose = null;
     [...tbody.children].forEach(row => {
       if (row.classList.contains('apa-group')){
-        if (current) sections.push(current);
         /* A section that relabels a column for itself carries those labels on
            its group row (longest span reports a base rate, not a percentile).
            The group row is dropped from the split — its name becomes the
@@ -9505,13 +9659,19 @@ const ReportBundle = (function(){
             : [],
           rows: []
         };
-      } else if (current){
+        sections.push(current);
+      } else if (current && row.classList.contains('apa-grouped-row')){
         current.rows.push(row);
+      } else {
+        if (!loose){
+          loose = { name: LOOSE_SECTION_NAME, loose: true, colLabels: [], rows: [] };
+          sections.push(loose);
+        }
+        loose.rows.push(row);
       }
     });
-    if (current) sections.push(current);
 
-    if (sections.length < 2) return [];
+    if (sections.filter(s => !s.loose).length < 2) return [];
 
     return sections.map(section => {
       const cloneTmp = document.createElement('div');
@@ -9561,7 +9721,7 @@ const ReportBundle = (function(){
       const titleText = buildIntelligentTitle(sourceId, cloneTmp.innerHTML, section.name);
       const titleEl = cloneTmp.querySelector('.apa-table-title');
       if (titleEl) titleEl.textContent = titleText;
-      return { name: section.name, title: titleText, html: cloneTmp.innerHTML };
+      return { name: section.name, title: titleText, html: cloneTmp.innerHTML, loose: !!section.loose };
     }).filter(Boolean);
   }
 
@@ -9591,11 +9751,18 @@ const ReportBundle = (function(){
     state.items = state.items.filter(i => i.sourceId !== parentSourceId);
 
     const validIds = new Set();
+    /* Two sections can share a heading: two custom tests both left unnamed
+       ("Untitled test"), or one named alike. Keyed on the heading alone, the
+       second overwrote the first and a whole table silently left the report.
+       Repeats take a numbered id; the title is untouched. */
+    const seenNames = {};
     splits.forEach(split => {
-      const splitId = `${parentSourceId}::${split.name}`;
+      seenNames[split.name] = (seenNames[split.name] || 0) + 1;
+      const splitId = `${parentSourceId}::${split.name}` + (seenNames[split.name] > 1 ? ` #${seenNames[split.name]}` : '');
       validIds.add(splitId);
       const existing = state.items.find(i => i.sourceId === splitId);
       if (existing){
+        existing.loose = !!split.loose;
         if (existing.html !== split.html || existing.title !== split.title){
           existing.html = split.html;
           existing.title = split.title || split.name;
@@ -9613,7 +9780,8 @@ const ReportBundle = (function(){
           addedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           hiddenColumns: [],
-          headerOverrides: []
+          headerOverrides: [],
+          loose: !!split.loose
         };
         state.items.push(newItem);
         lastChangedItemId = newItem.id;
@@ -10225,6 +10393,11 @@ const ReportBundle = (function(){
   function mergeableBattery(item, processedHtml){
     const parentId = (item.sourceId || '').split('::')[0];
     if (parentId.startsWith('pre-')) return null;
+    /* Rows that belong to no family belong to no battery. Without this the
+       family scan falls through to the note text, which cites the WAIS-IV
+       manual whenever base rates are present, and hand-entered measures
+       were merged in as a WAIS-IV sub-section. */
+    if (item.loose) return null;
     return catalogBatteryFor(detectTestFamily(processedHtml));
   }
   function computeBlocks(items){
@@ -10441,7 +10614,7 @@ ${buildReportHtmlBody()}
           <div class="rb-onboarding-body">
             <p>Every APA-formatted table you generate across the suite is <strong>auto-saved into one place</strong> as you work.</p>
             <p>Open the panel to <strong>reorder, hide columns, edit titles, and export</strong> the whole bundle to Word, Excel, or your clipboard - paste straight into your report.</p>
-            <p>Everything lives in your browser. <strong>Nothing is uploaded, nothing leaves your device</strong> — and the report clears itself when you close the tab.</p>
+            <p>Everything lives in your browser. <strong>Nothing is uploaded, nothing leaves your device</strong>, and the report clears itself when you close the tab.</p>
           </div>
           <div class="rb-onboarding-cta">Click the button below to open it ↓</div>
           <button class="rb-onboarding-dismiss" data-rb-action="dismiss-onboarding" type="button" aria-label="Dismiss">

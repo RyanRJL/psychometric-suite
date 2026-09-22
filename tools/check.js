@@ -9737,6 +9737,234 @@ check('the page styles borrow no class the rest of the app owns', () => {
 });
 
 
+/* ==========================================================================
+   49. Score Tables as a clinician uses it (audit, 2026-09-22)
+
+   Each check here pins a fault found by driving the real page the way a
+   clinician would, not by reading the code. None of them was visible to the
+   392 checks above, because each lived in the join between two correct
+   pieces: a row flag and its consumers, a regrouping and the report's split,
+   a legend and the predicate it describes. Where a check can drive the
+   shipped function, it does.
+   ========================================================================== */
+heading('49. Score Tables as a clinician uses it');
+
+const DS_CSS_SRC = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+
+check('a base-rate family keeps ONE group key across its bands; every other group keys on itself', () => {
+  /* Rows are re-banded to the age one MEASURE at a time, and Longest
+     Letter-Number Sequence stops at 65-69, so a 72-year-old's family sat in
+     two bands. Keyed on the band, it rendered two identical headings and the
+     report kept only one of them: the three scored spans were lost. */
+  const c = { normDB: D.normDB };
+  vm.createContext(c);
+  vm.runInContext(
+    ['familyBaseName', 'hasAgeBandSuffix', 'familyGroupIsBaseRate', 'batteryGroupKeyOf']
+      .map(n => extractFn(APP_SRC, n)).join(';') + ';globalThis.__K = batteryGroupKeyOf;', c);
+  const key = c.__K;
+  const bad = [];
+  const spanBands = Object.keys(D.normDB).filter(g => /^WAIS-IV Longest Span \(Process\) · /.test(g));
+  if (spanBands.length < 2) bad.push('the Longest Span bands are missing from normDB, so this check proves nothing');
+  const spanKeys = new Set(spanBands.map(g => key({ group: g })));
+  if (spanKeys.size !== 1 || !spanKeys.has('WAIS-IV Longest Span (Process)')) {
+    bad.push('the Longest Span bands key as ' + [...spanKeys].join(' | '));
+  }
+  /* Everything else must be untouched: WMS-IV's bands are separate batteries
+     (§30) and D-KEFS / CVLT bands are different norm groups, so merging them
+     under one heading would be its own misstatement. */
+  for (const g of Object.keys(D.normDB)) {
+    if (spanBands.includes(g)) continue;
+    if (key({ group: g }) !== g) { bad.push(g + ' was re-keyed'); break; }
+  }
+  if (key({ group: spanBands[0], groupKey: 'cg-1' }) !== 'cg-1') bad.push('a custom test\'s own groupKey no longer wins');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('overtyping the seeded example row makes it the clinician\'s row', () => {
+  /* The example row looks like any other. Typed over, it kept isExample, so
+     it scored on screen and never reached the APA table or the report, with
+     the example's raw 25 still attached. */
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(extractFn(APP_SRC, 'claimBatteryExampleRow') + ';globalThis.__C = claimBatteryExampleRow;', c);
+  const bad = [];
+  const row = { name: 'Example subtest', raw: '25', score: '10', isExample: true };
+  c.__C(row, 'name', null);
+  if ('isExample' in row) bad.push('the row is still flagged as the example');
+  if (row.raw !== '' || row.score !== '') bad.push('the example\'s seeded numbers survive as the patient\'s (raw ' + row.raw + ', score ' + row.score + ')');
+  const row2 = { name: 'Example subtest', raw: '25', score: '10', isExample: true };
+  c.__C(row2, 'score', null);
+  if (row2.name !== '' || row2.raw !== '') bad.push('editing the score left the example name or raw in place');
+  /* And the keystroke path must claim BEFORE it writes, or the typed value
+     is the one that gets blanked. */
+  const render = extractFn(APP_SRC, 'renderBattery');
+  if (!/if \(batteryRows\[i\]\.isExample\) claimBatteryExampleRow\(batteryRows\[i\], f, tr\);\s*batteryRows\[i\]\[f\] = e\.target\.value;/.test(render)) {
+    bad.push('the score-table input handler no longer claims the example row before writing the keystroke');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the APA export carries only rows with something entered', () => {
+  /* Quick Add loads a whole family. Exporting every NAMED row filed the
+     unadministered subtests as blank rows, and a family added with nothing
+     typed yet went into the Working Report as a table of dashes. */
+  const apa = extractFn(APP_SRC, 'renderBatteryApa');
+  const bad = [];
+  const m = apa.match(/const valid\s*=\s*batteryRows\.filter\(([\s\S]*?)\);\r?\n/);
+  if (!m) return 'renderBatteryApa no longer builds `valid` from batteryRows';
+  if (!/hasNum\(r\.score\)/.test(m[1])) bad.push('a row no longer needs a score to be exported');
+  if (!/batteryBaseRateEntry\(r\)/.test(m[1])) bad.push('a base-rate row (entered as a raw span) can no longer be exported');
+  if (!/!r\.isExample/.test(m[1])) bad.push('the seeded example row would be exported');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('every blank cell in the export says why', () => {
+  /* The on-screen hints ("add patient age", "age outside this band") never
+     leave the app, so an exported blank needs a sentence, as blank intervals
+     already have. Driven through the shipped note. */
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(extractConst(APP_SRC, 'APA_NOTES') + ';globalThis.__N = APA_NOTES;', c);
+  const note = ctx => c.__N.bat(ctx).filter(Boolean).join(' ');
+  const bad = [];
+  if (!/not reported/.test(note({ baseRateNoAge: true })) || !/age/.test(note({ baseRateNoAge: true }))) bad.push('no sentence for base rates withheld without an age');
+  if (!/publishes none for the patient's age/.test(note({ baseRateOutOfBand: true }))) bad.push('no sentence for a base rate outside its published ages');
+  if (!/entered by hand/.test(note({ blankCiManual: true }))) bad.push('no sentence for hand-entered rows\' blank interval');
+  const base = note({});
+  for (const k of ['baseRateNoAge', 'baseRateOutOfBand', 'blankCiManual']) {
+    if (note({ [k]: false }) !== base) bad.push(k + ' prints when false');
+  }
+  const apa = extractFn(APP_SRC, 'renderBatteryApa');
+  for (const k of ['baseRateNoAge', 'baseRateOutOfBand', 'blankCiManual']) {
+    if (!new RegExp(k + ':').test(apa)) bad.push('renderBatteryApa never supplies ' + k + ', so its sentence is inert');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the premorbid legend states the cut-off the asterisks actually use', () => {
+  /* Drives the shipped legend and the shipped stars together over a grid of
+     unrounded estimates and SEEs, in both modes. For each tier the legend's
+     "<= t" must be the highest whole score that earns it: t earns the tier
+     and t + 1 does not. At an estimate of 104.6 the legend used to read
+     "* <=90" while 90 got no asterisk. */
+  const els = {};
+  const c = {
+    document: { getElementById: id => els[id] || null },
+    escapeHtml: s => String(s),
+    syncPremorbidFlagNote: () => {},
+    clearPremorbidLink: () => {}
+  };
+  vm.createContext(c);
+  vm.runInContext(
+    extractConst(APP_SRC, 'PREMORBID_CI_Z') + extractConst(APP_SRC, 'PREMORBID_TIER_STARS')
+    + ['premorbidSeeTier', 'batteryPremorbidMode', 'batteryPremorbidStars', 'updatePremorbidLinkStatus']
+        .map(n => extractFn(APP_SRC, n)).join(';')
+    + ';globalThis.__U = updatePremorbidLinkStatus; globalThis.__S = batteryPremorbidStars;', c);
+  const bad = [];
+  let cases = 0;
+  for (const mode of ['sd', 'see']) {
+    for (let e10 = 950; e10 <= 1150; e10 += 7) {
+      for (const see of [3.9, 6.0, 7.73]) {
+        const est = e10 / 10;
+        els['bat-prem-threshold'] = { value: mode };
+        els['bat-prem-link-wrap'] = { style: {} };
+        els['bat-prem-link-status'] = { innerHTML: '', hidden: true };
+        els['bat-prem-score'] = { value: String(Math.round(est)),
+          dataset: { estimateExact: String(est), see: String(see), modelLabel: 'Model' } };
+        c.__U();
+        const cuts = [...els['bat-prem-link-status'].innerHTML.matchAll(/≤(-?\d+)/g)].map(x => +x[1]);
+        if (cuts.length !== 3) { bad.push('the legend no longer prints three cut-offs'); break; }
+        const prem = { estimate: est, see };
+        cuts.forEach((t, i) => {
+          cases++;
+          const tier = i + 1;
+          if (c.__S(t, prem).length < tier || c.__S(t + 1, prem).length >= tier) {
+            bad.push(mode + ' mode, estimate ' + est + ', SEE ' + see + ': legend says ' + '*'.repeat(tier) + ' <=' + t
+              + ' but ' + t + ' earns "' + c.__S(t, prem) + '" and ' + (t + 1) + ' earns "' + c.__S(t + 1, prem) + '"');
+          }
+        });
+        if (bad.length) break;
+      }
+      if (bad.length) break;
+    }
+  }
+  if (!bad.length && cases < 300) bad.push('only ' + cases + ' cases ran');
+  return bad.length === 0 || bad.slice(0, 3).join('; ');
+});
+
+check('"New patient" clears the Score Tables premorbid comparison', () => {
+  /* The checkbox, the figure and the linked model's SEE survived the button,
+     so the next patient was starred against the last one's estimate. */
+  const start = APP_SRC.indexOf('(function wireGlobalClear(){');
+  if (start === -1) return 'wireGlobalClear is gone';
+  const body = APP_SRC.slice(start, APP_SRC.indexOf('})();', start));
+  const bad = [];
+  if (!/getElementById\('bat-prem-score'\)[\s\S]*?\.value = ''[\s\S]*?dispatchEvent\(new Event\('input'/.test(body)) {
+    bad.push('the premorbid figure is not cleared through its own input event (which also drops the link metadata)');
+  }
+  if (!/getElementById\('bat-prem-enable'\)[\s\S]*?checked = false/.test(body)) bad.push('the comparison checkbox stays ticked');
+  /* The input listener is what drops the link; if it stopped doing so, the
+     clear above would leave the model and SEE behind. */
+  const listener = APP_SRC.slice(APP_SRC.indexOf("getElementById('bat-prem-score').addEventListener('input'"));
+  for (const k of ['see', 'modelLabel', 'estimateExact']) {
+    if (!new RegExp('delete e\\.target\\.dataset\\.' + k).test(listener.slice(0, 1500))) bad.push('a manual edit no longer drops dataset.' + k);
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the flagging legend follows the EFFECTIVE mode, not the button', () => {
+  /* CI threshold with a typed estimate flags by SD (no SEE), and the exported
+     note says so; the on-screen legend used to describe CI bounds. */
+  const ds = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
+  const bad = [];
+  if (!/batteryPremorbidMode\(getBatteryPremorbidComparison\(\)\)/.test(ds)) bad.push('the legend no longer asks batteryPremorbidMode');
+  if (!/SEE_FALLBACK_NOTE/.test(ds)) bad.push('there is no legend for CI mode falling back to SD');
+  if (!/window\.dsSyncPremNote = syncModeUI/.test(ds)) bad.push('app.js cannot resync the legend when a link changes');
+  if (!/syncPremorbidFlagNote\(\)/.test(extractFn(APP_SRC, 'updatePremorbidLinkStatus'))) bad.push('linking or unlinking no longer resyncs the legend');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a split report keeps rows that belong to no family, and never merges them into a battery', () => {
+  /* Hand-entered rows above the first family were dropped from the report;
+     ones below a family were filed under it. */
+  const ex = extractFn(APP_SRC, 'extractGroupsFromHtml');
+  const bad = [];
+  if (!/apa-grouped-row/.test(ex)) bad.push('the split no longer tells grouped rows from ungrouped ones');
+  if (!/loose/.test(ex)) bad.push('ungrouped rows no longer get a section of their own');
+  if (!/sections\.filter\(s => !s\.loose\)\.length < 2/.test(ex)) bad.push('a table of one family plus loose rows would now split');
+  if (!/if \(item\.loose\) return null;/.test(extractFn(APP_SRC, 'mergeableBattery'))) bad.push('loose rows can be merged into a battery by a citation in the note');
+  /* Both table builders must keep marking grouped rows, or the split above
+     reads every row as loose. */
+  if (!/apa-grouped-row/.test(extractFn(APP_SRC, 'buildApaTableFromColumns'))) bad.push('buildApaTableFromColumns no longer marks grouped rows');
+  const sp = extractFn(APP_SRC, 'splitAndUpsert');
+  if (!/seenNames/.test(sp)) bad.push('two sections with the same heading share one report id again, and one overwrites the other');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('family search hides the age-band pills it filters out', () => {
+  /* The pills carry display:inline-flex !important, which beat the filter's
+     inline display:none: searching "WAIS" left WMS-IV's pills on screen with
+     their heading gone. */
+  const bad = [];
+  if (!/classList\.toggle\('is-filtered-out'/.test(extractFn(APP_SRC, 'filterFamilyListEl'))) bad.push('the filter no longer sets .is-filtered-out');
+  if (!/\.combo-indented-row \.combo-item\.combo-indented\.is-filtered-out[\s\S]{0,120}display:\s*none\s*!important/.test(DS_CSS_SRC)) {
+    bad.push('no rule outranks the pill\'s display:inline-flex !important');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('renaming a test does not rebuild the table under the next click', () => {
+  /* A blur-time renderBattery destroyed whatever focus was moving to, so Tab
+     or Enter after naming a new test left focus on <body>. */
+  const render = extractFn(APP_SRC, 'renderBattery');
+  const rename = render.slice(render.indexOf("querySelectorAll('[data-group-rename]')"), render.indexOf("querySelectorAll('input[data-r]')"));
+  const bad = [];
+  if (/addEventListener\('blur'[^\n]*renderBattery/.test(rename)) bad.push('the rename input rebuilds the table on blur again');
+  if (!/e\.key !== 'Enter' && e\.key !== 'Tab'/.test(rename)) bad.push('Tab and Enter no longer move to the group\'s first subtest');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

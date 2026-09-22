@@ -9644,15 +9644,12 @@ body.rb-docked-active{padding-right:0}
 }
 
 /* --- 6. Empty-state message inside the table.
-   When no rows are entered, a quiet prompt appears via a ::before
-   pseudo on the empty tbody. Tells the user what to do without
-   demanding visual weight. */
-#battery #bat-table tbody:empty{
-  position:relative;
-}
-#battery #bat-table tbody:empty::before{
-  content:"No subtests yet. Use the search field above to autofill a test family, or click + Add row to enter manually.";
-  display:block;
+   A full-width row written by renderBattery when there are no rows. It was a
+   ::before on the empty tbody, which table layout placed in an anonymous cell
+   in the FIRST column, so the prompt ran one word per line down the # column.
+   The styling sits on an inner div with its own class, which nothing else in
+   either stylesheet claims, so the td padding rules cannot reach it. */
+.bat-empty-msg{
   padding:48px 24px;
   text-align:center;
   font-family:var(--sans);
@@ -9727,12 +9724,19 @@ body.rb-docked-active{padding-right:0}
 .bat-age-bar-main{flex:1 1 320px;min-width:260px}
 .bat-age-bar-title{font-family:var(--sans);font-weight:700;font-size:13.5px;color:var(--warn);margin-bottom:2px}
 .bat-age-bar-body{font-family:var(--sans);font-size:13px;color:var(--ink-2);line-height:1.5}
-.bat-age-bar-row{display:flex;gap:8px;align-items:center}
+/* flex:none, or the growing message column squeezes this row until the
+   button's label wraps onto two lines ("Add / age"). */
+.bat-age-bar-row{display:flex;gap:8px;align-items:center;flex:none}
 .bat-age-bar-input{
   width:96px;padding:7px 10px;font-size:14px;
   border:1px solid rgba(20,15,5,0.25);border-radius:6px;background:#fff;
 }
+/* A wider global number-input rule (monospace, 12px padding) wins over the
+   width above and clipped the placeholder to "e.g. 7". Scoped one class
+   deeper so it holds. */
+.bat-age-required-bar .bat-age-bar-input{width:116px}
 .bat-age-bar-add{
+  white-space:nowrap;
   padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;
   color:#fff;background:var(--warn);border:none;border-radius:6px;cursor:pointer;
 }
