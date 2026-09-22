@@ -10068,45 +10068,9 @@ body.rb-docked-active{padding-right:0}
   text-align:center;
   white-space:nowrap;
 }
-/* Text columns read left-aligned. Centring a two-line cell of running text
-   leaves both lines ragged on both edges, which is most of what made this
-   table look untidy beside the Change Analysis one — whose data columns are
-   single glyphs, where centring is right. */
-.pvt-overview-derived,
-.pvt-overview-acc{text-align:left}
-.pvt-overview-derived{white-space:normal;min-width:190px}
-.pvt-overview-inst{
-  display:block;
-  font-size:12.5px;
-  color:#3F3B35;
-  line-height:1.3;
-}
-.pvt-overview-acc{white-space:nowrap;min-width:180px}
-.pvt-overview-accsub{
-  display:block;
-  font-size:11.5px;
-  color:#6E6860;
-}
-/* The independence grouping is a label, not a measurement, so it takes a
-   pill — it reads as one token per row instead of a column of loose words. */
-.pvt-overview-pill{
-  display:inline-block;
-  padding:3px 9px;
-  border-radius:999px;
-  background:rgba(20,15,5,0.05);
-  font-size:11px;
-  font-weight:500;
-  color:#4D4840;
-  white-space:nowrap;
-}
-.pvt-overview-cut{
-  display:block;
-  font-family:var(--mono);
-  font-size:11px;
-  font-weight:600;
-  color:#1A1A1A;
-  margin-bottom:2px;
-}
+/* Text columns read left-aligned; only single glyphs are centred, as on
+   the Change Analysis overview. */
+.pvt-overview-derived{text-align:left;white-space:normal;min-width:190px;font-size:12.5px;color:#3F3B35}
 .pvt-overview-arrow{width:34px;color:#BCB6AD;text-align:center}
 .pvt-overview-arrow svg{width:14px;height:14px;display:inline-block;vertical-align:middle}
 .pvt-overview-foot{
@@ -10598,26 +10562,24 @@ body.rb-docked-active{padding-right:0}
   line-height:1.5;
 }
 .pvt-overview-derived{line-height:1.35}
-/* One meta line under the instrument: kind, edition, caveat, joined by
-   middots. It was three stacked lines, which set the row height. */
-.pvt-overview-sub{
-  display:block;
-  font-size:10.5px;
-  color:#9E9A93;
-  line-height:1.4;
-  margin-top:2px;
-}
-.pvt-overview-sub .is-warn{color:#9c3d2a}
 
-/* One-line cells for the About table: cut-off in the body face rather than
-   mono, and sens. / spec. as centred figures, the way the Change Analysis
-   overview centres its ticks. */
+/* The About table is a chooser: measure, instrument, cut-off. Measures
+   sharing an instrument sit in their own <tbody> under a small heading,
+   with a faint bar down the left binding the group; single measures need
+   neither. */
 .pvt-overview-cutcell{text-align:left;font-size:12.5px;color:#1A1A1A;font-weight:500}
-.pvt-overview-num{font-variant-numeric:tabular-nums;font-size:12.5px;color:#3F3B35;min-width:56px}
-.pvt-overview-num.is-note{font-size:11.5px;color:#7A766E}
-/* A shared group's pill sits in one cell spanning its rows; the faint tint
-   marks the span as a unit. */
-.pvt-overview-counts.is-shared{background:rgba(20,15,5,0.015)}
+.pvt-overview-table tbody + tbody > tr:first-child > td{border-top:1px solid rgba(20,15,5,0.08)}
+.pvt-overview-grouphead > td{
+  padding:10px 12px 2px 24px;
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#7A766E;
+}
+.pvt-overview-groupnote{letter-spacing:0;text-transform:none;font-weight:400;font-size:11px}
+.pvt-overview-group > tr > td:first-child{box-shadow:inset 3px 0 0 rgba(156,61,42,0.22)}
 /* The version note beside an instrument: same geometry as the "?" but in
    the caveat colour, so it reads as a warning rather than as help. */
 .pvt-overview-flag{

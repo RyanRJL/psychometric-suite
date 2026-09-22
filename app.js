@@ -8274,7 +8274,19 @@ function switchPvtTab(name){
      table already lists, saying "not scored" against each, and take 260px
      off a table that is the whole tab. */
   document.querySelector('#validity .pvt-sheet')?.classList.toggle('is-about', name === 'about');
+  pvtSyncDesc(name);
   renderPvtRail();
+}
+/* About gets a one-line description, as the Change Analysis overview does;
+   the full one returns on every measure tab. Its "no single index is a
+   verdict" is carried on About by the table's footer. */
+function pvtSyncDesc(name){
+  const desc = document.querySelector('#validity > .section-desc');
+  if (!desc) return;
+  if (desc.dataset.full === undefined) desc.dataset.full = desc.innerHTML;
+  desc.innerHTML = name === 'about'
+    ? 'Choose a measure below to score it against its published cut-offs.'
+    : desc.dataset.full;
 }
 
 function clearPvt(){
@@ -8289,62 +8301,48 @@ function clearPvt(){
 
 /* ---------- the About landing tab ----------
    The page lands here rather than on the Effort Index, which was only
-   ever first by markup order. Same idiom as the Change Analysis overview:
-   one row per measure, click to jump, a Counts-as column carrying the
-   independence grouping that the ≥ 2-failure rule depends on. Accuracy
-   cells are rendered from the SAME constants the method tabs print
-   (PVT_*_ACCURACY, PVT_TOMM_CUTOFFS), so this table cannot drift from
-   the pages it describes. */
+   ever first by markup order. Same idiom as the Change Analysis overview,
+   and deliberately as sparse: it is a chooser, so it carries what picks a
+   measure (what it is, what it was derived on, what it cuts at) and no
+   more. One row per measure, click to jump.
+
+   Sensitivity and specificity are NOT here, on purpose. They are printed
+   beside every cut-off selector (renderPvtAccuracy) and in the Summary,
+   both from the PVT_*_ACCURACY constants; a third copy made this a data
+   table and was most of why it read busier than the Change Analysis one.
+
+   Independence grouping - which the >= 2-failure rule depends on - is a
+   heading over each group of measures that share an instrument, rather
+   than a column: a column restated the instrument on every row. */
 function renderPvtAboutPanel(){
   const el = document.getElementById('pvt-about-body');
   if (!el) return;
-  const t2 = PVT_TOMM_CUTOFFS.find(c => c.id === 't2-45');
   const rows = [
     { tab: 'ei', title: 'Effort Index', cite: 'Silverberg et al. (2007); Shura et al. (2018)',
       source: 'RBANS embedded', group: 'RBANS', cut: 'EI &gt; 3',
-      sens: PVT_EI_ACCURACY.standard.sens, spec: PVT_EI_ACCURACY.standard.spec,
       desc: 'Weighted sum of the Digit Span and List Recognition raw scores (0–12); higher = less credible.' },
     { tab: 'es', title: 'Effort Scale', cite: 'Novitski et al. (2012)',
       source: 'RBANS embedded', group: 'RBANS', cut: 'ES &lt; 12',
-      sens: null, spec: null, acc: `ROC AUC ${PVT_ES_ACCURACY.auc}`,
       desc: 'List Recognition minus the three recall scores, plus Digit Span, all raw; computed only where its gate is met, because an ungated ES over-flags intact examinees.' },
     { tab: 'rds', title: 'Reliable Digit Span', cite: 'Greiffenstein et al. (1994); Schroeder et al. (2012)',
       source: 'WAIS embedded', group: 'Digit span', cut: 'RDS ≤ 6',
-      sens: PVT_RDS_ACCURACY.conservative.sens, spec: PVT_RDS_ACCURACY.conservative.spec,
       desc: 'Longest forward span plus longest backward span passed on both trials.' },
     { tab: 'ds', title: 'Digit Span indices', cite: 'Iverson &amp; Tulsky (2003); Axelrod et al. (2006)',
       source: 'WAIS embedded', group: 'Digit span', cut: 'ACSS ≤ 5',
-      sens: PVT_DS_ACCURACY.conservative.sens, spec: PVT_DS_ACCURACY.conservative.spec,
       desc: 'Age-corrected scaled-score cut-off, with Vocabulary − Digit Span and longest-span base rates alongside.' },
     { tab: 'rey15', title: 'Rey 15-Item', cite: 'Boone et al. (2002)',
       source: 'Stand-alone', group: 'Rey 15-Item', cut: 'Recall + recognition',
-      sens: PVT_REY15_ACCURACY.combo.sens, spec: PVT_REY15_ACCURACY.combo.spec,
       desc: 'Free recall of fifteen over-learned items, with a recognition trial that raises sensitivity.' },
     { tab: 'cvlt3', title: 'CVLT-3 Forced Choice', cite: 'Delis et al. (2017); Erdodi et al. (2018)',
       source: 'Embedded', group: 'CVLT-3', cut: 'Base rate by age',
-      sens: null, spec: null, acc: 'none for base rates',
       desc: 'Total hits on the Forced Choice trial, read against the CVLT-3 manual’s age-banded base rates, with the CVLT-II cut-offs selectable alongside.' },
     { tab: 'tomm', title: 'TOMM', cite: 'Tombaugh (1996); Martin et al. (2020)',
       source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
-      sens: t2 ? t2.sens.toFixed(2).replace(/^0/, '') : '—',
-      spec: t2 ? t2.spec.toFixed(2).replace(/^0/, '') : '—',
       desc: 'Fifty-item forced-choice picture recognition; robust to most genuine impairment, though specificity falls in dementia.' }
   ];
-  /* One line per cell, the way the Change Analysis overview reads. This
-     table used to put a second line of small text under every cell
-     (embedded / stand-alone, "edition not recorded", "version caveat, see
-     the measure", then sens. and spec.), which is what made it the busier of
-     the two About tabs. Nothing was dropped to get here:
-       - embedded / stand-alone leads the measure's own "?" tooltip, and is
-         also on the measure's tab above;
-       - the edition gap and the version caveat are a "!" beside the
-         instrument, whose tooltip now carries the caveat's full text from
-         PVT_INSTRUMENTS rather than a pointer to it;
-       - cut-off, sensitivity and specificity are columns of their own, so
-         the figures line up down the table instead of sitting in prose;
-       - "Counts as" spans the rows it groups, so two measures sharing an
-         instrument read as one indicator by shape as well as by label. */
   const esc = s => String(s).replace(/&(?!(?:[a-z]+|#\d+);)/gi, '&amp;').replace(/"/g, '&quot;');
+  /* The instrument alone, with a "!" where the edition is unrecorded or a
+     version caveat applies; its tooltip carries PVT_INSTRUMENTS' own text. */
   function derivedCell(r){
     const i = PVT_INSTRUMENTS[r.tab] || {};
     const notes = [];
@@ -8353,13 +8351,10 @@ function renderPvtAboutPanel(){
     const flag = notes.length
       ? ` <button type="button" class="pvt-overview-flag" data-pvtip="${esc(notes.join(' '))}" aria-label="Version note for ${r.title}" tabindex="0">!</button>`
       : '';
-    return `<span class="pvt-overview-inst">${i.derived || r.source}${flag}</span>`;
+    return `${i.derived || r.source}${flag}`;
   }
-  /* Rows are listed with each group's members adjacent, so the span is the
-     run length of the group from its first row. */
-  const span = {};
-  rows.forEach((r, k) => { if (!k || rows[k - 1].group !== r.group) span[k] = rows.filter(x => x.group === r.group).length; });
-  const body = rows.map((r, k) => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
+  const COUNT_WORDS = ['', 'one', 'two', 'three', 'four', 'five'];
+  const row = r => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
     <td class="pvt-overview-measure">
       <div class="pvt-overview-titlerow">
         <span class="pvt-overview-title">${r.title}</span>
@@ -8368,27 +8363,33 @@ function renderPvtAboutPanel(){
       <span class="pvt-overview-cite">${r.cite}</span>
     </td>
     <td class="pvt-overview-cell pvt-overview-derived">${derivedCell(r)}</td>
-    ${span[k] ? `<td class="pvt-overview-cell pvt-overview-counts${span[k] > 1 ? ' is-shared' : ''}" rowspan="${span[k]}"><span class="pvt-overview-pill">${r.group}</span></td>` : ''}
     <td class="pvt-overview-cell pvt-overview-cutcell">${r.cut}</td>
-    ${r.acc
-      ? `<td class="pvt-overview-cell pvt-overview-num is-note" colspan="2">${r.acc}</td>`
-      : `<td class="pvt-overview-cell pvt-overview-num">${r.sens}</td><td class="pvt-overview-cell pvt-overview-num">${r.spec}</td>`}
     <td class="pvt-overview-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></td>
-  </tr>`).join('');
+  </tr>`;
+  /* Groups in first-appearance order; only a group of two or more gets a
+     heading, since a heading over one measure would just repeat its name. */
+  const groups = [];
+  rows.forEach(r => {
+    const g = groups.find(x => x.name === r.group);
+    if (g) g.rows.push(r); else groups.push({ name: r.group, rows: [r] });
+  });
+  const body = groups.map(g => g.rows.length > 1
+    ? `<tbody class="pvt-overview-group">
+        <tr class="pvt-overview-grouphead"><td colspan="4">${g.name} <span class="pvt-overview-groupnote">· ${COUNT_WORDS[g.rows.length] || g.rows.length} measures, one indicator</span></td></tr>
+        ${g.rows.map(row).join('')}
+      </tbody>`
+    : `<tbody class="pvt-overview-single">${g.rows.map(row).join('')}</tbody>`).join('');
   el.innerHTML = `<div class="pvt-overview-wrap">
     <table class="pvt-overview-table">
       <thead><tr>
         <th class="pvt-overview-th is-measure">Measure</th>
         <th class="pvt-overview-th is-left"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The instrument and edition each cut-off was calibrated on. Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity. A cut-off derived on one edition does not automatically transfer to another; a ! marks where that matters.">Derived on</span></th>
-        <th class="pvt-overview-th"><span class="pvt-overview-colh" tabindex="0" data-pvtip="Measures derived from the same administration of the same instrument share error and are not independent evidence: each named group counts as ONE indicator in the aggregation.">Counts as</span></th>
-        <th class="pvt-overview-th is-left"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The cut-off each measure applies when its tab is first opened.">Default cut-off</span></th>
-        <th class="pvt-overview-th"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="Published sensitivity at the default cut-off: the same figure printed beside each measure's cut-off selector.">Sens.</span></th>
-        <th class="pvt-overview-th"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="Published specificity at the default cut-off: the same figure printed beside each measure's cut-off selector.">Spec.</span></th>
+        <th class="pvt-overview-th is-left"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="The cut-off each measure applies when its tab is first opened. Its published sensitivity and specificity are printed beside the cut-off selector on that tab.">Default cut-off</span></th>
         <th aria-hidden="true"></th>
       </tr></thead>
-      <tbody>${body}</tbody>
+      ${body}
     </table>
-    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014); measures sharing an instrument count as one.</p>
+    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014). Measures grouped under one heading share an instrument and count as one. No single index is a verdict.</p>
   </div>`;
   el.querySelectorAll('[data-about-tab]').forEach(row => {
     const go = () => switchPvtTab(row.dataset.aboutTab);
@@ -8404,6 +8405,7 @@ function setupPvtPage(){
   const root = document.getElementById('validity');
   if (!root) return;
   renderPvtAboutPanel();
+  pvtSyncDesc('about');
   root.querySelectorAll('.pvt-method-tab').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
   });
