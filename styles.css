@@ -9986,9 +9986,8 @@ body.rb-docked-active{padding-right:0}
 .pvt-overview-row:focus-visible{background:#F7F2E6;outline:none}
 .pvt-overview-row:focus-visible{box-shadow:inset 3px 0 0 #9C3D2A}
 .pvt-overview-row + .pvt-overview-row > td{border-top:1px solid rgba(20,15,5,0.05)}
-.pvt-overview-row td{padding:9px 12px;vertical-align:middle}
-.pvt-overview-measure{padding-left:24px;min-width:200px;white-space:nowrap}
-.pvt-overview-cell.pvt-overview-source{text-align:left;white-space:normal}
+.pvt-overview-row td{padding:14px 12px;vertical-align:middle}
+.pvt-overview-measure{padding-left:24px;min-width:240px}
 .pvt-overview-titlerow{
   display:flex;
   align-items:center;
@@ -10055,7 +10054,7 @@ body.rb-docked-active{padding-right:0}
 .pvt-overview-info:focus-visible::before{opacity:1;transform:translateY(0)}
 .pvt-overview-cite{
   display:block;
-  margin-top:0;
+  margin-top:2px;
   font-family:var(--sans);
   font-size:11.5px;
   font-style:italic;
@@ -10571,7 +10570,7 @@ body.rb-docked-active{padding-right:0}
 .pvt-overview-cutcell{text-align:left;font-size:12.5px;color:#1A1A1A;font-weight:500}
 .pvt-overview-table tbody + tbody > tr:first-child > td{border-top:1px solid rgba(20,15,5,0.08)}
 .pvt-overview-grouphead > td{
-  padding:7px 12px 0 24px;
+  padding:10px 12px 2px 24px;
   font-family:var(--sans);
   font-size:10px;
   font-weight:600;

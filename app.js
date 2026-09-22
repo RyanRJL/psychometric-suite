@@ -8304,8 +8304,7 @@ function clearPvt(){
    ever first by markup order. Same idiom as the Change Analysis overview,
    and deliberately as sparse: it is a chooser, so it carries what picks a
    measure (what it is, what it was derived on, what it cuts at) and no
-   more. One row per measure, one line per row (the citation has its own
-   column rather than sitting under the name), click to jump.
+   more. One row per measure, click to jump.
 
    Sensitivity and specificity are NOT here, on purpose. They are printed
    beside every cut-off selector (renderPvtAccuracy) and in the Summary,
@@ -8361,8 +8360,8 @@ function renderPvtAboutPanel(){
         <span class="pvt-overview-title">${r.title}</span>
         <button type="button" class="pvt-overview-info" data-pvtip="${esc(((PVT_INSTRUMENTS[r.tab] || {}).kind || r.source) + '. ' + r.desc)}" aria-label="More about ${r.title}" tabindex="0">?</button>
       </div>
+      <span class="pvt-overview-cite">${r.cite}</span>
     </td>
-    <td class="pvt-overview-cell pvt-overview-source"><span class="pvt-overview-cite">${r.cite}</span></td>
     <td class="pvt-overview-cell pvt-overview-derived">${derivedCell(r)}</td>
     <td class="pvt-overview-cell pvt-overview-cutcell">${r.cut}</td>
     <td class="pvt-overview-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></td>
@@ -8376,7 +8375,7 @@ function renderPvtAboutPanel(){
   });
   const body = groups.map(g => g.rows.length > 1
     ? `<tbody class="pvt-overview-group">
-        <tr class="pvt-overview-grouphead"><td colspan="5">${g.name} <span class="pvt-overview-groupnote">· ${COUNT_WORDS[g.rows.length] || g.rows.length} measures, one indicator</span></td></tr>
+        <tr class="pvt-overview-grouphead"><td colspan="4">${g.name} <span class="pvt-overview-groupnote">· ${COUNT_WORDS[g.rows.length] || g.rows.length} measures, one indicator</span></td></tr>
         ${g.rows.map(row).join('')}
       </tbody>`
     : `<tbody class="pvt-overview-single">${g.rows.map(row).join('')}</tbody>`).join('');
@@ -8384,7 +8383,6 @@ function renderPvtAboutPanel(){
     <table class="pvt-overview-table">
       <thead><tr>
         <th class="pvt-overview-th is-measure">Measure</th>
-        <th class="pvt-overview-th is-left">Source</th>
         <th class="pvt-overview-th is-left"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The instrument and edition each cut-off was calibrated on. Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity. A cut-off derived on one edition does not automatically transfer to another; a ! marks where that matters.">Derived on</span></th>
         <th class="pvt-overview-th is-left"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="The cut-off each measure applies when its tab is first opened. Its published sensitivity and specificity are printed beside the cut-off selector on that tab.">Default cut-off</span></th>
         <th aria-hidden="true"></th>
