@@ -58,7 +58,9 @@
    the conclusion speaks of abnormality "from among the overall set of
    tests administered"; and Crawford's own supplementary programs state
    that "the methods can be applied when only a subset of the Index
-   scores have been administered". The requirement is only that R covers
+   scores have been administered" (that last quote is NOT in the 2007
+   paper and has not been traced to its source; the first two are, verbatim).
+   The requirement is only that R covers
    the measures in hand. What cannot be done is quote a ten-measure
    figure for seven measures, so profSimulate keys its cache on the
    selection itself and nothing is carried over.

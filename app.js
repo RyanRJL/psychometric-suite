@@ -3088,7 +3088,10 @@ function buildApaTableFromColumns(outId, columns, rows, groupLabelFn, groupDispl
    cannot: a patient has three index scores below the 5th percentile — how
    unusual is that? By definition 5% of the population falls below the 5th
    percentile on ANY ONE measure, but across four correlated indices the
-   percentage showing at least one is 13.7%, not 5%. Reading each row on its
+   percentage showing at least one is 13.7%, not 5% (the paper's own Table 2
+   gives 13.21% for the WAIS-III Indices; 13.7% is this app's WAIS-IV matrix).
+   Verified against the paper, 2026-09: Method steps, equations 1 and 2, the
+   shared criterion for differences, Table 1 and the Appendix all match. Reading each row on its
    own overcalls impairment, and the paper's whole point is that the error is
    large enough to change a conclusion.
 
