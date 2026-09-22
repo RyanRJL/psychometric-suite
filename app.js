@@ -8570,12 +8570,11 @@ function renderPvtAboutPanel(){
       desc: 'Fifty-item forced-choice picture recognition; robust to most genuine impairment, though specificity falls in dementia.' }
   ];
   const esc = s => String(s).replace(/&(?!(?:[a-z]+|#\d+);)/gi, '&amp;').replace(/"/g, '&quot;');
-  /* The instrument alone, with a "!" where the edition is unrecorded or a
+  /* The instrument alone, with a "!" where a
      version caveat applies; its tooltip carries PVT_INSTRUMENTS' own text. */
   function derivedCell(r){
     const i = PVT_INSTRUMENTS[r.tab] || {};
     const notes = [];
-    if (i.unspecified) notes.push('Form or edition not recorded here: the sources held do not name the one this cut-off was calibrated on.');
     if (i.mismatch) notes.push(i.mismatch);
     const flag = notes.length
       ? ` <button type="button" class="pvt-overview-flag" data-pvtip="${esc(notes.join(' '))}" aria-label="Version note for ${r.title}" tabindex="0">!</button>`
