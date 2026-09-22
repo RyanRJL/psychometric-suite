@@ -10609,6 +10609,63 @@ body.rb-docked-active{padding-right:0}
 }
 .pvt-overview-sub .is-warn{color:#9c3d2a}
 
+/* One-line cells for the About table: cut-off in the body face rather than
+   mono, and sens. / spec. as centred figures, the way the Change Analysis
+   overview centres its ticks. */
+.pvt-overview-cutcell{text-align:left;font-size:12.5px;color:#1A1A1A;font-weight:500}
+.pvt-overview-num{font-variant-numeric:tabular-nums;font-size:12.5px;color:#3F3B35;min-width:56px}
+.pvt-overview-num.is-note{font-size:11.5px;color:#7A766E}
+/* A shared group's pill sits in one cell spanning its rows; the faint tint
+   marks the span as a unit. */
+.pvt-overview-counts.is-shared{background:rgba(20,15,5,0.015)}
+/* The version note beside an instrument: same geometry as the "?" but in
+   the caveat colour, so it reads as a warning rather than as help. */
+.pvt-overview-flag{
+  width:16px;
+  height:16px;
+  margin-left:4px;
+  border-radius:50%;
+  background:rgba(156,61,42,0.10);
+  border:none;
+  color:#9C3D2A;
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:700;
+  cursor:help;
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  line-height:1;
+  vertical-align:1px;
+}
+.pvt-overview-flag:hover,
+.pvt-overview-flag:focus-visible{background:#9C3D2A;color:#FFFFFF;outline:none}
+.pvt-overview-flag::before{
+  content:attr(data-pvtip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:-8px;
+  width:340px;
+  padding:12px 14px;
+  background:rgba(15,18,24,0.96);
+  color:#FFFFFF;
+  border-radius:8px;
+  font-size:12.5px;
+  font-weight:400;
+  line-height:1.55;
+  text-align:left;
+  white-space:normal;
+  z-index:60;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(4px);
+  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+}
+.pvt-overview-flag:hover::before,
+.pvt-overview-flag:focus-visible::before{opacity:1;transform:translateY(0)}
+
 /* ---------- Rey 15-Item administration overlay ----------
    Mounted on <body> (position:fixed against a transformed ancestor is the
    trap that moved the old age popover), full-viewport, above the drawer. */

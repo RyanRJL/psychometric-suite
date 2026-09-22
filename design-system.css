@@ -5432,10 +5432,12 @@ input[type="number"].ds-age-pop-input{
      because opening upward put it above the first row and hard against the
      top edge of the new scroll box, where nothing can scroll it back. */
   #validity .pvt-overview-colh::before,
-  #validity .pvt-overview-info::before{
+  #validity .pvt-overview-info::before,
+  #validity .pvt-overview-flag::before{
     width:min(320px, calc(100vw - 64px)) !important;
   }
-  #validity .pvt-overview-info::before{
+  #validity .pvt-overview-info::before,
+  #validity .pvt-overview-flag::before{
     bottom:auto !important;
     top:calc(100% + 8px) !important;
   }
