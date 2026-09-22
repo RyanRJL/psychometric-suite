@@ -6918,6 +6918,21 @@ check('EI weight table matches Silverberg et al. (2007) Table 2 cell for cell', 
   return bad.length === 0 || bad.join('; ');
 });
 
+check('the Larrabee table states it is for seven indicators, and the page count it cites is real', () => {
+  /* Larrabee's (2014) accuracy rows assume seven indicators administered;
+     the Summary counts independent GROUPS, and the caveat under the table
+     names how many this page can reach. Derived from the group keys the
+     summary rows actually carry, so adding a measure with a new group makes
+     this fail until the sentence is updated. */
+  const bad = [];
+  const groups = new Set([...extractFn(APP_SRC, 'getPvtSummaryRows').matchAll(/group: '([a-z0-9]+)'/g)].map(m => m[1]));
+  const words = { 4:'four', 5:'five', 6:'six', 7:'seven' };
+  const m = /These figures are for seven indicators administered\. They do not transfer directly to a different number, and this page counts at most (\w+) independent indicators\./.exec(HTML_SRC);
+  if (!m) bad.push('the caveat under the Larrabee table is missing');
+  else if (m[1] !== words[groups.size]) bad.push(`caveat says "${m[1]}" but the summary has ${groups.size} indicator groups`);
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('ES gate, formula and cut-off match Novitski et al. (2012)', () => {
   const bad = [];
   const g = D.PVT_ES.gate;
