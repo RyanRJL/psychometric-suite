@@ -4127,6 +4127,25 @@ document.getElementById('bat-clear').addEventListener('click', clearBattery);
 let sdiRows = [];
 const sdiLabelState = { d1:'Test', d2:'Retest' };
 function sdiAddRow(initial){ sdiRows.push(initial || { name:'', t1:'', t2:'', sd:'' }); renderSdi(); }
+/* The SD Index's seeded example row, claimed on the first keystroke, for the
+   same reason as claimBatteryExampleRow: typed over, it kept isExample, so it
+   scored on screen while renderSdiApa, the Working Report and Score Charts
+   skipped it, and the example's 9 and 6 stayed attached as this patient's.
+
+   The index-mode example's scoreType:'scaled' is kept. Every row on this
+   table gets its type when it is added (the Add row menu asks, autofill infers
+   it) and shows it in its (Scaled) tag, and nothing changes it afterwards. The
+   page-level #sdi-type it would otherwise fall back to is in a hidden panel,
+   so dropping it would move the row to a metric nobody chose or can see. */
+function claimSdiExampleRow(row, field, tr){
+  delete row.isExample;
+  ['name', 't1', 't2', 'sd'].forEach(k => {
+    if (k === field) return;
+    row[k] = '';
+    const el = tr && tr.querySelector(`input[data-f="${k}"]`);
+    if (el) el.value = '';
+  });
+}
 function sdiRemove(i){ sdiRows.splice(i, 1); renderSdi(); }
 function sdiRemoveGroup(group){
   sdiRows = sdiRows.filter(r => r.group !== group);
@@ -4299,6 +4318,7 @@ function renderSdi(){
   tbody.querySelectorAll('input').forEach(inp => {
     inp.addEventListener('input', e => {
       const i = +e.target.dataset.r, f = e.target.dataset.f;
+      if (sdiRows[i].isExample) claimSdiExampleRow(sdiRows[i], f, e.target.closest('tr'));
       sdiRows[i][f] = e.target.value;
       updateSdiRow(i, e.target.closest('tr'));
       renderSdiApa();
@@ -4554,6 +4574,25 @@ const rciState = {
 // Blank rows carry the full superset so any method can read/fill them.
 function newRciRow(method){
   return { name:'', sd:'', m1:'', sd1:'', m2:'', sd2:'', r:'', rCorrected:'', n:'', t1:'', t2:'' };
+}
+/* The shared Change Analysis example row, claimed on the first keystroke, for
+   the same reason as claimBatteryExampleRow: typed over, it kept isExample, so
+   it scored on screen while all four renderRciApa calls, the Working Report and
+   Score Charts skipped it.
+
+   Every field a new row carries is blanked except the one being typed in: the
+   example's norms (M 100, SD 15, r .90, n 100) are no more this measure's than
+   its scores are. The row is shared, so the other three methods see the claimed
+   row when they next render, which switching to them does. Only the inputs of
+   the table in hand exist to be cleared in place. */
+function claimRciExampleRow(row, field, tr){
+  delete row.isExample;
+  Object.keys(newRciRow()).forEach(k => {
+    if (k === field) return;
+    row[k] = '';
+    const el = tr && tr.querySelector(`input[data-f="${k}"]`);
+    if (el) el.value = '';
+  });
 }
 /* The four methods share ONE row set, so entering scores on one of them fills
    in the other three as a side effect. The working report therefore collects a
@@ -4893,6 +4932,7 @@ function renderRci(method){
     inp.addEventListener('input', e => {
       const m = e.target.dataset.m, i = +e.target.dataset.r, f = e.target.dataset.f;
       rciMarkMethodUsed(m);
+      if (rciState[m].rows[i].isExample) claimRciExampleRow(rciState[m].rows[i], f, e.target.closest('tr'));
       rciState[m].rows[i][f] = e.target.value;
       // Update only this row's computed cells (don't destroy focus)
       updateRciRow(m, i, e.target.closest('tr'));

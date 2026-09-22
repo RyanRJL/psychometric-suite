@@ -9795,6 +9795,13 @@ check('overtyping the seeded example row makes it the clinician\'s row', () => {
   const row2 = { name: 'Example subtest', raw: '25', score: '10', isExample: true };
   c.__C(row2, 'score', null);
   if (row2.name !== '' || row2.raw !== '') bad.push('editing the score left the example name or raw in place');
+  /* And on screen: the row is updated in place, not re-rendered, so a value
+     blanked only in state would still be showing. fakeRow is in §50. */
+  const row3 = { name: 'Example subtest', raw: '25', score: '10', isExample: true };
+  const tr3 = fakeRow(row3);
+  c.__C(row3, 'name', tr3);
+  if (tr3.els['input[data-f="raw"]'].value !== '' || tr3.els['input[data-f="score"]'].value !== '') bad.push('the example\'s seeded numbers are still on screen');
+  if (tr3.els['input[data-f="name"]'].value !== 'Example subtest') bad.push('the input being typed in was cleared');
   /* And the keystroke path must claim BEFORE it writes, or the typed value
      is the one that gets blanked. */
   const render = extractFn(APP_SRC, 'renderBattery');
@@ -9962,6 +9969,118 @@ check('renaming a test does not rebuild the table under the next click', () => {
   if (/addEventListener\('blur'[^\n]*renderBattery/.test(rename)) bad.push('the rename input rebuilds the table on blur again');
   if (!/e\.key !== 'Enter' && e\.key !== 'Tab'/.test(rename)) bad.push('Tab and Enter no longer move to the group\'s first subtest');
   return bad.length === 0 || bad.join('; ');
+});
+
+
+/* ==========================================================================
+   50. The seeded example rows on the SD Index and Change Analysis
+
+   §49's example-row fault, found again on the two other tables that seed
+   one. Typed over, each row kept isExample, so it scored on screen while the
+   APA table, the Working Report and Score Charts skipped it. Reproduced in the
+   running page before the fix: an SD Index row renamed "Logical Memory"
+   printed -1.00 / .317 with no APA table and a report of 0 items, and a
+   Change Analysis row renamed "Full Scale IQ" printed -1.64 / .101 on a
+   method already accepted for the report, with no table on any method.
+
+   The seeds are read out of app.js rather than restated, so a field added to
+   an example later has to be blanked by the claim or these fail.
+   ========================================================================== */
+heading('50. The seeded example rows on the SD Index and Change Analysis');
+
+/* Every example literal in app.js with this name, as objects. */
+function seededExamples(name) {
+  const re = new RegExp("\\{\\s*name:'" + name + "'[^{}]*\\}", 'g');
+  return (APP_SRC.match(re) || []).map(lit => vm.runInNewContext('(' + lit + ')'));
+}
+/* A row element whose inputs record what the claim did to them. */
+function fakeRow(row) {
+  const els = {};
+  for (const k of Object.keys(row)) els['input[data-f="' + k + '"]'] = { value: String(row[k]) };
+  return { els, querySelector: sel => els[sel] || null };
+}
+
+check('overtyping the SD Index example makes it the clinician\'s row, in state and on screen', () => {
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(['claimSdiExampleRow']
+    .map(n => extractFn(APP_SRC, n)).join(';') + ';globalThis.__C = claimSdiExampleRow;', c);
+  const seeds = seededExamples('Example memory score');
+  const bad = [];
+  /* Two in the init (raw and index mode) and two in loadExampleRow. */
+  if (seeds.length < 4) bad.push('only ' + seeds.length + ' SD Index example literals found, so this check proves little');
+  for (const seed of seeds) {
+    for (const field of ['name', 't1', 't2']) {
+      const row = { ...seed };
+      const tr = fakeRow(row);
+      c.__C(row, field, tr);
+      const label = (seed.scoreType ? 'index' : 'raw') + '-mode example, typing in ' + field;
+      if ('isExample' in row) bad.push(label + ': still flagged as the example');
+      for (const k of Object.keys(seed)) {
+        if (k === 'isExample' || k === 'scoreType' || k === field) continue;
+        if (row[k] !== '') bad.push(label + ': seeded ' + k + ' ' + row[k] + ' survives in state');
+        const el = tr.els['input[data-f="' + k + '"]'];
+        if (el && el.value !== '') bad.push(label + ': seeded ' + k + ' still on screen');
+      }
+      const typed = tr.els['input[data-f="' + field + '"]'];
+      if (typed && typed.value !== String(seed[field])) bad.push(label + ': the input being typed in was cleared');
+      /* The row's type stays. It was fixed when the row was added and is shown
+         in its (Scaled) tag; without it the row falls back to #sdi-type, which
+         sits in a hidden panel, so the metric would change to one nobody chose
+         or can see. */
+      if (row.scoreType !== seed.scoreType) bad.push(label + ': the row\'s score type changed from ' + seed.scoreType + ' to ' + row.scoreType);
+    }
+  }
+  /* Claim before the write, or the typed value is what gets blanked. */
+  const render = extractFn(APP_SRC, 'renderSdi');
+  if (!/if \(sdiRows\[i\]\.isExample\) claimSdiExampleRow\(sdiRows\[i\], f, e\.target\.closest\('tr'\)\);\s*sdiRows\[i\]\[f\] = e\.target\.value;/.test(render)) {
+    bad.push('the SD Index input handler no longer claims the example row before writing the keystroke');
+  }
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
+});
+
+check('overtyping the shared Change Analysis example makes it the clinician\'s row, and still accepts the method', () => {
+  const c = { rciMarkMethodUsed: () => {}, ReportBundle: {} };
+  vm.createContext(c);
+  vm.runInContext(['newRciRow', 'claimRciExampleRow']
+    .map(n => extractFn(APP_SRC, n)).join(';') + ';globalThis.__C = claimRciExampleRow; globalThis.__N = newRciRow;', c);
+  const seeds = seededExamples('Example index score');
+  const bad = [];
+  /* The init seed, loadExampleRow's and the four in `examples`. */
+  if (seeds.length < 3) bad.push('only ' + seeds.length + ' Change Analysis example literals found, so this check proves little');
+  const rowKeys = Object.keys(c.__N());
+  for (const seed of seeds) {
+    for (const k of Object.keys(seed)) {
+      if (k !== 'isExample' && !rowKeys.includes(k)) bad.push('an example seeds ' + k + ', which a new row does not carry, so the claim would leave it behind');
+    }
+    for (const field of ['name', 't1', 'm1', 'r']) {
+      const row = { ...seed };
+      const tr = fakeRow(row);
+      c.__C(row, field, tr);
+      const label = 'typing in ' + field;
+      if ('isExample' in row) bad.push(label + ': still flagged as the example');
+      for (const k of Object.keys(seed)) {
+        if (k === 'isExample' || k === field) continue;
+        if (row[k] !== '') bad.push(label + ': seeded ' + k + ' ' + row[k] + ' survives in state');
+        const el = tr.els['input[data-f="' + k + '"]'];
+        if (el && el.value !== '') bad.push(label + ': seeded ' + k + ' still on screen');
+      }
+      const typed = tr.els['input[data-f="' + field + '"]'];
+      if (typed && typed.value !== String(seed[field])) bad.push(label + ': the input being typed in was cleared');
+    }
+  }
+  /* The keystroke still accepts the method for the report (§34), and the
+     claim happens before the write. Accepting first is what lets the claimed
+     row, now visible to renderRciApa, be collected on the method in hand while
+     the other three stay gated. */
+  const render = extractFn(APP_SRC, 'renderRci');
+  if (!/rciMarkMethodUsed\(m\);\s*if \(rciState\[m\]\.rows\[i\]\.isExample\) claimRciExampleRow\(rciState\[m\]\.rows\[i\], f, e\.target\.closest\('tr'\)\);\s*rciState\[m\]\.rows\[i\]\[f\] = e\.target\.value;/.test(render)) {
+    bad.push('the Change Analysis input handler no longer accepts the method, then claims the example row, then writes the keystroke');
+  }
+  if (/ReportBundle|rciMarkMethodUsed/.test(extractFn(APP_SRC, 'claimRciExampleRow'))) {
+    bad.push('the claim touches consent itself; only data entry in the handler may accept a method');
+  }
+  return bad.length === 0 || bad.slice(0, 4).join('; ');
 });
 
 
