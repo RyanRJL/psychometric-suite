@@ -73,7 +73,7 @@ const REPORT_TEST_CATALOG = [
    cites for Tables 4.1, 4.3 and C.4-C.5.
    ============================================================ */
 const WAIS4_INTERCORR = {
-  source: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1 — Intercorrelations of Subtest, Process, and Composite Scores for All Ages',
+  source: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1: Intercorrelations of Subtest, Process, and Composite Scores for All Ages',
   /* `source` is the table's full printed title, for anyone reading this file.
      `citation` is what the exported APA note prints: enough to find the table
      and no more, because a note is read under a clinical table rather than
@@ -217,7 +217,7 @@ const WAIS4_INTERCORR = {
    ============================================================ */
 const WMS4_INTERCORR = {
   adult: {
-    source: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.1 — Intercorrelations of Subtest, Process, and Index Scores in the Normative Sample (Adult Battery)',
+    source: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.1: Intercorrelations of Subtest, Process, and Index Scores in the Normative Sample (Adult Battery)',
     citation: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.1 (Adult Battery)',
     battery: 'Adult',
     ageBand: 'Ages 16-69',
@@ -290,7 +290,7 @@ const WMS4_INTERCORR = {
     sd:   {'LM1':3, 'LM2':3, 'VPA1':3, 'VPA2':3, 'VPAWR':3, 'DE1':3, 'DE1C':3, 'DE1S':3, 'DE2':3, 'DE2C':3, 'DE2S':3, 'VR1':3.1, 'VR2':3.1, 'SA':3, 'SSP':3, 'AMI':9.9, 'VMI':9.6, 'VWMI':5.1, 'IMI':8.8, 'DMI':8.6}
   },
   older: {
-    source: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.2 — Intercorrelations of Subtest, Process, and Index Scores in the Normative Sample (Older Adult Battery)',
+    source: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.2: Intercorrelations of Subtest, Process, and Index Scores in the Normative Sample (Older Adult Battery)',
     citation: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.2 (Older Adult Battery)',
     battery: 'Older Adult',
     ageBand: 'Ages 65-90',
@@ -2521,8 +2521,8 @@ const PVT_CVLT3_CRITICAL = {
    set so specificity is .90 or better (Boone, 2007; Larrabee, 2014) — and is
    the default; 5% is offered for a clinician who wants a stricter reading. */
 const PVT_CVLT3_CRITERIA = [
-  { key: 'standard',     pct: 10, label: '10% — conventional (spec. ≥ .90)' },
-  { key: 'conservative', pct:  5, label: '5% — stricter' }
+  { key: 'standard',     pct: 10, label: '10%, conventional (spec. ≥ .90)' },
+  { key: 'conservative', pct:  5, label: '5%, stricter' }
 ];
 
 /* -------------------------------------------------------------------------
@@ -2560,13 +2560,13 @@ const PVT_CVLT3_CRITERIA = [
 const PVT_CVLT3_FC_CUTOFFS = [
   { key: 'baserate', cut: null, label: 'Base rate by age · CVLT-3 manual',
     sens: '—', spec: '—',
-    cite: 'Delis et al. (2017), Appendix D — base rates by age band; no cut-off or accuracy pair is published.' },
+    cite: 'Delis et al. (2017), Appendix D: base rates by age band; no cut-off or accuracy pair is published.' },
   { key: 'e15', cut: 15, label: '≤ 15 · a single error (Erdodi et al., 2018)',
     sens: '.56', spec: '.92',
-    cite: 'Erdodi et al. (2018), ACN 33(7), 845–859 — mean across seven reference PVTs in 104 adults with TBI. CVLT-II.' },
+    cite: 'Erdodi et al. (2018), ACN 33(7), 845–859: mean across seven reference PVTs in 104 adults with TBI. CVLT-II.' },
   { key: 'e14', cut: 14, label: '≤ 14 · de facto standard (Schwartz et al., 2016)',
     sens: '.50', spec: '.93',
-    cite: 'Schwartz et al. (2016), JINS 22(8), 851–858 — systematic review, 17 studies, N = 4,432. CVLT-II.' }
+    cite: 'Schwartz et al. (2016), JINS 22(8), 851–858: systematic review, 17 studies, N = 4,432. CVLT-II.' }
 ];
 
 /* Erdodi et al. (2018) Table 6, held so the summary figures above can be

@@ -6023,7 +6023,7 @@ check('the basis names the right source, and says when age will move it', () => 
     ['CVLT-3 Indices · Ages 16-44', 'T1-5 Correct', 'retest, corrected'],
     ['WISC-V Indices · All Ages', 'Fluid Reasoning Index', 'internal consistency · by age'],
     ['RBANS Subtests · All Ages', 'List Recognition', 'none published'],
-    ['WAIS-IV Longest Span (Process) · Ages 16-17', 'Longest Digit Span Forward', 'base rate — no interval'],
+    ['WAIS-IV Longest Span (Process) · Ages 16-17', 'Longest Digit Span Forward', 'base rate, no interval'],
     /* THE TWO RETEST LABELS, WHICH MUST NOT COLLAPSE INTO EACH OTHER. Both
        rest on the retest study's own correlation, but they are different
        claims about the SD it is paired with, and the whole point of the pair
@@ -6088,7 +6088,7 @@ check('the basis names the right source, and says when age will move it', () => 
     'internal consistency': 3, 'internal consistency · by age': 115,
     'stability, published · by age': 12, 'retest, corrected': 180,
     'retest, uncorrected': 285, 'retest, uncorrected · by age': 13,
-    'retest': 8, 'none published': 4, 'base rate — no interval': 51
+    'retest': 8, 'none published': 4, 'base rate, no interval': 51
   };
   Object.entries(want).forEach(([k, v]) => {
     if (tally[k] !== v) bad.push('basis "' + k + '": ' + (tally[k] || 0) + ' entries, expected ' + v);
@@ -9958,6 +9958,40 @@ check('family search hides the age-band pills it filters out', () => {
     bad.push('no rule outranks the pill\'s display:inline-flex !important');
   }
   return bad.length === 0 || bad.join('; ');
+});
+
+check('a mixed-metric export names each row\'s metric and keys it in the note', () => {
+  /* A T of 60 and a standard score of 60 printed identically under "Score".
+     Owner decision 2026-09-22: a Metric column, only on mixed tables. */
+  const apa = extractFn(APP_SRC, 'renderBatteryApa');
+  const bad = [];
+  if (!/const types\s*=\s*new Set\(valid\.map/.test(apa)) bad.push('the metric set is not taken from the printed rows (a scaled table with Longest Span spans would head its spans "Scaled Score")');
+  if (!/key:'metric'/.test(apa)) bad.push('there is no Metric column');
+  if (!/if \(mixed\) apaColumnState\['bat-apa'\]\.add\('metric'\);\s*else\s+apaColumnState\['bat-apa'\]\.delete\('metric'\);/.test(apa)) bad.push('the Metric column is not tied to the table being mixed');
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(extractConst(APP_SRC, 'APA_NOTES') + ';globalThis.__N = APA_NOTES;', c);
+  const note = ctx => c.__N.bat(ctx).filter(Boolean).join(' ');
+  if (!/Metric = scale each score is reported on: Scaled/.test(note({ mixedTypes: true, metricLegend: 'Scaled, M = 10' }))) bad.push('the note does not key the Metric column');
+  if (/Metric =/.test(note({ mixedTypes: true }))) bad.push('the note prints a key with nothing to key');
+  if (/[Mm]etric/.test(note({ onScreen: true }))) bad.push('the on-screen mirror mentions a metric it has no table for');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('no em dash in the page\'s prose (owner rule), bar the lone "no value" mark', () => {
+  /* Comments and scripts are not product text. A cell or field holding ONLY
+     a dash is a symbol for "nothing here", kept by owner decision; any other
+     em dash is punctuation in text a reader sees. */
+  /* Entities too: two prose dashes on the CVLT-3 tab were written &mdash;
+     and passed a check that looked only for the character. */
+  const html = HTML_SRC.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '')
+    .replace(/&mdash;|&#8212;|&#x2014;/gi, '—');
+  const hits = [];
+  html.split('\n').forEach(l => {
+    const stripped = l.replace(/>—</g, '><').replace(/placeholder="—"/g, '');
+    if (stripped.includes('—')) hits.push(stripped.trim().slice(0, 80));
+  });
+  return hits.length === 0 || hits.length + ' line(s), first: ' + hits[0];
 });
 
 check('renaming a test does not rebuild the table under the next click', () => {

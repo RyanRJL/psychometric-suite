@@ -815,7 +815,7 @@
       const midY = rowY + ROW_H / 2;
       const t1 = parseFloat(r.t1), t2 = parseFloat(r.t2);
 
-      let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, RCI ${fmt(res.calc.rci, 2)}, p ${fmtP(res.calc.p)} — ${res.outcome.label}</title>`;
+      let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, RCI ${fmt(res.calc.rci, 2)}, p ${fmtP(res.calc.p)}: ${res.outcome.label}</title>`;
       row += `<text class="viz-row-name" x="${COL_CHANGE.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name, 24))}</text>`;
       row += `<text class="viz-row-score" x="${COL_CHANGE.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}</text>`;
 
@@ -1075,7 +1075,7 @@
         const midY = rowY + ROW_H / 2;
         const sig = sdiCvHit(change, cv);
         const label = sig ? 'Significant change' : 'No significant change';
-        let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, SD Δ ${fmt(change, 2)} — ${label}</title>`;
+        let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, SD Δ ${fmt(change, 2)}: ${label}</title>`;
         row += `<text class="viz-row-name" x="${COL_CHANGE.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name, 24))}</text>`;
         row += `<text class="viz-row-score" x="${COL_CHANGE.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}</text>`;
         const bx0 = vizXd(-crit, axis), bx1 = vizXd(crit, axis);
