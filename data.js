@@ -183,7 +183,7 @@ const WAIS4_INTERCORR = {
    the Older Adult battery is normed 65-90 and drops Designs, Spatial Addition
    and the VWMI entirely, leaving 8 measures and 4 indices. Ages 65-69 are
    normed in BOTH, with different coefficients — Logical Memory I against the
-   AMI is .82 adult and .82 older, but VR I against VMI is .79 against .91 —
+   AMI is .83 adult and .82 older, but VR I against VMI is .79 against .91 —
    so age cannot pick the battery. The clinician picked it when they decided
    what to administer, and normDB records that choice in the group key
    (`· Ages 16-69` / `· Ages 65-90`), which is what the Profile page reads.
@@ -2198,9 +2198,17 @@ const PVT_EI_WEIGHTS = {
     { min: 0,  max: 9,  w: 6 }
   ]
 };
-/* EI > 3: standard threshold (~94% specificity in the derivation sample);
-   EI > 1: the authors' optimal screening cut-off for post-acute mild TBI. */
-const PVT_EI_CUTOFFS = { standard: 3, sensitive: 1 };
+/* EI > 3: standard threshold (~94% specificity in the derivation sample).
+   EI > 0: the authors' screening cut-off for post-acute mild TBI. Results:
+   overall classification "was optimal (86.9%) at a cut-off score of > 0";
+   Discussion: "a more liberal cut-off score of 1 is optimal ... provided the
+   goal is to screen", with "86% to 96%" of non-credible examinees identified.
+   Those are exactly Table 3's > 0 sensitivities (.857/.933/.958), so "a
+   cut-off score of 1" means a score of 1 flags, i.e. > 0. This was > 1
+   until 2026-09, a Table 3 row the paper tabulates but never recommends. */
+const PVT_EI_CUTOFFS = { standard: 3, sensitive: 0 };
+/* Shown on screen whenever the > 0 cut-off is selected. */
+const PVT_EI_SCREENING_CAUTION = 'At > 0 a third of genuine clinical patients flag (specificity .66, Silverberg et al., 2007, Table 1). The authors recommend it only to screen post-acute mild TBI, not as grounds for a finding.';
 
 /* Novitski et al. (2012). ES = (List Recognition - [List Recall + Story
    Recall + Figure Recall]) + Digit Span, all raw. LOWER is more suspicious.
@@ -2229,13 +2237,19 @@ const PVT_RDS = { floor: 3, cutoffTraditional: 7, cutoffConservative: 6 };
    "cut" means scores BELOW it fail. sens/spec are the point values the
    meta-analysis uses for its predictive-power tables (Tables 16-17), from
    which the app derives PPP/NPP by Bayes at the chosen base rate.
-   specRange/sensRange, where present, are the ranges quoted for the cut-off
-   summary table. Trial 1 < 41 row: Denning (2012). */
+   Trial 1 < 41 row: Denning (2012).
+
+   Every row prints its own point values, from Tables 3 and 4 (neuro/
+   psychiatric, weighted mean). The two Trial 2 rows used to carry the
+   abstract's ranges (.96-.98 / .46-.56 and .91-.97 / .59-.70), but those
+   pool Trial 2 WITH Retention, so they did not describe Trial 2 alone:
+   Trial 2 < 49's own values run .94-.97 / .59-.64, and the .45-.55 printed
+   for Trial 2 < 45 appeared nowhere in the paper. */
 const PVT_TOMM_CUTOFFS = [
   { id: 't1-41',  trial: 'trial1',    label: 'Trial 1 < 41',   cut: 41, sens: 0.66, spec: 0.93, note: 'More conservative Trial 1 cut-off; meta-analytic weighted-mean values at < 41 (cf. Denning, 2012).' },
   { id: 't1-42',  trial: 'trial1',    label: 'Trial 1 < 42',   cut: 42, sens: 0.69, spec: 0.91, note: 'Meta-analytic optimum for abbreviated/screening use.' },
-  { id: 't2-45',  trial: 'trial2',    label: 'Trial 2 < 45',   cut: 45, sens: 0.45, spec: 0.97, specRange: '.96–.98', sensRange: '.45–.55', note: 'Traditional cut-off; very high specificity across settings.' },
-  { id: 't2-49',  trial: 'trial2',    label: 'Trial 2 < 49',   cut: 49, sens: 0.63, spec: 0.95, specRange: '.91–.97', sensRange: '.59–.70', note: 'Liberal; only where significant impairment is not expected.' },
+  { id: 't2-45',  trial: 'trial2',    label: 'Trial 2 < 45',   cut: 45, sens: 0.45, spec: 0.97, note: 'Traditional cut-off; very high specificity across settings.' },
+  { id: 't2-49',  trial: 'trial2',    label: 'Trial 2 < 49',   cut: 49, sens: 0.63, spec: 0.95, note: 'Liberal; only where significant impairment is not expected.' },
   { id: 'ret-45', trial: 'retention', label: 'Retention < 45', cut: 45, sens: 0.55, spec: 0.98, note: 'Traditional cut-off; very high specificity across settings.' },
   { id: 'ret-49', trial: 'retention', label: 'Retention < 49', cut: 49, sens: 0.70, spec: 0.93, note: 'Liberal; only where significant impairment is not expected.' }
 ];
@@ -2249,19 +2263,23 @@ const PVT_BASE_RATES = [0.10, 0.20, 0.30, 0.40, 0.50];
    - EI (Silverberg et al., 2007): at > 3, specificity .94 in the mixed
      clinical derivation sample rising to 1.00 in mild TBI and controls
      (Tables 1 and 3); sensitivity .46-.71 across the clinical, simulated-
-     naive and simulated-coached malingering groups (Table 3). At > 1,
-     specificity .75 (derivation) to .96 (controls); sensitivity .67-.92.
+     naive and simulated-coached malingering groups (Table 3). At > 0,
+     specificity .66 (derivation, Table 1) to .781 (mild TBI) and .964
+     (controls); sensitivity .857-.958 (Table 3). The .66 means a third of
+     genuine clinical patients flag, which is why > 0 is screening-only.
    - RDS (Schroeder et al., 2012): global rates by weighted average and
      Bayesian method — at <= 6, sensitivity .30/.35 and specificity .96/.97;
      at <= 7, sensitivity .48/.58 and specificity .82/.85.
-   - ES (Novitski et al., 2012): NO published sensitivity/specificity pair
-     exists; discrimination is published as ROC AUC = .91 against amnestic
-     patients (vs .61 for the EI in the same comparison). Do not invent a
-     pair — the APA table prints dashes and the note explains.
+   - ES (Novitski et al., 2012): the DERIVATION STUDY publishes no
+     sensitivity/specificity pair; discrimination is ROC AUC = .91 against
+     amnestic patients (vs .61 for the EI in the same comparison). Later
+     studies do publish pairs at < 12, and they vary widely (pooled .67/.72,
+     Goette & Goette, 2019), so the page names the gap rather than claiming
+     none exists. The APA table prints dashes and the note explains.
    TOMM accuracy lives on PVT_TOMM_CUTOFFS above. Pinned by check.js §38. */
 const PVT_EI_ACCURACY = {
   standard:  { sens: '.46–.71', spec: '.94–1.00' },
-  sensitive: { sens: '.67–.92', spec: '.75–.96' }
+  sensitive: { sens: '.86–.96', spec: '.66–.96' }
 };
 const PVT_RDS_ACCURACY = {
   conservative: { sens: '.30–.35', spec: '.96–.97' },

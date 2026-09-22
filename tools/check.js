@@ -46,7 +46,7 @@ vm.runInContext(
     ';globalThis.__EXPORTS = { TOPF_TO_FSIQ, WAIS_COEF, WMS_COEF,' +
     ' OPIE_PRORATED_FSIQ, OPIE_PRORATED_GAI, OPIE_PRORATED_INDEX,' +
     ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB, WAIS4_INTERCORR, WMS4_INTERCORR,' +
-    ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
+    ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_EI_SCREENING_CAUTION, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
     ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
@@ -6911,7 +6911,10 @@ check('EI weight table matches Silverberg et al. (2007) Table 2 cell for cell', 
     if (w(D.PVT_EI_WEIGHTS.listRecognition, +v) !== e) bad.push(`LR ${v} -> expected ${e}`);
   });
   if (D.PVT_EI_CUTOFFS.standard !== 3) bad.push('standard cut-off is not EI > 3');
-  if (D.PVT_EI_CUTOFFS.sensitive !== 1) bad.push('screening cut-off is not EI > 1');
+  /* > 0, not > 1: Results "optimal (86.9%) at a cut-off score of > 0", and
+     the Discussion's "86% to 96%" identified are Table 3's > 0 sensitivities
+     (.857/.933/.958). > 1 is tabulated there but never recommended. */
+  if (D.PVT_EI_CUTOFFS.sensitive !== 0) bad.push('screening cut-off is not EI > 0');
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -7111,16 +7114,43 @@ check('shipped TOMM evaluation: default cut-offs, failure direction, Bayes wirin
 check('published accuracy strings match their sources, and reach screen and export', () => {
   /* PINNED: Silverberg et al. (2007) Tables 1 & 3 — at > 3 specificity .94
      (derivation) to 1.00 (mTBI/controls), sensitivity .464-.708 across the
-     three malingering groups; at > 1 specificity .75-.964, sensitivity
-     .667-.917. Schroeder et al. (2012) Tables 2 & 4 — global weighted/
+     three malingering groups; at > 0 specificity .66-.964, sensitivity
+     .857-.958 (ranges DERIVED below from the tables, not restated). Schroeder et al. (2012) Tables 2 & 4 — global weighted/
      Bayesian rates. The ES deliberately has NO pair: its published
      discrimination is ROC AUC .908 (vs .608 for the EI). */
   const bad = [];
   const eq = (got, want, name) => { if (got !== want) bad.push(name + ' drifted: ' + got); };
-  eq(D.PVT_EI_ACCURACY.standard.sens,  '.46–.71',  'EI > 3 sensitivity');
-  eq(D.PVT_EI_ACCURACY.standard.spec,  '.94–1.00', 'EI > 3 specificity');
-  eq(D.PVT_EI_ACCURACY.sensitive.sens, '.67–.92',  'EI > 1 sensitivity');
-  eq(D.PVT_EI_ACCURACY.sensitive.spec, '.75–.96',  'EI > 1 specificity');
+  /* Silverberg et al. (2007): Table 1 is the derivation-sample specificity
+     (N = 103); Table 3 gives specificity in mTBI and controls, then
+     sensitivity in clinical, sim-naive and sim-coached malingerers. Each
+     printed range is min-max of those cells at 2 dp, so a range pointing at
+     the wrong cut-off's row fails here. */
+  const T1 = { 0: .66, 1: .75, 2: .84, 3: .94 };
+  const T3 = {
+    0: { spec: [.781, .964], sens: [.933, .958, .857] },
+    1: { spec: [.813, .964], sens: [.667, .917, .750] },
+    2: { spec: [.906, .964], sens: [.667, .792, .500] },
+    3: { spec: [1.00, 1.00], sens: [.533, .708, .464] }
+  };
+  const f2 = v => v.toFixed(2).replace(/^0/, '');
+  const span = a => f2(Math.min(...a)) + '–' + f2(Math.max(...a));
+  ['standard', 'sensitive'].forEach(k => {
+    const c = D.PVT_EI_CUTOFFS[k];
+    eq(D.PVT_EI_ACCURACY[k].sens, span(T3[c].sens), `EI > ${c} sensitivity`);
+    eq(D.PVT_EI_ACCURACY[k].spec, span([T1[c], ...T3[c].spec]), `EI > ${c} specificity`);
+  });
+  /* The screening cut-off's restriction must be on screen and in the export. */
+  if (typeof D.PVT_EI_SCREENING_CAUTION !== 'string' || !/mild TBI/.test(D.PVT_EI_SCREENING_CAUTION)
+      || !/\.66/.test(D.PVT_EI_SCREENING_CAUTION)) bad.push('the EI > 0 caution lost its mild-TBI restriction or its .66');
+  if (!/PVT_EI_SCREENING_CAUTION/.test(extractFn(APP_SRC, 'renderPvtEi'))) bad.push('renderPvtEi no longer shows the screening caution');
+  if (!/ctx\.eiScreening/.test(APP_SRC) || !/eiScreening:/.test(extractFn(APP_SRC, 'renderPvtApa'))) bad.push('the APA note no longer carries the screening restriction');
+  if (!/EI &gt; 0 · screening, post-acute mild TBI only/.test(HTML_SRC)) bad.push('the cut-off selector no longer names the > 0 screening restriction');
+  /* TOMM rows print their own point values. The abstract's ranges pool
+     Trial 2 with Retention, so a range on a Trial 2 row misdescribes it. */
+  D.PVT_TOMM_CUTOFFS.forEach(c => {
+    if ('sensRange' in c || 'specRange' in c) bad.push(c.id + ' carries a pooled range again');
+  });
+  if (/sensRange|specRange/.test(APP_SRC)) bad.push('app.js still reads a TOMM range field');
   eq(D.PVT_RDS_ACCURACY.conservative.sens, '.30–.35', 'RDS <= 6 sensitivity');
   eq(D.PVT_RDS_ACCURACY.conservative.spec, '.96–.97', 'RDS <= 6 specificity');
   eq(D.PVT_RDS_ACCURACY.traditional.sens,  '.48–.58', 'RDS <= 7 sensitivity');

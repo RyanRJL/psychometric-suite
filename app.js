@@ -3088,7 +3088,7 @@ function buildApaTableFromColumns(outId, columns, rows, groupLabelFn, groupDispl
    cannot: a patient has three index scores below the 5th percentile — how
    unusual is that? By definition 5% of the population falls below the 5th
    percentile on ANY ONE measure, but across four correlated indices the
-   percentage showing at least one is 13.21%, not 5%. Reading each row on its
+   percentage showing at least one is 13.7%, not 5%. Reading each row on its
    own overcalls impairment, and the paper's whole point is that the error is
    large enough to change a conclusion.
 
@@ -3138,7 +3138,7 @@ function choleskyLower(R){
   return C;
 }
 
-/* xorshift128+ with Box-Muller. Deliberately not Math.random: the results
+/* xorshift with Marsaglia's polar method. Deliberately not Math.random: the results
    have to be reproducible across runs and across machines. */
 function makeNormalSampler(seed){
   let s0 = (seed >>> 0) || 0x9E3779B9, s1 = 0x85EBCA6B;
@@ -3543,8 +3543,13 @@ const APA_NOTES = {
       (ctx.onScreen || !sources.length) ? '' : `Sources: ${sources.join('; ')}.`,
       '"Fail" = score beyond the published cut-off, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent indicators (Larrabee, 2014).',
       ctx.hasDashes
-        ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks an index published as a base rate or an AUC rather than as a pair.'
+        ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks an index whose source publishes a base rate or an AUC rather than a pair.'
         : 'Sensitivity and specificity are the published values at the applied cut-off.',
+      /* EI > 0 flags a third of genuine clinical patients (Table 1), so the
+         restriction the authors attach to it travels with the table. */
+      ctx.eiScreening
+        ? 'The Effort Index is scored at the > 0 screening cut-off, which Silverberg et al. (2007) recommend only for screening post-acute mild TBI; at that cut-off specificity was .66 in their mixed clinical sample.'
+        : '',
       shared.length ? `Indices sharing a subtest count as one indicator: ${shared.join(' and ')}.` : '',
       /* The CVLT-3 is the one measure here with no published cut-off, so an
          exported table must say where its threshold came from — otherwise
@@ -7028,11 +7033,14 @@ document.addEventListener('click', e => {
 /* ================================================================
    PERFORMANCE VALIDITY (PVT) PAGE
 
-   Scores four validity indicators against their published cut-offs
+   Scores seven validity measures against their published cut-offs
    (constants in data.js, pinned by check.js §38):
      - RBANS Effort Index      Silverberg et al. (2007)
      - RBANS Effort Scale      Novitski et al. (2012) — GATED, see below
      - Reliable Digit Span     Greiffenstein et al. (1994)
+     - Digit Span indices      Iverson & Tulsky (2003); Axelrod et al. (2006)
+     - Rey 15-Item             Boone et al. (2002)
+     - CVLT-3 Forced Choice    Delis et al. (2017), Appendix D
      - TOMM                    Martin et al. (2020) meta-analysis
 
    Design constraints, in order of importance:
@@ -7595,7 +7603,8 @@ function renderPvtEi(){
     label: 'Effort Index', value: s.ei, state: s.fail ? 'fail' : 'pass',
     meta: `Cut-off &gt; ${s.cut}${s.cutKey === 'sensitive' ? ' (screening)' : ''} · sens. ${acc.sens} · spec. ${acc.spec} · higher = less credible`
   }], `Digit Span ${s.ds} → weight ${s.wDs}; List Recognition ${s.lr} → weight ${s.wLr}; sum ${s.ei}.${
-    s.fail ? ' Corroborate with an independent, preferably forced-choice, measure.' : ''}`);
+    s.fail ? ' Corroborate with an independent, preferably forced-choice, measure.' : ''}${
+    s.cutKey === 'sensitive' ? ' ' + PVT_EI_SCREENING_CAUTION : ''}`);
 }
 
 function renderPvtEs(){
@@ -7616,7 +7625,7 @@ function renderPvtEs(){
      List Recognition 0-20 minus total recall 0-42, plus Digit Span 0-16. */
   out.innerHTML = pvtReadoutHtml([{
     label: 'Effort Scale', value: s.es, state: s.fail ? 'fail' : 'pass',
-    meta: `Cut-off &lt; ${PVT_ES.cutoff} · ROC AUC ${PVT_ES_ACCURACY.auc} (no published sens/spec) · lower = less credible`
+    meta: `Cut-off &lt; ${PVT_ES.cutoff} · ROC AUC ${PVT_ES_ACCURACY.auc} (no sens/spec pair in the derivation study) · lower = less credible`
   }], `(${s.lr} − [${s.list} + ${s.stor} + ${s.fig}]) + ${s.ds} = ${s.es}. Gate met.${
     s.fail ? ' Confirm with a stand-alone forced-choice measure.' : ''}`);
 }
@@ -7715,7 +7724,7 @@ function renderPvtTomm(){
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
   out.innerHTML = pvtReadoutHtml(s.rows.map(r => ({
     label: `TOMM ${r.label}`, value: r.score, state: r.fail ? 'fail' : 'pass',
-    meta: `Cut-off &lt; ${r.cutoff.cut} · sens. ${r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, '')} · spec. ${r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, '')} · PPP ${r.ppp.toFixed(2).replace(/^0/, '')} at this base rate`
+    meta: `Cut-off &lt; ${r.cutoff.cut} · sens. ${r.cutoff.sens.toFixed(2).replace(/^0/, '')} · spec. ${r.cutoff.spec.toFixed(2).replace(/^0/, '')} · PPP ${r.ppp.toFixed(2).replace(/^0/, '')} at this base rate`
   })), s.anyFail
     ? 'At low base rates a single failure has modest positive predictive power. See the table below.'
     : '');
@@ -7727,8 +7736,8 @@ function renderPvtTomm(){
         <thead><tr><th>Trial · cut-off</th><th>Sens.</th><th>Spec.</th><th>PPP</th><th>NPP</th></tr></thead>
         <tbody>${s.rows.map(r => `
           <tr><td>${r.cutoff.label.replace('<', '&lt;')}</td>
-          <td>${r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, '')}</td>
-          <td>${r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.cutoff.sens.toFixed(2).replace(/^0/, '')}</td>
+          <td>${r.cutoff.spec.toFixed(2).replace(/^0/, '')}</td>
           <td>${r.ppp.toFixed(2).replace(/^0/, '')}</td>
           <td>${r.npp.toFixed(2).replace(/^0/, '')}</td></tr>`).join('')}
         </tbody>
@@ -7747,7 +7756,7 @@ function getPvtSummaryRows(){
   const ei = getPvtEi();
   if (ei.ei !== undefined) rows.push({
     id: 'ei', group: 'rbans', measure: 'RBANS Effort Index',
-    score: String(ei.ei), cutoff: `> ${ei.cut}${ei.cutKey === 'sensitive' ? ' (screening)' : ''}`,
+    score: String(ei.ei), cutoff: `> ${ei.cut}${ei.cutKey === 'sensitive' ? ' (mild TBI screening)' : ''}`,
     sens: PVT_EI_ACCURACY[ei.cutKey].sens, spec: PVT_EI_ACCURACY[ei.cutKey].spec,
     result: pvtStatusWord(ei.fail), fail: ei.fail
   });
@@ -7855,8 +7864,8 @@ function getPvtSummaryRows(){
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
     score: String(r.score), cutoff: `< ${r.cutoff.cut}`,
-    sens: r.cutoff.sensRange || r.cutoff.sens.toFixed(2).replace(/^0/, ''),
-    spec: r.cutoff.specRange || r.cutoff.spec.toFixed(2).replace(/^0/, ''),
+    sens: r.cutoff.sens.toFixed(2).replace(/^0/, ''),
+    spec: r.cutoff.spec.toFixed(2).replace(/^0/, ''),
     result: pvtStatusWord(r.fail), fail: r.fail
   }));
   return rows;
@@ -7966,6 +7975,7 @@ function renderPvtApa(){
     </table>
     ${apaNoteHtml('pvt', {
       hasEi:   rows.some(r => r.id === 'ei'),
+      eiScreening: rows.some(r => r.id === 'ei') && ei.cutKey === 'sensitive',
       hasEs:   rows.some(r => r.id === 'es'),
       hasRds:  rows.some(r => r.id === 'rds'),
       hasDs:   rows.some(r => r.id.startsWith('ds')),
@@ -8087,7 +8097,8 @@ function renderPvtAccuracy(){
   const eiEl = document.getElementById('pvt-ei-accuracy');
   if (eiEl){
     const key = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
-    eiEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_EI_ACCURACY[key].sens} · spec. ${PVT_EI_ACCURACY[key].spec} (Silverberg et al., 2007)`;
+    eiEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_EI_ACCURACY[key].sens} · spec. ${PVT_EI_ACCURACY[key].spec} (Silverberg et al., 2007)${
+      key === 'sensitive' ? '. Screening post-acute mild TBI only.' : ''}`;
   }
   const dsEl = document.getElementById('pvt-ds-accuracy');
   if (dsEl){
@@ -8298,8 +8309,8 @@ function renderPvtAboutPanel(){
       desc: 'Total hits on the Forced Choice trial, read against the CVLT-3 manual’s age-banded base rates, with the CVLT-II cut-offs selectable alongside.' },
     { tab: 'tomm', title: 'TOMM', cite: 'Tombaugh (1996); Martin et al. (2020)',
       source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
-      sens: t2 ? (t2.sensRange || String(t2.sens).replace('0.', '.')) : '—',
-      spec: t2 ? (t2.specRange || String(t2.spec).replace('0.', '.')) : '—',
+      sens: t2 ? t2.sens.toFixed(2).replace(/^0/, '') : '—',
+      spec: t2 ? t2.spec.toFixed(2).replace(/^0/, '') : '—',
       desc: 'Fifty-item forced-choice picture recognition; robust to most genuine impairment, though specificity falls in dementia.' }
   ];
   /* The provenance cell used to stack up to three lines - instrument,

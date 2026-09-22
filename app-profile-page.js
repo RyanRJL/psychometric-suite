@@ -7,8 +7,8 @@
    row cannot answer: this patient has three scores below the 5th
    percentile - how unusual is that? By definition 5% of the population
    falls below the 5th percentile on any ONE measure. Across four
-   correlated WAIS-IV Indices 13.8% show at least one; across ten core
-   subtests, 24.9%. Reading rows independently overcalls impairment by
+   correlated WAIS-IV Indices 13.7% show at least one; across ten core
+   subtests, 25.0%. Reading rows independently overcalls impairment by
    enough to change a conclusion.
 
    So the answer is a COUNT paired with a BASE RATE - "2 of 4 are
