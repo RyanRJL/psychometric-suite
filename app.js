@@ -3550,6 +3550,9 @@ const APA_NOTES = {
       ctx.eiScreening
         ? 'The Effort Index is scored at the > 0 screening cut-off, which Shura et al. (2018) recommend for patients under 65 without severe neurological impairment; pooled specificity was .91, but .66 in the derivation study’s mixed clinical sample (Silverberg et al., 2007).'
         : '',
+      ctx.eiOlder
+        ? 'The Effort Index is scored at the > 2 cut-off, which Shura et al. (2018) suggest for older and military or veteran samples.'
+        : '',
       shared.length ? `Indices sharing a subtest count as one indicator: ${shared.join(' and ')}.` : '',
       /* The CVLT-3 is the one measure here with no published cut-off, so an
          exported table must say where its threshold came from — otherwise
@@ -7082,6 +7085,13 @@ function pvtInt(v, min, max){
 }
 
 /* ---------- Effort Index (Silverberg et al., 2007) ---------- */
+/* What each non-default cut-off is for, as it reads beside the number. The
+   populations are Shura et al.'s (2018) recommendations. */
+const PVT_EI_CUT_TAG = {
+  standard:  { short: '', long: '' },
+  older:     { short: ' (older or military)', long: ' (older, military or veteran)' },
+  sensitive: { short: ' (screening, under 65)', long: ' (screening)' }
+};
 function pvtEiWeight(bands, raw){
   for (const b of bands) if (raw >= b.min && raw <= b.max) return b.w;
   return null;
@@ -7094,7 +7104,8 @@ function getPvtEi(){
   if (ds === undefined || lr === undefined) return { partial: true };
   const wDs = pvtEiWeight(PVT_EI_WEIGHTS.digitSpan, ds);
   const wLr = pvtEiWeight(PVT_EI_WEIGHTS.listRecognition, lr);
-  const cutKey = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
+  const sel = document.getElementById('pvt-ei-cutoff')?.value;
+  const cutKey = Object.prototype.hasOwnProperty.call(PVT_EI_CUTOFFS, sel) ? sel : 'standard';
   const cut = PVT_EI_CUTOFFS[cutKey];
   const ei = wDs + wLr;
   return { ds, lr, wDs, wLr, ei, cutKey, cut, fail: ei > cut };
@@ -7601,7 +7612,7 @@ function renderPvtEi(){
   const acc = PVT_EI_ACCURACY[s.cutKey];
   out.innerHTML = pvtReadoutHtml([{
     label: 'Effort Index', value: s.ei, state: s.fail ? 'fail' : 'pass',
-    meta: `Cut-off &gt; ${s.cut}${s.cutKey === 'sensitive' ? ' (screening)' : ''} · sens. ${acc.sens} · spec. ${acc.spec} · higher = less credible`
+    meta: `Cut-off &gt; ${s.cut}${PVT_EI_CUT_TAG[s.cutKey].long} · sens. ${acc.sens} · spec. ${acc.spec} · higher = less credible`
   }], `Digit Span ${s.ds} → weight ${s.wDs}; List Recognition ${s.lr} → weight ${s.wLr}; sum ${s.ei}.${
     s.fail ? ' Corroborate with an independent, preferably forced-choice, measure.' : ''}${
     s.cutKey === 'sensitive' ? ' ' + PVT_EI_SCREENING_CAUTION : ''}`);
@@ -7756,7 +7767,7 @@ function getPvtSummaryRows(){
   const ei = getPvtEi();
   if (ei.ei !== undefined) rows.push({
     id: 'ei', group: 'rbans', measure: 'RBANS Effort Index',
-    score: String(ei.ei), cutoff: `> ${ei.cut}${ei.cutKey === 'sensitive' ? ' (screening, under 65)' : ''}`,
+    score: String(ei.ei), cutoff: `> ${ei.cut}${PVT_EI_CUT_TAG[ei.cutKey].short}`,
     sens: PVT_EI_ACCURACY[ei.cutKey].sens, spec: PVT_EI_ACCURACY[ei.cutKey].spec,
     result: pvtStatusWord(ei.fail), fail: ei.fail
   });
@@ -7976,6 +7987,7 @@ function renderPvtApa(){
     ${apaNoteHtml('pvt', {
       hasEi:   rows.some(r => r.id === 'ei'),
       eiScreening: rows.some(r => r.id === 'ei') && ei.cutKey === 'sensitive',
+      eiOlder:     rows.some(r => r.id === 'ei') && ei.cutKey === 'older',
       hasEs:   rows.some(r => r.id === 'es'),
       hasRds:  rows.some(r => r.id === 'rds'),
       hasDs:   rows.some(r => r.id.startsWith('ds')),
@@ -8096,9 +8108,11 @@ function renderPvtInstruments(){
 function renderPvtAccuracy(){
   const eiEl = document.getElementById('pvt-ei-accuracy');
   if (eiEl){
-    const key = document.getElementById('pvt-ei-cutoff')?.value === 'sensitive' ? 'sensitive' : 'standard';
+    const sel = document.getElementById('pvt-ei-cutoff')?.value;
+    const key = Object.prototype.hasOwnProperty.call(PVT_EI_CUTOFFS, sel) ? sel : 'standard';
     eiEl.textContent = `Published accuracy at this cut-off: sens. ${PVT_EI_ACCURACY[key].sens} · spec. ${PVT_EI_ACCURACY[key].spec} (Shura et al., 2018, pooled)${
-      key === 'sensitive' ? '. Under 65 without severe neurological impairment only.' : ''}`;
+      key === 'sensitive' ? '. Under 65 without severe neurological impairment only.'
+      : key === 'older' ? '. For older and military or veteran samples.' : ''}`;
   }
   const dsEl = document.getElementById('pvt-ds-accuracy');
   if (dsEl){

@@ -2206,7 +2206,10 @@ const PVT_EI_WEIGHTS = {
    Those are exactly Table 3's > 0 sensitivities (.857/.933/.958), so "a
    cut-off score of 1" means a score of 1 flags, i.e. > 0. This was > 1
    until 2026-09, a Table 3 row the paper tabulates but never recommends. */
-const PVT_EI_CUTOFFS = { standard: 3, sensitive: 0 };
+/* EI > 2: Shura et al. (2018) EI >= 3, "a more conservative cutoff score of
+   EI >= 3 may be best for elderly and military or veteran samples". Offered
+   for exactly that population; the key is `older` and the label says both. */
+const PVT_EI_CUTOFFS = { standard: 3, older: 2, sensitive: 0 };
 /* Shown on screen whenever the > 0 cut-off is selected. Shura et al. (2018)
    recommend EI >= 1 (this > 0) "for patients who are younger than 65 and
    without severe neurological impairments", and EI >= 3 for elderly and
@@ -2267,7 +2270,8 @@ const PVT_BASE_RATES = [0.10, 0.20, 0.30, 0.40, 0.50];
    - EI: the POOLED meta-analytic estimate, Shura et al. (2018) Table 7
      (bivariate HSROC). Shura writes cut-offs as "EI >= n", so this app's
      > 3 is their EI >= 4 (6 studies: sens .44, spec .92) and > 0 is their
-     EI >= 1 (4 studies: sens .59, spec .91). The full-sample row, not the
+     EI >= 1 (4 studies: sens .59, spec .91), and > 2 is EI >= 3 (6 studies:
+     sens .48, spec .93). The full-sample row, not the
      subgroups: the .27-.40 / .95-.98 sometimes quoted for > 3 is the range
      of the four subgroup rows beneath it. Until 2026-09 these were
      Silverberg et al.'s (2007) derivation figures (> 3: .46-.71 / .94-1.00),
@@ -2285,6 +2289,7 @@ const PVT_BASE_RATES = [0.10, 0.20, 0.30, 0.40, 0.50];
    TOMM accuracy lives on PVT_TOMM_CUTOFFS above. Pinned by check.js §38. */
 const PVT_EI_ACCURACY = {
   standard:  { sens: '.44', spec: '.92' },
+  older:     { sens: '.48', spec: '.93' },
   sensitive: { sens: '.59', spec: '.91' }
 };
 const PVT_RDS_ACCURACY = {

@@ -6915,6 +6915,8 @@ check('EI weight table matches Silverberg et al. (2007) Table 2 cell for cell', 
      the Discussion's "86% to 96%" identified are Table 3's > 0 sensitivities
      (.857/.933/.958). > 1 is tabulated there but never recommended. */
   if (D.PVT_EI_CUTOFFS.sensitive !== 0) bad.push('screening cut-off is not EI > 0');
+  /* > 2 is Shura et al.'s (2018) EI >= 3, for older and military samples. */
+  if (D.PVT_EI_CUTOFFS.older !== 2) bad.push('older/military cut-off is not EI > 2');
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -7141,7 +7143,18 @@ check('published accuracy strings match their sources, and reach screen and expo
      not used; they are what the ".27-.40 / .95-.98" quoted for > 3 ranges over. */
   const T7 = { 1: [.59, .91], 2: [.62, .86], 3: [.48, .93], 4: [.44, .92], 5: [.23, .96] };
   const f2 = v => v.toFixed(2).replace(/^0/, '');
-  ['standard', 'sensitive'].forEach(k => {
+  /* Every offered cut-off, not a list of them: an option added without its
+     accuracy, or accuracy left for an option removed, fails here. */
+  if (Object.keys(D.PVT_EI_CUTOFFS).sort().join() !== Object.keys(D.PVT_EI_ACCURACY).sort().join()){
+    bad.push('PVT_EI_CUTOFFS and PVT_EI_ACCURACY no longer cover the same options');
+  }
+  const opts = [...HTML_SRC.matchAll(/<select id="pvt-ei-cutoff">([\s\S]*?)<\/select>/g)][0];
+  const vals = opts ? [...opts[1].matchAll(/value="(\w+)"/g)].map(m => m[1]).sort().join() : '';
+  if (vals !== Object.keys(D.PVT_EI_CUTOFFS).sort().join()) bad.push('the EI cut-off selector offers ' + vals);
+  if (opts) [...opts[1].matchAll(/value="(\w+)"[^>]*>EI &gt; (\d+)/g)].forEach(m => {
+    if (D.PVT_EI_CUTOFFS[m[1]] !== +m[2]) bad.push(`selector says ${m[1]} is > ${m[2]}, data says > ${D.PVT_EI_CUTOFFS[m[1]]}`);
+  });
+  Object.keys(D.PVT_EI_CUTOFFS).forEach(k => {
     const c = D.PVT_EI_CUTOFFS[k];
     eq(D.PVT_EI_ACCURACY[k].sens, f2(T7[c + 1][0]), `EI > ${c} sensitivity (Shura EI >= ${c + 1})`);
     eq(D.PVT_EI_ACCURACY[k].spec, f2(T7[c + 1][1]), `EI > ${c} specificity (Shura EI >= ${c + 1})`);
