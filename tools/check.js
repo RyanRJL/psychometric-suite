@@ -9960,21 +9960,29 @@ check('family search hides the age-band pills it filters out', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
-check('a mixed-metric export names each row\'s metric and keys it in the note', () => {
+check('a mixed-metric export says which metric each score is on', () => {
   /* A T of 60 and a standard score of 60 printed identically under "Score".
-     Owner decision 2026-09-22: a Metric column, only on mixed tables. */
+     Owner decision 2026-09-22: each family's heading row labels the Score
+     column; rows no heading can label (a family mixing metrics, or no
+     family) take an APA superscript keyed in the note. A Metric column was
+     tried first and replaced, so it must not come back. */
   const apa = extractFn(APP_SRC, 'renderBatteryApa');
   const bad = [];
   if (!/const types\s*=\s*new Set\(valid\.map/.test(apa)) bad.push('the metric set is not taken from the printed rows (a scaled table with Longest Span spans would head its spans "Scaled Score")');
-  if (!/key:'metric'/.test(apa)) bad.push('there is no Metric column');
-  if (!/if \(mixed\) apaColumnState\['bat-apa'\]\.add\('metric'\);\s*else\s+apaColumnState\['bat-apa'\]\.delete\('metric'\);/.test(apa)) bad.push('the Metric column is not tied to the table being mixed');
+  if (/key:'metric'/.test(apa)) bad.push('the Metric column is back');
+  const score = apa.slice(apa.indexOf("key:'score'"), apa.indexOf("key:'ci'"));
+  if (!/groupLabel: g => \(sectionMetric\.has\(g\)/.test(score)) bad.push('the Score column no longer labels each family\'s section');
+  if (!/<sup>\$\{markLetter\.get\(rowScoreType\(r\)\)\}<\/sup>/.test(score)) bad.push('unlabelled rows no longer carry a superscript mark');
+  if (!/if \(set\.size === 1\) sectionMetric\.set/.test(apa)) bad.push('a family mixing metrics could be given one section label');
+  if (!/const needsMark = r => mixed && !sectionMetric\.has/.test(apa)) bad.push('marks are no longer limited to mixed tables and unlabelled rows');
   const c = {};
   vm.createContext(c);
   vm.runInContext(extractConst(APP_SRC, 'APA_NOTES') + ';globalThis.__N = APA_NOTES;', c);
   const note = ctx => c.__N.bat(ctx).filter(Boolean).join(' ');
-  if (!/Metric = scale each score is reported on: Scaled/.test(note({ mixedTypes: true, metricLegend: 'Scaled, M = 10' }))) bad.push('the note does not key the Metric column');
-  if (/Metric =/.test(note({ mixedTypes: true }))) bad.push('the note prints a key with nothing to key');
-  if (/[Mm]etric/.test(note({ onScreen: true }))) bad.push('the on-screen mirror mentions a metric it has no table for');
+  const keyed = note({ metricMarks: ['<sup>a</sup><i>T</i> score (M = 50)', '<sup>b</sup><i>z</i> score (M = 0)'], premorbid: '100', premorbidMode: 'sd' });
+  if (!/<sup>a<\/sup><i>T<\/i> score \(M = 50\)\. <sup>b<\/sup><i>z<\/i> score \(M = 0\)\.$/.test(keyed)) bad.push('the note does not end with the superscript key, in order: ' + keyed.slice(-120));
+  if (/<sup>/.test(note({ metricMarks: [] })) || /<sup>/.test(note({}))) bad.push('the note prints a key with nothing to key');
+  if (/<sup>|[Mm]etric/.test(note({ onScreen: true }))) bad.push('the on-screen mirror mentions a metric it has no table for');
   return bad.length === 0 || bad.join('; ');
 });
 

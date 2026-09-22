@@ -3357,11 +3357,11 @@ function profileAbnormalityStdErr(pct, trials){
 const APA_NOTES = {
   'bat': ctx => [
     `Classification follows ${ctx.classification === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.`,
-    /* Keys the Metric column a mixed table carries. Without a legend the
-       caller has nothing to name, so the older generic sentence stands in. */
-    ctx.mixedTypes
-      ? (ctx.metricLegend ? `Metric = scale each score is reported on: ${ctx.metricLegend}.` : 'Scores are reported in their native metric.')
-      : '',
+    /* A mixed table labels each family's Score column in its heading row, so
+       it needs no sentence here; only rows that heading cannot label carry a
+       superscript, keyed at the end of the note (specific notes follow the
+       general note in APA order). The mirror has no table and passes no
+       marks, so nothing prints there. */
     /* Raw rows print a score but no percentile or classification, because a raw
        score carries no metric to derive them from. Without this line the blank
        cells read as an oversight rather than as the deliberate refusal they
@@ -3499,7 +3499,9 @@ const APA_NOTES = {
       ? (ctx.premorbidMode === 'see'
           ? `Asterisks mark scores falling below the premorbid estimate of ${ctx.premorbid} by more than the model's standard error of estimate: * beyond the 90% bound, ** beyond the 95% bound, *** beyond the 99% bound.`
           : `Asterisks mark scores below the premorbid estimate of ${ctx.premorbid}: * ≥ 1 SD, ** ≥ 1.5 SD, *** ≥ 2 SD.`)
-      : ''
+      : '',
+    /* Specific notes, last, per APA: the key to each superscript metric mark. */
+    Array.isArray(ctx.metricMarks) && ctx.metricMarks.length ? ctx.metricMarks.join('. ') + '.' : ''
   ],
   /* PROFILE ANALYSIS.
 
@@ -3716,17 +3718,15 @@ document.addEventListener('DOMContentLoaded', renderStaticApaNotes);
    keystrokes behind a timer and its simulation is cached on the SELECTION, so a
    score-only edit is a cache hit; only the keystroke that first scores a new
    measure costs a run. */
-/* The Metric column's labels and the note's key to them. The means and SDs
-   are the definitions of the four metrics this app converts between (toZ /
+/* The key to a superscript metric mark, in APA specific-note form. The means
+   and SDs are the definitions of the metrics this app converts between (toZ /
    fromZ), not data. */
-const BAT_APA_METRIC = { standard:'Standard', scaled:'Scaled', t:'<i>T</i>', z:'<i>z</i>', raw:'Raw' };
-const BAT_APA_METRIC_ORDER = ['standard', 'scaled', 't', 'z', 'raw'];
-const BAT_APA_METRIC_LEGEND = {
-  standard: 'Standard, <i>M</i> = 100, <i>SD</i> = 15',
-  scaled:   'Scaled, <i>M</i> = 10, <i>SD</i> = 3',
-  t:        '<i>T</i>, <i>M</i> = 50, <i>SD</i> = 10',
-  z:        '<i>z</i>, <i>M</i> = 0, <i>SD</i> = 1',
-  raw:      'Raw, not standardised'
+const BAT_APA_METRIC_KEY = {
+  standard: 'Standard score (<i>M</i> = 100, <i>SD</i> = 15)',
+  scaled:   'Scaled score (<i>M</i> = 10, <i>SD</i> = 3)',
+  t:        '<i>T</i> score (<i>M</i> = 50, <i>SD</i> = 10)',
+  z:        '<i>z</i> score (<i>M</i> = 0, <i>SD</i> = 1)',
+  raw:      'Raw score, not standardised'
 };
 function renderBatteryApa(){
   if (typeof profileScoresChanged === 'function') profileScoresChanged();
@@ -3762,22 +3762,49 @@ function renderBatteryApa(){
   else           apaColumnState['bat-apa'].add('raw');
   if (ciLevel === 'off') apaColumnState['bat-apa'].delete('ci');
   else                   apaColumnState['bat-apa'].add('ci');
-  /* A MIXED TABLE NAMES EACH ROW'S METRIC. The column header can only say
-     "Score" when rows differ, and on screen each row carries its own tag, but
-     the export had nothing: a T of 60 and a standard score of 60 printed
-     identically under one heading. Shown only when the table is mixed. */
-  if (mixed) apaColumnState['bat-apa'].add('metric');
-  else       apaColumnState['bat-apa'].delete('metric');
+  /* A MIXED TABLE SAYS WHICH METRIC EACH SCORE IS ON. The column header can
+     only say "Score" when rows differ, and on screen each row carries its own
+     tag, but the export had nothing: a T of 60 and a standard score of 60
+     printed identically. (A Metric column was tried first and replaced, owner
+     decision 2026-09-22.)
+
+     Each test family's heading row labels the Score column for its own rows,
+     the mechanism Longest Span already uses for "Base rate", so it carries
+     into each family's split table in the Working Report. Rows no heading can
+     label, because their family mixes metrics (CVLT-C: T and z) or they belong
+     to no family, take an APA specific-note superscript instead, keyed in the
+     note. Letters follow order of first appearance. */
+  const sectionMetric = new Map();
+  if (mixed){
+    const byKey = new Map();
+    valid.forEach(r => {
+      const k = batteryGroupKeyOf(r);
+      if (!k) return;
+      if (!byKey.has(k)) byKey.set(k, new Set());
+      byKey.get(k).add(rowScoreType(r));
+    });
+    byKey.forEach((set, k) => { if (set.size === 1) sectionMetric.set(k, [...set][0]); });
+  }
+  const needsMark = r => mixed && !sectionMetric.has(batteryGroupKeyOf(r));
+  const markLetter = new Map();
+  valid.forEach(r => {
+    const t = rowScoreType(r);
+    if (needsMark(r) && !markLetter.has(t)) markLetter.set(t, 'abcde'[markLetter.size]);
+  });
 
   const ciLabel = ciLevel !== 'off' ? `${ciLevel}% CI` : 'CI';
   const columns = [
     { key:'subtest',        label:'Subtest',        num:false, render:r => escapeHtml(r.name) },
-    { key:'metric',         label:'Metric',         num:false, defaultVisible:mixed, render:r => BAT_APA_METRIC[rowScoreType(r)] || '' },
     { key:'raw',            label:'Raw Score',       group:'Scores', num:true,  defaultVisible:!rawHidden, render:r => escapeHtml(r.raw || '-') },
     /* A base-rate row's entered value lives in the raw field; the export's
        Score column carries it so the span is printed whether or not the Raw
        column is toggled on. */
-    { key:'score',          label:headerLabel,       group:'Scores', num:true,  render:r => escapeHtml(batteryBaseRateEntry(r) ? (r.raw || '') : (r.score || '')) },
+    { key:'score',          label:headerLabel,       group:'Scores', num:true,
+      groupLabel: g => (sectionMetric.has(g) ? scoreTypeLabel(sectionMetric.get(g)) : ''),
+      render:r => {
+        const v = escapeHtml(batteryBaseRateEntry(r) ? (r.raw || '') : (r.score || ''));
+        return (v && needsMark(r)) ? `${v}<sup>${markLetter.get(rowScoreType(r))}</sup>` : v;
+      }},
     { key:'ci',             label:ciLabel,           group:'Scores', num:true,  defaultVisible:ciLevel !== 'off', render:r => { const ss = parseFloat(r.score); return ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : ''; }},
     { key:'percentile',     label:BAT_PCT_LABEL,     group:'Scores', num:true,
       /* Sections whose rows report a base rate relabel this column for
@@ -3805,7 +3832,7 @@ function renderBatteryApa(){
     ${apaNoteHtml('bat', {
       classification: cls,
       mixedTypes: mixed,
-      metricLegend: mixed ? BAT_APA_METRIC_ORDER.filter(t => types.has(t)).map(t => BAT_APA_METRIC_LEGEND[t]).join('; ') : '',
+      metricMarks: [...markLetter].map(([t, l]) => `<sup>${l}</sup>${BAT_APA_METRIC_KEY[t]}`),
       hasRaw: valid.some(r => rowScoreType(r) === 'raw' && !batteryBaseRateEntry(r)),
       hasBaseRates: valid.some(r => batteryBaseRateEntry(r) && r.raw !== '' && !isNaN(r.raw)),
       hasHigherIsWorse: valid.some(r => r.higherIsWorse && r.score !== '' && !isNaN(r.score)),
