@@ -2316,13 +2316,20 @@ const PVT_ES_ACCURACY = { auc: '.91' };
      suspicion index, interpreted against BASE RATES, not sens/spec —
      7.1% of the standardization sample and 2.8% of the combined clinical
      sample score >= 5 (Tables 3/6).
+   VERIFIED against Iverson & Tulsky (2003) Tables 1-6, 2026-09: every base
+   rate above is exact. Axelrod et al. (2006, p. 515) summarise Table 1 as
+   "3.6% ... four or less" and "7.4% ... five or less"; the table prints
+   1.9% and 3.8%. Axelrod misquote it; do not "correct" 3.8% to 7.4%.
+   Axelrod Table 3 confirms <= 5 at sens 36.1 / spec 96.6 (+LR 10.47) and
+   <= 7 at 75.0 / 69.0.
    DS ACSS and RDS come from the SAME subtest: the summary counts them as
    one indicator (the digit-span group), exactly as EI/ES share theirs. */
 /* The remaining two Iverson & Tulsky suspicion indices are span-based and
    interpreted against base rates, like the Vocabulary difference:
    - Longest span forward <= 4, FOR PERSONS UNDER AGE 55 ONLY (their
      guideline (b)) - Table 2 base rates run 2.5-5.5% across the under-55
-     bands and climb steeply with age (11.0% at 85-89), which is why the
+     bands and climb steeply from 55 (9.5% at 55-64, peaking at 12.7% at
+     80-84, 11.0% at 85-89), which is why the
      index is age-limited; combined clinical 3.4% (Table 5). The app reads
      the shared top-bar patient age and WITHHOLDS this index without one,
      or at 55+.

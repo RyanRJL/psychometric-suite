@@ -7325,7 +7325,7 @@ check('Rey 15-Item: cut-offs, accuracy and independence (Boone et al., 2002)', (
 check('Digit Span span indices: cut-offs, the under-55 age gate, and the withheld export', () => {
   /* PINNED: Iverson & Tulsky guidelines (b) and (c) — longest span forward
      <= 4 "for persons under age 55" (Table 2 base rates 2.5-5.5% in the
-     under-55 bands, 11.0% at 85-89 — the reason for the age limit; Table 5
+     under-55 bands, 9.5-12.7% from 55 (peak 80-84) — the reason for the age limit; Table 5
      combined clinical 3.4%) and longest span backward <= 2 (Table 2
      2.0-6.0% across bands; Table 5 clinical 3.4%). These are longest-span-
      on-EITHER-trial values, not the RDS both-trials span. */

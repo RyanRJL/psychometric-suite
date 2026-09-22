@@ -18335,7 +18335,7 @@ input[type="number"].ds-age-pop-input{
           <details class="formula-disclosure">
             <summary>Indices &amp; base rates</summary>
             <div class="formula-body">
-              <p>The Digit Span age-corrected scaled score is entered as scored on the record form. The age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease (Iverson &amp; Tulsky's suspicion guideline). Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from moderate/severe TBI (sens. .75, spec. .69, with .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Iverson &amp; Tulsky give three further suspicion indices, each evaluated against base rates: a Vocabulary − Digit Span difference ≥ 5 (7.1% of the standardisation sample, 2.8% of the combined clinical sample), a longest span forward ≤ 4 applicable only under age 55 (base rates 2.5–5.5% in the under-55 bands, climbing to 11% at 85–89, which is why the index is age-limited; the app reads the top-bar patient age and withholds it without one), and a longest span backward ≤ 2 (2.0–6.0% across all bands, 3.4% clinical). The longest spans here are the longest passed on <em>either</em> trial, as the standardisation data tabulate them, not the RDS both-trials span. Both papers derive from the WAIS-III. Document the edition administered.</p>
+              <p>The Digit Span age-corrected scaled score is entered as scored on the record form. The age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease (Iverson &amp; Tulsky's suspicion guideline). Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from TBI patients in neurorehabilitation (sens. .75, spec. .69, with .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Iverson &amp; Tulsky give three further suspicion indices, each evaluated against base rates: a Vocabulary − Digit Span difference ≥ 5 (7.1% of the standardisation sample, 2.8% of the combined clinical sample), a longest span forward ≤ 4 applicable only under age 55 (base rates 2.5–5.5% in the under-55 bands, rising to 9.5–12.7% from age 55, which is why the index is age-limited; the app reads the top-bar patient age and withholds it without one), and a longest span backward ≤ 2 (2.0–6.0% across all bands, 3.4% clinical). The longest spans here are the longest passed on <em>either</em> trial, as the standardisation data tabulate them, not the RDS both-trials span. Both papers derive from the WAIS-III. Document the edition administered.</p>
             </div>
           </details>
         </div>
@@ -22109,13 +22109,20 @@ const PVT_ES_ACCURACY = { auc: '.91' };
      suspicion index, interpreted against BASE RATES, not sens/spec —
      7.1% of the standardization sample and 2.8% of the combined clinical
      sample score >= 5 (Tables 3/6).
+   VERIFIED against Iverson & Tulsky (2003) Tables 1-6, 2026-09: every base
+   rate above is exact. Axelrod et al. (2006, p. 515) summarise Table 1 as
+   "3.6% ... four or less" and "7.4% ... five or less"; the table prints
+   1.9% and 3.8%. Axelrod misquote it; do not "correct" 3.8% to 7.4%.
+   Axelrod Table 3 confirms <= 5 at sens 36.1 / spec 96.6 (+LR 10.47) and
+   <= 7 at 75.0 / 69.0.
    DS ACSS and RDS come from the SAME subtest: the summary counts them as
    one indicator (the digit-span group), exactly as EI/ES share theirs. */
 /* The remaining two Iverson & Tulsky suspicion indices are span-based and
    interpreted against base rates, like the Vocabulary difference:
    - Longest span forward <= 4, FOR PERSONS UNDER AGE 55 ONLY (their
      guideline (b)) - Table 2 base rates run 2.5-5.5% across the under-55
-     bands and climb steeply with age (11.0% at 85-89), which is why the
+     bands and climb steeply from 55 (9.5% at 55-64, peaking at 12.7% at
+     80-84, 11.0% at 85-89), which is why the
      index is age-limited; combined clinical 3.4% (Table 5). The app reads
      the shared top-bar patient age and WITHHOLDS this index without one,
      or at 55+.
