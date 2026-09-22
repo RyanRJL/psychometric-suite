@@ -2743,7 +2743,7 @@ function resolveCiReliability(entry, normSD, age, correctRetest){
        say which: a base-rate measure is scored by published lookup and never
        had one, whereas a raw RBANS subtest is simply absent from its manual's
        reliability table. Neither prints an interval. */
-    if (entry.baseRates) return { r:null, basis:'base rate — no interval', none:true };
+    if (entry.baseRates) return { r:null, basis:'base rate, no interval', none:true };
     return { r:null, basis:'none published', none:true };
   }
   /* Unconditional, and it has to be: D-KEFS (original) publishes
@@ -2800,7 +2800,7 @@ function batteryBasisPresent(rows, prefix){
    arithmetic and useless for the note: a base-rate measure is scored by
    published lookup and never had a coefficient, whereas a raw RBANS subtest is
    simply absent from its manual's reliability table. resolveCiReliability
-   already distinguishes them ('base rate — no interval' vs 'none published'),
+   already distinguishes them ('base rate, no interval' vs 'none published'),
    so ask it directly rather than re-deriving the difference here.
 
    Verified over normDB at age 45: 51 base-rate rows and 4 none-published,
@@ -2815,7 +2815,7 @@ function batteryBlankCiReasons(rows){
     const type = rowScoreType(row);
     const rel = resolveCiReliability(entry, BATTERY_METRIC_SD[type], batteryPatientAge());
     if (!rel || !rel.none) return;
-    if (rel.basis === 'base rate — no interval') out.baseRate = true;
+    if (rel.basis === 'base rate, no interval') out.baseRate = true;
     else out.nonePublished = true;
   });
   return out;
@@ -3357,7 +3357,11 @@ function profileAbnormalityStdErr(pct, trials){
 const APA_NOTES = {
   'bat': ctx => [
     `Classification follows ${ctx.classification === 'wechsler' ? 'Wechsler conventions' : 'Guilmette et al. (2020)'}.`,
-    ctx.mixedTypes ? 'Scores are reported in their native standardised metric.' : '',
+    /* Keys the Metric column a mixed table carries. Without a legend the
+       caller has nothing to name, so the older generic sentence stands in. */
+    ctx.mixedTypes
+      ? (ctx.metricLegend ? `Metric = scale each score is reported on: ${ctx.metricLegend}.` : 'Scores are reported in their native metric.')
+      : '',
     /* Raw rows print a score but no percentile or classification, because a raw
        score carries no metric to derive them from. Without this line the blank
        cells read as an oversight rather than as the deliberate refusal they
@@ -3712,6 +3716,18 @@ document.addEventListener('DOMContentLoaded', renderStaticApaNotes);
    keystrokes behind a timer and its simulation is cached on the SELECTION, so a
    score-only edit is a cache hit; only the keystroke that first scores a new
    measure costs a run. */
+/* The Metric column's labels and the note's key to them. The means and SDs
+   are the definitions of the four metrics this app converts between (toZ /
+   fromZ), not data. */
+const BAT_APA_METRIC = { standard:'Standard', scaled:'Scaled', t:'<i>T</i>', z:'<i>z</i>', raw:'Raw' };
+const BAT_APA_METRIC_ORDER = ['standard', 'scaled', 't', 'z', 'raw'];
+const BAT_APA_METRIC_LEGEND = {
+  standard: 'Standard, <i>M</i> = 100, <i>SD</i> = 15',
+  scaled:   'Scaled, <i>M</i> = 10, <i>SD</i> = 3',
+  t:        '<i>T</i>, <i>M</i> = 50, <i>SD</i> = 10',
+  z:        '<i>z</i>, <i>M</i> = 0, <i>SD</i> = 1',
+  raw:      'Raw, not standardised'
+};
 function renderBatteryApa(){
   if (typeof profileScoresChanged === 'function') profileScoresChanged();
   /* Rows come and go through renderBattery, which ends here — same single
@@ -3733,8 +3749,11 @@ function renderBatteryApa(){
   const hasNum = v => v !== '' && v != null && Number.isFinite(parseFloat(v));
   const valid    = batteryRows.filter(r => r.name && !r.isExample
     && (hasNum(r.score) || (hasNum(r.raw) && (!rawHidden || batteryBaseRateEntry(r)))));
-  const completed = valid.filter(r => r.score !== '' && !isNaN(r.score));
-  const types    = new Set((completed.length ? completed : valid).map(r => rowScoreType(r)));
+  /* The metric of every PRINTED row, base-rate spans included: they sit in
+     the Score column as raw values, so a table of scaled subtests plus
+     Longest Span is mixed, not "Scaled Score" over a column of spans. */
+  const types    = new Set(valid.map(r => rowScoreType(r)));
+  const mixed    = types.size > 1;
   const headerLabel = types.size === 1 ? scoreTypeLabel([...types][0]) : 'Score';
 
   /* Sync column visibility with the table's current settings before building */
@@ -3743,10 +3762,17 @@ function renderBatteryApa(){
   else           apaColumnState['bat-apa'].add('raw');
   if (ciLevel === 'off') apaColumnState['bat-apa'].delete('ci');
   else                   apaColumnState['bat-apa'].add('ci');
+  /* A MIXED TABLE NAMES EACH ROW'S METRIC. The column header can only say
+     "Score" when rows differ, and on screen each row carries its own tag, but
+     the export had nothing: a T of 60 and a standard score of 60 printed
+     identically under one heading. Shown only when the table is mixed. */
+  if (mixed) apaColumnState['bat-apa'].add('metric');
+  else       apaColumnState['bat-apa'].delete('metric');
 
   const ciLabel = ciLevel !== 'off' ? `${ciLevel}% CI` : 'CI';
   const columns = [
     { key:'subtest',        label:'Subtest',        num:false, render:r => escapeHtml(r.name) },
+    { key:'metric',         label:'Metric',         num:false, defaultVisible:mixed, render:r => BAT_APA_METRIC[rowScoreType(r)] || '' },
     { key:'raw',            label:'Raw Score',       group:'Scores', num:true,  defaultVisible:!rawHidden, render:r => escapeHtml(r.raw || '-') },
     /* A base-rate row's entered value lives in the raw field; the export's
        Score column carries it so the span is printed whether or not the Raw
@@ -3778,7 +3804,8 @@ function renderBatteryApa(){
     ${buildApaTableFromColumns('bat-apa', columns, valid, batteryGroupKeyOf, batteryGroupLabel)}
     ${apaNoteHtml('bat', {
       classification: cls,
-      mixedTypes: types.size > 1,
+      mixedTypes: mixed,
+      metricLegend: mixed ? BAT_APA_METRIC_ORDER.filter(t => types.has(t)).map(t => BAT_APA_METRIC_LEGEND[t]).join('; ') : '',
       hasRaw: valid.some(r => rowScoreType(r) === 'raw' && !batteryBaseRateEntry(r)),
       hasBaseRates: valid.some(r => batteryBaseRateEntry(r) && r.raw !== '' && !isNaN(r.raw)),
       hasHigherIsWorse: valid.some(r => r.higherIsWorse && r.score !== '' && !isNaN(r.score)),
@@ -7725,7 +7752,7 @@ function pvtReadoutHtml(rows, note){
 }
 const PVT_PROMPTS = {
   partial: 'Enter the remaining score(s) to compute this index.',
-  invalid: 'Check the entered values — one is outside the possible raw-score range.'
+  invalid: 'Check the entered values: one is outside the possible raw-score range.'
 };
 function pvtStatusWord(fail){ return fail ? 'Fail' : 'Pass'; }
 
@@ -7755,7 +7782,7 @@ function renderPvtEs(){
   if (s.gated){
     out.innerHTML = pvtReadoutHtml([{
       label: 'Effort Scale', value: null, state: 'na', word: 'Not computed',
-      meta: `Gate not met — Digit Span ${s.ds} (&lt; 9), List Recognition ${s.lr} (&lt; 19), sum ${s.ds + s.lr} (&lt; 28)`
+      meta: `Gate not met: Digit Span ${s.ds} (&lt; 9), List Recognition ${s.lr} (&lt; 19), sum ${s.ds + s.lr} (&lt; 28)`
     }], 'On a profile this strong the ES over-flags, so no score is reported (Novitski et al., 2012).');
     return;
   }
@@ -8059,7 +8086,7 @@ function renderPvtCvlt3(){
   const basisNote = derived ? '' :
     ` The flag rests on the CVLT-II cut-off ≤ ${s.basis.cut}, not on a CVLT-3 figure; the base rate beside it is the CVLT-3 manual's.`;
   const note = `${s.usedAllAges
-      ? (s.age === null ? 'No patient age entered, so the manual&rsquo;s All ages column is used — enter an age in the top bar for the banded reading, which can differ sharply.'
+      ? (s.age === null ? 'No patient age entered, so the manual&rsquo;s All ages column is used. Enter an age in the top bar for the banded reading, which can differ sharply.'
                         : `Age ${s.age} falls outside the CVLT-3 normative range (16&ndash;90), so the All ages column is used.`)
       : `Read against the ${s.band} band for the entered age of ${s.age}.`
     }${basisNote} A poor forced-choice score is a strong indicator of exaggeration, but a perfect or near-perfect one does not rule it out (Delis et al., 2017).`;
