@@ -10489,6 +10489,22 @@ check('one name per page: top bar, brand row, tab title and home dial agree', ()
   return bad.length === 0 || bad.join('; ');
 });
 
+check('the chip glows exactly while the leave prompt would fire', () => {
+  /* Owner decision, 2026-09: a faint breathing ring while the report holds
+     tables not yet exported. It must use the leave prompt's own test, so the
+     glow and "you will lose this" cannot disagree; an export must stop it at
+     once; and reduced motion keeps the state without the movement. */
+  const bad = [];
+  const DS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const sync = (APP_SRC.match(/function syncUnexportedGlow\(\)\{[\s\S]*?\n  \}/) || [''])[0];
+  if (!/hasUnexported\(\)/.test(sync)) bad.push('the glow no longer uses hasUnexported()');
+  const mark = (APP_SRC.match(/function markExported\(\)\{[\s\S]*?\n  \}/) || [''])[0];
+  if (!/syncUnexportedGlow\(\)/.test(mark)) bad.push('an export does not stop the glow');
+  if (!/has-unexported\.is-open \.rb-chip::after\{\s*display:\s*none/.test(DS)) bad.push('the glow runs with the report open');
+  if (!/prefers-reduced-motion: reduce\)\{\s*body \.rb-root\.has-unexported \.rb-chip::after\{\s*animation:\s*none/.test(DS)) bad.push('no reduced-motion fallback');
+  return bad.length === 0 || bad.join('; ');
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

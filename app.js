@@ -12107,6 +12107,7 @@ ${buildReportHtmlBody()}
        little (has-items, design-system.css). Empty, it stays quiet: an empty
        report has nothing to find. */
     rootEl.classList.toggle('has-items', countNow > 0);
+    syncUnexportedGlow();
     /* "tables", not "items": the chip says APA Tables and a merged card says
        "2 tables combined", so the header counts the same thing. A merged
        battery is one card holding several tables, which is why the number
@@ -12181,6 +12182,14 @@ ${buildReportHtmlBody()}
     exportedSig = itemsSig();
     try { sessionStorage.setItem(EXPORTED_KEY, exportedSig); } catch(e){}
     hideLeaveCard();
+    syncUnexportedGlow();
+  }
+  /* The chip glows while the report holds tables not yet exported: the same
+     test the leave prompt uses, so the glow and the "you will lose this"
+     warning can never disagree. An export stops it; any change to the
+     report after that starts it again. */
+  function syncUnexportedGlow(){
+    if (rootEl) rootEl.classList.toggle('has-unexported', hasUnexported());
   }
   function hasUnexported(){ return state.items.length > 0 && itemsSig() !== exportedSig; }
   function onBeforeUnload(e){

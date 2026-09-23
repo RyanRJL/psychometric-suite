@@ -262,6 +262,14 @@ box whose children are fixed themselves, so its snapshot was empty and the chip 
 for the length of every navigation. The chip has no ambient motion (the rainbow orbit
 ring and scroll-fade were removed); only the capture pulse and count bump remain.
 
+**Two deliberate exceptions, both owner decisions (2026-09), because the chip in the status
+bar is easy to overlook and the report is the only way tables leave the app:** once the
+report holds tables the chip turns the accent colour and grows to 36 px (`.has-items`), and
+while any of them are not yet exported a faint accent ring breathes round it every 2.8 s
+(`.has-unexported`). The glow uses `hasUnexported()`, the leave prompt's own test, so the
+two cannot disagree; an export stops it; it is off while the drawer is open and steady
+under reduced motion. §55 pins all four.
+
 ### `display:flex` on a table cell inflates the row
 
 The Change Analysis rows were 44.2px against the Score Converter's 28px for the
@@ -2175,7 +2183,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 419 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 420 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients

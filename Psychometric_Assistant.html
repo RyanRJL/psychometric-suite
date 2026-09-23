@@ -17019,6 +17019,36 @@ body .rb-root.has-items .rb-chip-count{
 body .rb-root.has-items.is-open .rb-chip{
   box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.55), 0 0 0 3px rgba(156,61,42,0.25);
 }
+
+/* THE UNEXPORTED GLOW (owner decision, 2026-09). While the report holds
+   tables not yet exported (.has-unexported, the leave prompt's own test),
+   a faint accent ring breathes round the chip, once every 2.8s. It says
+   "unfinished work here", which is the real risk: the report is the only
+   way tables leave the app, and it clears when the tab closes.
+
+   A ring, not a fill: ::after is transparent inside, so it never covers the
+   chip's own label. Opacity is the only thing animated, which the
+   compositor handles without repainting. Off while the drawer is open (the
+   report is on screen) and, under reduced motion, held as a steady faint
+   ring so the state is still shown without the movement. */
+body .rb-root.has-unexported .rb-chip::after{
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgba(156,61,42,0.45), 0 0 10px 2px rgba(156,61,42,0.35);
+  pointer-events: none;
+  opacity: 0.15;
+  animation: rb-unexported-glow 2800ms ease-in-out infinite;
+}
+body .rb-root.has-unexported.is-open .rb-chip::after{ display: none; }
+@keyframes rb-unexported-glow{
+  0%, 100% { opacity: 0.15; }
+  50%      { opacity: 0.85; }
+}
+@media (prefers-reduced-motion: reduce){
+  body .rb-root.has-unexported .rb-chip::after{ animation: none; opacity: 0.5; }
+}
 </style>
 
 <style>
@@ -35025,6 +35055,7 @@ ${buildReportHtmlBody()}
        little (has-items, design-system.css). Empty, it stays quiet: an empty
        report has nothing to find. */
     rootEl.classList.toggle('has-items', countNow > 0);
+    syncUnexportedGlow();
     /* "tables", not "items": the chip says APA Tables and a merged card says
        "2 tables combined", so the header counts the same thing. A merged
        battery is one card holding several tables, which is why the number
@@ -35099,6 +35130,14 @@ ${buildReportHtmlBody()}
     exportedSig = itemsSig();
     try { sessionStorage.setItem(EXPORTED_KEY, exportedSig); } catch(e){}
     hideLeaveCard();
+    syncUnexportedGlow();
+  }
+  /* The chip glows while the report holds tables not yet exported: the same
+     test the leave prompt uses, so the glow and the "you will lose this"
+     warning can never disagree. An export stops it; any change to the
+     report after that starts it again. */
+  function syncUnexportedGlow(){
+    if (rootEl) rootEl.classList.toggle('has-unexported', hasUnexported());
   }
   function hasUnexported(){ return state.items.length > 0 && itemsSig() !== exportedSig; }
   function onBeforeUnload(e){
