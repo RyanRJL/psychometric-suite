@@ -10494,19 +10494,28 @@ check('one name per page: top bar, brand row, tab title and home dial agree', ()
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the chip glows exactly while the leave prompt would fire', () => {
-  /* Owner decision, 2026-09: a faint breathing ring while the report holds
-     tables not yet exported. It must use the leave prompt's own test, so the
-     glow and "you will lose this" cannot disagree; an export must stop it at
-     once; and reduced motion keeps the state without the movement. */
+check('the chip arc runs exactly while there is unexported work, or the report was never opened', () => {
+  /* Owner decisions, 2026-09: a spinning accent arc while the report holds
+     tables not yet exported, and on an empty report until this browser has
+     opened it once. The first must use the leave prompt's own test, so the
+     arc and "you will lose this" cannot disagree; an export must stop it at
+     once. The second must have its own flag, set only by opening: the
+     onboarding flag is also set by dismissing the first-run bubble. It stops
+     with the report open, and reduced motion keeps the state without the
+     movement. */
   const bad = [];
   const DS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
   const sync = (APP_SRC.match(/function syncUnexportedGlow\(\)\{[\s\S]*?\n  \}/) || [''])[0];
-  if (!/hasUnexported\(\)/.test(sync)) bad.push('the glow no longer uses hasUnexported()');
+  if (!/hasUnexported\(\)/.test(sync)) bad.push('the arc no longer uses hasUnexported()');
+  if (!/is-unopened', !reportOpened/.test(sync)) bad.push('the never-opened state is gone');
   const mark = (APP_SRC.match(/function markExported\(\)\{[\s\S]*?\n  \}/) || [''])[0];
-  if (!/syncUnexportedGlow\(\)/.test(mark)) bad.push('an export does not stop the glow');
-  if (!/has-unexported\.is-open \.rb-chip::after\{\s*display:\s*none/.test(DS)) bad.push('the glow runs with the report open');
-  if (!/prefers-reduced-motion: reduce\)\{\s*body \.rb-root\.has-unexported \.rb-chip::after\{\s*animation:\s*none/.test(DS)) bad.push('no reduced-motion fallback');
+  if (!/syncUnexportedGlow\(\)/.test(mark)) bad.push('an export does not stop the arc');
+  const open = (APP_SRC.match(/function open\(\)\{[\s\S]*?\n  \}/) || [''])[0];
+  if (!/reportOpened = true/.test(open) || !/OPENED_KEY/.test(open)) bad.push('opening the report does not record it');
+  if (/onboardingSeen/.test(sync)) bad.push('the never-opened state reads onboardingSeen, which dismissing the bubble also sets');
+  if (!/is-unopened\.is-open \.rb-chip::after\{\s*display:\s*none/.test(DS)) bad.push('the arc runs with the report open');
+  if (!/@keyframes rb-arc-spin/.test(DS)) bad.push('the arc no longer spins');
+  if (!/prefers-reduced-motion: reduce\)\{\s*body \.rb-root\.has-unexported \.rb-chip::after,\s*body \.rb-root\.is-unopened \.rb-chip::after\{\s*animation:\s*none/.test(DS)) bad.push('no reduced-motion fallback');
   return bad.length === 0 || bad.join('; ');
 });
 

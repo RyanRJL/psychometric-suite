@@ -11532,6 +11532,10 @@ ${buildReportHtmlBody()}
   /* ---------- state transitions ---------- */
   function open(){
     state.minimized = false;
+    if (!reportOpened){
+      reportOpened = true;
+      try { localStorage.setItem(OPENED_KEY, '1'); } catch(e){}
+    }
     state.onboardingSeen = true; // first open dismisses the hint
     hideAddPrompt();             // dismiss the transient "View live report" prompt
     save();
@@ -12215,12 +12219,22 @@ ${buildReportHtmlBody()}
     hideLeaveCard();
     syncUnexportedGlow();
   }
-  /* The chip glows while the report holds tables not yet exported: the same
-     test the leave prompt uses, so the glow and the "you will lose this"
-     warning can never disagree. An export stops it; any change to the
-     report after that starts it again. */
+  /* The chip's spinning arc has two reasons, each with its own class:
+     - has-unexported: tables not yet exported. The same test the leave
+       prompt uses, so the arc and the "you will lose this" warning can never
+       disagree. An export stops it; any change to the report restarts it.
+     - is-unopened: this browser has never opened the report. An empty report
+       otherwise shows nothing, and a first-time user needs to find where
+       tables will go. Opening it once ends that for good. Its own flag, not
+       onboardingSeen: dismissing the first-run bubble sets that without the
+       report ever being opened (owner decision, 2026-09). */
+  const OPENED_KEY = 'workingReport_opened_v1';
+  let reportOpened = false;
+  try { reportOpened = localStorage.getItem(OPENED_KEY) === '1'; } catch(e){}
   function syncUnexportedGlow(){
-    if (rootEl) rootEl.classList.toggle('has-unexported', hasUnexported());
+    if (!rootEl) return;
+    rootEl.classList.toggle('has-unexported', hasUnexported());
+    rootEl.classList.toggle('is-unopened', !reportOpened);
   }
   function hasUnexported(){ return state.items.length > 0 && itemsSig() !== exportedSig; }
   function onBeforeUnload(e){

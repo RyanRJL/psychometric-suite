@@ -17057,35 +17057,56 @@ body .rb-root.has-items.is-open .rb-chip{
   box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.55), 0 0 0 3px rgba(156,61,42,0.25);
 }
 
-/* THE UNEXPORTED GLOW (owner decision, 2026-09). While the report holds
-   tables not yet exported (.has-unexported, the leave prompt's own test),
-   a faint accent ring breathes round the chip, once every 2.8s. It says
-   "unfinished work here", which is the real risk: the report is the only
-   way tables leave the app, and it clears when the tab closes.
+/* THE SPINNING ARC (owner decisions, 2026-09). An accent arc runs round
+   the chip while it has something to say: tables not yet exported
+   (.has-unexported, the leave prompt's own test), or a browser that has
+   never opened the report (.is-unopened), so a first-time user finds where
+   tables will go before there are any. Owner chose a spinning arc over a
+   pulse, and accent-only colour replaces the old rainbow.
 
-   A ring, not a fill: ::after is transparent inside, so it never covers the
-   chip's own label. Opacity is the only thing animated, which the
-   compositor handles without repainting. Off while the drawer is open (the
-   report is on screen) and, under reduced motion, held as a steady faint
-   ring so the state is still shown without the movement. */
-body .rb-root.has-unexported .rb-chip::after{
+   A ring, not a fill: the mask keeps only a 2px band outside the chip, so
+   the label is never covered. The gradient's start angle is what turns,
+   via a registered custom property, because rotating the element itself
+   would swing a pill-shaped ring round its centre. One turn every 4s.
+   Off while the drawer is open (the report is on screen); under reduced
+   motion it stands still as a faint full ring, so the state still shows. */
+@property --rb-arc{
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+body .rb-root.has-unexported .rb-chip::after,
+body .rb-root.is-unopened .rb-chip::after{
   content: '';
   position: absolute;
-  inset: -3px;
+  inset: -4px;
+  padding: 2px;
   border-radius: 999px;
-  box-shadow: 0 0 0 2px rgba(156,61,42,0.45), 0 0 10px 2px rgba(156,61,42,0.35);
+  background: conic-gradient(from var(--rb-arc),
+    rgba(156,61,42,0) 0deg,
+    rgba(156,61,42,0) 200deg,
+    rgba(156,61,42,0.35) 280deg,
+    rgba(196,90,64,0.95) 345deg,
+    rgba(156,61,42,0) 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
   pointer-events: none;
-  opacity: 0.15;
-  animation: rb-unexported-glow 2800ms ease-in-out infinite;
+  animation: rb-arc-spin 4s linear infinite;
 }
-body .rb-root.has-unexported.is-open .rb-chip::after{ display: none; }
-@keyframes rb-unexported-glow{
-  0%, 100% { opacity: 0.15; }
-  50%      { opacity: 0.85; }
+body .rb-root.has-unexported.is-open .rb-chip::after,
+body .rb-root.is-unopened.is-open .rb-chip::after{ display: none; }
+@keyframes rb-arc-spin{
+  to { --rb-arc: 360deg; }
 }
 @media (prefers-reduced-motion: reduce){
-  body .rb-root.has-unexported .rb-chip::after{ animation: none; opacity: 0.5; }
+  body .rb-root.has-unexported .rb-chip::after,
+  body .rb-root.is-unopened .rb-chip::after{
+    animation: none;
+    background: rgba(156,61,42,0.45);
+  }
 }
+
 
 /* =====================================================================
    THE CHIP FLOATS (owner decision, 2026-09)
@@ -34590,6 +34611,10 @@ ${buildReportHtmlBody()}
   /* ---------- state transitions ---------- */
   function open(){
     state.minimized = false;
+    if (!reportOpened){
+      reportOpened = true;
+      try { localStorage.setItem(OPENED_KEY, '1'); } catch(e){}
+    }
     state.onboardingSeen = true; // first open dismisses the hint
     hideAddPrompt();             // dismiss the transient "View live report" prompt
     save();
@@ -35273,12 +35298,22 @@ ${buildReportHtmlBody()}
     hideLeaveCard();
     syncUnexportedGlow();
   }
-  /* The chip glows while the report holds tables not yet exported: the same
-     test the leave prompt uses, so the glow and the "you will lose this"
-     warning can never disagree. An export stops it; any change to the
-     report after that starts it again. */
+  /* The chip's spinning arc has two reasons, each with its own class:
+     - has-unexported: tables not yet exported. The same test the leave
+       prompt uses, so the arc and the "you will lose this" warning can never
+       disagree. An export stops it; any change to the report restarts it.
+     - is-unopened: this browser has never opened the report. An empty report
+       otherwise shows nothing, and a first-time user needs to find where
+       tables will go. Opening it once ends that for good. Its own flag, not
+       onboardingSeen: dismissing the first-run bubble sets that without the
+       report ever being opened (owner decision, 2026-09). */
+  const OPENED_KEY = 'workingReport_opened_v1';
+  let reportOpened = false;
+  try { reportOpened = localStorage.getItem(OPENED_KEY) === '1'; } catch(e){}
   function syncUnexportedGlow(){
-    if (rootEl) rootEl.classList.toggle('has-unexported', hasUnexported());
+    if (!rootEl) return;
+    rootEl.classList.toggle('has-unexported', hasUnexported());
+    rootEl.classList.toggle('is-unopened', !reportOpened);
   }
   function hasUnexported(){ return state.items.length > 0 && itemsSig() !== exportedSig; }
   function onBeforeUnload(e){

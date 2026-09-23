@@ -281,11 +281,17 @@ ring and scroll-fade were removed); only the capture pulse and count bump remain
 
 **Two deliberate exceptions, both owner decisions (2026-09), because the chip in the status
 bar is easy to overlook and the report is the only way tables leave the app:** once the
-report holds tables the chip turns the accent colour and grows to 36 px (`.has-items`), and
-while any of them are not yet exported a faint accent ring breathes round it every 2.8 s
-(`.has-unexported`). The glow uses `hasUnexported()`, the leave prompt's own test, so the
-two cannot disagree; an export stops it; it is off while the drawer is open and steady
-under reduced motion. §55 pins all four.
+report holds tables the chip turns the accent colour and grows (`.has-items`), and an
+accent arc spins round it (one turn per 4 s) in two cases: tables not yet exported
+(`.has-unexported`, from `hasUnexported()`, the leave prompt's own test, so the two cannot
+disagree; an export stops it), and a browser that has never opened the report
+(`.is-unopened`, so a first-time user finds it before there is anything in it). The second
+has its **own** flag (`workingReport_opened_v1`, set only in `open()`), not
+`onboardingSeen`, because dismissing the first-run bubble sets that without the report
+being opened. The arc turns its gradient angle via `@property --rb-arc`, not the element:
+rotating the element would swing a pill-shaped ring round its centre. Off while the drawer
+is open; a still, faint ring under reduced motion. Spin chosen over a pulse, and accent
+over the old rainbow, by the owner. §55 pins all of it.
 
 ### `display:flex` on a table cell inflates the row
 
