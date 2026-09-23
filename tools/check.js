@@ -10301,6 +10301,58 @@ check('a session file is refused whole unless it is this app, this version, inta
 });
 
 
+heading('54. Terms of use');
+
+/* The gate is an agreement, so it must block until accepted, ask again when
+   the terms change, and never be skippable by accident. A later edit that
+   drops the markup or the wiring would leave the app silently ungated. */
+check('the terms gate blocks until accepted, and asks again when the terms change', () => {
+  const bad = [];
+  const gate = (HTML_SRC.match(/<div class="terms-backdrop" id="terms-gate"[\s\S]*?<\/ul>[\s\S]*?<\/div>\s*<\/div>/) || [''])[0];
+  if (!gate) bad.push('#terms-gate markup is missing');
+  if (!/id="terms-gate" hidden/.test(gate)) bad.push('the gate is not hidden until the script decides');
+  if (!/id="terms-agree"/.test(gate)) bad.push('no agreement checkbox');
+  if (!/id="terms-continue" disabled/.test(gate)) bad.push('Continue is not disabled until the box is ticked');
+  // The four points the owner specified, plus the reference list.
+  for (const [what, re] of [
+    ['knowledge and experience of the methods', /knowledge of, and experience in, the methods/],
+    ['choices are clinical judgement', /own clinical judgement/],
+    ['consult source material first', /consult its source manuals and papers/],
+    ['references are listed', /All methods are referenced/],
+  ]) if (!re.test(gate)) bad.push('the gate does not state: ' + what);
+  if (/terms-close|data-dismiss/.test(gate)) bad.push('the gate has a dismiss control');
+  if (!/wireTermsGate\(\)\{[\s\S]*?if \(!termsAcceptance\(\)\) showTermsGate\(\);/.test(APP_SRC)) bad.push('the gate is not shown on load when unaccepted');
+  if (!/key === 'Escape'\)\{ e\.preventDefault\(\)/.test(APP_SRC)) bad.push('Escape is not swallowed');
+
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(extractConst(APP_SRC, 'TERMS_VERSION') + ';' + extractConst(APP_SRC, 'TERMS_KEY') + ';'
+    + extractFn(APP_SRC, 'termsAcceptance') + ';globalThis.__t = termsAcceptance; globalThis.__v = TERMS_VERSION; globalThis.__k = TERMS_KEY;', c);
+  const store = v => { c.localStorage = { getItem: k => (k === c.__k ? v : null) }; };
+  store(JSON.stringify({ version: c.__v, at: '2026-09-23T10:00:00Z' }));
+  if (!c.__t()) bad.push('an acceptance of the current version is not honoured');
+  store(JSON.stringify({ version: '2000-01-01', at: 'x' }));
+  if (c.__t()) bad.push('an acceptance of an older version is honoured');
+  store(null);
+  if (c.__t()) bad.push('no acceptance is treated as accepted');
+  store('{broken');
+  if (c.__t()) bad.push('a damaged record is treated as accepted');
+  c.localStorage = { getItem(){ throw new Error('blocked'); } };
+  if (c.__t()) bad.push('blocked storage is treated as accepted');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('Word and CSV exports carry the decision-support line', () => {
+  const bad = [];
+  if (!/const EXPORT_DISCLAIMER = '[^']+'/.test(APP_SRC)) bad.push('EXPORT_DISCLAIMER is missing');
+  for (const fn of ['exportWord', 'exportExcel']) {
+    const body = (APP_SRC.match(new RegExp('function ' + fn + '\\(\\)\\{[\\s\\S]*?\\n  \\}')) || [''])[0];
+    if (!body.includes('EXPORT_DISCLAIMER')) bad.push(fn + ' does not include it');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

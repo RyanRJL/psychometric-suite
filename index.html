@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260923m">
-<link rel="stylesheet" href="design-system.css?v=20260923m">
+<link rel="stylesheet" href="styles.css?v=20260923n">
+<link rel="stylesheet" href="design-system.css?v=20260923n">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -3170,7 +3170,7 @@
       Session storage is per-tab, so two tabs are two independent patient sessions rather than one shared report. Within a tab, use <strong>New patient</strong> in the top bar between patients: it clears every table and the age together, which is why it is one control rather than two.
     </p>
     <p class="section-body-text">
-      To carry a patient over to another sitting, use <strong>Save session</strong> in the top bar. It writes a file to your computer holding everything entered: scores, patient age and page settings. That file is patient data and is yours to keep as you would any clinical record. <strong>Open session</strong> reads it back and recalculates every table from those inputs.
+      To carry a patient over to another sitting, use <strong>Save session</strong> in the top bar. It writes a file to your computer holding everything entered: scores, patient age and page settings. That file is patient data: store it securely, as you would any clinical record, under your own data-protection obligations (for example UK GDPR). <strong>Open session</strong> reads it back and recalculates every table from those inputs.
     </p>
     <p class="section-body-text">
       Two things do persist here deliberately, and neither is patient data: your view preferences, such as drawer width and whether the report drawer starts minimised, and any custom test norms you add on the Data page, which would be worth little if they vanished with the tab.
@@ -3180,7 +3180,17 @@
 
     <h3 class="methods-h3">This is a calculator, not a clinical judgement</h3>
     <p class="section-body-text">
-      The suite computes and formats. It does not decide anything, and it cannot tell whether the method you have chosen suits the question you are asking. Clinical interpretation rests entirely with you.
+      The suite computes and formats. It is decision support: it does not decide anything, no result is a diagnosis on its own, and it cannot tell whether the method you have chosen suits the question you are asking. Every choice of method, norm and interpretation is your own clinical judgement.
+    </p>
+
+    <h3 class="methods-h3">Know the method before you use it</h3>
+    <p class="section-body-text">
+      Use each tool only with knowledge of, and experience in, the method behind it. Before using a tool in clinical practice, consult its source manuals and papers and make sure your understanding of the method is adequate. Every method used here is cited, and the full reference list is on <button type="button" class="terms-inline-link" data-terms-goto="about">Methods &amp; References</button>.
+    </p>
+
+    <h3 class="methods-h3">Norms and coefficients have limits</h3>
+    <p class="section-body-text">
+      Norms, reliabilities and regression coefficients are transcribed from the cited editions. Several were standardised on US samples, and any of them may be superseded by a later edition or correction. Check that the source applies to your patient and is current.
     </p>
 
     <h3 class="methods-h3">You are responsible for the inputs and the method</h3>
@@ -3200,7 +3210,20 @@
 
     <h3 class="methods-h3">Reports produced here are your responsibility</h3>
     <p class="section-body-text">
-      Output from this tool may end up in clinical records and in medico-legal reports that are scrutinised. Check the numbers before they leave. No warranty is given that any calculation is fit for a particular purpose, and responsibility for anything written on the basis of them is yours.
+      Output from this tool may end up in clinical records and in medico-legal reports that are scrutinised. Check the numbers before they leave. The tools are provided as they are, without warranty that any calculation is correct or fit for a particular purpose. The authors accept no liability for errors or omissions or for how the output is used, and responsibility for anything written on the basis of it is yours. Word and CSV exports carry a line saying so.
+    </p>
+
+    <h3 class="methods-h3">Not a medical device</h3>
+    <p class="section-body-text">
+      This software has not been assessed or registered as a medical device. It does not replace the publishers' manuals or scoring software, and it does not license the use of any test.
+    </p>
+
+    <h2 class="block-title">Your agreement</h2>
+    <p class="section-body-text">
+      Before first use, each browser asks you to agree to these terms. If the terms change, you are asked again. <span id="terms-status"></span>
+    </p>
+    <p class="section-body-text">
+      <button type="button" class="leave-card-btn" id="terms-review">Review the agreement</button>
     </p>
   </section>
 
@@ -3229,17 +3252,40 @@
          `1fr auto 1fr` grid with the version stamp centred, so this has to
          follow the stamp to land in the right-hand column. Put it before, and
          it takes the centre slot and pushes the version off-centre. -->
-    <p class="site-footer-privacy">Scores stay in this browser. Nothing is uploaded.</p>
+    <p class="site-footer-privacy">Scores stay in this browser. Nothing is uploaded.<br><span class="site-footer-terms">Decision support only. Check every figure against the source.</span></p>
   </div>
 </footer>
 
+<!-- Terms of use gate (wireTermsGate, app.js). Blocks the app until accepted;
+     acceptance is stored per browser against TERMS_VERSION. No close button,
+     no outside-click dismissal, Escape does nothing: it is an agreement, not a
+     notice. The full terms are on Privacy & use. -->
+<div class="terms-backdrop" id="terms-gate" hidden role="dialog" aria-modal="true" aria-labelledby="terms-title">
+  <div class="terms-card">
+    <h2 class="terms-title" id="terms-title">Before you use these tools</h2>
+    <p class="terms-lead">These are clinical decision-support calculators for qualified practitioners. By continuing you agree that:</p>
+    <ul class="terms-list">
+      <li>You will use the tools only with knowledge of, and experience in, the methods behind them, within your professional registration and scope of practice.</li>
+      <li>Every choice of method, norm and interpretation is your own clinical judgement. The tools calculate; they do not decide or diagnose.</li>
+      <li>Before using any tool in clinical practice, you will consult its source manuals and papers and make sure your knowledge of the method is adequate.</li>
+      <li>You will check every figure against the source material before it goes into a report.</li>
+      <li>All methods are referenced, and the full list is on Methods &amp; References.</li>
+      <li>The tools are provided without warranty and are not a medical device. Responsibility for any report written with them is yours.</li>
+      <li>Saved session files contain patient data, and storing them securely is your responsibility.</li>
+    </ul>
+    <p class="terms-more">The full terms are on Privacy &amp; use, in the footer of every page.</p>
+    <label class="terms-agree"><input type="checkbox" id="terms-agree"> I have read and agree to these terms</label>
+    <div class="terms-actions"><button type="button" class="leave-card-btn is-primary" id="terms-continue" disabled>Continue</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260923m"></script>
-<script src="app.js?v=20260923m"></script>
-<script src="design-system.js?v=20260923m" defer></script>
-<script src="app-effectsize-page.js?v=20260923m"></script>
-<script src="app-viz-page.js?v=20260923m"></script>
-<script src="app-profile-page.js?v=20260923m"></script>
+<script src="data.js?v=20260923n"></script>
+<script src="app.js?v=20260923n"></script>
+<script src="design-system.js?v=20260923n" defer></script>
+<script src="app-effectsize-page.js?v=20260923n"></script>
+<script src="app-viz-page.js?v=20260923n"></script>
+<script src="app-profile-page.js?v=20260923n"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

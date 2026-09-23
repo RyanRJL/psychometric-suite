@@ -9095,6 +9095,76 @@ function openSessionFile(file){
 })();
 
 /* ============================================================
+   TERMS OF USE · one-time acceptance before first use
+   ============================================================
+   The gate in index.html (#terms-gate) blocks the app until the clinician
+   ticks the box and continues. Acceptance is stored per browser against
+   TERMS_VERSION, so changing the terms (bump the date) asks again. If storage
+   is blocked the gate asks on every load: failing towards asking is the safe
+   direction. The full terms live on Privacy & use, which also offers the
+   agreement again. */
+const TERMS_VERSION = '2026-09-23';
+const TERMS_KEY = 'psTermsAccepted';
+/* One line on exported Word and CSV reports: the only place a reader of the
+   report meets any of this. */
+const EXPORT_DISCLAIMER = 'Calculated with clinical decision-support software. Interpretation, and checking each figure against the source manuals, rest with the reporting clinician.';
+function termsAcceptance(){
+  try {
+    const v = JSON.parse(localStorage.getItem(TERMS_KEY) || 'null');
+    return v && v.version === TERMS_VERSION ? v : null;
+  } catch(e){ return null; }
+}
+function showTermsGate(){
+  const gate = document.getElementById('terms-gate');
+  if (!gate) return;
+  const box = document.getElementById('terms-agree');
+  const go = document.getElementById('terms-continue');
+  if (box) box.checked = false;
+  if (go) go.disabled = true;
+  gate.hidden = false;
+  box?.focus();
+}
+function renderTermsStatus(){
+  const el = document.getElementById('terms-status');
+  if (!el) return;
+  const a = termsAcceptance();
+  const ver = new Date(TERMS_VERSION + 'T00:00:00').toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+  el.textContent = a && a.at
+    ? `Terms version ${ver}, accepted in this browser on ${new Date(a.at).toLocaleString()}.`
+    : `Terms version ${ver}.`;
+}
+(function wireTermsGate(){
+  const gate = document.getElementById('terms-gate');
+  if (!gate) return;
+  const box = document.getElementById('terms-agree');
+  const go = document.getElementById('terms-continue');
+  box?.addEventListener('change', () => { if (go) go.disabled = !box.checked; });
+  go?.addEventListener('click', () => {
+    if (!box?.checked) return;
+    try { localStorage.setItem(TERMS_KEY, JSON.stringify({ version: TERMS_VERSION, at: new Date().toISOString() })); } catch(e){}
+    gate.hidden = true;
+    renderTermsStatus();
+  });
+  // Keep keyboard focus inside the gate while it is open; Escape does not close it.
+  gate.addEventListener('keydown', e => {
+    if (e.key === 'Escape'){ e.preventDefault(); return; }
+    if (e.key !== 'Tab') return;
+    const f = [box, go].filter(el => el && !el.disabled);
+    if (!f.length) return;
+    const i = f.indexOf(document.activeElement);
+    const next = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : (i + 1) % f.length;
+    e.preventDefault();
+    f[next].focus();
+  });
+  document.getElementById('terms-review')?.addEventListener('click', showTermsGate);
+  // Not .nav-item: that class carries the sidebar's styling and active state.
+  document.querySelectorAll('[data-terms-goto]').forEach(b =>
+    b.addEventListener('click', () => navigateTo(b.dataset.termsGoto)));
+  renderTermsStatus();
+  if (!termsAcceptance()) showTermsGate();
+})();
+
+/* ============================================================
    AUTH OVERLAY · prototype-ready login/register behaviour
    ============================================================ */
 (function(){
@@ -10778,7 +10848,7 @@ const ReportBundle = (function(){
     };
     // Same blocks as the HTML/Word output, so a merged battery exports as one
     // section here too rather than as its individual source tables.
-    const sections = mergeReportBlocks(state.items).map((blockHtml, i) => {
+    const sections = [csvCell(EXPORT_DISCLAIMER)].concat(mergeReportBlocks(state.items).map((blockHtml, i) => {
       const tmp = document.createElement('div');
       tmp.innerHTML = blockHtml;
       const table = tmp.querySelector('table');
@@ -10798,7 +10868,7 @@ const ReportBundle = (function(){
         if (note){ lines.push(''); lines.push(csvCell(note)); }
       }
       return lines.join('\n');
-    }).filter(Boolean).join('\n\n');
+    })).filter(Boolean).join('\n\n');
 
     // BOM + CRLF so Excel recognises UTF-8 and respects line endings on Windows.
     const csvBlob = new Blob(['﻿', sections.replace(/\n/g, '\r\n')], { type: 'text/csv;charset=utf-8' });
@@ -10834,7 +10904,7 @@ const ReportBundle = (function(){
 </head>
 <body>
 <h1>Assessment Report</h1>
-<p class="rb-doc-meta">Compiled ${escapeHtmlLocal(dateStr)} · ${state.items.length} table${state.items.length===1?'':'s'}</p>
+<p class="rb-doc-meta">Compiled ${escapeHtmlLocal(dateStr)} · ${state.items.length} table${state.items.length===1?'':'s'}<br>${escapeHtmlLocal(EXPORT_DISCLAIMER)}</p>
 ${buildReportHtmlBody()}
 </body>
 </html>`;
