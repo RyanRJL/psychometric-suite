@@ -16986,6 +16986,39 @@ body #effectsize .es-pooled-item{ padding-top: 4px !important; padding-bottom: 4
    docked and undocked to compare them: no transition may run, or the second
    layout would be read part way through the first's margin change. */
 body.rb-measuring .main{ transition: none !important; }
+
+/* =====================================================================
+   THE CHIP WHEN THE REPORT HOLDS TABLES (2026-09)
+
+   In the status bar the chip is easy to overlook, and the report is the
+   only way tables leave the app. So once it holds anything it takes the
+   accent colour and 4px more height; while empty it stays the quiet dark
+   pill. The count badge inverts (white on accent) so it still reads
+   against the new background. The bar is 46px, so a 36px chip keeps 5px
+   above and below.
+   ===================================================================== */
+body .rb-root.has-items .rb-chip{
+  height: 36px;
+  bottom: calc((var(--footer-h) - 36px) / 2);
+  padding: 0 14px 0 6px;
+  font-size: 12.5px;
+  background: linear-gradient(180deg, #B14A33 0%, #9C3D2A 100%);
+  border-color: #86331F;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 3px rgba(156,61,42,0.35);
+}
+body .rb-root.has-items .rb-chip:hover{
+  background: linear-gradient(180deg, #BC5039 0%, #A6412D 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 0 3px rgba(156,61,42,0.22);
+}
+body .rb-root.has-items .rb-chip-sub{ color: rgba(255,255,255,0.72); }
+body .rb-root.has-items .rb-chip-count{
+  background: #FFFFFF;
+  color: #9C3D2A;
+  box-shadow: none;
+}
+body .rb-root.has-items.is-open .rb-chip{
+  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.55), 0 0 0 3px rgba(156,61,42,0.25);
+}
 </style>
 
 <style>
@@ -34987,6 +35020,11 @@ ${buildReportHtmlBody()}
       }
     });
     rbPrevCount = countNow;
+    /* The chip sits in the status bar, the least-watched strip on screen, so
+       once the report holds tables it switches to the accent and grows a
+       little (has-items, design-system.css). Empty, it stays quiet: an empty
+       report has nothing to find. */
+    rootEl.classList.toggle('has-items', countNow > 0);
     /* "tables", not "items": the chip says APA Tables and a merged card says
        "2 tables combined", so the header counts the same thing. A merged
        battery is one card holding several tables, which is why the number

@@ -12102,6 +12102,11 @@ ${buildReportHtmlBody()}
       }
     });
     rbPrevCount = countNow;
+    /* The chip sits in the status bar, the least-watched strip on screen, so
+       once the report holds tables it switches to the accent and grows a
+       little (has-items, design-system.css). Empty, it stays quiet: an empty
+       report has nothing to find. */
+    rootEl.classList.toggle('has-items', countNow > 0);
     /* "tables", not "items": the chip says APA Tables and a merged card says
        "2 tables combined", so the header counts the same thing. A merged
        battery is one card holding several tables, which is why the number
