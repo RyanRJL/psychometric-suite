@@ -1527,6 +1527,19 @@ shape: `Base rate = …`, `Abnormally low = …`, `Abnormal difference or deviat
 nothing here may be shortened further by dropping a clause — a note is read under a clinical
 table, where length is what stops it being read at all, but each sentence is load-bearing.
 
+#### The method is a panel now, not a disclosure (2026-09)
+
+Owner decision: the method text is always visible, in `.prof-method` on the left of a
+two-column grid, with the results on the right, and the page runs at full window width
+(`#profile.section{max-width:none}`; every other page keeps the 1100px cap). The panel is
+sticky below the top bar and scrolls inside itself. Its height is **measured**, not set in
+CSS (`profFitMethod`): the sticky top moves, so one fixed height fits only one scroll
+position, and at the end of a short results column the box is carried up under the top
+bar unless its height is also capped by where that column ends. Called directly on scroll,
+not through requestAnimationFrame, which never fires in a hidden document. Below 1000px it
+stacks under the results. The text is plain English with one formula; the paragraphs below
+describe the older disclosure and its trims.
+
 #### The disclosure states the formulae; the Methods page carries the argument
 
 The page's `formula-disclosure` had grown into an essay — six paragraphs, ~430 words, with

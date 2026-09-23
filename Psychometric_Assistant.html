@@ -16503,7 +16503,49 @@ input[type="number"].ds-age-pop-input{
   margin: 0 0 var(--ds-space-3) !important;
 }
 
-.prof-layout{ display: block; }
+/* Method always visible on the left, results on the right. The method box is
+   sticky below the top bar and scrolls inside itself, so it never runs past the
+   bottom of the window. body{zoom:0.9} scales vh too, so 100vh renders as 90% of
+   the window: dividing by 0.9 fills the real height (see CLAUDE.md on the zoom). */
+.prof-layout{
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.prof-main{ min-width: 0; }
+/* Owner request: this page uses the full window width. Every other section keeps
+   the shared 1100px cap; two columns side by side need the room. */
+#profile.section{ max-width: none; }
+.prof-method{
+  position: sticky;
+  top: calc(var(--topbar-h, 108px) + 16px);
+  max-height: calc(100vh / 0.9 - var(--topbar-h, 108px) - 32px);
+  display: flex; flex-direction: column;
+  background: var(--ds-surface, #FFFFFF);
+  border: 1px solid var(--ds-border, #E5E2DA);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.prof-method-title{
+  margin: 0; padding: 14px 16px 10px;
+  font-family: var(--sans); font-size: 13px; font-weight: 600; letter-spacing: 0;
+  color: var(--ink);
+  border-bottom: 1px solid var(--ds-border, #E5E2DA);
+}
+.prof-method-body{
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 12px 16px 16px;
+  font-family: var(--sans); font-size: 12.5px; line-height: 1.55; color: var(--ink);
+}
+.prof-method-body > * + *{ margin-top: 10px; }
+.prof-method-body p, .prof-method-body ul{ margin-bottom: 0; }
+.prof-method-body ul{ padding-left: 18px; }
+.prof-method-body li + li{ margin-top: 6px; }
+@media (max-width: 1000px){
+  .prof-layout{ grid-template-columns: minmax(0, 1fr); }
+  .prof-method{ position: static; max-height: none; order: 2; }
+}
 
 /* ---- the input strip: what went in ---- */
 .prof-strip{
@@ -18150,13 +18192,14 @@ input[type="number"].ds-age-pop-input{
     <p class="section-desc">How many scores are abnormal, and how many healthy people show that many. 13.7% show one below the 5th percentile across the four WAIS-IV Indices. Crawford, Garthwaite &amp; Gault (2007).</p>
 
     <div class="prof-layout">
-      <div id="prof-results"></div>
-
-        <details class="formula-disclosure">
-          <summary>Method &amp; formulae</summary>
-          <div class="formula-body">
+      <!-- Always visible, so the method is never hidden behind a click. Sticky and
+           internally scrollable: it stays beside the results and never runs past
+           the bottom of the window. -->
+      <aside class="prof-method" aria-labelledby="prof-method-title">
+        <h2 class="prof-method-title" id="prof-method-title">Method &amp; formulae</h2>
+        <div class="prof-method-body">
             <p>This method comes from Crawford, Garthwaite and Gault (2007), <i>Estimating the percentage of the population with abnormally low scores (or abnormally large score differences) on standardized neuropsychological test batteries</i>, published in <i>Neuropsychology</i>, 21, 419&ndash;430. It answers a question that no single score can: when several of a patient&rsquo;s scores are unusual, how common is that among healthy people?</p>
-            <p>To answer it, the method simulates a large healthy population (200,000 people) whose scores on the measures you have selected are related to one another exactly as they are in the test publisher&rsquo;s normative sample. The only information it needs is how strongly each pair of measures correlates. Each simulated person is checked against the criterion selected above, and the base rate is the percentage of them who show at least as many abnormal results as your patient. It is a count of people, not of scores.</p>
+            <p>To answer it, the method simulates a large healthy population (200,000 people) whose scores on the measures you have selected are related to one another exactly as they are in the test publisher&rsquo;s normative sample. The only information it needs is how strongly each pair of measures correlates. Each simulated person is checked against the selected criterion, and the base rate is the percentage of them who show at least as many abnormal results as your patient. It is a count of people, not of scores.</p>
             <p>Three kinds of result are counted:</p>
             <ul>
               <li><strong>Abnormally low scores</strong>: scores below the criterion (at the 5th percentile, <i>z</i> &lt; &minus;1.645).</li>
@@ -18164,8 +18207,11 @@ input[type="number"].ds-age-pop-input{
               <li><strong>Measures far from the patient&rsquo;s own average</strong>: one score that stands out from the patient&rsquo;s mean across the selected measures.</li>
             </ul>
             <p>Differences and deviations count in either direction, so they use the same criterion split across both tails (1.96 at the 5th percentile). The results update whenever the selection changes, because a base rate for ten measures does not apply to seven. Treating the measures as unrelated would get this wrong: across the four WAIS-IV Indices at the 5th percentile it would suggest 18.5% of healthy people show at least one abnormally low score, where the simulation gives 13.7%.</p>
-          </div>
-        </details>
+        </div>
+      </aside>
+
+      <div class="prof-main">
+        <div id="prof-results"></div>
 
         <div class="info-box" style="margin-top:10px" data-apa-note="prof"></div>
 
@@ -18179,6 +18225,7 @@ input[type="number"].ds-age-pop-input{
             </button>
           </div>
           <div class="apa-table-container" id="prof-apa"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -37788,6 +37835,37 @@ if (document.readyState === 'loading'){
     });
     renderProfile();
   }
+
+  /* THE METHOD PANEL ENDS AT THE BOTTOM OF THE WINDOW, WHEREVER IT SITS. It is
+     sticky, so its top moves: lower at the top of the page, below the top bar
+     once stuck. A fixed CSS height fits only one of those and ran 41px off the
+     bottom in the other, so the height is measured. Rects are visual px and
+     style.maxHeight is layout px (body zoom), hence the divide. */
+  function profFitMethod(){
+    const el = document.querySelector('#profile .prof-method');
+    if (!el || !el.offsetParent) return;
+    if (getComputedStyle(el).position !== 'sticky'){ el.style.maxHeight = ''; return; }
+    const z = typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1;
+    /* Never above where it sticks: past the end of its column the box is
+       carried up off the screen, and measuring from there would grow it. */
+    const stuckAt = (parseFloat(getComputedStyle(el).top) || 0) * z;
+    const top = Math.max(el.getBoundingClientRect().top, stuckAt);
+    /* And short enough that, at the furthest the page can scroll, the end of
+       the results column does not push it up under the top bar. */
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    const colEnd = el.parentElement.getBoundingClientRect().bottom + (maxScroll - window.scrollY);
+    const room = Math.min(window.innerHeight - top - 16, colEnd - stuckAt);
+    el.style.maxHeight = Math.max(200, room / z) + 'px';
+  }
+  /* Direct, not via requestAnimationFrame: one rect read and one style write
+     is cheap enough for every scroll event, and rAF never fires in a hidden
+     document, which left the panel unfitted when a page opened in the
+     background. */
+  function profFitSoon(){ profFitMethod(); }
+  window.addEventListener('scroll', profFitSoon, { passive: true });
+  window.addEventListener('resize', profFitSoon);
+  const profRenderInner = renderProfile;
+  renderProfile = function(){ profRenderInner(); profFitSoon(); };
 
   setupProfile();
   window.renderProfile = renderProfile;

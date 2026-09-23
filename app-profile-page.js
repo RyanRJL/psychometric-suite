@@ -969,6 +969,37 @@
     renderProfile();
   }
 
+  /* THE METHOD PANEL ENDS AT THE BOTTOM OF THE WINDOW, WHEREVER IT SITS. It is
+     sticky, so its top moves: lower at the top of the page, below the top bar
+     once stuck. A fixed CSS height fits only one of those and ran 41px off the
+     bottom in the other, so the height is measured. Rects are visual px and
+     style.maxHeight is layout px (body zoom), hence the divide. */
+  function profFitMethod(){
+    const el = document.querySelector('#profile .prof-method');
+    if (!el || !el.offsetParent) return;
+    if (getComputedStyle(el).position !== 'sticky'){ el.style.maxHeight = ''; return; }
+    const z = typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1;
+    /* Never above where it sticks: past the end of its column the box is
+       carried up off the screen, and measuring from there would grow it. */
+    const stuckAt = (parseFloat(getComputedStyle(el).top) || 0) * z;
+    const top = Math.max(el.getBoundingClientRect().top, stuckAt);
+    /* And short enough that, at the furthest the page can scroll, the end of
+       the results column does not push it up under the top bar. */
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    const colEnd = el.parentElement.getBoundingClientRect().bottom + (maxScroll - window.scrollY);
+    const room = Math.min(window.innerHeight - top - 16, colEnd - stuckAt);
+    el.style.maxHeight = Math.max(200, room / z) + 'px';
+  }
+  /* Direct, not via requestAnimationFrame: one rect read and one style write
+     is cheap enough for every scroll event, and rAF never fires in a hidden
+     document, which left the panel unfitted when a page opened in the
+     background. */
+  function profFitSoon(){ profFitMethod(); }
+  window.addEventListener('scroll', profFitSoon, { passive: true });
+  window.addEventListener('resize', profFitSoon);
+  const profRenderInner = renderProfile;
+  renderProfile = function(){ profRenderInner(); profFitSoon(); };
+
   setupProfile();
   window.renderProfile = renderProfile;
   window.profileScoresChanged = profileScoresChanged;

@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260923d">
-<link rel="stylesheet" href="design-system.css?v=20260923d">
+<link rel="stylesheet" href="styles.css?v=20260923j">
+<link rel="stylesheet" href="design-system.css?v=20260923j">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1451,13 +1451,14 @@
     <p class="section-desc">How many scores are abnormal, and how many healthy people show that many. 13.7% show one below the 5th percentile across the four WAIS-IV Indices. Crawford, Garthwaite &amp; Gault (2007).</p>
 
     <div class="prof-layout">
-      <div id="prof-results"></div>
-
-        <details class="formula-disclosure">
-          <summary>Method &amp; formulae</summary>
-          <div class="formula-body">
+      <!-- Always visible, so the method is never hidden behind a click. Sticky and
+           internally scrollable: it stays beside the results and never runs past
+           the bottom of the window. -->
+      <aside class="prof-method" aria-labelledby="prof-method-title">
+        <h2 class="prof-method-title" id="prof-method-title">Method &amp; formulae</h2>
+        <div class="prof-method-body">
             <p>This method comes from Crawford, Garthwaite and Gault (2007), <i>Estimating the percentage of the population with abnormally low scores (or abnormally large score differences) on standardized neuropsychological test batteries</i>, published in <i>Neuropsychology</i>, 21, 419&ndash;430. It answers a question that no single score can: when several of a patient&rsquo;s scores are unusual, how common is that among healthy people?</p>
-            <p>To answer it, the method simulates a large healthy population (200,000 people) whose scores on the measures you have selected are related to one another exactly as they are in the test publisher&rsquo;s normative sample. The only information it needs is how strongly each pair of measures correlates. Each simulated person is checked against the criterion selected above, and the base rate is the percentage of them who show at least as many abnormal results as your patient. It is a count of people, not of scores.</p>
+            <p>To answer it, the method simulates a large healthy population (200,000 people) whose scores on the measures you have selected are related to one another exactly as they are in the test publisher&rsquo;s normative sample. The only information it needs is how strongly each pair of measures correlates. Each simulated person is checked against the selected criterion, and the base rate is the percentage of them who show at least as many abnormal results as your patient. It is a count of people, not of scores.</p>
             <p>Three kinds of result are counted:</p>
             <ul>
               <li><strong>Abnormally low scores</strong>: scores below the criterion (at the 5th percentile, <i>z</i> &lt; &minus;1.645).</li>
@@ -1465,8 +1466,11 @@
               <li><strong>Measures far from the patient&rsquo;s own average</strong>: one score that stands out from the patient&rsquo;s mean across the selected measures.</li>
             </ul>
             <p>Differences and deviations count in either direction, so they use the same criterion split across both tails (1.96 at the 5th percentile). The results update whenever the selection changes, because a base rate for ten measures does not apply to seven. Treating the measures as unrelated would get this wrong: across the four WAIS-IV Indices at the 5th percentile it would suggest 18.5% of healthy people show at least one abnormally low score, where the simulation gives 13.7%.</p>
-          </div>
-        </details>
+        </div>
+      </aside>
+
+      <div class="prof-main">
+        <div id="prof-results"></div>
 
         <div class="info-box" style="margin-top:10px" data-apa-note="prof"></div>
 
@@ -1480,6 +1484,7 @@
             </button>
           </div>
           <div class="apa-table-container" id="prof-apa"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -3220,12 +3225,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260923d"></script>
-<script src="app.js?v=20260923d"></script>
-<script src="design-system.js?v=20260923d" defer></script>
-<script src="app-effectsize-page.js?v=20260923d"></script>
-<script src="app-viz-page.js?v=20260923d"></script>
-<script src="app-profile-page.js?v=20260923d"></script>
+<script src="data.js?v=20260923j"></script>
+<script src="app.js?v=20260923j"></script>
+<script src="design-system.js?v=20260923j" defer></script>
+<script src="app-effectsize-page.js?v=20260923j"></script>
+<script src="app-viz-page.js?v=20260923j"></script>
+<script src="app-profile-page.js?v=20260923j"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
