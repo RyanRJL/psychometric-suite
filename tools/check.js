@@ -3725,7 +3725,9 @@ check('"New patient" clears the age, not just the tables', () => {
   if (!/'patient-age'/.test(handler)) bad.push('the master age input is not among the cleared fields');
   if (!/new patient\?/i.test(handler)) bad.push('the confirm text no longer says what it does');
   if (!/patient age/.test(handler)) bad.push('the confirm text does not warn that the age goes too');
-  if (!/<span>New patient<\/span>/.test(HTML_SRC)) bad.push('the button is still labelled for tables alone');
+  /* Since 2026-09 it is an item in the Session menu rather than a button of
+     its own; the label is what matters. */
+  if (!/id="topbar-clear-all"[^>]*>\s*New patient/.test(HTML_SRC)) bad.push('the button is still labelled for tables alone');
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -8776,6 +8778,12 @@ check('every navigable section has a top-bar entry that is visible without a men
   const bad = [];
   for (const id of ids) {
     if (FOOTER_PAGES.has(id)) continue;
+    /* Home's entry is the logo (one-row top bar, 2026-09): the Home tab was
+       dropped because the logo already went there. */
+    if (id === 'home'){
+      if (!/<button[^>]*class="topbar-brand[^"]*"[^>]*data-target="home"/.test(HTML_SRC)) bad.push('#home has no entry: the logo no longer goes home');
+      continue;
+    }
     const top = new RegExp('<button[^>]*class="topnav-item[^"]*"[^>]*data-target="' + id + '"').test(HTML_SRC);
     const drop = new RegExp('<button[^>]*class="topnav-drop-item[^"]*"[^>]*data-target="' + id + '"').test(HTML_SRC);
     /* A dropdown entry alone is not enough for a page that is not a member of
@@ -10472,25 +10480,36 @@ check('every transition takes its duration from the motion scale', () => {
 
 check('one name per page: top bar, brand row, tab title and home dial agree', () => {
   /* Premorbid was "Estimate" in the top bar and "Estimation" in the brand
-     row and on the dial; Effect Sizes was "Effect Size Tools" in two of them. */
+     row and on the dial; Effect Sizes was "Effect Size Tools" in two of them.
+     A page's top-bar name is its tab, or its entry in a menu that holds whole
+     pages (Calculators: Score Converter, Effect Sizes). Menus that open a tab
+     WITHIN one page (Premorbid, Change Analysis) are not page names. */
   const bad = [];
   const DSJS = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
   const slice = (src, start) => { const i = src.indexOf(start); return i < 0 ? '' : src.slice(i, src.indexOf('};', i)); };
   const titles = slice(APP_SRC, 'const PAGE_TITLES = {');
   const tmap = slice(DSJS, 'const TITLE_MAP = {');
   const home = HTML_SRC.slice(HTML_SRC.indexOf('<div class="home-dial">'));
-  let seen = 0;
-  for (const b of HTML_SRC.matchAll(/data-bucket="([^"]+)"[^>]*>[\s\S]{0,600}?<span>([^<]+)<\/span>/g)) {
-    const id = b[1], label = b[2].trim();
-    if (id === 'home' || id === 'change') continue;
-    seen++;
+  const header = HTML_SRC.slice(HTML_SRC.indexOf('<header class="topbar"'), HTML_SRC.indexOf('</header>'));
+  const names = new Map();
+  for (const b of header.matchAll(/<button[^>]*class="topnav-item[^"]*"[^>]*data-target="([^"]+)"[^>]*>\s*<span>([^<]+)<\/span>/g)) names.set(b[1], b[2].trim());
+  /* Page menus only: a group whose own button navigates nowhere. */
+  for (const g of header.matchAll(/<div class="topnav-group"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/g)) {
+    const topBtn = (g[1].match(/<button[^>]*class="topnav-item[^"]*"[^>]*>/) || [''])[0];
+    if (/data-target=/.test(topBtn)) continue;
+    for (const b of g[1].matchAll(/<button[^>]*class="topnav-drop-item[^"]*"[^>]*data-target="([^"]+)"[^>]*>([^<]+)<\/button>/g)) {
+      if (!names.has(b[1])) names.set(b[1], b[2].trim());
+    }
+  }
+  if (names.size < 8) return 'only ' + names.size + ' top-bar pages found, so the pattern no longer matches the markup';
+  for (const [id0, label] of names) {
+    const id = id0 === 'change-analysis' ? 'change-analysis' : id0;
     const pt = (titles.match(new RegExp("\\b" + id + "['\"]?\\s*:\\s*'([^']+)'")) || [])[1];
     const tm = (tmap.match(new RegExp("'" + id + "'\\s*:\\s*'([^']+)'")) || [])[1];
     if (pt && pt !== label) bad.push('PAGE_TITLES.' + id + ' is "' + pt + '", the top bar says "' + label + '"');
     if (tm && tm !== label) bad.push('TITLE_MAP.' + id + ' is "' + tm + '", the top bar says "' + label + '"');
     if (!home.includes('<span class="home-dial-label">' + label + '</span>')) bad.push('the dial has no node labelled "' + label + '"');
   }
-  if (seen < 7) return 'only ' + seen + ' top-bar pages found, so the pattern no longer matches the markup';
   return bad.length === 0 || bad.join('; ');
 });
 

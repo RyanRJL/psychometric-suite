@@ -210,9 +210,11 @@ painted under the floating chip. §55 pins what made that true. Things to know b
 touching layout:
 
 - **The footer is a fixed status bar** (`APP FRAME`, end of `design-system.css`).
-  **`.main`'s** `padding-bottom` reserves `--footer-h` (which `syncAppFrame()` measures,
-  since the privacy line wraps on a narrow window) plus `--rb-chip-rise`, the strip the
-  chip rises into.
+  **`.main`'s** `padding-bottom` reserves `--footer-h` (which `syncAppFrame()` measures
+  rather than assumes) plus `--rb-chip-rise`, the strip the chip rises into. The bar holds
+  the three footer links and the version stamp; the privacy line ("Scores stay in this
+  browser…") was removed as repetition (owner decision, 2026-09), and with it the bar went
+  to one line, so it now has a **40 px floor** (`min-height`).
 - **The reserve must be on `.main`, never on `body`, and this cost a false "fits".**
   `body` has a fixed height (`html,body{height:100%}`), so content that outgrows it
   overflows *into* body's padding without extending the document's scroll. With the
@@ -227,11 +229,16 @@ touching layout:
   bottom rather than the box's parent and siblings (which missed Change Analysis's panel
   margins), and floors its result, since rounding up by half a pixel is a scrollbar.
   `profFitMethod` uses the same helper; Score Charts subtracts its own measured spill.
-- **The chip floats.** Its bottom is `--rb-chip-lift` (14 px) above the window edge, so it
-  rises 4 px (empty) to 8 px (holding tables) above the 46 px bar with a lifted shadow,
-  inside the 8 px `--rb-chip-rise` strip that no page may reach into. Open, it drops back
-  into the bar, because the docked drawer ends at the bar and its Export to Word button
-  sits right there. `--rb-chip-slot` keeps the footer text out from under it.
+- **The chip floats.** Its bottom, `--rb-chip-lift`, is **derived**:
+  `--footer-h + --rb-chip-rise − 40px`, so the full 40 px chip tops out exactly at the edge
+  of the 8 px strip that no page may reach into, whatever the bar measures. It rises 4 px
+  (empty) to 8 px (holding tables). A fixed 14 px lift was right only for the old 46 px bar:
+  when the bar went to one line (29 px) it put the chip 19 px up, past the strip. Open, it
+  drops back into the bar, because the docked drawer ends at the bar and its Export to Word
+  button sits right there. `--rb-chip-slot` keeps the footer text out from under it.
+  Because the lift is a `calc()`, **JavaScript must read the chip's rect, not the
+  property**: `getPropertyValue` returns a custom property's text, not a number
+  (`chipEdges()` in the pill code).
 - **Three widths, not eight.** Workspaces are full width (Profile, Charts, Validity,
   Change Analysis, Data); single-panel tools take `--page-max` (1320); the two reading
   pages keep 1100. Every page shares `--page-pad-*`. The deep 80 to 100 px bottom paddings
@@ -272,8 +279,9 @@ One motion scale: `--t-fast` 120 ms, `--t-base` 180 ms, `--t-slow` 280 ms and on
 curve, `--ease`. The `--ds-duration-*` tokens alias them. Every `transition` in both
 stylesheets uses a token (there were 30 durations and 16 curves); §55 fails on a literal.
 
-Page changes: **the top bar holds still** and only the page title crossfades. The whole
-bar used to crossfade, doubling the logo and buttons for 140 ms. **The view-transition
+Page changes: **the top bar holds still.** The whole bar used to crossfade, doubling the
+logo and buttons for 140 ms. (Its page title had its own short crossfade; since the one-row
+bar the title is for screen readers only, so the rule is inert but harmless.) **The view-transition
 name is on `.rb-chip` and the open drawer, never `.rb-root`**: the root is a 0x0 fixed
 box whose children are fixed themselves, so its snapshot was empty and the chip vanished
 for the length of every navigation. The chip has no ambient motion (the rainbow orbit
@@ -496,8 +504,9 @@ comes from either side, and the split is the whole design:
 The other three offer themselves through a **floating card** in the corner the
 Working Report already owns, above the chip where `.rb-add-prompt` sits
 (`refreshConsentControls`). Since the chip moved into the status bar (2026-09) the card,
-the pills, the onboarding bubble and the Ko-fi toast all start 12 px above the bar
-(`calc(var(--footer-h) + 12px)`, and `pillBaseBottom()` for the pills' inline offsets).
+the pills, the onboarding bubble and the Ko-fi toast all start 10 px above the chip's top
+(`calc(var(--rb-chip-lift) + 40px + 10px)`, and `pillBaseBottom()`, which reads the chip's
+rect, for the pills' inline offsets).
 **Three homes were tried; two of them fail**, and all
 of it was settled by driving the real UI rather than reading the markup:
 
@@ -1408,7 +1417,7 @@ top bar and absent from the ring every other tool sits on.
 | Registration | Where | Symptom if missed |
 |---|---|---|
 | `<section class="section" id="…">` | `index.html` | `isNavigableSection` refuses to navigate |
-| a **top-level** `.topnav-item` with `data-bucket` | `index.html` | reachable only by opening a menu, or not at all |
+| a **top-level** `.topnav-item` with `data-bucket`, or an entry in a page menu (Calculators) | `index.html` | reachable only by opening a menu, or not at all |
 | `TOPNAV_BUCKETS[id]` | `app.js` | the top bar highlights Home instead |
 | `PAGE_TITLES[id]` | `app.js` | the brand row is blank |
 | `#id > .eyebrow, #id > .section-title{display:none}` | a stylesheet | the page wears a hero no other page has |
@@ -1433,13 +1442,33 @@ the footer**, deliberately outside the top bar, so they carry a title but no buc
 The **sidebar numbers are positions**, so inserting a page mid-list without renumbering
 leaves `05, 10, 06, 07` — which reads as missing pages. §46 asserts the sequence.
 
-**The top bar is full.** Profile Analysis made nine top-level tabs, and at the old 18px
-padding they ran 124px past the 1320px bar at every window width, so the nav sat off to the
-right of the brand row. It is now 10px padding with `justify-content:safe center` (centred
-when the row fits, start-aligned rather than clipped on the left when it does not), the
-icons drop below 1180px and the padding tightens to 6px below 1020px. Measured in the
-browser at 1920, 1440, 1180, 1100, 1020 and 905. A tenth top-level tab will not fit: put it
-in a dropdown, or re-measure.
+#### The top bar is one row (owner decision, 2026-09)
+
+Chosen from mock-ups of the old two rows (108 px), a tidied two rows (92 px) and this
+(56 px), which gives 52 px back to every page. Logo (the way Home; the Home tab went), then
+seven tabs without icons, then the age field and a **Session** menu. **Score Converter and
+Effect Sizes share a Calculators menu**, whose own button navigates nowhere
+(`data-bucket="calculators"`, no `data-target`), so `TOPNAV_BUCKETS` maps both pages to
+`calculators`. The current tab takes the accent underline the page tabs use. The page name
+beside the logo is **screen-reader only** now (`#topbar-page-title` is still written by
+`syncTopnav`); the highlighted tab says it on screen.
+
+- **Session holds Save, Open and New patient**, New patient set apart in red. It opens on
+  **click**, not hover like the tab menus, because it holds an action that clears
+  everything. Escape and a click elsewhere close it; arrow keys move within it. The three
+  items keep their ids, so the handlers are unchanged. **Ctrl+S (Cmd+S) saves the session**
+  (`wireSessionMenu`), which puts Save back at one action after it moved into a menu.
+- **The age field is a plain label and box.** The grey uppercase chip read as disabled. Its
+  state classes are unchanged (§26); `.is-wanted` now dashes the box itself.
+- **It fits by steps, measured on the live bar, not the mock-up** (which ran 36 px light,
+  missing the age field's "in use" pip). At 1366 the row needs 1405 of 1518 layout px.
+  Below a 1279 px window the wordmark text goes (the mark stays); below 1099 the tab padding
+  tightens to 7 px; below 1059 the "Age" and "Session" words go (the box and icon stay,
+  names kept for screen readers). That fits to about 955 px. Below 959 the tabs scroll
+  sideways, and **the three tab menus cannot open there**, because a scrolling box clips
+  what pops out of it; it is not a supported width. A breakpoint set from an estimate
+  clipped a tab by 1 px at 1262 before these were measured, so **re-measure if anything
+  joins the row.**
 
 #### The home dial takes any number of tools, but it used to take exactly seven
 

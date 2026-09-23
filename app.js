@@ -9193,6 +9193,47 @@ function openSessionFile(file){
   input?.addEventListener('change', () => { openSessionFile(input.files[0]); input.value = ''; });
 })();
 
+/* ---------- The Session menu (top bar) ----------
+   New patient, Open and Save share one menu. It opens on CLICK, not hover as
+   the page menus do, because it holds an action that clears everything.
+   Any choice closes it, as do a click elsewhere and Escape (which returns
+   focus to the button). The items' own handlers are bound by id elsewhere
+   (wireSessionButtons, wireGlobalClear) and are untouched.
+
+   Ctrl+S (Cmd+S) saves the session: without it, Save is two clicks away
+   where it used to be one. The browser's own "save page" is suppressed only
+   for that chord, and only once this handler exists. */
+(function wireSessionMenu(){
+  const wrap = document.getElementById('topbar-session-menu');
+  const btn = document.getElementById('topbar-session-btn');
+  const list = document.getElementById('topbar-session-list');
+  if (!wrap || !btn || !list) return;
+  const setOpen = open => {
+    list.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    wrap.classList.toggle('is-open', open);
+    if (open) list.querySelector('.topbar-menu-item')?.focus();
+  };
+  btn.addEventListener('click', () => setOpen(list.hidden));
+  list.addEventListener('click', e => { if (e.target.closest('.topbar-menu-item')) setOpen(false); });
+  document.addEventListener('click', e => { if (!list.hidden && !wrap.contains(e.target)) setOpen(false); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !list.hidden){ setOpen(false); btn.focus(); return; }
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')){
+      e.preventDefault();
+      if (typeof saveSession === 'function') saveSession();
+    }
+    /* Arrow keys move between the items while the menu is open. */
+    if (!list.hidden && (e.key === 'ArrowDown' || e.key === 'ArrowUp')){
+      const items = [...list.querySelectorAll('.topbar-menu-item')];
+      const i = items.indexOf(document.activeElement);
+      const next = e.key === 'ArrowDown' ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
+      items[next]?.focus();
+      e.preventDefault();
+    }
+  });
+})();
+
 /* ============================================================
    TERMS OF USE · one-time acceptance before first use
    ============================================================
@@ -9449,9 +9490,11 @@ function renderTermsStatus(){
 (function(){
   const TOPNAV_BUCKETS = {
     home: 'home',
-    converter: 'converter',
+    /* Both calculators live in the one Calculators menu (2026-09), so either
+       page lights that tab. */
+    converter: 'calculators',
     battery: 'battery',
-    effectsize: 'effectsize',
+    effectsize: 'calculators',
     // All change-analysis methods map to the "change" bucket
     sdi: 'change',
     'rci-basic': 'change',
@@ -11608,17 +11651,18 @@ ${buildReportHtmlBody()}
   /* The chip floats: its bottom sits --rb-chip-lift above the window edge and
      it rises above the bar (design-system.css, CHIP FLOATS). Pills start just
      above the chip's top and fly into its centre. */
-  function cssPx(name, fallback){
-    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
-    return Number.isFinite(v) ? v : fallback;
-  }
-  function chipTopBottom(){
+  /* Read off the chip itself: --rb-chip-lift is a calc(), and a custom
+     property holding a calc() comes back from getPropertyValue as its text,
+     not a number. The rect is visual px; `bottom` is layout px (body zoom). */
+  function chipEdges(){
     const chip = rootEl && rootEl.querySelector('.rb-chip');
-    const h = chip && chip.offsetHeight ? chip.offsetHeight : 40;
-    return cssPx('--rb-chip-lift', 20) + h;
+    const z = (typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1) || 1;
+    if (!chip || !chip.offsetHeight) return { top: footerLayoutH() + 8, bottom: 8 };
+    const r = chip.getBoundingClientRect();
+    return { top: (window.innerHeight - r.top) / z, bottom: (window.innerHeight - r.bottom) / z };
   }
-  function pillBaseBottom(){ return Math.max(footerLayoutH(), chipTopBottom()) + 10; }
-  function chipCentreBottom(){ return cssPx('--rb-chip-lift', 20) + (chipTopBottom() - cssPx('--rb-chip-lift', 20)) / 2; }
+  function pillBaseBottom(){ return Math.max(footerLayoutH(), chipEdges().top) + 10; }
+  function chipCentreBottom(){ const e = chipEdges(); return (e.top + e.bottom) / 2; }
 
   function buildPillNode(sourceLabel, sourceId){
     const text = sourceLabel ? `${sourceLabel} added to report` : 'Added to report';

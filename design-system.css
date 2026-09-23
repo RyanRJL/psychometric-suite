@@ -5054,26 +5054,6 @@ input[type="number"].ds-patient-field-input{
   line-height: 1.45;
 }
 
-/* =====================================================================
-   THE STANDING PRIVACY LINE
-
-   A standalone class, not a modifier of anything in the footer. `.site-footer`
-   and `.site-footer-links` are each declared in both stylesheets, and this
-   needs no part of that argument.
-
-   Quiet on purpose: it is a reassurance a clinician looks for once, not a
-   banner. It sits in the footer's right-hand grid column and reads as a
-   statement of fact rather than a notice to be dismissed.
-   ===================================================================== */
-.site-footer-privacy{
-  margin: 0;
-  justify-self: end;
-  font-family: var(--sans);
-  font-size: var(--ds-text-xs);
-  line-height: 1.4;
-  color: var(--ds-text-subtle);
-  text-align: right;
-}
 /* The footer's three columns are sized for a wide window. Left as a 3-up grid
    on a narrow one, this sentence gets a 47px column and stacks into a column
    of single words. Below 900px the footer goes single-column instead.
@@ -5095,7 +5075,6 @@ input[type="number"].ds-patient-field-input{
     grid-column: auto;
     justify-self: start;
   }
-  .site-footer-privacy{ justify-self: start; text-align: left; }
 }
 
 /* =====================================================================
@@ -5669,14 +5648,8 @@ body .site-footer-inner{
   gap: var(--ds-space-6);
 }
 body .site-footer-inner .ds-version-stamp{ flex-shrink: 0; }
-body .site-footer-privacy{
-  margin-left: auto;
-  text-align: right;
-  min-width: 0;
-}
 @media (max-width: 900px){
   body .site-footer-inner{ flex-wrap: wrap; gap: var(--ds-space-2) var(--ds-space-4); }
-  body .site-footer-privacy{ margin-left: 0; text-align: left; }
 }
 
 /* =====================================================================
@@ -6131,7 +6104,14 @@ body .rb-root.is-unopened.is-open .rb-chip::after{ display: none; }
    Only the chip's resting position, size and shadow change here. Colour
    (.has-items) and the unexported glow are defined above and still apply.
    ===================================================================== */
-:root{ --rb-chip-lift: 14px; --rb-chip-rise: 8px; }
+/* The chip's bottom is derived, not fixed: bar height plus the reserved
+   strip, less the full chip's 40px, so a 40px chip tops out exactly at the
+   strip's edge whatever the bar measures. The bar has a 40px floor: with the
+   privacy line gone (2026-09) it holds one line and measured 29px, which
+   put the chip 19px above it, past the strip. */
+:root{ --rb-chip-rise: 8px; --rb-chip-lift: calc(var(--footer-h) + var(--rb-chip-rise) - 40px); }
+body .site-footer{ min-height: 40px; display: flex; align-items: center; }
+body .site-footer-inner{ flex: 1; }
 /* The strip the chip rises into is reserved, full width: body padding
    grows by --rb-chip-rise, so no page's last card can reach up beside the
    chip. Measured before this was added, the chip's shadow edge crossed the
@@ -6183,4 +6163,175 @@ body .rb-root.has-items.is-open .rb-chip{
   bottom: calc((var(--footer-h) - 32px) / 2);
   height: 32px;
   transform: none;
+}
+
+/* =====================================================================
+   ONE-ROW TOP BAR (owner decision, 2026-09)
+
+   Chosen from mock-ups of the old two rows (108px), this, and a tidied two-
+   row bar (92px). One row of 56px gives 52px back to every page. Measured
+   in the mock-up and then on the page: at a 1366px window the row needs
+   1369 of 1518 layout px. Below that the wordmark text goes (the mark
+   stays), then the tab padding tightens, then the tabs scroll: every step
+   keeps every tab on screen.
+
+   No tab icons, and the current tab takes the accent underline the page
+   tabs use. The page name beside the logo is gone from view (the tab says
+   it) but stays for screen readers. The age field is a plain labelled box:
+   the grey uppercase chip read as disabled. The Session menu is standalone
+   classes (.topbar-menu*), so nothing in either stylesheet reaches it.
+   ===================================================================== */
+:root{ --topbar-h: 56px; }
+body .topbar-row-main{
+  height: var(--topbar-h);
+  background: #FFFFFF;
+  border-bottom: 1px solid #E5E2DA;
+}
+body .topbar-row-main .topbar-inner{
+  max-width: none;
+  height: 100%;
+  padding: 0 20px;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+}
+body .topbar-row-main .topbar-brand{
+  align-self: center;
+  height: 30px;
+  padding-right: 18px;
+  margin-right: 6px;
+  border-right: 1px solid var(--ds-border);
+  border-radius: 0;
+}
+/* Visible to screen readers only: the highlighted tab says it on screen. */
+body .topbar-page-title{
+  position: absolute !important;
+  width: 1px !important; height: 1px !important;
+  overflow: hidden !important; clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important; padding: 0 !important; margin: -1px !important; border: 0 !important;
+}
+body .topbar-row-main .topnav{
+  height: auto;
+  align-items: stretch;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+body .topbar-row-main .topnav-group{ height: auto; }
+body .topbar-row-main .topnav-item{
+  height: auto !important;
+  padding: 0 11px !important;
+  gap: 4px !important;
+}
+body .topbar-row-main .topnav-item::after{
+  left: 11px; right: 11px; bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--ds-primary);
+}
+body .topbar-row-main .topnav-chevron{ width: 10px; height: 10px; }
+body .topbar-row-main .topnav-dropdown{ top: calc(100% - 2px); border-radius: 8px; }
+body .topbar-spacer{ flex: 1 1 12px; min-width: 12px; }
+
+/* The age field: a label and a box, no chip around them. Its states keep
+   their classes (.is-live pip, .is-wanted, .is-pulsing; check.js 26); the
+   wanted state now marks the box itself. */
+body .topbar .ds-patient-field{
+  align-self: center;
+  height: 32px;
+  padding: 0 6px 0 0;
+  gap: 7px;
+  background: transparent;
+  border-color: transparent;
+}
+body .topbar .ds-patient-field-label{
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ds-text-muted);
+}
+body .topbar input.ds-patient-field-input,
+body .topbar input[type="number"].ds-patient-field-input{
+  width: 58px !important;
+  height: 30px !important;
+  padding: 0 6px !important;
+  border: 1px solid var(--ds-border-strong) !important;
+  border-radius: 6px !important;
+  background: #FFFFFF !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+}
+body .topbar input.ds-patient-field-input::placeholder{ color: #B5AFA6; font-weight: 500; }
+body .topbar .ds-patient-field.is-wanted{ border-color: transparent; }
+body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
+  border: 1.5px dashed rgba(156,61,42,0.55) !important;
+}
+
+/* The Session menu. */
+.topbar-menu{ position: relative; align-self: center; margin-left: 10px; }
+.topbar-menu-btn{
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 12px;
+  font: 600 12.5px var(--sans); color: var(--ds-text);
+  background: #FFFFFF; border: 1px solid var(--ds-border-strong); border-radius: 7px;
+  cursor: pointer; white-space: nowrap;
+  transition: background-color var(--t-fast) var(--ease);
+}
+.topbar-menu-btn svg{ width: 14px; height: 14px; opacity: 0.75; }
+.topbar-menu-btn .topnav-chevron{ width: 10px; height: 10px; opacity: 0.6; transition: transform var(--t-base) var(--ease); }
+.topbar-menu.is-open .topbar-menu-btn .topnav-chevron{ transform: rotate(-180deg); }
+.topbar-menu-btn:hover, .topbar-menu.is-open .topbar-menu-btn{ background: #F7F4EF; }
+.topbar-menu-btn:focus-visible{ outline: 2px solid var(--ds-primary-ring, rgba(156,61,42,0.4)); outline-offset: 2px; }
+.topbar-menu-list{
+  position: absolute; right: 0; top: calc(100% + 6px);
+  min-width: 224px; padding: 6px;
+  background: #FFFFFF; border: 1px solid var(--ds-border-strong); border-radius: 9px;
+  box-shadow: 0 12px 30px rgba(15,18,24,0.14);
+  z-index: 70;
+}
+.topbar-menu-list[hidden]{ display: none; }
+.topbar-menu-head{
+  padding: 6px 10px 4px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--ds-text-subtle);
+}
+.topbar-menu-item{
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 8px 10px; border: 0; border-radius: 6px; background: transparent;
+  font: 400 13px var(--sans); color: var(--ds-text); text-align: left; cursor: pointer;
+}
+.topbar-menu-item:hover, .topbar-menu-item:focus-visible{ background: #F4F0E9; outline: none; }
+.topbar-menu-item kbd, .topbar-menu-item small{
+  margin-left: auto; font: 400 11px var(--sans); color: var(--ds-text-subtle);
+}
+.topbar-menu-item.is-danger{ color: var(--ds-primary); }
+.topbar-menu-sep{ height: 1px; margin: 5px 4px; background: var(--ds-border); }
+@media print{ .topbar-menu{ display: none; } }
+
+/* Narrower windows, in steps that keep every tab on screen. */
+@media (max-width: 1279px){
+  body .topbar-row-main .topbar-brand-title{ display: none; }
+  body .topbar-row-main .topbar-brand{ padding-right: 12px; }
+}
+@media (max-width: 1099px){
+  body .topbar-row-main .topnav-item{ padding: 0 7px !important; }
+  body .topbar-row-main .topnav-item::after{ left: 7px; right: 7px; }
+}
+/* Then the two labels on the right give way to what they label: the age box
+   keeps its "years" placeholder and the Session button its icon (its name
+   stays for screen readers via aria-label and the visually hidden label). */
+@media (max-width: 1059px){
+  body .topbar .ds-patient-field-label{
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  body .topbar-menu-btn > span{ display: none; }
+}
+/* Last resort, below the ~955px window where everything above still fits:
+   the tabs scroll sideways rather than any of them disappearing. A scrolling
+   box clips what pops out of it, so the three tab menus cannot open here;
+   this is not a supported width (see NARROW-VIEWPORT CONTAINMENT). */
+@media (max-width: 959px){
+  body .topbar-row-main .topnav{ overflow-x: auto; scrollbar-width: none; }
 }

@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260923u">
-<link rel="stylesheet" href="design-system.css?v=20260923u">
+<link rel="stylesheet" href="styles.css?v=20260924a">
+<link rel="stylesheet" href="design-system.css?v=20260924a">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -512,14 +512,73 @@
 
 <!-- ========== TOP NAVIGATION (redesign) ========== -->
 <header class="topbar" role="banner">
-  <div class="topbar-row topbar-row-brand">
+  <!-- ONE ROW (owner decision, 2026-09; mock-ups compared the old two rows,
+       this, and a tidied two-row bar). The logo is the way Home. The page's
+       name is carried by the highlighted tab, so the old label beside the logo
+       is kept only for screen readers. Score Converter and Effect Sizes share
+       the Calculators menu; New patient, Open and Save share the Session menu,
+       New patient set apart because it clears everything. Measured at 1366px:
+       the row needs 1369 of 1518 layout px. -->
+  <div class="topbar-row topbar-row-main">
     <div class="topbar-inner">
-      <button type="button" class="topbar-brand topbar-brand-home nav-item" data-target="home" aria-label="Go to home page">
+      <button type="button" class="topbar-brand topbar-brand-home nav-item" data-target="home" aria-label="Home">
         <span class="ds-brand-mark" aria-hidden="true"></span>
         <span class="topbar-brand-title">Psychometric <em>Assistant</em></span>
       </button>
-      <span class="topbar-divider" aria-hidden="true"></span>
-      <div class="topbar-page-title" id="topbar-page-title">Home</div>
+      <div class="topbar-page-title" id="topbar-page-title" aria-live="polite">Home</div>
+
+      <nav class="topnav" aria-label="Primary navigation">
+        <div class="topnav-group" data-bucket="premorbid">
+          <button type="button" class="topnav-item nav-item" data-target="premorbid" data-bucket="premorbid">
+            <span>Premorbid Estimate</span>
+            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
+          </button>
+          <div class="topnav-dropdown" role="menu">
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="estimates" role="menuitem">Premorbid Estimates</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="predict" role="menuitem">ToPF vs WAIS-IV</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="opiepredict" role="menuitem">OPIE-4 vs WAIS-IV</button>
+          </div>
+        </div>
+        <button type="button" class="topnav-item nav-item" data-target="battery" data-bucket="battery">
+          <span>Score Tables</span>
+        </button>
+        <div class="topnav-group" data-bucket="change">
+          <button type="button" class="topnav-item nav-item" data-target="change-analysis" data-bucket="change">
+            <span>Change Analysis</span>
+            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
+          </button>
+          <div class="topnav-dropdown" role="menu">
+            <button type="button" class="topnav-drop-item nav-item" data-target="sdi" role="menuitem">Standard Deviation Index</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="rci-basic" role="menuitem">Simple Reliable Change</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="rci-practice" role="menuitem">Practice Effect-Adjusted</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">McSweeney Regression-Based</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
+          </div>
+        </div>
+        <button type="button" class="topnav-item nav-item" data-target="validity" data-bucket="validity">
+          <span>Performance Validity</span>
+        </button>
+        <!-- A menu, not a page: the button has no data-target, so it opens the
+             list (hover or focus) rather than navigating anywhere. -->
+        <div class="topnav-group" data-bucket="calculators">
+          <button type="button" class="topnav-item" data-bucket="calculators" aria-haspopup="true">
+            <span>Calculators</span>
+            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
+          </button>
+          <div class="topnav-dropdown" role="menu">
+            <button type="button" class="topnav-drop-item nav-item" data-target="converter" role="menuitem">Score Converter</button>
+            <button type="button" class="topnav-drop-item nav-item" data-target="effectsize" role="menuitem">Effect Sizes</button>
+          </div>
+        </div>
+        <button type="button" class="topnav-item nav-item" data-target="charts" data-bucket="charts">
+          <span>Score Charts</span>
+        </button>
+        <button type="button" class="topnav-item nav-item" data-target="profile" data-bucket="profile">
+          <span>Profile Analysis</span>
+        </button>
+      </nav>
+
+      <span class="topbar-spacer" aria-hidden="true"></span>
 
       <!-- THE PATIENT'S AGE — the master input.
 
@@ -546,9 +605,9 @@
            never by the [hidden] attribute — see the CSS cascade note in
            CLAUDE.md, and what .ds-inline-bar-age[hidden] had to do to win. -->
       <div class="ds-patient-field" id="patient-age-field">
-        <label class="ds-patient-field-label" for="patient-age">Patient age</label>
+        <label class="ds-patient-field-label" for="patient-age">Age</label>
         <input type="number" id="patient-age" class="ds-patient-field-input"
-               min="5" max="90" step="1" placeholder="—"
+               min="5" max="90" step="1" placeholder="years"
                title="Optional. Used where a test publishes its reliability by age band, which sharpens the confidence interval. Left blank, those measures use the published all-ages coefficient instead. Shared with the age on the Premorbid page.">
         <span class="ds-patient-field-live" id="patient-age-live" title="A measure on this page is reading the patient age.">
           <span class="ds-patient-field-dot" aria-hidden="true"></span><span>in use</span>
@@ -556,33 +615,35 @@
         <span class="ds-patient-field-pad" aria-hidden="true"></span>
       </div>
 
-      <!-- Clears the tables AND the age: you are switching patient, not tidying
-           one table. Two controls that each cleared half the patient is how a
-           previous age survives onto the next person's report. -->
-      <button type="button" class="topbar-clear" id="topbar-clear-all" title="Clear every table you've been working on this session, and the patient age" aria-label="Start a new patient">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 4h10"/>
-          <path d="M5.5 4V2.5h5V4"/>
-          <path d="M4 4l1 9h6l1-9"/>
-        </svg>
-        <span>New patient</span>
-      </button>
-      <!-- Nothing outlives the tab, so a session is carried between sittings as
-           a file (saveSession / openSessionFile in app.js). -->
-      <button type="button" class="topbar-session" id="topbar-open-session" title="Open a session file saved earlier. It replaces what is currently entered." aria-label="Open a saved session">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M2 4.5V12.5h12V6H8L6.5 4.5z"/>
-        </svg>
-        <span>Open session</span>
-      </button>
-      <button type="button" class="topbar-session" id="topbar-save-session" title="Save everything entered to a file, to carry on later. The file holds patient data: keep it securely." aria-label="Save this session to a file">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M8 2.5v8"/>
-          <path d="M4.5 7.5L8 11l3.5-3.5"/>
-          <path d="M3 13.5h10"/>
-        </svg>
-        <span>Save session</span>
-      </button>
+      <!-- SESSION. Opens on click, not hover as the page menus do: it holds an
+           action that clears everything, which should never be one stray
+           pointer movement away. The three buttons keep their ids, so the
+           handlers in app.js are unchanged; Ctrl+S saves (wireSessionMenu). -->
+      <div class="topbar-menu" id="topbar-session-menu">
+        <button type="button" class="topbar-menu-btn" id="topbar-session-btn" aria-label="Session" aria-haspopup="menu" aria-expanded="false" aria-controls="topbar-session-list">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M5 6h6M5 9h4"/></svg>
+          <span>Session</span>
+          <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
+        </button>
+        <div class="topbar-menu-list" id="topbar-session-list" role="menu" aria-label="Session" hidden>
+          <div class="topbar-menu-head">This patient</div>
+          <!-- Nothing outlives the tab, so a session is carried between sittings
+               as a file (saveSession / openSessionFile in app.js). -->
+          <button type="button" class="topbar-menu-item" id="topbar-save-session" role="menuitem" title="Save everything entered to a file, to carry on later. The file holds patient data: keep it securely.">
+            Save session&hellip;<kbd>Ctrl+S</kbd>
+          </button>
+          <button type="button" class="topbar-menu-item" id="topbar-open-session" role="menuitem" title="Open a session file saved earlier. It replaces what is currently entered.">
+            Open session&hellip;
+          </button>
+          <div class="topbar-menu-sep" role="separator"></div>
+          <!-- Clears the tables AND the age: you are switching patient, not
+               tidying one table. Two controls that each cleared half the patient
+               is how a previous age survives onto the next person's report. -->
+          <button type="button" class="topbar-menu-item is-danger" id="topbar-clear-all" role="menuitem" title="Clear every table you have been working on this session, and the patient age">
+            New patient<small>clears all</small>
+          </button>
+        </div>
+      </div>
       <input type="file" id="session-file-input" accept=".json,application/json" hidden>
       <!-- DONATION BUTTON — kept for easy re-activation, remove comment tags to restore
       <a class="topbar-kofi" href="https://ko-fi.com/clinpsyry" target="_blank" rel="noopener noreferrer" title="Support free clinical tools">
@@ -594,105 +655,6 @@
         <span>Support this website</span>
       </a>
       -->
-    </div>
-  </div>
-  <div class="topbar-row topbar-row-nav">
-    <div class="topbar-inner">
-      <nav class="topnav" aria-label="Primary navigation">
-        <button type="button" class="topnav-item active nav-item" data-target="home" data-bucket="home">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9.5L10 3.5L17 9.5V17H12.5V12H7.5V17H3V9.5Z"/>
-          </svg>
-          <span>Home</span>
-        </button>
-        <div class="topnav-group" data-bucket="premorbid">
-          <button type="button" class="topnav-item nav-item" data-target="premorbid" data-bucket="premorbid">
-            <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="10" cy="10" r="6.5"/>
-              <circle cx="10" cy="10" r="2.5"/>
-            </svg>
-            <span>Premorbid Estimate</span>
-            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="4,6.5 8,10.5 12,6.5"/>
-            </svg>
-          </button>
-          <div class="topnav-dropdown" role="menu">
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="estimates" role="menuitem">Premorbid Estimates</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="predict" role="menuitem">ToPF vs WAIS-IV</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="opiepredict" role="menuitem">OPIE-4 vs WAIS-IV</button>
-          </div>
-        </div>
-        <button type="button" class="topnav-item nav-item" data-target="battery" data-bucket="battery">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2.5" y="3.5" width="15" height="13" rx="1"/>
-            <line x1="2.5" y1="8" x2="17.5" y2="8"/>
-            <line x1="7.5" y1="8" x2="7.5" y2="16.5"/>
-          </svg>
-          <span>Score Tables</span>
-        </button>
-        <div class="topnav-group" data-bucket="change">
-          <button type="button" class="topnav-item nav-item" data-target="change-analysis" data-bucket="change">
-            <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="2.5,14 7,9.5 11,12.5 17.5,5"/>
-              <polyline points="13.5,5 17.5,5 17.5,9"/>
-            </svg>
-            <span>Change Analysis</span>
-            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="4,6.5 8,10.5 12,6.5"/>
-            </svg>
-          </button>
-          <div class="topnav-dropdown" role="menu">
-            <button type="button" class="topnav-drop-item nav-item" data-target="sdi" role="menuitem">Standard Deviation Index</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="rci-basic" role="menuitem">Simple Reliable Change</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="rci-practice" role="menuitem">Practice Effect-Adjusted</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="rci-srb" role="menuitem">McSweeney Regression-Based</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="rci-crawford" role="menuitem">Crawford Regression-Based</button>
-          </div>
-        </div>
-        <button type="button" class="topnav-item nav-item" data-target="validity" data-bucket="validity">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10 2.5 L16.5 5 v4.5 c0 4-2.8 6.8-6.5 8 c-3.7-1.2-6.5-4-6.5-8 V5 Z"/>
-            <polyline points="7,10 9.2,12.2 13.5,7.5"/>
-          </svg>
-          <span>Performance Validity</span>
-        </button>
-        <button type="button" class="topnav-item nav-item" data-target="converter" data-bucket="converter">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3,7 14,7 11.5,4.5"/>
-            <polyline points="17,13 6,13 8.5,15.5"/>
-          </svg>
-          <span>Score Converter</span>
-        </button>
-        <button type="button" class="topnav-item nav-item" data-target="effectsize" data-bucket="effectsize">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="14" x2="17" y2="6"/>
-            <line x1="4" y1="13" x2="6" y2="15"/>
-            <line x1="7.5" y1="10.5" x2="9.5" y2="12.5"/>
-            <line x1="11" y1="8" x2="13" y2="10"/>
-            <line x1="14.5" y1="5.5" x2="16.5" y2="7.5"/>
-          </svg>
-          <span>Effect Sizes</span>
-        </button>
-        <button type="button" class="topnav-item nav-item" data-target="charts" data-bucket="charts">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="17" x2="17" y2="17"/>
-            <line x1="5.5" y1="14" x2="5.5" y2="9"/>
-            <line x1="10" y1="14" x2="10" y2="4"/>
-            <line x1="14.5" y1="14" x2="14.5" y2="7"/>
-          </svg>
-          <span>Score Charts</span>
-        </button>
-        <button type="button" class="topnav-item nav-item" data-target="profile" data-bucket="profile">
-          <svg class="topnav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3,12 7,6 11,13 17,8"/>
-            <circle cx="3" cy="12" r="1.3"/>
-            <circle cx="7" cy="6" r="1.3"/>
-            <circle cx="11" cy="13" r="1.3"/>
-            <circle cx="17" cy="8" r="1.3"/>
-          </svg>
-          <span>Profile Analysis</span>
-        </button>
-      </nav>
     </div>
   </div>
 </header>
@@ -3241,17 +3203,6 @@
       <span class="ds-version-dot" aria-hidden="true"></span>
       <span id="app-version">v0.2.0 &middot; updated September 2026</span>
     </div>
-    <!-- The standing privacy claim. A clinician about to type a real patient's
-         scores into a website has exactly this question, and until now the only
-         place it was answered was a <meta description> nobody reads. Verified:
-         the app contains no fetch, XHR, sendBeacon, WebSocket or analytics call
-         of its own. Do not soften this to "we do not share your data", which is
-         a weaker and different claim.
-
-         The footer is a fixed status bar (APP FRAME, design-system.css):
-         links, then the version, then this line pushed to the right, ending
-         before the slot the Working Report chip occupies. -->
-    <p class="site-footer-privacy">Scores stay in this browser. Nothing is uploaded.<br><span class="site-footer-terms">Decision support only. Check every figure against the source.</span></p>
   </div>
 </footer>
 
@@ -3283,12 +3234,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260923u"></script>
-<script src="app.js?v=20260923u"></script>
-<script src="design-system.js?v=20260923u" defer></script>
-<script src="app-effectsize-page.js?v=20260923u"></script>
-<script src="app-viz-page.js?v=20260923u"></script>
-<script src="app-profile-page.js?v=20260923u"></script>
+<script src="data.js?v=20260924a"></script>
+<script src="app.js?v=20260924a"></script>
+<script src="design-system.js?v=20260924a" defer></script>
+<script src="app-effectsize-page.js?v=20260924a"></script>
+<script src="app-viz-page.js?v=20260924a"></script>
+<script src="app-profile-page.js?v=20260924a"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

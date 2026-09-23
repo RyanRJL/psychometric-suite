@@ -2787,12 +2787,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   white-space:nowrap;
   border-left:none!important;
 }
-.topnav-icon{
-  width:15px;height:15px;flex-shrink:0;
-  color:currentColor;opacity:.85;
-}
 .topnav-item:hover{color:#1A1A1A!important;background:transparent!important}
-.topnav-item:hover .topnav-icon{opacity:1}
 .topnav-item::after{
   content:"";position:absolute;left:10px;right:10px;bottom:-1px;
   height:2px;background:#1A1A1A;
@@ -2800,13 +2795,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   transition:transform var(--t-base) var(--ease);
 }
 .topnav-item.active{color:#1A1A1A!important;font-weight:500!important;background:transparent!important;border-left-color:transparent!important}
-.topnav-item.active .topnav-icon{opacity:1}
 /* After the base .topnav-item rule, which is also !important. */
-/* Below the width where nine tabs with icons fit, the decorative icons go and
-   then the padding tightens, so every tab stays on screen down to the 900px
-   breakpoint, where the row becomes scrollable. Measured, not modelled: with
-   icons the row needs ~1170px of window, without them ~1020px at 10px padding. */
-@media (max-width:1179px){.topnav-icon{display:none}}
 @media (max-width:1019px){.topnav-item{padding:0 6px!important}}
 .topnav-item.active::after{transform:scaleX(1)}
 
@@ -7833,44 +7822,6 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
    for, restrained enough to never compete with primary navigation. The
    toast does the heavy lifting for support; this link is the always-on
    path for the deliberate user. */
-/* Clear-all button — sits between page title and the Ko-fi link in the
-   topbar. Quiet ghost style, with a red tint on hover to signal the
-   destructive nature of the action. */
-.topbar-clear{
-  margin-left:auto;
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  flex-shrink:0;
-  padding:6px 11px;
-  border-radius:6px;
-  background:transparent;
-  color:#5A5A5A;
-  font-family:var(--sans);
-  font-size:12px;
-  font-weight:500;
-  letter-spacing:-0.005em;
-  border:1px solid transparent;
-  cursor:pointer;
-  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
-  white-space:nowrap;
-}
-.topbar-clear svg{
-  width:12px;height:12px;
-  color:currentColor;
-  flex-shrink:0;
-  opacity:0.75;
-}
-.topbar-clear:hover{
-  color:#B91C1C;
-  background:rgba(185,28,28,0.06);
-  border-color:rgba(185,28,28,0.20);
-}
-.topbar-clear:hover svg{opacity:1}
-.topbar-clear:focus-visible{
-  outline:2px solid rgba(185,28,28,0.40);
-  outline-offset:2px;
-}
 
 .topbar-kofi{
   display:inline-flex;
@@ -10942,21 +10893,5 @@ svg.rey-glyph{width:56px;height:56px}
   background:none; border:0; padding:0; font:inherit; color:var(--accent);
   text-decoration:underline; cursor:pointer;
 }
-.site-footer-terms{ display:inline-block; margin-top:2px; }
 @media print{ .terms-backdrop{ display:none; } }
 
-/* Open / Save session in the top bar (saveSession, openSessionFile). A
-   standalone class: .topbar-clear carries margin-left:auto and a red
-   destructive hover, neither of which belongs here. */
-.topbar-session{
-  display:inline-flex; align-items:center; gap:6px; flex-shrink:0;
-  padding:6px 11px; border-radius:6px; background:transparent;
-  color:#5A5A5A; font-family:var(--sans); font-size:12px; font-weight:500;
-  border:1px solid transparent; cursor:pointer; white-space:nowrap;
-  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
-}
-.topbar-session svg{ width:12px; height:12px; flex-shrink:0; opacity:0.75; }
-.topbar-session:hover{ color:#1A1A1A; background:rgba(26,26,26,0.05); border-color:rgba(26,26,26,0.14); }
-.topbar-session:hover svg{ opacity:1; }
-.topbar-session:focus-visible{ outline:2px solid rgba(26,26,26,0.4); outline-offset:2px; }
-@media print{ .topbar-session{ display:none; } }
