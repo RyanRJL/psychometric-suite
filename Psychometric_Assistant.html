@@ -10794,6 +10794,17 @@ svg.rey-glyph{width:56px;height:56px}
   border-right:0;
   border-radius:0;
 }
+/* The age bar is the same case: a bordered box of its own with a 14px margin
+   under it, so the card showed white round it and between it and the header.
+   Inside the card it is the card's top band instead, ruled off from the
+   table below; the warning stripe on the left stays. */
+#battery .bat-table-block > .bat-age-required-bar{
+  margin:0;
+  border:0;
+  border-bottom:1px solid rgba(139,58,46,0.28);
+  border-left:4px solid var(--warn);
+  border-radius:9px 9px 0 0;
+}
 #battery .bat-table-block > .bat-age-required-bar[hidden] + .table-viewport{
   border-radius:9px 9px 0 0;
 }
