@@ -30857,8 +30857,7 @@ function renderPvtNav(){
 function pvtInstrumentLineHtml(tab){
   const i = PVT_INSTRUMENTS[tab];
   if (!i) return '';
-  return `<span class="pvt-derived"><span class="pvt-derived-label">Derived on</span> ${i.derived}${
-    i.unspecified ? ' <span class="pvt-derived-gap">(form or edition not recorded here)</span>' : ''}</span>${
+  return `<span class="pvt-derived"><span class="pvt-derived-label">Derived on</span> ${i.derived}</span>${
     i.mismatch ? `<span class="pvt-derived-warn">${i.mismatch}</span>` : ''}`;
 }
 function renderPvtInstruments(){
