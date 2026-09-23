@@ -10321,6 +10321,17 @@ check('the terms gate blocks until accepted, and asks again when the terms chang
     ['references are listed', /All methods are referenced/],
   ]) if (!re.test(gate)) bad.push('the gate does not state: ' + what);
   if (/terms-close|data-dismiss/.test(gate)) bad.push('the gate has a dismiss control');
+  // The full terms are copied from the page, never held as a second text.
+  if (!/id="terms-full-toggle"/.test(gate) || !/<div class="terms-full" id="terms-full" hidden[^>]*><\/div>/.test(gate))
+    bad.push('the full-terms panel is missing, or holds its own copy of the text');
+  const fill = (APP_SRC.match(/function fillTermsFull\(\)\{[\s\S]*?\n\}/) || [''])[0];
+  if (!/getElementById\('privacy-use'\)/.test(fill)) bad.push('the full terms are not read from #privacy-use');
+  if (!/data-terms-exclude/.test(fill)) bad.push('the page heading and agreement controls are not excluded');
+  if (!/removeAttribute\('id'\)/.test(fill)) bad.push('copied ids are not stripped');
+  if (!/querySelectorAll\('button'\)/.test(fill)) bad.push('copied buttons are not neutralised');
+  const priv = (HTML_SRC.match(/<section class="section" id="privacy-use">[\s\S]*?<\/section>/) || [''])[0];
+  if (!/data-terms-exclude>Your agreement/.test(priv)) bad.push('the agreement block would be copied into the gate');
+  if (!/data-terms-exclude>\s*<button[^>]*id="terms-review"/.test(priv)) bad.push('the Review button would be copied into the gate');
   if (!/wireTermsGate\(\)\{[\s\S]*?if \(!termsAcceptance\(\)\) showTermsGate\(\);/.test(APP_SRC)) bad.push('the gate is not shown on load when unaccepted');
   if (!/key === 'Escape'\)\{ e\.preventDefault\(\)/.test(APP_SRC)) bad.push('Escape is not swallowed');
 

@@ -10940,6 +10940,23 @@ svg.rey-glyph{width:56px;height:56px}
 .terms-list{ margin:0 0 12px; padding-left:20px; font-size:13.5px; line-height:1.5; }
 .terms-list li + li{ margin-top:6px; }
 .terms-more{ margin:0 0 16px; font-size:13px; color:var(--muted); }
+.terms-full-toggle{
+  background:none; border:0; padding:0; margin:0 0 10px; cursor:pointer;
+  font:500 13.5px/1.4 var(--sans); color:var(--ink); text-decoration:underline;
+}
+/* Fixed px, not vh: body{zoom:0.9} scales vh too. The copied terms carry no
+   classes (fillTermsFull strips them), so these element rules style them. */
+.terms-full{
+  max-height:300px; overflow-y:auto; margin:0 0 12px; padding:12px 14px;
+  border:1px solid var(--border); border-radius:8px; background:#FAFAF8;
+  font-size:13px; line-height:1.55; color:var(--ink);
+}
+.terms-full[hidden]{ display:none; }
+.terms-full:focus-visible{ outline:2px solid #1A1A1A; outline-offset:2px; }
+.terms-full h2{ margin:16px 0 6px; font:600 15px/1.3 var(--sans); }
+.terms-full h2:first-child{ margin-top:0; }
+.terms-full h3{ margin:12px 0 4px; font:600 13.5px/1.35 var(--sans); }
+.terms-full p{ margin:0 0 8px; }
 .terms-agree{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:500; cursor:pointer; }
 .terms-agree input{ width:16px; height:16px; margin:0; }
 .terms-actions{ display:flex; justify-content:flex-end; margin-top:16px; }
@@ -19927,9 +19944,9 @@ input[type="number"].ds-age-pop-input{
        age where one was used.
        ================================================================== -->
   <section class="section" id="privacy-use">
-    <div class="eyebrow">Settings &middot; Privacy &amp; use</div>
-    <h1 class="section-title">Privacy &amp; <em>use</em></h1>
-    <p class="section-desc">What happens to the data you enter, and what you are agreeing to when you use these calculators.</p>
+    <div class="eyebrow" data-terms-exclude>Settings &middot; Privacy &amp; use</div>
+    <h1 class="section-title" data-terms-exclude>Privacy &amp; <em>use</em></h1>
+    <p class="section-desc" data-terms-exclude>What happens to the data you enter, and what you are agreeing to when you use these calculators.</p>
 
     <h2 class="block-title">Where your data goes</h2>
 
@@ -19997,11 +20014,11 @@ input[type="number"].ds-age-pop-input{
       This software has not been assessed or registered as a medical device. It does not replace the publishers' manuals or scoring software, and it does not license the use of any test.
     </p>
 
-    <h2 class="block-title">Your agreement</h2>
-    <p class="section-body-text">
+    <h2 class="block-title" data-terms-exclude>Your agreement</h2>
+    <p class="section-body-text" data-terms-exclude>
       Before first use, each browser asks you to agree to these terms. If the terms change, you are asked again. <span id="terms-status"></span>
     </p>
-    <p class="section-body-text">
+    <p class="section-body-text" data-terms-exclude>
       <button type="button" class="leave-card-btn" id="terms-review">Review the agreement</button>
     </p>
   </section>
@@ -20052,7 +20069,11 @@ input[type="number"].ds-age-pop-input{
       <li>The tools are provided without warranty and are not a medical device. Responsibility for any report written with them is yours.</li>
       <li>Saved session files contain patient data, and storing them securely is your responsibility.</li>
     </ul>
-    <p class="terms-more">The full terms are on Privacy &amp; use, in the footer of every page.</p>
+    <button type="button" class="terms-full-toggle" id="terms-full-toggle" aria-expanded="false" aria-controls="terms-full">Read the full terms</button>
+    <!-- Filled from #privacy-use each time it opens (fillTermsFull), so the
+         popup and the page cannot say different things. -->
+    <div class="terms-full" id="terms-full" hidden tabindex="0"></div>
+    <p class="terms-more">The full terms are also on Privacy &amp; use, in the footer of every page.</p>
     <label class="terms-agree"><input type="checkbox" id="terms-agree"> I have read and agree to these terms</label>
     <div class="terms-actions"><button type="button" class="leave-card-btn is-primary" id="terms-continue" disabled>Continue</button></div>
   </div>
@@ -31819,6 +31840,34 @@ function termsAcceptance(){
     return v && v.version === TERMS_VERSION ? v : null;
   } catch(e){ return null; }
 }
+/* The popup's full terms are copied from #privacy-use each time they open, so
+   there is one text and the two cannot drift. Elements marked
+   data-terms-exclude (the page heading and the agreement's own controls) are
+   left out. Ids are stripped so nothing is duplicated, classes so the page's
+   styling (h2.block-title and the like) does not follow it in, and buttons
+   become plain text: nothing inside the gate may navigate away from it. */
+function fillTermsFull(){
+  const src = document.getElementById('privacy-use');
+  const dst = document.getElementById('terms-full');
+  if (!src || !dst) return;
+  dst.replaceChildren();
+  [...src.children].forEach(el => {
+    if (el.hasAttribute('data-terms-exclude')) return;
+    const c = el.cloneNode(true);
+    c.querySelectorAll('button').forEach(b => b.replaceWith(document.createTextNode(b.textContent)));
+    [c, ...c.querySelectorAll('*')].forEach(n => { n.removeAttribute('id'); n.removeAttribute('class'); });
+    dst.appendChild(c);
+  });
+}
+function setTermsFullOpen(open){
+  const t = document.getElementById('terms-full-toggle');
+  const full = document.getElementById('terms-full');
+  if (!t || !full) return;
+  if (open) fillTermsFull();
+  full.hidden = !open;
+  t.setAttribute('aria-expanded', String(open));
+  t.textContent = open ? 'Hide the full terms' : 'Read the full terms';
+}
 function showTermsGate(){
   const gate = document.getElementById('terms-gate');
   if (!gate) return;
@@ -31826,6 +31875,7 @@ function showTermsGate(){
   const go = document.getElementById('terms-continue');
   if (box) box.checked = false;
   if (go) go.disabled = true;
+  setTermsFullOpen(false);
   gate.hidden = false;
   box?.focus();
 }
@@ -31843,6 +31893,9 @@ function renderTermsStatus(){
   if (!gate) return;
   const box = document.getElementById('terms-agree');
   const go = document.getElementById('terms-continue');
+  const toggle = document.getElementById('terms-full-toggle');
+  const full = document.getElementById('terms-full');
+  toggle?.addEventListener('click', () => setTermsFullOpen(!!full?.hidden));
   box?.addEventListener('change', () => { if (go) go.disabled = !box.checked; });
   go?.addEventListener('click', () => {
     if (!box?.checked) return;
@@ -31854,7 +31907,7 @@ function renderTermsStatus(){
   gate.addEventListener('keydown', e => {
     if (e.key === 'Escape'){ e.preventDefault(); return; }
     if (e.key !== 'Tab') return;
-    const f = [box, go].filter(el => el && !el.disabled);
+    const f = [toggle, full, box, go].filter(el => el && !el.disabled && !el.hidden);
     if (!f.length) return;
     const i = f.indexOf(document.activeElement);
     const next = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : (i + 1) % f.length;

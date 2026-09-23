@@ -10908,6 +10908,23 @@ svg.rey-glyph{width:56px;height:56px}
 .terms-list{ margin:0 0 12px; padding-left:20px; font-size:13.5px; line-height:1.5; }
 .terms-list li + li{ margin-top:6px; }
 .terms-more{ margin:0 0 16px; font-size:13px; color:var(--muted); }
+.terms-full-toggle{
+  background:none; border:0; padding:0; margin:0 0 10px; cursor:pointer;
+  font:500 13.5px/1.4 var(--sans); color:var(--ink); text-decoration:underline;
+}
+/* Fixed px, not vh: body{zoom:0.9} scales vh too. The copied terms carry no
+   classes (fillTermsFull strips them), so these element rules style them. */
+.terms-full{
+  max-height:300px; overflow-y:auto; margin:0 0 12px; padding:12px 14px;
+  border:1px solid var(--border); border-radius:8px; background:#FAFAF8;
+  font-size:13px; line-height:1.55; color:var(--ink);
+}
+.terms-full[hidden]{ display:none; }
+.terms-full:focus-visible{ outline:2px solid #1A1A1A; outline-offset:2px; }
+.terms-full h2{ margin:16px 0 6px; font:600 15px/1.3 var(--sans); }
+.terms-full h2:first-child{ margin-top:0; }
+.terms-full h3{ margin:12px 0 4px; font:600 13.5px/1.35 var(--sans); }
+.terms-full p{ margin:0 0 8px; }
 .terms-agree{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:500; cursor:pointer; }
 .terms-agree input{ width:16px; height:16px; margin:0; }
 .terms-actions{ display:flex; justify-content:flex-end; margin-top:16px; }

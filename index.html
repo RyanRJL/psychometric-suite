@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260923n">
-<link rel="stylesheet" href="design-system.css?v=20260923n">
+<link rel="stylesheet" href="styles.css?v=20260923o">
+<link rel="stylesheet" href="design-system.css?v=20260923o">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -3148,9 +3148,9 @@
        age where one was used.
        ================================================================== -->
   <section class="section" id="privacy-use">
-    <div class="eyebrow">Settings &middot; Privacy &amp; use</div>
-    <h1 class="section-title">Privacy &amp; <em>use</em></h1>
-    <p class="section-desc">What happens to the data you enter, and what you are agreeing to when you use these calculators.</p>
+    <div class="eyebrow" data-terms-exclude>Settings &middot; Privacy &amp; use</div>
+    <h1 class="section-title" data-terms-exclude>Privacy &amp; <em>use</em></h1>
+    <p class="section-desc" data-terms-exclude>What happens to the data you enter, and what you are agreeing to when you use these calculators.</p>
 
     <h2 class="block-title">Where your data goes</h2>
 
@@ -3218,11 +3218,11 @@
       This software has not been assessed or registered as a medical device. It does not replace the publishers' manuals or scoring software, and it does not license the use of any test.
     </p>
 
-    <h2 class="block-title">Your agreement</h2>
-    <p class="section-body-text">
+    <h2 class="block-title" data-terms-exclude>Your agreement</h2>
+    <p class="section-body-text" data-terms-exclude>
       Before first use, each browser asks you to agree to these terms. If the terms change, you are asked again. <span id="terms-status"></span>
     </p>
-    <p class="section-body-text">
+    <p class="section-body-text" data-terms-exclude>
       <button type="button" class="leave-card-btn" id="terms-review">Review the agreement</button>
     </p>
   </section>
@@ -3273,19 +3273,23 @@
       <li>The tools are provided without warranty and are not a medical device. Responsibility for any report written with them is yours.</li>
       <li>Saved session files contain patient data, and storing them securely is your responsibility.</li>
     </ul>
-    <p class="terms-more">The full terms are on Privacy &amp; use, in the footer of every page.</p>
+    <button type="button" class="terms-full-toggle" id="terms-full-toggle" aria-expanded="false" aria-controls="terms-full">Read the full terms</button>
+    <!-- Filled from #privacy-use each time it opens (fillTermsFull), so the
+         popup and the page cannot say different things. -->
+    <div class="terms-full" id="terms-full" hidden tabindex="0"></div>
+    <p class="terms-more">The full terms are also on Privacy &amp; use, in the footer of every page.</p>
     <label class="terms-agree"><input type="checkbox" id="terms-agree"> I have read and agree to these terms</label>
     <div class="terms-actions"><button type="button" class="leave-card-btn is-primary" id="terms-continue" disabled>Continue</button></div>
   </div>
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260923n"></script>
-<script src="app.js?v=20260923n"></script>
-<script src="design-system.js?v=20260923n" defer></script>
-<script src="app-effectsize-page.js?v=20260923n"></script>
-<script src="app-viz-page.js?v=20260923n"></script>
-<script src="app-profile-page.js?v=20260923n"></script>
+<script src="data.js?v=20260923o"></script>
+<script src="app.js?v=20260923o"></script>
+<script src="design-system.js?v=20260923o" defer></script>
+<script src="app-effectsize-page.js?v=20260923o"></script>
+<script src="app-viz-page.js?v=20260923o"></script>
+<script src="app-profile-page.js?v=20260923o"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

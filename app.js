@@ -9114,6 +9114,34 @@ function termsAcceptance(){
     return v && v.version === TERMS_VERSION ? v : null;
   } catch(e){ return null; }
 }
+/* The popup's full terms are copied from #privacy-use each time they open, so
+   there is one text and the two cannot drift. Elements marked
+   data-terms-exclude (the page heading and the agreement's own controls) are
+   left out. Ids are stripped so nothing is duplicated, classes so the page's
+   styling (h2.block-title and the like) does not follow it in, and buttons
+   become plain text: nothing inside the gate may navigate away from it. */
+function fillTermsFull(){
+  const src = document.getElementById('privacy-use');
+  const dst = document.getElementById('terms-full');
+  if (!src || !dst) return;
+  dst.replaceChildren();
+  [...src.children].forEach(el => {
+    if (el.hasAttribute('data-terms-exclude')) return;
+    const c = el.cloneNode(true);
+    c.querySelectorAll('button').forEach(b => b.replaceWith(document.createTextNode(b.textContent)));
+    [c, ...c.querySelectorAll('*')].forEach(n => { n.removeAttribute('id'); n.removeAttribute('class'); });
+    dst.appendChild(c);
+  });
+}
+function setTermsFullOpen(open){
+  const t = document.getElementById('terms-full-toggle');
+  const full = document.getElementById('terms-full');
+  if (!t || !full) return;
+  if (open) fillTermsFull();
+  full.hidden = !open;
+  t.setAttribute('aria-expanded', String(open));
+  t.textContent = open ? 'Hide the full terms' : 'Read the full terms';
+}
 function showTermsGate(){
   const gate = document.getElementById('terms-gate');
   if (!gate) return;
@@ -9121,6 +9149,7 @@ function showTermsGate(){
   const go = document.getElementById('terms-continue');
   if (box) box.checked = false;
   if (go) go.disabled = true;
+  setTermsFullOpen(false);
   gate.hidden = false;
   box?.focus();
 }
@@ -9138,6 +9167,9 @@ function renderTermsStatus(){
   if (!gate) return;
   const box = document.getElementById('terms-agree');
   const go = document.getElementById('terms-continue');
+  const toggle = document.getElementById('terms-full-toggle');
+  const full = document.getElementById('terms-full');
+  toggle?.addEventListener('click', () => setTermsFullOpen(!!full?.hidden));
   box?.addEventListener('change', () => { if (go) go.disabled = !box.checked; });
   go?.addEventListener('click', () => {
     if (!box?.checked) return;
@@ -9149,7 +9181,7 @@ function renderTermsStatus(){
   gate.addEventListener('keydown', e => {
     if (e.key === 'Escape'){ e.preventDefault(); return; }
     if (e.key !== 'Tab') return;
-    const f = [box, go].filter(el => el && !el.disabled);
+    const f = [toggle, full, box, go].filter(el => el && !el.disabled && !el.hidden);
     if (!f.length) return;
     const i = f.indexOf(document.activeElement);
     const next = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : (i + 1) % f.length;
