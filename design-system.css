@@ -5641,11 +5641,18 @@ body #home.section{
   padding-bottom: var(--page-pad-top) !important;
 }
 body .home-dial{
-  min-height: calc(100vh / 0.9 - var(--topbar-h, 108px) - var(--footer-h) - 2 * var(--page-pad-top));
+  min-height: calc(100vh / 0.9 - var(--topbar-h, 108px) - var(--footer-h) - var(--rb-chip-rise, 0px) - 2 * var(--page-pad-top));
 }
 
 /* ---- the status bar ---- */
-body{ padding-bottom: var(--footer-h) !important; }
+/* On .main, NOT on body. body has a fixed height (html,body{height:100%}),
+   so a flex item that outgrows it overflows INTO body's padding without
+   extending the document's scroll: content sat under the bar while the page
+   reported that it fitted, which is how the first version of this frame
+   passed its own measurements. .main's padding is part of .main's height,
+   which is what the scroll extent is made of. */
+body{ padding-bottom: 0 !important; }
+body .main{ padding-bottom: calc(var(--footer-h) + var(--rb-chip-rise, 0px)) !important; }
 body .site-footer{
   position: fixed !important;
   left: 0; right: 0; bottom: 0;
@@ -5720,7 +5727,7 @@ body .rb-root.is-open .rb-chip{
 body .rb-add-prompt,
 body .rb-offer-box,
 body .rb-onboarding,
-body .rb-kofi-toast{ bottom: calc(var(--footer-h) + 12px); }
+body .rb-kofi-toast{ bottom: calc(var(--rb-chip-lift, 20px) + 40px + 10px); }
 
 body .rb-root.is-open .rb-drawer{
   top: var(--topbar-h, 108px) !important;
@@ -5885,8 +5892,10 @@ body #converter .conv-scores-strip > *{
   padding-bottom: 10px !important;
 }
 body #converter .conv-unified-panel{
-  row-gap: 14px !important;
+  row-gap: 10px !important;
   margin-bottom: 0 !important;
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
 }
 
 /* Performance Validity: the About overview's seven rows were 62px each
@@ -5895,10 +5904,11 @@ body #converter .conv-unified-panel{
    the same row design, so it takes the same padding and the two stay alike. */
 body #validity .pvt-overview-row td,
 body #change-analysis .change-overview-table td{
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
 }
-body #validity .pvt-refs{ margin-top: 12px !important; }
+body #validity .pvt-refs{ margin-top: 8px !important; padding-top: 4px !important; }
+body #validity .pvt-sheet.is-about{ padding-top: 16px !important; padding-bottom: 16px !important; }
 
 /* Premorbid, ToPF and OPIE-4 tabs: the model / index column was squeezed
    by six numeric columns with room to spare, so "Verbal Comprehension Index"
@@ -5922,20 +5932,27 @@ body #premorbid .pre-results-table tbody input{
 /* The group rows, header and the note above the OPIE-4 table (the UK
    caveat, which must stay above the table) give up spacing, not content. */
 body #premorbid .pre-results-table tr.group-row td{
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+body #premorbid .pre-results-table thead th{
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
-body #premorbid .pre-results-table thead th{
+body #premorbid .pre-tab-content > .info-box{
+  margin-top: 0 !important;
+  margin-bottom: 8px !important;
+}
+/* The note's padding is owned by a two-id rule in styles.css
+   (#premorbid #pre-opiepredict .info-box), so it is matched here. */
+body #premorbid #pre-predict .info-box,
+body #premorbid #pre-opiepredict .info-box{
   padding-top: 8px !important;
   padding-bottom: 8px !important;
 }
-body #premorbid .pre-tab-content > .info-box{
-  margin-top: 0 !important;
-  margin-bottom: 12px !important;
-}
 body #premorbid .pre-tab-content{
-  padding-top: 16px !important;
-  padding-bottom: 16px !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
 }
 
 /* Performance Validity's description, moved into the top of the sheet by
@@ -5959,13 +5976,13 @@ body #effectsize .es-result-card{
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
-body #effectsize .es-tabs-wrap{ margin-bottom: 10px !important; }
+body #effectsize .es-tabs-wrap{ margin-bottom: 8px !important; }
 body #effectsize .es-input-panel{
-  padding-top: 10px !important;
-  padding-bottom: 10px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
   margin-bottom: 10px !important;
 }
-body #effectsize .es-output-row{ margin-bottom: 0 !important; row-gap: 10px !important; }
+body #effectsize .es-output-row{ margin-bottom: 0 !important; row-gap: 8px !important; }
 body #effectsize .es-view-pane:has(> .info-box){
   padding-top: 10px !important;
   padding-bottom: 10px !important;
@@ -5976,16 +5993,36 @@ body #effectsize .es-view-pane:has(> .es-collapse){
 }
 body #effectsize .es-collapse{ margin-top: 0 !important; }
 body #effectsize .es-collapse-summary{
-  padding-top: 9px !important;
-  padding-bottom: 9px !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
   margin-bottom: 0 !important;
 }
 body #effectsize .es-group{ padding-top: 10px !important; padding-bottom: 10px !important; }
-body #effectsize .es-groups{ margin-bottom: 8px !important; }
+body #effectsize .es-groups{ margin-bottom: 6px !important; }
+/* Each group's "95% CI" line sat on a row of its own under the inputs; it
+   now shares the title's row, right-aligned, and the four inputs take the
+   app's compact field height. Measured: 51px over at 1366 x 768 in
+   group-data mode before, none after, with the tabs left at full height so
+   they still match Premorbid's. */
+body #effectsize .es-group{
+  display: grid !important;
+  grid-template-columns: 1fr auto;
+  column-gap: 12px;
+  align-items: baseline;
+}
+body #effectsize .es-group-title{ grid-column: 1; grid-row: 1; margin-bottom: 6px !important; }
+body #effectsize .es-grp-ci{ grid-column: 2; grid-row: 1; margin: 0 !important; text-align: right; }
+body #effectsize .es-grp-grid{ grid-column: 1 / -1; grid-row: 2; }
+body #effectsize .es-grp-grid input,
+body #effectsize .es-grp-grid select{
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  height: auto !important;
+}
 body #effectsize .es-pooled,
 body #effectsize .es-pooled-item{ padding-top: 4px !important; padding-bottom: 4px !important; }
 #effectsize:has(.es-tab.is-active[data-mode="groups"]) .es-curve{ height: auto !important; }
-#effectsize:has(.es-tab.is-active[data-mode="groups"]) .es-curve svg{ height: 170px !important; }
+#effectsize:has(.es-tab.is-active[data-mode="groups"]) .es-curve svg{ height: 160px !important; }
 /* Set for a moment by pageFitsDocked (app.js) while it lays the page out
    docked and undocked to compare them: no transition may run, or the second
    layout would be read part way through the first's margin change. */
@@ -6052,4 +6089,77 @@ body .rb-root.has-unexported.is-open .rb-chip::after{ display: none; }
 }
 @media (prefers-reduced-motion: reduce){
   body .rb-root.has-unexported .rb-chip::after{ animation: none; opacity: 0.5; }
+}
+
+/* =====================================================================
+   THE CHIP FLOATS (owner decision, 2026-09)
+
+   Sat flat inside the status bar, the chip read as part of the furniture
+   and was easy to overlook. It now straddles the bar's top edge: its
+   bottom is --rb-chip-lift above the window edge, so it rises 10px (empty)
+   to 14px (holding tables) above the bar, with a lifted shadow and a small
+   rise on hover. That is the floating look without floating over content:
+   the fitters leave at least 16 visual px (about 18 layout px) between
+   the last content and the bar on every page, and the chip rises less
+   than that, so it lands in empty space.
+
+   Open, it drops back into the bar. The docked drawer ends at the bar's
+   top edge and its Export to Word button sits right there; a raised chip
+   would cover it.
+
+   Only the chip's resting position, size and shadow change here. Colour
+   (.has-items) and the unexported glow are defined above and still apply.
+   ===================================================================== */
+:root{ --rb-chip-lift: 14px; --rb-chip-rise: 8px; }
+/* The strip the chip rises into is reserved, full width: body padding
+   grows by --rb-chip-rise, so no page's last card can reach up beside the
+   chip. Measured before this was added, the chip's shadow edge crossed the
+   bottom-right corner of the last card on four views at 1366 x 768. The
+   chip's bottom is 14px up, so it rises 4px (empty) to 8px (holding tables)
+   above the 46px bar, inside the 8px strip. (The padding rule itself is in
+   APP FRAME above.) */
+body .rb-chip{
+  height: 36px;
+  bottom: var(--rb-chip-lift);
+  padding: 0 14px 0 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    0 2px 4px rgba(15,18,24,0.14),
+    0 8px 20px rgba(15,18,24,0.18),
+    0 16px 36px rgba(15,18,24,0.12);
+  transition: bottom var(--t-slow) var(--ease), transform var(--t-fast) var(--ease),
+              box-shadow var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+body .rb-chip:hover{
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    0 3px 6px rgba(15,18,24,0.16),
+    0 12px 26px rgba(15,18,24,0.22),
+    0 22px 44px rgba(15,18,24,0.14);
+}
+body .rb-root.has-items .rb-chip{
+  height: 40px;
+  bottom: var(--rb-chip-lift);
+  padding: 0 16px 0 7px;
+  font-size: 13px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.2),
+    0 2px 4px rgba(156,61,42,0.22),
+    0 8px 20px rgba(156,61,42,0.28),
+    0 16px 36px rgba(15,18,24,0.14);
+}
+body .rb-root.has-items .rb-chip:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    0 3px 6px rgba(156,61,42,0.26),
+    0 12px 26px rgba(156,61,42,0.32),
+    0 22px 44px rgba(15,18,24,0.16);
+}
+body .rb-root.has-items .rb-chip-icon{ width: 26px; height: 26px; }
+body .rb-root.is-open .rb-chip,
+body .rb-root.has-items.is-open .rb-chip{
+  bottom: calc((var(--footer-h) - 32px) / 2);
+  height: 32px;
+  transform: none;
 }

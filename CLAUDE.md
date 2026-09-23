@@ -205,16 +205,33 @@ Three things that bit while wiring it, all found by driving the real page:
 
 UI audit, 2026-09. The app is meant to read as one window. At **1366 x 768, 1440 x 900 and
 1920 x 1080, all 27 views** (every page, every Validity / Premorbid / Change Analysis tab,
-both Effect Sizes modes) fit with no page scroll, report open or closed. §55 pins what
-made that true. Three things to know before touching layout:
+both Effect Sizes modes) fit with no page scroll, report open or closed, and nothing is
+painted under the floating chip. §55 pins what made that true. Things to know before
+touching layout:
 
-- **The footer is a fixed status bar** (`APP FRAME`, end of `design-system.css`). Body
-  `padding-bottom` reserves `--footer-h`, which `syncAppFrame()` (`app.js`) **measures**,
-  since the privacy line wraps on a narrow window. **Every fitter that sizes something to
-  "the window" must subtract it**: `fitTableViewports` and `profFitMethod` call
-  `footerVisualHeight()`, the Score Charts fit reads the footer's rect. Forget it and a
-  box's last row sits under the bar with nothing thrown. The report chip lives in the
-  bar's right end; `--rb-chip-slot` keeps the footer text out from under it.
+- **The footer is a fixed status bar** (`APP FRAME`, end of `design-system.css`).
+  **`.main`'s** `padding-bottom` reserves `--footer-h` (which `syncAppFrame()` measures,
+  since the privacy line wraps on a narrow window) plus `--rb-chip-rise`, the strip the
+  chip rises into.
+- **The reserve must be on `.main`, never on `body`, and this cost a false "fits".**
+  `body` has a fixed height (`html,body{height:100%}`), so content that outgrows it
+  overflows *into* body's padding without extending the document's scroll. With the
+  reserve on body, content sat up to ~44 px under the bar on four views while every
+  scroll measurement read zero, and the first version of this frame was reported as
+  fitting on that basis. `.main`'s padding is part of `.main`'s height, which is what the
+  scroll extent is made of, so the measurement is honest again. §55 fails if the reserve
+  goes back on body. **When checking fit, also sample what is painted near the bar;**
+  `scrollHeight` alone is what was fooled.
+- **Every fitter aims at `frameRoomBottom(el)`** (`app.js`): the window less `.main`'s
+  reserve less the page's own bottom padding. `fitTableViewports` measures the page's
+  bottom rather than the box's parent and siblings (which missed Change Analysis's panel
+  margins), and floors its result, since rounding up by half a pixel is a scrollbar.
+  `profFitMethod` uses the same helper; Score Charts subtracts its own measured spill.
+- **The chip floats.** Its bottom is `--rb-chip-lift` (14 px) above the window edge, so it
+  rises 4 px (empty) to 8 px (holding tables) above the 46 px bar with a lifted shadow,
+  inside the 8 px `--rb-chip-rise` strip that no page may reach into. Open, it drops back
+  into the bar, because the docked drawer ends at the bar and its Export to Word button
+  sits right there. `--rb-chip-slot` keeps the footer text out from under it.
 - **Three widths, not eight.** Workspaces are full width (Profile, Charts, Validity,
   Change Analysis, Data); single-panel tools take `--page-max` (1320); the two reading
   pages keep 1100. Every page shares `--page-pad-*`. The deep 80 to 100 px bottom paddings

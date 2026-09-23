@@ -16637,11 +16637,18 @@ body #home.section{
   padding-bottom: var(--page-pad-top) !important;
 }
 body .home-dial{
-  min-height: calc(100vh / 0.9 - var(--topbar-h, 108px) - var(--footer-h) - 2 * var(--page-pad-top));
+  min-height: calc(100vh / 0.9 - var(--topbar-h, 108px) - var(--footer-h) - var(--rb-chip-rise, 0px) - 2 * var(--page-pad-top));
 }
 
 /* ---- the status bar ---- */
-body{ padding-bottom: var(--footer-h) !important; }
+/* On .main, NOT on body. body has a fixed height (html,body{height:100%}),
+   so a flex item that outgrows it overflows INTO body's padding without
+   extending the document's scroll: content sat under the bar while the page
+   reported that it fitted, which is how the first version of this frame
+   passed its own measurements. .main's padding is part of .main's height,
+   which is what the scroll extent is made of. */
+body{ padding-bottom: 0 !important; }
+body .main{ padding-bottom: calc(var(--footer-h) + var(--rb-chip-rise, 0px)) !important; }
 body .site-footer{
   position: fixed !important;
   left: 0; right: 0; bottom: 0;
@@ -16716,7 +16723,7 @@ body .rb-root.is-open .rb-chip{
 body .rb-add-prompt,
 body .rb-offer-box,
 body .rb-onboarding,
-body .rb-kofi-toast{ bottom: calc(var(--footer-h) + 12px); }
+body .rb-kofi-toast{ bottom: calc(var(--rb-chip-lift, 20px) + 40px + 10px); }
 
 body .rb-root.is-open .rb-drawer{
   top: var(--topbar-h, 108px) !important;
@@ -16881,8 +16888,10 @@ body #converter .conv-scores-strip > *{
   padding-bottom: 10px !important;
 }
 body #converter .conv-unified-panel{
-  row-gap: 14px !important;
+  row-gap: 10px !important;
   margin-bottom: 0 !important;
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
 }
 
 /* Performance Validity: the About overview's seven rows were 62px each
@@ -16891,10 +16900,11 @@ body #converter .conv-unified-panel{
    the same row design, so it takes the same padding and the two stay alike. */
 body #validity .pvt-overview-row td,
 body #change-analysis .change-overview-table td{
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
 }
-body #validity .pvt-refs{ margin-top: 12px !important; }
+body #validity .pvt-refs{ margin-top: 8px !important; padding-top: 4px !important; }
+body #validity .pvt-sheet.is-about{ padding-top: 16px !important; padding-bottom: 16px !important; }
 
 /* Premorbid, ToPF and OPIE-4 tabs: the model / index column was squeezed
    by six numeric columns with room to spare, so "Verbal Comprehension Index"
@@ -16918,20 +16928,27 @@ body #premorbid .pre-results-table tbody input{
 /* The group rows, header and the note above the OPIE-4 table (the UK
    caveat, which must stay above the table) give up spacing, not content. */
 body #premorbid .pre-results-table tr.group-row td{
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+body #premorbid .pre-results-table thead th{
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
-body #premorbid .pre-results-table thead th{
+body #premorbid .pre-tab-content > .info-box{
+  margin-top: 0 !important;
+  margin-bottom: 8px !important;
+}
+/* The note's padding is owned by a two-id rule in styles.css
+   (#premorbid #pre-opiepredict .info-box), so it is matched here. */
+body #premorbid #pre-predict .info-box,
+body #premorbid #pre-opiepredict .info-box{
   padding-top: 8px !important;
   padding-bottom: 8px !important;
 }
-body #premorbid .pre-tab-content > .info-box{
-  margin-top: 0 !important;
-  margin-bottom: 12px !important;
-}
 body #premorbid .pre-tab-content{
-  padding-top: 16px !important;
-  padding-bottom: 16px !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
 }
 
 /* Performance Validity's description, moved into the top of the sheet by
@@ -16955,13 +16972,13 @@ body #effectsize .es-result-card{
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
-body #effectsize .es-tabs-wrap{ margin-bottom: 10px !important; }
+body #effectsize .es-tabs-wrap{ margin-bottom: 8px !important; }
 body #effectsize .es-input-panel{
-  padding-top: 10px !important;
-  padding-bottom: 10px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
   margin-bottom: 10px !important;
 }
-body #effectsize .es-output-row{ margin-bottom: 0 !important; row-gap: 10px !important; }
+body #effectsize .es-output-row{ margin-bottom: 0 !important; row-gap: 8px !important; }
 body #effectsize .es-view-pane:has(> .info-box){
   padding-top: 10px !important;
   padding-bottom: 10px !important;
@@ -16972,16 +16989,36 @@ body #effectsize .es-view-pane:has(> .es-collapse){
 }
 body #effectsize .es-collapse{ margin-top: 0 !important; }
 body #effectsize .es-collapse-summary{
-  padding-top: 9px !important;
-  padding-bottom: 9px !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
   margin-bottom: 0 !important;
 }
 body #effectsize .es-group{ padding-top: 10px !important; padding-bottom: 10px !important; }
-body #effectsize .es-groups{ margin-bottom: 8px !important; }
+body #effectsize .es-groups{ margin-bottom: 6px !important; }
+/* Each group's "95% CI" line sat on a row of its own under the inputs; it
+   now shares the title's row, right-aligned, and the four inputs take the
+   app's compact field height. Measured: 51px over at 1366 x 768 in
+   group-data mode before, none after, with the tabs left at full height so
+   they still match Premorbid's. */
+body #effectsize .es-group{
+  display: grid !important;
+  grid-template-columns: 1fr auto;
+  column-gap: 12px;
+  align-items: baseline;
+}
+body #effectsize .es-group-title{ grid-column: 1; grid-row: 1; margin-bottom: 6px !important; }
+body #effectsize .es-grp-ci{ grid-column: 2; grid-row: 1; margin: 0 !important; text-align: right; }
+body #effectsize .es-grp-grid{ grid-column: 1 / -1; grid-row: 2; }
+body #effectsize .es-grp-grid input,
+body #effectsize .es-grp-grid select{
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  height: auto !important;
+}
 body #effectsize .es-pooled,
 body #effectsize .es-pooled-item{ padding-top: 4px !important; padding-bottom: 4px !important; }
 #effectsize:has(.es-tab.is-active[data-mode="groups"]) .es-curve{ height: auto !important; }
-#effectsize:has(.es-tab.is-active[data-mode="groups"]) .es-curve svg{ height: 170px !important; }
+#effectsize:has(.es-tab.is-active[data-mode="groups"]) .es-curve svg{ height: 160px !important; }
 /* Set for a moment by pageFitsDocked (app.js) while it lays the page out
    docked and undocked to compare them: no transition may run, or the second
    layout would be read part way through the first's margin change. */
@@ -17048,6 +17085,79 @@ body .rb-root.has-unexported.is-open .rb-chip::after{ display: none; }
 }
 @media (prefers-reduced-motion: reduce){
   body .rb-root.has-unexported .rb-chip::after{ animation: none; opacity: 0.5; }
+}
+
+/* =====================================================================
+   THE CHIP FLOATS (owner decision, 2026-09)
+
+   Sat flat inside the status bar, the chip read as part of the furniture
+   and was easy to overlook. It now straddles the bar's top edge: its
+   bottom is --rb-chip-lift above the window edge, so it rises 10px (empty)
+   to 14px (holding tables) above the bar, with a lifted shadow and a small
+   rise on hover. That is the floating look without floating over content:
+   the fitters leave at least 16 visual px (about 18 layout px) between
+   the last content and the bar on every page, and the chip rises less
+   than that, so it lands in empty space.
+
+   Open, it drops back into the bar. The docked drawer ends at the bar's
+   top edge and its Export to Word button sits right there; a raised chip
+   would cover it.
+
+   Only the chip's resting position, size and shadow change here. Colour
+   (.has-items) and the unexported glow are defined above and still apply.
+   ===================================================================== */
+:root{ --rb-chip-lift: 14px; --rb-chip-rise: 8px; }
+/* The strip the chip rises into is reserved, full width: body padding
+   grows by --rb-chip-rise, so no page's last card can reach up beside the
+   chip. Measured before this was added, the chip's shadow edge crossed the
+   bottom-right corner of the last card on four views at 1366 x 768. The
+   chip's bottom is 14px up, so it rises 4px (empty) to 8px (holding tables)
+   above the 46px bar, inside the 8px strip. (The padding rule itself is in
+   APP FRAME above.) */
+body .rb-chip{
+  height: 36px;
+  bottom: var(--rb-chip-lift);
+  padding: 0 14px 0 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    0 2px 4px rgba(15,18,24,0.14),
+    0 8px 20px rgba(15,18,24,0.18),
+    0 16px 36px rgba(15,18,24,0.12);
+  transition: bottom var(--t-slow) var(--ease), transform var(--t-fast) var(--ease),
+              box-shadow var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+body .rb-chip:hover{
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    0 3px 6px rgba(15,18,24,0.16),
+    0 12px 26px rgba(15,18,24,0.22),
+    0 22px 44px rgba(15,18,24,0.14);
+}
+body .rb-root.has-items .rb-chip{
+  height: 40px;
+  bottom: var(--rb-chip-lift);
+  padding: 0 16px 0 7px;
+  font-size: 13px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.2),
+    0 2px 4px rgba(156,61,42,0.22),
+    0 8px 20px rgba(156,61,42,0.28),
+    0 16px 36px rgba(15,18,24,0.14);
+}
+body .rb-root.has-items .rb-chip:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    0 3px 6px rgba(156,61,42,0.26),
+    0 12px 26px rgba(156,61,42,0.32),
+    0 22px 44px rgba(15,18,24,0.16);
+}
+body .rb-root.has-items .rb-chip-icon{ width: 26px; height: 26px; }
+body .rb-root.is-open .rb-chip,
+body .rb-root.has-items.is-open .rb-chip{
+  bottom: calc((var(--footer-h) - 32px) / 2);
+  height: 32px;
+  transform: none;
 }
 </style>
 
@@ -31685,6 +31795,21 @@ function footerVisualHeight(){
 /* `var` for the same init-order reason as tableViewportRO below. */
 var appFrameRO = null;
 
+/* Where page content may end, as a visual y: the window less .main's bottom
+   reserve (the bar, plus the strip the chip rises into), less the page's own
+   bottom padding. A fitter aiming at "the window less the bar" put content
+   under the reserve, and body's fixed height hid that from the scroll
+   measurement (see APP FRAME). Pass an element to include the padding of
+   the page it is on. */
+function frameRoomBottom(el){
+  const z = typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1;
+  const main = document.querySelector('.main');
+  let pad = main ? parseFloat(getComputedStyle(main).paddingBottom) || 0 : 0;
+  const sec = el && el.closest ? el.closest('.main > .section') : null;
+  if (sec) pad += parseFloat(getComputedStyle(sec).paddingBottom) || 0;
+  return window.innerHeight - pad * z;
+}
+
 function syncAppFrame(){
   const root = document.documentElement;
   const chip = document.querySelector('.rb-chip');
@@ -31752,7 +31877,6 @@ function setupAppFrame(){
    than useless, so the box stops shrinking at TABLE_VIEWPORT_MIN and the
    page scrolls the way it always did. */
 const TABLE_VIEWPORT_MIN = 220;   /* layout px — below this, let the page scroll */
-const TABLE_VIEWPORT_GAP = 16;    /* visual px — breathing room under the last control */
 
 /* `var`, DELIBERATELY, and the only three in this neighbourhood. This block
    sits near the end of app.js, but renderBattery() — which ends in
@@ -31774,26 +31898,31 @@ function fitTableViewports(){
     const rect = box.getBoundingClientRect();
     if (!rect.height) return;               /* the page it lives on is hidden */
 
-    /* Where the content below this box currently ends. The parent is
-       included so a panel's own bottom padding counts; ancestors above it
-       are not, because those run to the footer. */
+    /* Where the page's content currently ends: the bottom of the page
+       itself, less its own bottom padding. That covers everything below the
+       box (the action row, a method panel's margins) without listing any of
+       it. It used to take the box's parent and siblings only, which missed
+       the panel margins on Change Analysis. */
     let tail = rect.bottom;
-    const parentRect = box.parentElement && box.parentElement.getBoundingClientRect();
-    if (parentRect && parentRect.height) tail = Math.max(tail, parentRect.bottom);
-    for (let el = box.nextElementSibling; el; el = el.nextElementSibling){
-      const r = el.getBoundingClientRect();
-      if (r.height) tail = Math.max(tail, r.bottom);
+    const sec = box.closest('.main > .section');
+    if (sec){
+      tail = Math.max(tail, sec.getBoundingClientRect().bottom - (parseFloat(getComputedStyle(sec).paddingBottom) || 0) * z);
+    } else {
+      const parentRect = box.parentElement && box.parentElement.getBoundingClientRect();
+      if (parentRect && parentRect.height) tail = Math.max(tail, parentRect.bottom);
     }
 
-    /* The window less the fixed status bar: that strip is covered, so a
-       box fitted to the full window would end underneath it. */
-    const over   = tail - (window.innerHeight - footerVisualHeight() - TABLE_VIEWPORT_GAP);
-    const target = Math.max(TABLE_VIEWPORT_MIN, Math.round((rect.height - over) / z));
+    /* Aimed at where content may end: the window less the status bar, the
+       chip's strip and the page's padding (frameRoomBottom). */
+    const over   = tail - frameRoomBottom(box);
+    /* Floor, not round: rounding up by half a pixel leaves the page 1px taller
+       than the window, which is a scrollbar. */
+    const target = Math.max(TABLE_VIEWPORT_MIN, Math.floor((rect.height - over) / z));
 
     /* Write only on a real change: an unconditional write on every resize
        tick is a layout thrash for no visible difference. */
     const current = parseFloat(box.style.maxHeight);
-    if (!Number.isFinite(current) || Math.abs(current - target) > 1){
+    if (!Number.isFinite(current) || current !== target){
       box.style.maxHeight = target + 'px';
     }
   });
@@ -34530,8 +34659,20 @@ ${buildReportHtmlBody()}
     const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--footer-h'));
     return Number.isFinite(v) && v > 0 ? v : 44;
   }
-  function pillBaseBottom(){ return footerLayoutH() + 12; }
-  function chipCentreBottom(){ return footerLayoutH() / 2; }
+  /* The chip floats: its bottom sits --rb-chip-lift above the window edge and
+     it rises above the bar (design-system.css, CHIP FLOATS). Pills start just
+     above the chip's top and fly into its centre. */
+  function cssPx(name, fallback){
+    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+    return Number.isFinite(v) ? v : fallback;
+  }
+  function chipTopBottom(){
+    const chip = rootEl && rootEl.querySelector('.rb-chip');
+    const h = chip && chip.offsetHeight ? chip.offsetHeight : 40;
+    return cssPx('--rb-chip-lift', 20) + h;
+  }
+  function pillBaseBottom(){ return Math.max(footerLayoutH(), chipTopBottom()) + 10; }
+  function chipCentreBottom(){ return cssPx('--rb-chip-lift', 20) + (chipTopBottom() - cssPx('--rb-chip-lift', 20)) / 2; }
 
   function buildPillNode(sourceLabel, sourceId){
     const text = sourceLabel ? `${sourceLabel} added to report` : 'Added to report';
@@ -38523,9 +38664,10 @@ if (document.readyState === 'loading'){
        the results column does not push it up under the top bar. */
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
     const colEnd = el.parentElement.getBoundingClientRect().bottom + (maxScroll - window.scrollY);
-    /* Less the fixed status bar, which covers the bottom of the window. */
-    const footerH = typeof footerVisualHeight === 'function' ? footerVisualHeight() : 0;
-    const room = Math.min(window.innerHeight - footerH - top - 16, colEnd - stuckAt);
+    /* Down to where content may end: the window less the status bar, the
+       chip's strip and this page's padding (frameRoomBottom, app.js). */
+    const bottom = typeof frameRoomBottom === 'function' ? frameRoomBottom(el) : window.innerHeight - 16;
+    const room = Math.min(bottom - top, colEnd - stuckAt);
     el.style.maxHeight = Math.max(200, room / z) + 'px';
   }
   /* Direct, not via requestAnimationFrame: one rect read and one style write

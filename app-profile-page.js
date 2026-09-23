@@ -994,9 +994,10 @@
        the results column does not push it up under the top bar. */
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
     const colEnd = el.parentElement.getBoundingClientRect().bottom + (maxScroll - window.scrollY);
-    /* Less the fixed status bar, which covers the bottom of the window. */
-    const footerH = typeof footerVisualHeight === 'function' ? footerVisualHeight() : 0;
-    const room = Math.min(window.innerHeight - footerH - top - 16, colEnd - stuckAt);
+    /* Down to where content may end: the window less the status bar, the
+       chip's strip and this page's padding (frameRoomBottom, app.js). */
+    const bottom = typeof frameRoomBottom === 'function' ? frameRoomBottom(el) : window.innerHeight - 16;
+    const room = Math.min(bottom - top, colEnd - stuckAt);
     el.style.maxHeight = Math.max(200, room / z) + 'px';
   }
   /* Direct, not via requestAnimationFrame: one rect read and one style write

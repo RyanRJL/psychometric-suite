@@ -8737,6 +8737,21 @@ function footerVisualHeight(){
 /* `var` for the same init-order reason as tableViewportRO below. */
 var appFrameRO = null;
 
+/* Where page content may end, as a visual y: the window less .main's bottom
+   reserve (the bar, plus the strip the chip rises into), less the page's own
+   bottom padding. A fitter aiming at "the window less the bar" put content
+   under the reserve, and body's fixed height hid that from the scroll
+   measurement (see APP FRAME). Pass an element to include the padding of
+   the page it is on. */
+function frameRoomBottom(el){
+  const z = typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1;
+  const main = document.querySelector('.main');
+  let pad = main ? parseFloat(getComputedStyle(main).paddingBottom) || 0 : 0;
+  const sec = el && el.closest ? el.closest('.main > .section') : null;
+  if (sec) pad += parseFloat(getComputedStyle(sec).paddingBottom) || 0;
+  return window.innerHeight - pad * z;
+}
+
 function syncAppFrame(){
   const root = document.documentElement;
   const chip = document.querySelector('.rb-chip');
@@ -8804,7 +8819,6 @@ function setupAppFrame(){
    than useless, so the box stops shrinking at TABLE_VIEWPORT_MIN and the
    page scrolls the way it always did. */
 const TABLE_VIEWPORT_MIN = 220;   /* layout px — below this, let the page scroll */
-const TABLE_VIEWPORT_GAP = 16;    /* visual px — breathing room under the last control */
 
 /* `var`, DELIBERATELY, and the only three in this neighbourhood. This block
    sits near the end of app.js, but renderBattery() — which ends in
@@ -8826,26 +8840,31 @@ function fitTableViewports(){
     const rect = box.getBoundingClientRect();
     if (!rect.height) return;               /* the page it lives on is hidden */
 
-    /* Where the content below this box currently ends. The parent is
-       included so a panel's own bottom padding counts; ancestors above it
-       are not, because those run to the footer. */
+    /* Where the page's content currently ends: the bottom of the page
+       itself, less its own bottom padding. That covers everything below the
+       box (the action row, a method panel's margins) without listing any of
+       it. It used to take the box's parent and siblings only, which missed
+       the panel margins on Change Analysis. */
     let tail = rect.bottom;
-    const parentRect = box.parentElement && box.parentElement.getBoundingClientRect();
-    if (parentRect && parentRect.height) tail = Math.max(tail, parentRect.bottom);
-    for (let el = box.nextElementSibling; el; el = el.nextElementSibling){
-      const r = el.getBoundingClientRect();
-      if (r.height) tail = Math.max(tail, r.bottom);
+    const sec = box.closest('.main > .section');
+    if (sec){
+      tail = Math.max(tail, sec.getBoundingClientRect().bottom - (parseFloat(getComputedStyle(sec).paddingBottom) || 0) * z);
+    } else {
+      const parentRect = box.parentElement && box.parentElement.getBoundingClientRect();
+      if (parentRect && parentRect.height) tail = Math.max(tail, parentRect.bottom);
     }
 
-    /* The window less the fixed status bar: that strip is covered, so a
-       box fitted to the full window would end underneath it. */
-    const over   = tail - (window.innerHeight - footerVisualHeight() - TABLE_VIEWPORT_GAP);
-    const target = Math.max(TABLE_VIEWPORT_MIN, Math.round((rect.height - over) / z));
+    /* Aimed at where content may end: the window less the status bar, the
+       chip's strip and the page's padding (frameRoomBottom). */
+    const over   = tail - frameRoomBottom(box);
+    /* Floor, not round: rounding up by half a pixel leaves the page 1px taller
+       than the window, which is a scrollbar. */
+    const target = Math.max(TABLE_VIEWPORT_MIN, Math.floor((rect.height - over) / z));
 
     /* Write only on a real change: an unconditional write on every resize
        tick is a layout thrash for no visible difference. */
     const current = parseFloat(box.style.maxHeight);
-    if (!Number.isFinite(current) || Math.abs(current - target) > 1){
+    if (!Number.isFinite(current) || current !== target){
       box.style.maxHeight = target + 'px';
     }
   });
@@ -11582,8 +11601,20 @@ ${buildReportHtmlBody()}
     const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--footer-h'));
     return Number.isFinite(v) && v > 0 ? v : 44;
   }
-  function pillBaseBottom(){ return footerLayoutH() + 12; }
-  function chipCentreBottom(){ return footerLayoutH() / 2; }
+  /* The chip floats: its bottom sits --rb-chip-lift above the window edge and
+     it rises above the bar (design-system.css, CHIP FLOATS). Pills start just
+     above the chip's top and fly into its centre. */
+  function cssPx(name, fallback){
+    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+    return Number.isFinite(v) ? v : fallback;
+  }
+  function chipTopBottom(){
+    const chip = rootEl && rootEl.querySelector('.rb-chip');
+    const h = chip && chip.offsetHeight ? chip.offsetHeight : 40;
+    return cssPx('--rb-chip-lift', 20) + h;
+  }
+  function pillBaseBottom(){ return Math.max(footerLayoutH(), chipTopBottom()) + 10; }
+  function chipCentreBottom(){ return cssPx('--rb-chip-lift', 20) + (chipTopBottom() - cssPx('--rb-chip-lift', 20)) / 2; }
 
   function buildPillNode(sourceLabel, sourceId){
     const text = sourceLabel ? `${sourceLabel} added to report` : 'Added to report';

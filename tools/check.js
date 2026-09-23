@@ -10378,15 +10378,20 @@ check('the footer is a fixed status bar, and every page fitter leaves its strip 
   const PROF = fs.readFileSync(path.join(ROOT, 'app-profile-page.js'), 'utf8');
   const VIZ = fs.readFileSync(path.join(ROOT, 'app-viz-page.js'), 'utf8');
   if (!/body \.site-footer\{[^}]*position:\s*fixed/.test(DS)) bad.push('the footer is not position:fixed');
-  if (!/body\{\s*padding-bottom:\s*var\(--footer-h\)/.test(DS)) bad.push('body does not reserve --footer-h, so the last row sits under the bar');
+  if (!/body \.main\{\s*padding-bottom:\s*calc\(var\(--footer-h\)/.test(DS)) bad.push('.main does not reserve --footer-h, so the last row sits under the bar');
+  /* On body it did nothing measurable: body's height is fixed, so content
+     overflowed into its padding without extending the scroll. */
+  if (/body\{\s*padding-bottom:\s*(?:calc\()?var\(--footer-h\)/.test(DS)) bad.push('the reserve is on body again, where content slides under the bar without scrolling');
   if (!/function syncAppFrame\(\)\{[\s\S]*?--footer-h[\s\S]*?\n\}/.test(APP_SRC)) bad.push('syncAppFrame no longer measures --footer-h');
   /* Each fitter sizes something to "the window". With a fixed bar the room
      is the window less the bar, and forgetting it puts a box's last row
      under the bar with nothing thrown. */
   const fitBody = (APP_SRC.match(/function fitTableViewports\(\)\{[\s\S]*?\n\}/) || [''])[0];
-  if (!/footerVisualHeight\(\)/.test(fitBody)) bad.push('fitTableViewports ignores the status bar');
+  if (!/frameRoomBottom\(/.test(fitBody)) bad.push('fitTableViewports does not aim at frameRoomBottom');
   const profBody = (PROF.match(/function profFitMethod\(\)\{[\s\S]*?\n  \}/) || [''])[0];
-  if (!/footerVisualHeight/.test(profBody)) bad.push('profFitMethod ignores the status bar');
+  if (!/frameRoomBottom/.test(profBody)) bad.push('profFitMethod does not aim at frameRoomBottom');
+  const room = (APP_SRC.match(/function frameRoomBottom\(el\)\{[\s\S]*?\n\}/) || [''])[0];
+  if (!/\.main/.test(room) || !/paddingBottom/.test(room)) bad.push("frameRoomBottom no longer reads .main's reserve");
   if (!/site-footer/.test(VIZ)) bad.push('the Score Charts fit no longer reads the footer');
   return bad.length === 0 || bad.join('; ');
 });
