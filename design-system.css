@@ -1412,7 +1412,9 @@ kbd, .ds-kbd{
 .combo-ageband-note,
 .apa-empty,
 .apa-status,
-.formula-disclosure,
+/* Not .formula-disclosure itself: the <details> is only a wrapper, and a
+   surface on it drew a beige box around the pill button. The opened body
+   (.formula-body) carries its own panel. */
 .formula-disclosure .info-box,
 .es-mode-selector,
 .es-mode-option,
