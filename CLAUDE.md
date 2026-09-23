@@ -1537,7 +1537,12 @@ CSS (`profFitMethod`): the sticky top moves, so one fixed height fits only one s
 position, and at the end of a short results column the box is carried up under the top
 bar unless its height is also capped by where that column ends. Called directly on scroll,
 not through requestAnimationFrame, which never fires in a hidden document. Below 1000px it
-stacks under the results. The text is plain English with one formula; the paragraphs below
+stacks under the results. **Score Charts has the same layout** (`.viz-method`, the CSS rules
+are shared, `#charts.section` is full width too), with one difference: that page fits one
+window rather than scrolling, so `vizFitMethod` sizes the panel to the window less the
+footer, and `vizFitToWindow` then aligns its bottom with the chart area's. Sized from the
+window alone it ran 34px long at a 560px window and scrolled the page. Its empty state is
+now a card like Profile's (`.viz-empty-card`, with a Go to Score Tables button). The text is plain English with one formula; the paragraphs below
 describe the older disclosure and its trims.
 
 #### The disclosure states the formulae; the Methods page carries the argument

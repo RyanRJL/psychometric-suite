@@ -1255,7 +1255,24 @@
      pixels, and mixing them sizes everything ~11% wrong. */
   let vizFitPass = 0;
 
+  /* THE METHOD PANEL ENDS WHERE THE WINDOW DOES, less the footer, like the
+     chart area beside it. This page fits one window rather than scrolling,
+     so the panel's height is the room below its own top. Run before the
+     chart fit, so the spill measured there is the chart's and not the
+     panel's. Rects are visual px, style.maxHeight layout px (body zoom). */
+  function vizFitMethod(){
+    const el = section.querySelector('.viz-method');
+    if (!el || !el.offsetParent) return;
+    if (getComputedStyle(el).position === 'static'){ el.style.maxHeight = ''; return; }
+    const zoom = parseFloat(getComputedStyle(document.body).zoom) || 1;
+    const footer = document.querySelector('.site-footer, footer');
+    const footerH = footer ? footer.getBoundingClientRect().height : 0;
+    const top = el.getBoundingClientRect().top;
+    el.style.maxHeight = Math.max(200, (window.innerHeight - top - footerH - 16) / zoom) + 'px';
+  }
+
   function vizFitToWindow(){
+    vizFitMethod();
     const layout = grid.querySelector('.viz-layout');
     const stage = grid.querySelector('.viz-stage');
     if (!layout || !stage) return;
@@ -1278,6 +1295,14 @@
     if (spill > 0){
       availLayout = Math.max(200, availLayout - spill);
       layout.style.height = Math.floor(availLayout) + 'px';
+    }
+    /* With charts on screen the panel ends where the chart area ends. The
+       window-based estimate above left it 34px longer at a short window,
+       which scrolled a page that is meant to fit. */
+    const methodEl = section.querySelector('.viz-method');
+    if (methodEl && getComputedStyle(methodEl).position !== 'static'){
+      const room = layout.getBoundingClientRect().bottom - methodEl.getBoundingClientRect().top;
+      methodEl.style.maxHeight = Math.max(200, room / zoom) + 'px';
     }
 
     if (!vizSingle){ grid.style.removeProperty('--viz-fit-h'); return; }
@@ -1341,6 +1366,7 @@
     if (!blocks.length){
       grid.innerHTML = '';
       if (emptyEl) emptyEl.hidden = false;
+      vizFitMethod();
       return;
     }
     if (emptyEl) emptyEl.hidden = true;
@@ -1416,6 +1442,12 @@
   /* Re-render whenever the page becomes visible, so it always reflects the
      current Score Tables state. Same pattern as syncTopnav: observe the
      section's class attribute rather than hooking every navigation path. */
+  /* The empty card's button, same as Profile Analysis's. */
+  emptyEl?.addEventListener('click', e => {
+    const b = e.target.closest('[data-viz-goto]');
+    if (b && typeof navigateTo === 'function') navigateTo(b.dataset.vizGoto);
+  });
+
   new MutationObserver(() => {
     if (section.classList.contains('active')) renderVizPage();
   }).observe(section, { attributes: true, attributeFilter: ['class'] });

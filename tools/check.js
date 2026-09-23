@@ -787,10 +787,10 @@ check('the dead per-method formula blocks are gone from the Change Analysis page
      The roster is explicit rather than a count: a disclosure appearing on a
      page not listed here has to be acknowledged, which is what the count was
      really buying. */
-  /* Profile Analysis left the roster in 2026-09: its method is an always-visible
+  /* Profile Analysis and Score Charts left the roster in 2026-09: its method is an always-visible
      panel (.prof-method) rather than a fold-out, by owner decision, so that the
      method is never one click away from the result it produced. */
-  const OWNS_A_DISCLOSURE = { validity: 8, charts: 1 };
+  const OWNS_A_DISCLOSURE = { validity: 8 };
   const secs = [...html.matchAll(/<section class="section[^"]*" id="([^"]+)"/g)]
     .map(m => ({ id: m[1], at: m.index }));
   secs.push({ id: '<end>', at: html.length });
@@ -816,6 +816,8 @@ check('the dead per-method formula blocks are gone from the Change Analysis page
   }
   const prof = html.slice(html.indexOf('<section class="section" id="profile">'));
   if (!/<aside class="prof-method"/.test(prof.slice(0, prof.indexOf('</section>')))) bad.push('#profile lost its always-visible method panel');
+  const charts = html.slice(html.indexOf('<section class="section" id="charts">'));
+  if (!/<aside class="viz-method"/.test(charts.slice(0, charts.indexOf('</section>')))) bad.push('#charts lost its always-visible method panel');
   return bad.length === 0 || bad.join('; ');
 });
 

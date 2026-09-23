@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260923k">
-<link rel="stylesheet" href="design-system.css?v=20260923k">
+<link rel="stylesheet" href="styles.css?v=20260923m">
+<link rel="stylesheet" href="design-system.css?v=20260923m">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -2028,22 +2028,32 @@
          already names the page, and on a page whose job is to show a chart in
          one window every line of chrome costs chart. What the heading used to
          say now lives where it is actually useful: the settings summary in the
-         control rail, the description in the disclosure below. -->
+         control rail, the description in the method panel. -->
 
-    <p class="viz-empty-line" id="viz-empty" hidden>Enter scores on Score Tables, Change Analysis, the SD Index or the premorbid page to chart them here.</p>
-
-    <div class="viz-blocks" id="viz-grid"></div>
-
-    <details class="formula-disclosure">
-      <summary>How these charts are drawn</summary>
-      <div class="info-box">
+    <div class="viz-page-layout">
+      <!-- Always visible, like Profile Analysis: how a chart is drawn sits beside
+           the chart rather than behind a click. Sized to the chart area by
+           vizFitMethod, and scrolls inside itself. -->
+      <aside class="viz-method" aria-labelledby="viz-method-title">
+        <h2 class="viz-method-title" id="viz-method-title">How these charts are drawn</h2>
+        <div class="viz-method-body">
         <p>Charts read the same data and settings as their source tables, so the two cannot disagree. Each source (Score Tables, Premorbid, Change Analysis, SD Index) is its own pane, and only sources with data appear.</p>
         <p><b>Score Tables</b> charts draw each subtest in its native metric with classification bands and confidence intervals matching the table. Base-rate measures show a cumulative step line. Error measures (marked ↓) reverse the bands to describe performance. Raw-score measures are listed with their confidence interval but not plotted.</p>
         <p><b>Change Analysis</b> charts plot both testings against the reliable-change interval for the selected method. Outcomes state significance only, never a direction.</p>
         <p><b>SD Index</b> charts plot change in SD units against the significance band. <b>Premorbid</b> charts show predicted vs achieved scores with prediction intervals and base rates, read directly from the tables.</p>
         <p>The Score Tables pane offers four axis modes: <i>Native metric</i>, <i>Percentile</i>, <i>Standard score</i> and <i>Raw scores</i>. Use <i>All charts</i> to see the full profile, or <i>One at a time</i> for a closer look with arrow-key paging.</p>
+        </div>
+      </aside>
+
+      <div class="viz-main">
+        <div class="viz-empty-card" id="viz-empty" hidden>
+          <div class="viz-empty-h">No scores to chart yet</div>
+          <p class="viz-empty-p">Charts are drawn from scores already entered on Score Tables, Change Analysis, the SD Index or the Premorbid page. Enter scores there and they appear here.</p>
+          <button class="btn" type="button" data-viz-goto="battery">Go to Score Tables</button>
+        </div>
+        <div class="viz-blocks" id="viz-grid"></div>
       </div>
-    </details>
+    </div>
   </section>
 
   <!-- ========== 04 SDI ========== -->
@@ -3224,12 +3234,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260923k"></script>
-<script src="app.js?v=20260923k"></script>
-<script src="design-system.js?v=20260923k" defer></script>
-<script src="app-effectsize-page.js?v=20260923k"></script>
-<script src="app-viz-page.js?v=20260923k"></script>
-<script src="app-profile-page.js?v=20260923k"></script>
+<script src="data.js?v=20260923m"></script>
+<script src="app.js?v=20260923m"></script>
+<script src="design-system.js?v=20260923m" defer></script>
+<script src="app-effectsize-page.js?v=20260923m"></script>
+<script src="app-viz-page.js?v=20260923m"></script>
+<script src="app-profile-page.js?v=20260923m"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
