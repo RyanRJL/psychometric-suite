@@ -112,10 +112,13 @@
   --ds-shadow-overlay: 0 1px 2px rgba(15,18,24,0.06), 0 8px 24px rgba(15,18,24,0.10), 0 24px 56px rgba(15,18,24,0.16);
 
   /* MOTION — 1 curve, 3 durations. Used everywhere. */
-  --ds-duration-instant: 80ms;
-  --ds-duration-fast:    160ms;
-  --ds-duration-slow:    260ms;
-  --ds-ease:             cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* One motion scale for the whole app (UI audit, 2026-09): these alias the
+     --t-* tokens in styles.css, which every transition now uses. There were
+     30 distinct durations and 16 easing curves across the two stylesheets. */
+  --ds-duration-instant: var(--t-fast);
+  --ds-duration-fast:    var(--t-base);
+  --ds-duration-slow:    var(--t-slow);
+  --ds-ease:             var(--ease);
 
   /* RING (focus) */
   --ds-ring-width: 2px;
@@ -818,9 +821,9 @@ button.btn-clear:hover:not(:disabled){
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(20,15,8,0.06);
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
+    border-color var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    transform var(--t-base) var(--ease);
 }
 .home-db-card:hover{
   border-color: var(--ds-primary);
@@ -861,7 +864,7 @@ button.btn-clear:hover:not(:disabled){
 .home-db-card-arrow{
   font-size: 16px;
   color: var(--ds-border-strong);
-  transition: color 180ms ease, transform 180ms ease;
+  transition: color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
   align-self: flex-end;
 }
 .home-db-card:hover .home-db-card-arrow{
@@ -1360,24 +1363,7 @@ kbd, .ds-kbd{
   .section{ padding-bottom: 120px !important; }   /* more clearance on phones */
 }
 
-/* Active "scrolling" state — chip visually recedes so it's not a hot spot
-   while the user is reading/scrolling content under it.
-   The .ds-chip-recede class is toggled by design-system.js on scroll. */
-.rb-chip{
-  transition:
-    transform 200ms var(--ds-ease),
-    opacity 200ms var(--ds-ease),
-    box-shadow 200ms var(--ds-ease) !important;
-}
-.ds-chip-recede .rb-chip{
-  opacity: 0.55;
-  transform: translateY(2px) scale(0.96);
-}
-/* Hover snaps to lifted position */
-.rb-chip:hover{
-  opacity: 1 !important;
-  transform: translateY(-4px) scale(1.03) !important;
-}
+
 
 /* ============================================================================
    29. SURFACE UNIFICATION — one rule, no exceptions
@@ -2307,7 +2293,7 @@ input[type="text"].ds-inline-bar-input{
   border-radius: 50%;
   cursor: help;
   outline: none;
-  transition: color 120ms ease, border-color 120ms ease, background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
   box-shadow: 0 1px 2px rgba(156,61,42,0.10);
 }
 .ds-prem-card-info svg{
@@ -2344,7 +2330,7 @@ input[type="text"].ds-inline-bar-input{
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms;
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), visibility var(--t-fast);
   z-index: 100;
   white-space: normal;
 }
@@ -2775,147 +2761,9 @@ input[type="text"].ds-inline-bar-input{
   outline: none !important;
 }
 
-/* ============================================================================
-   35. CHIP ORBIT LIGHT — bright green sweep around the chip on tab click.
-   Brighter, thicker, longer arc, bigger glow. Reads from across the
-   screen as a deliberate confirmation pulse.
-   ============================================================================ */
-@property --ds-orbit-angle{
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
-.rb-chip{
-  position: fixed;
-}
-/* Multicolour rainbow ring — always spinning, hue cycles continuously */
-.rb-chip::before{
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 999px;
-  padding: 3px;
-  background: conic-gradient(
-    from var(--ds-orbit-angle, 0deg),
-    transparent 0deg,
-    transparent 160deg,
-    rgba(139, 92, 246, 0.5)  190deg,
-    rgba(59,  130, 246, 1)   220deg,
-    rgba(6,   182, 212, 1)   248deg,
-    rgba(34,  197,  94, 1)   272deg,
-    rgba(234, 179,   8, 1)   296deg,
-    rgba(249, 115,  22, 1)   316deg,
-    rgba(236,  72, 153, 1)   338deg,
-    #FFFFFF                   354deg,
-    rgba(139,  92, 246, 1)   360deg
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0.45;
-  z-index: 2;
-  animation: rb-chip-orbit-spin 10s linear infinite, rb-chip-hue-cycle 14s linear infinite;
-}
-/* White spark chases the rainbow */
-.rb-chip::after{
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  padding: 2px;
-  background: conic-gradient(
-    from var(--ds-orbit-angle, 0deg),
-    transparent 0deg,
-    transparent 315deg,
-    rgba(255, 255, 255, 0.6)  340deg,
-    rgba(255, 255, 255, 1)    355deg,
-    transparent 360deg
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0.30;
-  z-index: 3;
-  filter: drop-shadow(0 0 3px rgba(255,255,255,0.70));
-  animation: rb-chip-orbit-spin 10s linear infinite;
-}
-
-/* Triggered orbit disabled — clashes with always-on rainbow ring */
-@keyframes rb-chip-orbit-spin{
-  0%   { --ds-orbit-angle: 0deg; }
-  100% { --ds-orbit-angle: 360deg; }
-}
-/* Hue-rotate the whole ring so the rainbow colour arc slowly drifts */
-@keyframes rb-chip-hue-cycle{
-  0%   { filter: hue-rotate(0deg)   drop-shadow(0 0 3px rgba(99,102,241,0.55)) drop-shadow(0 0 8px rgba(99,102,241,0.20)); }
-  25%  { filter: hue-rotate(90deg)  drop-shadow(0 0 3px rgba(34,197,94,0.55))  drop-shadow(0 0 8px rgba(34,197,94,0.20));  }
-  50%  { filter: hue-rotate(180deg) drop-shadow(0 0 3px rgba(249,115,22,0.55)) drop-shadow(0 0 8px rgba(249,115,22,0.20)); }
-  75%  { filter: hue-rotate(270deg) drop-shadow(0 0 3px rgba(236,72,153,0.55)) drop-shadow(0 0 8px rgba(236,72,153,0.20)); }
-  100% { filter: hue-rotate(360deg) drop-shadow(0 0 3px rgba(99,102,241,0.55)) drop-shadow(0 0 8px rgba(99,102,241,0.20)); }
-}
-
-/* Fallback for browsers without @property — rotate the entire pseudo */
-@supports not (background: conic-gradient(from var(--x, 0deg), red, blue)){
-  .rb-chip::before{
-    background: conic-gradient(
-      transparent 0deg,
-      transparent 180deg,
-      rgba(34, 197, 94, 0.35) 220deg,
-      rgba(22, 163, 74, 0.85) 280deg,
-      rgba(34, 197, 94, 1) 320deg,
-      #BBF7D0 348deg,
-      #FFFFFF 358deg,
-      rgba(34, 197, 94, 1) 360deg
-    );
-  }
-  .rb-chip::after{
-    background: conic-gradient(
-      transparent 0deg,
-      transparent 300deg,
-      rgba(255, 255, 255, 0.6) 330deg,
-      rgba(255, 255, 255, 1) 355deg,
-      transparent 360deg
-    );
-  }
-  .rb-chip.rb-chip-orbit::before,
-  .rb-chip.rb-chip-orbit::after{
-    animation: rb-chip-orbit-rotate 2.4s linear 1;
-  }
-  @keyframes rb-chip-orbit-rotate{
-    from { transform: rotate(0deg);   }
-    to   { transform: rotate(360deg); }
-  }
-}
-
-/* Subtle multicolour breathing glow */
-@keyframes rb-chip-ambient-glow{
-  0%  { box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0  8px 2px rgba(99, 102,241,0.30), 0 0 20px 6px rgba(99, 102,241,0.10); }
-  25% { box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0 10px 3px rgba(34, 197, 94,0.35), 0 0 22px 7px rgba(34, 197, 94,0.12); }
-  50% { box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0 10px 3px rgba(249,115, 22,0.32), 0 0 22px 7px rgba(249,115, 22,0.10); }
-  75% { box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0  9px 2px rgba(236, 72,153,0.30), 0 0 20px 6px rgba(236, 72,153,0.10); }
-  100%{ box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0  8px 2px rgba(99, 102,241,0.30), 0 0 20px 6px rgba(99, 102,241,0.10); }
-}
-@keyframes rb-chip-float{
-  0%, 100% { transform: translateY(0px);  }
-  50%       { transform: translateY(-7px); }
-}
-.rb-chip{
-  /* Calm at rest — no perpetual bob. Motion happens only on purpose:
-     the pulse when a table is captured, hover, and the count-badge bump. */
-  animation: none;
-}
-.ds-chip-recede .rb-chip{
-  animation-play-state: paused;
-}
-.rb-chip:hover{
-  animation-play-state: paused;
-}
+/* 35. The chip's rainbow orbit ring, its hue cycle, the ambient glow and the
+   float keyframes were removed in the 2026-09 UI audit: perpetual motion in
+   off-palette colours on a clinical tool. See WORKING REPORT DOCK below. */
 
 /* ============================================================================
    33. REMOVED FEATURE — Lock/Unlock norms toggle
@@ -3053,7 +2901,7 @@ input[type="text"].ds-inline-bar-input{
   background: var(--ds-surface, #FFFFFF) !important;
   cursor: pointer !important;
   line-height: 1.2 !important;
-  transition: background-color 140ms var(--ds-ease, ease), border-color 140ms var(--ds-ease, ease);
+  transition: background-color var(--t-fast) var(--ds-ease, var(--ease)), border-color var(--t-fast) var(--ds-ease, var(--ease));
 }
 .combo-indented-row .combo-item.combo-indented:hover{
   background: #F8F6EF !important;
@@ -3361,7 +3209,7 @@ input[type="text"].ds-inline-bar-input{
   align-items: center !important;
   justify-content: center !important;
   gap: 0 !important;
-  transition: background 120ms ease, color 120ms ease !important;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease) !important;
 }
 #premorbid.ds-prem-restructured .pre-tabs > .tab:hover:not(.active){
   background: rgba(20,15,5,0.025) !important;
@@ -3513,7 +3361,7 @@ input[type="text"].ds-inline-bar-input{
   font-size: 13px;
   color: var(--ds-text-faint);
   border-bottom: 1px dashed var(--ds-border);
-  transition: color 220ms var(--ds-ease);
+  transition: color var(--t-base) var(--ds-ease);
 }
 .ds-prem-ticks-row:last-child{ border-bottom: 0; }
 .ds-prem-ticks-row.is-ready{ color: var(--ds-text); }
@@ -3531,9 +3379,9 @@ input[type="text"].ds-inline-bar-input{
   position: relative;
   flex-shrink: 0;
   transition:
-    background-color 220ms var(--ds-ease),
-    border-color 220ms var(--ds-ease),
-    transform 220ms var(--ds-ease);
+    background-color var(--t-base) var(--ds-ease),
+    border-color var(--t-base) var(--ds-ease),
+    transform var(--t-base) var(--ds-ease);
 }
 .ds-prem-ticks-row.is-ready .ds-prem-ticks-mark{
   background: #15803d;
@@ -3550,7 +3398,7 @@ input[type="text"].ds-inline-bar-input{
   border-bottom: 1.6px solid white;
   transform: translate(-50%, -65%) rotate(-45deg) scale(0);
   transform-origin: center;
-  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--t-slow) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .ds-prem-ticks-row.is-ready .ds-prem-ticks-mark::after{
   transform: translate(-50%, -65%) rotate(-45deg) scale(1);
@@ -3825,7 +3673,7 @@ input[type="text"].ds-inline-bar-input{
   cursor: pointer;
   letter-spacing: 0.01em;
   white-space: nowrap;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 .bat-prem-link-btn svg{ width: 13px; height: 13px; flex: 0 0 auto; }
 .bat-prem-link-btn:hover:not(:disabled){
@@ -3873,7 +3721,7 @@ input[type="text"].ds-inline-bar-input{
   border-radius: 6px;
   cursor: pointer;
   font-family: var(--sans);
-  transition: background 120ms ease;
+  transition: background var(--t-fast) var(--ease);
 }
 .bat-prem-link-option:hover{ background: rgba(20,15,5,0.04); }
 .bat-prem-link-option-name{
@@ -3954,7 +3802,7 @@ input[type="text"].ds-inline-bar-input{
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .bat-prem-link-clear:hover{ background: rgba(20,15,5,0.08); color: #1A1A1A; }
 
@@ -4061,7 +3909,7 @@ input[type="text"].ds-inline-bar-input{
   color: var(--ink-3, #9A9A9A);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
 .bat-raw-toggle:hover,
 .bat-raw-toggle.is-active{
@@ -4193,7 +4041,7 @@ input[type="text"].ds-inline-bar-input{
   border-radius: 6px;
   padding: 5px 12px;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   min-width: 130px;
   text-align: center;
 }
@@ -4775,152 +4623,9 @@ input[type="number"].ds-patient-field-input{
   outline-offset: 1px;
 }
 
-/* ============================================================================
-   42. MISSING-AGE POPOVER — anchored to the Score CI toggle
-
-   Opens on the transition into "an age would now change a printed number" and
-   carries its own input, so the ask is also the fastest way to answer it.
-
-   DELIBERATELY NOT A MODAL. There is no backdrop and nothing is dimmed. The
-   age is optional — blank falls back to the publisher's own all-ages
-   coefficient, which is equally citable — and an overlay that blocked the page
-   would read as "required" whatever the buttons said. Primary tint, never
-   --ds-warning or --ds-destructive, for the same reason.
-
-   Shown by a CLASS with display:none as the owned default, never [hidden]:
-   the attribute lost that fight before against an element's own display.
-   ============================================================================ */
-.ds-age-pop{
-  display: none;
-  position: fixed;
-  z-index: 9200;                 /* above the working-report onboarding (8999) */
-  width: 320px;
-  max-width: calc(100vw - 24px);
-  padding: 14px 15px 12px;
-  border: 1px solid rgba(20,15,8,0.14);
-  border-radius: var(--ds-radius-lg);
-  box-shadow: var(--ds-shadow-overlay);
-  font-family: var(--sans);
-  color: var(--ds-text);
-  /* Opaque fallback first — backdrop-filter is unsupported in some browsers
-     and a translucent panel with no blur is unreadable over a data table. */
-  background: var(--ds-surface);
-}
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
-  .ds-age-pop{
-    background: rgba(253,250,246,0.78);
-    -webkit-backdrop-filter: blur(14px) saturate(1.5);
-    backdrop-filter: blur(14px) saturate(1.5);
-  }
-}
-.ds-age-pop.is-open{
-  display: block;
-  animation: ds-age-pop-in var(--ds-duration-slow) var(--ds-ease);
-}
-@keyframes ds-age-pop-in{
-  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0)    scale(1); }
-}
-@media (prefers-reduced-motion: reduce){
-  .ds-age-pop.is-open{ animation: none; }
-}
-
-/* Points back at the CI toggle. Inherits the panel's translucency so the glass
-   reads as one surface rather than a box with a solid tab stuck on it. */
-.ds-age-pop-arrow{
-  position: absolute;
-  top: -6px;
-  width: 11px;
-  height: 11px;
-  transform: rotate(45deg);
-  background: inherit;
-  border-left: 1px solid rgba(20,15,8,0.14);
-  border-top: 1px solid rgba(20,15,8,0.14);
-  border-radius: 2px 0 0 0;
-}
-.ds-age-pop-title{
-  font-size: var(--ds-text-base);
-  font-weight: var(--ds-weight-semibold);
-  letter-spacing: var(--ds-tracking-tight);
-  color: var(--ds-text);
-  margin-bottom: 5px;
-}
-.ds-age-pop-body{
-  font-size: var(--ds-text-sm);
-  line-height: var(--ds-leading-snug);
-  color: var(--ds-text-muted);
-  margin-bottom: 11px;
-}
-.ds-age-pop-body strong{
-  font-weight: var(--ds-weight-semibold);
-  color: var(--ds-text);
-}
-.ds-age-pop-row{
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-}
-/* Armed throughout: styles.css declares padding, font-size and border-radius
-   with !important on a bare input[type="number"] selector, which beats any
-   non-important rule however specific. Same reason .ds-patient-field-input is
-   armed — see the note there. */
-input.ds-age-pop-input,
-input[type="number"].ds-age-pop-input{
-  flex: 1 !important;
-  min-width: 0 !important;
-  width: auto !important;
-  height: 32px !important;
-  padding: 0 10px !important;
-  background: var(--ds-surface) !important;
-  border: 1px solid var(--ds-border-strong) !important;
-  border-radius: var(--ds-radius-sm) !important;
-  font-family: var(--sans) !important;
-  font-size: var(--ds-text-sm) !important;
-  color: var(--ds-text) !important;
-  box-shadow: none !important;
-  box-sizing: border-box !important;
-}
-.ds-age-pop-input:focus{
-  outline: none;
-  border-color: var(--ds-primary);
-  box-shadow: 0 0 0 3px var(--ds-primary-tint) !important;
-}
-.ds-age-pop-add{
-  flex-shrink: 0;
-  height: 32px;
-  padding: 0 16px;
-  background: var(--ds-primary);
-  border: 1px solid var(--ds-primary);
-  border-radius: var(--ds-radius-sm);
-  font-family: var(--sans);
-  font-size: var(--ds-text-sm);
-  font-weight: var(--ds-weight-semibold);
-  color: var(--ds-text-inverse);
-  cursor: pointer;
-}
-.ds-age-pop-add:hover{ background: var(--ds-primary-hover); border-color: var(--ds-primary-hover); }
-/* The skip is a plain link, not a second button: it is the do-nothing option
-   and must not compete with Add, but it names the real alternative rather than
-   saying "Dismiss" or "Not now". */
-.ds-age-pop-skip{
-  display: block;
-  margin: 9px 0 0;
-  padding: 2px 0;
-  background: none;
-  border: none;
-  font-family: var(--sans);
-  font-size: var(--ds-text-xs);
-  color: var(--ds-text-subtle);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-.ds-age-pop-skip:hover{ color: var(--ds-text-muted); }
-.ds-age-pop-add:focus-visible,
-.ds-age-pop-skip:focus-visible{
-  outline: var(--ds-ring-width) solid var(--ds-primary-ring);
-  outline-offset: 2px;
-}
+/* 42. The missing-age popover was replaced by the inline required-age bar
+   (owner decision, 2026-08); its styles were removed in the 2026-09 UI audit.
+   The residual state and the landing pulse below are still live. */
 
 /* THE RESIDUAL STATE. What a clinician sees if the popover was skipped, or
    fired while they were looking at the table rather than the top bar. Purely
@@ -5097,7 +4802,7 @@ input[type="number"].ds-age-pop-input{
   align-items: center;
   justify-content: center;
   box-shadow: 0 1px 5px rgba(20,15,8,0.08);
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition: border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), transform var(--t-base) var(--ease);
 }
 .home-dial-dot svg{ width: 23px; height: 23px; }
 .home-dial-label{
@@ -5106,7 +4811,7 @@ input[type="number"].ds-age-pop-input{
   letter-spacing: -0.01em;
   line-height: 1.25;
   color: var(--ds-text);
-  transition: color 180ms ease;
+  transition: color var(--t-base) var(--ease);
 }
 
 /* Every rule from here down is !important, and it is not decoration.
@@ -5157,7 +4862,7 @@ input[type="number"].ds-age-pop-input{
   right: 30px;
   margin: 0;
   text-align: center;
-  transition: opacity 160ms ease;
+  transition: opacity var(--t-base) var(--ease);
 }
 .home-dial-hub-rest{
   display: flex;
@@ -5629,32 +5334,46 @@ input[type="number"].ds-age-pop-input{
   padding: 8px 14px; border-bottom: 1px solid var(--ds-border);
   background: var(--ds-surface-sunken, transparent);
 }
+/* The instrument choice is a TAB (it changes what the page shows), so it
+   takes the app's tab look: the Premorbid and Change Analysis tabs, cream
+   when active with a 3px accent rule beneath. */
 .prof-inst{
-  font: inherit; font-size: var(--ds-text-sm); padding: 4px 12px;
-  border: 1px solid var(--ds-border-strong); border-radius: var(--ds-radius-full);
-  background: var(--ds-surface); color: var(--ds-text-subtle);
+  font: inherit; font-size: 13px; font-weight: 500; padding: 8px 14px;
+  border: 0; border-radius: 6px 6px 0 0; position: relative;
+  background: transparent; color: var(--ds-text-muted);
   cursor: pointer; white-space: nowrap;
+  transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
-.prof-inst.prof-on{
-  background: var(--ds-text); color: var(--ds-surface);
-  border-color: var(--ds-text); font-weight: 500;
+.prof-inst:hover{ color: var(--ds-text); }
+.prof-inst.prof-on{ background: #F0E8D6; color: var(--ds-text); font-weight: 600; }
+.prof-inst.prof-on::after{
+  content: ''; position: absolute; left: 0; right: 0; bottom: -9px; height: 3px;
+  background: var(--ds-primary);
 }
 .prof-strip-head{
   display: flex; align-items: center; justify-content: space-between;
   gap: var(--ds-space-3); flex-wrap: wrap;
   padding: 8px 14px; border-bottom: 1px solid var(--ds-border);
 }
+/* The level switch is a SETTING, so it takes the app's one segmented-control
+   look (the Score CI and classification toggles, .ds-inline-bar-toggle):
+   a sunken track with the chosen segment lifted. It was a black pill of its
+   own, a fourth switch style (UI audit, 2026-09). */
 .prof-lvls{
-  display: inline-flex; background: var(--ds-surface);
-  border: 1px solid var(--ds-border-strong); border-radius: var(--ds-radius-full);
-  overflow: hidden;
+  display: inline-flex; gap: 2px; padding: 3px;
+  background: var(--ds-surface-emphasis, #EDE8E0);
+  border: 1px solid var(--ds-border); border-radius: 6px;
 }
 .prof-lvl{
-  font: inherit; font-size: var(--ds-text-sm); padding: 4px 12px;
-  border: 0; background: transparent; color: var(--ds-text-subtle);
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 0 12px; height: 26px;
+  border: 0; border-radius: 4px; background: transparent; color: var(--ds-text-muted);
   cursor: pointer; white-space: nowrap;
+  transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
-.prof-lvl.prof-on{ background: var(--ds-text); color: var(--ds-surface); font-weight: 500; }
+.prof-lvl.prof-on{
+  background: var(--ds-surface); color: var(--ds-text);
+  box-shadow: 0 1px 0 rgba(15,18,24,0.04), 0 1px 3px rgba(15,18,24,0.08);
+}
 .prof-lvl:disabled{ opacity: .4; cursor: not-allowed; }
 .prof-crit{
   display: inline-flex; align-items: center; gap: var(--ds-space-2);
@@ -5839,3 +5558,435 @@ input[type="number"].ds-age-pop-input{
 
 /* [hidden] must win over the card's own box styling. */
 .viz-empty-card[hidden]{ display: none; }
+
+/* =====================================================================
+   APP FRAME (UI audit, 2026-09)
+
+   The app is meant to read as one window, not a document: top bar, a
+   working area, and a status bar, with nothing scrolling on a tool page
+   at a laptop size (checked at 1366 x 768 and 1440 x 900).
+
+   1. ONE PAGE WIDTH AND ONE PADDING. Twelve pages had eight widths
+      (1040 to 1480 px, or none) and top padding of 20, 24 or 32 px over
+      bottom padding of 8 to 100 px, so the content jumped sideways on
+      every navigation. Every page now takes the padding below, and one
+      of three widths, each for a reason: WORKSPACES are full width
+      (Profile Analysis and Score Charts by owner decision, 2026-09;
+      Performance Validity and Change Analysis, which already were, because
+      their multi-column sheets were built for it and capping them at 1320
+      truncated Validity's cut-off selects; and the twelve-column Data
+      table); SINGLE-PANEL tools take --page-max; and the two reading pages
+      (Methods & References, Privacy & use) keep a 1100 px measure so
+      their prose stays a readable line length.
+
+      The deep bottom padding existed only to keep the last row clear of
+      the floating report chip. The chip now lives in the status bar, so
+      that clearance is dead space and is gone.
+
+      Selectors are id-scoped with `body` in front and carry !important
+      on purpose: the per-page rules they replace are id-scoped and some
+      are !important themselves (#change-analysis.section), so nothing
+      weaker reaches them. The superseded rules are left where they are
+      and lose; that is the design-system layering this file exists for.
+
+   2. THE FOOTER IS A FIXED STATUS BAR. In the flow it was part of every
+      page's height budget and pushed most of them past the fold. Fixed,
+      it is always visible, and body padding-bottom reserves exactly its
+      height so the last row is never under it. --footer-h is measured,
+      not assumed (syncAppFrame, app.js), because the privacy line wraps
+      to two lines on a narrow window. The report chip sits in the bar's
+      right-hand end, and --rb-chip-slot keeps the footer's own text out
+      of that slot, which is what stops the chip covering it.
+   ===================================================================== */
+:root{
+  --page-max: 1320px;
+  --page-pad-x: 40px;
+  --page-pad-top: 24px;
+  --page-pad-bottom: 24px;
+  --page-max-reading: 1100px;
+  --footer-h: 44px;          /* layout px; re-measured by syncAppFrame() */
+  --rb-chip-slot: 280px;     /* layout px; re-measured by syncAppFrame() */
+}
+@media (max-width: 900px){
+  :root{ --page-pad-x: 20px; }
+}
+
+body #converter.section,
+body #battery.section,
+body #effectsize.section,
+body #profile.section,
+body #validity.section,
+body #charts.section,
+body #change-analysis.section,
+body #premorbid.section,
+body #custom-tests.section,
+body #about.section,
+body #privacy-use.section{
+  max-width: var(--page-max) !important;
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom) !important;
+}
+body #profile.section,
+body #charts.section,
+body #validity.section,
+body #change-analysis.section,
+body #custom-tests.section{ max-width: none !important; }
+body #about.section,
+body #privacy-use.section{ max-width: var(--page-max-reading) !important; }
+
+/* Home is one centred object: symmetric padding, and the dial fills the
+   window between the top bar and the status bar. 100vh / 0.9 converts the
+   window to layout px (body zoom; see the note on .home-dial above). */
+body #home.section{
+  padding-top: var(--page-pad-top) !important;
+  padding-bottom: var(--page-pad-top) !important;
+}
+body .home-dial{
+  min-height: calc(100vh / 0.9 - var(--topbar-h, 108px) - var(--footer-h) - 2 * var(--page-pad-top));
+}
+
+/* ---- the status bar ---- */
+body{ padding-bottom: var(--footer-h) !important; }
+body .site-footer{
+  position: fixed !important;
+  left: 0; right: 0; bottom: 0;
+  z-index: 55;                               /* under the top bar (60) and the report (9000+) */
+  margin: 0 !important;
+  padding: 6px var(--rb-chip-slot) 6px var(--page-pad-x) !important;
+  background: var(--ds-bg) !important;       /* opaque: content scrolls beneath it */
+  border-top: 1px solid var(--ds-border) !important;
+}
+body .site-footer-inner{
+  max-width: none;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-6);
+}
+body .site-footer-inner .ds-version-stamp{ flex-shrink: 0; }
+body .site-footer-privacy{
+  margin-left: auto;
+  text-align: right;
+  min-width: 0;
+}
+@media (max-width: 900px){
+  body .site-footer-inner{ flex-wrap: wrap; gap: var(--ds-space-2) var(--ds-space-4); }
+  body .site-footer-privacy{ margin-left: 0; text-align: left; }
+}
+
+/* =====================================================================
+   WORKING REPORT DOCK (UI audit, 2026-09)
+
+   THE CHIP LIVES IN THE STATUS BAR. It floated 20px above the window's
+   corner, over whatever was there: the footer's privacy line at every
+   width, and the last button of a long Score Tables table. Compact and
+   centred in the bar, it covers nothing, and --rb-chip-slot keeps the
+   bar's own text clear of it. No shadow stack, no hover lift and no
+   ambient motion: it is a control in a toolbar now, not a floating
+   object. The capture pulse (rb-flash) and the count bump stay, because
+   those say something happened.
+
+   THE DRAWER DOCKS. Open, it is a full-height panel between the top bar
+   and the status bar, and where the window has room the page narrows
+   beside it (body.rb-docked, set by applyDock in app.js, which also owns
+   the widths). The floating version covered the right half of the page,
+   which on Score Tables is Score, Percentile and Classification: the very
+   columns the report is checked against. On a window too narrow to leave
+   the page a usable width it overlays instead (.is-overlay).
+
+   The chip stays visible while the drawer is open, as a pressed toggle,
+   rather than being hidden: docked, it sits directly under the panel it
+   opens, which is the toolbar-toggle pattern, not a duplicate.
+   ===================================================================== */
+body .rb-chip{
+  right: 16px;
+  bottom: calc((var(--footer-h) - 32px) / 2);
+  height: 32px;
+  padding: 0 12px 0 5px;
+  gap: 8px;
+  font-size: 12px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 1px 2px rgba(0,0,0,0.18);
+  transition: background-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+body .rb-chip:hover{
+  transform: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 0 0 3px rgba(156,61,42,0.18);
+}
+body .rb-chip-icon{ width: 22px; height: 22px; }
+body .rb-chip-count{ height: 20px; min-width: 20px; }
+body .rb-root.is-open .rb-chip{
+  box-shadow: inset 0 0 0 1.5px var(--ds-primary), 0 0 0 3px rgba(156,61,42,0.18);
+}
+
+/* Everything that floats above the chip starts just above the status bar. */
+body .rb-add-prompt,
+body .rb-offer-box,
+body .rb-onboarding,
+body .rb-kofi-toast{ bottom: calc(var(--footer-h) + 12px); }
+
+body .rb-root.is-open .rb-drawer{
+  top: var(--topbar-h, 108px) !important;
+  bottom: var(--footer-h) !important;
+  right: 0 !important;
+  width: var(--rb-dock-w, 560px) !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  border: 0 !important;
+  border-left: 1px solid var(--ds-border) !important;
+  border-radius: 0 !important;
+  box-shadow: -1px 0 0 rgba(15,18,24,0.02) !important;
+  transform-origin: right center;
+  animation: rb-dock-in var(--t-slow) var(--ease);
+  transition: width var(--t-slow) var(--ease);
+}
+body .rb-root.is-maximised.is-open .rb-drawer{
+  width: var(--rb-dock-w, 800px) !important;
+  max-height: none !important;
+}
+/* Overlaying rather than docked: the page is not narrowed, so the panel
+   needs the shadow that says it is on top of something. */
+body .rb-root.is-overlay .rb-drawer{
+  box-shadow: -12px 0 32px rgba(15,18,24,0.14) !important;
+}
+body .rb-root.is-closing .rb-drawer{
+  animation: rb-dock-out 180ms var(--ease) forwards;
+}
+@keyframes rb-dock-in{
+  from{ transform: translateX(32px); opacity: 0; }
+  to  { transform: none;             opacity: 1; }
+}
+@keyframes rb-dock-out{
+  from{ transform: none;             opacity: 1; }
+  to  { transform: translateX(32px); opacity: 0; }
+}
+/* Docked, the panel is narrower than the floating drawer was, and its five
+   actions no longer fit one row. Left to wrap, they broke into three ragged
+   rows. So two deliberate rows: what the report IS (New report, Merge by
+   battery) above, and what to DO with it (Copy, Excel, Word) below,
+   right-aligned. The right-hand wrapper steps aside (display:contents) so
+   its buttons can be ordered with the rest, and the bar's ::before is the
+   full-width break between the rows. */
+body .rb-root.is-open .rb-drawer-actions{ flex-wrap: wrap; row-gap: 8px; justify-content: flex-start; }
+body .rb-root.is-open .rb-actions-right{ display: contents; }
+body .rb-root.is-open .rb-drawer-actions > .rb-action-clear{ order: 1; }
+body .rb-root.is-open .rb-drawer-actions .rb-action-merge{ order: 2; }
+body .rb-root.is-open .rb-drawer-actions::before{ content: ''; order: 3; flex-basis: 100%; height: 0; }
+body .rb-root.is-open .rb-drawer-actions .rb-action-copy{ order: 4; margin-left: auto; }
+body .rb-root.is-open .rb-drawer-actions .rb-action-export-excel{ order: 5; }
+body .rb-root.is-open .rb-drawer-actions .rb-action-export{ order: 6; }
+/* The page narrows beside it, and Score Tables' premorbid bar is the one
+   control row that ran out of width: it truncated its own label to "PRE...".
+   It wraps instead, label intact. */
+body .ds-prem-card{ flex-wrap: wrap !important; row-gap: 8px; }
+body .ds-prem-card-header{ flex-shrink: 0 !important; white-space: nowrap; }
+body .main{ transition: margin-right var(--t-slow) var(--ease); }
+body.rb-docked .main{ margin-right: var(--rb-dock-w, 560px); }
+
+/* =====================================================================
+   ONE LOOK PER CONTROL (UI audit, 2026-09)
+
+   Two kinds of switch, one look each. A TAB changes what the page shows:
+   white strip, cream active tab with a 3px accent rule (Premorbid, Change
+   Analysis, Performance Validity, Profile's instruments, and now Effect
+   Sizes). A SEGMENTED CONTROL changes a setting: sunken track, lifted
+   segment (Score CI, classification, Profile's level). Effect Sizes had a
+   third look, lettered pill tabs with a green OR badge between them.
+   ===================================================================== */
+body #effectsize .es-tabs{
+  display: flex !important; gap: 0 !important;
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  width: max-content;
+}
+body #effectsize .es-tab{
+  flex: 0 0 auto !important;
+  padding: 11px 20px !important;
+  top: 0 !important;
+  border: 0 !important; border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  position: relative;
+}
+body #effectsize .es-tab + .es-tabs-or + .es-tab,
+body #effectsize .es-tab + .es-tab{ border-left: 1px solid var(--ds-border) !important; }
+body #effectsize .es-tab:hover{ background: rgba(26,26,26,0.025) !important; }
+body #effectsize .es-tab.is-active{ background: #F0E8D6 !important; }
+body #effectsize .es-tab.is-active::after{
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background: var(--ds-primary);
+}
+body #effectsize .es-tab-num,
+body #effectsize .es-tab-sub,
+body #effectsize .es-tabs-or{ display: none !important; }
+body #effectsize .es-tab-title{ font-size: 13.5px !important; }
+
+/* Change Analysis prints its method's formula at the top of the method's
+   own card (moved there by the builder in index.html). Standalone class:
+   the .section-desc it used to borrow is hidden inside method panels. */
+/* The legacy settings grid is emptied (its controls are driven from the
+   inline bar) but was still laid out with a 24px bottom margin: a ghost gap
+   under the formula line. Margin only; the grid itself stays, since the
+   inline bar remote-controls the controls inside it. */
+body #change-analysis .change-setup-grid.ds-legacy-hidden{ margin: 0 !important; }
+/* The method strip carried its own 1320px cap while the card beneath it is
+   full width, so on a wide window the strip stopped short of the card. */
+body #change-analysis .change-flow-side{ max-width: none !important; }
+.change-formula-line{
+  margin: -6px 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ds-text-muted);
+}
+
+/* Change Analysis's action row matches Score Tables': "+ Add row" on the
+   left, a quiet bordered "Clear all" pushed right, a hairline above. The
+   Score Tables rules are page-scoped (#battery ...), so these repeat them
+   for this page rather than widening those. */
+body #change-analysis .add-row-actions{
+  display: flex !important; align-items: center !important; gap: 10px !important;
+  margin-top: 14px !important; padding-top: 12px !important;
+  border-top: 1px solid rgba(20,15,5,0.06) !important;
+}
+body #change-analysis .add-row-actions .add-row-btn,
+body #change-analysis .add-row-actions .btn:not(.btn-clear){
+  padding: 8px 14px !important; font-size: 12.5px !important;
+}
+body #change-analysis .add-row-actions .btn-clear{
+  margin-left: auto !important;
+  padding: 6px 12px !important;
+  font-size: 11.5px !important;
+  color: #9A968D !important;
+  background: transparent !important;
+  border: 1px solid rgba(20,15,5,0.10) !important;
+  border-radius: 4px !important;
+  min-height: 0 !important;
+}
+body #change-analysis .add-row-actions .btn-clear:hover{
+  color: #9C3D2A !important;
+  border-color: rgba(156,61,42,0.30) !important;
+  background: rgba(156,61,42,0.04) !important;
+}
+
+/* =====================================================================
+   FITTING THE WINDOW (UI audit, 2026-09)
+
+   With the frame above, two tool pages still ran past a 1366 x 768
+   window. Each is tightened where its height actually came from,
+   measured on the rendered page rather than guessed.
+
+   Score Converter: the Score Equivalents column (five rows at 16px
+   padding, 47px each) set the height of the whole row, taller than the
+   curve beside it. 10px rows keep it just under the curve. The panel's
+   18px bottom margin sat on top of the page's own bottom padding.
+   ===================================================================== */
+body #converter .conv-scores-strip > *{
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+body #converter .conv-unified-panel{
+  row-gap: 14px !important;
+  margin-bottom: 0 !important;
+}
+
+/* Performance Validity: the About overview's seven rows were 62px each
+   (14px cell padding around a two-line title and citation), which alone
+   took the page 82px past the fold. The Change Analysis About table uses
+   the same row design, so it takes the same padding and the two stay alike. */
+body #validity .pvt-overview-row td,
+body #change-analysis .change-overview-table td{
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+body #validity .pvt-refs{ margin-top: 12px !important; }
+
+/* Premorbid, ToPF and OPIE-4 tabs: the model / index column was squeezed
+   by six numeric columns with room to spare, so "Verbal Comprehension Index"
+   wrapped to three lines and every row roughly doubled. The name stays on one
+   line, keeping the right padding its "?" tip is positioned in (styles.css
+   gives 34px, a later rule had taken it back to 14px, so long names ran under
+   the icon), and the rows and the Achieved box take Score Tables'
+   density. */
+body #premorbid .pre-results-table td.model{ white-space: nowrap; }
+body #premorbid .pre-results-table td.model.model-has-tip{ padding-right: 34px !important; }
+body #premorbid .pre-results-table tbody td,
+body #premorbid .pre-results-table tbody td.achieved-cell{
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
+}
+body #premorbid .pre-results-table tbody input{
+  height: 26px !important;
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
+}
+/* The group rows, header and the note above the OPIE-4 table (the UK
+   caveat, which must stay above the table) give up spacing, not content. */
+body #premorbid .pre-results-table tr.group-row td{
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+body #premorbid .pre-results-table thead th{
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+body #premorbid .pre-tab-content > .info-box{
+  margin-top: 0 !important;
+  margin-bottom: 12px !important;
+}
+body #premorbid .pre-tab-content{
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+/* Performance Validity's description, moved into the top of the sheet by
+   pvtSyncDesc (app.js). Same treatment as Change Analysis's formula line. */
+.pvt-desc-line{
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ds-text-muted);
+}
+
+/* Effect Sizes. The twelve result cards carried a 78px min-height around
+   about 40px of content, and group-data mode adds a 195px input panel above
+   the same results, which took it 182px past a 1366 x 768 window. The cards
+   take their content height; the spacing around the panels drops to the
+   page's 10px rhythm; and in group-data mode only, the distribution curve
+   gives up height (it scales, keeping its aspect) so the numbers stay on
+   screen. Statistic mode keeps its full-height curve. */
+body #effectsize .es-result-card{
+  min-height: 0 !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+body #effectsize .es-tabs-wrap{ margin-bottom: 10px !important; }
+body #effectsize .es-input-panel{
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 10px !important;
+}
+body #effectsize .es-output-row{ margin-bottom: 0 !important; row-gap: 10px !important; }
+body #effectsize .es-view-pane:has(> .info-box){
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+body #effectsize .es-view-pane:has(> .es-collapse){
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+body #effectsize .es-collapse{ margin-top: 0 !important; }
+body #effectsize .es-collapse-summary{
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+  margin-bottom: 0 !important;
+}
+body #effectsize .es-group{ padding-top: 10px !important; padding-bottom: 10px !important; }
+body #effectsize .es-groups{ margin-bottom: 8px !important; }
+body #effectsize .es-pooled,
+body #effectsize .es-pooled-item{ padding-top: 4px !important; padding-bottom: 4px !important; }
+#effectsize:has(.es-tab.is-active[data-mode="groups"]) .es-curve{ height: auto !important; }
+#effectsize:has(.es-tab.is-active[data-mode="groups"]) .es-curve svg{ height: 170px !important; }
+/* Set for a moment by pageFitsDocked (app.js) while it lays the page out
+   docked and undocked to compare them: no transition may run, or the second
+   layout would be read part way through the first's margin change. */
+body.rb-measuring .main{ transition: none !important; }

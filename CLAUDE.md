@@ -201,6 +201,67 @@ Three things that bit while wiring it, all found by driving the real page:
 - **The `ResizeObserver` watches the TABLE, never the box.** The box's height is
   what this code writes, so observing it would feed its own output back in.
 
+### The app frame: a fixed status bar, three widths, nothing scrolls
+
+UI audit, 2026-09. The app is meant to read as one window. At **1366 x 768, 1440 x 900 and
+1920 x 1080, all 27 views** (every page, every Validity / Premorbid / Change Analysis tab,
+both Effect Sizes modes) fit with no page scroll, report open or closed. §55 pins what
+made that true. Three things to know before touching layout:
+
+- **The footer is a fixed status bar** (`APP FRAME`, end of `design-system.css`). Body
+  `padding-bottom` reserves `--footer-h`, which `syncAppFrame()` (`app.js`) **measures**,
+  since the privacy line wraps on a narrow window. **Every fitter that sizes something to
+  "the window" must subtract it**: `fitTableViewports` and `profFitMethod` call
+  `footerVisualHeight()`, the Score Charts fit reads the footer's rect. Forget it and a
+  box's last row sits under the bar with nothing thrown. The report chip lives in the
+  bar's right end; `--rb-chip-slot` keeps the footer text out from under it.
+- **Three widths, not eight.** Workspaces are full width (Profile, Charts, Validity,
+  Change Analysis, Data); single-panel tools take `--page-max` (1320); the two reading
+  pages keep 1100. Every page shares `--page-pad-*`. The deep 80 to 100 px bottom paddings
+  existed only to clear the old floating chip and are gone. **A new page must join the
+  list** or it brings its own width back.
+- **Pages were tightened where their height actually came from**, each measured, never
+  by shrinking type: Converter's equivalents rows, Validity's overview rows (and its
+  sources box moved under the result, which balanced a 555 px card against a 140 px
+  column), Premorbid's results table (the model column was wrapping names to three lines;
+  its "?" tip had lost its 34 px padding to a later rule), and Effect Sizes' result cards
+  (a 78 px `min-height` around 40 px of content). In group-data mode only, the Effect
+  Sizes curve drops to 170 px, keeping its aspect.
+
+#### The Working Report docks, but only where the page still fits
+
+Open, the drawer is a full-height panel between the top bar and the status bar, and
+where there is room **the page narrows beside it** (`body.rb-docked`), so the scores and
+the report are on screen together. The floating version covered the right half of the
+page, which on Score Tables is Score, Percentile and Classification.
+
+**A width rule alone was wrong**: at 1366 it docked Premorbid with its results table
+running under the panel, Effect Sizes' input row likewise, and Profile gained 140 px of
+scroll. So `pageFitsDocked()` lays the page out both ways, synchronously with transitions
+off (`rb-measuring`), and docks only if nothing spills sideways (`section.scrollWidth`)
+and it scrolls no further than undocked. Otherwise it overlays (`.is-overlay`). The
+decision is re-made on resize, on navigation and after any click in the page, since a
+tab or mode switch changes what is on screen without resizing anything. At 1366 Score
+Tables, Change Analysis, Converter, Charts and Data dock; at 1920 everything does.
+
+Docked, a click on the page is work, not a dismissal, so the outside-click close applies
+to the overlay only, and Escape closes it only from inside the report. The chip stays
+visible as the toggle (pressed while open, `aria-expanded`). The header counts **tables**,
+as the chip does: a merged battery is one card holding several.
+
+#### Transitions
+
+One motion scale: `--t-fast` 120 ms, `--t-base` 180 ms, `--t-slow` 280 ms and one easing
+curve, `--ease`. The `--ds-duration-*` tokens alias them. Every `transition` in both
+stylesheets uses a token (there were 30 durations and 16 curves); §55 fails on a literal.
+
+Page changes: **the top bar holds still** and only the page title crossfades. The whole
+bar used to crossfade, doubling the logo and buttons for 140 ms. **The view-transition
+name is on `.rb-chip` and the open drawer, never `.rb-root`**: the root is a 0x0 fixed
+box whose children are fixed themselves, so its snapshot was empty and the chip vanished
+for the length of every navigation. The chip has no ambient motion (the rainbow orbit
+ring and scroll-fade were removed); only the capture pulse and count bump remain.
+
 ### `display:flex` on a table cell inflates the row
 
 The Change Analysis rows were 44.2px against the Score Converter's 28px for the
@@ -403,7 +464,10 @@ comes from either side, and the split is the whole design:
 
 The other three offer themselves through a **floating card** in the corner the
 Working Report already owns, above the chip where `.rb-add-prompt` sits
-(`refreshConsentControls`). **Three homes were tried; two of them fail**, and all
+(`refreshConsentControls`). Since the chip moved into the status bar (2026-09) the card,
+the pills, the onboarding bubble and the Ko-fi toast all start 12 px above the bar
+(`calc(var(--footer-h) + 12px)`, and `pillBaseBottom()` for the pills' inline offsets).
+**Three homes were tried; two of them fail**, and all
 of it was settled by driving the real UI rather than reading the markup:
 
 - **The APA toolbar.** `styles.css` hides every page's inline APA panel outright
@@ -1318,6 +1382,7 @@ top bar and absent from the ring every other tool sits on.
 | `PAGE_TITLES[id]` | `app.js` | the brand row is blank |
 | `#id > .eyebrow, #id > .section-title{display:none}` | a stylesheet | the page wears a hero no other page has |
 | a `.home-dial-node` | `index.html` | the tool is missing from the home page |
+| `body #id.section` in the APP FRAME list | `design-system.css` | the page brings back its own width and padding (§55) |
 
 The hero check has to allow a **class-scoped** spelling as well as an id-scoped one: the
 five Change Analysis method panels are hidden together by `.change-method-panel >
@@ -2110,7 +2175,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 411 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 419 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -2121,7 +2186,8 @@ Score Tables confidence intervals, documentation contracts, wiring (§16–17), 
 raw-score metric (§18), the Norms Database view (§32), age-band filtering of the
 family dropdowns (§33), consent gating on the Change Analysis methods (§34), the
 empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
-tab-close prompt and AACN default (§52), and Save / Open session (§53).
+tab-close prompt and AACN default (§52), Save / Open session (§53), and the app frame,
+the docked report and the motion scale (§55).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

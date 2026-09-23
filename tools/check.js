@@ -1769,7 +1769,7 @@ const INIT_CALLS = [
   'renderConverter', 'setupPreTabs', 'buildPredictTable',
   'setupPremorbidListeners', 'calcPremorbid', 'calcPredict',
   'calcOpiePredict', 'wireBatteryAutofill', 'wireSdiAutofill',
-  'setupPvtPage', 'refreshAll', 'setupTableViewportFit'
+  'setupPvtPage', 'refreshAll', 'setupAppFrame', 'setupTableViewportFit'
 ];
 
 check('every init function app.js defines is also invoked at top level', () => {
@@ -10363,6 +10363,131 @@ check('Word and CSV exports carry the decision-support line', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
+
+heading('55. The app frame, the docked report and one motion scale');
+/* UI audit, 2026-09. The app is meant to read as one window: a fixed status
+   bar, no page scroll on a tool page at 1366 x 768, and a Working Report that
+   docks beside the page instead of covering it. The measurements behind this
+   section (every view at three window sizes, report open and closed) are in
+   the commit that added it; these checks pin the properties that made them
+   true, so a later edit cannot quietly undo one. */
+
+check('the footer is a fixed status bar, and every page fitter leaves its strip alone', () => {
+  const bad = [];
+  const DS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const PROF = fs.readFileSync(path.join(ROOT, 'app-profile-page.js'), 'utf8');
+  const VIZ = fs.readFileSync(path.join(ROOT, 'app-viz-page.js'), 'utf8');
+  if (!/body \.site-footer\{[^}]*position:\s*fixed/.test(DS)) bad.push('the footer is not position:fixed');
+  if (!/body\{\s*padding-bottom:\s*var\(--footer-h\)/.test(DS)) bad.push('body does not reserve --footer-h, so the last row sits under the bar');
+  if (!/function syncAppFrame\(\)\{[\s\S]*?--footer-h[\s\S]*?\n\}/.test(APP_SRC)) bad.push('syncAppFrame no longer measures --footer-h');
+  /* Each fitter sizes something to "the window". With a fixed bar the room
+     is the window less the bar, and forgetting it puts a box's last row
+     under the bar with nothing thrown. */
+  const fitBody = (APP_SRC.match(/function fitTableViewports\(\)\{[\s\S]*?\n\}/) || [''])[0];
+  if (!/footerVisualHeight\(\)/.test(fitBody)) bad.push('fitTableViewports ignores the status bar');
+  const profBody = (PROF.match(/function profFitMethod\(\)\{[\s\S]*?\n  \}/) || [''])[0];
+  if (!/footerVisualHeight/.test(profBody)) bad.push('profFitMethod ignores the status bar');
+  if (!/site-footer/.test(VIZ)) bad.push('the Score Charts fit no longer reads the footer');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('every page takes the frame: one padding, and one of three widths', () => {
+  /* The audit found eight widths on twelve pages. A page left out of the
+     frame list brings its own back. Home has a rule of its own (a centred
+     dial), and #change-analysis is built at runtime, so it is added to the
+     markup's list by hand. */
+  const DS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const frame = DS.slice(DS.indexOf('APP FRAME (UI audit'));
+  /* The five Change Analysis methods are sections in the markup but are
+     turned into panels inside #change-analysis by the inline builder, so
+     they are read out of that builder's own methods array and skipped. */
+  const builder = HTML_SRC.slice(HTML_SRC.indexOf("consolidated.id = 'change-analysis'") - 20000, HTML_SRC.indexOf("consolidated.id = 'change-analysis'"));
+  const panels = new Set([...builder.matchAll(/\bid:\s*'([a-z-]+)'/g)].map(m => m[1]));
+  const ids = [...HTML_SRC.matchAll(/<section class="section[^"]*" id="([^"]+)"/g)].map(m => m[1]).filter(id => !panels.has(id));
+  if (!ids.includes('change-analysis')) ids.push('change-analysis');
+  const bad = [];
+  if (ids.length < 10) return 'only ' + ids.length + ' sections found, so the pattern no longer matches the markup';
+  for (const id of ids) {
+    if (id === 'home') { if (!frame.includes('body #home.section')) bad.push('#home has no frame rule'); continue; }
+    if (!frame.includes('body #' + id + '.section')) bad.push('#' + id + ' is not in the frame list');
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the report docks only where the page on screen still fits beside it', () => {
+  const bad = [];
+  const dock = (APP_SRC.match(/function applyDock\(\)\{[\s\S]*?\n  \}/) || [''])[0];
+  if (!dock) return 'applyDock is gone';
+  /* A width rule alone docked Premorbid at 1366 with its results table
+     running under the panel. The page itself has to be measured. */
+  if (!/pageFitsDocked\(\)/.test(dock)) bad.push('applyDock no longer measures the page');
+  const fits = (APP_SRC.match(/function pageFitsDocked\(\)\{[\s\S]*?\n  \}/) || [''])[0];
+  if (!/scrollWidth/.test(fits)) bad.push('pageFitsDocked does not test sideways spill');
+  if (!/scrollHeight/.test(fits)) bad.push('pageFitsDocked does not test added scroll');
+  if (!/rb-measuring/.test(fits)) bad.push('pageFitsDocked measures with the margin transition running');
+  /* The page under an open report changes on navigation, so the decision is
+     made again there. */
+  const nav = (APP_SRC.match(/function navigateTo\(target, opts\)\{[\s\S]*?\n\}/) || [''])[0];
+  if (!/ReportBundle\.applyDock\(\)/.test(nav)) bad.push('navigateTo does not re-decide docking');
+  /* Docked, the page is being worked beside the report: a click there is
+     work, not a dismissal. */
+  if (!/if \(document\.body\.classList\.contains\('rb-docked'\)\) return;\s*const path/.test(APP_SRC)) bad.push('a click on the page closes a docked report');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('page transitions keep the chip and the top bar still', () => {
+  const bad = [];
+  /* .rb-root is a 0x0 box whose children are fixed: named there, its
+     snapshot was empty and the chip vanished during every navigation. */
+  if (/\.rb-root\{view-transition-name/.test(CSS_SRC)) bad.push('the transition name is back on .rb-root');
+  if (!/\.rb-chip\{view-transition-name:report-chip\}/.test(CSS_SRC)) bad.push('the chip has no transition name of its own');
+  /* The whole bar crossfading doubled the logo and buttons for 140ms. */
+  if (!/::view-transition-group\(site-topbar\),\s*::view-transition-old\(site-topbar\),\s*::view-transition-new\(site-topbar\)\{animation:none\}/.test(CSS_SRC)) bad.push('the top bar crossfades again');
+  if (!/\.topbar-page-title\{view-transition-name:page-title\}/.test(CSS_SRC)) bad.push('the page title has lost its own crossfade');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('every transition takes its duration from the motion scale', () => {
+  /* 30 distinct durations and 16 easing curves before the audit. A literal
+     duration in a transition is how the next one arrives. Allowed: 0.01ms,
+     the reduced-motion override, and a zero (visibility 0s ... flips at the
+     end of a fade rather than animating). */
+  const bad = [];
+  const DS = fs.readFileSync(path.join(ROOT, 'design-system.css'), 'utf8');
+  const decl = /(?<![\w-])transition(?:-duration)?\s*:\s*([^;{}]*)/g;
+  for (const [name, src] of [['styles.css', CSS_SRC], ['design-system.css', DS]]) {
+    for (const m of src.matchAll(decl)) {
+      const lits = (m[1].match(/(?<![\w.-])\d*\.?\d+m?s(?![\w-])/g) || []).filter(t => t !== '0.01ms' && parseFloat(t) !== 0);
+      if (lits.length) bad.push(name + ': "' + m[1].trim().slice(0, 60) + '"');
+    }
+  }
+  if (!/--ds-duration-fast:\s*var\(--t-base\)/.test(DS)) bad.push('the design-system durations no longer alias the --t-* scale');
+  return bad.length === 0 || bad.slice(0, 5).join('; ') + (bad.length > 5 ? ' (+' + (bad.length - 5) + ' more)' : '');
+});
+
+check('one name per page: top bar, brand row, tab title and home dial agree', () => {
+  /* Premorbid was "Estimate" in the top bar and "Estimation" in the brand
+     row and on the dial; Effect Sizes was "Effect Size Tools" in two of them. */
+  const bad = [];
+  const DSJS = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
+  const slice = (src, start) => { const i = src.indexOf(start); return i < 0 ? '' : src.slice(i, src.indexOf('};', i)); };
+  const titles = slice(APP_SRC, 'const PAGE_TITLES = {');
+  const tmap = slice(DSJS, 'const TITLE_MAP = {');
+  const home = HTML_SRC.slice(HTML_SRC.indexOf('<div class="home-dial">'));
+  let seen = 0;
+  for (const b of HTML_SRC.matchAll(/data-bucket="([^"]+)"[^>]*>[\s\S]{0,600}?<span>([^<]+)<\/span>/g)) {
+    const id = b[1], label = b[2].trim();
+    if (id === 'home' || id === 'change') continue;
+    seen++;
+    const pt = (titles.match(new RegExp("\\b" + id + "['\"]?\\s*:\\s*'([^']+)'")) || [])[1];
+    const tm = (tmap.match(new RegExp("'" + id + "'\\s*:\\s*'([^']+)'")) || [])[1];
+    if (pt && pt !== label) bad.push('PAGE_TITLES.' + id + ' is "' + pt + '", the top bar says "' + label + '"');
+    if (tm && tm !== label) bad.push('TITLE_MAP.' + id + ' is "' + tm + '", the top bar says "' + label + '"');
+    if (!home.includes('<span class="home-dial-label">' + label + '</span>')) bad.push('the dial has no node labelled "' + label + '"');
+  }
+  if (seen < 7) return 'only ' + seen + ' top-bar pages found, so the pattern no longer matches the markup';
+  return bad.length === 0 || bad.join('; ');
+});
 
 // ---------------------------------------------------------------------------
 // Summary

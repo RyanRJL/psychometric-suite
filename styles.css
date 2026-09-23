@@ -70,7 +70,7 @@ body{display:flex;min-height:100vh;overflow:hidden;zoom:0.9}
   display:flex;align-items:center;justify-content:space-between;gap:8px;
   font-family:var(--sans);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
   color:var(--muted);font-weight:500;background:transparent;border:1px solid transparent;
-  border-radius:6px;cursor:pointer;text-align:left;transition:background 120ms ease, color 120ms ease, border-color 120ms ease;
+  border-radius:6px;cursor:pointer;text-align:left;transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .nav-label:hover{background:rgba(0,0,0,0.03);color:var(--ink);border-color:var(--border-soft)}
 .nav-label::after{content:"\25BE";font-size:10px;letter-spacing:0;color:var(--faint);line-height:1}
@@ -82,7 +82,7 @@ body{display:flex;min-height:100vh;overflow:hidden;zoom:0.9}
   padding:7px 24px;cursor:pointer;
   font-size:13.5px;color:var(--ink-2);
   border-left:2px solid transparent;
-  transition:background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
   user-select:none;
 }
 .nav-item:hover{background:rgba(0,0,0,0.03);color:var(--ink)}
@@ -215,7 +215,7 @@ h1.section-title em{font-style:italic;font-weight:500;color:var(--accent)}
 .home-overview-panel .block-title{margin:0 0 12px;padding-bottom:10px;font-size:22px}
 .home-overview-copy{font-size:14px;color:var(--ink-2);line-height:1.65;max-width:720px;margin-bottom:20px}
 .home-tool-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
-.home-tool-card{position:relative;display:flex;flex-direction:column;gap:10px;min-height:126px;padding:17px 16px;text-align:center;align-items:center;border:1px solid var(--border-soft);border-radius:8px;background:rgba(250,247,241,.72);box-shadow:var(--shadow-soft);cursor:pointer;transition:transform 150ms ease,border-color 150ms ease,background 150ms ease,box-shadow 150ms ease}
+.home-tool-card{position:relative;display:flex;flex-direction:column;gap:10px;min-height:126px;padding:17px 16px;text-align:center;align-items:center;border:1px solid var(--border-soft);border-radius:8px;background:rgba(250,247,241,.72);box-shadow:var(--shadow-soft);cursor:pointer;transition:transform var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),background var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
 .home-tool-card:hover{transform:translateY(-2px);border-color:rgba(156,61,42,.30);background:var(--paper);box-shadow:0 8px 20px rgba(60,40,20,.06)}
 .home-tool-icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:var(--accent-tint);color:var(--accent);font-family:var(--serif);font-size:18px;line-height:1}
 .home-tool-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
@@ -242,13 +242,13 @@ h1.section-title em{font-style:italic;font-weight:500;color:var(--accent)}
   padding:24px 22px 20px;
   background:var(--paper);border:1px solid var(--border-soft);border-radius:8px;
   box-shadow:var(--shadow-soft);cursor:default;text-align:left;
-  transition:transform 150ms ease,border-color 150ms ease,box-shadow 150ms ease;
+  transition:transform var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
   font-family:var(--sans);position:relative;overflow:visible;
 }
 .home-pathway-card::before{
   content:"";position:absolute;inset:0 0 auto 0;height:2px;
   background:linear-gradient(90deg,var(--accent),rgba(156,61,42,0.05));
-  opacity:0;transition:opacity 150ms ease;
+  opacity:0;transition:opacity var(--t-fast) var(--ease);
 }
 .home-pathway-card:hover{transform:translateY(-2px);border-color:rgba(156,61,42,.26);box-shadow:0 8px 20px rgba(60,40,20,.06)}
 .home-pathway-card:hover::before{opacity:1}
@@ -264,7 +264,7 @@ h1.section-title em{font-style:italic;font-weight:500;color:var(--accent)}
 .home-pathway-title{
   font-family:var(--serif);font-size:20px;font-weight:600;
   letter-spacing:-0.01em;color:var(--ink);line-height:1.1;margin-bottom:10px;
-  transition:color 150ms ease;
+  transition:color var(--t-fast) var(--ease);
 }
 .home-pathway-card:hover .home-pathway-title{color:var(--accent)}
 .home-pathway-desc{font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:16px;flex:1}
@@ -272,7 +272,7 @@ h1.section-title em{font-style:italic;font-weight:500;color:var(--accent)}
   list-style:none;border-top:1px solid var(--border-soft);
   padding-top:12px;display:flex;flex-direction:column;gap:5px;
 }
-.home-pathway-tool{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);cursor:default;border-radius:3px;padding:1px 4px;margin:0 -4px;transition:background 120ms ease}
+.home-pathway-tool{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);cursor:default;border-radius:3px;padding:1px 4px;margin:0 -4px;transition:background var(--t-fast) var(--ease)}
 .home-pathway-tool:hover{background:rgba(156,61,42,0.06)}
 .home-pathway-tool:hover .home-pathway-tool-name{color:var(--accent)}
 .home-pathway-tool-num{font-family:var(--mono);font-size:10px;color:var(--faint);width:18px;flex-shrink:0}
@@ -296,12 +296,12 @@ h1.section-title em{font-style:italic;font-weight:500;color:var(--accent)}
   width:min(340px,72vw);padding:10px 12px;border:1px solid rgba(156,61,42,0.24);
   border-radius:6px;background:var(--tooltip-bg);color:var(--ink-2);box-shadow:var(--tooltip-shadow);
   font-family:var(--sans);font-size:12px;font-weight:400;line-height:1.45;letter-spacing:0;text-transform:none;
-  white-space:normal;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity 140ms ease,transform 140ms ease;
+  white-space:normal;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
 }
 .home-pathway-tool-badge::after{
   content:"";position:absolute;right:14px;bottom:calc(100% + 3px);z-index:81;
   border-width:6px 6px 0 6px;border-style:solid;border-color:var(--tooltip-bg) transparent transparent transparent;
-  opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity 140ms ease,transform 140ms ease;
+  opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
 }
 .home-pathway-tool-badge:hover::before,
 .home-pathway-tool-badge:hover::after,
@@ -328,7 +328,7 @@ input[type="text"], input[type="number"], input[type="date"], select, textarea{
   border:1px solid var(--border);border-radius:3px;
   padding:8px 10px;
   width:100%;
-  transition:border-color 120ms ease, box-shadow 120ms ease;
+  transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 input:focus, select:focus, textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint-strong)}
 input[type="number"]{font-family:var(--mono)}
@@ -362,7 +362,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
   font-family:var(--sans);font-size:12.5px;font-weight:500;letter-spacing:0.01em;
   padding:8px 14px;border-radius:3px;cursor:pointer;
   border:1px solid var(--border);background:var(--paper);color:var(--ink);
-  transition:all 120ms ease;
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   text-decoration:none;
 }
 .btn:hover{border-color:var(--ink);background:var(--paper-2)}
@@ -477,7 +477,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 .input-table .row-actions button{
   background:none;border:none;cursor:pointer;color:var(--faint);
   padding:4px;font-size:14px;line-height:1;border-radius:3px;
-  transition:all 120ms ease;
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 .input-table .row-actions button:hover{color:var(--warn);background:rgba(139,58,46,0.08)}
 .input-table .computed{color:var(--ink-2);font-family:var(--mono);text-align:center;padding:8px 10px}
@@ -500,7 +500,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
   border:1px dashed #2E8552;
   padding:7px 12px;border-radius:3px;
   font-family:var(--sans);font-size:12px;font-weight:600;color:#246B43;cursor:pointer;
-  transition:background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  transition:background var(--t-base) var(--ease), border-color var(--t-base) var(--ease), color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
 }
 .add-row-btn:hover{
   background:#2E8552;
@@ -602,7 +602,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 .conv-slider-marks .mark{position:absolute;width:1px;height:7px;background:var(--border);top:-3px;transform:translateX(-50%)}
 .conv-slider-marks .mark.major{height:10px;top:-5px;background:var(--muted)}
 input[type="range"]#conv-slider{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--border);outline:none;margin:0;position:relative;z-index:2;border:none;padding:0}
-input[type="range"]#conv-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);border:3px solid var(--paper);box-shadow:0 0 0 1px var(--accent),0 2px 5px rgba(156,61,42,0.25);cursor:grab;transition:transform 0.12s}
+input[type="range"]#conv-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);border:3px solid var(--paper);box-shadow:0 0 0 1px var(--accent),0 2px 5px rgba(156,61,42,0.25);cursor:grab;transition:transform var(--t-fast)}
 input[type="range"]#conv-slider::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.1)}
 input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:3px solid var(--paper);box-shadow:0 0 0 1px var(--accent);cursor:grab}
 .conv-slider-ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:6px;letter-spacing:0.02em}
@@ -622,7 +622,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 /* CONVERTER SCORES STRIP */
 .conv-strip-header{font-family:var(--mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-top:16px;margin-bottom:6px}
 .conv-scores-strip{display:flex;gap:0;background:var(--paper);border:1px solid var(--border-soft);border-radius:5px;overflow:hidden}
-.conv-score-item{flex:1;padding:14px 16px;border-right:1px solid var(--border-soft);transition:background 150ms;position:relative}
+.conv-score-item{flex:1;padding:14px 16px;border-right:1px solid var(--border-soft);transition:background var(--t-fast);position:relative}
 .conv-score-item:last-child{border-right:none}
 .conv-score-item.conv-score-active{background:var(--accent)}
 .conv-score-item.conv-score-active .conv-score-label::after{content:" Â· you entered";font-size:8px;letter-spacing:0.05em;color:rgba(255,220,200,0.6);text-transform:none}
@@ -685,7 +685,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .desc-carousel-track{
   display:flex;align-items:center;
-  transition:transform 380ms cubic-bezier(0.4,0,0.2,1);
+  transition:transform var(--t-slow) cubic-bezier(0.4,0,0.2,1);
   /* Drop will-change — it forces a permanent GPU layer with bilinear
      filtering which renders text at non-integer offsets fuzzily. The
      transform-only animation runs fine without it. */
@@ -698,7 +698,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   /* Use solid colour shifts (not opacity) so the text stays crisp. */
   color:#C5BFB2;
   opacity:1;
-  transition:color 380ms;
+  transition:color var(--t-slow);
   cursor:default;
   /* Force grayscale antialiasing so masked + transformed text doesn't
      pick up subpixel colour-fringing artefacts. */
@@ -740,7 +740,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   display:flex;justify-content:space-between;align-items:baseline;
   padding:9px 12px;border-left:2px solid transparent;
   font-size:13.5px;color:var(--ink-2);
-  transition:background 120ms ease;
+  transition:background var(--t-fast) var(--ease);
 }
 .descriptor-row .desc-row-label{font-family:var(--sans)}
 .descriptor-row .desc-row-criteria{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:0.01em}
@@ -764,7 +764,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .tab{
   padding:10px 18px;cursor:pointer;font-size:13px;color:var(--muted);
   border-bottom:2px solid transparent;margin-bottom:-1px;
-  transition:all 120ms ease;font-family:var(--sans);
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);font-family:var(--sans);
 }
 .tab:hover{color:var(--ink)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
@@ -784,7 +784,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   padding:12px 18px;border-radius:4px;font-size:13px;
   box-shadow:0 8px 24px rgba(0,0,0,0.15);
   opacity:0;transform:translate(-50%, -8px);
-  transition:opacity 200ms ease, transform 200ms ease;
+  transition:opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease);
   pointer-events:none;
   z-index:1000;
   display:flex;align-items:center;gap:8px;
@@ -845,7 +845,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   color:#FFFFFF;
   font-weight:600;
   box-shadow:0 1px 2px rgba(178,42,32,0.30), 0 2px 6px rgba(214,58,47,0.22);
-  transition:background 160ms ease, border-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+  transition:background var(--t-base) var(--ease), border-color var(--t-base) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-base) var(--ease);
 }
 .btn-clear:hover{
   background:#E84A3D;
@@ -882,8 +882,8 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .pre-results-table td.model.model-has-tip{position:relative;padding-right:34px}
 .model-info-dot{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(156,61,42,0.24);border-radius:999px;background:var(--accent-tint);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:600;line-height:1;cursor:help}
 .model-info-dot:focus{outline:2px solid rgba(156,61,42,0.34);outline-offset:2px}
-.model-info-dot::before{content:attr(data-tooltip);position:absolute;right:-2px;bottom:calc(100% + 9px);z-index:90;width:min(340px,70vw);padding:11px 13px;border:1px solid rgba(156,61,42,0.24);border-radius:6px;background:var(--tooltip-bg);color:var(--ink-2);box-shadow:var(--tooltip-shadow);font-family:var(--sans);font-size:12px;font-weight:400;line-height:1.45;letter-spacing:0;text-transform:none;white-space:normal;text-align:left;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity 140ms ease,transform 140ms ease}
-.model-info-dot::after{content:"";position:absolute;right:2px;bottom:calc(100% + 3px);z-index:91;border-width:6px 6px 0 6px;border-style:solid;border-color:var(--tooltip-bg) transparent transparent transparent;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity 140ms ease,transform 140ms ease}
+.model-info-dot::before{content:attr(data-tooltip);position:absolute;right:-2px;bottom:calc(100% + 9px);z-index:90;width:min(340px,70vw);padding:11px 13px;border:1px solid rgba(156,61,42,0.24);border-radius:6px;background:var(--tooltip-bg);color:var(--ink-2);box-shadow:var(--tooltip-shadow);font-family:var(--sans);font-size:12px;font-weight:400;line-height:1.45;letter-spacing:0;text-transform:none;white-space:normal;text-align:left;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
+.model-info-dot::after{content:"";position:absolute;right:2px;bottom:calc(100% + 3px);z-index:91;border-width:6px 6px 0 6px;border-style:solid;border-color:var(--tooltip-bg) transparent transparent transparent;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
 .model-info-dot:hover::before,.model-info-dot:hover::after,.model-info-dot:focus::before,.model-info-dot:focus::after{opacity:1;transform:translateY(0)}
 .pre-results-table tr:last-child td{border-bottom:1.25px solid var(--ink)}
 .pre-results-table .group-row td{
@@ -1356,9 +1356,9 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   padding:0 14px;
   height:40px;
   box-shadow:0 1px 2px rgba(60,40,20,0.04);
-  transition:border-color 200ms cubic-bezier(0.2,0.8,0.2,1),
-             box-shadow 200ms cubic-bezier(0.2,0.8,0.2,1),
-             background 200ms ease;
+  transition:border-color var(--t-base) var(--ease),
+             box-shadow var(--t-base) var(--ease),
+             background var(--t-base) var(--ease);
 }
 .report-search-shell:hover{
   border-color:rgba(20,15,5,0.22);
@@ -1374,7 +1374,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   width:15px;height:15px;
   color:#9A968D;
   flex-shrink:0;
-  transition:color 200ms ease;
+  transition:color var(--t-base) var(--ease);
 }
 .report-search-shell:focus-within .report-search-icon{color:var(--accent)}
 
@@ -1417,7 +1417,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   background:rgba(20,15,5,0.06);
   color:#5A5A5A;
   cursor:pointer;
-  transition:background 160ms ease, color 160ms ease, transform 160ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
   padding:0;
 }
 .report-search-clear svg{width:10px;height:10px}
@@ -1461,7 +1461,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   border-radius:999px;
   padding:8px 16px 8px 12px;
   box-shadow:0 1px 2px rgba(60,40,20,0.04);
-  transition:background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
+  transition:background var(--t-base) var(--ease), border-color var(--t-base) var(--ease), color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), transform var(--t-fast) var(--ease);
 }
 .report-manual-entry-details > summary::-webkit-details-marker{display:none}
 .report-manual-entry-details > summary:hover{
@@ -1493,7 +1493,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   font-size:13px;
   font-weight:700;
   line-height:1;
-  transition:background 160ms ease, color 160ms ease, transform 200ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
 }
 .report-manual-entry-details > summary:hover::before,
 .report-manual-entry-details[open] > summary::before{
@@ -1563,7 +1563,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   letter-spacing:0;
   line-height:1;
   cursor:pointer;
-  transition:background 140ms ease, color 140ms ease, border-color 140ms ease, transform 120ms ease, box-shadow 140ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 .report-selected-row .report-selected-tools .report-selected-remove:hover{
   background:#D63A2F;
@@ -1635,7 +1635,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .report-section-item{
   width:100%;border:1px solid var(--border-soft);background:var(--paper);border-radius:6px;
   padding:0;text-align:left;color:var(--ink-2);display:grid;grid-template-columns:22px 1fr auto;
-  transition:background 120ms ease,border-color 120ms ease,color 120ms ease;
+  transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
 }
 .report-section-item:hover{background:rgba(156,61,42,.035);color:var(--ink)}
 .report-section-item.active{border-color:rgba(156,61,42,.34);background:var(--accent-tint);color:var(--accent)}
@@ -1859,7 +1859,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 
 /* Workflow polish - calculator pages */
 .formula-disclosure{margin:18px 0 14px;max-width:100%;}
-.formula-disclosure summary{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--accent);border:1px solid rgba(156,61,42,0.20);background:var(--accent-tint);border-radius:999px;padding:6px 12px;transition:background 120ms ease,border-color 120ms ease;}
+.formula-disclosure summary{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--accent);border:1px solid rgba(156,61,42,0.20);background:var(--accent-tint);border-radius:999px;padding:6px 12px;transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);}
 .formula-disclosure summary:hover{background:var(--accent-tint-strong);border-color:rgba(156,61,42,0.34)}
 .formula-disclosure summary::before{content:'\0192';font-family:var(--serif);font-style:italic;font-size:14px;color:var(--accent)}
 .formula-disclosure[open] summary{margin-bottom:10px}
@@ -1882,7 +1882,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 .input-table{background:rgba(255,255,255,0.18);border-radius:5px;overflow:hidden}
 .input-table thead tr.table-group-row th{background:rgba(244,240,232,0.62);border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);color:var(--muted);font-size:9.5px;letter-spacing:0.13em;text-align:center;font-weight:600;padding:7px 8px;}
 .input-table thead tr.table-group-row th:first-child{text-align:left;color:var(--faint)}
-.input-table tbody tr{transition:background 120ms ease}
+.input-table tbody tr{transition:background var(--t-fast) var(--ease)}
 .input-table tbody tr:hover{background:rgba(156,61,42,0.024)}
 .input-table td input[type="number"]{text-align:center}
 .input-table td.computed{text-align:center;white-space:nowrap}
@@ -2127,11 +2127,11 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 /* Mode tabs (clear OR â€” looks like proper tabs sitting on top of the panel) */
 #effectsize .es-tabs-wrap{margin-bottom:0}
 #effectsize .es-tabs{display:flex;align-items:stretch;gap:0;position:relative;z-index:2}
-#effectsize .es-tab{flex:1;display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--paper-2);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;font-family:var(--sans);text-align:left;cursor:pointer;transition:background 160ms,color 160ms,border-color 160ms;color:var(--ink-2);position:relative;top:1px}
+#effectsize .es-tab{flex:1;display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--paper-2);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;font-family:var(--sans);text-align:left;cursor:pointer;transition:background var(--t-base),color var(--t-base),border-color var(--t-base);color:var(--ink-2);position:relative;top:1px}
 #effectsize .es-tab:hover{background:var(--paper-3);color:var(--ink)}
 #effectsize .es-tab.is-active{background:var(--paper);border-color:var(--border);color:var(--ink);top:0;box-shadow:0 -2px 0 var(--accent) inset}
 #effectsize .es-tab.is-active .es-tab-num{background:var(--accent);color:#FAF7F1;border-color:var(--accent)}
-#effectsize .es-tab-num{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--paper);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--muted);transition:all 160ms}
+#effectsize .es-tab-num{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--paper);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--muted);transition: background-color var(--t-base), border-color var(--t-base), color var(--t-base), box-shadow var(--t-base), opacity var(--t-base), transform var(--t-base)}
 #effectsize .es-tab-text{display:flex;flex-direction:column;gap:1px;line-height:1.25}
 #effectsize .es-tab-title{font-size:13.5px;font-weight:600;letter-spacing:-0.005em}
 #effectsize .es-tab-sub{font-size:11px;color:var(--muted);font-weight:400}
@@ -2260,8 +2260,8 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
     0 4px 10px rgba(20,15,5,0.20);
   cursor:grab;
   transition:
-    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease);
 }
 #effectsize #es-d-slider::-moz-range-thumb{
   width:14px;
@@ -2275,8 +2275,8 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
     0 4px 10px rgba(20,15,5,0.20);
   cursor:grab;
   transition:
-    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease);
 }
 #effectsize #es-d-slider:hover::-webkit-slider-thumb{
   transform:scale(1.12);
@@ -2462,7 +2462,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
   padding:8px 12px;
   border-radius:7px 7px 0 0;
   cursor:pointer;
-  transition:all 140ms ease;
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   margin-bottom:-1px;
   position:relative;
   z-index:1;
@@ -2521,7 +2521,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
   opacity:0;
   transform:translateY(4px);
   pointer-events:none;
-  transition:opacity 140ms ease,transform 140ms ease;
+  transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
 }
 #effectsize .es-result-card[data-tooltip]::after{
   content:"";
@@ -2535,7 +2535,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
   opacity:0;
   transform:translateY(4px);
   pointer-events:none;
-  transition:opacity 140ms ease,transform 140ms ease;
+  transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
 }
 #effectsize .es-result-card[data-tooltip]:hover::before,
 #effectsize .es-result-card[data-tooltip]:hover::after,
@@ -2579,7 +2579,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 #effectsize .es-target-panel,#effectsize .es-examples{margin:0}
 #effectsize .es-target-panel summary,#effectsize .es-examples summary{cursor:pointer;list-style:none;outline:none;display:flex;align-items:center;gap:8px}
 #effectsize .es-target-panel summary::-webkit-details-marker,#effectsize .es-examples summary::-webkit-details-marker{display:none}
-#effectsize .es-target-panel summary::before,#effectsize .es-examples summary::before{content:"â–¸";color:var(--muted);font-size:10px;transition:transform 180ms}
+#effectsize .es-target-panel summary::before,#effectsize .es-examples summary::before{content:"â–¸";color:var(--muted);font-size:10px;transition:transform var(--t-base)}
 #effectsize .es-target-panel[open] summary::before,#effectsize .es-examples[open] summary::before{transform:rotate(90deg)}
 #effectsize .es-target-body{margin-top:10px}
 #effectsize .es-target-intro{
@@ -2783,7 +2783,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   font-family:var(--sans)!important;font-size:13px!important;font-weight:400!important;letter-spacing:0!important;
   color:#737373!important;
   display:inline-flex!important;align-items:center!important;gap:8px!important;
-  transition:color 120ms ease;
+  transition:color var(--t-fast) var(--ease);
   white-space:nowrap;
   border-left:none!important;
 }
@@ -2797,7 +2797,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   content:"";position:absolute;left:10px;right:10px;bottom:-1px;
   height:2px;background:#1A1A1A;
   transform:scaleX(0);transform-origin:center;
-  transition:transform 180ms ease;
+  transition:transform var(--t-base) var(--ease);
 }
 .topnav-item.active{color:#1A1A1A!important;font-weight:500!important;background:transparent!important;border-left-color:transparent!important}
 .topnav-item.active .topnav-icon{opacity:1}
@@ -2834,7 +2834,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   color:#5A5A5A!important;
   letter-spacing:0!important;
   border-left:none!important;
-  transition:color 120ms ease;
+  transition:color var(--t-fast) var(--ease);
 }
 .site-footer-link:hover{color:#1A1A1A!important;text-decoration:underline;text-underline-offset:4px;text-decoration-color:#9A968D}
 .site-footer-link.active{color:#1A1A1A!important;font-weight:500!important;background:transparent!important}
@@ -2849,7 +2849,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
 .topnav-chevron{
   width:11px;height:11px;flex-shrink:0;
   margin-left:2px;color:currentColor;opacity:.6;
-  transition:transform 160ms ease;
+  transition:transform var(--t-base) var(--ease);
 }
 .topnav-group:hover .topnav-chevron,
 .topnav-group:focus-within .topnav-chevron{transform:rotate(-180deg);opacity:.85}
@@ -2864,7 +2864,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   display:flex;flex-direction:column;
   opacity:0;pointer-events:none;
   transform:translateY(2px);
-  transition:opacity 130ms ease, transform 130ms ease;
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   z-index:65;
 }
 .topnav-group:hover .topnav-dropdown,
@@ -2875,7 +2875,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   background:transparent!important;border:none!important;cursor:pointer;
   padding:8px 18px!important;text-align:left;
   font-family:var(--sans)!important;font-size:13px!important;font-weight:400!important;color:#4A4A4A!important;
-  transition:background 100ms ease, color 100ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
   display:block!important;
   border-left:none!important;
   letter-spacing:0!important;
@@ -2934,7 +2934,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   border-radius:4px;
   padding:22px 22px 20px;
   box-shadow:none;
-  transition:border-color 140ms ease;
+  transition:border-color var(--t-fast) var(--ease);
   display:flex;flex-direction:column;
   position:relative;
 }
@@ -3030,7 +3030,7 @@ input[type="text"], input[type="number"], input[type="date"], textarea{
   font-family:var(--sans)!important;
   font-size:13px!important;
   color:var(--ink)!important;
-  transition:border-color 120ms ease, box-shadow 120ms ease;
+  transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 select{
   background-color:#FFFFFF!important;
@@ -3039,7 +3039,7 @@ select{
   font-family:var(--sans)!important;
   font-size:13px!important;
   color:var(--ink)!important;
-  transition:border-color 120ms ease, box-shadow 120ms ease;
+  transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 input[type="text"]:hover, input[type="number"]:hover, input[type="date"]:hover, select:hover, textarea:hover{
   border-color:#9A968D!important;
@@ -3070,7 +3070,7 @@ input[type="number"]{font-family:var(--mono)!important}
   color:var(--ink)!important;
   padding:7px 14px;
   letter-spacing:0;
-  transition:background 120ms ease, border-color 120ms ease;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .btn:hover{background:#F4F1E9!important;border-color:#9A968D!important;color:var(--ink)!important}
 .btn-primary{
@@ -3220,7 +3220,7 @@ details summary:hover{color:var(--ink)}
   padding:16px 18px 15px!important;
   text-align:left;
   cursor:pointer;
-  transition:background 160ms var(--ease)!important;
+  transition:background var(--t-base) var(--ease)!important;
   box-shadow:none!important;
   position:relative;
   display:grid;
@@ -3264,7 +3264,7 @@ details summary:hover{color:var(--ink)}
   flex-shrink:0;
   padding:0!important;
   align-self:center!important;
-  transition:background 160ms var(--ease), color 160ms var(--ease), transform 160ms var(--ease), box-shadow 160ms var(--ease)!important;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease)!important;
 }
 #change-analysis .change-method-tab:hover:not(.active) .change-method-num{
   background:rgba(20,15,5,0.12)!important;
@@ -3286,7 +3286,7 @@ details summary:hover{color:var(--ink)}
   color:#5A5A5A!important;
   line-height:1.3!important;
   letter-spacing:-0.01em!important;
-  transition:color 240ms var(--ease)!important;
+  transition:color var(--t-slow) var(--ease)!important;
 }
 #change-analysis .change-method-tab:hover:not(.active) .change-method-label{color:#1A1A1A!important}
 #change-analysis .change-method-tab.active .change-method-label{color:#1A1A1A!important;font-weight:600!important}
@@ -3295,7 +3295,7 @@ details summary:hover{color:var(--ink)}
   color:#8A867E!important;background:transparent!important;border:none!important;
   padding:0!important;letter-spacing:0!important;text-transform:none!important;
   border-radius:0!important;display:block;
-  transition:color 160ms var(--ease)!important;
+  transition:color var(--t-base) var(--ease)!important;
 }
 #change-analysis .change-method-tab.active .change-method-pill{color:#5A5A5A!important}
 #change-analysis .change-method-meta{
@@ -3306,7 +3306,7 @@ details summary:hover{color:var(--ink)}
   line-height:1.4!important;
   letter-spacing:0!important;
   margin:0!important;
-  transition:color 240ms var(--ease)!important;
+  transition:color var(--t-slow) var(--ease)!important;
 }
 #change-analysis .change-method-tab.active .change-method-meta{color:#5A5A5A!important}
 /* Hide visual clutter inside method tabs */
@@ -3383,7 +3383,7 @@ details summary:hover{color:var(--ink)}
   border-bottom:2px solid transparent!important;
   border-radius:0!important;padding:13px 18px!important;cursor:pointer;
   display:flex;align-items:center;gap:10px;
-  transition:color 120ms ease, border-color 120ms ease;
+  transition:color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 #effectsize .es-tab:hover{background:rgba(26,26,26,0.025)!important}
 #effectsize .es-tab.is-active{
@@ -3483,7 +3483,7 @@ details summary:hover{color:var(--ink)}
   padding:20px 18px 18px!important;
   text-align:center!important;
   cursor:pointer;
-  transition:background 240ms var(--ease), color 240ms var(--ease);
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease);
   display:flex!important;
   flex-direction:column!important;
   align-items:center!important;
@@ -3626,9 +3626,9 @@ body{
 
 /* Smoother topnav underline â€” animated width */
 .topnav-item::after{
-  transition:transform 220ms var(--ease)!important;
+  transition:transform var(--t-base) var(--ease)!important;
 }
-.topnav-item{transition:color 140ms var(--ease)!important}
+.topnav-item{transition:color var(--t-fast) var(--ease)!important}
 
 /* ---- CARDS: elevation + lift on hover ---- */
 .home-pathway-card{
@@ -4225,7 +4225,12 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 .topbar{view-transition-name:site-topbar}
 .sidebar{view-transition-name:site-sidebar}
 .site-footer{view-transition-name:site-footer}
-.rb-root{view-transition-name:report-chip}
+.rb-chip{view-transition-name:report-chip}
+/* Named on the chip and the open drawer, NOT on .rb-root. The root is a 0x0
+   fixed box and its children are positioned fixed themselves, so its
+   snapshot held nothing: the chip vanished for the length of every page
+   transition, and an open drawer with it (UI audit, 2026-09). */
+.rb-root.is-open .rb-drawer{view-transition-name:report-drawer}
 
 /* Chrome whose content is identical either side of a navigation shouldn't
    crossfade at all — fading one image into a matching one only risks a flicker.
@@ -4239,14 +4244,24 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 ::view-transition-old(site-footer),
 ::view-transition-new(site-footer),
 ::view-transition-old(report-chip),
-::view-transition-new(report-chip){animation:none}
+::view-transition-new(report-chip),
+::view-transition-group(report-drawer),
+::view-transition-old(report-drawer),
+::view-transition-new(report-drawer){animation:none}
 
-/* The top bar does crossfade, so its page title and nav highlight change
-   smoothly rather than snapping — but kept short. A crossfade overlays both
-   states, and the longer that lasts the more the two read as a double image. */
-::view-transition-group(site-topbar){animation-duration:140ms}
+/* The top bar holds still too. It used to crossfade as one image because its
+   page title and nav highlight change, but that doubled everything that does
+   NOT change (the logo, the age field, the three buttons) for 140ms on every
+   navigation, which read as a ghosted header (UI audit, 2026-09). Now the
+   bar snaps, so the nav highlight moves at once, and only the page title
+   gets its own short crossfade. */
+.topbar-page-title{view-transition-name:page-title}
+::view-transition-group(site-topbar),
 ::view-transition-old(site-topbar),
-::view-transition-new(site-topbar){animation-duration:140ms}
+::view-transition-new(site-topbar){animation:none}
+::view-transition-group(page-title){animation-duration:var(--t-fast)}
+::view-transition-old(page-title),
+::view-transition-new(page-title){animation-duration:var(--t-fast)}
 
 /* Fallback for browsers without View Transitions: the same two beats, run
    back to back on .main by navigateTo(). Kept deliberately shorter than the
@@ -4852,7 +4867,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#FFFFFF!important;
   font-weight:600!important;
   box-shadow:0 1px 2px rgba(36,107,67,0.30), 0 4px 12px rgba(46,133,82,0.28), inset 0 1px 0 rgba(255,255,255,0.18)!important;
-  transition:background 160ms ease, transform 120ms ease, box-shadow 160ms ease!important;
+  transition:background var(--t-base) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-base) var(--ease)!important;
 }
 #premorbid .pre-nav-next:hover{
   background:linear-gradient(180deg, #45B375 0%, #34935C 100%)!important;
@@ -5181,7 +5196,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-bottom:0!important;
   overflow:hidden;
   pointer-events:none;
-  transition:max-height 220ms var(--ease), opacity 160ms ease, margin 220ms var(--ease);
+  transition:max-height var(--t-base) var(--ease), opacity var(--t-base) var(--ease), margin var(--t-base) var(--ease);
 }
 #change-analysis .change-overview-card:hover .change-overview-cite,
 #change-analysis .change-overview-card.is-pinned .change-overview-cite,
@@ -5645,7 +5660,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#7A766E!important;
   letter-spacing:0!important;
   cursor:pointer;
-  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease)!important;
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease), box-shadow var(--t-slow) var(--ease)!important;
   white-space:nowrap;
   text-align:center!important;
 }
@@ -5653,7 +5668,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   width:14px;height:14px;
   flex-shrink:0;
   opacity:0.7;
-  transition:opacity 240ms var(--ease);
+  transition:opacity var(--t-slow) var(--ease);
 }
 #converter .conv-view-tab:hover:not(.is-active){color:#1A1A1A!important}
 #converter .conv-view-tab:hover:not(.is-active) svg{opacity:0.95}
@@ -5755,7 +5770,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   padding:5px 14px;
   border-radius:var(--r-pill);
   cursor:pointer;
-  transition:background 140ms var(--ease), color 140ms var(--ease);
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .conv-full-anchor button:hover:not(.is-active){color:#1A1A1A}
 .conv-full-anchor button.is-active{
@@ -5910,14 +5925,14 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   letter-spacing:0;
   white-space:nowrap;
   text-transform:none;
-  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease);
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease), box-shadow var(--t-slow) var(--ease);
 }
 .norms-pill-segment svg{
   width:11px;
   height:11px;
   flex-shrink:0;
   opacity:0.65;
-  transition:opacity 240ms var(--ease);
+  transition:opacity var(--t-slow) var(--ease);
 }
 .norms-pill-segment:hover:not(.is-active){
   color:#1A1A1A;
@@ -5967,7 +5982,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
    visually recede. NO layout change â€” cells keep their position and width.
    The toggle button itself is exempted so it stays clickable and crisp. */
 .input-table [data-norm-cell="true"]{
-  transition:opacity 280ms ease, filter 280ms ease, background-color 280ms ease;
+  transition:opacity var(--t-slow) var(--ease), filter var(--t-slow) var(--ease), background-color var(--t-slow) var(--ease);
 }
 .input-table.norms-locked [data-norm-cell="true"]:not(.table-group-row > *){
   opacity:0.35;
@@ -5978,7 +5993,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 .input-table.norms-locked .table-group-row th[data-norm-cell="true"] .norms-group-label{
   opacity:0.5;
-  transition:opacity 280ms ease;
+  transition:opacity var(--t-slow) var(--ease);
 }
 /* Disabled inputs in locked state â€” flat, no caret, clearly uneditable */
 .input-table.norms-locked [data-norm-cell="true"] input{
@@ -6090,7 +6105,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   gap:12px!important;
   color:#5A5A5A!important;
   cursor:pointer;
-  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease)!important;
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease), box-shadow var(--t-slow) var(--ease)!important;
   text-align:left!important;
   position:relative!important;
   top:0!important;
@@ -6119,7 +6134,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   align-items:center!important;
   justify-content:center!important;
   flex-shrink:0!important;
-  transition:background 240ms var(--ease), color 240ms var(--ease)!important;
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease)!important;
 }
 #effectsize .es-tab.is-active .es-tab-num{
   background:#1A1A1A!important;
@@ -6230,7 +6245,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   text-transform:none!important;
   cursor:pointer;
   margin:0!important;
-  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease)!important;
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease), box-shadow var(--t-slow) var(--ease)!important;
   text-align:center!important;
   line-height:1.25!important;
   min-width:0;
@@ -6445,7 +6460,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 #battery .bat-premorbid-block .bat-side-panel-body{
   opacity:0.45;
   pointer-events:none;
-  transition:opacity 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:opacity var(--t-base) var(--ease);
 }
 #battery .bat-premorbid-block[data-enabled="true"] .bat-side-panel-blurb,
 #battery .bat-premorbid-block[data-enabled="true"] .bat-side-panel-body{
@@ -6634,10 +6649,10 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
     0 1px 2px rgba(0,0,0,0.20),
     0 6px 16px rgba(0,0,0,0.18),
     0 14px 32px rgba(0,0,0,0.14);
-  transition:right 240ms cubic-bezier(0.2,0.8,0.2,1),
-             transform 220ms cubic-bezier(0.2,0.8,0.2,1),
-             box-shadow 220ms cubic-bezier(0.2,0.8,0.2,1),
-             border-color 220ms ease;
+  transition:right var(--t-slow) var(--ease),
+             transform var(--t-base) var(--ease),
+             box-shadow var(--t-base) var(--ease),
+             border-color var(--t-base) var(--ease);
 }
 .rb-chip:hover{
   transform:translateY(-3px);
@@ -6717,19 +6732,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-left:2px;
 }
 
-/* Idle floating effect — transform-only animation for smoothness.
-   Box-shadow stays constant (animating it triggers paint and looks
-   jumpy on low-end machines). Pauses on hover and when the drawer
-   is open. */
-.rb-chip{
-  animation:rb-chip-float 4200ms cubic-bezier(0.45, 0, 0.55, 1) infinite;
-  will-change:transform;
-}
-.rb-chip:hover, .rb-root.is-open .rb-chip{animation:none}
-@keyframes rb-chip-float{
-  0%,100% { transform:translateY(0); }
-  50%     { transform:translateY(-4px); }
-}
+
 
 /* Sharp pulse when an APA table is added — overrides the float cycle
    for one beat to confirm the auto-capture worked. */
@@ -6754,7 +6757,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   100% { transform:scale(1); }
 }
 /* Copy buttons: brief green "Copied ✓" confirmation state */
-.is-copied{ background:#1f7a4d !important; border-color:#1f7a4d !important; color:#fff !important; transition:background 120ms ease; }
+.is-copied{ background:#1f7a4d !important; border-color:#1f7a4d !important; color:#fff !important; transition:background var(--t-fast) var(--ease); }
 .is-copied svg{ stroke:#fff !important; }
 
 /* Chip stays anchored to the bottom-right corner of the viewport in BOTH states.
@@ -6803,8 +6806,6 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   0%   { transform:scale(1); opacity:1; }
   100% { transform:scale(0); opacity:0; }
 }
-/* Drawer floats now — no need to displace body content */
-body.rb-docked-active{padding-right:0}
 @media (max-width:520px){
   .rb-root.is-open .rb-drawer{width:calc(100vw - 40px); right:20px}
   .rb-root.is-open .rb-chip{right:20px}
@@ -6828,7 +6829,7 @@ body.rb-docked-active{padding-right:0}
   color:#5A5A5A;
   cursor:pointer;
   padding:0;
-  transition:background 160ms ease, color 160ms ease, border-color 160ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), border-color var(--t-base) var(--ease);
 }
 
 /* ---- View-mode toggle (Edit / Preview) ----
@@ -6860,7 +6861,7 @@ body.rb-docked-active{padding-right:0}
   letter-spacing:-0.005em;
   cursor:pointer;
   white-space:nowrap;
-  transition:background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 .rb-mode-btn svg{width:11px;height:11px;flex-shrink:0}
 .rb-mode-btn:hover:not(.is-active){
@@ -6895,8 +6896,8 @@ body.rb-docked-active{padding-right:0}
 }
 /* Smooth resize between maximised and restored states */
 .rb-root.is-open .rb-drawer{
-  transition:width 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
-             max-height 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:width var(--t-slow) var(--ease),
+             max-height var(--t-slow) var(--ease);
 }
 
 /* ---- TRANSIENT "View live report" PROMPT ----
@@ -6930,8 +6931,8 @@ body.rb-docked-active{padding-right:0}
   pointer-events:auto;
   /* Fade for entry/exit; bottom-transition smooths stack reflow when other pills
      fly away. The bob animation uses transform separately so the two don't fight. */
-  transition:opacity 280ms cubic-bezier(0.2,0.8,0.2,1),
-             bottom  240ms cubic-bezier(0.2,0.8,0.2,1);
+  transition:opacity var(--t-slow) var(--ease),
+             bottom  var(--t-slow) var(--ease);
 }
 .rb-add-prompt svg{width:13px;height:13px;color:#FFFFFF;pointer-events:none;flex-shrink:0}
 .rb-add-prompt span{
@@ -7045,7 +7046,7 @@ body.rb-docked-active{padding-right:0}
   color:#9A968D;
   cursor:pointer;
   padding:0;
-  transition:color 160ms ease, background 160ms ease;
+  transition:color var(--t-base) var(--ease), background var(--t-base) var(--ease);
 }
 .rb-onboarding-dismiss:hover{color:#1A1A1A;background:rgba(20,15,5,0.06)}
 .rb-onboarding-dismiss svg{width:11px;height:11px;pointer-events:none}
@@ -7246,7 +7247,7 @@ body.rb-docked-active{padding-right:0}
      loss of clipping isn't visible. */
   overflow:visible;
   box-shadow:0 1px 2px rgba(15,18,24,0.04);
-  transition:border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  transition:border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), opacity var(--t-base) var(--ease);
   animation:rb-item-in 240ms cubic-bezier(0.2,0.8,0.2,1);
 }
 .rb-item-header{border-top-left-radius:10px;border-top-right-radius:10px}
@@ -7304,11 +7305,11 @@ body.rb-docked-active{padding-right:0}
   50%     { opacity:1;    transform:scaleX(1.01); }
 }
 .rb-item{
-  transition:border-color 160ms ease,
-             box-shadow 160ms ease,
-             opacity 160ms ease,
-             margin-top 200ms cubic-bezier(0.2,0.8,0.2,1),
-             margin-bottom 200ms cubic-bezier(0.2,0.8,0.2,1);
+  transition:border-color var(--t-base) var(--ease),
+             box-shadow var(--t-base) var(--ease),
+             opacity var(--t-base) var(--ease),
+             margin-top var(--t-base) var(--ease),
+             margin-bottom var(--t-base) var(--ease);
 }
 
 .rb-item-header{
@@ -7331,7 +7332,7 @@ body.rb-docked-active{padding-right:0}
   border:1px solid transparent;
   border-radius:6px;
   background:transparent;
-  transition:color 140ms ease, background 140ms ease, border-color 140ms ease;
+  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
   -webkit-user-drag:element;                 /* Safari/Chrome explicit */
 }
 .rb-item-grip-icon{
@@ -7428,7 +7429,7 @@ body.rb-docked-active{padding-right:0}
   background:#fff;
   color:#6B675E;
   cursor:pointer;
-  transition:background 140ms ease, color 140ms ease, border-color 140ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .rb-member-btn svg{width:11px;height:11px;}
 .rb-member-btn:hover:not(:disabled){
@@ -7452,7 +7453,7 @@ body.rb-docked-active{padding-right:0}
   color:#B22A20;
   cursor:pointer;
   padding:0;
-  transition:background 160ms ease, color 160ms ease, transform 160ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
 }
 .rb-item-remove svg{width:10px;height:10px}
 .rb-item-remove:hover{
@@ -7486,9 +7487,9 @@ body.rb-docked-active{padding-right:0}
   letter-spacing:0.01em;
   cursor:pointer;
   white-space:nowrap;
-  transition:background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
 }
-.rb-item-actionbtn svg{width:13px;height:13px;color:#7A766E;flex-shrink:0;transition:color 160ms ease}
+.rb-item-actionbtn svg{width:13px;height:13px;color:#7A766E;flex-shrink:0;transition:color var(--t-base) var(--ease)}
 .rb-item-actionbtn:hover{
   background:rgba(20,15,5,0.04);
   color:#1A1A1A;
@@ -7537,9 +7538,9 @@ body.rb-docked-active{padding-right:0}
   color:#1A1A1A;
   text-align:left;
   cursor:pointer;
-  transition:background 120ms ease, color 120ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
-.rb-item-menu-item svg{width:13px;height:13px;color:#7A766E;flex-shrink:0;transition:color 120ms ease}
+.rb-item-menu-item svg{width:13px;height:13px;color:#7A766E;flex-shrink:0;transition:color var(--t-fast) var(--ease)}
 .rb-item-menu-item:hover:not(:disabled){background:rgba(20,15,5,0.05)}
 .rb-item-menu-item:hover:not(:disabled) svg{color:#1A1A1A}
 .rb-item-menu-item:disabled{
@@ -7573,13 +7574,13 @@ body.rb-docked-active{padding-right:0}
   background:#FFFFFF;
   display:inline-flex;align-items:center;justify-content:center;
   flex-shrink:0;
-  transition:background 140ms ease, border-color 140ms ease;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .rb-col-check svg{
   width:9px;height:9px;
   color:#FFFFFF;
   opacity:0;
-  transition:opacity 120ms ease;
+  transition:opacity var(--t-fast) var(--ease);
 }
 .rb-col-check.is-checked{
   background:var(--accent);
@@ -7599,9 +7600,9 @@ body.rb-docked-active{padding-right:0}
   background:#FFFFFF;
   max-height:1500px;
   opacity:1;
-  transition:max-height 260ms cubic-bezier(0.2,0.8,0.2,1),
-             opacity 200ms ease-out,
-             padding 260ms cubic-bezier(0.2,0.8,0.2,1);
+  transition:max-height var(--t-slow) var(--ease),
+             opacity var(--t-base) var(--ease),
+             padding var(--t-slow) var(--ease);
 }
 /* Reorder mode: items collapse to header strips so the user can see the
    full structure of the report at once while dragging. */
@@ -7610,9 +7611,9 @@ body.rb-docked-active{padding-right:0}
   opacity:0;
   padding-top:0;
   padding-bottom:0;
-  transition:max-height 220ms cubic-bezier(0.4,0,0.6,1),
-             opacity 160ms ease-out,
-             padding 220ms cubic-bezier(0.4,0,0.6,1);
+  transition:max-height var(--t-base) cubic-bezier(0.4,0,0.6,1),
+             opacity var(--t-base) var(--ease),
+             padding var(--t-base) cubic-bezier(0.4,0,0.6,1);
 }
 .rb-drawer-body.is-reorder-mode .rb-item{margin:6px 0}
 
@@ -7621,7 +7622,7 @@ body.rb-docked-active{padding-right:0}
   cursor:text;
   outline:none;
   border-radius:2px;
-  transition:background 120ms ease, box-shadow 120ms ease;
+  transition:background var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
   position:relative;
 }
 .rb-editable-header:hover{
@@ -7671,7 +7672,7 @@ body.rb-docked-active{padding-right:0}
   border-radius:7px;
   cursor:pointer;
   letter-spacing:-0.005em;
-  transition:background 160ms ease, color 160ms ease, border-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), border-color var(--t-base) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-base) var(--ease);
 }
 .rb-drawer-actions .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none!important}
 .rb-drawer-actions .btn svg{width:13px;height:13px;flex-shrink:0}
@@ -7739,7 +7740,7 @@ body.rb-docked-active{padding-right:0}
   border:1px solid rgba(46,133,82,0.40)!important;
   color:#246B43!important;
   font-weight:600!important;
-  transition:background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 120ms ease!important;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), transform var(--t-fast) var(--ease)!important;
 }
 .apa-toolbar .rb-add-btn:hover{
   background:#2E8552!important;
@@ -7809,7 +7810,7 @@ body.rb-docked-active{padding-right:0}
   border-radius:6px;
   cursor:pointer;
   white-space:nowrap;
-  transition:background 160ms ease, border-color 160ms ease, color 160ms ease;
+  transition:background var(--t-base) var(--ease), border-color var(--t-base) var(--ease), color var(--t-base) var(--ease);
 }
 .rb-offer-add{flex:1 1 auto;background:#9C3D2A;border:1px solid #9C3D2A;color:#FFFFFF}
 .rb-offer-add:hover{background:#8A3424;border-color:#8A3424}
@@ -7851,7 +7852,7 @@ body.rb-docked-active{padding-right:0}
   letter-spacing:-0.005em;
   border:1px solid transparent;
   cursor:pointer;
-  transition:color 140ms ease, background 140ms ease, border-color 140ms ease;
+  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
   white-space:nowrap;
 }
 .topbar-clear svg{
@@ -7886,7 +7887,7 @@ body.rb-docked-active{padding-right:0}
   letter-spacing:-0.005em;
   text-decoration:none;
   border:1px solid transparent;
-  transition:color 140ms ease, background 140ms ease, border-color 140ms ease;
+  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
   white-space:nowrap;
 }
 .topbar-kofi svg{
@@ -7935,8 +7936,8 @@ body.rb-docked-active{padding-right:0}
   transform:translateY(12px) scale(0.98);
   pointer-events:auto;
   overflow:hidden;
-  transition:opacity 280ms cubic-bezier(0.2,0.8,0.2,1),
-             transform 320ms cubic-bezier(0.2,0.9,0.25,1);
+  transition:opacity var(--t-slow) var(--ease),
+             transform var(--t-slow) cubic-bezier(0.2,0.9,0.25,1);
 }
 .rb-kofi-toast.is-visible{
   opacity:1;
@@ -7958,7 +7959,7 @@ body.rb-docked-active{padding-right:0}
   cursor:pointer;
   padding:0;
   z-index:2;
-  transition:background 140ms ease, color 140ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .rb-kofi-toast-close svg{width:10px;height:10px}
 .rb-kofi-toast-close:hover{
@@ -8051,7 +8052,7 @@ body.rb-docked-active{padding-right:0}
     inset 0 -1px 0 rgba(0,0,0,0.10),
     0 2px 4px rgba(255,94,91,0.22),
     0 6px 14px rgba(255,94,91,0.18);
-  transition:background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+  transition:background var(--t-base) var(--ease), transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
   cursor:pointer;
 }
 .rb-kofi-toast-cta-cup{
@@ -8297,12 +8298,12 @@ body.rb-docked-active{padding-right:0}
   border-radius:8px;
   cursor:pointer;
   letter-spacing:0.01em;
-  transition:background 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 #change-analysis .change-overview-cta svg{
   width:14px;
   height:14px;
-  transition:transform 140ms ease;
+  transition:transform var(--t-fast) var(--ease);
 }
 #change-analysis .change-overview-cta:hover{
   background:#9C3D2A;
@@ -8661,7 +8662,7 @@ body.rb-docked-active{padding-right:0}
   background:rgba(250,247,241,0.55);
   margin-top:10px;
   overflow:hidden;
-  transition:border-color 150ms ease, box-shadow 150ms ease;
+  transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 #effectsize .es-collapse:hover{ border-color:rgba(156,61,42,0.35); }
 #effectsize .es-collapse[open]{ box-shadow:0 1px 4px rgba(20,15,5,0.05); }
@@ -8669,7 +8670,7 @@ body.rb-docked-active{padding-right:0}
   cursor:pointer; list-style:none; user-select:none;
   display:flex; align-items:center; width:100%; box-sizing:border-box;
   padding:14px 16px; margin:0 !important;
-  transition:background 150ms ease, color 150ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 #effectsize .es-collapse-summary:hover{ background:rgba(156,61,42,0.06); color:var(--accent); }
 #effectsize .es-collapse-summary::-webkit-details-marker{ display:none; }
@@ -8677,7 +8678,7 @@ body.rb-docked-active{padding-right:0}
 #effectsize .es-collapse-summary::after{
   content:'\25BE'; margin-left:auto; flex-shrink:0;
   color:var(--accent); font-size:13px;
-  transition:transform 180ms ease;
+  transition:transform var(--t-base) var(--ease);
 }
 #effectsize .es-collapse[open] > .es-collapse-summary::after{ transform:rotate(180deg); }
 /* keep the body padded inside the card */
@@ -9330,7 +9331,7 @@ body.rb-docked-active{padding-right:0}
   z-index:60;
   opacity:0;
   pointer-events:none;
-  transition:opacity 160ms var(--ease), transform 160ms var(--ease);
+  transition:opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease);
   box-shadow:0 12px 28px rgba(15,18,24,0.22);
 }
 #change-analysis .change-overview-colh-label::after{
@@ -9344,7 +9345,7 @@ body.rb-docked-active{padding-right:0}
   border-color:transparent transparent rgba(15,18,24,0.96) transparent;
   z-index:61;
   opacity:0;
-  transition:opacity 160ms var(--ease);
+  transition:opacity var(--t-base) var(--ease);
 }
 /* Last dimension column: a centred popover would hang off the right edge of
    the table on a narrow window, so anchor it to the heading's right instead. */
@@ -9373,7 +9374,7 @@ body.rb-docked-active{padding-right:0}
 }
 #change-analysis .change-overview-row{
   cursor:pointer;
-  transition:background 140ms var(--ease);
+  transition:background var(--t-fast) var(--ease);
 }
 #change-analysis .change-overview-row:hover,
 #change-analysis .change-overview-row:focus-visible{
@@ -9467,7 +9468,7 @@ body.rb-docked-active{padding-right:0}
   padding:0;
   line-height:1;
   flex:0 0 auto;
-  transition:background 140ms var(--ease), color 140ms var(--ease);
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 #change-analysis .change-overview-info:hover,
 #change-analysis .change-overview-info:focus-visible{
@@ -9499,7 +9500,7 @@ body.rb-docked-active{padding-right:0}
   opacity:0;
   transform:translateY(4px);
   pointer-events:none;
-  transition:opacity 160ms var(--ease), transform 160ms var(--ease);
+  transition:opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease);
   box-shadow:0 10px 24px rgba(20,15,5,0.14);
 }
 #change-analysis .change-overview-info::after{
@@ -9512,7 +9513,7 @@ body.rb-docked-active{padding-right:0}
   border-color:#FFFFFF transparent transparent transparent;
   z-index:51;
   opacity:0;
-  transition:opacity 160ms var(--ease);
+  transition:opacity var(--t-base) var(--ease);
 }
 #change-analysis .change-overview-info:hover::before,
 #change-analysis .change-overview-info:hover::after,
@@ -9526,7 +9527,7 @@ body.rb-docked-active{padding-right:0}
   text-align:center;
   color:#9C3D2A;
   opacity:0;
-  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 #change-analysis .change-overview-table-arrow svg{
   width:18px;
@@ -9611,7 +9612,7 @@ body.rb-docked-active{padding-right:0}
   font-size:14px;
   line-height:1;
   cursor:pointer;
-  transition:background 140ms ease, color 140ms ease, border-color 140ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 #battery #bat-table .row-actions button:hover{
   background:rgba(156,61,42,0.10);
@@ -9807,7 +9808,7 @@ body.rb-docked-active{padding-right:0}
   gap:6px;
   position:relative;
   box-shadow:inset 0 -1px 0 rgba(20,15,5,0.08);
-  transition:background 240ms var(--ease,ease), color 240ms var(--ease,ease);
+  transition:background var(--t-slow) var(--ease,var(--ease)), color var(--t-slow) var(--ease,var(--ease));
 }
 .pvt-method-tab:first-child{border-radius:var(--r-lg) 0 0 0}
 .pvt-method-tab:last-child{border-right:none;border-radius:0 var(--r-lg) 0 0}
@@ -9866,7 +9867,7 @@ body.rb-docked-active{padding-right:0}
   text-transform:uppercase;
   line-height:1;
   white-space:nowrap;
-  transition:background 140ms ease,color 140ms ease,border-color 140ms ease;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);
 }
 .pvt-status.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.4);background:rgba(46,125,79,0.07)}
 .pvt-status.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.4);background:rgba(156,61,42,0.07)}
@@ -9901,7 +9902,7 @@ body.rb-docked-active{padding-right:0}
   align-items:center;
   justify-content:center;
   box-shadow:0 1px 2px rgba(168,85,68,0.25), 0 0 0 2px rgba(168,85,68,0.15);
-  transition:transform 140ms var(--ease), box-shadow 140ms var(--ease);
+  transition:transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 .pvt-method-tab-about:hover .pvt-about-bubble{
   transform:scale(1.08);
@@ -9988,14 +9989,14 @@ body.rb-docked-active{padding-right:0}
   z-index:60;
   opacity:0;
   pointer-events:none;
-  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 .pvt-overview-colh.is-end::before{left:auto;right:0;transform:translateY(-4px)}
 .pvt-overview-colh:hover::before,
 .pvt-overview-colh:focus-visible::before{opacity:1;transform:translateX(-50%) translateY(0)}
 .pvt-overview-colh.is-end:hover::before,
 .pvt-overview-colh.is-end:focus-visible::before{transform:translateY(0)}
-.pvt-overview-row{cursor:pointer;transition:background 140ms var(--ease)}
+.pvt-overview-row{cursor:pointer;transition:background var(--t-fast) var(--ease)}
 .pvt-overview-row:hover,
 .pvt-overview-row:focus-visible{background:#F7F2E6;outline:none}
 .pvt-overview-row:focus-visible{box-shadow:inset 3px 0 0 #9C3D2A}
@@ -10033,7 +10034,7 @@ body.rb-docked-active{padding-right:0}
   padding:0;
   line-height:1;
   flex:0 0 auto;
-  transition:background 140ms var(--ease), color 140ms var(--ease);
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .pvt-overview-info:hover,
 .pvt-overview-info:focus-visible{
@@ -10061,7 +10062,7 @@ body.rb-docked-active{padding-right:0}
   z-index:60;
   opacity:0;
   pointer-events:none;
-  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   transform:translateY(4px);
 }
 .pvt-overview-info:hover::before,
@@ -10171,7 +10172,7 @@ body.rb-docked-active{padding-right:0}
   background:transparent;
   color:#9E9A93;
   cursor:pointer;
-  transition:background 120ms ease, color 120ms ease, transform 160ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-base) var(--ease);
 }
 .pvt-rail-toggle svg{width:13px;height:13px}
 .pvt-rail-toggle:hover{background:rgba(20,15,5,0.04);color:var(--ink)}
@@ -10261,7 +10262,7 @@ body.rb-docked-active{padding-right:0}
   background:transparent;
   text-align:left;
   cursor:pointer;
-  transition:background 120ms ease;
+  transition:background var(--t-fast) var(--ease);
 }
 .pvt-rail-row:hover{background:rgba(20,15,5,0.035)}
 .pvt-rail-row:focus{outline:none}
@@ -10300,7 +10301,7 @@ body.rb-docked-active{padding-right:0}
   color:var(--ink);
   text-align:left;
   cursor:pointer;
-  transition:background 120ms ease;
+  transition:background var(--t-fast) var(--ease);
 }
 .pvt-rail-cta:hover{background:rgba(20,15,5,0.04)}
 .pvt-rail-cta:focus{outline:none}
@@ -10637,7 +10638,7 @@ body.rb-docked-active{padding-right:0}
   opacity:0;
   pointer-events:none;
   transform:translateY(4px);
-  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 .pvt-overview-flag:hover::before,
 .pvt-overview-flag:focus-visible::before{opacity:1;transform:translateY(0)}
@@ -10704,7 +10705,7 @@ svg.rey-glyph{width:56px;height:56px}
   background:transparent;
   cursor:pointer;
   padding:6px;
-  transition:border-color 120ms ease,background 120ms ease;
+  transition:border-color var(--t-fast) var(--ease),background var(--t-fast) var(--ease);
 }
 .rey-pick:hover{border-color:rgba(20,15,5,0.14)}
 .rey-pick:focus-visible{outline:none;border-color:rgba(156,61,42,0.5)}
@@ -10952,7 +10953,7 @@ svg.rey-glyph{width:56px;height:56px}
   padding:6px 11px; border-radius:6px; background:transparent;
   color:#5A5A5A; font-family:var(--sans); font-size:12px; font-weight:500;
   border:1px solid transparent; cursor:pointer; white-space:nowrap;
-  transition:color 140ms ease, background 140ms ease, border-color 140ms ease;
+  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .topbar-session svg{ width:12px; height:12px; flex-shrink:0; opacity:0.75; }
 .topbar-session:hover{ color:#1A1A1A; background:rgba(26,26,26,0.05); border-color:rgba(26,26,26,0.14); }

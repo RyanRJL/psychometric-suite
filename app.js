@@ -511,8 +511,11 @@ function navigateTo(target, opts){
        and is skipped, so the page being arrived at is the only place its
        own cap can be computed. */
     if (typeof refreshTableViewportFit === 'function') refreshTableViewportFit();
-    /* The popover is anchored to a control on Score Tables, so it cannot
-       survive a page change — its anchor goes with it. */
+    /* Whether the Working Report can dock beside a page depends on the page.
+       In a try: the auth code can navigate during boot, before the
+       `const ReportBundle` line far below has run, and `typeof` on a const in
+       that state throws rather than returning "undefined". */
+    try { if (ReportBundle.applyDock) ReportBundle.applyDock(); } catch (e) {}
   };
 
   // Re-selecting the page you're already on shouldn't flash it away and back.
@@ -2969,7 +2972,13 @@ function renderBattery(){
        Its inferred-metric tag is suppressed for the same reason: "(Scaled)"
        beside a disabled Score box would claim a metric the row does not have. */
     const isBr = !!batteryBaseRateEntry(r);
-    const abbr = isBr ? '' : scoreTypeAbbr(rowType);
+    /* Nor on a row whose group header already names one metric for the
+       whole group ("· Standard Score"): fifteen "(Scaled)" tags under a
+       "Scaled Score" heading say nothing the heading does not. The tag stays
+       where it carries information, on ungrouped rows and in a "Mixed"
+       group, which is what that heading's own comment promises. */
+    const groupUniform = !!gKey && new Set(batteryRows.filter(x => batteryGroupKeyOf(x) === gKey).map(x => rowScoreType(x))).size === 1;
+    const abbr = (isBr || groupUniform) ? '' : scoreTypeAbbr(rowType);
     const typeTag = abbr ? `<span class="bat-row-type-tag">(${abbr})</span>` : '';
     const scoreCell = isBr
       ? `<td class="bat-score-na-cell"><input type="number" disabled class="bat-score-na" title="Raw-score measure: enter the span in the Raw Score column. The base rate is read from the published table." aria-label="Not applicable: raw-score measure"></td>`
@@ -4366,7 +4375,9 @@ function renderSdi(){
     if (r.group) tr.className = 'in-group';
     if (change === null && hasAnyRowValue(r)) tr.classList.add('row-check');
     else if (change === null) tr.classList.add('row-awaiting');
-    const abbr = raw ? '' : scoreTypeAbbr(sdiRowScoreType(r));
+    /* As on Score Tables: no tag where the group header names the one metric. */
+    const sdiGroupUniform = !!r.group && new Set(sdiRows.filter(x => x.group === r.group).map(x => sdiRowScoreType(x))).size === 1;
+    const abbr = (raw || sdiGroupUniform) ? '' : scoreTypeAbbr(sdiRowScoreType(r));
     const typeTag = abbr ? `<span class="bat-row-type-tag">(${escapeHtml(abbr)})</span>` : '';
     tr.innerHTML = `
       <td class="row-num">${i+1}${typeTag}</td>
@@ -8511,10 +8522,17 @@ function switchPvtTab(name){
 /* About carries no description, as the Change Analysis overview does not;
    the full one shows on every measure tab. Its "no single index is a
    verdict" is carried on About by the table's footer. An inline display
-   rather than [hidden], so no stylesheet display rule can outrank it. */
+   rather than [hidden], so no stylesheet display rule can outrank it.
+
+   It sits at the top of the sheet, inside the card, rather than as a loose
+   line above the tab strip: the only text on any tool page outside a card,
+   as Change Analysis's formula line also was (UI audit, 2026-09). */
 function pvtSyncDesc(name){
-  const desc = document.querySelector('#validity > .section-desc');
-  if (desc) desc.style.display = name === 'about' ? 'none' : '';
+  const desc = document.getElementById('pvt-desc');
+  if (!desc) return;
+  const main = document.querySelector('#validity .pvt-sheet-main');
+  if (main && desc.parentElement !== main) main.prepend(desc);
+  desc.style.display = name === 'about' ? 'none' : '';
 }
 
 function clearPvt(){
@@ -8612,7 +8630,7 @@ function renderPvtAboutPanel(){
         <th class="pvt-overview-th is-measure">Measure</th>
         <th class="pvt-overview-th is-left"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The instrument and edition each cut-off was calibrated on. Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity. A cut-off derived on one edition does not automatically transfer to another; a ! marks where that matters.">Derived on</span></th>
         <th class="pvt-overview-th is-left"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="The cut-off each measure applies when its tab is first opened. Its published sensitivity and specificity are printed beside the cut-off selector on that tab.">Default cut-off</span></th>
-        <th aria-hidden="true"></th>
+        <th class="pvt-overview-th" aria-hidden="true"></th>
       </tr></thead>
       ${body}
     </table>
@@ -8699,6 +8717,65 @@ wireSdiAutofill();
 setupPvtPage();
 
 /* ============================================================
+   APP FRAME: the footer is a fixed status bar
+   ============================================================
+   See "APP FRAME" at the end of design-system.css. The footer is fixed to
+   the bottom of the window and body padding-bottom reserves its height, so
+   the page's own fitters have to leave that strip alone as well.
+
+   Both custom properties are MEASURED. The privacy line wraps to two lines
+   on a narrow window, and the chip's width follows its count badge, so a
+   constant would be right at one width only. offsetHeight / offsetWidth are
+   layout px, which is what CSS lengths on this zoomed body are, so neither
+   value is divided by the zoom. */
+function footerVisualHeight(){
+  const footer = document.querySelector('.site-footer');
+  if (!footer || getComputedStyle(footer).position !== 'fixed') return 0;
+  return footer.getBoundingClientRect().height;   /* visual px, like every rect */
+}
+
+/* `var` for the same init-order reason as tableViewportRO below. */
+var appFrameRO = null;
+
+function syncAppFrame(){
+  const root = document.documentElement;
+  const chip = document.querySelector('.rb-chip');
+  /* The chip is injected by ReportBundle, later than this module starts, so
+     it is picked up by whichever pass first finds it. */
+  if (chip && appFrameRO && !chip.dataset.frameObserved){
+    chip.dataset.frameObserved = '1';
+    appFrameRO.observe(chip);
+  }
+  /* The chip's width plus its 16px inset and a 24px gap before the footer
+     text. Read first: the footer's height depends on it (a wider slot can
+     wrap the privacy line). */
+  if (chip && chip.offsetWidth){
+    const slot = chip.offsetWidth + 16 + 24;
+    if (root.style.getPropertyValue('--rb-chip-slot') !== slot + 'px'){
+      root.style.setProperty('--rb-chip-slot', slot + 'px');
+    }
+  }
+  const footer = document.querySelector('.site-footer');
+  if (footer && footer.offsetHeight){
+    const h = footer.offsetHeight;
+    if (root.style.getPropertyValue('--footer-h') !== h + 'px'){
+      root.style.setProperty('--footer-h', h + 'px');
+    }
+  }
+}
+
+function setupAppFrame(){
+  if (typeof ResizeObserver === 'function' && !appFrameRO){
+    appFrameRO = new ResizeObserver(() => syncAppFrame());
+    const footer = document.querySelector('.site-footer');
+    if (footer) appFrameRO.observe(footer);
+  }
+  syncAppFrame();
+  window.addEventListener('resize', syncAppFrame);
+  window.addEventListener('load', syncAppFrame);
+}
+
+/* ============================================================
    TABLE VIEWPORT FIT — the box ends where the window ends
    ============================================================
    .table-viewport (styles.css) caps the Score Tables and Change Analysis
@@ -8760,7 +8837,9 @@ function fitTableViewports(){
       if (r.height) tail = Math.max(tail, r.bottom);
     }
 
-    const over   = tail - (window.innerHeight - TABLE_VIEWPORT_GAP);
+    /* The window less the fixed status bar: that strip is covered, so a
+       box fitted to the full window would end underneath it. */
+    const over   = tail - (window.innerHeight - footerVisualHeight() - TABLE_VIEWPORT_GAP);
     const target = Math.max(TABLE_VIEWPORT_MIN, Math.round((rect.height - over) / z));
 
     /* Write only on a real change: an unconditional write on every resize
@@ -8835,7 +8914,8 @@ window.fitTableViewports = fitTableViewports;
 // Final initialization
 refreshAll();
 
-// Size the scrolling table boxes to the window (see the banner above)
+// The status-bar footer, then the scrolling table boxes that fit around it
+setupAppFrame();
 setupTableViewportFit();
 
 /* ---------- GLOBAL CLEAR — Topbar "New patient" button ----------
@@ -9352,7 +9432,6 @@ function renderTermsStatus(){
     home: 'home',
     converter: 'converter',
     battery: 'battery',
-    'report-writer': 'report',
     effectsize: 'effectsize',
     // All change-analysis methods map to the "change" bucket
     sdi: 'change',
@@ -9373,8 +9452,7 @@ function renderTermsStatus(){
     home: 'Home',
     converter: 'Score Converter',
     battery: 'Score Tables',
-    'report-writer': 'Report Writer',
-    effectsize: 'Effect Size Tools',
+    effectsize: 'Effect Sizes',
     sdi: 'Standard Deviation Index',
     'rci-basic': 'Simple Reliable Change',
     'rci-practice': 'Practice Effect-Adjusted',
@@ -9384,12 +9462,12 @@ function renderTermsStatus(){
     charts: 'Score Charts',
     profile: 'Profile Analysis',
     validity: 'Performance Validity',
-    premorbid: 'Premorbid Estimation',
+    premorbid: 'Premorbid Estimate',
     'custom-tests': 'Data',
     about: 'Methods & References',
     /* Footer page, absent from TOPNAV_BUCKETS by design — but the brand row
        still names every page it can land on. */
-    'privacy-use': 'Privacy & Use'
+    'privacy-use': 'Privacy & use'
   };
 
   function syncTopnav(){
@@ -10786,7 +10864,7 @@ const ReportBundle = (function(){
       if (key && byKey.has(key)){
         byKey.get(key).members.push(member);
       } else {
-        const g = { key, longName: info ? info.longName : null, members: [member] };
+        const g = { key, longName: info ? info.longName : null, shortName: info ? info.name : null, members: [member] };
         groups.push(g);
         if (key) byKey.set(key, g);
       }
@@ -10816,6 +10894,7 @@ const ReportBundle = (function(){
         items: ordered.map(m => m.item),
         isMerged,
         longName: g.longName,
+        shortName: g.shortName,
         html: isMerged
           ? buildMergedTableHtml(g.longName, ordered.map(m => ({ html: m.html, subLabel: m.subLabel })))
           : ordered[0].html
@@ -10998,7 +11077,7 @@ ${buildReportHtmlBody()}
               <line x1="5.5" y1="11" x2="9.5" y2="11"/>
             </svg>
             <span>Working Report</span>
-            <span class="rb-drawer-count" data-rb-count-text>0 items</span>
+            <span class="rb-drawer-count" data-rb-count-text>0 tables</span>
           </div>
           <div class="rb-drawer-head-actions">
             <div class="rb-mode-toggle" role="tablist" aria-label="View mode">
@@ -11314,6 +11393,13 @@ ${buildReportHtmlBody()}
         // If editing a header, just blur - don't close the drawer
         const editing = document.activeElement?.closest('.rb-editable-header');
         if (editing){ editing.blur(); return; }
+        /* Docked, the report sits beside a page that is still being worked,
+           and Escape there belongs to the page (closing a family dropdown,
+           say). Only an Escape from inside the report, or from nowhere in
+           particular, closes it. */
+        const ae = document.activeElement;
+        const fromPage = ae && ae !== document.body && !rootEl?.contains(ae);
+        if (fromPage && document.body.classList.contains('rb-docked')) return;
         close();
       }
       // Enter on a header cell → commit (blur to save)
@@ -11336,6 +11422,10 @@ ${buildReportHtmlBody()}
     // (e.g. clicking ✕ to remove an item triggers a full re-render).
     document.addEventListener('click', e => {
       if (state.minimized) return;
+      /* Docked beside the page, the report is meant to stay open while the
+         page is worked, so a click on the page is work, not a dismissal.
+         Only the overlay (a window too narrow to dock) closes this way. */
+      if (document.body.classList.contains('rb-docked')) return;
       const path = (typeof e.composedPath === 'function') ? e.composedPath() : [];
       for (const el of path){
         if (el && el.id === 'report-bundle-root') return;
@@ -11346,6 +11436,78 @@ ${buildReportHtmlBody()}
     });
 
     // Resize handle removed - drawer is now fixed-size.
+    window.addEventListener('resize', applyDock);
+    /* A click in the page can change what is on screen (a tab, a mode) and
+       so whether it fits beside the panel. After the click's own handlers. */
+    document.addEventListener('click', e => {
+      if (state.minimized || rootEl?.contains(e.target)) return;
+      setTimeout(applyDock, 0);
+    });
+  }
+
+  /* ---------- docking ----------
+     Open, the report is a full-height panel on the right, between the top
+     bar and the status bar. Where the window has room it DOCKS: the page
+     narrows beside it, so the scores being reported and the report itself
+     are on screen together. It used to float over the page's right half,
+     which was exactly where Score, Percentile and Classification sit.
+
+     Where the window is too narrow to leave the page a usable width, it
+     overlays instead, as before. RB_DOCK_MIN_PAGE is that usable width; all
+     three constants are layout px (the CSS width is too), so the window is
+     converted out of visual px once. The widths are written to CSS here, so
+     the stylesheet and this test cannot disagree.
+
+     A width alone is not enough, because pages differ. At 1366 px Score
+     Tables and Change Analysis fit beside the panel, while Premorbid's
+     results table, Effect Sizes' input row and a Validity tab ran under it
+     and Profile Analysis gained 140px of scroll. So the page on screen is
+     MEASURED docked (pageFitsDocked) and docks only if nothing spills
+     sideways and it scrolls no further than it does undocked. Re-run on
+     navigation and after any click in the page, since a tab or mode switch
+     changes what is on screen without resizing anything. */
+  const RB_DOCK_W        = 560;
+  const RB_DOCK_W_MAX    = 800;
+  const RB_DOCK_MIN_PAGE = 900;
+  /* Both layouts are laid out synchronously, with transitions off, and the
+     original state put back, so nothing is painted in between. */
+  function pageFitsDocked(){
+    const sec = document.querySelector('.main > .section.active');
+    if (!sec) return true;
+    const body = document.body;
+    const se = document.scrollingElement || document.documentElement;
+    const fit = () => { if (typeof fitTableViewports === 'function') fitTableViewports(); };
+    const had = body.classList.contains('rb-docked');
+    body.classList.add('rb-measuring');
+    body.classList.remove('rb-docked');
+    fit();
+    const baseScroll = Math.max(0, se.scrollHeight - se.clientHeight);
+    body.classList.add('rb-docked');
+    fit();
+    const fits = sec.scrollWidth <= sec.clientWidth + 1
+      && (se.scrollHeight - se.clientHeight) <= baseScroll + 1;
+    body.classList.toggle('rb-docked', had);
+    fit();
+    body.classList.remove('rb-measuring');
+    return fits;
+  }
+  function applyDock(){
+    const z = (typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1) || 1;
+    const width = state.maximised ? RB_DOCK_W_MAX : RB_DOCK_W;
+    const open = !state.minimized;
+    const rootStyle = document.documentElement.style;
+    rootStyle.setProperty('--rb-dock-w', width + 'px');
+    const push = open && (window.innerWidth / z - width) >= RB_DOCK_MIN_PAGE && pageFitsDocked();
+    const was = document.body.classList.contains('rb-docked');
+    document.body.classList.toggle('rb-docked', push);
+    if (rootEl) rootEl.classList.toggle('is-overlay', open && !push);
+    /* The page's own fitters (table boxes, the Profile and Charts panels)
+       listen for resize. A change of page width is one, for them, so they
+       are told once the margin transition has finished. */
+    if (was !== push){
+      clearTimeout(applyDock.t);
+      applyDock.t = setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
+    }
   }
 
   /* ---------- state transitions ---------- */
@@ -11366,7 +11528,7 @@ ${buildReportHtmlBody()}
         save();
         render(); // removes is-open + hides drawer
         rootEl?.classList.remove('is-closing'); // cleanup last so the drawer never re-animates
-      }, 240); // matches rb-drawer-bubble-out duration
+      }, 180); // matches rb-dock-out (design-system.css)
     } else {
       state.minimized = true;
       save();
@@ -11413,8 +11575,15 @@ ${buildReportHtmlBody()}
      during continuous typing). */
   const PILL_HEIGHT = 40;       // approx pill height
   const PILL_GAP    = 8;        // gap between stacked pills
-  const PILL_BASE_BOTTOM = 82;  // distance from viewport bottom for pill #1
-  const CHIP_CENTER_BOTTOM = 24; // chip's vertical centre, target for fly animation
+  /* Both measured from the status bar the chip now sits in (--footer-h,
+     layout px, as `bottom` is): pill #1 starts 12px above the bar, and the
+     fly animation aims at the bar's centre line, which is the chip's. */
+  function footerLayoutH(){
+    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--footer-h'));
+    return Number.isFinite(v) && v > 0 ? v : 44;
+  }
+  function pillBaseBottom(){ return footerLayoutH() + 12; }
+  function chipCentreBottom(){ return footerLayoutH() / 2; }
 
   function buildPillNode(sourceLabel, sourceId){
     const text = sourceLabel ? `${sourceLabel} added to report` : 'Added to report';
@@ -11439,8 +11608,8 @@ ${buildReportHtmlBody()}
     clearTimeout(pill._holdTimer);
     pill.classList.remove('is-visible');
     // Compute fly distance from this pill's CURRENT bottom to the chip's centre
-    const bottomVal = parseInt(pill.style.bottom, 10) || PILL_BASE_BOTTOM;
-    const flyDistance = bottomVal - CHIP_CENTER_BOTTOM;
+    const bottomVal = parseInt(pill.style.bottom, 10) || pillBaseBottom();
+    const flyDistance = bottomVal - chipCentreBottom();
     pill.style.setProperty('--rb-fly-distance', flyDistance + 'px');
     pill.classList.add('is-flying');
     // Chip "catches" the pill just before arrival
@@ -11503,7 +11672,7 @@ ${buildReportHtmlBody()}
        VISUAL px (body carries zoom:0.9) while `bottom` is applied in LAYOUT px,
        so the height is divided back out — see pageZoomFactor. */
     const card = document.querySelector('#rb-offer-host .rb-offer-box');
-    let base = PILL_BASE_BOTTOM;
+    let base = pillBaseBottom();
     if (card){
       const z = (typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1) || 1;
       base += Math.round(card.getBoundingClientRect().height / z) + PILL_GAP;
@@ -11828,7 +11997,10 @@ ${buildReportHtmlBody()}
     // Stable menu id keyed to the battery, so it survives within-group reorders
     // (the first member — and thus the anchor — can change as rows move).
     const menuId = escapeHtmlLocal('grp-' + (block.key || block.ids[0]));
-    const title = escapeHtmlLocal(block.longName || 'Merged tables');
+    /* The card header takes the instrument's short name. The merged table's
+       own caption, directly below, already prints the full title, and the
+       header repeating it in capitals ran to three lines (UI audit, 2026-09). */
+    const title = escapeHtmlLocal(block.shortName || block.longName || 'Merged tables');
     const count = block.items.length;
     const members = block.items.map((it, mi) => {
       const mid = escapeHtmlLocal(it.id);
@@ -11930,7 +12102,11 @@ ${buildReportHtmlBody()}
       }
     });
     rbPrevCount = countNow;
-    rootEl.querySelectorAll('[data-rb-count-text]').forEach(el => el.textContent = `${state.items.length} item${state.items.length === 1 ? '' : 's'}`);
+    /* "tables", not "items": the chip says APA Tables and a merged card says
+       "2 tables combined", so the header counts the same thing. A merged
+       battery is one card holding several tables, which is why the number
+       can exceed the cards on screen. */
+    rootEl.querySelectorAll('[data-rb-count-text]').forEach(el => el.textContent = `${state.items.length} table${state.items.length === 1 ? '' : 's'}`);
     rootEl.querySelectorAll('[data-rb-action="clear"], [data-rb-action="copy"], [data-rb-action="export-word"], [data-rb-action="export-excel"]').forEach(b => b.disabled = !state.items.length);
     rootEl.dataset.state = state.minimized ? 'closed' : 'open';
     rootEl.classList.toggle('is-open', !state.minimized);
@@ -11940,11 +12116,11 @@ ${buildReportHtmlBody()}
     // Drawer is only shown when open
     if (drawer) drawer.hidden = state.minimized;
 
-    // Drawer is now a fixed-size floating popover - no inline width override,
-    // no body padding push.
+    // Width comes from the stylesheet (--rb-dock-w, set by applyDock).
     if (drawer) drawer.style.width = '';
-    document.body.style.paddingRight = '';
-    document.body.classList.remove('rb-docked-active');
+    applyDock();
+    const chipBtn = rootEl.querySelector('.rb-chip');
+    if (chipBtn) chipBtn.setAttribute('aria-expanded', String(!state.minimized));
 
     // Onboarding hint: show only on first ever visit, when drawer is closed
     if (onboarding){
@@ -12052,6 +12228,8 @@ ${buildReportHtmlBody()}
     watchMethodPanels();
     render();
     refreshConsentControls();
+    /* The chip now exists: size the status bar's slot for it. */
+    if (typeof syncAppFrame === 'function') syncAppFrame();
     setInterval(() => {
       if (state.minimized) return;
       rootEl?.querySelectorAll('[data-rb-time]').forEach(el => {
@@ -12081,7 +12259,7 @@ ${buildReportHtmlBody()}
     });
   }
 
-  return { init, addOrReplace, remove, clear, clearSilent, setSuppressed, isSuppressed, copyAll, exportWord, exportExcel, open, close, toggle, showKofiPrompt: maybeShowKofiToast,
+  return { init, addOrReplace, remove, clear, clearSilent, setSuppressed, isSuppressed, copyAll, exportWord, exportExcel, open, close, toggle, applyDock, showKofiPrompt: maybeShowKofiToast,
            acceptSource, isSourceAccepted, isConsentGated, resetConsent, refreshConsentControls,
            hasUnexported, showLeaveCard, markExported,
            /* Save / Open session: consent travels with the patient's tables, the

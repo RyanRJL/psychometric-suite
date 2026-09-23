@@ -102,7 +102,7 @@ body{display:flex;min-height:100vh;overflow:hidden;zoom:0.9}
   display:flex;align-items:center;justify-content:space-between;gap:8px;
   font-family:var(--sans);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
   color:var(--muted);font-weight:500;background:transparent;border:1px solid transparent;
-  border-radius:6px;cursor:pointer;text-align:left;transition:background 120ms ease, color 120ms ease, border-color 120ms ease;
+  border-radius:6px;cursor:pointer;text-align:left;transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .nav-label:hover{background:rgba(0,0,0,0.03);color:var(--ink);border-color:var(--border-soft)}
 .nav-label::after{content:"\25BE";font-size:10px;letter-spacing:0;color:var(--faint);line-height:1}
@@ -114,7 +114,7 @@ body{display:flex;min-height:100vh;overflow:hidden;zoom:0.9}
   padding:7px 24px;cursor:pointer;
   font-size:13.5px;color:var(--ink-2);
   border-left:2px solid transparent;
-  transition:background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
   user-select:none;
 }
 .nav-item:hover{background:rgba(0,0,0,0.03);color:var(--ink)}
@@ -247,7 +247,7 @@ h1.section-title em{font-style:italic;font-weight:500;color:var(--accent)}
 .home-overview-panel .block-title{margin:0 0 12px;padding-bottom:10px;font-size:22px}
 .home-overview-copy{font-size:14px;color:var(--ink-2);line-height:1.65;max-width:720px;margin-bottom:20px}
 .home-tool-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
-.home-tool-card{position:relative;display:flex;flex-direction:column;gap:10px;min-height:126px;padding:17px 16px;text-align:center;align-items:center;border:1px solid var(--border-soft);border-radius:8px;background:rgba(250,247,241,.72);box-shadow:var(--shadow-soft);cursor:pointer;transition:transform 150ms ease,border-color 150ms ease,background 150ms ease,box-shadow 150ms ease}
+.home-tool-card{position:relative;display:flex;flex-direction:column;gap:10px;min-height:126px;padding:17px 16px;text-align:center;align-items:center;border:1px solid var(--border-soft);border-radius:8px;background:rgba(250,247,241,.72);box-shadow:var(--shadow-soft);cursor:pointer;transition:transform var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),background var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
 .home-tool-card:hover{transform:translateY(-2px);border-color:rgba(156,61,42,.30);background:var(--paper);box-shadow:0 8px 20px rgba(60,40,20,.06)}
 .home-tool-icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:var(--accent-tint);color:var(--accent);font-family:var(--serif);font-size:18px;line-height:1}
 .home-tool-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
@@ -274,13 +274,13 @@ h1.section-title em{font-style:italic;font-weight:500;color:var(--accent)}
   padding:24px 22px 20px;
   background:var(--paper);border:1px solid var(--border-soft);border-radius:8px;
   box-shadow:var(--shadow-soft);cursor:default;text-align:left;
-  transition:transform 150ms ease,border-color 150ms ease,box-shadow 150ms ease;
+  transition:transform var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
   font-family:var(--sans);position:relative;overflow:visible;
 }
 .home-pathway-card::before{
   content:"";position:absolute;inset:0 0 auto 0;height:2px;
   background:linear-gradient(90deg,var(--accent),rgba(156,61,42,0.05));
-  opacity:0;transition:opacity 150ms ease;
+  opacity:0;transition:opacity var(--t-fast) var(--ease);
 }
 .home-pathway-card:hover{transform:translateY(-2px);border-color:rgba(156,61,42,.26);box-shadow:0 8px 20px rgba(60,40,20,.06)}
 .home-pathway-card:hover::before{opacity:1}
@@ -296,7 +296,7 @@ h1.section-title em{font-style:italic;font-weight:500;color:var(--accent)}
 .home-pathway-title{
   font-family:var(--serif);font-size:20px;font-weight:600;
   letter-spacing:-0.01em;color:var(--ink);line-height:1.1;margin-bottom:10px;
-  transition:color 150ms ease;
+  transition:color var(--t-fast) var(--ease);
 }
 .home-pathway-card:hover .home-pathway-title{color:var(--accent)}
 .home-pathway-desc{font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:16px;flex:1}
@@ -304,7 +304,7 @@ h1.section-title em{font-style:italic;font-weight:500;color:var(--accent)}
   list-style:none;border-top:1px solid var(--border-soft);
   padding-top:12px;display:flex;flex-direction:column;gap:5px;
 }
-.home-pathway-tool{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);cursor:default;border-radius:3px;padding:1px 4px;margin:0 -4px;transition:background 120ms ease}
+.home-pathway-tool{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);cursor:default;border-radius:3px;padding:1px 4px;margin:0 -4px;transition:background var(--t-fast) var(--ease)}
 .home-pathway-tool:hover{background:rgba(156,61,42,0.06)}
 .home-pathway-tool:hover .home-pathway-tool-name{color:var(--accent)}
 .home-pathway-tool-num{font-family:var(--mono);font-size:10px;color:var(--faint);width:18px;flex-shrink:0}
@@ -328,12 +328,12 @@ h1.section-title em{font-style:italic;font-weight:500;color:var(--accent)}
   width:min(340px,72vw);padding:10px 12px;border:1px solid rgba(156,61,42,0.24);
   border-radius:6px;background:var(--tooltip-bg);color:var(--ink-2);box-shadow:var(--tooltip-shadow);
   font-family:var(--sans);font-size:12px;font-weight:400;line-height:1.45;letter-spacing:0;text-transform:none;
-  white-space:normal;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity 140ms ease,transform 140ms ease;
+  white-space:normal;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
 }
 .home-pathway-tool-badge::after{
   content:"";position:absolute;right:14px;bottom:calc(100% + 3px);z-index:81;
   border-width:6px 6px 0 6px;border-style:solid;border-color:var(--tooltip-bg) transparent transparent transparent;
-  opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity 140ms ease,transform 140ms ease;
+  opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
 }
 .home-pathway-tool-badge:hover::before,
 .home-pathway-tool-badge:hover::after,
@@ -360,7 +360,7 @@ input[type="text"], input[type="number"], input[type="date"], select, textarea{
   border:1px solid var(--border);border-radius:3px;
   padding:8px 10px;
   width:100%;
-  transition:border-color 120ms ease, box-shadow 120ms ease;
+  transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 input:focus, select:focus, textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint-strong)}
 input[type="number"]{font-family:var(--mono)}
@@ -394,7 +394,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
   font-family:var(--sans);font-size:12.5px;font-weight:500;letter-spacing:0.01em;
   padding:8px 14px;border-radius:3px;cursor:pointer;
   border:1px solid var(--border);background:var(--paper);color:var(--ink);
-  transition:all 120ms ease;
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   text-decoration:none;
 }
 .btn:hover{border-color:var(--ink);background:var(--paper-2)}
@@ -509,7 +509,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 .input-table .row-actions button{
   background:none;border:none;cursor:pointer;color:var(--faint);
   padding:4px;font-size:14px;line-height:1;border-radius:3px;
-  transition:all 120ms ease;
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 .input-table .row-actions button:hover{color:var(--warn);background:rgba(139,58,46,0.08)}
 .input-table .computed{color:var(--ink-2);font-family:var(--mono);text-align:center;padding:8px 10px}
@@ -532,7 +532,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
   border:1px dashed #2E8552;
   padding:7px 12px;border-radius:3px;
   font-family:var(--sans);font-size:12px;font-weight:600;color:#246B43;cursor:pointer;
-  transition:background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  transition:background var(--t-base) var(--ease), border-color var(--t-base) var(--ease), color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
 }
 .add-row-btn:hover{
   background:#2E8552;
@@ -634,7 +634,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
 .conv-slider-marks .mark{position:absolute;width:1px;height:7px;background:var(--border);top:-3px;transform:translateX(-50%)}
 .conv-slider-marks .mark.major{height:10px;top:-5px;background:var(--muted)}
 input[type="range"]#conv-slider{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--border);outline:none;margin:0;position:relative;z-index:2;border:none;padding:0}
-input[type="range"]#conv-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);border:3px solid var(--paper);box-shadow:0 0 0 1px var(--accent),0 2px 5px rgba(156,61,42,0.25);cursor:grab;transition:transform 0.12s}
+input[type="range"]#conv-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);border:3px solid var(--paper);box-shadow:0 0 0 1px var(--accent),0 2px 5px rgba(156,61,42,0.25);cursor:grab;transition:transform var(--t-fast)}
 input[type="range"]#conv-slider::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.1)}
 input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:3px solid var(--paper);box-shadow:0 0 0 1px var(--accent);cursor:grab}
 .conv-slider-ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:6px;letter-spacing:0.02em}
@@ -654,7 +654,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 /* CONVERTER SCORES STRIP */
 .conv-strip-header{font-family:var(--mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-top:16px;margin-bottom:6px}
 .conv-scores-strip{display:flex;gap:0;background:var(--paper);border:1px solid var(--border-soft);border-radius:5px;overflow:hidden}
-.conv-score-item{flex:1;padding:14px 16px;border-right:1px solid var(--border-soft);transition:background 150ms;position:relative}
+.conv-score-item{flex:1;padding:14px 16px;border-right:1px solid var(--border-soft);transition:background var(--t-fast);position:relative}
 .conv-score-item:last-child{border-right:none}
 .conv-score-item.conv-score-active{background:var(--accent)}
 .conv-score-item.conv-score-active .conv-score-label::after{content:" Â· you entered";font-size:8px;letter-spacing:0.05em;color:rgba(255,220,200,0.6);text-transform:none}
@@ -717,7 +717,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .desc-carousel-track{
   display:flex;align-items:center;
-  transition:transform 380ms cubic-bezier(0.4,0,0.2,1);
+  transition:transform var(--t-slow) cubic-bezier(0.4,0,0.2,1);
   /* Drop will-change — it forces a permanent GPU layer with bilinear
      filtering which renders text at non-integer offsets fuzzily. The
      transform-only animation runs fine without it. */
@@ -730,7 +730,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   /* Use solid colour shifts (not opacity) so the text stays crisp. */
   color:#C5BFB2;
   opacity:1;
-  transition:color 380ms;
+  transition:color var(--t-slow);
   cursor:default;
   /* Force grayscale antialiasing so masked + transformed text doesn't
      pick up subpixel colour-fringing artefacts. */
@@ -772,7 +772,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   display:flex;justify-content:space-between;align-items:baseline;
   padding:9px 12px;border-left:2px solid transparent;
   font-size:13.5px;color:var(--ink-2);
-  transition:background 120ms ease;
+  transition:background var(--t-fast) var(--ease);
 }
 .descriptor-row .desc-row-label{font-family:var(--sans)}
 .descriptor-row .desc-row-criteria{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:0.01em}
@@ -796,7 +796,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .tab{
   padding:10px 18px;cursor:pointer;font-size:13px;color:var(--muted);
   border-bottom:2px solid transparent;margin-bottom:-1px;
-  transition:all 120ms ease;font-family:var(--sans);
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);font-family:var(--sans);
 }
 .tab:hover{color:var(--ink)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
@@ -816,7 +816,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   padding:12px 18px;border-radius:4px;font-size:13px;
   box-shadow:0 8px 24px rgba(0,0,0,0.15);
   opacity:0;transform:translate(-50%, -8px);
-  transition:opacity 200ms ease, transform 200ms ease;
+  transition:opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease);
   pointer-events:none;
   z-index:1000;
   display:flex;align-items:center;gap:8px;
@@ -877,7 +877,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   color:#FFFFFF;
   font-weight:600;
   box-shadow:0 1px 2px rgba(178,42,32,0.30), 0 2px 6px rgba(214,58,47,0.22);
-  transition:background 160ms ease, border-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+  transition:background var(--t-base) var(--ease), border-color var(--t-base) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-base) var(--ease);
 }
 .btn-clear:hover{
   background:#E84A3D;
@@ -914,8 +914,8 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .pre-results-table td.model.model-has-tip{position:relative;padding-right:34px}
 .model-info-dot{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(156,61,42,0.24);border-radius:999px;background:var(--accent-tint);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:600;line-height:1;cursor:help}
 .model-info-dot:focus{outline:2px solid rgba(156,61,42,0.34);outline-offset:2px}
-.model-info-dot::before{content:attr(data-tooltip);position:absolute;right:-2px;bottom:calc(100% + 9px);z-index:90;width:min(340px,70vw);padding:11px 13px;border:1px solid rgba(156,61,42,0.24);border-radius:6px;background:var(--tooltip-bg);color:var(--ink-2);box-shadow:var(--tooltip-shadow);font-family:var(--sans);font-size:12px;font-weight:400;line-height:1.45;letter-spacing:0;text-transform:none;white-space:normal;text-align:left;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity 140ms ease,transform 140ms ease}
-.model-info-dot::after{content:"";position:absolute;right:2px;bottom:calc(100% + 3px);z-index:91;border-width:6px 6px 0 6px;border-style:solid;border-color:var(--tooltip-bg) transparent transparent transparent;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity 140ms ease,transform 140ms ease}
+.model-info-dot::before{content:attr(data-tooltip);position:absolute;right:-2px;bottom:calc(100% + 9px);z-index:90;width:min(340px,70vw);padding:11px 13px;border:1px solid rgba(156,61,42,0.24);border-radius:6px;background:var(--tooltip-bg);color:var(--ink-2);box-shadow:var(--tooltip-shadow);font-family:var(--sans);font-size:12px;font-weight:400;line-height:1.45;letter-spacing:0;text-transform:none;white-space:normal;text-align:left;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
+.model-info-dot::after{content:"";position:absolute;right:2px;bottom:calc(100% + 3px);z-index:91;border-width:6px 6px 0 6px;border-style:solid;border-color:var(--tooltip-bg) transparent transparent transparent;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease)}
 .model-info-dot:hover::before,.model-info-dot:hover::after,.model-info-dot:focus::before,.model-info-dot:focus::after{opacity:1;transform:translateY(0)}
 .pre-results-table tr:last-child td{border-bottom:1.25px solid var(--ink)}
 .pre-results-table .group-row td{
@@ -1388,9 +1388,9 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   padding:0 14px;
   height:40px;
   box-shadow:0 1px 2px rgba(60,40,20,0.04);
-  transition:border-color 200ms cubic-bezier(0.2,0.8,0.2,1),
-             box-shadow 200ms cubic-bezier(0.2,0.8,0.2,1),
-             background 200ms ease;
+  transition:border-color var(--t-base) var(--ease),
+             box-shadow var(--t-base) var(--ease),
+             background var(--t-base) var(--ease);
 }
 .report-search-shell:hover{
   border-color:rgba(20,15,5,0.22);
@@ -1406,7 +1406,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   width:15px;height:15px;
   color:#9A968D;
   flex-shrink:0;
-  transition:color 200ms ease;
+  transition:color var(--t-base) var(--ease);
 }
 .report-search-shell:focus-within .report-search-icon{color:var(--accent)}
 
@@ -1449,7 +1449,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   background:rgba(20,15,5,0.06);
   color:#5A5A5A;
   cursor:pointer;
-  transition:background 160ms ease, color 160ms ease, transform 160ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
   padding:0;
 }
 .report-search-clear svg{width:10px;height:10px}
@@ -1493,7 +1493,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   border-radius:999px;
   padding:8px 16px 8px 12px;
   box-shadow:0 1px 2px rgba(60,40,20,0.04);
-  transition:background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
+  transition:background var(--t-base) var(--ease), border-color var(--t-base) var(--ease), color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), transform var(--t-fast) var(--ease);
 }
 .report-manual-entry-details > summary::-webkit-details-marker{display:none}
 .report-manual-entry-details > summary:hover{
@@ -1525,7 +1525,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   font-size:13px;
   font-weight:700;
   line-height:1;
-  transition:background 160ms ease, color 160ms ease, transform 200ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
 }
 .report-manual-entry-details > summary:hover::before,
 .report-manual-entry-details[open] > summary::before{
@@ -1595,7 +1595,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   letter-spacing:0;
   line-height:1;
   cursor:pointer;
-  transition:background 140ms ease, color 140ms ease, border-color 140ms ease, transform 120ms ease, box-shadow 140ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 .report-selected-row .report-selected-tools .report-selected-remove:hover{
   background:#D63A2F;
@@ -1667,7 +1667,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .report-section-item{
   width:100%;border:1px solid var(--border-soft);background:var(--paper);border-radius:6px;
   padding:0;text-align:left;color:var(--ink-2);display:grid;grid-template-columns:22px 1fr auto;
-  transition:background 120ms ease,border-color 120ms ease,color 120ms ease;
+  transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
 }
 .report-section-item:hover{background:rgba(156,61,42,.035);color:var(--ink)}
 .report-section-item.active{border-color:rgba(156,61,42,.34);background:var(--accent-tint);color:var(--accent)}
@@ -1891,7 +1891,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 
 /* Workflow polish - calculator pages */
 .formula-disclosure{margin:18px 0 14px;max-width:100%;}
-.formula-disclosure summary{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--accent);border:1px solid rgba(156,61,42,0.20);background:var(--accent-tint);border-radius:999px;padding:6px 12px;transition:background 120ms ease,border-color 120ms ease;}
+.formula-disclosure summary{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--accent);border:1px solid rgba(156,61,42,0.20);background:var(--accent-tint);border-radius:999px;padding:6px 12px;transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);}
 .formula-disclosure summary:hover{background:var(--accent-tint-strong);border-color:rgba(156,61,42,0.34)}
 .formula-disclosure summary::before{content:'\0192';font-family:var(--serif);font-style:italic;font-size:14px;color:var(--accent)}
 .formula-disclosure[open] summary{margin-bottom:10px}
@@ -1914,7 +1914,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 .input-table{background:rgba(255,255,255,0.18);border-radius:5px;overflow:hidden}
 .input-table thead tr.table-group-row th{background:rgba(244,240,232,0.62);border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);color:var(--muted);font-size:9.5px;letter-spacing:0.13em;text-align:center;font-weight:600;padding:7px 8px;}
 .input-table thead tr.table-group-row th:first-child{text-align:left;color:var(--faint)}
-.input-table tbody tr{transition:background 120ms ease}
+.input-table tbody tr{transition:background var(--t-fast) var(--ease)}
 .input-table tbody tr:hover{background:rgba(156,61,42,0.024)}
 .input-table td input[type="number"]{text-align:center}
 .input-table td.computed{text-align:center;white-space:nowrap}
@@ -2159,11 +2159,11 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 /* Mode tabs (clear OR â€” looks like proper tabs sitting on top of the panel) */
 #effectsize .es-tabs-wrap{margin-bottom:0}
 #effectsize .es-tabs{display:flex;align-items:stretch;gap:0;position:relative;z-index:2}
-#effectsize .es-tab{flex:1;display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--paper-2);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;font-family:var(--sans);text-align:left;cursor:pointer;transition:background 160ms,color 160ms,border-color 160ms;color:var(--ink-2);position:relative;top:1px}
+#effectsize .es-tab{flex:1;display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--paper-2);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;font-family:var(--sans);text-align:left;cursor:pointer;transition:background var(--t-base),color var(--t-base),border-color var(--t-base);color:var(--ink-2);position:relative;top:1px}
 #effectsize .es-tab:hover{background:var(--paper-3);color:var(--ink)}
 #effectsize .es-tab.is-active{background:var(--paper);border-color:var(--border);color:var(--ink);top:0;box-shadow:0 -2px 0 var(--accent) inset}
 #effectsize .es-tab.is-active .es-tab-num{background:var(--accent);color:#FAF7F1;border-color:var(--accent)}
-#effectsize .es-tab-num{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--paper);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--muted);transition:all 160ms}
+#effectsize .es-tab-num{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--paper);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--muted);transition: background-color var(--t-base), border-color var(--t-base), color var(--t-base), box-shadow var(--t-base), opacity var(--t-base), transform var(--t-base)}
 #effectsize .es-tab-text{display:flex;flex-direction:column;gap:1px;line-height:1.25}
 #effectsize .es-tab-title{font-size:13.5px;font-weight:600;letter-spacing:-0.005em}
 #effectsize .es-tab-sub{font-size:11px;color:var(--muted);font-weight:400}
@@ -2292,8 +2292,8 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
     0 4px 10px rgba(20,15,5,0.20);
   cursor:grab;
   transition:
-    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease);
 }
 #effectsize #es-d-slider::-moz-range-thumb{
   width:14px;
@@ -2307,8 +2307,8 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
     0 4px 10px rgba(20,15,5,0.20);
   cursor:grab;
   transition:
-    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease);
 }
 #effectsize #es-d-slider:hover::-webkit-slider-thumb{
   transform:scale(1.12);
@@ -2494,7 +2494,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
   padding:8px 12px;
   border-radius:7px 7px 0 0;
   cursor:pointer;
-  transition:all 140ms ease;
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   margin-bottom:-1px;
   position:relative;
   z-index:1;
@@ -2553,7 +2553,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
   opacity:0;
   transform:translateY(4px);
   pointer-events:none;
-  transition:opacity 140ms ease,transform 140ms ease;
+  transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
 }
 #effectsize .es-result-card[data-tooltip]::after{
   content:"";
@@ -2567,7 +2567,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
   opacity:0;
   transform:translateY(4px);
   pointer-events:none;
-  transition:opacity 140ms ease,transform 140ms ease;
+  transition:opacity var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
 }
 #effectsize .es-result-card[data-tooltip]:hover::before,
 #effectsize .es-result-card[data-tooltip]:hover::after,
@@ -2611,7 +2611,7 @@ h2.block-title + .input-table,.table-section-title + .input-table{margin-top:12p
 #effectsize .es-target-panel,#effectsize .es-examples{margin:0}
 #effectsize .es-target-panel summary,#effectsize .es-examples summary{cursor:pointer;list-style:none;outline:none;display:flex;align-items:center;gap:8px}
 #effectsize .es-target-panel summary::-webkit-details-marker,#effectsize .es-examples summary::-webkit-details-marker{display:none}
-#effectsize .es-target-panel summary::before,#effectsize .es-examples summary::before{content:"â–¸";color:var(--muted);font-size:10px;transition:transform 180ms}
+#effectsize .es-target-panel summary::before,#effectsize .es-examples summary::before{content:"â–¸";color:var(--muted);font-size:10px;transition:transform var(--t-base)}
 #effectsize .es-target-panel[open] summary::before,#effectsize .es-examples[open] summary::before{transform:rotate(90deg)}
 #effectsize .es-target-body{margin-top:10px}
 #effectsize .es-target-intro{
@@ -2815,7 +2815,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   font-family:var(--sans)!important;font-size:13px!important;font-weight:400!important;letter-spacing:0!important;
   color:#737373!important;
   display:inline-flex!important;align-items:center!important;gap:8px!important;
-  transition:color 120ms ease;
+  transition:color var(--t-fast) var(--ease);
   white-space:nowrap;
   border-left:none!important;
 }
@@ -2829,7 +2829,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   content:"";position:absolute;left:10px;right:10px;bottom:-1px;
   height:2px;background:#1A1A1A;
   transform:scaleX(0);transform-origin:center;
-  transition:transform 180ms ease;
+  transition:transform var(--t-base) var(--ease);
 }
 .topnav-item.active{color:#1A1A1A!important;font-weight:500!important;background:transparent!important;border-left-color:transparent!important}
 .topnav-item.active .topnav-icon{opacity:1}
@@ -2866,7 +2866,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   color:#5A5A5A!important;
   letter-spacing:0!important;
   border-left:none!important;
-  transition:color 120ms ease;
+  transition:color var(--t-fast) var(--ease);
 }
 .site-footer-link:hover{color:#1A1A1A!important;text-decoration:underline;text-underline-offset:4px;text-decoration-color:#9A968D}
 .site-footer-link.active{color:#1A1A1A!important;font-weight:500!important;background:transparent!important}
@@ -2881,7 +2881,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
 .topnav-chevron{
   width:11px;height:11px;flex-shrink:0;
   margin-left:2px;color:currentColor;opacity:.6;
-  transition:transform 160ms ease;
+  transition:transform var(--t-base) var(--ease);
 }
 .topnav-group:hover .topnav-chevron,
 .topnav-group:focus-within .topnav-chevron{transform:rotate(-180deg);opacity:.85}
@@ -2896,7 +2896,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   display:flex;flex-direction:column;
   opacity:0;pointer-events:none;
   transform:translateY(2px);
-  transition:opacity 130ms ease, transform 130ms ease;
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   z-index:65;
 }
 .topnav-group:hover .topnav-dropdown,
@@ -2907,7 +2907,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   background:transparent!important;border:none!important;cursor:pointer;
   padding:8px 18px!important;text-align:left;
   font-family:var(--sans)!important;font-size:13px!important;font-weight:400!important;color:#4A4A4A!important;
-  transition:background 100ms ease, color 100ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
   display:block!important;
   border-left:none!important;
   letter-spacing:0!important;
@@ -2966,7 +2966,7 @@ body{display:flex;flex-direction:column;overflow:auto;background:var(--paper);fo
   border-radius:4px;
   padding:22px 22px 20px;
   box-shadow:none;
-  transition:border-color 140ms ease;
+  transition:border-color var(--t-fast) var(--ease);
   display:flex;flex-direction:column;
   position:relative;
 }
@@ -3062,7 +3062,7 @@ input[type="text"], input[type="number"], input[type="date"], textarea{
   font-family:var(--sans)!important;
   font-size:13px!important;
   color:var(--ink)!important;
-  transition:border-color 120ms ease, box-shadow 120ms ease;
+  transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 select{
   background-color:#FFFFFF!important;
@@ -3071,7 +3071,7 @@ select{
   font-family:var(--sans)!important;
   font-size:13px!important;
   color:var(--ink)!important;
-  transition:border-color 120ms ease, box-shadow 120ms ease;
+  transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 input[type="text"]:hover, input[type="number"]:hover, input[type="date"]:hover, select:hover, textarea:hover{
   border-color:#9A968D!important;
@@ -3102,7 +3102,7 @@ input[type="number"]{font-family:var(--mono)!important}
   color:var(--ink)!important;
   padding:7px 14px;
   letter-spacing:0;
-  transition:background 120ms ease, border-color 120ms ease;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .btn:hover{background:#F4F1E9!important;border-color:#9A968D!important;color:var(--ink)!important}
 .btn-primary{
@@ -3252,7 +3252,7 @@ details summary:hover{color:var(--ink)}
   padding:16px 18px 15px!important;
   text-align:left;
   cursor:pointer;
-  transition:background 160ms var(--ease)!important;
+  transition:background var(--t-base) var(--ease)!important;
   box-shadow:none!important;
   position:relative;
   display:grid;
@@ -3296,7 +3296,7 @@ details summary:hover{color:var(--ink)}
   flex-shrink:0;
   padding:0!important;
   align-self:center!important;
-  transition:background 160ms var(--ease), color 160ms var(--ease), transform 160ms var(--ease), box-shadow 160ms var(--ease)!important;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease)!important;
 }
 #change-analysis .change-method-tab:hover:not(.active) .change-method-num{
   background:rgba(20,15,5,0.12)!important;
@@ -3318,7 +3318,7 @@ details summary:hover{color:var(--ink)}
   color:#5A5A5A!important;
   line-height:1.3!important;
   letter-spacing:-0.01em!important;
-  transition:color 240ms var(--ease)!important;
+  transition:color var(--t-slow) var(--ease)!important;
 }
 #change-analysis .change-method-tab:hover:not(.active) .change-method-label{color:#1A1A1A!important}
 #change-analysis .change-method-tab.active .change-method-label{color:#1A1A1A!important;font-weight:600!important}
@@ -3327,7 +3327,7 @@ details summary:hover{color:var(--ink)}
   color:#8A867E!important;background:transparent!important;border:none!important;
   padding:0!important;letter-spacing:0!important;text-transform:none!important;
   border-radius:0!important;display:block;
-  transition:color 160ms var(--ease)!important;
+  transition:color var(--t-base) var(--ease)!important;
 }
 #change-analysis .change-method-tab.active .change-method-pill{color:#5A5A5A!important}
 #change-analysis .change-method-meta{
@@ -3338,7 +3338,7 @@ details summary:hover{color:var(--ink)}
   line-height:1.4!important;
   letter-spacing:0!important;
   margin:0!important;
-  transition:color 240ms var(--ease)!important;
+  transition:color var(--t-slow) var(--ease)!important;
 }
 #change-analysis .change-method-tab.active .change-method-meta{color:#5A5A5A!important}
 /* Hide visual clutter inside method tabs */
@@ -3415,7 +3415,7 @@ details summary:hover{color:var(--ink)}
   border-bottom:2px solid transparent!important;
   border-radius:0!important;padding:13px 18px!important;cursor:pointer;
   display:flex;align-items:center;gap:10px;
-  transition:color 120ms ease, border-color 120ms ease;
+  transition:color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 #effectsize .es-tab:hover{background:rgba(26,26,26,0.025)!important}
 #effectsize .es-tab.is-active{
@@ -3515,7 +3515,7 @@ details summary:hover{color:var(--ink)}
   padding:20px 18px 18px!important;
   text-align:center!important;
   cursor:pointer;
-  transition:background 240ms var(--ease), color 240ms var(--ease);
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease);
   display:flex!important;
   flex-direction:column!important;
   align-items:center!important;
@@ -3658,9 +3658,9 @@ body{
 
 /* Smoother topnav underline â€” animated width */
 .topnav-item::after{
-  transition:transform 220ms var(--ease)!important;
+  transition:transform var(--t-base) var(--ease)!important;
 }
-.topnav-item{transition:color 140ms var(--ease)!important}
+.topnav-item{transition:color var(--t-fast) var(--ease)!important}
 
 /* ---- CARDS: elevation + lift on hover ---- */
 .home-pathway-card{
@@ -4257,7 +4257,12 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 .topbar{view-transition-name:site-topbar}
 .sidebar{view-transition-name:site-sidebar}
 .site-footer{view-transition-name:site-footer}
-.rb-root{view-transition-name:report-chip}
+.rb-chip{view-transition-name:report-chip}
+/* Named on the chip and the open drawer, NOT on .rb-root. The root is a 0x0
+   fixed box and its children are positioned fixed themselves, so its
+   snapshot held nothing: the chip vanished for the length of every page
+   transition, and an open drawer with it (UI audit, 2026-09). */
+.rb-root.is-open .rb-drawer{view-transition-name:report-drawer}
 
 /* Chrome whose content is identical either side of a navigation shouldn't
    crossfade at all — fading one image into a matching one only risks a flicker.
@@ -4271,14 +4276,24 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 ::view-transition-old(site-footer),
 ::view-transition-new(site-footer),
 ::view-transition-old(report-chip),
-::view-transition-new(report-chip){animation:none}
+::view-transition-new(report-chip),
+::view-transition-group(report-drawer),
+::view-transition-old(report-drawer),
+::view-transition-new(report-drawer){animation:none}
 
-/* The top bar does crossfade, so its page title and nav highlight change
-   smoothly rather than snapping — but kept short. A crossfade overlays both
-   states, and the longer that lasts the more the two read as a double image. */
-::view-transition-group(site-topbar){animation-duration:140ms}
+/* The top bar holds still too. It used to crossfade as one image because its
+   page title and nav highlight change, but that doubled everything that does
+   NOT change (the logo, the age field, the three buttons) for 140ms on every
+   navigation, which read as a ghosted header (UI audit, 2026-09). Now the
+   bar snaps, so the nav highlight moves at once, and only the page title
+   gets its own short crossfade. */
+.topbar-page-title{view-transition-name:page-title}
+::view-transition-group(site-topbar),
 ::view-transition-old(site-topbar),
-::view-transition-new(site-topbar){animation-duration:140ms}
+::view-transition-new(site-topbar){animation:none}
+::view-transition-group(page-title){animation-duration:var(--t-fast)}
+::view-transition-old(page-title),
+::view-transition-new(page-title){animation-duration:var(--t-fast)}
 
 /* Fallback for browsers without View Transitions: the same two beats, run
    back to back on .main by navigateTo(). Kept deliberately shorter than the
@@ -4884,7 +4899,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#FFFFFF!important;
   font-weight:600!important;
   box-shadow:0 1px 2px rgba(36,107,67,0.30), 0 4px 12px rgba(46,133,82,0.28), inset 0 1px 0 rgba(255,255,255,0.18)!important;
-  transition:background 160ms ease, transform 120ms ease, box-shadow 160ms ease!important;
+  transition:background var(--t-base) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-base) var(--ease)!important;
 }
 #premorbid .pre-nav-next:hover{
   background:linear-gradient(180deg, #45B375 0%, #34935C 100%)!important;
@@ -5213,7 +5228,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-bottom:0!important;
   overflow:hidden;
   pointer-events:none;
-  transition:max-height 220ms var(--ease), opacity 160ms ease, margin 220ms var(--ease);
+  transition:max-height var(--t-base) var(--ease), opacity var(--t-base) var(--ease), margin var(--t-base) var(--ease);
 }
 #change-analysis .change-overview-card:hover .change-overview-cite,
 #change-analysis .change-overview-card.is-pinned .change-overview-cite,
@@ -5677,7 +5692,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#7A766E!important;
   letter-spacing:0!important;
   cursor:pointer;
-  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease)!important;
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease), box-shadow var(--t-slow) var(--ease)!important;
   white-space:nowrap;
   text-align:center!important;
 }
@@ -5685,7 +5700,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   width:14px;height:14px;
   flex-shrink:0;
   opacity:0.7;
-  transition:opacity 240ms var(--ease);
+  transition:opacity var(--t-slow) var(--ease);
 }
 #converter .conv-view-tab:hover:not(.is-active){color:#1A1A1A!important}
 #converter .conv-view-tab:hover:not(.is-active) svg{opacity:0.95}
@@ -5787,7 +5802,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   padding:5px 14px;
   border-radius:var(--r-pill);
   cursor:pointer;
-  transition:background 140ms var(--ease), color 140ms var(--ease);
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .conv-full-anchor button:hover:not(.is-active){color:#1A1A1A}
 .conv-full-anchor button.is-active{
@@ -5942,14 +5957,14 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   letter-spacing:0;
   white-space:nowrap;
   text-transform:none;
-  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease);
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease), box-shadow var(--t-slow) var(--ease);
 }
 .norms-pill-segment svg{
   width:11px;
   height:11px;
   flex-shrink:0;
   opacity:0.65;
-  transition:opacity 240ms var(--ease);
+  transition:opacity var(--t-slow) var(--ease);
 }
 .norms-pill-segment:hover:not(.is-active){
   color:#1A1A1A;
@@ -5999,7 +6014,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
    visually recede. NO layout change â€” cells keep their position and width.
    The toggle button itself is exempted so it stays clickable and crisp. */
 .input-table [data-norm-cell="true"]{
-  transition:opacity 280ms ease, filter 280ms ease, background-color 280ms ease;
+  transition:opacity var(--t-slow) var(--ease), filter var(--t-slow) var(--ease), background-color var(--t-slow) var(--ease);
 }
 .input-table.norms-locked [data-norm-cell="true"]:not(.table-group-row > *){
   opacity:0.35;
@@ -6010,7 +6025,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 .input-table.norms-locked .table-group-row th[data-norm-cell="true"] .norms-group-label{
   opacity:0.5;
-  transition:opacity 280ms ease;
+  transition:opacity var(--t-slow) var(--ease);
 }
 /* Disabled inputs in locked state â€” flat, no caret, clearly uneditable */
 .input-table.norms-locked [data-norm-cell="true"] input{
@@ -6122,7 +6137,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   gap:12px!important;
   color:#5A5A5A!important;
   cursor:pointer;
-  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease)!important;
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease), box-shadow var(--t-slow) var(--ease)!important;
   text-align:left!important;
   position:relative!important;
   top:0!important;
@@ -6151,7 +6166,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   align-items:center!important;
   justify-content:center!important;
   flex-shrink:0!important;
-  transition:background 240ms var(--ease), color 240ms var(--ease)!important;
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease)!important;
 }
 #effectsize .es-tab.is-active .es-tab-num{
   background:#1A1A1A!important;
@@ -6262,7 +6277,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   text-transform:none!important;
   cursor:pointer;
   margin:0!important;
-  transition:background 240ms var(--ease), color 240ms var(--ease), box-shadow 240ms var(--ease)!important;
+  transition:background var(--t-slow) var(--ease), color var(--t-slow) var(--ease), box-shadow var(--t-slow) var(--ease)!important;
   text-align:center!important;
   line-height:1.25!important;
   min-width:0;
@@ -6477,7 +6492,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 #battery .bat-premorbid-block .bat-side-panel-body{
   opacity:0.45;
   pointer-events:none;
-  transition:opacity 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:opacity var(--t-base) var(--ease);
 }
 #battery .bat-premorbid-block[data-enabled="true"] .bat-side-panel-blurb,
 #battery .bat-premorbid-block[data-enabled="true"] .bat-side-panel-body{
@@ -6666,10 +6681,10 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
     0 1px 2px rgba(0,0,0,0.20),
     0 6px 16px rgba(0,0,0,0.18),
     0 14px 32px rgba(0,0,0,0.14);
-  transition:right 240ms cubic-bezier(0.2,0.8,0.2,1),
-             transform 220ms cubic-bezier(0.2,0.8,0.2,1),
-             box-shadow 220ms cubic-bezier(0.2,0.8,0.2,1),
-             border-color 220ms ease;
+  transition:right var(--t-slow) var(--ease),
+             transform var(--t-base) var(--ease),
+             box-shadow var(--t-base) var(--ease),
+             border-color var(--t-base) var(--ease);
 }
 .rb-chip:hover{
   transform:translateY(-3px);
@@ -6749,19 +6764,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   margin-left:2px;
 }
 
-/* Idle floating effect — transform-only animation for smoothness.
-   Box-shadow stays constant (animating it triggers paint and looks
-   jumpy on low-end machines). Pauses on hover and when the drawer
-   is open. */
-.rb-chip{
-  animation:rb-chip-float 4200ms cubic-bezier(0.45, 0, 0.55, 1) infinite;
-  will-change:transform;
-}
-.rb-chip:hover, .rb-root.is-open .rb-chip{animation:none}
-@keyframes rb-chip-float{
-  0%,100% { transform:translateY(0); }
-  50%     { transform:translateY(-4px); }
-}
+
 
 /* Sharp pulse when an APA table is added — overrides the float cycle
    for one beat to confirm the auto-capture worked. */
@@ -6786,7 +6789,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   100% { transform:scale(1); }
 }
 /* Copy buttons: brief green "Copied ✓" confirmation state */
-.is-copied{ background:#1f7a4d !important; border-color:#1f7a4d !important; color:#fff !important; transition:background 120ms ease; }
+.is-copied{ background:#1f7a4d !important; border-color:#1f7a4d !important; color:#fff !important; transition:background var(--t-fast) var(--ease); }
 .is-copied svg{ stroke:#fff !important; }
 
 /* Chip stays anchored to the bottom-right corner of the viewport in BOTH states.
@@ -6835,8 +6838,6 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   0%   { transform:scale(1); opacity:1; }
   100% { transform:scale(0); opacity:0; }
 }
-/* Drawer floats now — no need to displace body content */
-body.rb-docked-active{padding-right:0}
 @media (max-width:520px){
   .rb-root.is-open .rb-drawer{width:calc(100vw - 40px); right:20px}
   .rb-root.is-open .rb-chip{right:20px}
@@ -6860,7 +6861,7 @@ body.rb-docked-active{padding-right:0}
   color:#5A5A5A;
   cursor:pointer;
   padding:0;
-  transition:background 160ms ease, color 160ms ease, border-color 160ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), border-color var(--t-base) var(--ease);
 }
 
 /* ---- View-mode toggle (Edit / Preview) ----
@@ -6892,7 +6893,7 @@ body.rb-docked-active{padding-right:0}
   letter-spacing:-0.005em;
   cursor:pointer;
   white-space:nowrap;
-  transition:background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 .rb-mode-btn svg{width:11px;height:11px;flex-shrink:0}
 .rb-mode-btn:hover:not(.is-active){
@@ -6927,8 +6928,8 @@ body.rb-docked-active{padding-right:0}
 }
 /* Smooth resize between maximised and restored states */
 .rb-root.is-open .rb-drawer{
-  transition:width 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
-             max-height 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:width var(--t-slow) var(--ease),
+             max-height var(--t-slow) var(--ease);
 }
 
 /* ---- TRANSIENT "View live report" PROMPT ----
@@ -6962,8 +6963,8 @@ body.rb-docked-active{padding-right:0}
   pointer-events:auto;
   /* Fade for entry/exit; bottom-transition smooths stack reflow when other pills
      fly away. The bob animation uses transform separately so the two don't fight. */
-  transition:opacity 280ms cubic-bezier(0.2,0.8,0.2,1),
-             bottom  240ms cubic-bezier(0.2,0.8,0.2,1);
+  transition:opacity var(--t-slow) var(--ease),
+             bottom  var(--t-slow) var(--ease);
 }
 .rb-add-prompt svg{width:13px;height:13px;color:#FFFFFF;pointer-events:none;flex-shrink:0}
 .rb-add-prompt span{
@@ -7077,7 +7078,7 @@ body.rb-docked-active{padding-right:0}
   color:#9A968D;
   cursor:pointer;
   padding:0;
-  transition:color 160ms ease, background 160ms ease;
+  transition:color var(--t-base) var(--ease), background var(--t-base) var(--ease);
 }
 .rb-onboarding-dismiss:hover{color:#1A1A1A;background:rgba(20,15,5,0.06)}
 .rb-onboarding-dismiss svg{width:11px;height:11px;pointer-events:none}
@@ -7278,7 +7279,7 @@ body.rb-docked-active{padding-right:0}
      loss of clipping isn't visible. */
   overflow:visible;
   box-shadow:0 1px 2px rgba(15,18,24,0.04);
-  transition:border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  transition:border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), opacity var(--t-base) var(--ease);
   animation:rb-item-in 240ms cubic-bezier(0.2,0.8,0.2,1);
 }
 .rb-item-header{border-top-left-radius:10px;border-top-right-radius:10px}
@@ -7336,11 +7337,11 @@ body.rb-docked-active{padding-right:0}
   50%     { opacity:1;    transform:scaleX(1.01); }
 }
 .rb-item{
-  transition:border-color 160ms ease,
-             box-shadow 160ms ease,
-             opacity 160ms ease,
-             margin-top 200ms cubic-bezier(0.2,0.8,0.2,1),
-             margin-bottom 200ms cubic-bezier(0.2,0.8,0.2,1);
+  transition:border-color var(--t-base) var(--ease),
+             box-shadow var(--t-base) var(--ease),
+             opacity var(--t-base) var(--ease),
+             margin-top var(--t-base) var(--ease),
+             margin-bottom var(--t-base) var(--ease);
 }
 
 .rb-item-header{
@@ -7363,7 +7364,7 @@ body.rb-docked-active{padding-right:0}
   border:1px solid transparent;
   border-radius:6px;
   background:transparent;
-  transition:color 140ms ease, background 140ms ease, border-color 140ms ease;
+  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
   -webkit-user-drag:element;                 /* Safari/Chrome explicit */
 }
 .rb-item-grip-icon{
@@ -7460,7 +7461,7 @@ body.rb-docked-active{padding-right:0}
   background:#fff;
   color:#6B675E;
   cursor:pointer;
-  transition:background 140ms ease, color 140ms ease, border-color 140ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .rb-member-btn svg{width:11px;height:11px;}
 .rb-member-btn:hover:not(:disabled){
@@ -7484,7 +7485,7 @@ body.rb-docked-active{padding-right:0}
   color:#B22A20;
   cursor:pointer;
   padding:0;
-  transition:background 160ms ease, color 160ms ease, transform 160ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
 }
 .rb-item-remove svg{width:10px;height:10px}
 .rb-item-remove:hover{
@@ -7518,9 +7519,9 @@ body.rb-docked-active{padding-right:0}
   letter-spacing:0.01em;
   cursor:pointer;
   white-space:nowrap;
-  transition:background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
 }
-.rb-item-actionbtn svg{width:13px;height:13px;color:#7A766E;flex-shrink:0;transition:color 160ms ease}
+.rb-item-actionbtn svg{width:13px;height:13px;color:#7A766E;flex-shrink:0;transition:color var(--t-base) var(--ease)}
 .rb-item-actionbtn:hover{
   background:rgba(20,15,5,0.04);
   color:#1A1A1A;
@@ -7569,9 +7570,9 @@ body.rb-docked-active{padding-right:0}
   color:#1A1A1A;
   text-align:left;
   cursor:pointer;
-  transition:background 120ms ease, color 120ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
-.rb-item-menu-item svg{width:13px;height:13px;color:#7A766E;flex-shrink:0;transition:color 120ms ease}
+.rb-item-menu-item svg{width:13px;height:13px;color:#7A766E;flex-shrink:0;transition:color var(--t-fast) var(--ease)}
 .rb-item-menu-item:hover:not(:disabled){background:rgba(20,15,5,0.05)}
 .rb-item-menu-item:hover:not(:disabled) svg{color:#1A1A1A}
 .rb-item-menu-item:disabled{
@@ -7605,13 +7606,13 @@ body.rb-docked-active{padding-right:0}
   background:#FFFFFF;
   display:inline-flex;align-items:center;justify-content:center;
   flex-shrink:0;
-  transition:background 140ms ease, border-color 140ms ease;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .rb-col-check svg{
   width:9px;height:9px;
   color:#FFFFFF;
   opacity:0;
-  transition:opacity 120ms ease;
+  transition:opacity var(--t-fast) var(--ease);
 }
 .rb-col-check.is-checked{
   background:var(--accent);
@@ -7631,9 +7632,9 @@ body.rb-docked-active{padding-right:0}
   background:#FFFFFF;
   max-height:1500px;
   opacity:1;
-  transition:max-height 260ms cubic-bezier(0.2,0.8,0.2,1),
-             opacity 200ms ease-out,
-             padding 260ms cubic-bezier(0.2,0.8,0.2,1);
+  transition:max-height var(--t-slow) var(--ease),
+             opacity var(--t-base) var(--ease),
+             padding var(--t-slow) var(--ease);
 }
 /* Reorder mode: items collapse to header strips so the user can see the
    full structure of the report at once while dragging. */
@@ -7642,9 +7643,9 @@ body.rb-docked-active{padding-right:0}
   opacity:0;
   padding-top:0;
   padding-bottom:0;
-  transition:max-height 220ms cubic-bezier(0.4,0,0.6,1),
-             opacity 160ms ease-out,
-             padding 220ms cubic-bezier(0.4,0,0.6,1);
+  transition:max-height var(--t-base) cubic-bezier(0.4,0,0.6,1),
+             opacity var(--t-base) var(--ease),
+             padding var(--t-base) cubic-bezier(0.4,0,0.6,1);
 }
 .rb-drawer-body.is-reorder-mode .rb-item{margin:6px 0}
 
@@ -7653,7 +7654,7 @@ body.rb-docked-active{padding-right:0}
   cursor:text;
   outline:none;
   border-radius:2px;
-  transition:background 120ms ease, box-shadow 120ms ease;
+  transition:background var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
   position:relative;
 }
 .rb-editable-header:hover{
@@ -7703,7 +7704,7 @@ body.rb-docked-active{padding-right:0}
   border-radius:7px;
   cursor:pointer;
   letter-spacing:-0.005em;
-  transition:background 160ms ease, color 160ms ease, border-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), border-color var(--t-base) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-base) var(--ease);
 }
 .rb-drawer-actions .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none!important}
 .rb-drawer-actions .btn svg{width:13px;height:13px;flex-shrink:0}
@@ -7771,7 +7772,7 @@ body.rb-docked-active{padding-right:0}
   border:1px solid rgba(46,133,82,0.40)!important;
   color:#246B43!important;
   font-weight:600!important;
-  transition:background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 120ms ease!important;
+  transition:background var(--t-base) var(--ease), color var(--t-base) var(--ease), border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), transform var(--t-fast) var(--ease)!important;
 }
 .apa-toolbar .rb-add-btn:hover{
   background:#2E8552!important;
@@ -7841,7 +7842,7 @@ body.rb-docked-active{padding-right:0}
   border-radius:6px;
   cursor:pointer;
   white-space:nowrap;
-  transition:background 160ms ease, border-color 160ms ease, color 160ms ease;
+  transition:background var(--t-base) var(--ease), border-color var(--t-base) var(--ease), color var(--t-base) var(--ease);
 }
 .rb-offer-add{flex:1 1 auto;background:#9C3D2A;border:1px solid #9C3D2A;color:#FFFFFF}
 .rb-offer-add:hover{background:#8A3424;border-color:#8A3424}
@@ -7883,7 +7884,7 @@ body.rb-docked-active{padding-right:0}
   letter-spacing:-0.005em;
   border:1px solid transparent;
   cursor:pointer;
-  transition:color 140ms ease, background 140ms ease, border-color 140ms ease;
+  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
   white-space:nowrap;
 }
 .topbar-clear svg{
@@ -7918,7 +7919,7 @@ body.rb-docked-active{padding-right:0}
   letter-spacing:-0.005em;
   text-decoration:none;
   border:1px solid transparent;
-  transition:color 140ms ease, background 140ms ease, border-color 140ms ease;
+  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
   white-space:nowrap;
 }
 .topbar-kofi svg{
@@ -7967,8 +7968,8 @@ body.rb-docked-active{padding-right:0}
   transform:translateY(12px) scale(0.98);
   pointer-events:auto;
   overflow:hidden;
-  transition:opacity 280ms cubic-bezier(0.2,0.8,0.2,1),
-             transform 320ms cubic-bezier(0.2,0.9,0.25,1);
+  transition:opacity var(--t-slow) var(--ease),
+             transform var(--t-slow) cubic-bezier(0.2,0.9,0.25,1);
 }
 .rb-kofi-toast.is-visible{
   opacity:1;
@@ -7990,7 +7991,7 @@ body.rb-docked-active{padding-right:0}
   cursor:pointer;
   padding:0;
   z-index:2;
-  transition:background 140ms ease, color 140ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .rb-kofi-toast-close svg{width:10px;height:10px}
 .rb-kofi-toast-close:hover{
@@ -8083,7 +8084,7 @@ body.rb-docked-active{padding-right:0}
     inset 0 -1px 0 rgba(0,0,0,0.10),
     0 2px 4px rgba(255,94,91,0.22),
     0 6px 14px rgba(255,94,91,0.18);
-  transition:background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+  transition:background var(--t-base) var(--ease), transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease);
   cursor:pointer;
 }
 .rb-kofi-toast-cta-cup{
@@ -8329,12 +8330,12 @@ body.rb-docked-active{padding-right:0}
   border-radius:8px;
   cursor:pointer;
   letter-spacing:0.01em;
-  transition:background 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 #change-analysis .change-overview-cta svg{
   width:14px;
   height:14px;
-  transition:transform 140ms ease;
+  transition:transform var(--t-fast) var(--ease);
 }
 #change-analysis .change-overview-cta:hover{
   background:#9C3D2A;
@@ -8693,7 +8694,7 @@ body.rb-docked-active{padding-right:0}
   background:rgba(250,247,241,0.55);
   margin-top:10px;
   overflow:hidden;
-  transition:border-color 150ms ease, box-shadow 150ms ease;
+  transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 #effectsize .es-collapse:hover{ border-color:rgba(156,61,42,0.35); }
 #effectsize .es-collapse[open]{ box-shadow:0 1px 4px rgba(20,15,5,0.05); }
@@ -8701,7 +8702,7 @@ body.rb-docked-active{padding-right:0}
   cursor:pointer; list-style:none; user-select:none;
   display:flex; align-items:center; width:100%; box-sizing:border-box;
   padding:14px 16px; margin:0 !important;
-  transition:background 150ms ease, color 150ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 #effectsize .es-collapse-summary:hover{ background:rgba(156,61,42,0.06); color:var(--accent); }
 #effectsize .es-collapse-summary::-webkit-details-marker{ display:none; }
@@ -8709,7 +8710,7 @@ body.rb-docked-active{padding-right:0}
 #effectsize .es-collapse-summary::after{
   content:'\25BE'; margin-left:auto; flex-shrink:0;
   color:var(--accent); font-size:13px;
-  transition:transform 180ms ease;
+  transition:transform var(--t-base) var(--ease);
 }
 #effectsize .es-collapse[open] > .es-collapse-summary::after{ transform:rotate(180deg); }
 /* keep the body padded inside the card */
@@ -9362,7 +9363,7 @@ body.rb-docked-active{padding-right:0}
   z-index:60;
   opacity:0;
   pointer-events:none;
-  transition:opacity 160ms var(--ease), transform 160ms var(--ease);
+  transition:opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease);
   box-shadow:0 12px 28px rgba(15,18,24,0.22);
 }
 #change-analysis .change-overview-colh-label::after{
@@ -9376,7 +9377,7 @@ body.rb-docked-active{padding-right:0}
   border-color:transparent transparent rgba(15,18,24,0.96) transparent;
   z-index:61;
   opacity:0;
-  transition:opacity 160ms var(--ease);
+  transition:opacity var(--t-base) var(--ease);
 }
 /* Last dimension column: a centred popover would hang off the right edge of
    the table on a narrow window, so anchor it to the heading's right instead. */
@@ -9405,7 +9406,7 @@ body.rb-docked-active{padding-right:0}
 }
 #change-analysis .change-overview-row{
   cursor:pointer;
-  transition:background 140ms var(--ease);
+  transition:background var(--t-fast) var(--ease);
 }
 #change-analysis .change-overview-row:hover,
 #change-analysis .change-overview-row:focus-visible{
@@ -9499,7 +9500,7 @@ body.rb-docked-active{padding-right:0}
   padding:0;
   line-height:1;
   flex:0 0 auto;
-  transition:background 140ms var(--ease), color 140ms var(--ease);
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 #change-analysis .change-overview-info:hover,
 #change-analysis .change-overview-info:focus-visible{
@@ -9531,7 +9532,7 @@ body.rb-docked-active{padding-right:0}
   opacity:0;
   transform:translateY(4px);
   pointer-events:none;
-  transition:opacity 160ms var(--ease), transform 160ms var(--ease);
+  transition:opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease);
   box-shadow:0 10px 24px rgba(20,15,5,0.14);
 }
 #change-analysis .change-overview-info::after{
@@ -9544,7 +9545,7 @@ body.rb-docked-active{padding-right:0}
   border-color:#FFFFFF transparent transparent transparent;
   z-index:51;
   opacity:0;
-  transition:opacity 160ms var(--ease);
+  transition:opacity var(--t-base) var(--ease);
 }
 #change-analysis .change-overview-info:hover::before,
 #change-analysis .change-overview-info:hover::after,
@@ -9558,7 +9559,7 @@ body.rb-docked-active{padding-right:0}
   text-align:center;
   color:#9C3D2A;
   opacity:0;
-  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 #change-analysis .change-overview-table-arrow svg{
   width:18px;
@@ -9643,7 +9644,7 @@ body.rb-docked-active{padding-right:0}
   font-size:14px;
   line-height:1;
   cursor:pointer;
-  transition:background 140ms ease, color 140ms ease, border-color 140ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 #battery #bat-table .row-actions button:hover{
   background:rgba(156,61,42,0.10);
@@ -9839,7 +9840,7 @@ body.rb-docked-active{padding-right:0}
   gap:6px;
   position:relative;
   box-shadow:inset 0 -1px 0 rgba(20,15,5,0.08);
-  transition:background 240ms var(--ease,ease), color 240ms var(--ease,ease);
+  transition:background var(--t-slow) var(--ease,var(--ease)), color var(--t-slow) var(--ease,var(--ease));
 }
 .pvt-method-tab:first-child{border-radius:var(--r-lg) 0 0 0}
 .pvt-method-tab:last-child{border-right:none;border-radius:0 var(--r-lg) 0 0}
@@ -9898,7 +9899,7 @@ body.rb-docked-active{padding-right:0}
   text-transform:uppercase;
   line-height:1;
   white-space:nowrap;
-  transition:background 140ms ease,color 140ms ease,border-color 140ms ease;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);
 }
 .pvt-status.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.4);background:rgba(46,125,79,0.07)}
 .pvt-status.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.4);background:rgba(156,61,42,0.07)}
@@ -9933,7 +9934,7 @@ body.rb-docked-active{padding-right:0}
   align-items:center;
   justify-content:center;
   box-shadow:0 1px 2px rgba(168,85,68,0.25), 0 0 0 2px rgba(168,85,68,0.15);
-  transition:transform 140ms var(--ease), box-shadow 140ms var(--ease);
+  transition:transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 .pvt-method-tab-about:hover .pvt-about-bubble{
   transform:scale(1.08);
@@ -10020,14 +10021,14 @@ body.rb-docked-active{padding-right:0}
   z-index:60;
   opacity:0;
   pointer-events:none;
-  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 .pvt-overview-colh.is-end::before{left:auto;right:0;transform:translateY(-4px)}
 .pvt-overview-colh:hover::before,
 .pvt-overview-colh:focus-visible::before{opacity:1;transform:translateX(-50%) translateY(0)}
 .pvt-overview-colh.is-end:hover::before,
 .pvt-overview-colh.is-end:focus-visible::before{transform:translateY(0)}
-.pvt-overview-row{cursor:pointer;transition:background 140ms var(--ease)}
+.pvt-overview-row{cursor:pointer;transition:background var(--t-fast) var(--ease)}
 .pvt-overview-row:hover,
 .pvt-overview-row:focus-visible{background:#F7F2E6;outline:none}
 .pvt-overview-row:focus-visible{box-shadow:inset 3px 0 0 #9C3D2A}
@@ -10065,7 +10066,7 @@ body.rb-docked-active{padding-right:0}
   padding:0;
   line-height:1;
   flex:0 0 auto;
-  transition:background 140ms var(--ease), color 140ms var(--ease);
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .pvt-overview-info:hover,
 .pvt-overview-info:focus-visible{
@@ -10093,7 +10094,7 @@ body.rb-docked-active{padding-right:0}
   z-index:60;
   opacity:0;
   pointer-events:none;
-  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   transform:translateY(4px);
 }
 .pvt-overview-info:hover::before,
@@ -10203,7 +10204,7 @@ body.rb-docked-active{padding-right:0}
   background:transparent;
   color:#9E9A93;
   cursor:pointer;
-  transition:background 120ms ease, color 120ms ease, transform 160ms ease;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-base) var(--ease);
 }
 .pvt-rail-toggle svg{width:13px;height:13px}
 .pvt-rail-toggle:hover{background:rgba(20,15,5,0.04);color:var(--ink)}
@@ -10293,7 +10294,7 @@ body.rb-docked-active{padding-right:0}
   background:transparent;
   text-align:left;
   cursor:pointer;
-  transition:background 120ms ease;
+  transition:background var(--t-fast) var(--ease);
 }
 .pvt-rail-row:hover{background:rgba(20,15,5,0.035)}
 .pvt-rail-row:focus{outline:none}
@@ -10332,7 +10333,7 @@ body.rb-docked-active{padding-right:0}
   color:var(--ink);
   text-align:left;
   cursor:pointer;
-  transition:background 120ms ease;
+  transition:background var(--t-fast) var(--ease);
 }
 .pvt-rail-cta:hover{background:rgba(20,15,5,0.04)}
 .pvt-rail-cta:focus{outline:none}
@@ -10669,7 +10670,7 @@ body.rb-docked-active{padding-right:0}
   opacity:0;
   pointer-events:none;
   transform:translateY(4px);
-  transition:opacity 140ms var(--ease), transform 140ms var(--ease);
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 .pvt-overview-flag:hover::before,
 .pvt-overview-flag:focus-visible::before{opacity:1;transform:translateY(0)}
@@ -10736,7 +10737,7 @@ svg.rey-glyph{width:56px;height:56px}
   background:transparent;
   cursor:pointer;
   padding:6px;
-  transition:border-color 120ms ease,background 120ms ease;
+  transition:border-color var(--t-fast) var(--ease),background var(--t-fast) var(--ease);
 }
 .rey-pick:hover{border-color:rgba(20,15,5,0.14)}
 .rey-pick:focus-visible{outline:none;border-color:rgba(156,61,42,0.5)}
@@ -10984,7 +10985,7 @@ svg.rey-glyph{width:56px;height:56px}
   padding:6px 11px; border-radius:6px; background:transparent;
   color:#5A5A5A; font-family:var(--sans); font-size:12px; font-weight:500;
   border:1px solid transparent; cursor:pointer; white-space:nowrap;
-  transition:color 140ms ease, background 140ms ease, border-color 140ms ease;
+  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .topbar-session svg{ width:12px; height:12px; flex-shrink:0; opacity:0.75; }
 .topbar-session:hover{ color:#1A1A1A; background:rgba(26,26,26,0.05); border-color:rgba(26,26,26,0.14); }
@@ -11107,10 +11108,13 @@ svg.rey-glyph{width:56px;height:56px}
   --ds-shadow-overlay: 0 1px 2px rgba(15,18,24,0.06), 0 8px 24px rgba(15,18,24,0.10), 0 24px 56px rgba(15,18,24,0.16);
 
   /* MOTION — 1 curve, 3 durations. Used everywhere. */
-  --ds-duration-instant: 80ms;
-  --ds-duration-fast:    160ms;
-  --ds-duration-slow:    260ms;
-  --ds-ease:             cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* One motion scale for the whole app (UI audit, 2026-09): these alias the
+     --t-* tokens in styles.css, which every transition now uses. There were
+     30 distinct durations and 16 easing curves across the two stylesheets. */
+  --ds-duration-instant: var(--t-fast);
+  --ds-duration-fast:    var(--t-base);
+  --ds-duration-slow:    var(--t-slow);
+  --ds-ease:             var(--ease);
 
   /* RING (focus) */
   --ds-ring-width: 2px;
@@ -11813,9 +11817,9 @@ button.btn-clear:hover:not(:disabled){
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(20,15,8,0.06);
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
+    border-color var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    transform var(--t-base) var(--ease);
 }
 .home-db-card:hover{
   border-color: var(--ds-primary);
@@ -11856,7 +11860,7 @@ button.btn-clear:hover:not(:disabled){
 .home-db-card-arrow{
   font-size: 16px;
   color: var(--ds-border-strong);
-  transition: color 180ms ease, transform 180ms ease;
+  transition: color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
   align-self: flex-end;
 }
 .home-db-card:hover .home-db-card-arrow{
@@ -12355,24 +12359,7 @@ kbd, .ds-kbd{
   .section{ padding-bottom: 120px !important; }   /* more clearance on phones */
 }
 
-/* Active "scrolling" state — chip visually recedes so it's not a hot spot
-   while the user is reading/scrolling content under it.
-   The .ds-chip-recede class is toggled by design-system.js on scroll. */
-.rb-chip{
-  transition:
-    transform 200ms var(--ds-ease),
-    opacity 200ms var(--ds-ease),
-    box-shadow 200ms var(--ds-ease) !important;
-}
-.ds-chip-recede .rb-chip{
-  opacity: 0.55;
-  transform: translateY(2px) scale(0.96);
-}
-/* Hover snaps to lifted position */
-.rb-chip:hover{
-  opacity: 1 !important;
-  transform: translateY(-4px) scale(1.03) !important;
-}
+
 
 /* ============================================================================
    29. SURFACE UNIFICATION — one rule, no exceptions
@@ -13302,7 +13289,7 @@ input[type="text"].ds-inline-bar-input{
   border-radius: 50%;
   cursor: help;
   outline: none;
-  transition: color 120ms ease, border-color 120ms ease, background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
   box-shadow: 0 1px 2px rgba(156,61,42,0.10);
 }
 .ds-prem-card-info svg{
@@ -13339,7 +13326,7 @@ input[type="text"].ds-inline-bar-input{
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms;
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), visibility var(--t-fast);
   z-index: 100;
   white-space: normal;
 }
@@ -13770,147 +13757,9 @@ input[type="text"].ds-inline-bar-input{
   outline: none !important;
 }
 
-/* ============================================================================
-   35. CHIP ORBIT LIGHT — bright green sweep around the chip on tab click.
-   Brighter, thicker, longer arc, bigger glow. Reads from across the
-   screen as a deliberate confirmation pulse.
-   ============================================================================ */
-@property --ds-orbit-angle{
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
-.rb-chip{
-  position: fixed;
-}
-/* Multicolour rainbow ring — always spinning, hue cycles continuously */
-.rb-chip::before{
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 999px;
-  padding: 3px;
-  background: conic-gradient(
-    from var(--ds-orbit-angle, 0deg),
-    transparent 0deg,
-    transparent 160deg,
-    rgba(139, 92, 246, 0.5)  190deg,
-    rgba(59,  130, 246, 1)   220deg,
-    rgba(6,   182, 212, 1)   248deg,
-    rgba(34,  197,  94, 1)   272deg,
-    rgba(234, 179,   8, 1)   296deg,
-    rgba(249, 115,  22, 1)   316deg,
-    rgba(236,  72, 153, 1)   338deg,
-    #FFFFFF                   354deg,
-    rgba(139,  92, 246, 1)   360deg
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0.45;
-  z-index: 2;
-  animation: rb-chip-orbit-spin 10s linear infinite, rb-chip-hue-cycle 14s linear infinite;
-}
-/* White spark chases the rainbow */
-.rb-chip::after{
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  padding: 2px;
-  background: conic-gradient(
-    from var(--ds-orbit-angle, 0deg),
-    transparent 0deg,
-    transparent 315deg,
-    rgba(255, 255, 255, 0.6)  340deg,
-    rgba(255, 255, 255, 1)    355deg,
-    transparent 360deg
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0.30;
-  z-index: 3;
-  filter: drop-shadow(0 0 3px rgba(255,255,255,0.70));
-  animation: rb-chip-orbit-spin 10s linear infinite;
-}
-
-/* Triggered orbit disabled — clashes with always-on rainbow ring */
-@keyframes rb-chip-orbit-spin{
-  0%   { --ds-orbit-angle: 0deg; }
-  100% { --ds-orbit-angle: 360deg; }
-}
-/* Hue-rotate the whole ring so the rainbow colour arc slowly drifts */
-@keyframes rb-chip-hue-cycle{
-  0%   { filter: hue-rotate(0deg)   drop-shadow(0 0 3px rgba(99,102,241,0.55)) drop-shadow(0 0 8px rgba(99,102,241,0.20)); }
-  25%  { filter: hue-rotate(90deg)  drop-shadow(0 0 3px rgba(34,197,94,0.55))  drop-shadow(0 0 8px rgba(34,197,94,0.20));  }
-  50%  { filter: hue-rotate(180deg) drop-shadow(0 0 3px rgba(249,115,22,0.55)) drop-shadow(0 0 8px rgba(249,115,22,0.20)); }
-  75%  { filter: hue-rotate(270deg) drop-shadow(0 0 3px rgba(236,72,153,0.55)) drop-shadow(0 0 8px rgba(236,72,153,0.20)); }
-  100% { filter: hue-rotate(360deg) drop-shadow(0 0 3px rgba(99,102,241,0.55)) drop-shadow(0 0 8px rgba(99,102,241,0.20)); }
-}
-
-/* Fallback for browsers without @property — rotate the entire pseudo */
-@supports not (background: conic-gradient(from var(--x, 0deg), red, blue)){
-  .rb-chip::before{
-    background: conic-gradient(
-      transparent 0deg,
-      transparent 180deg,
-      rgba(34, 197, 94, 0.35) 220deg,
-      rgba(22, 163, 74, 0.85) 280deg,
-      rgba(34, 197, 94, 1) 320deg,
-      #BBF7D0 348deg,
-      #FFFFFF 358deg,
-      rgba(34, 197, 94, 1) 360deg
-    );
-  }
-  .rb-chip::after{
-    background: conic-gradient(
-      transparent 0deg,
-      transparent 300deg,
-      rgba(255, 255, 255, 0.6) 330deg,
-      rgba(255, 255, 255, 1) 355deg,
-      transparent 360deg
-    );
-  }
-  .rb-chip.rb-chip-orbit::before,
-  .rb-chip.rb-chip-orbit::after{
-    animation: rb-chip-orbit-rotate 2.4s linear 1;
-  }
-  @keyframes rb-chip-orbit-rotate{
-    from { transform: rotate(0deg);   }
-    to   { transform: rotate(360deg); }
-  }
-}
-
-/* Subtle multicolour breathing glow */
-@keyframes rb-chip-ambient-glow{
-  0%  { box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0  8px 2px rgba(99, 102,241,0.30), 0 0 20px 6px rgba(99, 102,241,0.10); }
-  25% { box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0 10px 3px rgba(34, 197, 94,0.35), 0 0 22px 7px rgba(34, 197, 94,0.12); }
-  50% { box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0 10px 3px rgba(249,115, 22,0.32), 0 0 22px 7px rgba(249,115, 22,0.10); }
-  75% { box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0  9px 2px rgba(236, 72,153,0.30), 0 0 20px 6px rgba(236, 72,153,0.10); }
-  100%{ box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0  8px 2px rgba(99, 102,241,0.30), 0 0 20px 6px rgba(99, 102,241,0.10); }
-}
-@keyframes rb-chip-float{
-  0%, 100% { transform: translateY(0px);  }
-  50%       { transform: translateY(-7px); }
-}
-.rb-chip{
-  /* Calm at rest — no perpetual bob. Motion happens only on purpose:
-     the pulse when a table is captured, hover, and the count-badge bump. */
-  animation: none;
-}
-.ds-chip-recede .rb-chip{
-  animation-play-state: paused;
-}
-.rb-chip:hover{
-  animation-play-state: paused;
-}
+/* 35. The chip's rainbow orbit ring, its hue cycle, the ambient glow and the
+   float keyframes were removed in the 2026-09 UI audit: perpetual motion in
+   off-palette colours on a clinical tool. See WORKING REPORT DOCK below. */
 
 /* ============================================================================
    33. REMOVED FEATURE — Lock/Unlock norms toggle
@@ -14048,7 +13897,7 @@ input[type="text"].ds-inline-bar-input{
   background: var(--ds-surface, #FFFFFF) !important;
   cursor: pointer !important;
   line-height: 1.2 !important;
-  transition: background-color 140ms var(--ds-ease, ease), border-color 140ms var(--ds-ease, ease);
+  transition: background-color var(--t-fast) var(--ds-ease, var(--ease)), border-color var(--t-fast) var(--ds-ease, var(--ease));
 }
 .combo-indented-row .combo-item.combo-indented:hover{
   background: #F8F6EF !important;
@@ -14356,7 +14205,7 @@ input[type="text"].ds-inline-bar-input{
   align-items: center !important;
   justify-content: center !important;
   gap: 0 !important;
-  transition: background 120ms ease, color 120ms ease !important;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease) !important;
 }
 #premorbid.ds-prem-restructured .pre-tabs > .tab:hover:not(.active){
   background: rgba(20,15,5,0.025) !important;
@@ -14508,7 +14357,7 @@ input[type="text"].ds-inline-bar-input{
   font-size: 13px;
   color: var(--ds-text-faint);
   border-bottom: 1px dashed var(--ds-border);
-  transition: color 220ms var(--ds-ease);
+  transition: color var(--t-base) var(--ds-ease);
 }
 .ds-prem-ticks-row:last-child{ border-bottom: 0; }
 .ds-prem-ticks-row.is-ready{ color: var(--ds-text); }
@@ -14526,9 +14375,9 @@ input[type="text"].ds-inline-bar-input{
   position: relative;
   flex-shrink: 0;
   transition:
-    background-color 220ms var(--ds-ease),
-    border-color 220ms var(--ds-ease),
-    transform 220ms var(--ds-ease);
+    background-color var(--t-base) var(--ds-ease),
+    border-color var(--t-base) var(--ds-ease),
+    transform var(--t-base) var(--ds-ease);
 }
 .ds-prem-ticks-row.is-ready .ds-prem-ticks-mark{
   background: #15803d;
@@ -14545,7 +14394,7 @@ input[type="text"].ds-inline-bar-input{
   border-bottom: 1.6px solid white;
   transform: translate(-50%, -65%) rotate(-45deg) scale(0);
   transform-origin: center;
-  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--t-slow) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .ds-prem-ticks-row.is-ready .ds-prem-ticks-mark::after{
   transform: translate(-50%, -65%) rotate(-45deg) scale(1);
@@ -14820,7 +14669,7 @@ input[type="text"].ds-inline-bar-input{
   cursor: pointer;
   letter-spacing: 0.01em;
   white-space: nowrap;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 .bat-prem-link-btn svg{ width: 13px; height: 13px; flex: 0 0 auto; }
 .bat-prem-link-btn:hover:not(:disabled){
@@ -14868,7 +14717,7 @@ input[type="text"].ds-inline-bar-input{
   border-radius: 6px;
   cursor: pointer;
   font-family: var(--sans);
-  transition: background 120ms ease;
+  transition: background var(--t-fast) var(--ease);
 }
 .bat-prem-link-option:hover{ background: rgba(20,15,5,0.04); }
 .bat-prem-link-option-name{
@@ -14949,7 +14798,7 @@ input[type="text"].ds-inline-bar-input{
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .bat-prem-link-clear:hover{ background: rgba(20,15,5,0.08); color: #1A1A1A; }
 
@@ -15056,7 +14905,7 @@ input[type="text"].ds-inline-bar-input{
   color: var(--ink-3, #9A9A9A);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
 .bat-raw-toggle:hover,
 .bat-raw-toggle.is-active{
@@ -15188,7 +15037,7 @@ input[type="text"].ds-inline-bar-input{
   border-radius: 6px;
   padding: 5px 12px;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
   min-width: 130px;
   text-align: center;
 }
@@ -15770,152 +15619,9 @@ input[type="number"].ds-patient-field-input{
   outline-offset: 1px;
 }
 
-/* ============================================================================
-   42. MISSING-AGE POPOVER — anchored to the Score CI toggle
-
-   Opens on the transition into "an age would now change a printed number" and
-   carries its own input, so the ask is also the fastest way to answer it.
-
-   DELIBERATELY NOT A MODAL. There is no backdrop and nothing is dimmed. The
-   age is optional — blank falls back to the publisher's own all-ages
-   coefficient, which is equally citable — and an overlay that blocked the page
-   would read as "required" whatever the buttons said. Primary tint, never
-   --ds-warning or --ds-destructive, for the same reason.
-
-   Shown by a CLASS with display:none as the owned default, never [hidden]:
-   the attribute lost that fight before against an element's own display.
-   ============================================================================ */
-.ds-age-pop{
-  display: none;
-  position: fixed;
-  z-index: 9200;                 /* above the working-report onboarding (8999) */
-  width: 320px;
-  max-width: calc(100vw - 24px);
-  padding: 14px 15px 12px;
-  border: 1px solid rgba(20,15,8,0.14);
-  border-radius: var(--ds-radius-lg);
-  box-shadow: var(--ds-shadow-overlay);
-  font-family: var(--sans);
-  color: var(--ds-text);
-  /* Opaque fallback first — backdrop-filter is unsupported in some browsers
-     and a translucent panel with no blur is unreadable over a data table. */
-  background: var(--ds-surface);
-}
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
-  .ds-age-pop{
-    background: rgba(253,250,246,0.78);
-    -webkit-backdrop-filter: blur(14px) saturate(1.5);
-    backdrop-filter: blur(14px) saturate(1.5);
-  }
-}
-.ds-age-pop.is-open{
-  display: block;
-  animation: ds-age-pop-in var(--ds-duration-slow) var(--ds-ease);
-}
-@keyframes ds-age-pop-in{
-  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0)    scale(1); }
-}
-@media (prefers-reduced-motion: reduce){
-  .ds-age-pop.is-open{ animation: none; }
-}
-
-/* Points back at the CI toggle. Inherits the panel's translucency so the glass
-   reads as one surface rather than a box with a solid tab stuck on it. */
-.ds-age-pop-arrow{
-  position: absolute;
-  top: -6px;
-  width: 11px;
-  height: 11px;
-  transform: rotate(45deg);
-  background: inherit;
-  border-left: 1px solid rgba(20,15,8,0.14);
-  border-top: 1px solid rgba(20,15,8,0.14);
-  border-radius: 2px 0 0 0;
-}
-.ds-age-pop-title{
-  font-size: var(--ds-text-base);
-  font-weight: var(--ds-weight-semibold);
-  letter-spacing: var(--ds-tracking-tight);
-  color: var(--ds-text);
-  margin-bottom: 5px;
-}
-.ds-age-pop-body{
-  font-size: var(--ds-text-sm);
-  line-height: var(--ds-leading-snug);
-  color: var(--ds-text-muted);
-  margin-bottom: 11px;
-}
-.ds-age-pop-body strong{
-  font-weight: var(--ds-weight-semibold);
-  color: var(--ds-text);
-}
-.ds-age-pop-row{
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-}
-/* Armed throughout: styles.css declares padding, font-size and border-radius
-   with !important on a bare input[type="number"] selector, which beats any
-   non-important rule however specific. Same reason .ds-patient-field-input is
-   armed — see the note there. */
-input.ds-age-pop-input,
-input[type="number"].ds-age-pop-input{
-  flex: 1 !important;
-  min-width: 0 !important;
-  width: auto !important;
-  height: 32px !important;
-  padding: 0 10px !important;
-  background: var(--ds-surface) !important;
-  border: 1px solid var(--ds-border-strong) !important;
-  border-radius: var(--ds-radius-sm) !important;
-  font-family: var(--sans) !important;
-  font-size: var(--ds-text-sm) !important;
-  color: var(--ds-text) !important;
-  box-shadow: none !important;
-  box-sizing: border-box !important;
-}
-.ds-age-pop-input:focus{
-  outline: none;
-  border-color: var(--ds-primary);
-  box-shadow: 0 0 0 3px var(--ds-primary-tint) !important;
-}
-.ds-age-pop-add{
-  flex-shrink: 0;
-  height: 32px;
-  padding: 0 16px;
-  background: var(--ds-primary);
-  border: 1px solid var(--ds-primary);
-  border-radius: var(--ds-radius-sm);
-  font-family: var(--sans);
-  font-size: var(--ds-text-sm);
-  font-weight: var(--ds-weight-semibold);
-  color: var(--ds-text-inverse);
-  cursor: pointer;
-}
-.ds-age-pop-add:hover{ background: var(--ds-primary-hover); border-color: var(--ds-primary-hover); }
-/* The skip is a plain link, not a second button: it is the do-nothing option
-   and must not compete with Add, but it names the real alternative rather than
-   saying "Dismiss" or "Not now". */
-.ds-age-pop-skip{
-  display: block;
-  margin: 9px 0 0;
-  padding: 2px 0;
-  background: none;
-  border: none;
-  font-family: var(--sans);
-  font-size: var(--ds-text-xs);
-  color: var(--ds-text-subtle);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-.ds-age-pop-skip:hover{ color: var(--ds-text-muted); }
-.ds-age-pop-add:focus-visible,
-.ds-age-pop-skip:focus-visible{
-  outline: var(--ds-ring-width) solid var(--ds-primary-ring);
-  outline-offset: 2px;
-}
+/* 42. The missing-age popover was replaced by the inline required-age bar
+   (owner decision, 2026-08); its styles were removed in the 2026-09 UI audit.
+   The residual state and the landing pulse below are still live. */
 
 /* THE RESIDUAL STATE. What a clinician sees if the popover was skipped, or
    fired while they were looking at the table rather than the top bar. Purely
@@ -16092,7 +15798,7 @@ input[type="number"].ds-age-pop-input{
   align-items: center;
   justify-content: center;
   box-shadow: 0 1px 5px rgba(20,15,8,0.08);
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition: border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), transform var(--t-base) var(--ease);
 }
 .home-dial-dot svg{ width: 23px; height: 23px; }
 .home-dial-label{
@@ -16101,7 +15807,7 @@ input[type="number"].ds-age-pop-input{
   letter-spacing: -0.01em;
   line-height: 1.25;
   color: var(--ds-text);
-  transition: color 180ms ease;
+  transition: color var(--t-base) var(--ease);
 }
 
 /* Every rule from here down is !important, and it is not decoration.
@@ -16152,7 +15858,7 @@ input[type="number"].ds-age-pop-input{
   right: 30px;
   margin: 0;
   text-align: center;
-  transition: opacity 160ms ease;
+  transition: opacity var(--t-base) var(--ease);
 }
 .home-dial-hub-rest{
   display: flex;
@@ -16624,32 +16330,46 @@ input[type="number"].ds-age-pop-input{
   padding: 8px 14px; border-bottom: 1px solid var(--ds-border);
   background: var(--ds-surface-sunken, transparent);
 }
+/* The instrument choice is a TAB (it changes what the page shows), so it
+   takes the app's tab look: the Premorbid and Change Analysis tabs, cream
+   when active with a 3px accent rule beneath. */
 .prof-inst{
-  font: inherit; font-size: var(--ds-text-sm); padding: 4px 12px;
-  border: 1px solid var(--ds-border-strong); border-radius: var(--ds-radius-full);
-  background: var(--ds-surface); color: var(--ds-text-subtle);
+  font: inherit; font-size: 13px; font-weight: 500; padding: 8px 14px;
+  border: 0; border-radius: 6px 6px 0 0; position: relative;
+  background: transparent; color: var(--ds-text-muted);
   cursor: pointer; white-space: nowrap;
+  transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
-.prof-inst.prof-on{
-  background: var(--ds-text); color: var(--ds-surface);
-  border-color: var(--ds-text); font-weight: 500;
+.prof-inst:hover{ color: var(--ds-text); }
+.prof-inst.prof-on{ background: #F0E8D6; color: var(--ds-text); font-weight: 600; }
+.prof-inst.prof-on::after{
+  content: ''; position: absolute; left: 0; right: 0; bottom: -9px; height: 3px;
+  background: var(--ds-primary);
 }
 .prof-strip-head{
   display: flex; align-items: center; justify-content: space-between;
   gap: var(--ds-space-3); flex-wrap: wrap;
   padding: 8px 14px; border-bottom: 1px solid var(--ds-border);
 }
+/* The level switch is a SETTING, so it takes the app's one segmented-control
+   look (the Score CI and classification toggles, .ds-inline-bar-toggle):
+   a sunken track with the chosen segment lifted. It was a black pill of its
+   own, a fourth switch style (UI audit, 2026-09). */
 .prof-lvls{
-  display: inline-flex; background: var(--ds-surface);
-  border: 1px solid var(--ds-border-strong); border-radius: var(--ds-radius-full);
-  overflow: hidden;
+  display: inline-flex; gap: 2px; padding: 3px;
+  background: var(--ds-surface-emphasis, #EDE8E0);
+  border: 1px solid var(--ds-border); border-radius: 6px;
 }
 .prof-lvl{
-  font: inherit; font-size: var(--ds-text-sm); padding: 4px 12px;
-  border: 0; background: transparent; color: var(--ds-text-subtle);
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 0 12px; height: 26px;
+  border: 0; border-radius: 4px; background: transparent; color: var(--ds-text-muted);
   cursor: pointer; white-space: nowrap;
+  transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
-.prof-lvl.prof-on{ background: var(--ds-text); color: var(--ds-surface); font-weight: 500; }
+.prof-lvl.prof-on{
+  background: var(--ds-surface); color: var(--ds-text);
+  box-shadow: 0 1px 0 rgba(15,18,24,0.04), 0 1px 3px rgba(15,18,24,0.08);
+}
 .prof-lvl:disabled{ opacity: .4; cursor: not-allowed; }
 .prof-crit{
   display: inline-flex; align-items: center; gap: var(--ds-space-2);
@@ -16834,6 +16554,438 @@ input[type="number"].ds-age-pop-input{
 
 /* [hidden] must win over the card's own box styling. */
 .viz-empty-card[hidden]{ display: none; }
+
+/* =====================================================================
+   APP FRAME (UI audit, 2026-09)
+
+   The app is meant to read as one window, not a document: top bar, a
+   working area, and a status bar, with nothing scrolling on a tool page
+   at a laptop size (checked at 1366 x 768 and 1440 x 900).
+
+   1. ONE PAGE WIDTH AND ONE PADDING. Twelve pages had eight widths
+      (1040 to 1480 px, or none) and top padding of 20, 24 or 32 px over
+      bottom padding of 8 to 100 px, so the content jumped sideways on
+      every navigation. Every page now takes the padding below, and one
+      of three widths, each for a reason: WORKSPACES are full width
+      (Profile Analysis and Score Charts by owner decision, 2026-09;
+      Performance Validity and Change Analysis, which already were, because
+      their multi-column sheets were built for it and capping them at 1320
+      truncated Validity's cut-off selects; and the twelve-column Data
+      table); SINGLE-PANEL tools take --page-max; and the two reading pages
+      (Methods & References, Privacy & use) keep a 1100 px measure so
+      their prose stays a readable line length.
+
+      The deep bottom padding existed only to keep the last row clear of
+      the floating report chip. The chip now lives in the status bar, so
+      that clearance is dead space and is gone.
+
+      Selectors are id-scoped with `body` in front and carry !important
+      on purpose: the per-page rules they replace are id-scoped and some
+      are !important themselves (#change-analysis.section), so nothing
+      weaker reaches them. The superseded rules are left where they are
+      and lose; that is the design-system layering this file exists for.
+
+   2. THE FOOTER IS A FIXED STATUS BAR. In the flow it was part of every
+      page's height budget and pushed most of them past the fold. Fixed,
+      it is always visible, and body padding-bottom reserves exactly its
+      height so the last row is never under it. --footer-h is measured,
+      not assumed (syncAppFrame, app.js), because the privacy line wraps
+      to two lines on a narrow window. The report chip sits in the bar's
+      right-hand end, and --rb-chip-slot keeps the footer's own text out
+      of that slot, which is what stops the chip covering it.
+   ===================================================================== */
+:root{
+  --page-max: 1320px;
+  --page-pad-x: 40px;
+  --page-pad-top: 24px;
+  --page-pad-bottom: 24px;
+  --page-max-reading: 1100px;
+  --footer-h: 44px;          /* layout px; re-measured by syncAppFrame() */
+  --rb-chip-slot: 280px;     /* layout px; re-measured by syncAppFrame() */
+}
+@media (max-width: 900px){
+  :root{ --page-pad-x: 20px; }
+}
+
+body #converter.section,
+body #battery.section,
+body #effectsize.section,
+body #profile.section,
+body #validity.section,
+body #charts.section,
+body #change-analysis.section,
+body #premorbid.section,
+body #custom-tests.section,
+body #about.section,
+body #privacy-use.section{
+  max-width: var(--page-max) !important;
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom) !important;
+}
+body #profile.section,
+body #charts.section,
+body #validity.section,
+body #change-analysis.section,
+body #custom-tests.section{ max-width: none !important; }
+body #about.section,
+body #privacy-use.section{ max-width: var(--page-max-reading) !important; }
+
+/* Home is one centred object: symmetric padding, and the dial fills the
+   window between the top bar and the status bar. 100vh / 0.9 converts the
+   window to layout px (body zoom; see the note on .home-dial above). */
+body #home.section{
+  padding-top: var(--page-pad-top) !important;
+  padding-bottom: var(--page-pad-top) !important;
+}
+body .home-dial{
+  min-height: calc(100vh / 0.9 - var(--topbar-h, 108px) - var(--footer-h) - 2 * var(--page-pad-top));
+}
+
+/* ---- the status bar ---- */
+body{ padding-bottom: var(--footer-h) !important; }
+body .site-footer{
+  position: fixed !important;
+  left: 0; right: 0; bottom: 0;
+  z-index: 55;                               /* under the top bar (60) and the report (9000+) */
+  margin: 0 !important;
+  padding: 6px var(--rb-chip-slot) 6px var(--page-pad-x) !important;
+  background: var(--ds-bg) !important;       /* opaque: content scrolls beneath it */
+  border-top: 1px solid var(--ds-border) !important;
+}
+body .site-footer-inner{
+  max-width: none;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-6);
+}
+body .site-footer-inner .ds-version-stamp{ flex-shrink: 0; }
+body .site-footer-privacy{
+  margin-left: auto;
+  text-align: right;
+  min-width: 0;
+}
+@media (max-width: 900px){
+  body .site-footer-inner{ flex-wrap: wrap; gap: var(--ds-space-2) var(--ds-space-4); }
+  body .site-footer-privacy{ margin-left: 0; text-align: left; }
+}
+
+/* =====================================================================
+   WORKING REPORT DOCK (UI audit, 2026-09)
+
+   THE CHIP LIVES IN THE STATUS BAR. It floated 20px above the window's
+   corner, over whatever was there: the footer's privacy line at every
+   width, and the last button of a long Score Tables table. Compact and
+   centred in the bar, it covers nothing, and --rb-chip-slot keeps the
+   bar's own text clear of it. No shadow stack, no hover lift and no
+   ambient motion: it is a control in a toolbar now, not a floating
+   object. The capture pulse (rb-flash) and the count bump stay, because
+   those say something happened.
+
+   THE DRAWER DOCKS. Open, it is a full-height panel between the top bar
+   and the status bar, and where the window has room the page narrows
+   beside it (body.rb-docked, set by applyDock in app.js, which also owns
+   the widths). The floating version covered the right half of the page,
+   which on Score Tables is Score, Percentile and Classification: the very
+   columns the report is checked against. On a window too narrow to leave
+   the page a usable width it overlays instead (.is-overlay).
+
+   The chip stays visible while the drawer is open, as a pressed toggle,
+   rather than being hidden: docked, it sits directly under the panel it
+   opens, which is the toolbar-toggle pattern, not a duplicate.
+   ===================================================================== */
+body .rb-chip{
+  right: 16px;
+  bottom: calc((var(--footer-h) - 32px) / 2);
+  height: 32px;
+  padding: 0 12px 0 5px;
+  gap: 8px;
+  font-size: 12px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 1px 2px rgba(0,0,0,0.18);
+  transition: background-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+body .rb-chip:hover{
+  transform: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 0 0 3px rgba(156,61,42,0.18);
+}
+body .rb-chip-icon{ width: 22px; height: 22px; }
+body .rb-chip-count{ height: 20px; min-width: 20px; }
+body .rb-root.is-open .rb-chip{
+  box-shadow: inset 0 0 0 1.5px var(--ds-primary), 0 0 0 3px rgba(156,61,42,0.18);
+}
+
+/* Everything that floats above the chip starts just above the status bar. */
+body .rb-add-prompt,
+body .rb-offer-box,
+body .rb-onboarding,
+body .rb-kofi-toast{ bottom: calc(var(--footer-h) + 12px); }
+
+body .rb-root.is-open .rb-drawer{
+  top: var(--topbar-h, 108px) !important;
+  bottom: var(--footer-h) !important;
+  right: 0 !important;
+  width: var(--rb-dock-w, 560px) !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  border: 0 !important;
+  border-left: 1px solid var(--ds-border) !important;
+  border-radius: 0 !important;
+  box-shadow: -1px 0 0 rgba(15,18,24,0.02) !important;
+  transform-origin: right center;
+  animation: rb-dock-in var(--t-slow) var(--ease);
+  transition: width var(--t-slow) var(--ease);
+}
+body .rb-root.is-maximised.is-open .rb-drawer{
+  width: var(--rb-dock-w, 800px) !important;
+  max-height: none !important;
+}
+/* Overlaying rather than docked: the page is not narrowed, so the panel
+   needs the shadow that says it is on top of something. */
+body .rb-root.is-overlay .rb-drawer{
+  box-shadow: -12px 0 32px rgba(15,18,24,0.14) !important;
+}
+body .rb-root.is-closing .rb-drawer{
+  animation: rb-dock-out 180ms var(--ease) forwards;
+}
+@keyframes rb-dock-in{
+  from{ transform: translateX(32px); opacity: 0; }
+  to  { transform: none;             opacity: 1; }
+}
+@keyframes rb-dock-out{
+  from{ transform: none;             opacity: 1; }
+  to  { transform: translateX(32px); opacity: 0; }
+}
+/* Docked, the panel is narrower than the floating drawer was, and its five
+   actions no longer fit one row. Left to wrap, they broke into three ragged
+   rows. So two deliberate rows: what the report IS (New report, Merge by
+   battery) above, and what to DO with it (Copy, Excel, Word) below,
+   right-aligned. The right-hand wrapper steps aside (display:contents) so
+   its buttons can be ordered with the rest, and the bar's ::before is the
+   full-width break between the rows. */
+body .rb-root.is-open .rb-drawer-actions{ flex-wrap: wrap; row-gap: 8px; justify-content: flex-start; }
+body .rb-root.is-open .rb-actions-right{ display: contents; }
+body .rb-root.is-open .rb-drawer-actions > .rb-action-clear{ order: 1; }
+body .rb-root.is-open .rb-drawer-actions .rb-action-merge{ order: 2; }
+body .rb-root.is-open .rb-drawer-actions::before{ content: ''; order: 3; flex-basis: 100%; height: 0; }
+body .rb-root.is-open .rb-drawer-actions .rb-action-copy{ order: 4; margin-left: auto; }
+body .rb-root.is-open .rb-drawer-actions .rb-action-export-excel{ order: 5; }
+body .rb-root.is-open .rb-drawer-actions .rb-action-export{ order: 6; }
+/* The page narrows beside it, and Score Tables' premorbid bar is the one
+   control row that ran out of width: it truncated its own label to "PRE...".
+   It wraps instead, label intact. */
+body .ds-prem-card{ flex-wrap: wrap !important; row-gap: 8px; }
+body .ds-prem-card-header{ flex-shrink: 0 !important; white-space: nowrap; }
+body .main{ transition: margin-right var(--t-slow) var(--ease); }
+body.rb-docked .main{ margin-right: var(--rb-dock-w, 560px); }
+
+/* =====================================================================
+   ONE LOOK PER CONTROL (UI audit, 2026-09)
+
+   Two kinds of switch, one look each. A TAB changes what the page shows:
+   white strip, cream active tab with a 3px accent rule (Premorbid, Change
+   Analysis, Performance Validity, Profile's instruments, and now Effect
+   Sizes). A SEGMENTED CONTROL changes a setting: sunken track, lifted
+   segment (Score CI, classification, Profile's level). Effect Sizes had a
+   third look, lettered pill tabs with a green OR badge between them.
+   ===================================================================== */
+body #effectsize .es-tabs{
+  display: flex !important; gap: 0 !important;
+  background: var(--ds-surface) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  width: max-content;
+}
+body #effectsize .es-tab{
+  flex: 0 0 auto !important;
+  padding: 11px 20px !important;
+  top: 0 !important;
+  border: 0 !important; border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  position: relative;
+}
+body #effectsize .es-tab + .es-tabs-or + .es-tab,
+body #effectsize .es-tab + .es-tab{ border-left: 1px solid var(--ds-border) !important; }
+body #effectsize .es-tab:hover{ background: rgba(26,26,26,0.025) !important; }
+body #effectsize .es-tab.is-active{ background: #F0E8D6 !important; }
+body #effectsize .es-tab.is-active::after{
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background: var(--ds-primary);
+}
+body #effectsize .es-tab-num,
+body #effectsize .es-tab-sub,
+body #effectsize .es-tabs-or{ display: none !important; }
+body #effectsize .es-tab-title{ font-size: 13.5px !important; }
+
+/* Change Analysis prints its method's formula at the top of the method's
+   own card (moved there by the builder in index.html). Standalone class:
+   the .section-desc it used to borrow is hidden inside method panels. */
+/* The legacy settings grid is emptied (its controls are driven from the
+   inline bar) but was still laid out with a 24px bottom margin: a ghost gap
+   under the formula line. Margin only; the grid itself stays, since the
+   inline bar remote-controls the controls inside it. */
+body #change-analysis .change-setup-grid.ds-legacy-hidden{ margin: 0 !important; }
+/* The method strip carried its own 1320px cap while the card beneath it is
+   full width, so on a wide window the strip stopped short of the card. */
+body #change-analysis .change-flow-side{ max-width: none !important; }
+.change-formula-line{
+  margin: -6px 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ds-text-muted);
+}
+
+/* Change Analysis's action row matches Score Tables': "+ Add row" on the
+   left, a quiet bordered "Clear all" pushed right, a hairline above. The
+   Score Tables rules are page-scoped (#battery ...), so these repeat them
+   for this page rather than widening those. */
+body #change-analysis .add-row-actions{
+  display: flex !important; align-items: center !important; gap: 10px !important;
+  margin-top: 14px !important; padding-top: 12px !important;
+  border-top: 1px solid rgba(20,15,5,0.06) !important;
+}
+body #change-analysis .add-row-actions .add-row-btn,
+body #change-analysis .add-row-actions .btn:not(.btn-clear){
+  padding: 8px 14px !important; font-size: 12.5px !important;
+}
+body #change-analysis .add-row-actions .btn-clear{
+  margin-left: auto !important;
+  padding: 6px 12px !important;
+  font-size: 11.5px !important;
+  color: #9A968D !important;
+  background: transparent !important;
+  border: 1px solid rgba(20,15,5,0.10) !important;
+  border-radius: 4px !important;
+  min-height: 0 !important;
+}
+body #change-analysis .add-row-actions .btn-clear:hover{
+  color: #9C3D2A !important;
+  border-color: rgba(156,61,42,0.30) !important;
+  background: rgba(156,61,42,0.04) !important;
+}
+
+/* =====================================================================
+   FITTING THE WINDOW (UI audit, 2026-09)
+
+   With the frame above, two tool pages still ran past a 1366 x 768
+   window. Each is tightened where its height actually came from,
+   measured on the rendered page rather than guessed.
+
+   Score Converter: the Score Equivalents column (five rows at 16px
+   padding, 47px each) set the height of the whole row, taller than the
+   curve beside it. 10px rows keep it just under the curve. The panel's
+   18px bottom margin sat on top of the page's own bottom padding.
+   ===================================================================== */
+body #converter .conv-scores-strip > *{
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+body #converter .conv-unified-panel{
+  row-gap: 14px !important;
+  margin-bottom: 0 !important;
+}
+
+/* Performance Validity: the About overview's seven rows were 62px each
+   (14px cell padding around a two-line title and citation), which alone
+   took the page 82px past the fold. The Change Analysis About table uses
+   the same row design, so it takes the same padding and the two stay alike. */
+body #validity .pvt-overview-row td,
+body #change-analysis .change-overview-table td{
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+body #validity .pvt-refs{ margin-top: 12px !important; }
+
+/* Premorbid, ToPF and OPIE-4 tabs: the model / index column was squeezed
+   by six numeric columns with room to spare, so "Verbal Comprehension Index"
+   wrapped to three lines and every row roughly doubled. The name stays on one
+   line, keeping the right padding its "?" tip is positioned in (styles.css
+   gives 34px, a later rule had taken it back to 14px, so long names ran under
+   the icon), and the rows and the Achieved box take Score Tables'
+   density. */
+body #premorbid .pre-results-table td.model{ white-space: nowrap; }
+body #premorbid .pre-results-table td.model.model-has-tip{ padding-right: 34px !important; }
+body #premorbid .pre-results-table tbody td,
+body #premorbid .pre-results-table tbody td.achieved-cell{
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
+}
+body #premorbid .pre-results-table tbody input{
+  height: 26px !important;
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
+}
+/* The group rows, header and the note above the OPIE-4 table (the UK
+   caveat, which must stay above the table) give up spacing, not content. */
+body #premorbid .pre-results-table tr.group-row td{
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+body #premorbid .pre-results-table thead th{
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+body #premorbid .pre-tab-content > .info-box{
+  margin-top: 0 !important;
+  margin-bottom: 12px !important;
+}
+body #premorbid .pre-tab-content{
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+/* Performance Validity's description, moved into the top of the sheet by
+   pvtSyncDesc (app.js). Same treatment as Change Analysis's formula line. */
+.pvt-desc-line{
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ds-text-muted);
+}
+
+/* Effect Sizes. The twelve result cards carried a 78px min-height around
+   about 40px of content, and group-data mode adds a 195px input panel above
+   the same results, which took it 182px past a 1366 x 768 window. The cards
+   take their content height; the spacing around the panels drops to the
+   page's 10px rhythm; and in group-data mode only, the distribution curve
+   gives up height (it scales, keeping its aspect) so the numbers stay on
+   screen. Statistic mode keeps its full-height curve. */
+body #effectsize .es-result-card{
+  min-height: 0 !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+body #effectsize .es-tabs-wrap{ margin-bottom: 10px !important; }
+body #effectsize .es-input-panel{
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 10px !important;
+}
+body #effectsize .es-output-row{ margin-bottom: 0 !important; row-gap: 10px !important; }
+body #effectsize .es-view-pane:has(> .info-box){
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+body #effectsize .es-view-pane:has(> .es-collapse){
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+body #effectsize .es-collapse{ margin-top: 0 !important; }
+body #effectsize .es-collapse-summary{
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+  margin-bottom: 0 !important;
+}
+body #effectsize .es-group{ padding-top: 10px !important; padding-bottom: 10px !important; }
+body #effectsize .es-groups{ margin-bottom: 8px !important; }
+body #effectsize .es-pooled,
+body #effectsize .es-pooled-item{ padding-top: 4px !important; padding-bottom: 4px !important; }
+#effectsize:has(.es-tab.is-active[data-mode="groups"]) .es-curve{ height: auto !important; }
+#effectsize:has(.es-tab.is-active[data-mode="groups"]) .es-curve svg{ height: 170px !important; }
+/* Set for a moment by pageFitsDocked (app.js) while it lays the page out
+   docked and undocked to compare them: no transition may run, or the second
+   layout would be read part way through the first's margin change. */
+body.rb-measuring .main{ transition: none !important; }
 </style>
 
 <style>
@@ -17013,7 +17165,7 @@ input[type="number"].ds-age-pop-input{
     align-items:start;
     min-height:70px;
     position:relative;
-    transition:background 140ms ease,border-color 140ms ease,box-shadow 140ms ease;
+    transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
   }
   .change-method-tab:focus{outline:none}
   .change-method-tab:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.22)}
@@ -17520,7 +17672,7 @@ input[type="number"].ds-age-pop-input{
     <div class="nav-item" data-target="charts"><span class="nav-item-num">05</span>Score Charts</div>
     <div class="nav-item" data-target="profile"><span class="nav-item-num">06</span>Profile Analysis</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">07</span>Score Converter</div>
-    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">08</span>Effect Size Tools</div>
+    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">08</span>Effect Sizes</div>
     <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">09</span>Data</div>
     <div class="nav-item" data-target="about"><span class="nav-item-num">10</span>Methods &amp; References</div>
   </nav>
@@ -17601,27 +17753,16 @@ input[type="number"].ds-age-pop-input{
             <h1 class="home-dial-hub-title">Psychometric <em>Assistant</em></h1>
             <p class="home-dial-hub-hint">Neuropsychological calculators for clinical practice</p>
           </div>
-          <p class="home-dial-desc" id="dial-desc-0" data-dial-desc="0">Score embedded and stand-alone PVTs against published cut-offs, with base-rate-aware interpretation.</p>
-          <p class="home-dial-desc" id="dial-desc-1" data-dial-desc="1">Estimate premorbid ability using ToPF and OPIE-4, compared against WAIS-IV and WMS-IV.</p>
-          <p class="home-dial-desc" id="dial-desc-2" data-dial-desc="2">Build APA-formatted report tables with confidence-interval columns and premorbid comparison.</p>
-          <p class="home-dial-desc" id="dial-desc-3" data-dial-desc="3">Evaluate test-retest change across five methods, from descriptive SDI to Crawford regression.</p>
-          <p class="home-dial-desc" id="dial-desc-4" data-dial-desc="4">Chart scores entered elsewhere in the suite against classification and reliable-change bands.</p>
-          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Ask how many of a patient&rsquo;s scores are abnormal, and how many healthy people show that many.</p>
-          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
-          <p class="home-dial-desc" id="dial-desc-7" data-dial-desc="7">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
+          <p class="home-dial-desc" id="dial-desc-0" data-dial-desc="0">Estimate premorbid ability using ToPF and OPIE-4, compared against WAIS-IV and WMS-IV.</p>
+          <p class="home-dial-desc" id="dial-desc-1" data-dial-desc="1">Build APA-formatted report tables with confidence-interval columns and premorbid comparison.</p>
+          <p class="home-dial-desc" id="dial-desc-2" data-dial-desc="2">Evaluate test-retest change across five methods, from descriptive SDI to Crawford regression.</p>
+          <p class="home-dial-desc" id="dial-desc-3" data-dial-desc="3">Score embedded and stand-alone PVTs against published cut-offs, with base-rate-aware interpretation.</p>
+          <p class="home-dial-desc" id="dial-desc-4" data-dial-desc="4">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
+          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
+          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Chart scores entered elsewhere in the suite against classification and reliable-change bands.</p>
+          <p class="home-dial-desc" id="dial-desc-7" data-dial-desc="7">Ask how many of a patient&rsquo;s scores are abnormal, and how many healthy people show that many.</p>
         </div>
         <button class="home-dial-node" data-dial="0" aria-describedby="dial-desc-0" style="--a:0deg"
-                onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
-          <span class="home-dial-dot">
-            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M11 2.5 L18 5.2 v4.8 c0 4.4-3 7.5-7 8.9 c-4-1.4-7-4.5-7-8.9 V5.2 Z"/>
-              <polyline points="7.8,11 10.2,13.4 14.8,8.2"/>
-            </svg>
-          </span>
-          <span class="home-dial-label">Performance Validity</span>
-        </button>
-
-        <button class="home-dial-node" data-dial="1" aria-describedby="dial-desc-1" style="--a:45deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;premorbid&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17633,10 +17774,10 @@ input[type="number"].ds-age-pop-input{
               <line x1="17" y1="11" x2="21" y2="11"/>
             </svg>
           </span>
-          <span class="home-dial-label">Premorbid Estimation</span>
+          <span class="home-dial-label">Premorbid Estimate</span>
         </button>
 
-        <button class="home-dial-node" data-dial="2" aria-describedby="dial-desc-2" style="--a:90deg"
+        <button class="home-dial-node" data-dial="1" aria-describedby="dial-desc-1" style="--a:45deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;battery&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17648,7 +17789,7 @@ input[type="number"].ds-age-pop-input{
           <span class="home-dial-label">Score Tables</span>
         </button>
 
-        <button class="home-dial-node" data-dial="3" aria-describedby="dial-desc-3" style="--a:135deg"
+        <button class="home-dial-node" data-dial="2" aria-describedby="dial-desc-2" style="--a:90deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;change-analysis&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17659,7 +17800,44 @@ input[type="number"].ds-age-pop-input{
           <span class="home-dial-label">Change Analysis</span>
         </button>
 
+        <button class="home-dial-node" data-dial="3" aria-describedby="dial-desc-3" style="--a:135deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 2.5 L18 5.2 v4.8 c0 4.4-3 7.5-7 8.9 c-4-1.4-7-4.5-7-8.9 V5.2 Z"/>
+              <polyline points="7.8,11 10.2,13.4 14.8,8.2"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Performance Validity</span>
+        </button>
+
         <button class="home-dial-node" data-dial="4" aria-describedby="dial-desc-4" style="--a:180deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;converter&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/>
+              <line x1="2" y1="11" x2="20" y2="11"/>
+              <line x1="11" y1="2" x2="11" y2="6"/><line x1="11" y1="16" x2="11" y2="20"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Score Converter</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="5" aria-describedby="dial-desc-5" style="--a:225deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="4" y1="18" x2="18" y2="4"/>
+              <circle cx="6" cy="16" r="2.5"/>
+              <circle cx="16" cy="6" r="2.5"/>
+              <line x1="4" y1="11" x2="8" y2="11"/>
+              <line x1="6" y1="9" x2="6" y2="13"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Effect Sizes</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="6" aria-describedby="dial-desc-6" style="--a:270deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;charts&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17672,10 +17850,10 @@ input[type="number"].ds-age-pop-input{
           <span class="home-dial-label">Score Charts</span>
         </button>
 
-        <!-- Profile Analysis. Sits after Score Charts because it is the question
+        <!-- Profile Analysis. Last, as in the top bar: it is the question
              a clinician asks once the scores are on the table and drawn: how many
              of them are abnormal, and how many healthy people show that many. -->
-        <button class="home-dial-node" data-dial="5" aria-describedby="dial-desc-5" style="--a:225deg"
+        <button class="home-dial-node" data-dial="7" aria-describedby="dial-desc-7" style="--a:315deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;profile&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17685,32 +17863,6 @@ input[type="number"].ds-age-pop-input{
             </svg>
           </span>
           <span class="home-dial-label">Profile Analysis</span>
-        </button>
-
-        <button class="home-dial-node" data-dial="6" aria-describedby="dial-desc-6" style="--a:270deg"
-                onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
-          <span class="home-dial-dot">
-            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <line x1="4" y1="18" x2="18" y2="4"/>
-              <circle cx="6" cy="16" r="2.5"/>
-              <circle cx="16" cy="6" r="2.5"/>
-              <line x1="4" y1="11" x2="8" y2="11"/>
-              <line x1="6" y1="9" x2="6" y2="13"/>
-            </svg>
-          </span>
-          <span class="home-dial-label">Effect Size Tools</span>
-        </button>
-
-        <button class="home-dial-node" data-dial="7" aria-describedby="dial-desc-7" style="--a:315deg"
-                onclick="document.querySelector('.nav-item[data-target=&quot;converter&quot;]').click()">
-          <span class="home-dial-dot">
-            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/>
-              <line x1="2" y1="11" x2="20" y2="11"/>
-              <line x1="11" y1="2" x2="11" y2="6"/><line x1="11" y1="16" x2="11" y2="20"/>
-            </svg>
-          </span>
-          <span class="home-dial-label">Score Converter</span>
         </button>
 
       </div>
@@ -18258,7 +18410,7 @@ input[type="number"].ds-age-pop-input{
            internally scrollable: it stays beside the results and never runs past
            the bottom of the window. -->
       <aside class="prof-method" aria-labelledby="prof-method-title">
-        <h2 class="prof-method-title" id="prof-method-title">Method &amp; formulae</h2>
+        <h2 class="prof-method-title" id="prof-method-title">Method</h2>
         <div class="prof-method-body">
             <p>This method comes from Crawford, Garthwaite and Gault (2007), <i>Estimating the percentage of the population with abnormally low scores (or abnormally large score differences) on standardized neuropsychological test batteries</i>, published in <i>Neuropsychology</i>, 21, 419&ndash;430. It answers a question that no single score can: when several of a patient&rsquo;s scores are unusual, how common is that among healthy people?</p>
             <p>To answer it, the method simulates a large healthy population (200,000 people) whose scores on the measures you have selected are related to one another exactly as they are in the test publisher&rsquo;s normative sample. The only information it needs is how strongly each pair of measures correlates. Each simulated person is checked against the selected criterion, and the base rate is the percentage of them who show at least as many abnormal results as your patient. It is a count of people, not of scores.</p>
@@ -18296,7 +18448,7 @@ input[type="number"].ds-age-pop-input{
   <section class="section" id="validity">
     <div class="eyebrow">Performance Validity · Embedded &amp; Stand-Alone PVTs</div>
     <h1 class="section-title">Performance <span class="ink">Validity</span></h1>
-    <p class="section-desc">Score embedded and stand-alone validity indicators against their published cut-offs, then weigh them together. No single index is a verdict. Results are cut-off comparisons only.</p>
+    <p class="pvt-desc-line" id="pvt-desc">Score embedded and stand-alone validity indicators against their published cut-offs, then weigh them together. No single index is a verdict. Results are cut-off comparisons only.</p>
 
     <div class="pvt-method-tabs" role="tablist" aria-label="Performance validity measures">
       <button type="button" class="pvt-method-tab pvt-method-tab-about active" data-pvt-tab="about" role="tab" aria-selected="true">
@@ -18403,11 +18555,6 @@ input[type="number"].ds-age-pop-input{
               </select>
             </div>
           </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Cut-offs: Silverberg, Wertheimer &amp; Fichtenberg (2007), <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. Accuracy: Shura et al. (2018), <i>Neuropsychology Review, 28</i>(3), 269–284, pooled estimates.</span>
-            <span class="pvt-source-accuracy" id="pvt-ei-accuracy"></span>
-            <span class="pvt-derived-line" data-pvt-derived="ei"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Formula &amp; weighting table</summary>
             <div class="formula-body">
@@ -18433,6 +18580,11 @@ input[type="number"].ds-age-pop-input{
             <summary><strong>Caution.</strong> Over-flags in dementia (~48%) and severe impairment; corroborate before concluding.</summary>
             <div class="pvt-caution-body">Both subtests load on attention/working memory and verbal recognition, so aphasia or significant memory disorder can inflate the EI without poor effort. Severely impaired geriatric samples show ~31–37% failure rates. Do not apply single-subtest cut-offs in place of the combined EI, and do not declare a whole RBANS protocol invalid on the EI alone. Use it to generate hypotheses and trigger further validity testing (Silverberg et al., 2007).</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Cut-offs: Silverberg, Wertheimer &amp; Fichtenberg (2007), <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. Accuracy: Shura et al. (2018), <i>Neuropsychology Review, 28</i>(3), 269–284, pooled estimates.</span>
+            <span class="pvt-source-accuracy" id="pvt-ei-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="ei"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -18465,11 +18617,6 @@ input[type="number"].ds-age-pop-input{
             </div>
           </div>
           <div class="info-box pvt-note"><strong>Mandatory gate.</strong> Computed only where Digit Span &lt; 9, List Recognition &lt; 19, or their sum &lt; 28 (Novitski et al., 2012).</div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Formula, gate &amp; cut-off: Novitski, Steele, Karantzoulis &amp; Randolph (2012), <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</span>
-            <span class="pvt-source-accuracy">No published sensitivity/specificity pair. Discrimination is ROC AUC = .91 vs amnestic patients (vs .61 for the EI).</span>
-            <span class="pvt-derived-line" data-pvt-derived="es"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Formula</summary>
             <div class="formula-body">
@@ -18483,6 +18630,11 @@ input[type="number"].ds-age-pop-input{
             <summary><strong>Caution.</strong> Unstable outside Alzheimer-type amnesia; confirm with a stand-alone PVT.</summary>
             <div class="pvt-caution-body">Built around the Alzheimer's recall/recognition dissociation, so mixed or atypical memory profiles may not match the pattern: later work shows ~4% failure in AD but ~31% in non-AD dementia and &gt;60% suboptimal rates in Parkinson's disease. The amnestic validation sample had no independent effort testing (Novitski et al., 2012).</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Formula, gate &amp; cut-off: Novitski, Steele, Karantzoulis &amp; Randolph (2012), <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</span>
+            <span class="pvt-source-accuracy">No published sensitivity/specificity pair. Discrimination is ROC AUC = .91 vs amnestic patients (vs .61 for the EI).</span>
+            <span class="pvt-derived-line" data-pvt-derived="es"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -18510,11 +18662,6 @@ input[type="number"].ds-age-pop-input{
             </div>
           </div>
           <div class="info-box pvt-note"><strong>Classic variant.</strong> Forward + Backward only; the WAIS-IV Sequencing variants use different cut-offs and are not scored here.</div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Scoring: Greiffenstein, Baker &amp; Gola (1994), <i>Psychological Assessment, 6</i>(3), 218–224. Cut-off accuracy: Schroeder et al. (2012), <i>Assessment, 19</i>(1), 21–30.</span>
-            <span class="pvt-source-accuracy" id="pvt-rds-accuracy"></span>
-            <span class="pvt-derived-line" data-pvt-derived="rds"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Scoring &amp; worked example</summary>
             <div class="formula-body">
@@ -18528,6 +18675,11 @@ input[type="number"].ds-age-pop-input{
             <summary><strong>Caution.</strong> Prefer ≤ 6 in genuine impairment, and even ≤ 6 over-flags in some groups.</summary>
             <div class="pvt-caution-body">RDS loads on attention/working memory: low scores occur legitimately in genuine attentional impairment, anxiety, and especially conduction aphasia. Schroeder et al. (2012) found ≤ 7 held only 82–85% specificity across clinical groups, against 96–97% for ≤ 6. Even at ≤ 6, specificity remains inadequate in cerebrovascular accident, severe memory disorders, intellectual disability or borderline intellectual functioning, and English-as-a-second-language examinees. Validation samples were predominantly mild-TBI/litigating.</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Scoring: Greiffenstein, Baker &amp; Gola (1994), <i>Psychological Assessment, 6</i>(3), 218–224. Cut-off accuracy: Schroeder et al. (2012), <i>Assessment, 19</i>(1), 21–30.</span>
+            <span class="pvt-source-accuracy" id="pvt-rds-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="rds"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -18562,11 +18714,6 @@ input[type="number"].ds-age-pop-input{
               </select>
             </div>
           </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Base rates &amp; suspicion indices: Iverson &amp; Tulsky (2003), <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9. Classification accuracy: Axelrod, Fichtenberg, Millis &amp; Wertheimer (2006), <i>The Clinical Neuropsychologist, 20</i>(3), 513–523. Both WAIS-III.</span>
-            <span class="pvt-source-accuracy" id="pvt-ds-accuracy"></span>
-            <span class="pvt-derived-line" data-pvt-derived="ds"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Indices &amp; base rates</summary>
             <div class="formula-body">
@@ -18580,6 +18727,11 @@ input[type="number"].ds-age-pop-input{
             <summary><strong>Caution.</strong> Not a stand-alone measure, and it shares its subtest with RDS, so the summary counts them as one indicator.</summary>
             <div class="pvt-caution-body">Axelrod et al. explicitly recommend against using the Digit Span scaled score as a stand-alone validity measure, as it accounted for a modest share of variance (AUC .77). Genuine impairment can suppress the score, so apply the conservative cut-off where real deficits are plausible. Both sources are WAIS-III. The WAIS-IV subtest adds Sequencing to the composite, so an ACSS from a WAIS-IV record is not on the identical metric these cut-offs were derived on.</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Base rates &amp; suspicion indices: Iverson &amp; Tulsky (2003), <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9. Classification accuracy: Axelrod, Fichtenberg, Millis &amp; Wertheimer (2006), <i>The Clinical Neuropsychologist, 20</i>(3), 513–523. Both WAIS-III.</span>
+            <span class="pvt-source-accuracy" id="pvt-ds-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="ds"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -18607,11 +18759,6 @@ input[type="number"].ds-age-pop-input{
             <button type="button" class="btn" id="pvt-rey-administer">Administer on screen</button>
             <span class="rey-admin-hint">Times the 10-second exposure and scores the recognition trial. Displays test stimuli: start only with the examinee present.</span>
           </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Recognition trial, combination score &amp; accuracy: Boone, Salazar, Lu, Warner-Chacon &amp; Razani (2002), <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</span>
-            <span class="pvt-source-accuracy">Recall &lt; 9: sens. .47 · spec. .97–1.00. Combination &lt; 20: sens. .71 · spec. .92–.94.</span>
-            <span class="pvt-derived-line" data-pvt-derived="rey15"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Scoring &amp; administration</summary>
             <div class="formula-body">
@@ -18625,6 +18772,11 @@ input[type="number"].ds-age-pop-input{
             <summary><strong>Caution.</strong> Specificity falls in dementia and intellectual disability; corroborate before concluding.</summary>
             <div class="pvt-caution-body">The minority of studies reporting low specificity for the &lt; 9 cut-off generally included patients with intellectual disability or dementia, so avoid these cut-offs there. Certain false-positive recognition errors (circling "f", "5", "6" or a pentagon) occurred only in the suspect-effort group and may serve as virtual pathognomonic signs when present, though they are infrequent (Boone et al., 2002).</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Recognition trial, combination score &amp; accuracy: Boone, Salazar, Lu, Warner-Chacon &amp; Razani (2002), <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</span>
+            <span class="pvt-source-accuracy">Recall &lt; 9: sens. .47 · spec. .97–1.00. Combination &lt; 20: sens. .71 · spec. .92–.94.</span>
+            <span class="pvt-derived-line" data-pvt-derived="rey15"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -18663,11 +18815,6 @@ input[type="number"].ds-age-pop-input{
               <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-crit-recog" placeholder="e.g. 0">
             </div>
           </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Base rates: Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms). The manual publishes <strong>base rates by age band, not a cut-off</strong>. Cut-offs and accuracy: Erdodi et al. (2018) and Schwartz et al. (2016), both <strong>CVLT-II</strong>.</span>
-            <span class="pvt-source-accuracy" id="pvt-cvlt3-accuracy"></span>
-            <span class="pvt-derived-line" data-pvt-derived="cvlt3"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>How the threshold is derived, and why it moves with age</summary>
             <div class="formula-body">
@@ -18685,6 +18832,11 @@ input[type="number"].ds-age-pop-input{
             <summary><strong>Caution.</strong> Failure rates climb with genuine impairment; a near-perfect score rules nothing out.</summary>
             <div class="pvt-caution-body">The manual is explicit that forced-choice recognition is suited to blatant exaggeration: &ldquo;a poor score on forced choice testing is often a strong indicator of symptom amplification, but a perfect or near-perfect score does not rule it out&rdquo;, since a sophisticated simulator recognises the task as easy. <strong>False positives concentrate in severe impairment.</strong> Failure rates rise with the severity of neurocognitive disorder, and are substantially elevated in dementia and intellectual disability, so the cut-offs should not be read at face value there (Schwartz et al., 2016). Conversely there is a well-replicated <strong>reverse severity effect</strong> in head injury: patients with mild TBI were two to three times more likely to fail than those with moderate-to-severe TBI, and failure was unrelated to injury severity, neuroradiological findings or performance on tests sensitive to TBI (Erdodi et al., 2018). Appendix D tabulates the Standard and Alternate Forms only. The Brief Form's 9-item list has no published base rates, and the trial is given after the Yes/No Recognition trial, roughly 10 minutes on (Delis et al., 2017).</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Base rates: Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms). The manual publishes <strong>base rates by age band, not a cut-off</strong>. Cut-offs and accuracy: Erdodi et al. (2018) and Schwartz et al. (2016), both <strong>CVLT-II</strong>.</span>
+            <span class="pvt-source-accuracy" id="pvt-cvlt3-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="cvlt3"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -18731,10 +18883,6 @@ input[type="number"].ds-age-pop-input{
               </select>
             </div>
           </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Test: Tombaugh (1996). Cut-offs &amp; accuracy: Martin et al. (2020), <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. Meta-analytic weighted means, shown per trial in the predictive-power table.</span>
-            <span class="pvt-derived-line" data-pvt-derived="tomm"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Cut-offs &amp; classification accuracy</summary>
             <div class="formula-body">
@@ -18749,6 +18897,10 @@ input[type="number"].ds-age-pop-input{
             <summary><strong>Caution.</strong> Do not interpret traditional cut-offs in suspected or confirmed dementia.</summary>
             <div class="pvt-caution-body">Across dementia samples, weighted-mean specificity was ≤ .70 at traditional cut-offs, with no study achieving a false-positive rate under 10%. Specificity for the liberal &lt; 49 cut-off also dipped below 90% in moderate/severe TBI and severe depression, and simulator studies overestimate sensitivity relative to real known-groups patients (Martin et al., 2020).</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Test: Tombaugh (1996). Cut-offs &amp; accuracy: Martin et al. (2020), <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. Meta-analytic weighted means, shown per trial in the predictive-power table.</span>
+            <span class="pvt-derived-line" data-pvt-derived="tomm"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -18839,7 +18991,7 @@ input[type="number"].ds-age-pop-input{
            the chart rather than behind a click. Sized to the chart area by
            vizFitMethod, and scrolls inside itself. -->
       <aside class="viz-method" aria-labelledby="viz-method-title">
-        <h2 class="viz-method-title" id="viz-method-title">How these charts are drawn</h2>
+        <h2 class="viz-method-title" id="viz-method-title">Method</h2>
         <div class="viz-method-body">
         <p>Charts read the same data and settings as their source tables, so the two cannot disagree. Each source (Score Tables, Premorbid, Change Analysis, SD Index) is its own pane, and only sources with data appear.</p>
         <p><b>Score Tables</b> charts draw each subtest in its native metric with classification bands and confidence intervals matching the table. Base-rate measures show a cumulative step line. Error measures (marked ↓) reverse the bands to describe performance. Raw-score measures are listed with their confidence interval but not plotted.</p>
@@ -18959,8 +19111,8 @@ input[type="number"].ds-age-pop-input{
         <div class="field">
           <label>Significance threshold</label>
           <select class="rci-cv" data-target="rci-basic">
-            <option value="0.95">95% confidence · critical value 1.96</option>
             <option value="0.90">90% confidence · critical value 1.645</option>
+            <option value="0.95" selected>95% confidence · critical value 1.96</option>
           </select>
         </div>
         <div class="field">
@@ -19041,8 +19193,8 @@ input[type="number"].ds-age-pop-input{
         <div class="field">
           <label>Significance threshold</label>
           <select class="rci-cv" data-target="rci-practice">
-            <option value="0.95">95% confidence · critical value 1.96</option>
             <option value="0.90">90% confidence · critical value 1.645</option>
+            <option value="0.95" selected>95% confidence · critical value 1.96</option>
           </select>
         </div>
         <div class="field">
@@ -19126,8 +19278,8 @@ input[type="number"].ds-age-pop-input{
         <div class="field">
           <label>Significance threshold</label>
           <select class="rci-cv" data-target="rci-srb">
-            <option value="0.95">95% confidence · critical value 1.96</option>
             <option value="0.90">90% confidence · critical value 1.645</option>
+            <option value="0.95" selected>95% confidence · critical value 1.96</option>
           </select>
         </div>
         <div class="field">
@@ -19222,8 +19374,8 @@ input[type="number"].ds-age-pop-input{
                2.069, so a statistic of 2.02 reads as significant against the
                label while the app correctly calls it non-significant. -->
           <select class="rci-cv" data-target="rci-crawford" title="Crawford's method uses a t critical value based on the normative sample size (df = N − 2), not a fixed z. Smaller norms give a higher threshold: at N = 25 the 95% value is 2.069, at N = 100 it is 1.985, converging on 1.96 as N grows.">
-            <option value="0.95">95% confidence · critical value t(N−2)</option>
             <option value="0.90">90% confidence · critical value t(N−2)</option>
+            <option value="0.95" selected>95% confidence · critical value t(N−2)</option>
           </select>
         </div>
         <div class="field">
@@ -19711,7 +19863,7 @@ input[type="number"].ds-age-pop-input{
 
     <h3 class="methods-h3">What this tool does</h3>
     <p class="section-body-text">
-      Nine working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Profile Analysis</strong>, <strong>Performance Validity</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Size Tools</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
+      Nine working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Profile Analysis</strong>, <strong>Performance Validity</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Sizes</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
     </p>
     <p class="section-body-text">
       The auto-fill normative database holds published parameters for seven instrument families: D-KEFS (original and Advanced), WAIS-IV, WMS-IV, WISC-V, CVLT-3, CVLT-C and the RBANS, with the retest sample size <i>N</i> where the publisher reports one. <i>N</i> is required for the Crawford &amp; Garthwaite method and may need entering by hand where it is unavailable. Clinicians should verify every imported parameter against the current manual, and against local service standards, before interpreting it.
@@ -19931,7 +20083,7 @@ input[type="number"].ds-age-pop-input{
       <p>Watts, B. V., Schnurr, P. P., Mayo, L., Young-Xu, Y., Weeks, W. B., &amp; Friedman, M. J. (2013). Meta-analysis of the efficacy of treatments for posttraumatic stress disorder. <i>The Journal of Clinical Psychiatry, 74</i>(6), e541–e550.</p>
       <p>Williams, A. C. de C., Fisher, E., Hearn, L., &amp; Eccleston, C. (2020). Psychological therapies for the management of chronic pain (excluding headache) in adults. <i>Cochrane Database of Systematic Reviews, 8</i>, CD007407.</p>
       <p>Wolraich, M. L., Wilson, D. B., &amp; White, J. W. (1995). The effect of sugar on behavior or cognition in children: A meta-analysis. <i>JAMA, 274</i>(20), 1617–1621.</p>
-      <p class="references-note">The Effect Size Tools page also cites a UK Biobank male-versus-female adult height contrast (<i>d</i> = 2.04) attributed to Lui et al. (2021). That source could not be verified and is not listed here; treat the value as an illustrative anchor only.</p>
+      <p class="references-note">The Effect Sizes page also cites a UK Biobank male-versus-female adult height contrast (<i>d</i> = 2.04) attributed to Lui et al. (2021). That source could not be verified and is not listed here; treat the value as an illustrative anchor only.</p>
     </div>
       </div>
     </div>
@@ -20043,7 +20195,7 @@ input[type="number"].ds-age-pop-input{
     </div>
     <div class="ds-version-stamp" title="Build version and last update">
       <span class="ds-version-dot" aria-hidden="true"></span>
-      <span id="app-version">v0.2.0 &middot; updated July 2026</span>
+      <span id="app-version">v0.2.0 &middot; updated September 2026</span>
     </div>
     <!-- The standing privacy claim. A clinician about to type a real patient's
          scores into a website has exactly this question, and until now the only
@@ -20052,10 +20204,9 @@ input[type="number"].ds-age-pop-input{
          of its own. Do not soften this to "we do not share your data", which is
          a weaker and different claim.
 
-         THIRD child on purpose. design-system.css lays the footer out as a
-         `1fr auto 1fr` grid with the version stamp centred, so this has to
-         follow the stamp to land in the right-hand column. Put it before, and
-         it takes the centre slot and pushes the version off-centre. -->
+         The footer is a fixed status bar (APP FRAME, design-system.css):
+         links, then the version, then this line pushed to the right, ending
+         before the slot the Working Report chip occupies. -->
     <p class="site-footer-privacy">Scores stay in this browser. Nothing is uploaded.<br><span class="site-footer-terms">Decision support only. Check every figure against the source.</span></p>
   </div>
 </footer>
@@ -23245,8 +23396,11 @@ function navigateTo(target, opts){
        and is skipped, so the page being arrived at is the only place its
        own cap can be computed. */
     if (typeof refreshTableViewportFit === 'function') refreshTableViewportFit();
-    /* The popover is anchored to a control on Score Tables, so it cannot
-       survive a page change — its anchor goes with it. */
+    /* Whether the Working Report can dock beside a page depends on the page.
+       In a try: the auth code can navigate during boot, before the
+       `const ReportBundle` line far below has run, and `typeof` on a const in
+       that state throws rather than returning "undefined". */
+    try { if (ReportBundle.applyDock) ReportBundle.applyDock(); } catch (e) {}
   };
 
   // Re-selecting the page you're already on shouldn't flash it away and back.
@@ -25703,7 +25857,13 @@ function renderBattery(){
        Its inferred-metric tag is suppressed for the same reason: "(Scaled)"
        beside a disabled Score box would claim a metric the row does not have. */
     const isBr = !!batteryBaseRateEntry(r);
-    const abbr = isBr ? '' : scoreTypeAbbr(rowType);
+    /* Nor on a row whose group header already names one metric for the
+       whole group ("· Standard Score"): fifteen "(Scaled)" tags under a
+       "Scaled Score" heading say nothing the heading does not. The tag stays
+       where it carries information, on ungrouped rows and in a "Mixed"
+       group, which is what that heading's own comment promises. */
+    const groupUniform = !!gKey && new Set(batteryRows.filter(x => batteryGroupKeyOf(x) === gKey).map(x => rowScoreType(x))).size === 1;
+    const abbr = (isBr || groupUniform) ? '' : scoreTypeAbbr(rowType);
     const typeTag = abbr ? `<span class="bat-row-type-tag">(${abbr})</span>` : '';
     const scoreCell = isBr
       ? `<td class="bat-score-na-cell"><input type="number" disabled class="bat-score-na" title="Raw-score measure: enter the span in the Raw Score column. The base rate is read from the published table." aria-label="Not applicable: raw-score measure"></td>`
@@ -27100,7 +27260,9 @@ function renderSdi(){
     if (r.group) tr.className = 'in-group';
     if (change === null && hasAnyRowValue(r)) tr.classList.add('row-check');
     else if (change === null) tr.classList.add('row-awaiting');
-    const abbr = raw ? '' : scoreTypeAbbr(sdiRowScoreType(r));
+    /* As on Score Tables: no tag where the group header names the one metric. */
+    const sdiGroupUniform = !!r.group && new Set(sdiRows.filter(x => x.group === r.group).map(x => sdiRowScoreType(x))).size === 1;
+    const abbr = (raw || sdiGroupUniform) ? '' : scoreTypeAbbr(sdiRowScoreType(r));
     const typeTag = abbr ? `<span class="bat-row-type-tag">(${escapeHtml(abbr)})</span>` : '';
     tr.innerHTML = `
       <td class="row-num">${i+1}${typeTag}</td>
@@ -31245,10 +31407,17 @@ function switchPvtTab(name){
 /* About carries no description, as the Change Analysis overview does not;
    the full one shows on every measure tab. Its "no single index is a
    verdict" is carried on About by the table's footer. An inline display
-   rather than [hidden], so no stylesheet display rule can outrank it. */
+   rather than [hidden], so no stylesheet display rule can outrank it.
+
+   It sits at the top of the sheet, inside the card, rather than as a loose
+   line above the tab strip: the only text on any tool page outside a card,
+   as Change Analysis's formula line also was (UI audit, 2026-09). */
 function pvtSyncDesc(name){
-  const desc = document.querySelector('#validity > .section-desc');
-  if (desc) desc.style.display = name === 'about' ? 'none' : '';
+  const desc = document.getElementById('pvt-desc');
+  if (!desc) return;
+  const main = document.querySelector('#validity .pvt-sheet-main');
+  if (main && desc.parentElement !== main) main.prepend(desc);
+  desc.style.display = name === 'about' ? 'none' : '';
 }
 
 function clearPvt(){
@@ -31346,7 +31515,7 @@ function renderPvtAboutPanel(){
         <th class="pvt-overview-th is-measure">Measure</th>
         <th class="pvt-overview-th is-left"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The instrument and edition each cut-off was calibrated on. Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity. A cut-off derived on one edition does not automatically transfer to another; a ! marks where that matters.">Derived on</span></th>
         <th class="pvt-overview-th is-left"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="The cut-off each measure applies when its tab is first opened. Its published sensitivity and specificity are printed beside the cut-off selector on that tab.">Default cut-off</span></th>
-        <th aria-hidden="true"></th>
+        <th class="pvt-overview-th" aria-hidden="true"></th>
       </tr></thead>
       ${body}
     </table>
@@ -31433,6 +31602,65 @@ wireSdiAutofill();
 setupPvtPage();
 
 /* ============================================================
+   APP FRAME: the footer is a fixed status bar
+   ============================================================
+   See "APP FRAME" at the end of design-system.css. The footer is fixed to
+   the bottom of the window and body padding-bottom reserves its height, so
+   the page's own fitters have to leave that strip alone as well.
+
+   Both custom properties are MEASURED. The privacy line wraps to two lines
+   on a narrow window, and the chip's width follows its count badge, so a
+   constant would be right at one width only. offsetHeight / offsetWidth are
+   layout px, which is what CSS lengths on this zoomed body are, so neither
+   value is divided by the zoom. */
+function footerVisualHeight(){
+  const footer = document.querySelector('.site-footer');
+  if (!footer || getComputedStyle(footer).position !== 'fixed') return 0;
+  return footer.getBoundingClientRect().height;   /* visual px, like every rect */
+}
+
+/* `var` for the same init-order reason as tableViewportRO below. */
+var appFrameRO = null;
+
+function syncAppFrame(){
+  const root = document.documentElement;
+  const chip = document.querySelector('.rb-chip');
+  /* The chip is injected by ReportBundle, later than this module starts, so
+     it is picked up by whichever pass first finds it. */
+  if (chip && appFrameRO && !chip.dataset.frameObserved){
+    chip.dataset.frameObserved = '1';
+    appFrameRO.observe(chip);
+  }
+  /* The chip's width plus its 16px inset and a 24px gap before the footer
+     text. Read first: the footer's height depends on it (a wider slot can
+     wrap the privacy line). */
+  if (chip && chip.offsetWidth){
+    const slot = chip.offsetWidth + 16 + 24;
+    if (root.style.getPropertyValue('--rb-chip-slot') !== slot + 'px'){
+      root.style.setProperty('--rb-chip-slot', slot + 'px');
+    }
+  }
+  const footer = document.querySelector('.site-footer');
+  if (footer && footer.offsetHeight){
+    const h = footer.offsetHeight;
+    if (root.style.getPropertyValue('--footer-h') !== h + 'px'){
+      root.style.setProperty('--footer-h', h + 'px');
+    }
+  }
+}
+
+function setupAppFrame(){
+  if (typeof ResizeObserver === 'function' && !appFrameRO){
+    appFrameRO = new ResizeObserver(() => syncAppFrame());
+    const footer = document.querySelector('.site-footer');
+    if (footer) appFrameRO.observe(footer);
+  }
+  syncAppFrame();
+  window.addEventListener('resize', syncAppFrame);
+  window.addEventListener('load', syncAppFrame);
+}
+
+/* ============================================================
    TABLE VIEWPORT FIT — the box ends where the window ends
    ============================================================
    .table-viewport (styles.css) caps the Score Tables and Change Analysis
@@ -31494,7 +31722,9 @@ function fitTableViewports(){
       if (r.height) tail = Math.max(tail, r.bottom);
     }
 
-    const over   = tail - (window.innerHeight - TABLE_VIEWPORT_GAP);
+    /* The window less the fixed status bar: that strip is covered, so a
+       box fitted to the full window would end underneath it. */
+    const over   = tail - (window.innerHeight - footerVisualHeight() - TABLE_VIEWPORT_GAP);
     const target = Math.max(TABLE_VIEWPORT_MIN, Math.round((rect.height - over) / z));
 
     /* Write only on a real change: an unconditional write on every resize
@@ -31569,7 +31799,8 @@ window.fitTableViewports = fitTableViewports;
 // Final initialization
 refreshAll();
 
-// Size the scrolling table boxes to the window (see the banner above)
+// The status-bar footer, then the scrolling table boxes that fit around it
+setupAppFrame();
 setupTableViewportFit();
 
 /* ---------- GLOBAL CLEAR — Topbar "New patient" button ----------
@@ -32086,7 +32317,6 @@ function renderTermsStatus(){
     home: 'home',
     converter: 'converter',
     battery: 'battery',
-    'report-writer': 'report',
     effectsize: 'effectsize',
     // All change-analysis methods map to the "change" bucket
     sdi: 'change',
@@ -32107,8 +32337,7 @@ function renderTermsStatus(){
     home: 'Home',
     converter: 'Score Converter',
     battery: 'Score Tables',
-    'report-writer': 'Report Writer',
-    effectsize: 'Effect Size Tools',
+    effectsize: 'Effect Sizes',
     sdi: 'Standard Deviation Index',
     'rci-basic': 'Simple Reliable Change',
     'rci-practice': 'Practice Effect-Adjusted',
@@ -32118,12 +32347,12 @@ function renderTermsStatus(){
     charts: 'Score Charts',
     profile: 'Profile Analysis',
     validity: 'Performance Validity',
-    premorbid: 'Premorbid Estimation',
+    premorbid: 'Premorbid Estimate',
     'custom-tests': 'Data',
     about: 'Methods & References',
     /* Footer page, absent from TOPNAV_BUCKETS by design — but the brand row
        still names every page it can land on. */
-    'privacy-use': 'Privacy & Use'
+    'privacy-use': 'Privacy & use'
   };
 
   function syncTopnav(){
@@ -33520,7 +33749,7 @@ const ReportBundle = (function(){
       if (key && byKey.has(key)){
         byKey.get(key).members.push(member);
       } else {
-        const g = { key, longName: info ? info.longName : null, members: [member] };
+        const g = { key, longName: info ? info.longName : null, shortName: info ? info.name : null, members: [member] };
         groups.push(g);
         if (key) byKey.set(key, g);
       }
@@ -33550,6 +33779,7 @@ const ReportBundle = (function(){
         items: ordered.map(m => m.item),
         isMerged,
         longName: g.longName,
+        shortName: g.shortName,
         html: isMerged
           ? buildMergedTableHtml(g.longName, ordered.map(m => ({ html: m.html, subLabel: m.subLabel })))
           : ordered[0].html
@@ -33732,7 +33962,7 @@ ${buildReportHtmlBody()}
               <line x1="5.5" y1="11" x2="9.5" y2="11"/>
             </svg>
             <span>Working Report</span>
-            <span class="rb-drawer-count" data-rb-count-text>0 items</span>
+            <span class="rb-drawer-count" data-rb-count-text>0 tables</span>
           </div>
           <div class="rb-drawer-head-actions">
             <div class="rb-mode-toggle" role="tablist" aria-label="View mode">
@@ -34048,6 +34278,13 @@ ${buildReportHtmlBody()}
         // If editing a header, just blur - don't close the drawer
         const editing = document.activeElement?.closest('.rb-editable-header');
         if (editing){ editing.blur(); return; }
+        /* Docked, the report sits beside a page that is still being worked,
+           and Escape there belongs to the page (closing a family dropdown,
+           say). Only an Escape from inside the report, or from nowhere in
+           particular, closes it. */
+        const ae = document.activeElement;
+        const fromPage = ae && ae !== document.body && !rootEl?.contains(ae);
+        if (fromPage && document.body.classList.contains('rb-docked')) return;
         close();
       }
       // Enter on a header cell → commit (blur to save)
@@ -34070,6 +34307,10 @@ ${buildReportHtmlBody()}
     // (e.g. clicking ✕ to remove an item triggers a full re-render).
     document.addEventListener('click', e => {
       if (state.minimized) return;
+      /* Docked beside the page, the report is meant to stay open while the
+         page is worked, so a click on the page is work, not a dismissal.
+         Only the overlay (a window too narrow to dock) closes this way. */
+      if (document.body.classList.contains('rb-docked')) return;
       const path = (typeof e.composedPath === 'function') ? e.composedPath() : [];
       for (const el of path){
         if (el && el.id === 'report-bundle-root') return;
@@ -34080,6 +34321,78 @@ ${buildReportHtmlBody()}
     });
 
     // Resize handle removed - drawer is now fixed-size.
+    window.addEventListener('resize', applyDock);
+    /* A click in the page can change what is on screen (a tab, a mode) and
+       so whether it fits beside the panel. After the click's own handlers. */
+    document.addEventListener('click', e => {
+      if (state.minimized || rootEl?.contains(e.target)) return;
+      setTimeout(applyDock, 0);
+    });
+  }
+
+  /* ---------- docking ----------
+     Open, the report is a full-height panel on the right, between the top
+     bar and the status bar. Where the window has room it DOCKS: the page
+     narrows beside it, so the scores being reported and the report itself
+     are on screen together. It used to float over the page's right half,
+     which was exactly where Score, Percentile and Classification sit.
+
+     Where the window is too narrow to leave the page a usable width, it
+     overlays instead, as before. RB_DOCK_MIN_PAGE is that usable width; all
+     three constants are layout px (the CSS width is too), so the window is
+     converted out of visual px once. The widths are written to CSS here, so
+     the stylesheet and this test cannot disagree.
+
+     A width alone is not enough, because pages differ. At 1366 px Score
+     Tables and Change Analysis fit beside the panel, while Premorbid's
+     results table, Effect Sizes' input row and a Validity tab ran under it
+     and Profile Analysis gained 140px of scroll. So the page on screen is
+     MEASURED docked (pageFitsDocked) and docks only if nothing spills
+     sideways and it scrolls no further than it does undocked. Re-run on
+     navigation and after any click in the page, since a tab or mode switch
+     changes what is on screen without resizing anything. */
+  const RB_DOCK_W        = 560;
+  const RB_DOCK_W_MAX    = 800;
+  const RB_DOCK_MIN_PAGE = 900;
+  /* Both layouts are laid out synchronously, with transitions off, and the
+     original state put back, so nothing is painted in between. */
+  function pageFitsDocked(){
+    const sec = document.querySelector('.main > .section.active');
+    if (!sec) return true;
+    const body = document.body;
+    const se = document.scrollingElement || document.documentElement;
+    const fit = () => { if (typeof fitTableViewports === 'function') fitTableViewports(); };
+    const had = body.classList.contains('rb-docked');
+    body.classList.add('rb-measuring');
+    body.classList.remove('rb-docked');
+    fit();
+    const baseScroll = Math.max(0, se.scrollHeight - se.clientHeight);
+    body.classList.add('rb-docked');
+    fit();
+    const fits = sec.scrollWidth <= sec.clientWidth + 1
+      && (se.scrollHeight - se.clientHeight) <= baseScroll + 1;
+    body.classList.toggle('rb-docked', had);
+    fit();
+    body.classList.remove('rb-measuring');
+    return fits;
+  }
+  function applyDock(){
+    const z = (typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1) || 1;
+    const width = state.maximised ? RB_DOCK_W_MAX : RB_DOCK_W;
+    const open = !state.minimized;
+    const rootStyle = document.documentElement.style;
+    rootStyle.setProperty('--rb-dock-w', width + 'px');
+    const push = open && (window.innerWidth / z - width) >= RB_DOCK_MIN_PAGE && pageFitsDocked();
+    const was = document.body.classList.contains('rb-docked');
+    document.body.classList.toggle('rb-docked', push);
+    if (rootEl) rootEl.classList.toggle('is-overlay', open && !push);
+    /* The page's own fitters (table boxes, the Profile and Charts panels)
+       listen for resize. A change of page width is one, for them, so they
+       are told once the margin transition has finished. */
+    if (was !== push){
+      clearTimeout(applyDock.t);
+      applyDock.t = setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
+    }
   }
 
   /* ---------- state transitions ---------- */
@@ -34100,7 +34413,7 @@ ${buildReportHtmlBody()}
         save();
         render(); // removes is-open + hides drawer
         rootEl?.classList.remove('is-closing'); // cleanup last so the drawer never re-animates
-      }, 240); // matches rb-drawer-bubble-out duration
+      }, 180); // matches rb-dock-out (design-system.css)
     } else {
       state.minimized = true;
       save();
@@ -34147,8 +34460,15 @@ ${buildReportHtmlBody()}
      during continuous typing). */
   const PILL_HEIGHT = 40;       // approx pill height
   const PILL_GAP    = 8;        // gap between stacked pills
-  const PILL_BASE_BOTTOM = 82;  // distance from viewport bottom for pill #1
-  const CHIP_CENTER_BOTTOM = 24; // chip's vertical centre, target for fly animation
+  /* Both measured from the status bar the chip now sits in (--footer-h,
+     layout px, as `bottom` is): pill #1 starts 12px above the bar, and the
+     fly animation aims at the bar's centre line, which is the chip's. */
+  function footerLayoutH(){
+    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--footer-h'));
+    return Number.isFinite(v) && v > 0 ? v : 44;
+  }
+  function pillBaseBottom(){ return footerLayoutH() + 12; }
+  function chipCentreBottom(){ return footerLayoutH() / 2; }
 
   function buildPillNode(sourceLabel, sourceId){
     const text = sourceLabel ? `${sourceLabel} added to report` : 'Added to report';
@@ -34173,8 +34493,8 @@ ${buildReportHtmlBody()}
     clearTimeout(pill._holdTimer);
     pill.classList.remove('is-visible');
     // Compute fly distance from this pill's CURRENT bottom to the chip's centre
-    const bottomVal = parseInt(pill.style.bottom, 10) || PILL_BASE_BOTTOM;
-    const flyDistance = bottomVal - CHIP_CENTER_BOTTOM;
+    const bottomVal = parseInt(pill.style.bottom, 10) || pillBaseBottom();
+    const flyDistance = bottomVal - chipCentreBottom();
     pill.style.setProperty('--rb-fly-distance', flyDistance + 'px');
     pill.classList.add('is-flying');
     // Chip "catches" the pill just before arrival
@@ -34237,7 +34557,7 @@ ${buildReportHtmlBody()}
        VISUAL px (body carries zoom:0.9) while `bottom` is applied in LAYOUT px,
        so the height is divided back out — see pageZoomFactor. */
     const card = document.querySelector('#rb-offer-host .rb-offer-box');
-    let base = PILL_BASE_BOTTOM;
+    let base = pillBaseBottom();
     if (card){
       const z = (typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1) || 1;
       base += Math.round(card.getBoundingClientRect().height / z) + PILL_GAP;
@@ -34562,7 +34882,10 @@ ${buildReportHtmlBody()}
     // Stable menu id keyed to the battery, so it survives within-group reorders
     // (the first member — and thus the anchor — can change as rows move).
     const menuId = escapeHtmlLocal('grp-' + (block.key || block.ids[0]));
-    const title = escapeHtmlLocal(block.longName || 'Merged tables');
+    /* The card header takes the instrument's short name. The merged table's
+       own caption, directly below, already prints the full title, and the
+       header repeating it in capitals ran to three lines (UI audit, 2026-09). */
+    const title = escapeHtmlLocal(block.shortName || block.longName || 'Merged tables');
     const count = block.items.length;
     const members = block.items.map((it, mi) => {
       const mid = escapeHtmlLocal(it.id);
@@ -34664,7 +34987,11 @@ ${buildReportHtmlBody()}
       }
     });
     rbPrevCount = countNow;
-    rootEl.querySelectorAll('[data-rb-count-text]').forEach(el => el.textContent = `${state.items.length} item${state.items.length === 1 ? '' : 's'}`);
+    /* "tables", not "items": the chip says APA Tables and a merged card says
+       "2 tables combined", so the header counts the same thing. A merged
+       battery is one card holding several tables, which is why the number
+       can exceed the cards on screen. */
+    rootEl.querySelectorAll('[data-rb-count-text]').forEach(el => el.textContent = `${state.items.length} table${state.items.length === 1 ? '' : 's'}`);
     rootEl.querySelectorAll('[data-rb-action="clear"], [data-rb-action="copy"], [data-rb-action="export-word"], [data-rb-action="export-excel"]').forEach(b => b.disabled = !state.items.length);
     rootEl.dataset.state = state.minimized ? 'closed' : 'open';
     rootEl.classList.toggle('is-open', !state.minimized);
@@ -34674,11 +35001,11 @@ ${buildReportHtmlBody()}
     // Drawer is only shown when open
     if (drawer) drawer.hidden = state.minimized;
 
-    // Drawer is now a fixed-size floating popover - no inline width override,
-    // no body padding push.
+    // Width comes from the stylesheet (--rb-dock-w, set by applyDock).
     if (drawer) drawer.style.width = '';
-    document.body.style.paddingRight = '';
-    document.body.classList.remove('rb-docked-active');
+    applyDock();
+    const chipBtn = rootEl.querySelector('.rb-chip');
+    if (chipBtn) chipBtn.setAttribute('aria-expanded', String(!state.minimized));
 
     // Onboarding hint: show only on first ever visit, when drawer is closed
     if (onboarding){
@@ -34786,6 +35113,8 @@ ${buildReportHtmlBody()}
     watchMethodPanels();
     render();
     refreshConsentControls();
+    /* The chip now exists: size the status bar's slot for it. */
+    if (typeof syncAppFrame === 'function') syncAppFrame();
     setInterval(() => {
       if (state.minimized) return;
       rootEl?.querySelectorAll('[data-rb-time]').forEach(el => {
@@ -34815,7 +35144,7 @@ ${buildReportHtmlBody()}
     });
   }
 
-  return { init, addOrReplace, remove, clear, clearSilent, setSuppressed, isSuppressed, copyAll, exportWord, exportExcel, open, close, toggle, showKofiPrompt: maybeShowKofiToast,
+  return { init, addOrReplace, remove, clear, clearSilent, setSuppressed, isSuppressed, copyAll, exportWord, exportExcel, open, close, toggle, applyDock, showKofiPrompt: maybeShowKofiToast,
            acceptSource, isSourceAccepted, isConsentGated, resetConsent, refreshConsentControls,
            hasUnexported, showLeaveCard, markExported,
            /* Save / Open session: consent travels with the patient's tables, the
@@ -37927,6 +38256,11 @@ if (document.readyState === 'loading'){
     const out = profEl('prof-results');
     if (!out) return;
     profPull();
+    /* The note mirrors the exported table's note, so it is shown only when
+       there is a profile for it to describe. Under the empty state it
+       explained a table that did not exist (UI audit, 2026-09). Toggled by
+       style, not [hidden]: .info-box carries its own display. */
+    const note = document.querySelector('#profile [data-apa-note="prof"]');
     const found = profScoreTableRows();
     const c = profCriterion();
 
@@ -37939,9 +38273,11 @@ if (document.readyState === 'loading'){
         + '<p class="prof-empty-p">A profile is built from scores already entered on Score Tables. '
         + 'Add a ' + escapeHtml(names) + ' measure there and it appears here.</p>'
         + '<button class="btn" type="button" data-prof-goto="battery">Go to Score Tables</button></div>';
+      if (note) note.style.display = 'none';
       renderProfileApa();
       return;
     }
+    if (note) note.style.display = '';
 
     const counts = profCounts();
     const res = profSimulate();
@@ -38110,7 +38446,9 @@ if (document.readyState === 'loading'){
        the results column does not push it up under the top bar. */
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
     const colEnd = el.parentElement.getBoundingClientRect().bottom + (maxScroll - window.scrollY);
-    const room = Math.min(window.innerHeight - top - 16, colEnd - stuckAt);
+    /* Less the fixed status bar, which covers the bottom of the window. */
+    const footerH = typeof footerVisualHeight === 'function' ? footerVisualHeight() : 0;
+    const room = Math.min(window.innerHeight - footerH - top - 16, colEnd - stuckAt);
     el.style.maxHeight = Math.max(200, room / z) + 'px';
   }
   /* Direct, not via requestAnimationFrame: one rect read and one style write
@@ -38221,7 +38559,7 @@ if (document.readyState === 'loading'){
   consolidated.id = 'change-analysis';
   consolidated.innerHTML = `
     <div class="eyebrow" id="change-main-eyebrow">Standard Deviation Index</div>
-    <p class="section-desc" id="change-main-desc">Formula basis: descriptive standard-deviation discrepancy, SD Δ = (X₂ − X₁) / SD; no reliability correction is applied.</p>
+    <p class="change-formula-line" id="change-main-desc">Formula basis: descriptive standard-deviation discrepancy, SD Δ = (X₂ − X₁) / SD; no reliability correction is applied.</p>
     <div class="change-flow-shell">
       <aside class="change-flow-side">
         <div class="change-method-tabs" role="tablist" aria-label="Change analysis method"></div>
@@ -38480,7 +38818,7 @@ if (document.readyState === 'loading'){
           ${makeColHead('practice', 'Practice<br>effect')}
           ${makeColHead('rtm',      'Regression<br>to mean')}
           ${makeColHead('n',        'Sample-size<br>adjustment', true)}
-          <th aria-hidden="true"></th>
+          <th class="change-overview-colh" aria-hidden="true"></th>
         </tr>
       </thead>
       <tbody>
@@ -38523,6 +38861,13 @@ if (document.readyState === 'loading'){
       const method = methods.find(item => item.id === id);
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
       if (mainDesc && method){ mainDesc.innerHTML = method.source; mainDesc.style.display = ''; }
+      /* The method's formula is the only one this page prints (none of the
+         five panels has a formula disclosure), so it stays on screen. It
+         lives at the top of the active method's own card, in the band the
+         tab seam leaves, rather than as a loose line above the tab strip,
+         which was the only text on any tool page sitting outside a card. */
+      const activePanel = body.querySelector('#' + id);
+      if (mainDesc && activePanel && mainDesc.parentElement !== activePanel) activePanel.prepend(mainDesc);
     }
     // Shared data: re-render the RCI method we just switched to, so scores/norms
     // entered on any other method appear here too (single shared data set).
@@ -38617,7 +38962,6 @@ if (document.readyState === 'loading'){
     'home':           'Home',
     'converter':      'Score Converter',
     'battery':        'Score Tables',
-    'report-writer':  'Report Writer',
     'effectsize':     'Effect Sizes',
     'change-analysis':'Change Analysis',
     'charts':         'Score Charts',
@@ -38631,7 +38975,7 @@ if (document.readyState === 'loading'){
     'rci-practice':   'Practice Effect-Adjusted',
     'rci-srb':        'McSweeney Regression-Based',
     'rci-crawford':   'Crawford Regression-Based',
-    'premorbid':      'Premorbid Estimation',
+    'premorbid':      'Premorbid Estimate',
     'about':          'Methods & References',
     'custom-tests':   'Data',
     'privacy-use':    'Privacy & use'
@@ -38701,7 +39045,10 @@ if (document.readyState === 'loading'){
           // Preserve any leading icon by replacing only the trailing text node
           // when present; otherwise just set textContent.
           const lastText = Array.from(el.childNodes).reverse().find(n => n.nodeType === 3);
-          if (lastText) lastText.textContent = ' ' + rep.replace(/^\+\s*/, '');
+          /* Written verbatim. This used to strip the leading "+", so Change
+             Analysis read "Add row" beside Score Tables' "+ Add row" for the
+             same action (UI audit, 2026-09). */
+          if (lastText) lastText.textContent = rep;
           else el.textContent = rep;
           break;
         }
@@ -38998,7 +39345,7 @@ if (document.readyState === 'loading'){
               <circle cx="7" cy="7" r="4.5"/>
               <path d="M11 11l3 3"/>
             </svg>
-            <input type="text" class="ds-inline-bar-input" placeholder="Search a test family…" autocomplete="off">
+            <input type="text" class="ds-inline-bar-input" placeholder="Search a test family (WAIS-IV, WMS-IV, RBANS…)" autocomplete="off">
           </div>
         ` : ''}
       </div>
@@ -39455,48 +39802,8 @@ if (document.readyState === 'loading'){
   /* Belt-and-braces timer fires too */
   [200, 600, 1200].forEach(ms => setTimeout(clearNormsLock, ms));
 
-  /* --- 4. Chip auto-fade on scroll ------------------------------------------
-     While the user is actively scrolling (i.e. reading / working), the
-     Working Report chip recedes (opacity + slight scale-down) so it isn't
-     a hot spot on top of content. When scrolling stops for ~600ms or the
-     user scrolls back up, it returns to full presence. The drawer being
-     open suspends this entirely - chip stays fully visible. */
-  let scrollTimer = null;
-  let lastScrollY = window.scrollY;
-  const RECEDE_CLASS = 'ds-chip-recede';
-  const RECEDE_DELAY = 600;
-
-  function onScroll(){
-    const drawerOpen = document.querySelector('.rb-root.is-open');
-    if (drawerOpen){
-      document.body.classList.remove(RECEDE_CLASS);
-      return;
-    }
-    const dy = window.scrollY - lastScrollY;
-    lastScrollY = window.scrollY;
-    // Only recede on downward scroll - upward scroll restores immediately
-    if (dy > 2) document.body.classList.add(RECEDE_CLASS);
-    else if (dy < -2) document.body.classList.remove(RECEDE_CLASS);
-    // Reset timer - when scrolling stops, restore the chip
-    clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(() => {
-      document.body.classList.remove(RECEDE_CLASS);
-    }, RECEDE_DELAY);
-  }
-  // Listen on whatever actually scrolls. The redesign moved the scroll
-  // container from `.main` (now overflow:visible) to the document, so binding
-  // to `.main` meant this handler never fired at all.
-  function attachChipFade(){
-    const mainEl = document.querySelector('.main');
-    const mainScrolls = mainEl && ['auto','scroll','overlay'].includes(getComputedStyle(mainEl).overflowY);
-    const target = mainScrolls ? mainEl : window;
-    target.addEventListener('scroll', onScroll, { passive: true });
-  }
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', attachChipFade);
-  } else {
-    attachChipFade();
-  }
+  /* --- 4. (removed) The chip used to fade while the page scrolled, because it
+     floated over content. It sits in the status bar now, over nothing. */
 
   // ============================================================================
   // PREMORBID - 2-column layout (sticky inputs LEFT, tabbed tables RIGHT)

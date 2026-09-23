@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260923p">
-<link rel="stylesheet" href="design-system.css?v=20260923p">
+<link rel="stylesheet" href="styles.css?v=20260923q">
+<link rel="stylesheet" href="design-system.css?v=20260923q">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -209,7 +209,7 @@
     align-items:start;
     min-height:70px;
     position:relative;
-    transition:background 140ms ease,border-color 140ms ease,box-shadow 140ms ease;
+    transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
   }
   .change-method-tab:focus{outline:none}
   .change-method-tab:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.22)}
@@ -716,7 +716,7 @@
     <div class="nav-item" data-target="charts"><span class="nav-item-num">05</span>Score Charts</div>
     <div class="nav-item" data-target="profile"><span class="nav-item-num">06</span>Profile Analysis</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">07</span>Score Converter</div>
-    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">08</span>Effect Size Tools</div>
+    <div class="nav-item" data-target="effectsize"><span class="nav-item-num">08</span>Effect Sizes</div>
     <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">09</span>Data</div>
     <div class="nav-item" data-target="about"><span class="nav-item-num">10</span>Methods &amp; References</div>
   </nav>
@@ -797,27 +797,16 @@
             <h1 class="home-dial-hub-title">Psychometric <em>Assistant</em></h1>
             <p class="home-dial-hub-hint">Neuropsychological calculators for clinical practice</p>
           </div>
-          <p class="home-dial-desc" id="dial-desc-0" data-dial-desc="0">Score embedded and stand-alone PVTs against published cut-offs, with base-rate-aware interpretation.</p>
-          <p class="home-dial-desc" id="dial-desc-1" data-dial-desc="1">Estimate premorbid ability using ToPF and OPIE-4, compared against WAIS-IV and WMS-IV.</p>
-          <p class="home-dial-desc" id="dial-desc-2" data-dial-desc="2">Build APA-formatted report tables with confidence-interval columns and premorbid comparison.</p>
-          <p class="home-dial-desc" id="dial-desc-3" data-dial-desc="3">Evaluate test-retest change across five methods, from descriptive SDI to Crawford regression.</p>
-          <p class="home-dial-desc" id="dial-desc-4" data-dial-desc="4">Chart scores entered elsewhere in the suite against classification and reliable-change bands.</p>
-          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Ask how many of a patient&rsquo;s scores are abnormal, and how many healthy people show that many.</p>
-          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
-          <p class="home-dial-desc" id="dial-desc-7" data-dial-desc="7">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
+          <p class="home-dial-desc" id="dial-desc-0" data-dial-desc="0">Estimate premorbid ability using ToPF and OPIE-4, compared against WAIS-IV and WMS-IV.</p>
+          <p class="home-dial-desc" id="dial-desc-1" data-dial-desc="1">Build APA-formatted report tables with confidence-interval columns and premorbid comparison.</p>
+          <p class="home-dial-desc" id="dial-desc-2" data-dial-desc="2">Evaluate test-retest change across five methods, from descriptive SDI to Crawford regression.</p>
+          <p class="home-dial-desc" id="dial-desc-3" data-dial-desc="3">Score embedded and stand-alone PVTs against published cut-offs, with base-rate-aware interpretation.</p>
+          <p class="home-dial-desc" id="dial-desc-4" data-dial-desc="4">Convert between standard, scaled, <i>T</i> and <i>z</i> scores and percentiles, with classification bands.</p>
+          <p class="home-dial-desc" id="dial-desc-5" data-dial-desc="5">Convert between and interpret effect sizes: Cohen's <i>d</i>, <i>r</i>, &eta;&sup2;, odds ratios and more.</p>
+          <p class="home-dial-desc" id="dial-desc-6" data-dial-desc="6">Chart scores entered elsewhere in the suite against classification and reliable-change bands.</p>
+          <p class="home-dial-desc" id="dial-desc-7" data-dial-desc="7">Ask how many of a patient&rsquo;s scores are abnormal, and how many healthy people show that many.</p>
         </div>
         <button class="home-dial-node" data-dial="0" aria-describedby="dial-desc-0" style="--a:0deg"
-                onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
-          <span class="home-dial-dot">
-            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M11 2.5 L18 5.2 v4.8 c0 4.4-3 7.5-7 8.9 c-4-1.4-7-4.5-7-8.9 V5.2 Z"/>
-              <polyline points="7.8,11 10.2,13.4 14.8,8.2"/>
-            </svg>
-          </span>
-          <span class="home-dial-label">Performance Validity</span>
-        </button>
-
-        <button class="home-dial-node" data-dial="1" aria-describedby="dial-desc-1" style="--a:45deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;premorbid&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -829,10 +818,10 @@
               <line x1="17" y1="11" x2="21" y2="11"/>
             </svg>
           </span>
-          <span class="home-dial-label">Premorbid Estimation</span>
+          <span class="home-dial-label">Premorbid Estimate</span>
         </button>
 
-        <button class="home-dial-node" data-dial="2" aria-describedby="dial-desc-2" style="--a:90deg"
+        <button class="home-dial-node" data-dial="1" aria-describedby="dial-desc-1" style="--a:45deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;battery&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -844,7 +833,7 @@
           <span class="home-dial-label">Score Tables</span>
         </button>
 
-        <button class="home-dial-node" data-dial="3" aria-describedby="dial-desc-3" style="--a:135deg"
+        <button class="home-dial-node" data-dial="2" aria-describedby="dial-desc-2" style="--a:90deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;change-analysis&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -855,7 +844,44 @@
           <span class="home-dial-label">Change Analysis</span>
         </button>
 
+        <button class="home-dial-node" data-dial="3" aria-describedby="dial-desc-3" style="--a:135deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;validity&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 2.5 L18 5.2 v4.8 c0 4.4-3 7.5-7 8.9 c-4-1.4-7-4.5-7-8.9 V5.2 Z"/>
+              <polyline points="7.8,11 10.2,13.4 14.8,8.2"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Performance Validity</span>
+        </button>
+
         <button class="home-dial-node" data-dial="4" aria-describedby="dial-desc-4" style="--a:180deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;converter&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/>
+              <line x1="2" y1="11" x2="20" y2="11"/>
+              <line x1="11" y1="2" x2="11" y2="6"/><line x1="11" y1="16" x2="11" y2="20"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Score Converter</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="5" aria-describedby="dial-desc-5" style="--a:225deg"
+                onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
+          <span class="home-dial-dot">
+            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="4" y1="18" x2="18" y2="4"/>
+              <circle cx="6" cy="16" r="2.5"/>
+              <circle cx="16" cy="6" r="2.5"/>
+              <line x1="4" y1="11" x2="8" y2="11"/>
+              <line x1="6" y1="9" x2="6" y2="13"/>
+            </svg>
+          </span>
+          <span class="home-dial-label">Effect Sizes</span>
+        </button>
+
+        <button class="home-dial-node" data-dial="6" aria-describedby="dial-desc-6" style="--a:270deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;charts&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -868,10 +894,10 @@
           <span class="home-dial-label">Score Charts</span>
         </button>
 
-        <!-- Profile Analysis. Sits after Score Charts because it is the question
+        <!-- Profile Analysis. Last, as in the top bar: it is the question
              a clinician asks once the scores are on the table and drawn: how many
              of them are abnormal, and how many healthy people show that many. -->
-        <button class="home-dial-node" data-dial="5" aria-describedby="dial-desc-5" style="--a:225deg"
+        <button class="home-dial-node" data-dial="7" aria-describedby="dial-desc-7" style="--a:315deg"
                 onclick="document.querySelector('.nav-item[data-target=&quot;profile&quot;]').click()">
           <span class="home-dial-dot">
             <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -881,32 +907,6 @@
             </svg>
           </span>
           <span class="home-dial-label">Profile Analysis</span>
-        </button>
-
-        <button class="home-dial-node" data-dial="6" aria-describedby="dial-desc-6" style="--a:270deg"
-                onclick="document.querySelector('.nav-item[data-target=&quot;effectsize&quot;]').click()">
-          <span class="home-dial-dot">
-            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <line x1="4" y1="18" x2="18" y2="4"/>
-              <circle cx="6" cy="16" r="2.5"/>
-              <circle cx="16" cy="6" r="2.5"/>
-              <line x1="4" y1="11" x2="8" y2="11"/>
-              <line x1="6" y1="9" x2="6" y2="13"/>
-            </svg>
-          </span>
-          <span class="home-dial-label">Effect Size Tools</span>
-        </button>
-
-        <button class="home-dial-node" data-dial="7" aria-describedby="dial-desc-7" style="--a:315deg"
-                onclick="document.querySelector('.nav-item[data-target=&quot;converter&quot;]').click()">
-          <span class="home-dial-dot">
-            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/>
-              <line x1="2" y1="11" x2="20" y2="11"/>
-              <line x1="11" y1="2" x2="11" y2="6"/><line x1="11" y1="16" x2="11" y2="20"/>
-            </svg>
-          </span>
-          <span class="home-dial-label">Score Converter</span>
         </button>
 
       </div>
@@ -1454,7 +1454,7 @@
            internally scrollable: it stays beside the results and never runs past
            the bottom of the window. -->
       <aside class="prof-method" aria-labelledby="prof-method-title">
-        <h2 class="prof-method-title" id="prof-method-title">Method &amp; formulae</h2>
+        <h2 class="prof-method-title" id="prof-method-title">Method</h2>
         <div class="prof-method-body">
             <p>This method comes from Crawford, Garthwaite and Gault (2007), <i>Estimating the percentage of the population with abnormally low scores (or abnormally large score differences) on standardized neuropsychological test batteries</i>, published in <i>Neuropsychology</i>, 21, 419&ndash;430. It answers a question that no single score can: when several of a patient&rsquo;s scores are unusual, how common is that among healthy people?</p>
             <p>To answer it, the method simulates a large healthy population (200,000 people) whose scores on the measures you have selected are related to one another exactly as they are in the test publisher&rsquo;s normative sample. The only information it needs is how strongly each pair of measures correlates. Each simulated person is checked against the selected criterion, and the base rate is the percentage of them who show at least as many abnormal results as your patient. It is a count of people, not of scores.</p>
@@ -1492,7 +1492,7 @@
   <section class="section" id="validity">
     <div class="eyebrow">Performance Validity · Embedded &amp; Stand-Alone PVTs</div>
     <h1 class="section-title">Performance <span class="ink">Validity</span></h1>
-    <p class="section-desc">Score embedded and stand-alone validity indicators against their published cut-offs, then weigh them together. No single index is a verdict. Results are cut-off comparisons only.</p>
+    <p class="pvt-desc-line" id="pvt-desc">Score embedded and stand-alone validity indicators against their published cut-offs, then weigh them together. No single index is a verdict. Results are cut-off comparisons only.</p>
 
     <div class="pvt-method-tabs" role="tablist" aria-label="Performance validity measures">
       <button type="button" class="pvt-method-tab pvt-method-tab-about active" data-pvt-tab="about" role="tab" aria-selected="true">
@@ -1599,11 +1599,6 @@
               </select>
             </div>
           </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Cut-offs: Silverberg, Wertheimer &amp; Fichtenberg (2007), <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. Accuracy: Shura et al. (2018), <i>Neuropsychology Review, 28</i>(3), 269–284, pooled estimates.</span>
-            <span class="pvt-source-accuracy" id="pvt-ei-accuracy"></span>
-            <span class="pvt-derived-line" data-pvt-derived="ei"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Formula &amp; weighting table</summary>
             <div class="formula-body">
@@ -1629,6 +1624,11 @@
             <summary><strong>Caution.</strong> Over-flags in dementia (~48%) and severe impairment; corroborate before concluding.</summary>
             <div class="pvt-caution-body">Both subtests load on attention/working memory and verbal recognition, so aphasia or significant memory disorder can inflate the EI without poor effort. Severely impaired geriatric samples show ~31–37% failure rates. Do not apply single-subtest cut-offs in place of the combined EI, and do not declare a whole RBANS protocol invalid on the EI alone. Use it to generate hypotheses and trigger further validity testing (Silverberg et al., 2007).</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Cut-offs: Silverberg, Wertheimer &amp; Fichtenberg (2007), <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. Accuracy: Shura et al. (2018), <i>Neuropsychology Review, 28</i>(3), 269–284, pooled estimates.</span>
+            <span class="pvt-source-accuracy" id="pvt-ei-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="ei"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1661,11 +1661,6 @@
             </div>
           </div>
           <div class="info-box pvt-note"><strong>Mandatory gate.</strong> Computed only where Digit Span &lt; 9, List Recognition &lt; 19, or their sum &lt; 28 (Novitski et al., 2012).</div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Formula, gate &amp; cut-off: Novitski, Steele, Karantzoulis &amp; Randolph (2012), <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</span>
-            <span class="pvt-source-accuracy">No published sensitivity/specificity pair. Discrimination is ROC AUC = .91 vs amnestic patients (vs .61 for the EI).</span>
-            <span class="pvt-derived-line" data-pvt-derived="es"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Formula</summary>
             <div class="formula-body">
@@ -1679,6 +1674,11 @@
             <summary><strong>Caution.</strong> Unstable outside Alzheimer-type amnesia; confirm with a stand-alone PVT.</summary>
             <div class="pvt-caution-body">Built around the Alzheimer's recall/recognition dissociation, so mixed or atypical memory profiles may not match the pattern: later work shows ~4% failure in AD but ~31% in non-AD dementia and &gt;60% suboptimal rates in Parkinson's disease. The amnestic validation sample had no independent effort testing (Novitski et al., 2012).</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Formula, gate &amp; cut-off: Novitski, Steele, Karantzoulis &amp; Randolph (2012), <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</span>
+            <span class="pvt-source-accuracy">No published sensitivity/specificity pair. Discrimination is ROC AUC = .91 vs amnestic patients (vs .61 for the EI).</span>
+            <span class="pvt-derived-line" data-pvt-derived="es"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1706,11 +1706,6 @@
             </div>
           </div>
           <div class="info-box pvt-note"><strong>Classic variant.</strong> Forward + Backward only; the WAIS-IV Sequencing variants use different cut-offs and are not scored here.</div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Scoring: Greiffenstein, Baker &amp; Gola (1994), <i>Psychological Assessment, 6</i>(3), 218–224. Cut-off accuracy: Schroeder et al. (2012), <i>Assessment, 19</i>(1), 21–30.</span>
-            <span class="pvt-source-accuracy" id="pvt-rds-accuracy"></span>
-            <span class="pvt-derived-line" data-pvt-derived="rds"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Scoring &amp; worked example</summary>
             <div class="formula-body">
@@ -1724,6 +1719,11 @@
             <summary><strong>Caution.</strong> Prefer ≤ 6 in genuine impairment, and even ≤ 6 over-flags in some groups.</summary>
             <div class="pvt-caution-body">RDS loads on attention/working memory: low scores occur legitimately in genuine attentional impairment, anxiety, and especially conduction aphasia. Schroeder et al. (2012) found ≤ 7 held only 82–85% specificity across clinical groups, against 96–97% for ≤ 6. Even at ≤ 6, specificity remains inadequate in cerebrovascular accident, severe memory disorders, intellectual disability or borderline intellectual functioning, and English-as-a-second-language examinees. Validation samples were predominantly mild-TBI/litigating.</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Scoring: Greiffenstein, Baker &amp; Gola (1994), <i>Psychological Assessment, 6</i>(3), 218–224. Cut-off accuracy: Schroeder et al. (2012), <i>Assessment, 19</i>(1), 21–30.</span>
+            <span class="pvt-source-accuracy" id="pvt-rds-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="rds"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1758,11 +1758,6 @@
               </select>
             </div>
           </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Base rates &amp; suspicion indices: Iverson &amp; Tulsky (2003), <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9. Classification accuracy: Axelrod, Fichtenberg, Millis &amp; Wertheimer (2006), <i>The Clinical Neuropsychologist, 20</i>(3), 513–523. Both WAIS-III.</span>
-            <span class="pvt-source-accuracy" id="pvt-ds-accuracy"></span>
-            <span class="pvt-derived-line" data-pvt-derived="ds"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Indices &amp; base rates</summary>
             <div class="formula-body">
@@ -1776,6 +1771,11 @@
             <summary><strong>Caution.</strong> Not a stand-alone measure, and it shares its subtest with RDS, so the summary counts them as one indicator.</summary>
             <div class="pvt-caution-body">Axelrod et al. explicitly recommend against using the Digit Span scaled score as a stand-alone validity measure, as it accounted for a modest share of variance (AUC .77). Genuine impairment can suppress the score, so apply the conservative cut-off where real deficits are plausible. Both sources are WAIS-III. The WAIS-IV subtest adds Sequencing to the composite, so an ACSS from a WAIS-IV record is not on the identical metric these cut-offs were derived on.</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Base rates &amp; suspicion indices: Iverson &amp; Tulsky (2003), <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9. Classification accuracy: Axelrod, Fichtenberg, Millis &amp; Wertheimer (2006), <i>The Clinical Neuropsychologist, 20</i>(3), 513–523. Both WAIS-III.</span>
+            <span class="pvt-source-accuracy" id="pvt-ds-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="ds"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1803,11 +1803,6 @@
             <button type="button" class="btn" id="pvt-rey-administer">Administer on screen</button>
             <span class="rey-admin-hint">Times the 10-second exposure and scores the recognition trial. Displays test stimuli: start only with the examinee present.</span>
           </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Recognition trial, combination score &amp; accuracy: Boone, Salazar, Lu, Warner-Chacon &amp; Razani (2002), <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</span>
-            <span class="pvt-source-accuracy">Recall &lt; 9: sens. .47 · spec. .97–1.00. Combination &lt; 20: sens. .71 · spec. .92–.94.</span>
-            <span class="pvt-derived-line" data-pvt-derived="rey15"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Scoring &amp; administration</summary>
             <div class="formula-body">
@@ -1821,6 +1816,11 @@
             <summary><strong>Caution.</strong> Specificity falls in dementia and intellectual disability; corroborate before concluding.</summary>
             <div class="pvt-caution-body">The minority of studies reporting low specificity for the &lt; 9 cut-off generally included patients with intellectual disability or dementia, so avoid these cut-offs there. Certain false-positive recognition errors (circling "f", "5", "6" or a pentagon) occurred only in the suspect-effort group and may serve as virtual pathognomonic signs when present, though they are infrequent (Boone et al., 2002).</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Recognition trial, combination score &amp; accuracy: Boone, Salazar, Lu, Warner-Chacon &amp; Razani (2002), <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</span>
+            <span class="pvt-source-accuracy">Recall &lt; 9: sens. .47 · spec. .97–1.00. Combination &lt; 20: sens. .71 · spec. .92–.94.</span>
+            <span class="pvt-derived-line" data-pvt-derived="rey15"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1859,11 +1859,6 @@
               <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-crit-recog" placeholder="e.g. 0">
             </div>
           </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Base rates: Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms). The manual publishes <strong>base rates by age band, not a cut-off</strong>. Cut-offs and accuracy: Erdodi et al. (2018) and Schwartz et al. (2016), both <strong>CVLT-II</strong>.</span>
-            <span class="pvt-source-accuracy" id="pvt-cvlt3-accuracy"></span>
-            <span class="pvt-derived-line" data-pvt-derived="cvlt3"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>How the threshold is derived, and why it moves with age</summary>
             <div class="formula-body">
@@ -1881,6 +1876,11 @@
             <summary><strong>Caution.</strong> Failure rates climb with genuine impairment; a near-perfect score rules nothing out.</summary>
             <div class="pvt-caution-body">The manual is explicit that forced-choice recognition is suited to blatant exaggeration: &ldquo;a poor score on forced choice testing is often a strong indicator of symptom amplification, but a perfect or near-perfect score does not rule it out&rdquo;, since a sophisticated simulator recognises the task as easy. <strong>False positives concentrate in severe impairment.</strong> Failure rates rise with the severity of neurocognitive disorder, and are substantially elevated in dementia and intellectual disability, so the cut-offs should not be read at face value there (Schwartz et al., 2016). Conversely there is a well-replicated <strong>reverse severity effect</strong> in head injury: patients with mild TBI were two to three times more likely to fail than those with moderate-to-severe TBI, and failure was unrelated to injury severity, neuroradiological findings or performance on tests sensitive to TBI (Erdodi et al., 2018). Appendix D tabulates the Standard and Alternate Forms only. The Brief Form's 9-item list has no published base rates, and the trial is given after the Yes/No Recognition trial, roughly 10 minutes on (Delis et al., 2017).</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Base rates: Delis, Kramer, Kaplan &amp; Ober (2017), <i>CVLT-3</i>, Appendix D, Tables D.13&ndash;D.15 (Standard/Alternate Forms). The manual publishes <strong>base rates by age band, not a cut-off</strong>. Cut-offs and accuracy: Erdodi et al. (2018) and Schwartz et al. (2016), both <strong>CVLT-II</strong>.</span>
+            <span class="pvt-source-accuracy" id="pvt-cvlt3-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="cvlt3"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1927,10 +1927,6 @@
               </select>
             </div>
           </div>
-          <div class="pvt-source">
-            <span class="pvt-source-cite">Test: Tombaugh (1996). Cut-offs &amp; accuracy: Martin et al. (2020), <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. Meta-analytic weighted means, shown per trial in the predictive-power table.</span>
-            <span class="pvt-derived-line" data-pvt-derived="tomm"></span>
-          </div>
           <details class="formula-disclosure">
             <summary>Cut-offs &amp; classification accuracy</summary>
             <div class="formula-body">
@@ -1945,6 +1941,10 @@
             <summary><strong>Caution.</strong> Do not interpret traditional cut-offs in suspected or confirmed dementia.</summary>
             <div class="pvt-caution-body">Across dementia samples, weighted-mean specificity was ≤ .70 at traditional cut-offs, with no study achieving a false-positive rate under 10%. Specificity for the liberal &lt; 49 cut-off also dipped below 90% in moderate/severe TBI and severe depression, and simulator studies overestimate sensitivity relative to real known-groups patients (Martin et al., 2020).</div>
           </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Test: Tombaugh (1996). Cut-offs &amp; accuracy: Martin et al. (2020), <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. Meta-analytic weighted means, shown per trial in the predictive-power table.</span>
+            <span class="pvt-derived-line" data-pvt-derived="tomm"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -2035,7 +2035,7 @@
            the chart rather than behind a click. Sized to the chart area by
            vizFitMethod, and scrolls inside itself. -->
       <aside class="viz-method" aria-labelledby="viz-method-title">
-        <h2 class="viz-method-title" id="viz-method-title">How these charts are drawn</h2>
+        <h2 class="viz-method-title" id="viz-method-title">Method</h2>
         <div class="viz-method-body">
         <p>Charts read the same data and settings as their source tables, so the two cannot disagree. Each source (Score Tables, Premorbid, Change Analysis, SD Index) is its own pane, and only sources with data appear.</p>
         <p><b>Score Tables</b> charts draw each subtest in its native metric with classification bands and confidence intervals matching the table. Base-rate measures show a cumulative step line. Error measures (marked ↓) reverse the bands to describe performance. Raw-score measures are listed with their confidence interval but not plotted.</p>
@@ -2155,8 +2155,8 @@
         <div class="field">
           <label>Significance threshold</label>
           <select class="rci-cv" data-target="rci-basic">
-            <option value="0.95">95% confidence · critical value 1.96</option>
             <option value="0.90">90% confidence · critical value 1.645</option>
+            <option value="0.95" selected>95% confidence · critical value 1.96</option>
           </select>
         </div>
         <div class="field">
@@ -2237,8 +2237,8 @@
         <div class="field">
           <label>Significance threshold</label>
           <select class="rci-cv" data-target="rci-practice">
-            <option value="0.95">95% confidence · critical value 1.96</option>
             <option value="0.90">90% confidence · critical value 1.645</option>
+            <option value="0.95" selected>95% confidence · critical value 1.96</option>
           </select>
         </div>
         <div class="field">
@@ -2322,8 +2322,8 @@
         <div class="field">
           <label>Significance threshold</label>
           <select class="rci-cv" data-target="rci-srb">
-            <option value="0.95">95% confidence · critical value 1.96</option>
             <option value="0.90">90% confidence · critical value 1.645</option>
+            <option value="0.95" selected>95% confidence · critical value 1.96</option>
           </select>
         </div>
         <div class="field">
@@ -2418,8 +2418,8 @@
                2.069, so a statistic of 2.02 reads as significant against the
                label while the app correctly calls it non-significant. -->
           <select class="rci-cv" data-target="rci-crawford" title="Crawford's method uses a t critical value based on the normative sample size (df = N − 2), not a fixed z. Smaller norms give a higher threshold: at N = 25 the 95% value is 2.069, at N = 100 it is 1.985, converging on 1.96 as N grows.">
-            <option value="0.95">95% confidence · critical value t(N−2)</option>
             <option value="0.90">90% confidence · critical value t(N−2)</option>
+            <option value="0.95" selected>95% confidence · critical value t(N−2)</option>
           </select>
         </div>
         <div class="field">
@@ -2907,7 +2907,7 @@
 
     <h3 class="methods-h3">What this tool does</h3>
     <p class="section-body-text">
-      Nine working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Profile Analysis</strong>, <strong>Performance Validity</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Size Tools</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
+      Nine working pages: <strong>Premorbid Estimate</strong>, <strong>Score Tables</strong>, <strong>Change Analysis</strong>, <strong>Profile Analysis</strong>, <strong>Performance Validity</strong>, <strong>Score Charts</strong>, <strong>Score Converter</strong>, <strong>Effect Sizes</strong> and <strong>Data</strong>. Every calculation runs locally in the browser. No patient data is transmitted off-device, and the app works with no network connection.
     </p>
     <p class="section-body-text">
       The auto-fill normative database holds published parameters for seven instrument families: D-KEFS (original and Advanced), WAIS-IV, WMS-IV, WISC-V, CVLT-3, CVLT-C and the RBANS, with the retest sample size <i>N</i> where the publisher reports one. <i>N</i> is required for the Crawford &amp; Garthwaite method and may need entering by hand where it is unavailable. Clinicians should verify every imported parameter against the current manual, and against local service standards, before interpreting it.
@@ -3127,7 +3127,7 @@
       <p>Watts, B. V., Schnurr, P. P., Mayo, L., Young-Xu, Y., Weeks, W. B., &amp; Friedman, M. J. (2013). Meta-analysis of the efficacy of treatments for posttraumatic stress disorder. <i>The Journal of Clinical Psychiatry, 74</i>(6), e541–e550.</p>
       <p>Williams, A. C. de C., Fisher, E., Hearn, L., &amp; Eccleston, C. (2020). Psychological therapies for the management of chronic pain (excluding headache) in adults. <i>Cochrane Database of Systematic Reviews, 8</i>, CD007407.</p>
       <p>Wolraich, M. L., Wilson, D. B., &amp; White, J. W. (1995). The effect of sugar on behavior or cognition in children: A meta-analysis. <i>JAMA, 274</i>(20), 1617–1621.</p>
-      <p class="references-note">The Effect Size Tools page also cites a UK Biobank male-versus-female adult height contrast (<i>d</i> = 2.04) attributed to Lui et al. (2021). That source could not be verified and is not listed here; treat the value as an illustrative anchor only.</p>
+      <p class="references-note">The Effect Sizes page also cites a UK Biobank male-versus-female adult height contrast (<i>d</i> = 2.04) attributed to Lui et al. (2021). That source could not be verified and is not listed here; treat the value as an illustrative anchor only.</p>
     </div>
       </div>
     </div>
@@ -3239,7 +3239,7 @@
     </div>
     <div class="ds-version-stamp" title="Build version and last update">
       <span class="ds-version-dot" aria-hidden="true"></span>
-      <span id="app-version">v0.2.0 &middot; updated July 2026</span>
+      <span id="app-version">v0.2.0 &middot; updated September 2026</span>
     </div>
     <!-- The standing privacy claim. A clinician about to type a real patient's
          scores into a website has exactly this question, and until now the only
@@ -3248,10 +3248,9 @@
          of its own. Do not soften this to "we do not share your data", which is
          a weaker and different claim.
 
-         THIRD child on purpose. design-system.css lays the footer out as a
-         `1fr auto 1fr` grid with the version stamp centred, so this has to
-         follow the stamp to land in the right-hand column. Put it before, and
-         it takes the centre slot and pushes the version off-centre. -->
+         The footer is a fixed status bar (APP FRAME, design-system.css):
+         links, then the version, then this line pushed to the right, ending
+         before the slot the Working Report chip occupies. -->
     <p class="site-footer-privacy">Scores stay in this browser. Nothing is uploaded.<br><span class="site-footer-terms">Decision support only. Check every figure against the source.</span></p>
   </div>
 </footer>
@@ -3284,12 +3283,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260923p"></script>
-<script src="app.js?v=20260923p"></script>
-<script src="design-system.js?v=20260923p" defer></script>
-<script src="app-effectsize-page.js?v=20260923p"></script>
-<script src="app-viz-page.js?v=20260923p"></script>
-<script src="app-profile-page.js?v=20260923p"></script>
+<script src="data.js?v=20260923q"></script>
+<script src="app.js?v=20260923q"></script>
+<script src="design-system.js?v=20260923q" defer></script>
+<script src="app-effectsize-page.js?v=20260923q"></script>
+<script src="app-viz-page.js?v=20260923q"></script>
+<script src="app-profile-page.js?v=20260923q"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
@@ -3383,7 +3382,7 @@
   consolidated.id = 'change-analysis';
   consolidated.innerHTML = `
     <div class="eyebrow" id="change-main-eyebrow">Standard Deviation Index</div>
-    <p class="section-desc" id="change-main-desc">Formula basis: descriptive standard-deviation discrepancy, SD Δ = (X₂ − X₁) / SD; no reliability correction is applied.</p>
+    <p class="change-formula-line" id="change-main-desc">Formula basis: descriptive standard-deviation discrepancy, SD Δ = (X₂ − X₁) / SD; no reliability correction is applied.</p>
     <div class="change-flow-shell">
       <aside class="change-flow-side">
         <div class="change-method-tabs" role="tablist" aria-label="Change analysis method"></div>
@@ -3642,7 +3641,7 @@
           ${makeColHead('practice', 'Practice<br>effect')}
           ${makeColHead('rtm',      'Regression<br>to mean')}
           ${makeColHead('n',        'Sample-size<br>adjustment', true)}
-          <th aria-hidden="true"></th>
+          <th class="change-overview-colh" aria-hidden="true"></th>
         </tr>
       </thead>
       <tbody>
@@ -3685,6 +3684,13 @@
       const method = methods.find(item => item.id === id);
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
       if (mainDesc && method){ mainDesc.innerHTML = method.source; mainDesc.style.display = ''; }
+      /* The method's formula is the only one this page prints (none of the
+         five panels has a formula disclosure), so it stays on screen. It
+         lives at the top of the active method's own card, in the band the
+         tab seam leaves, rather than as a loose line above the tab strip,
+         which was the only text on any tool page sitting outside a card. */
+      const activePanel = body.querySelector('#' + id);
+      if (mainDesc && activePanel && mainDesc.parentElement !== activePanel) activePanel.prepend(mainDesc);
     }
     // Shared data: re-render the RCI method we just switched to, so scores/norms
     // entered on any other method appear here too (single shared data set).

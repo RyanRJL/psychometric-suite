@@ -19,7 +19,6 @@
     'home':           'Home',
     'converter':      'Score Converter',
     'battery':        'Score Tables',
-    'report-writer':  'Report Writer',
     'effectsize':     'Effect Sizes',
     'change-analysis':'Change Analysis',
     'charts':         'Score Charts',
@@ -33,7 +32,7 @@
     'rci-practice':   'Practice Effect-Adjusted',
     'rci-srb':        'McSweeney Regression-Based',
     'rci-crawford':   'Crawford Regression-Based',
-    'premorbid':      'Premorbid Estimation',
+    'premorbid':      'Premorbid Estimate',
     'about':          'Methods & References',
     'custom-tests':   'Data',
     'privacy-use':    'Privacy & use'
@@ -103,7 +102,10 @@
           // Preserve any leading icon by replacing only the trailing text node
           // when present; otherwise just set textContent.
           const lastText = Array.from(el.childNodes).reverse().find(n => n.nodeType === 3);
-          if (lastText) lastText.textContent = ' ' + rep.replace(/^\+\s*/, '');
+          /* Written verbatim. This used to strip the leading "+", so Change
+             Analysis read "Add row" beside Score Tables' "+ Add row" for the
+             same action (UI audit, 2026-09). */
+          if (lastText) lastText.textContent = rep;
           else el.textContent = rep;
           break;
         }
@@ -400,7 +402,7 @@
               <circle cx="7" cy="7" r="4.5"/>
               <path d="M11 11l3 3"/>
             </svg>
-            <input type="text" class="ds-inline-bar-input" placeholder="Search a test family…" autocomplete="off">
+            <input type="text" class="ds-inline-bar-input" placeholder="Search a test family (WAIS-IV, WMS-IV, RBANS…)" autocomplete="off">
           </div>
         ` : ''}
       </div>
@@ -857,48 +859,8 @@
   /* Belt-and-braces timer fires too */
   [200, 600, 1200].forEach(ms => setTimeout(clearNormsLock, ms));
 
-  /* --- 4. Chip auto-fade on scroll ------------------------------------------
-     While the user is actively scrolling (i.e. reading / working), the
-     Working Report chip recedes (opacity + slight scale-down) so it isn't
-     a hot spot on top of content. When scrolling stops for ~600ms or the
-     user scrolls back up, it returns to full presence. The drawer being
-     open suspends this entirely - chip stays fully visible. */
-  let scrollTimer = null;
-  let lastScrollY = window.scrollY;
-  const RECEDE_CLASS = 'ds-chip-recede';
-  const RECEDE_DELAY = 600;
-
-  function onScroll(){
-    const drawerOpen = document.querySelector('.rb-root.is-open');
-    if (drawerOpen){
-      document.body.classList.remove(RECEDE_CLASS);
-      return;
-    }
-    const dy = window.scrollY - lastScrollY;
-    lastScrollY = window.scrollY;
-    // Only recede on downward scroll - upward scroll restores immediately
-    if (dy > 2) document.body.classList.add(RECEDE_CLASS);
-    else if (dy < -2) document.body.classList.remove(RECEDE_CLASS);
-    // Reset timer - when scrolling stops, restore the chip
-    clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(() => {
-      document.body.classList.remove(RECEDE_CLASS);
-    }, RECEDE_DELAY);
-  }
-  // Listen on whatever actually scrolls. The redesign moved the scroll
-  // container from `.main` (now overflow:visible) to the document, so binding
-  // to `.main` meant this handler never fired at all.
-  function attachChipFade(){
-    const mainEl = document.querySelector('.main');
-    const mainScrolls = mainEl && ['auto','scroll','overlay'].includes(getComputedStyle(mainEl).overflowY);
-    const target = mainScrolls ? mainEl : window;
-    target.addEventListener('scroll', onScroll, { passive: true });
-  }
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', attachChipFade);
-  } else {
-    attachChipFade();
-  }
+  /* --- 4. (removed) The chip used to fade while the page scrolled, because it
+     floated over content. It sits in the status bar now, over nothing. */
 
   // ============================================================================
   // PREMORBID - 2-column layout (sticky inputs LEFT, tabbed tables RIGHT)

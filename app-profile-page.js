@@ -804,6 +804,11 @@
     const out = profEl('prof-results');
     if (!out) return;
     profPull();
+    /* The note mirrors the exported table's note, so it is shown only when
+       there is a profile for it to describe. Under the empty state it
+       explained a table that did not exist (UI audit, 2026-09). Toggled by
+       style, not [hidden]: .info-box carries its own display. */
+    const note = document.querySelector('#profile [data-apa-note="prof"]');
     const found = profScoreTableRows();
     const c = profCriterion();
 
@@ -816,9 +821,11 @@
         + '<p class="prof-empty-p">A profile is built from scores already entered on Score Tables. '
         + 'Add a ' + escapeHtml(names) + ' measure there and it appears here.</p>'
         + '<button class="btn" type="button" data-prof-goto="battery">Go to Score Tables</button></div>';
+      if (note) note.style.display = 'none';
       renderProfileApa();
       return;
     }
+    if (note) note.style.display = '';
 
     const counts = profCounts();
     const res = profSimulate();
@@ -987,7 +994,9 @@
        the results column does not push it up under the top bar. */
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
     const colEnd = el.parentElement.getBoundingClientRect().bottom + (maxScroll - window.scrollY);
-    const room = Math.min(window.innerHeight - top - 16, colEnd - stuckAt);
+    /* Less the fixed status bar, which covers the bottom of the window. */
+    const footerH = typeof footerVisualHeight === 'function' ? footerVisualHeight() : 0;
+    const room = Math.min(window.innerHeight - footerH - top - 16, colEnd - stuckAt);
     el.style.maxHeight = Math.max(200, room / z) + 'px';
   }
   /* Direct, not via requestAnimationFrame: one rect read and one style write
