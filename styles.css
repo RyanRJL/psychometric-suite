@@ -10748,6 +10748,23 @@ svg.rey-glyph{width:56px;height:56px}
 .table-viewport thead tr{
   background:var(--paper-card);
 }
+/* On Score Tables the viewport sits INSIDE a card (.bat-table-block), so its
+   own frame is a second box: the 8px margin showed as a white strip above the
+   header, and its border ran a hairline inside the card's on both sides. There
+   the card is the frame; the viewport keeps only its bottom rule, which
+   separates the table from the add-row buttons. Its top corners follow the
+   card's (10px less the 1px border) only when nothing sits above it; the age
+   bar, when shown, takes the card's top edge instead. */
+#battery .bat-table-block > .table-viewport{
+  margin-top:0;
+  border-top:0;
+  border-left:0;
+  border-right:0;
+  border-radius:0;
+}
+#battery .bat-table-block > .bat-age-required-bar[hidden] + .table-viewport{
+  border-radius:9px 9px 0 0;
+}
 /* The .table-group-row above it already carries an opaque !important
    surface from design-system.css, so it needs nothing here.
 
