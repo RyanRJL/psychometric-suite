@@ -8941,6 +8941,160 @@ setupTableViewportFit();
 })();
 
 /* ============================================================
+   SAVE / OPEN SESSION
+   ------------------------------------------------------------
+   Nothing here outlives the tab, so a session is carried between
+   sittings as a file the clinician saves and opens again.
+
+   THE FILE HOLDS INPUTS, NEVER OUTPUTS. The report's CSV and Word
+   exports hold finished tables (percentiles, classifications,
+   intervals) and cannot rebuild the calculators; reading them back
+   would mean guessing. This file holds exactly what "New patient"
+   clears: the row arrays, the page fields, and which Change Analysis
+   methods were accepted into the report. Every derived number is
+   recomputed on open by the same code that computed it the first time.
+
+   The Working Report's tables are NOT stored. They rebuild from the
+   restored tables through the report's own observers, so a session file
+   can never inject markup, and a report cannot disagree with the tables
+   it came from. What is lost is the report's own ordering and edited
+   headings.
+
+   Versioned and strict: a file that is not a session of a version this
+   code reads is refused whole, never half-applied.
+   ============================================================ */
+const SESSION_APP = 'psychometric-assistant-session';
+const SESSION_VERSION = 1;
+/* Page fields captured by id. Tables are held by their row arrays, and the
+   family search boxes are navigation, not data. */
+const SESSION_FIELD_SCOPE = '#battery, #sdi, #premorbid, #validity, #change-analysis, .change-method-panel';
+function sessionFieldEls(){
+  const els = [document.getElementById('patient-age')];
+  document.querySelectorAll(SESSION_FIELD_SCOPE).forEach(sec => {
+    sec.querySelectorAll('input[id], select[id], textarea[id]').forEach(el => {
+      if (el.type === 'file' || el.type === 'search' || /family-input|search/i.test(el.id)) return;
+      if (el.closest('table')) return;
+      els.push(el);
+    });
+  });
+  return [...new Set(els.filter(Boolean))];
+}
+function buildSession(){
+  const fields = {};
+  sessionFieldEls().forEach(el => {
+    fields[el.id] = (el.type === 'checkbox' || el.type === 'radio') ? { checked: el.checked } : { value: el.value };
+  });
+  const clone = x => JSON.parse(JSON.stringify(x));
+  const methods = {};
+  ['rci-basic','rci-practice','rci-srb','rci-crawford'].forEach(m => {
+    const s = rciState[m];
+    methods[m] = { cv: s.cv, useCorrectedR: s.useCorrectedR, d1: s.d1, d2: s.d2, title: s.title };
+  });
+  return {
+    app: SESSION_APP,
+    version: SESSION_VERSION,
+    saved: new Date().toISOString(),
+    fields,
+    battery: { rows: clone(batteryRows), groupSeq: batteryGroupSeq },
+    sdi: { rows: clone(sdiRows), labels: clone(sdiLabelState) },
+    rci: { rows: clone(RCI_SHARED_ROWS), methods },
+    pre: clone(preState),
+    pvt: clone(pvtState),
+    consent: (typeof ReportBundle !== 'undefined' && ReportBundle.consentState) ? ReportBundle.consentState() : {}
+  };
+}
+/* Returns an error string, or '' when the file can be applied whole. */
+function validateSession(s){
+  const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
+  if (!isObj(s) || s.app !== SESSION_APP) return 'This is not a Psychometric Assistant session file.';
+  if (s.version !== SESSION_VERSION) return `This session was saved by a different version of the app (file version ${s.version}, this app reads ${SESSION_VERSION}).`;
+  if (!isObj(s.fields) || !isObj(s.battery) || !Array.isArray(s.battery.rows)
+      || !isObj(s.sdi) || !Array.isArray(s.sdi.rows) || !isObj(s.rci) || !Array.isArray(s.rci.rows)
+      || !isObj(s.rci.methods) || !isObj(s.pre) || !isObj(s.pvt)) return 'The session file is incomplete or damaged.';
+  const rowsOk = rows => rows.every(isObj);
+  if (!rowsOk(s.battery.rows) || !rowsOk(s.sdi.rows) || !rowsOk(s.rci.rows)) return 'The session file is incomplete or damaged.';
+  return '';
+}
+function applySession(s){
+  if (typeof ReportBundle !== 'undefined' && ReportBundle.setSuppressed) ReportBundle.setSuppressed(true);
+  try { if (typeof ReportBundle !== 'undefined' && ReportBundle.clearSilent) ReportBundle.clearSilent(); } catch(e){}
+  /* Fields first: the patient age and the page settings decide how the
+     restored rows render (age bands, CI level, classification). */
+  Object.entries(s.fields).forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if (!el || !v || typeof v !== 'object') return;
+    if ('checked' in v) el.checked = !!v.checked;
+    else if ('value' in v) el.value = String(v.value ?? '');
+    el.dispatchEvent(new Event('input',  { bubbles:true }));
+    el.dispatchEvent(new Event('change', { bubbles:true }));
+  });
+  /* In place: RCI_SHARED_ROWS is referenced by all four methods, and
+     batteryRows by closures elsewhere. */
+  batteryRows.length = 0; s.battery.rows.forEach(r => batteryRows.push(r));
+  if (Number.isFinite(s.battery.groupSeq)) batteryGroupSeq = s.battery.groupSeq;
+  sdiRows = s.sdi.rows;
+  if (s.sdi.labels && typeof s.sdi.labels === 'object') Object.assign(sdiLabelState, s.sdi.labels);
+  RCI_SHARED_ROWS.length = 0; s.rci.rows.forEach(r => RCI_SHARED_ROWS.push(r));
+  Object.entries(s.rci.methods).forEach(([m, v]) => {
+    if (!rciState[m] || !v) return;
+    ['cv','useCorrectedR','d1','d2','title'].forEach(k => { if (k in v) rciState[m][k] = v[k]; });
+  });
+  preState.achieved = s.pre.achieved || {};
+  preState.opieAchieved = s.pre.opieAchieved || {};
+  Object.keys(pvtState).forEach(k => { pvtState[k] = s.pvt[k] ?? ''; });
+  document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = pvtState[inp.dataset.pvtField] ?? ''; });
+  if (typeof ReportBundle !== 'undefined' && ReportBundle.setConsent) ReportBundle.setConsent(s.consent || {});
+  if (typeof ReportBundle !== 'undefined' && ReportBundle.setSuppressed) ReportBundle.setSuppressed(false);
+  /* Re-render with the report listening, so every table collects again. */
+  const run = f => { try { f(); } catch(e){ console.error(e); } };
+  run(() => renderBattery());
+  run(() => renderSdi());
+  ['rci-basic','rci-practice','rci-srb','rci-crawford'].forEach(m => run(() => renderRci(m)));
+  run(() => { if (typeof calcPremorbid === 'function') calcPremorbid(); });
+  run(() => { if (typeof calcPredict === 'function') calcPredict(); });
+  run(() => { if (typeof calcOpiePredict === 'function') calcOpiePredict(); });
+  run(() => { if (typeof renderPvtAll === 'function') renderPvtAll(); });
+  /* The data now also exists in the file it came from, so closing the tab
+     loses nothing that was not already saved. */
+  setTimeout(() => { if (typeof ReportBundle !== 'undefined' && ReportBundle.markExported) ReportBundle.markExported(); }, 800);
+}
+function saveSession(){
+  const blob = new Blob([JSON.stringify(buildSession(), null, 1)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `patient-session-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  if (typeof ReportBundle !== 'undefined' && ReportBundle.markExported) ReportBundle.markExported();
+  if (typeof showToast === 'function') showToast('✓ Session saved. It holds patient data: keep it securely');
+}
+function sessionHasData(){
+  return batteryRows.some(r => !r.isExample && (r.name || r.score)) || sdiRows.some(r => !r.isExample && (r.t1 || r.t2))
+    || RCI_SHARED_ROWS.some(r => !r.isExample && (r.t1 || r.t2)) || !!document.getElementById('patient-age')?.value;
+}
+function openSessionFile(file){
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let s;
+    try { s = JSON.parse(reader.result); } catch(e){ s = null; }
+    const err = validateSession(s);
+    if (err){ if (typeof showToast === 'function') showToast(err, true); return; }
+    if (sessionHasData() && !confirm('Open this session?\n\nIt replaces everything currently entered, including the Working Report.')) return;
+    applySession(s);
+    const when = s.saved ? new Date(s.saved).toLocaleString() : 'an earlier sitting';
+    if (typeof showToast === 'function') showToast(`✓ Session from ${when} opened`);
+  };
+  reader.readAsText(file);
+}
+(function wireSessionButtons(){
+  const input = document.getElementById('session-file-input');
+  document.getElementById('topbar-save-session')?.addEventListener('click', saveSession);
+  document.getElementById('topbar-open-session')?.addEventListener('click', () => input?.click());
+  input?.addEventListener('change', () => { openSessionFile(input.files[0]); input.value = ''; });
+})();
+
+/* ============================================================
    AUTH OVERLAY · prototype-ready login/register behaviour
    ============================================================ */
 (function(){
@@ -11763,9 +11917,10 @@ ${buildReportHtmlBody()}
     back.innerHTML = `
       <div class="leave-card" role="alertdialog" aria-modal="true" aria-labelledby="leave-card-title" aria-describedby="leave-card-body">
         <h2 class="leave-card-title" id="leave-card-title">Nothing is saved when this tab closes</h2>
-        <p class="leave-card-body" id="leave-card-body">Closing the tab clears every table and the working report (${n} table${n === 1 ? '' : 's'}). Export the report first if you need it.</p>
+        <p class="leave-card-body" id="leave-card-body">Closing the tab clears every table and the working report (${n} table${n === 1 ? '' : 's'}). Save the session to carry on later, or export the report.</p>
         <div class="leave-card-actions">
-          <button type="button" class="leave-card-btn is-primary" data-leave="word">Export to Word</button>
+          <button type="button" class="leave-card-btn is-primary" data-leave="session">Save session</button>
+          <button type="button" class="leave-card-btn" data-leave="word">Export to Word</button>
           <button type="button" class="leave-card-btn" data-leave="copy">Copy report</button>
           <button type="button" class="leave-card-btn is-quiet" data-leave="stay">Keep working</button>
         </div>
@@ -11774,14 +11929,15 @@ ${buildReportHtmlBody()}
       const b = e.target.closest('[data-leave]');
       if (b){
         const act = b.dataset.leave;
-        if (act === 'word') exportWord();
+        if (act === 'session' && typeof saveSession === 'function') saveSession();
+        else if (act === 'word') exportWord();
         else if (act === 'copy') copyAll();
         hideLeaveCard();
       } else if (e.target === back) hideLeaveCard();
     });
     back.addEventListener('keydown', e => { if (e.key === 'Escape') hideLeaveCard(); });
     document.body.appendChild(back);
-    back.querySelector('[data-leave="word"]')?.focus();
+    back.querySelector('[data-leave="session"]')?.focus();
   }
 
   /* ---------- init ---------- */
@@ -11825,7 +11981,11 @@ ${buildReportHtmlBody()}
 
   return { init, addOrReplace, remove, clear, clearSilent, setSuppressed, isSuppressed, copyAll, exportWord, exportExcel, open, close, toggle, showKofiPrompt: maybeShowKofiToast,
            acceptSource, isSourceAccepted, isConsentGated, resetConsent, refreshConsentControls,
-           hasUnexported, showLeaveCard };
+           hasUnexported, showLeaveCard, markExported,
+           /* Save / Open session: consent travels with the patient's tables, the
+              report's items do not (they rebuild from the restored tables). */
+           consentState: () => JSON.parse(JSON.stringify(state.consent || {})),
+           setConsent: c => { state.consent = {}; Object.keys(c || {}).forEach(k => { if (CONSENT_SOURCES.has(k) && c[k] === true) state.consent[k] = true; }); save(); refreshConsentControls(); } };
 })();
 
 if (document.readyState === 'loading'){

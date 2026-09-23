@@ -10238,6 +10238,62 @@ check('the default classification is AACN', () => {
 });
 
 
+heading('53. Save and open session');
+
+/* A session file holds INPUTS: exactly what "New patient" clears, so what one
+   control empties the other can carry. Never the report's rendered tables:
+   they rebuild from the restored rows, so a file cannot inject markup and a
+   report cannot disagree with its tables. */
+check('a saved session carries everything New patient clears, and nothing rendered', () => {
+  const bad = [];
+  const build = extractFn(APP_SRC, 'buildSession');
+  const apply = extractFn(APP_SRC, 'applySession');
+  if (!build || !apply) return 'buildSession or applySession is missing';
+  for (const holder of ['batteryRows', 'sdiRows', 'RCI_SHARED_ROWS', 'preState', 'pvtState', 'sdiLabelState', 'batteryGroupSeq']) {
+    if (!build.includes(holder)) bad.push('the session does not save ' + holder);
+    if (!apply.includes(holder)) bad.push('the session does not restore ' + holder);
+  }
+  if (!/getElementById\('patient-age'\)/.test(extractFn(APP_SRC, 'sessionFieldEls'))) bad.push('the patient age is not saved');
+  /* Every field New patient clears must sit where sessionFieldEls looks. */
+  const clearSrc = APP_SRC.slice(APP_SRC.indexOf('(function wireGlobalClear'), APP_SRC.indexOf('SAVE / OPEN SESSION'));
+  const list = (clearSrc.match(/\[('[\w-]+',?\s*)+\]\.forEach\(id =>/) || [''])[0];
+  const ids = (list.match(/'([\w-]+)'/g) || []).map(s => s.slice(1, -1));
+  if (!ids.length) bad.push('could not read the New patient field list');
+  const scopes = ['battery', 'sdi', 'premorbid', 'validity'];
+  for (const id of ids) {
+    if (id === 'patient-age') continue;
+    const at = HTML_SRC.indexOf('id="' + id + '"');
+    if (at < 0) { bad.push(id + ' is cleared but not in the markup'); continue; }
+    const sec = [...HTML_SRC.slice(0, at).matchAll(/<section class="section[^"]*" id="([\w-]+)"/g)].pop();
+    if (!sec || !scopes.includes(sec[1])) bad.push(id + ' is cleared by New patient but lies outside the saved scope');
+  }
+  if (/state\.items|\.apa-table|innerHTML/.test(build)) bad.push('the session stores rendered output');
+  if (/RCI_SHARED_ROWS\s*=[^=]/.test(apply)) bad.push('RCI_SHARED_ROWS is reassigned, breaking the link all four methods share');
+  if (!/markExported/.test(extractFn(APP_SRC, 'saveSession'))) bad.push('saving a session still leaves the tab-close prompt armed');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('a session file is refused whole unless it is this app, this version, intact', () => {
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(extractConst(APP_SRC, 'SESSION_APP') + ';' + extractConst(APP_SRC, 'SESSION_VERSION') + ';'
+    + extractFn(APP_SRC, 'validateSession') + ';globalThis.__v = validateSession;', c);
+  const v = c.__v;
+  const good = { app: 'psychometric-assistant-session', version: 1, fields: {}, battery: { rows: [{}] }, sdi: { rows: [] },
+                 rci: { rows: [], methods: {} }, pre: {}, pvt: {} };
+  const bad = [];
+  if (v(good) !== '') bad.push('a well-formed session is refused: ' + v(good));
+  if (!v(null)) bad.push('null is accepted');
+  if (!v({ ...good, app: 'something-else' })) bad.push("another app's file is accepted");
+  if (!v({ ...good, version: 2 })) bad.push('a future version is accepted');
+  if (!v({ ...good, battery: { rows: 'x' } })) bad.push('damaged rows are accepted');
+  if (!v({ ...good, battery: { rows: [1] } })) bad.push('a row that is not an object is accepted');
+  const { pvt, ...noPvt } = good;
+  if (!v(noPvt)) bad.push('a file missing a section is accepted');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

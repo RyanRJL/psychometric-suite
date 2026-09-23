@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260923b">
-<link rel="stylesheet" href="design-system.css?v=20260923b">
+<link rel="stylesheet" href="styles.css?v=20260923c">
+<link rel="stylesheet" href="design-system.css?v=20260923c">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -567,6 +567,23 @@
         </svg>
         <span>New patient</span>
       </button>
+      <!-- Nothing outlives the tab, so a session is carried between sittings as
+           a file (saveSession / openSessionFile in app.js). -->
+      <button type="button" class="topbar-session" id="topbar-open-session" title="Open a session file saved earlier. It replaces what is currently entered." aria-label="Open a saved session">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 4.5V12.5h12V6H8L6.5 4.5z"/>
+        </svg>
+        <span>Open session</span>
+      </button>
+      <button type="button" class="topbar-session" id="topbar-save-session" title="Save everything entered to a file, to carry on later. The file holds patient data: keep it securely." aria-label="Save this session to a file">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 2.5v8"/>
+          <path d="M4.5 7.5L8 11l3.5-3.5"/>
+          <path d="M3 13.5h10"/>
+        </svg>
+        <span>Save session</span>
+      </button>
+      <input type="file" id="session-file-input" accept=".json,application/json" hidden>
       <!-- DONATION BUTTON — kept for easy re-activation, remove comment tags to restore
       <a class="topbar-kofi" href="https://ko-fi.com/clinpsyry" target="_blank" rel="noopener noreferrer" title="Support free clinical tools">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -3133,10 +3150,13 @@
 
     <h3 class="methods-h3">Patient data lasts only as long as the tab</h3>
     <p class="section-body-text">
-      Entered scores and the Working Report are held in <strong>session storage</strong>, which survives a reload of the same tab and nothing else. Closing the tab, the window or the browser clears them. Nothing patient-identifiable is written to disk, and an older version of this app that did keep reports on disk has its leftovers deleted the first time this version loads.
+      Entered scores and the Working Report are held in <strong>session storage</strong>, which survives a reload of the same tab and nothing else. Closing the tab, the window or the browser clears them. The app writes nothing patient-identifiable to disk of its own accord, and an older version of this app that did keep reports on disk has its leftovers deleted the first time this version loads.
     </p>
     <p class="section-body-text">
       Session storage is per-tab, so two tabs are two independent patient sessions rather than one shared report. Within a tab, use <strong>New patient</strong> in the top bar between patients: it clears every table and the age together, which is why it is one control rather than two.
+    </p>
+    <p class="section-body-text">
+      To carry a patient over to another sitting, use <strong>Save session</strong> in the top bar. It writes a file to your computer holding everything entered: scores, patient age and page settings. That file is patient data and is yours to keep as you would any clinical record. <strong>Open session</strong> reads it back and recalculates every table from those inputs.
     </p>
     <p class="section-body-text">
       Two things do persist here deliberately, and neither is patient data: your view preferences, such as drawer width and whether the report drawer starts minimised, and any custom test norms you add on the Data page, which would be worth little if they vanished with the tab.
@@ -3200,12 +3220,12 @@
 </footer>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260923b"></script>
-<script src="app.js?v=20260923b"></script>
-<script src="design-system.js?v=20260923b" defer></script>
-<script src="app-effectsize-page.js?v=20260923b"></script>
-<script src="app-viz-page.js?v=20260923b"></script>
-<script src="app-profile-page.js?v=20260923b"></script>
+<script src="data.js?v=20260923c"></script>
+<script src="app.js?v=20260923c"></script>
+<script src="design-system.js?v=20260923c" defer></script>
+<script src="app-effectsize-page.js?v=20260923c"></script>
+<script src="app-viz-page.js?v=20260923c"></script>
+<script src="app-profile-page.js?v=20260923c"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

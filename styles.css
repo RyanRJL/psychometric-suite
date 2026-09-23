@@ -10885,3 +10885,19 @@ svg.rey-glyph{width:56px;height:56px}
 .leave-card-btn.is-quiet{ border-color:transparent; color:var(--muted); }
 .leave-card-btn:focus-visible{ outline:2px solid #1A1A1A; outline-offset:2px; }
 @media print{ .leave-card-backdrop{ display:none; } }
+
+/* Open / Save session in the top bar (saveSession, openSessionFile). A
+   standalone class: .topbar-clear carries margin-left:auto and a red
+   destructive hover, neither of which belongs here. */
+.topbar-session{
+  display:inline-flex; align-items:center; gap:6px; flex-shrink:0;
+  padding:6px 11px; border-radius:6px; background:transparent;
+  color:#5A5A5A; font-family:var(--sans); font-size:12px; font-weight:500;
+  border:1px solid transparent; cursor:pointer; white-space:nowrap;
+  transition:color 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+.topbar-session svg{ width:12px; height:12px; flex-shrink:0; opacity:0.75; }
+.topbar-session:hover{ color:#1A1A1A; background:rgba(26,26,26,0.05); border-color:rgba(26,26,26,0.14); }
+.topbar-session:hover svg{ opacity:1; }
+.topbar-session:focus-visible{ outline:2px solid rgba(26,26,26,0.4); outline-offset:2px; }
+@media print{ .topbar-session{ display:none; } }

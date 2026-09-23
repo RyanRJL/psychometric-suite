@@ -333,6 +333,24 @@ The preview pane denies clipboard write outright (`permissions.query` returns `d
 so Copy fails there for every caller. To test the success path, stand in a resolving
 `navigator.clipboard` and click for real.
 
+#### Save / Open session
+
+Nothing outlives the tab, so a patient is carried between sittings as a JSON file
+(`saveSession` / `openSessionFile`, after `wireGlobalClear` in `app.js`; buttons in the
+top bar and on the leave card). **The file holds inputs, never outputs**: exactly what
+New patient clears (the row arrays, the page fields by id, the Change Analysis settings
+and consent). Every derived number is recomputed on open. The report CSV/Word exports
+cannot serve instead: they hold finished tables, and reading them back would mean guessing.
+
+The report's items are **not** stored. They rebuild through the report's own observers
+from the restored tables, so a file cannot inject markup and a report cannot disagree with
+its tables; the cost is the report's manual ordering and edited headings. The file is
+versioned (`SESSION_VERSION`) and refused whole if it is not this app, this version, intact.
+**If you add patient state to a page, add it to both New patient and `buildSession`**:
+§53 fails if a field New patient clears lies outside the saved scope, or a state holder is
+saved but not restored. Round trip verified in the browser: enter, save, New patient,
+open, and every table on four pages read back identically.
+
 #### Collection is automatic, except on the four Change Analysis methods
 
 A `MutationObserver` per APA container collects a tool's table the moment one
@@ -2074,7 +2092,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 409 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 411 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -2085,7 +2103,7 @@ Score Tables confidence intervals, documentation contracts, wiring (§16–17), 
 raw-score metric (§18), the Norms Database view (§32), age-band filtering of the
 family dropdowns (§33), consent gating on the Change Analysis methods (§34), the
 empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
-tab-close prompt and AACN default (§52).
+tab-close prompt and AACN default (§52), and Save / Open session (§53).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is
