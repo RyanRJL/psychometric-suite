@@ -9849,7 +9849,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-nav-summary-label{font-size:13px;font-weight:600;color:var(--ds-text)}
 .pvt-nav-summary-meta{font-size:11px;color:var(--ds-text-subtle);line-height:1.3}
 
-.pvt-nav-group{padding-top:6px}
+.pvt-nav-group{display:flex;flex-direction:column;gap:4px;padding-top:6px}
 .pvt-nav-group-head{
   display:flex;
   align-items:baseline;
@@ -9871,16 +9871,20 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   gap:8px;
   width:100%;
   padding:6px 10px;
-  border:0;
-  border-radius:var(--ds-radius-sm);
-  background:transparent;
+  border:1px solid var(--ds-border);
+  border-radius:var(--ds-radius-md);
+  background:var(--ds-surface);
+  box-shadow:0 1px 2px rgba(0,0,0,0.05);
   font-family:var(--sans);
   text-align:left;
   cursor:pointer;
-  transition:background var(--t-fast) var(--ease);
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
-.pvt-nav-item:hover{background:var(--ds-surface-emphasis)}
-.pvt-nav-item.active{background:var(--ds-surface-emphasis);box-shadow:inset 3px 0 0 var(--ds-primary)}
+/* Each measure is a bordered button, like the Summary card above it (owner
+   report, 2026-09, a second time: the chevrons alone still read as a list of
+   names, not things to click). Hover lifts the border; the open one is tinted. */
+.pvt-nav-item:hover{background:var(--ds-surface-subtle);border-color:var(--ds-text-faint);box-shadow:0 2px 4px rgba(0,0,0,0.08)}
+.pvt-nav-item.active{background:var(--ds-primary-tint);border-color:rgba(156,61,42,0.35);box-shadow:inset 3px 0 0 var(--ds-primary)}
 .pvt-nav-item:focus{outline:none}
 .pvt-nav-item:focus-visible{box-shadow:inset 0 0 0 2px var(--ds-primary-ring)}
 /* A chevron on every entry, so a list of names reads as a list of things
