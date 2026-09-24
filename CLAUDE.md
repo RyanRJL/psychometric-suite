@@ -1623,6 +1623,34 @@ reading `data.js`, and the short form the exported note prints (`WMS-IV Technica
 Interpretive Manual (GB), Table 4.1 (Adult Battery)`). The page passes `citation || source`,
 so a matrix without one still names its table.
 
+#### WAIS-IV and WMS-IV together: Table 4.12 (2026-09)
+
+A fourth tab, **WAIS-IV + WMS-IV**, appears only when Score Tables holds scores from
+**both** WAIS-IV and the WMS-IV **Adult** battery. Its matrix, `WAIS4_WMS4_JOINT`
+(`data.js`), is three published blocks laid together by key and nothing else: Table 5.1
+(WAIS-IV within), Table 4.1 (WMS-IV Adult within), and `WMS4_WAIS4_CROSS`, WMS-IV Technical
+Manual **Table 4.12** (20 WMS-IV rows x 21 WAIS-IV columns). §56 asserts every one of the
+780 pairs is the cell its own table prints.
+
+- **Table 4.12 is range-corrected** "for the variability of the WMS-IV normative sample
+  (Guilford & Fruchter, 1978)". That is not the part-whole correction the shaded triangles
+  carry. The within blocks come from the normative samples, and this correction puts the
+  co-norming sample on that same population, so the three may form one matrix. There is no
+  uncorrected version to choose instead.
+- **Adult battery only.** Table 4.12 pools both batteries (n 1,250 for shared measures,
+  ~900 for Adult-only ones) and has one VMI row; the Older Adult VMI is a different sum.
+- **No WAIS-IV process scores**: Table 4.12 does not print them.
+- **The joint instrument has no group pattern.** `joint: ['wais4','wms4']` makes
+  `profScoreTableRowsFor` read each part through the part's own pattern, so the group-key
+  rule still decides every row, and the composition rules are the union of the parts'
+  (`profRuleTable`), never restated.
+- **Transcription proof.** The page came in as an OCR'd photo. Each composite cell is
+  predictable from its row's (or column's) subtest cells and the within-battery
+  correlations: all 225 reproduce within .03. Mutation-tested: a single misread subtest or
+  composite cell fails §56. **What it cannot see:** the 25 cells where neither side is in
+  any composite (the five WMS-IV process scores against CO, FW, PCm, LN, CA), and a
+  misread of .01 to .02 anywhere. The index block is pinned verbatim as a second reading.
+
 #### The note is written for whoever receives the report
 
 **Not for the clinician, and certainly not for the developer.** The exported table may be
@@ -2256,7 +2284,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 420 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 425 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -2268,7 +2296,8 @@ raw-score metric (§18), the Norms Database view (§32), age-band filtering of t
 family dropdowns (§33), consent gating on the Change Analysis methods (§34), the
 empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
 tab-close prompt and AACN default (§52), Save / Open session (§53), and the app frame,
-the docked report and the motion scale (§55).
+the docked report and the motion scale (§55), and the WAIS-IV/WMS-IV joint profile on
+WMS-IV Table 4.12 (§56).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

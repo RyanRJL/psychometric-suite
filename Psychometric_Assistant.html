@@ -19957,7 +19957,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
       Three questions are answered from one simulation: how many scores are abnormally low, how many pairwise differences between measures are abnormally large, and how many measures deviate abnormally from the patient&rsquo;s own mean across the battery. The criterion is chosen by the clinician from the five the paper tabulates (below 1 SD, or below the 10th, 5th, 2nd or 1st percentile) and governs all three. A difference or deviation is abnormal when larger than the same percentage of the population shows, in either direction. Simulations are seeded, so a figure quoted in a report does not change when the page is reopened, and the sampling error of each percentage is stated beside it.
     </p>
     <p class="section-body-text">
-      The only input is the correlation matrix over the measures administered, taken from the publisher&rsquo;s normative sample: WAIS-IV Technical and Interpretive Manual (GB) Table 5.1, or WMS-IV Technical and Interpretive Manual (GB) Table 4.1 (Adult battery) or 4.2 (Older Adult battery). Scores are read from Score Tables rather than entered here, so the two cannot disagree. A profile may not hold both a measure and a part of itself (an index and its own subtest, two indices sharing subtests, or a subtest and its own process scores), so each instrument is profiled one level at a time. Where a publisher&rsquo;s indices cross, as WMS-IV&rsquo;s do (auditory and visual against immediate and delayed), the two readings are offered separately. Index scores give the more accurate estimate: the authors note that scaled scores are coarse, one point being a third of a standard deviation, so a subtest-level profile is the rougher reading and says so on screen and in the exported note.
+      The only input is the correlation matrix over the measures administered, taken from the publisher&rsquo;s normative sample: WAIS-IV Technical and Interpretive Manual (GB) Table 5.1, or WMS-IV Technical and Interpretive Manual (GB) Table 4.1 (Adult battery) or 4.2 (Older Adult battery). WAIS-IV and the WMS-IV Adult battery can also be profiled together, on WMS-IV Table 4.12, which correlates the two batteries in their co-normed sample (corrected to the WMS-IV normative sample&rsquo;s variability); the Older Adult battery cannot, as that table pools both batteries under one Visual Memory Index. Scores are read from Score Tables rather than entered here, so the two cannot disagree. A profile may not hold both a measure and a part of itself (an index and its own subtest, two indices sharing subtests, or a subtest and its own process scores), so each instrument is profiled one level at a time. Where a publisher&rsquo;s indices cross, as WMS-IV&rsquo;s do (auditory and visual against immediate and delayed), the two readings are offered separately. Index scores give the more accurate estimate: the authors note that scaled scores are coarse, one point being a third of a standard deviation, so a subtest-level profile is the rougher reading and says so on screen and in the exported note.
     </p>
 
     <h3 class="methods-h3">Performance validity</h3>
@@ -20529,6 +20529,134 @@ const WMS4_INTERCORR = {
     sd:   {'LM1':3, 'LM2':3.1, 'VPA1':3, 'VPA2':3, 'VPAWR':3, 'VR1':3, 'VR2':2.9, 'SSP':3, 'AMI':10.2, 'VMI':5.4, 'IMI':7.1, 'DMI':7}
   },
 };
+
+
+/* ============================================================
+   WMS4_WAIS4_CROSS — the block that lets WAIS-IV and WMS-IV be profiled
+   TOGETHER, and the one piece neither matrix above contains
+
+   Transcribed from WMS-IV Technical and Interpretive Manual (GB), Table 4.12,
+   "Correlations Between the WMS-IV and the WAIS-IV": 20 WMS-IV rows (every
+   Adult-battery measure) against 21 WAIS-IV columns (15 subtests, the four
+   Indices, GAI and FSIQ). Rows are keyed 'WMS|WAIS' with the WMS-IV measure
+   first, which is also the order the joint matrix below needs.
+
+   THE NOTE UNDER THE TABLE: "Correlations were corrected for the variability
+   of the WMS-IV normative sample (Guilford & Fruchter, 1978)." That is a
+   RANGE correction, not the part-whole correction the shaded triangles of
+   Tables 4.1 and 5.1 carry, and the difference decides whether it may sit
+   beside them. The within-battery lower triangles are taken on the
+   normative samples themselves, so they already describe the normative
+   population's variability. The co-norming sample (n up to 1,250) is not
+   the normative sample, and this correction is what puts its coefficients
+   on that same population. So all three blocks describe one population and
+   may form one covariance structure. The part-whole-corrected cells stay
+   out, exactly as before. There is no uncorrected version of this table to
+   choose instead.
+
+   THE SAMPLE IS NOT ONE AGE BAND. n is 1,250 for measures both WMS-IV
+   batteries share and ~900 for Designs, Spatial Addition, VWMI and the three
+   WAIS-IV measures normed to 69 (FW, LN, CA). So the table pools the
+   co-normed Adult and Older Adult examinees wherever a measure exists in
+   both. That is why the joint profile is offered for the ADULT battery only:
+   its VMI is Designs + Visual Reproduction, while the Older Adult VMI is
+   Visual Reproduction alone, and this table's single VMI row cannot be both.
+   The shared subtests (LM, VPA, VR, SSP) are the same tasks in both, but a
+   one-battery rule is simpler to state than a per-measure one, and the
+   Adult battery is the one this table fully covers.
+
+   TRANSCRIPTION PROOF. The photographed page was read by OCR, so it was not
+   trusted. Every composite cell is predictable from the subtest cells in
+   its own row or column: corr(X, sum of S) = sum of sd_i r(X,S_i) over the
+   SD of the sum, taking the within-battery r and SDs from Tables 5.1 and
+   4.1. All 225 composite cells (20 rows x 6 WAIS-IV composites, 21 columns
+   x 5 WMS-IV indices) reproduce within .03, 219 within .02. The residual is
+   the different samples and the range correction, and it is small and
+   unsigned. A single misread digit in a subtest cell moves five or six of
+   those predictions at once. check.js §56 re-runs it.
+
+   GAI appears here and nowhere in WAIS4_INTERCORR (Table 5.1 does not print
+   it), so it is stored and unused. Means, SDs and n are the manual's own
+   rows and are unused too; unlike Tables 4.1 and 5.1 the index means here
+   are on the 100/15 metric.
+   ============================================================ */
+const WMS4_WAIS4_CROSS = {
+  source: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.12: Correlations Between the WMS-IV and the WAIS-IV',
+  citation: 'WMS-IV Technical and Interpretive Manual (GB), Table 4.12',
+  correctedFor: 'variability of the WMS-IV normative sample (Guilford & Fruchter, 1978)',
+  rows: ['LM1', 'LM2', 'VPA1', 'VPA2', 'VPAWR', 'DE1', 'DE1C', 'DE1S', 'DE2', 'DE2C', 'DE2S', 'VR1', 'VR2', 'SA', 'SSP', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
+  cols: ['SI', 'VC', 'IN', 'CO', 'BD', 'MR', 'VP', 'FW', 'PCm', 'DS', 'AR', 'LN', 'SS', 'CD', 'CA', 'VCI', 'PRI', 'WMI', 'PSI', 'GAI', 'FSIQ'],
+  r: {
+    'LM1|SI':0.45, 'LM1|VC':0.45, 'LM1|IN':0.38, 'LM1|CO':0.43, 'LM1|BD':0.3, 'LM1|MR':0.34, 'LM1|VP':0.28, 'LM1|FW':0.34, 'LM1|PCm':0.37, 'LM1|DS':0.39, 'LM1|AR':0.4, 'LM1|LN':0.3, 'LM1|SS':0.3, 'LM1|CD':0.33, 'LM1|CA':0.17, 'LM1|VCI':0.47, 'LM1|PRI':0.37, 'LM1|WMI':0.44, 'LM1|PSI':0.34, 'LM1|GAI':0.47, 'LM1|FSIQ':0.5,
+    'LM2|SI':0.41, 'LM2|VC':0.41, 'LM2|IN':0.36, 'LM2|CO':0.4, 'LM2|BD':0.26, 'LM2|MR':0.3, 'LM2|VP':0.26, 'LM2|FW':0.32, 'LM2|PCm':0.34, 'LM2|DS':0.32, 'LM2|AR':0.35, 'LM2|LN':0.27, 'LM2|SS':0.29, 'LM2|CD':0.3, 'LM2|CA':0.19, 'LM2|VCI':0.44, 'LM2|PRI':0.32, 'LM2|WMI':0.38, 'LM2|PSI':0.33, 'LM2|GAI':0.42, 'LM2|FSIQ':0.45,
+    'VPA1|SI':0.37, 'VPA1|VC':0.37, 'VPA1|IN':0.32, 'VPA1|CO':0.34, 'VPA1|BD':0.3, 'VPA1|MR':0.35, 'VPA1|VP':0.29, 'VPA1|FW':0.4, 'VPA1|PCm':0.29, 'VPA1|DS':0.36, 'VPA1|AR':0.35, 'VPA1|LN':0.33, 'VPA1|SS':0.28, 'VPA1|CD':0.31, 'VPA1|CA':0.23, 'VPA1|VCI':0.39, 'VPA1|PRI':0.37, 'VPA1|WMI':0.4, 'VPA1|PSI':0.33, 'VPA1|GAI':0.43, 'VPA1|FSIQ':0.45,
+    'VPA2|SI':0.35, 'VPA2|VC':0.37, 'VPA2|IN':0.31, 'VPA2|CO':0.35, 'VPA2|BD':0.29, 'VPA2|MR':0.34, 'VPA2|VP':0.28, 'VPA2|FW':0.39, 'VPA2|PCm':0.28, 'VPA2|DS':0.33, 'VPA2|AR':0.34, 'VPA2|LN':0.32, 'VPA2|SS':0.27, 'VPA2|CD':0.28, 'VPA2|CA':0.21, 'VPA2|VCI':0.38, 'VPA2|PRI':0.36, 'VPA2|WMI':0.38, 'VPA2|PSI':0.3, 'VPA2|GAI':0.42, 'VPA2|FSIQ':0.44,
+    'VPAWR|SI':0.4, 'VPAWR|VC':0.41, 'VPAWR|IN':0.34, 'VPAWR|CO':0.39, 'VPAWR|BD':0.32, 'VPAWR|MR':0.39, 'VPAWR|VP':0.31, 'VPAWR|FW':0.42, 'VPAWR|PCm':0.33, 'VPAWR|DS':0.38, 'VPAWR|AR':0.37, 'VPAWR|LN':0.39, 'VPAWR|SS':0.33, 'VPAWR|CD':0.38, 'VPAWR|CA':0.27, 'VPAWR|VCI':0.43, 'VPAWR|PRI':0.4, 'VPAWR|WMI':0.42, 'VPAWR|PSI':0.39, 'VPAWR|GAI':0.46, 'VPAWR|FSIQ':0.5,
+    'DE1|SI':0.28, 'DE1|VC':0.3, 'DE1|IN':0.3, 'DE1|CO':0.32, 'DE1|BD':0.44, 'DE1|MR':0.4, 'DE1|VP':0.4, 'DE1|FW':0.41, 'DE1|PCm':0.34, 'DE1|DS':0.36, 'DE1|AR':0.36, 'DE1|LN':0.33, 'DE1|SS':0.32, 'DE1|CD':0.36, 'DE1|CA':0.28, 'DE1|VCI':0.33, 'DE1|PRI':0.49, 'DE1|WMI':0.41, 'DE1|PSI':0.37, 'DE1|GAI':0.45, 'DE1|FSIQ':0.49,
+    'DE1C|SI':0.28, 'DE1C|VC':0.29, 'DE1C|IN':0.28, 'DE1C|CO':0.29, 'DE1C|BD':0.37, 'DE1C|MR':0.39, 'DE1C|VP':0.36, 'DE1C|FW':0.37, 'DE1C|PCm':0.3, 'DE1C|DS':0.33, 'DE1C|AR':0.31, 'DE1C|LN':0.3, 'DE1C|SS':0.28, 'DE1C|CD':0.3, 'DE1C|CA':0.21, 'DE1C|VCI':0.32, 'DE1C|PRI':0.45, 'DE1C|WMI':0.36, 'DE1C|PSI':0.32, 'DE1C|GAI':0.43, 'DE1C|FSIQ':0.45,
+    'DE1S|SI':0.2, 'DE1S|VC':0.21, 'DE1S|IN':0.23, 'DE1S|CO':0.24, 'DE1S|BD':0.34, 'DE1S|MR':0.27, 'DE1S|VP':0.31, 'DE1S|FW':0.32, 'DE1S|PCm':0.28, 'DE1S|DS':0.28, 'DE1S|AR':0.31, 'DE1S|LN':0.25, 'DE1S|SS':0.28, 'DE1S|CD':0.27, 'DE1S|CA':0.27, 'DE1S|VCI':0.23, 'DE1S|PRI':0.37, 'DE1S|WMI':0.33, 'DE1S|PSI':0.3, 'DE1S|GAI':0.33, 'DE1S|FSIQ':0.38,
+    'DE2|SI':0.23, 'DE2|VC':0.25, 'DE2|IN':0.25, 'DE2|CO':0.25, 'DE2|BD':0.35, 'DE2|MR':0.34, 'DE2|VP':0.32, 'DE2|FW':0.33, 'DE2|PCm':0.27, 'DE2|DS':0.34, 'DE2|AR':0.3, 'DE2|LN':0.3, 'DE2|SS':0.25, 'DE2|CD':0.26, 'DE2|CA':0.26, 'DE2|VCI':0.27, 'DE2|PRI':0.4, 'DE2|WMI':0.36, 'DE2|PSI':0.28, 'DE2|GAI':0.38, 'DE2|FSIQ':0.41,
+    'DE2C|SI':0.25, 'DE2C|VC':0.29, 'DE2C|IN':0.27, 'DE2C|CO':0.27, 'DE2C|BD':0.35, 'DE2C|MR':0.36, 'DE2C|VP':0.33, 'DE2C|FW':0.35, 'DE2C|PCm':0.28, 'DE2C|DS':0.33, 'DE2C|AR':0.31, 'DE2C|LN':0.32, 'DE2C|SS':0.26, 'DE2C|CD':0.27, 'DE2C|CA':0.26, 'DE2C|VCI':0.3, 'DE2C|PRI':0.41, 'DE2C|WMI':0.36, 'DE2C|PSI':0.29, 'DE2C|GAI':0.4, 'DE2C|FSIQ':0.42,
+    'DE2S|SI':0.13, 'DE2S|VC':0.12, 'DE2S|IN':0.13, 'DE2S|CO':0.14, 'DE2S|BD':0.21, 'DE2S|MR':0.2, 'DE2S|VP':0.21, 'DE2S|FW':0.19, 'DE2S|PCm':0.19, 'DE2S|DS':0.21, 'DE2S|AR':0.16, 'DE2S|LN':0.16, 'DE2S|SS':0.17, 'DE2S|CD':0.14, 'DE2S|CA':0.18, 'DE2S|VCI':0.14, 'DE2S|PRI':0.25, 'DE2S|WMI':0.21, 'DE2S|PSI':0.17, 'DE2S|GAI':0.22, 'DE2S|FSIQ':0.23,
+    'VR1|SI':0.41, 'VR1|VC':0.4, 'VR1|IN':0.41, 'VR1|CO':0.42, 'VR1|BD':0.52, 'VR1|MR':0.48, 'VR1|VP':0.51, 'VR1|FW':0.45, 'VR1|PCm':0.45, 'VR1|DS':0.38, 'VR1|AR':0.4, 'VR1|LN':0.34, 'VR1|SS':0.4, 'VR1|CD':0.38, 'VR1|CA':0.26, 'VR1|VCI':0.46, 'VR1|PRI':0.6, 'VR1|WMI':0.44, 'VR1|PSI':0.43, 'VR1|GAI':0.58, 'VR1|FSIQ':0.59,
+    'VR2|SI':0.32, 'VR2|VC':0.29, 'VR2|IN':0.31, 'VR2|CO':0.32, 'VR2|BD':0.41, 'VR2|MR':0.38, 'VR2|VP':0.42, 'VR2|FW':0.37, 'VR2|PCm':0.34, 'VR2|DS':0.3, 'VR2|AR':0.3, 'VR2|LN':0.26, 'VR2|SS':0.33, 'VR2|CD':0.28, 'VR2|CA':0.29, 'VR2|VCI':0.34, 'VR2|PRI':0.48, 'VR2|WMI':0.34, 'VR2|PSI':0.33, 'VR2|GAI':0.46, 'VR2|FSIQ':0.46,
+    'SA|SI':0.4, 'SA|VC':0.41, 'SA|IN':0.41, 'SA|CO':0.4, 'SA|BD':0.51, 'SA|MR':0.48, 'SA|VP':0.45, 'SA|FW':0.47, 'SA|PCm':0.37, 'SA|DS':0.46, 'SA|AR':0.51, 'SA|LN':0.45, 'SA|SS':0.4, 'SA|CD':0.42, 'SA|CA':0.27, 'SA|VCI':0.45, 'SA|PRI':0.57, 'SA|WMI':0.54, 'SA|PSI':0.45, 'SA|GAI':0.57, 'SA|FSIQ':0.62,
+    'SSP|SI':0.42, 'SSP|VC':0.44, 'SSP|IN':0.4, 'SSP|CO':0.43, 'SSP|BD':0.45, 'SSP|MR':0.49, 'SSP|VP':0.46, 'SSP|FW':0.47, 'SSP|PCm':0.41, 'SSP|DS':0.47, 'SSP|AR':0.45, 'SSP|LN':0.44, 'SSP|SS':0.41, 'SSP|CD':0.42, 'SSP|CA':0.29, 'SSP|VCI':0.47, 'SSP|PRI':0.56, 'SSP|WMI':0.52, 'SSP|PSI':0.46, 'SSP|GAI':0.57, 'SSP|FSIQ':0.61,
+    'AMI|SI':0.48, 'AMI|VC':0.5, 'AMI|IN':0.42, 'AMI|CO':0.46, 'AMI|BD':0.35, 'AMI|MR':0.4, 'AMI|VP':0.34, 'AMI|FW':0.44, 'AMI|PCm':0.39, 'AMI|DS':0.43, 'AMI|AR':0.44, 'AMI|LN':0.38, 'AMI|SS':0.35, 'AMI|CD':0.38, 'AMI|CA':0.25, 'AMI|VCI':0.53, 'AMI|PRI':0.44, 'AMI|WMI':0.5, 'AMI|PSI':0.4, 'AMI|GAI':0.54, 'AMI|FSIQ':0.57,
+    'VMI|SI':0.39, 'VMI|VC':0.38, 'VMI|IN':0.4, 'VMI|CO':0.41, 'VMI|BD':0.53, 'VMI|MR':0.5, 'VMI|VP':0.51, 'VMI|FW':0.49, 'VMI|PCm':0.44, 'VMI|DS':0.42, 'VMI|AR':0.42, 'VMI|LN':0.39, 'VMI|SS':0.42, 'VMI|CD':0.4, 'VMI|CA':0.35, 'VMI|VCI':0.44, 'VMI|PRI':0.62, 'VMI|WMI':0.47, 'VMI|PSI':0.45, 'VMI|GAI':0.58, 'VMI|FSIQ':0.61,
+    'VWMI|SI':0.47, 'VWMI|VC':0.49, 'VWMI|IN':0.48, 'VWMI|CO':0.49, 'VWMI|BD':0.55, 'VWMI|MR':0.55, 'VWMI|VP':0.53, 'VWMI|FW':0.54, 'VWMI|PCm':0.45, 'VWMI|DS':0.53, 'VWMI|AR':0.56, 'VWMI|LN':0.52, 'VWMI|SS':0.45, 'VWMI|CD':0.47, 'VWMI|CA':0.33, 'VWMI|VCI':0.53, 'VWMI|PRI':0.66, 'VWMI|WMI':0.62, 'VWMI|PSI':0.51, 'VWMI|GAI':0.66, 'VWMI|FSIQ':0.71,
+    'IMI|SI':0.52, 'IMI|VC':0.52, 'IMI|IN':0.49, 'IMI|CO':0.51, 'IMI|BD':0.52, 'IMI|MR':0.53, 'IMI|VP':0.5, 'IMI|FW':0.55, 'IMI|PCm':0.5, 'IMI|DS':0.51, 'IMI|AR':0.51, 'IMI|LN':0.45, 'IMI|SS':0.45, 'IMI|CD':0.48, 'IMI|CA':0.33, 'IMI|VCI':0.57, 'IMI|PRI':0.61, 'IMI|WMI':0.57, 'IMI|PSI':0.51, 'IMI|GAI':0.66, 'IMI|FSIQ':0.7,
+    'DMI|SI':0.46, 'DMI|VC':0.47, 'DMI|IN':0.43, 'DMI|CO':0.46, 'DMI|BD':0.45, 'DMI|MR':0.48, 'DMI|VP':0.45, 'DMI|FW':0.5, 'DMI|PCm':0.43, 'DMI|DS':0.45, 'DMI|AR':0.45, 'DMI|LN':0.42, 'DMI|SS':0.41, 'DMI|CD':0.4, 'DMI|CA':0.34, 'DMI|VCI':0.51, 'DMI|PRI':0.55, 'DMI|WMI':0.51, 'DMI|PSI':0.44, 'DMI|GAI':0.58, 'DMI|FSIQ':0.61,
+  },
+  wmsMean: {'LM1':9.9, 'LM2':9.8, 'VPA1':9.9, 'VPA2':9.9, 'VPAWR':9.9, 'DE1':10, 'DE1C':10, 'DE1S':10, 'DE2':10, 'DE2C':10, 'DE2S':10, 'VR1':10, 'VR2':10, 'SA':10, 'SSP':9.9, 'AMI':99.2, 'VMI':99.9, 'VWMI':99.9, 'IMI':99.5, 'DMI':99.4},
+  wmsSd:   {'LM1':3.1, 'LM2':3, 'VPA1':3, 'VPA2':3, 'VPAWR':3, 'DE1':3, 'DE1C':3.1, 'DE1S':3, 'DE2':3.1, 'DE2C':3, 'DE2S':3, 'VR1':3.1, 'VR2':3.1, 'SA':3.1, 'SSP':3.1, 'AMI':14.8, 'VMI':15.3, 'VWMI':15.6, 'IMI':15.2, 'DMI':15.1},
+  wmsN:    {'LM1':1250, 'LM2':1250, 'VPA1':1250, 'VPA2':1250, 'VPAWR':1248, 'DE1':900, 'DE1C':900, 'DE1S':900, 'DE2':900, 'DE2C':900, 'DE2S':900, 'VR1':1250, 'VR2':1250, 'SA':900, 'SSP':1250, 'AMI':1250, 'VMI':1250, 'VWMI':900, 'IMI':1250, 'DMI':1250},
+  waisMean: {'SI':10, 'VC':10, 'IN':9.9, 'CO':10.2, 'BD':10.1, 'MR':10.1, 'VP':10.1, 'FW':10.3, 'PCm':10, 'DS':10, 'AR':10, 'LN':10.2, 'SS':10.1, 'CD':10.1, 'CA':10.1, 'VCI':99.7, 'PRI':100.2, 'WMI':99.9, 'PSI':100.3, 'GAI':100, 'FSIQ':100},
+  waisSd:   {'SI':2.9, 'VC':3, 'IN':3.1, 'CO':3.1, 'BD':3, 'MR':3.1, 'VP':3, 'FW':3, 'PCm':3.1, 'DS':2.9, 'AR':2.9, 'LN':3, 'SS':3, 'CD':3, 'CA':3, 'VCI':15, 'PRI':14.6, 'WMI':14.6, 'PSI':14.9, 'GAI':15, 'FSIQ':15},
+  waisN:    {'SI':1250, 'VC':1250, 'IN':1250, 'CO':1249, 'BD':1250, 'MR':1250, 'VP':1250, 'FW':900, 'PCm':1249, 'DS':1250, 'AR':1250, 'LN':900, 'SS':1250, 'CD':1250, 'CA':899, 'VCI':1250, 'PRI':1250, 'WMI':1250, 'PSI':1250, 'GAI':1250, 'FSIQ':1250}
+};
+
+/* WAIS4_WMS4_JOINT — the three published blocks laid into one matrix.
+   Nothing here is a new number: every cell is read from Table 5.1, Table 4.1
+   (Adult) or Table 4.12 by key, and a pair none of them prints is left out
+   rather than filled. WAIS-IV measures come first in `order`, so every cross
+   pair is keyed 'WMS|WAIS', the shape Table 4.12 is already stored in.
+
+   Only WAIS-IV measures Table 4.12 covers join: the four Digit Span and
+   Block Design process scores are absent from it, so they have no
+   correlation with any WMS-IV measure and cannot be in a joint profile.
+   `restrictedTo16_69` is empty on purpose: the Adult battery is itself
+   normed 16-69, so a patient who can hold this profile is inside that range
+   and the age caveat would state nothing. */
+const WAIS4_WMS4_JOINT = (function(){
+  const W = WAIS4_INTERCORR, M = WMS4_INTERCORR.adult, X = WMS4_WAIS4_CROSS;
+  const wais = W.order.filter(k => X.cols.indexOf(k) !== -1);
+  const wms = M.order.filter(k => X.rows.indexOf(k) !== -1);
+  const r = {};
+  const put = (src, list) => list.forEach((a, i) => list.slice(0, i).forEach(b => {
+    if (src[a + '|' + b] !== undefined) r[a + '|' + b] = src[a + '|' + b];
+  }));
+  put(W.r, wais);
+  put(M.r, wms);
+  wms.forEach(a => wais.forEach(b => {
+    if (X.r[a + '|' + b] !== undefined) r[a + '|' + b] = X.r[a + '|' + b];
+  }));
+  const pick = (o, ks) => ks.reduce((out, k) => { out[k] = o[k]; return out; }, {});
+  return {
+    source: W.source + '; ' + M.source + '; ' + X.source,
+    citation: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1, and WMS-IV Technical and Interpretive Manual (GB), Tables 4.1 (Adult Battery) and 4.12',
+    battery: 'Adult',
+    ageBand: 'Ages 16-69',
+    order: wais.concat(wms),
+    labels: Object.assign(pick(W.labels, wais), pick(M.labels, wms)),
+    restrictedTo16_69: [],
+    r,
+    /* The manuals' own Mean/SD rows, which the composite check in check.js
+       reads: index entries are sums of scaled scores, as in both parents. */
+    mean: Object.assign(pick(W.mean, wais), pick(M.mean, wms)),
+    sd: Object.assign(pick(W.sd, wais), pick(M.sd, wms))
+  };
+})();
 
 // ToPF Raw (0-70) → estimated FSIQ
 const TOPF_TO_FSIQ = [
@@ -26398,7 +26526,8 @@ const APA_NOTES = {
       ? `A difference or deviation is abnormal when it is larger than ${ctx.diffPct} of healthy people show, in either direction.`
       : 'A difference or deviation is abnormal when it is larger than the same percentage of healthy people show, in either direction.',
     /* MODELLED RATHER THAN OBSERVED, AND FROM WHICH TABLE. Three matrices are
-       reachable (WAIS-IV Table 5.1, WMS-IV Tables 4.1 and 4.2) and the two
+       reachable (WAIS-IV Table 5.1, WMS-IV Tables 4.1 and 4.2, and the joint
+       5.1 + 4.1 + 4.12) and the two
        WMS-IV batteries share every measure name against different normative
        samples, so a note naming one table unconditionally would misstate the
        source on two profiles in three. The trial count stays because it is
@@ -37411,7 +37540,9 @@ if (document.readyState === 'loading'){
    to print.
 
    THREE INSTRUMENTS, ONE PER TAB. WAIS-IV (Table 5.1), WMS-IV Adult
-   (Table 4.1) and WMS-IV Older Adult (Table 4.2). The two WMS-IV
+   (Table 4.1) and WMS-IV Older Adult (Table 4.2), plus a fourth tab
+   profiling WAIS-IV with the WMS-IV Adult battery on WMS-IV Table 4.12
+   (see WMS4_WAIS4_CROSS in data.js). The two WMS-IV
    batteries are separate entries rather than one instrument with an age
    switch: they are different normative samples with different measure
    lists and different coefficients, ages 65-69 are normed in both, and
@@ -37530,11 +37661,19 @@ if (document.readyState === 'loading'){
      pair: every process score there is a part, not a rescoring. */
   const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {} };
 
+  /* A JOINT instrument has no composition of its own: it is the union of its
+     parts', which share no keys, so nothing is restated and the two cannot
+     drift apart. The same for aliases. */
+  function profRuleTable(table, id){
+    const inst = PROF_INSTRUMENTS.find(x => x.id === id);
+    if (inst && inst.joint) return Object.assign({}, ...inst.joint.map(p => profRuleTable(table, p)));
+    return table[id] || {};
+  }
   function profComponents(key, seen){
     const inst = profState.instrument;
-    const k = (PROF_ALIAS[inst] || {})[key] || key;
+    const k = profRuleTable(PROF_ALIAS, inst)[key] || key;
     const out = seen || new Set();
-    const parts = (PROF_COMPOSED_OF[inst] || {})[k];
+    const parts = profRuleTable(PROF_COMPOSED_OF, inst)[k];
     if (!parts){ out.add(k); return out; }
     parts.forEach(p => profComponents(p, out));
     return out;
@@ -37624,6 +37763,33 @@ if (document.readyState === 'loading'){
            measure, which reads as "one is not a profile" rather than as an
            omission. */
         { id:'wo-proc', label:'Process scores', keys:['VPAWR'] }
+      ] },
+    /* WAIS-IV AND THE WMS-IV ADULT BATTERY TOGETHER, on WMS-IV Table 4.12,
+       which correlates every Adult-battery measure with the WAIS-IV. Offered
+       only when Score Tables holds scores from both: a joint tab over one
+       instrument would repeat that instrument's own tab.
+
+       It has no group pattern of its own. Each measure is still admitted by
+       its OWN instrument's pattern (`joint` names the parts, and
+       profScoreTableRowsFor reads each part), so an Older Adult score can no
+       more reach this matrix than it can reach the Adult one. Older Adult is
+       not offered: Table 4.12 pools both batteries and has one VMI row, and
+       the two batteries' VMI are different sums. See WMS4_WAIS4_CROSS.
+
+       No process-score level: Table 4.12 has no WAIS-IV process scores, and
+       WMS-IV process scores alone are the WMS-IV tab's own level. */
+    { id:'w4wm4', label:'WAIS-IV + WMS-IV', name:'WAIS-IV and WMS-IV',
+      joint: ['wais4', 'wms4'],
+      composites: ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
+      matrix: () => (typeof WAIS4_WMS4_JOINT !== 'undefined') ? WAIS4_WMS4_JOINT : null,
+      levels: [
+        { id:'wj-mod',  label:'Indices, WMS-IV by modality',
+          keys:['VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI'] },
+        { id:'wj-time', label:'Indices, WMS-IV by delay',
+          keys:['VCI', 'PRI', 'WMI', 'PSI', 'IMI', 'DMI', 'VWMI'] },
+        { id:'wj-sub',  label:'Subtests',
+          keys:['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD', 'LN', 'FW', 'CO', 'CA', 'PCm',
+                'LM1', 'LM2', 'VPA1', 'VPA2', 'DE1', 'DE2', 'VR1', 'VR2', 'SA', 'SSP'] }
       ] }
   ];
   function profInstrument(){
@@ -37833,6 +37999,13 @@ if (document.readyState === 'loading'){
      "DE I Content") for exactly this reason: the name is the join. */
   function profScoreTableRowsFor(inst){
     if (typeof batteryRows === 'undefined' || !Array.isArray(batteryRows)) return {};
+    /* A joint instrument reads each part through that part's own filter,
+       and holds nothing unless every part holds something. */
+    if (inst.joint){
+      const parts = inst.joint.map(id => profScoreTableRowsFor(PROF_INSTRUMENTS.find(x => x.id === id)));
+      if (parts.some(p => !Object.keys(p).length)) return {};
+      return Object.assign({}, ...parts);
+    }
     const M = inst.matrix ? inst.matrix() : null;
     if (!M) return {};
     const byName = {};
@@ -38200,7 +38373,7 @@ if (document.readyState === 'loading'){
     /* Nothing to profile: the honest state is a pointer at where scores
        live, not an empty set of cards. */
     if (!Object.keys(found).length){
-      const names = [...new Set(PROF_INSTRUMENTS.map(x => x.name))].join(' or ');
+      const names = [...new Set(PROF_INSTRUMENTS.filter(x => !x.joint).map(x => x.name))].join(' or ');
       /* The purpose line leads: this is the first thing a clinician new to the
          page reads, and "no scores yet" alone does not say what the page is for. */
       out.innerHTML = '<div class="prof-empty">'

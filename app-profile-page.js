@@ -26,7 +26,9 @@
    to print.
 
    THREE INSTRUMENTS, ONE PER TAB. WAIS-IV (Table 5.1), WMS-IV Adult
-   (Table 4.1) and WMS-IV Older Adult (Table 4.2). The two WMS-IV
+   (Table 4.1) and WMS-IV Older Adult (Table 4.2), plus a fourth tab
+   profiling WAIS-IV with the WMS-IV Adult battery on WMS-IV Table 4.12
+   (see WMS4_WAIS4_CROSS in data.js). The two WMS-IV
    batteries are separate entries rather than one instrument with an age
    switch: they are different normative samples with different measure
    lists and different coefficients, ages 65-69 are normed in both, and
@@ -145,11 +147,19 @@
      pair: every process score there is a part, not a rescoring. */
   const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {} };
 
+  /* A JOINT instrument has no composition of its own: it is the union of its
+     parts', which share no keys, so nothing is restated and the two cannot
+     drift apart. The same for aliases. */
+  function profRuleTable(table, id){
+    const inst = PROF_INSTRUMENTS.find(x => x.id === id);
+    if (inst && inst.joint) return Object.assign({}, ...inst.joint.map(p => profRuleTable(table, p)));
+    return table[id] || {};
+  }
   function profComponents(key, seen){
     const inst = profState.instrument;
-    const k = (PROF_ALIAS[inst] || {})[key] || key;
+    const k = profRuleTable(PROF_ALIAS, inst)[key] || key;
     const out = seen || new Set();
-    const parts = (PROF_COMPOSED_OF[inst] || {})[k];
+    const parts = profRuleTable(PROF_COMPOSED_OF, inst)[k];
     if (!parts){ out.add(k); return out; }
     parts.forEach(p => profComponents(p, out));
     return out;
@@ -239,6 +249,33 @@
            measure, which reads as "one is not a profile" rather than as an
            omission. */
         { id:'wo-proc', label:'Process scores', keys:['VPAWR'] }
+      ] },
+    /* WAIS-IV AND THE WMS-IV ADULT BATTERY TOGETHER, on WMS-IV Table 4.12,
+       which correlates every Adult-battery measure with the WAIS-IV. Offered
+       only when Score Tables holds scores from both: a joint tab over one
+       instrument would repeat that instrument's own tab.
+
+       It has no group pattern of its own. Each measure is still admitted by
+       its OWN instrument's pattern (`joint` names the parts, and
+       profScoreTableRowsFor reads each part), so an Older Adult score can no
+       more reach this matrix than it can reach the Adult one. Older Adult is
+       not offered: Table 4.12 pools both batteries and has one VMI row, and
+       the two batteries' VMI are different sums. See WMS4_WAIS4_CROSS.
+
+       No process-score level: Table 4.12 has no WAIS-IV process scores, and
+       WMS-IV process scores alone are the WMS-IV tab's own level. */
+    { id:'w4wm4', label:'WAIS-IV + WMS-IV', name:'WAIS-IV and WMS-IV',
+      joint: ['wais4', 'wms4'],
+      composites: ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
+      matrix: () => (typeof WAIS4_WMS4_JOINT !== 'undefined') ? WAIS4_WMS4_JOINT : null,
+      levels: [
+        { id:'wj-mod',  label:'Indices, WMS-IV by modality',
+          keys:['VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI'] },
+        { id:'wj-time', label:'Indices, WMS-IV by delay',
+          keys:['VCI', 'PRI', 'WMI', 'PSI', 'IMI', 'DMI', 'VWMI'] },
+        { id:'wj-sub',  label:'Subtests',
+          keys:['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD', 'LN', 'FW', 'CO', 'CA', 'PCm',
+                'LM1', 'LM2', 'VPA1', 'VPA2', 'DE1', 'DE2', 'VR1', 'VR2', 'SA', 'SSP'] }
       ] }
   ];
   function profInstrument(){
@@ -448,6 +485,13 @@
      "DE I Content") for exactly this reason: the name is the join. */
   function profScoreTableRowsFor(inst){
     if (typeof batteryRows === 'undefined' || !Array.isArray(batteryRows)) return {};
+    /* A joint instrument reads each part through that part's own filter,
+       and holds nothing unless every part holds something. */
+    if (inst.joint){
+      const parts = inst.joint.map(id => profScoreTableRowsFor(PROF_INSTRUMENTS.find(x => x.id === id)));
+      if (parts.some(p => !Object.keys(p).length)) return {};
+      return Object.assign({}, ...parts);
+    }
     const M = inst.matrix ? inst.matrix() : null;
     if (!M) return {};
     const byName = {};
@@ -815,7 +859,7 @@
     /* Nothing to profile: the honest state is a pointer at where scores
        live, not an empty set of cards. */
     if (!Object.keys(found).length){
-      const names = [...new Set(PROF_INSTRUMENTS.map(x => x.name))].join(' or ');
+      const names = [...new Set(PROF_INSTRUMENTS.filter(x => !x.joint).map(x => x.name))].join(' or ');
       /* The purpose line leads: this is the first thing a clinician new to the
          page reads, and "no scores yet" alone does not say what the page is for. */
       out.innerHTML = '<div class="prof-empty">'
