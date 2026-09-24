@@ -10293,6 +10293,20 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#7A5148;
   line-height:1.5;
 }
+/* "Papers": one link per source paper for the measure (PVT_SOURCES), so the
+   data behind a cut-off is one click away. Standalone class names, claimed by
+   no other rule, so nothing in the cascade reaches them. */
+.pvt-papers{
+  display:block;
+  margin-top:5px;
+  color:var(--ds-text-muted);
+  line-height:1.5;
+}
+.pvt-paper-link{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.pvt-paper-link:hover{text-decoration-thickness:2px}
+.pvt-paper-nolink{color:var(--ds-text-muted)}
+.pvt-paper-sep{color:var(--ds-text-faint)}
+.pvt-ref-doi{color:var(--accent);word-break:break-all}
 /* ---------- Rey 15-Item administration overlay ----------
    Mounted on <body> (position:fixed against a transformed ancestor is the
    trap that moved the old age popover), full-viewport, above the drawer. */

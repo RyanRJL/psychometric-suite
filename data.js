@@ -2871,7 +2871,7 @@ const PVT_CVLT3_FC_CUTOFFS = [
     cite: 'Delis et al. (2017), Appendix D: base rates by age band; no cut-off or accuracy pair is published.' },
   { key: 'e15', cut: 15, label: '≤ 15 · a single error (Erdodi et al., 2018)',
     sens: '.56', spec: '.92',
-    cite: 'Erdodi et al. (2018), ACN 33(7), 845–859: mean across seven reference PVTs in 104 adults with TBI. CVLT-II.' },
+    cite: 'Erdodi et al. (2018), ACN 33(7), 845–860: mean across seven reference PVTs in 104 adults with TBI. CVLT-II.' },
   { key: 'e14', cut: 14, label: '≤ 14 · de facto standard (Schwartz et al., 2016)',
     sens: '.50', spec: '.93',
     cite: 'Schwartz et al. (2016), JINS 22(8), 851–858: systematic review, 17 studies, N = 4,432. CVLT-II.' }
@@ -2976,14 +2976,17 @@ const PVT_DKEFS_TRAILS = {
    ========================================================================= */
 const PVT_INSTRUMENTS = {
   ei: {
+    sources: ['silverberg2007', 'shura2018'],
     kind: 'Embedded', derived: 'RBANS', unspecified: true,
     detail: 'Digit Span and List Recognition raw scores.'
   },
   es: {
+    sources: ['novitski2012'],
     kind: 'Embedded', derived: 'RBANS', unspecified: true,
     detail: 'List Recognition, the three recall scores and Digit Span, all raw.'
   },
   rds: {
+    sources: ['greiffenstein1994', 'meyers1998', 'schroeder2012'],
     kind: 'Embedded', derived: 'WAIS-R, WAIS-III and WAIS-IV',
     detail: 'Digit Span, Forward and Backward trials.',
     mismatch: 'Classic Reliable Digit Span is Forward + Backward only. The WAIS-IV and WAIS-5 subtest adds a Sequencing trial, which is NOT included here; sequencing-inclusive variants exist but carry different cut-offs. Record which variant was scored.',
@@ -2992,26 +2995,59 @@ const PVT_INSTRUMENTS = {
     noteMismatch: 'Reliable Digit Span is Forward + Backward only, excluding the WAIS-IV/WAIS-5 Sequencing trial.'
   },
   ds: {
+    sources: ['iverson2003', 'axelrod2006'],
     kind: 'Embedded', derived: 'WAIS-III',
     detail: 'Age-corrected scaled score, Vocabulary − Digit Span, and longest spans.',
     mismatch: 'Both sources are WAIS-III. A WAIS-IV or WAIS-5 age-corrected scaled score includes Sequencing in the composite, so it is not on the identical metric these cut-offs were derived on.',
     noteMismatch: 'The Digit Span cut-offs are WAIS-III; a WAIS-IV/WAIS-5 scaled score includes Sequencing.'
   },
   rey15: {
+    sources: ['boone2002'],
     kind: 'Stand-alone', derived: 'Rey 15-Item with the Boone recognition trial',
     detail: 'Free recall plus the recognition trial Boone et al. added.'
   },
   tomm: {
+    sources: ['tombaugh1996', 'martin2020', 'denning2012'],
     kind: 'Stand-alone', derived: 'TOMM',
     detail: 'Trial 1, Trial 2 and Retention, 50 items each.'
   },
   trails: {
+    sources: ['erdodi2018trails'],
     kind: 'Embedded', derived: 'D-KEFS Trail Making Test',
     detail: 'Age-corrected scaled scores on the five conditions.'
   },
   cvlt3: {
+    sources: ['delis2017', 'erdodi2018fcr', 'schwartz2016'],
     kind: 'Embedded', derived: 'CVLT-3 (base rates) · CVLT-II (cut-offs)',
     detail: 'Forced Choice Recognition total hits and critical items.',
     mismatch: 'The base rates are the CVLT-3 manual’s own. The two selectable cut-offs and their accuracy are CVLT-II figures, applied here because the trial is structurally identical across editions (16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition).'
   }
+};
+
+/* The papers (and manuals) each measure's cut-offs come from, so a clinician
+   can open the data behind a cut-off before choosing it. Each DOI was checked
+   against Crossref (author, title, journal, volume, issue and first page) and
+   resolved at doi.org, 2026-09-24. Manuals have no DOI and are listed without
+   a link. PVT_INSTRUMENTS[tab].sources names these keys; the on-page reference
+   list carries the same DOIs, and check.js holds the two together. */
+const PVT_SOURCES = {
+  axelrod2006:       { label: 'Axelrod et al. (2006)', doi: '10.1080/13854040590967117' },
+  boone2002:         { label: 'Boone et al. (2002)', doi: '10.1076/jcen.24.5.561.1004' },
+  delis2017:         { label: 'Delis et al. (2017), CVLT-3 manual', doi: null },
+  denning2012:       { label: 'Denning (2012)', doi: '10.1093/arclin/acs044' },
+  erdodi2018fcr:     { label: 'Erdodi, Abeare et al. (2018)', doi: '10.1093/acn/acx110' },
+  erdodi2018trails:  { label: 'Erdodi, Hurtubise et al. (2018)', doi: '10.1037/pas0000561' },
+  greiffenstein1994: { label: 'Greiffenstein et al. (1994)', doi: '10.1037/1040-3590.6.3.218' },
+  iverson2003:       { label: 'Iverson & Tulsky (2003)', doi: '10.1093/arclin/18.1.1' },
+  larrabee2014:      { label: 'Larrabee (2014)', doi: '10.1093/arclin/acu019' },
+  martin2020:        { label: 'Martin et al. (2020)', doi: '10.1080/13854046.2019.1637027' },
+  meyers1998:        { label: 'Meyers & Volbrecht (1998)', doi: '10.1177/107319119800500309' },
+  novitski2012:      { label: 'Novitski et al. (2012)', doi: '10.1093/arclin/acr119' },
+  schroeder2012:     { label: 'Schroeder et al. (2012)', doi: '10.1177/1073191111428764' },
+  schwartz2016:      { label: 'Schwartz et al. (2016)', doi: '10.1017/s1355617716000746' },
+  shura2018:         { label: 'Shura et al. (2018)', doi: '10.1007/s11065-018-9377-5' },
+  silverberg2007:    { label: 'Silverberg et al. (2007)', doi: '10.1080/13854040600850958' },
+  slick1999:         { label: 'Slick et al. (1999)', doi: '10.1076/1385-4046(199911)13:04;1-y;ft545' },
+  sweet2021:         { label: 'Sweet et al. (2021)', doi: '10.1080/13854046.2021.1896036' },
+  tombaugh1996:      { label: 'Tombaugh (1996), TOMM manual', doi: null }
 };

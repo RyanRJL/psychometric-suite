@@ -8598,7 +8598,20 @@ function pvtInstrumentLineHtml(tab){
   const i = PVT_INSTRUMENTS[tab];
   if (!i) return '';
   return `<span class="pvt-derived"><span class="pvt-derived-label">Derived on</span> ${i.derived}</span>${
-    i.mismatch ? `<span class="pvt-derived-warn">${i.mismatch}</span>` : ''}`;
+    i.mismatch ? `<span class="pvt-derived-warn">${i.mismatch}</span>` : ''}${pvtPapersHtml(i.sources)}`;
+}
+/* One link per paper the measure's cut-offs come from (PVT_SOURCES), opening
+   in a new tab so the page and its entries stay put. A manual has no DOI and
+   is named without a link. */
+function pvtPapersHtml(keys){
+  const items = (keys || []).map(k => PVT_SOURCES[k]).filter(Boolean).map(s => {
+    const label = escapeHtml(s.label);
+    return s.doi
+      ? `<a class="pvt-paper-link" href="https://doi.org/${encodeURI(s.doi)}" target="_blank" rel="noopener noreferrer">${label}</a>`
+      : `<span class="pvt-paper-nolink">${label}</span>`;
+  });
+  if (!items.length) return '';
+  return `<span class="pvt-papers"><span class="pvt-derived-label">Papers</span> ${items.join('<span class="pvt-paper-sep"> · </span>')}</span>`;
 }
 function renderPvtInstruments(){
   document.querySelectorAll('#validity [data-pvt-derived]').forEach(el => {

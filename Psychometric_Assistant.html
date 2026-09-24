@@ -10325,6 +10325,20 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#7A5148;
   line-height:1.5;
 }
+/* "Papers": one link per source paper for the measure (PVT_SOURCES), so the
+   data behind a cut-off is one click away. Standalone class names, claimed by
+   no other rule, so nothing in the cascade reaches them. */
+.pvt-papers{
+  display:block;
+  margin-top:5px;
+  color:var(--ds-text-muted);
+  line-height:1.5;
+}
+.pvt-paper-link{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.pvt-paper-link:hover{text-decoration-thickness:2px}
+.pvt-paper-nolink{color:var(--ds-text-muted)}
+.pvt-paper-sep{color:var(--ds-text-faint)}
+.pvt-ref-doi{color:var(--accent);word-break:break-all}
 /* ---------- Rey 15-Item administration overlay ----------
    Mounted on <body> (position:fixed against a transformed ancestor is the
    trap that moved the old age popover), full-viewport, above the drawer. */
@@ -18996,24 +19010,24 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
     <details class="pvt-refs">
       <summary>References: Performance Validity</summary>
       <div class="references" id="pvt-references">
-        <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale–Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
-        <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
+        <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale–Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523. <a class="pvt-ref-doi" href="https://doi.org/10.1080/13854040590967117" target="_blank" rel="noopener noreferrer">https://doi.org/10.1080/13854040590967117</a></p>
+        <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573. <a class="pvt-ref-doi" href="https://doi.org/10.1076/jcen.24.5.561.1004" target="_blank" rel="noopener noreferrer">https://doi.org/10.1076/jcen.24.5.561.1004</a></p>
         <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson. [Forced Choice Recognition base rates by age band, Appendix D Tables D.13-D.15; the manual publishes no cut-off for this trial.]</p>
-        <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
-        <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859. [The CVLT-II <span style="white-space:nowrap">&le; 15</span> cut-off and its accuracy across seven reference PVTs.]</p>
-        <p>Erdodi, L. A., Hurtubise, J. L., Charron, C., Dunn, A., Enache, A., McDermott, A., &amp; Hirst, R. B. (2018). The D-KEFS Trails as performance validity tests. <i>Psychological Assessment, 30</i>(8), 1082–1095.</p>
-      <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
-        <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
-        <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
-        <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
-        <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
-        <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</p>
-        <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30.</p>
-        <p>Schwartz, E. S., Erdodi, L., Rodriguez, N., Ghosh, J. J., Curtain, J. R., Flashman, L. A., &amp; Roth, R. M. (2016). CVLT-II Forced Choice Recognition trial as an embedded validity indicator: A systematic review of the evidence. <i>Journal of the International Neuropsychological Society, 22</i>(8), 851&ndash;858. [The CVLT-II <span style="white-space:nowrap">&le; 14</span> cut-off; classification accuracy and the impairment gradient in failure rates.]</p>
-        <p>Shura, R. D., Brearly, T. W., Rowland, J. A., Martindale, S. L., Miskey, H. M., &amp; Duff, K. (2018). RBANS validity indices: A systematic review and meta-analysis. <i>Neuropsychology Review, 28</i>(3), 269–284.</p>
-        <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
-        <p>Slick, D. J., Sherman, E. M. S., &amp; Iverson, G. L. (1999). Diagnostic criteria for malingered neurocognitive dysfunction: Proposed standards for clinical practice and research. <i>The Clinical Neuropsychologist, 13</i>(4), 545–561.</p>
-        <p>Sweet, J. J., Heilbronner, R. L., Morgan, J. E., Larrabee, G. J., Rohling, M. L., Boone, K. B., Kirkwood, M. W., Schroeder, R. W., Suhr, J. A., &amp; Conference Participants. (2021). American Academy of Clinical Neuropsychology (AACN) 2021 consensus statement on validity assessment: Update of the 2009 AACN consensus conference statement on neuropsychological assessment of effort, response bias, and malingering. <i>The Clinical Neuropsychologist, 35</i>(6), 1053–1106.</p>
+        <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432. <a class="pvt-ref-doi" href="https://doi.org/10.1093/arclin/acs044" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/arclin/acs044</a></p>
+        <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;860. <a class="pvt-ref-doi" href="https://doi.org/10.1093/acn/acx110" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/acn/acx110</a> [The CVLT-II <span style="white-space:nowrap">&le; 15</span> cut-off and its accuracy across seven reference PVTs.]</p>
+        <p>Erdodi, L. A., Hurtubise, J. L., Charron, C., Dunn, A., Enache, A., McDermott, A., &amp; Hirst, R. B. (2018). The D-KEFS Trails as performance validity tests. <i>Psychological Assessment, 30</i>(8), 1082–1095. <a class="pvt-ref-doi" href="https://doi.org/10.1037/pas0000561" target="_blank" rel="noopener noreferrer">https://doi.org/10.1037/pas0000561</a></p>
+      <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224. <a class="pvt-ref-doi" href="https://doi.org/10.1037/1040-3590.6.3.218" target="_blank" rel="noopener noreferrer">https://doi.org/10.1037/1040-3590.6.3.218</a></p>
+        <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9. <a class="pvt-ref-doi" href="https://doi.org/10.1093/arclin/18.1.1" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/arclin/18.1.1</a></p>
+        <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373. <a class="pvt-ref-doi" href="https://doi.org/10.1093/arclin/acu019" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/arclin/acu019</a></p>
+        <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119. <a class="pvt-ref-doi" href="https://doi.org/10.1080/13854046.2019.1637027" target="_blank" rel="noopener noreferrer">https://doi.org/10.1080/13854046.2019.1637027</a></p>
+        <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307. <a class="pvt-ref-doi" href="https://doi.org/10.1177/107319119800500309" target="_blank" rel="noopener noreferrer">https://doi.org/10.1177/107319119800500309</a></p>
+        <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195. <a class="pvt-ref-doi" href="https://doi.org/10.1093/arclin/acr119" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/arclin/acr119</a></p>
+        <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30. <a class="pvt-ref-doi" href="https://doi.org/10.1177/1073191111428764" target="_blank" rel="noopener noreferrer">https://doi.org/10.1177/1073191111428764</a></p>
+        <p>Schwartz, E. S., Erdodi, L., Rodriguez, N., Ghosh, J. J., Curtain, J. R., Flashman, L. A., &amp; Roth, R. M. (2016). CVLT-II Forced Choice Recognition trial as an embedded validity indicator: A systematic review of the evidence. <i>Journal of the International Neuropsychological Society, 22</i>(8), 851&ndash;858. <a class="pvt-ref-doi" href="https://doi.org/10.1017/s1355617716000746" target="_blank" rel="noopener noreferrer">https://doi.org/10.1017/s1355617716000746</a> [The CVLT-II <span style="white-space:nowrap">&le; 14</span> cut-off; classification accuracy and the impairment gradient in failure rates.]</p>
+        <p>Shura, R. D., Brearly, T. W., Rowland, J. A., Martindale, S. L., Miskey, H. M., &amp; Duff, K. (2018). RBANS validity indices: A systematic review and meta-analysis. <i>Neuropsychology Review, 28</i>(3), 269–284. <a class="pvt-ref-doi" href="https://doi.org/10.1007/s11065-018-9377-5" target="_blank" rel="noopener noreferrer">https://doi.org/10.1007/s11065-018-9377-5</a></p>
+        <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. <a class="pvt-ref-doi" href="https://doi.org/10.1080/13854040600850958" target="_blank" rel="noopener noreferrer">https://doi.org/10.1080/13854040600850958</a></p>
+        <p>Slick, D. J., Sherman, E. M. S., &amp; Iverson, G. L. (1999). Diagnostic criteria for malingered neurocognitive dysfunction: Proposed standards for clinical practice and research. <i>The Clinical Neuropsychologist, 13</i>(4), 545–561. <a class="pvt-ref-doi" href="https://doi.org/10.1076/1385-4046(199911)13:04;1-y;ft545" target="_blank" rel="noopener noreferrer">https://doi.org/10.1076/1385-4046(199911)13:04;1-y;ft545</a></p>
+        <p>Sweet, J. J., Heilbronner, R. L., Morgan, J. E., Larrabee, G. J., Rohling, M. L., Boone, K. B., Kirkwood, M. W., Schroeder, R. W., Suhr, J. A., &amp; Conference Participants. (2021). American Academy of Clinical Neuropsychology (AACN) 2021 consensus statement on validity assessment: Update of the 2009 AACN consensus conference statement on neuropsychological assessment of effort, response bias, and malingering. <i>The Clinical Neuropsychologist, 35</i>(6), 1053–1106. <a class="pvt-ref-doi" href="https://doi.org/10.1080/13854046.2021.1896036" target="_blank" rel="noopener noreferrer">https://doi.org/10.1080/13854046.2021.1896036</a></p>
         <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
       </div>
     </details>
@@ -23163,7 +23177,7 @@ const PVT_CVLT3_FC_CUTOFFS = [
     cite: 'Delis et al. (2017), Appendix D: base rates by age band; no cut-off or accuracy pair is published.' },
   { key: 'e15', cut: 15, label: '≤ 15 · a single error (Erdodi et al., 2018)',
     sens: '.56', spec: '.92',
-    cite: 'Erdodi et al. (2018), ACN 33(7), 845–859: mean across seven reference PVTs in 104 adults with TBI. CVLT-II.' },
+    cite: 'Erdodi et al. (2018), ACN 33(7), 845–860: mean across seven reference PVTs in 104 adults with TBI. CVLT-II.' },
   { key: 'e14', cut: 14, label: '≤ 14 · de facto standard (Schwartz et al., 2016)',
     sens: '.50', spec: '.93',
     cite: 'Schwartz et al. (2016), JINS 22(8), 851–858: systematic review, 17 studies, N = 4,432. CVLT-II.' }
@@ -23268,14 +23282,17 @@ const PVT_DKEFS_TRAILS = {
    ========================================================================= */
 const PVT_INSTRUMENTS = {
   ei: {
+    sources: ['silverberg2007', 'shura2018'],
     kind: 'Embedded', derived: 'RBANS', unspecified: true,
     detail: 'Digit Span and List Recognition raw scores.'
   },
   es: {
+    sources: ['novitski2012'],
     kind: 'Embedded', derived: 'RBANS', unspecified: true,
     detail: 'List Recognition, the three recall scores and Digit Span, all raw.'
   },
   rds: {
+    sources: ['greiffenstein1994', 'meyers1998', 'schroeder2012'],
     kind: 'Embedded', derived: 'WAIS-R, WAIS-III and WAIS-IV',
     detail: 'Digit Span, Forward and Backward trials.',
     mismatch: 'Classic Reliable Digit Span is Forward + Backward only. The WAIS-IV and WAIS-5 subtest adds a Sequencing trial, which is NOT included here; sequencing-inclusive variants exist but carry different cut-offs. Record which variant was scored.',
@@ -23284,28 +23301,61 @@ const PVT_INSTRUMENTS = {
     noteMismatch: 'Reliable Digit Span is Forward + Backward only, excluding the WAIS-IV/WAIS-5 Sequencing trial.'
   },
   ds: {
+    sources: ['iverson2003', 'axelrod2006'],
     kind: 'Embedded', derived: 'WAIS-III',
     detail: 'Age-corrected scaled score, Vocabulary − Digit Span, and longest spans.',
     mismatch: 'Both sources are WAIS-III. A WAIS-IV or WAIS-5 age-corrected scaled score includes Sequencing in the composite, so it is not on the identical metric these cut-offs were derived on.',
     noteMismatch: 'The Digit Span cut-offs are WAIS-III; a WAIS-IV/WAIS-5 scaled score includes Sequencing.'
   },
   rey15: {
+    sources: ['boone2002'],
     kind: 'Stand-alone', derived: 'Rey 15-Item with the Boone recognition trial',
     detail: 'Free recall plus the recognition trial Boone et al. added.'
   },
   tomm: {
+    sources: ['tombaugh1996', 'martin2020', 'denning2012'],
     kind: 'Stand-alone', derived: 'TOMM',
     detail: 'Trial 1, Trial 2 and Retention, 50 items each.'
   },
   trails: {
+    sources: ['erdodi2018trails'],
     kind: 'Embedded', derived: 'D-KEFS Trail Making Test',
     detail: 'Age-corrected scaled scores on the five conditions.'
   },
   cvlt3: {
+    sources: ['delis2017', 'erdodi2018fcr', 'schwartz2016'],
     kind: 'Embedded', derived: 'CVLT-3 (base rates) · CVLT-II (cut-offs)',
     detail: 'Forced Choice Recognition total hits and critical items.',
     mismatch: 'The base rates are the CVLT-3 manual’s own. The two selectable cut-offs and their accuracy are CVLT-II figures, applied here because the trial is structurally identical across editions (16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition).'
   }
+};
+
+/* The papers (and manuals) each measure's cut-offs come from, so a clinician
+   can open the data behind a cut-off before choosing it. Each DOI was checked
+   against Crossref (author, title, journal, volume, issue and first page) and
+   resolved at doi.org, 2026-09-24. Manuals have no DOI and are listed without
+   a link. PVT_INSTRUMENTS[tab].sources names these keys; the on-page reference
+   list carries the same DOIs, and check.js holds the two together. */
+const PVT_SOURCES = {
+  axelrod2006:       { label: 'Axelrod et al. (2006)', doi: '10.1080/13854040590967117' },
+  boone2002:         { label: 'Boone et al. (2002)', doi: '10.1076/jcen.24.5.561.1004' },
+  delis2017:         { label: 'Delis et al. (2017), CVLT-3 manual', doi: null },
+  denning2012:       { label: 'Denning (2012)', doi: '10.1093/arclin/acs044' },
+  erdodi2018fcr:     { label: 'Erdodi, Abeare et al. (2018)', doi: '10.1093/acn/acx110' },
+  erdodi2018trails:  { label: 'Erdodi, Hurtubise et al. (2018)', doi: '10.1037/pas0000561' },
+  greiffenstein1994: { label: 'Greiffenstein et al. (1994)', doi: '10.1037/1040-3590.6.3.218' },
+  iverson2003:       { label: 'Iverson & Tulsky (2003)', doi: '10.1093/arclin/18.1.1' },
+  larrabee2014:      { label: 'Larrabee (2014)', doi: '10.1093/arclin/acu019' },
+  martin2020:        { label: 'Martin et al. (2020)', doi: '10.1080/13854046.2019.1637027' },
+  meyers1998:        { label: 'Meyers & Volbrecht (1998)', doi: '10.1177/107319119800500309' },
+  novitski2012:      { label: 'Novitski et al. (2012)', doi: '10.1093/arclin/acr119' },
+  schroeder2012:     { label: 'Schroeder et al. (2012)', doi: '10.1177/1073191111428764' },
+  schwartz2016:      { label: 'Schwartz et al. (2016)', doi: '10.1017/s1355617716000746' },
+  shura2018:         { label: 'Shura et al. (2018)', doi: '10.1007/s11065-018-9377-5' },
+  silverberg2007:    { label: 'Silverberg et al. (2007)', doi: '10.1080/13854040600850958' },
+  slick1999:         { label: 'Slick et al. (1999)', doi: '10.1076/1385-4046(199911)13:04;1-y;ft545' },
+  sweet2021:         { label: 'Sweet et al. (2021)', doi: '10.1080/13854046.2021.1896036' },
+  tombaugh1996:      { label: 'Tombaugh (1996), TOMM manual', doi: null }
 };
 </script>
 <script data-inlined-from="app.js">
@@ -31909,7 +31959,20 @@ function pvtInstrumentLineHtml(tab){
   const i = PVT_INSTRUMENTS[tab];
   if (!i) return '';
   return `<span class="pvt-derived"><span class="pvt-derived-label">Derived on</span> ${i.derived}</span>${
-    i.mismatch ? `<span class="pvt-derived-warn">${i.mismatch}</span>` : ''}`;
+    i.mismatch ? `<span class="pvt-derived-warn">${i.mismatch}</span>` : ''}${pvtPapersHtml(i.sources)}`;
+}
+/* One link per paper the measure's cut-offs come from (PVT_SOURCES), opening
+   in a new tab so the page and its entries stay put. A manual has no DOI and
+   is named without a link. */
+function pvtPapersHtml(keys){
+  const items = (keys || []).map(k => PVT_SOURCES[k]).filter(Boolean).map(s => {
+    const label = escapeHtml(s.label);
+    return s.doi
+      ? `<a class="pvt-paper-link" href="https://doi.org/${encodeURI(s.doi)}" target="_blank" rel="noopener noreferrer">${label}</a>`
+      : `<span class="pvt-paper-nolink">${label}</span>`;
+  });
+  if (!items.length) return '';
+  return `<span class="pvt-papers"><span class="pvt-derived-label">Papers</span> ${items.join('<span class="pvt-paper-sep"> · </span>')}</span>`;
 }
 function renderPvtInstruments(){
   document.querySelectorAll('#validity [data-pvt-derived]').forEach(el => {

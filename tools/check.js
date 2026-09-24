@@ -52,7 +52,7 @@ vm.runInContext(
     ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
     ' REY15_RECALL_ROWS, REY15_RECOGNITION_ROWS, REY15_SHAPES,' +
     ' PVT_CVLT3_BANDS, PVT_CVLT3_FC_HITS, PVT_CVLT3_CRITICAL, PVT_CVLT3_CRITERIA,' +
-    ' PVT_CVLT3_FC_CUTOFFS, PVT_CVLT3_ERDODI_T6, PVT_INSTRUMENTS, PVT_DKEFS_TRAILS,' +
+    ' PVT_CVLT3_FC_CUTOFFS, PVT_CVLT3_ERDODI_T6, PVT_INSTRUMENTS, PVT_DKEFS_TRAILS, PVT_SOURCES,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -11146,6 +11146,36 @@ check('the Trails indicator is decided by the chosen threshold, on all five cond
   /* No summary row, so nothing counted or exported, until all five are in. */
   const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
   if (!/!tr\.partial[\s\S]{0,300}group: 'trails'/.test(rowsFn)) bad.push('the summary row is no longer withheld until all five are entered');
+  return bad.length === 0 || bad.join('; ');
+});
+
+heading('61. Validity: source papers linked from every measure');
+
+/* Each measure links the papers its cut-offs come from, and the reference
+   list prints the same DOIs. The DOIs were checked against Crossref and
+   doi.org when stored; this holds the three places together so a DOI edited
+   in one cannot quietly disagree with another. */
+check('every measure links its source papers, and the reference list carries the same DOIs', () => {
+  const S = sandbox.__EXPORTS.PVT_SOURCES, I = sandbox.__EXPORTS.PVT_INSTRUMENTS, bad = [];
+  Object.entries(S).forEach(([k, s]) => {
+    if (s.doi !== null && !/^10\.\d{4,9}\/\S+$/.test(s.doi)) bad.push(k + ' has a malformed DOI');
+  });
+  Object.entries(I).forEach(([t, i]) => {
+    if (!Array.isArray(i.sources) || !i.sources.length) bad.push(t + ' names no source papers');
+    (i.sources || []).forEach(k => { if (!S[k]) bad.push(t + ' names unknown source ' + k); });
+    if (!(i.sources || []).some(k => S[k] && S[k].doi)) bad.push(t + ' has no linked paper');
+  });
+  const refs = (HTML_SRC.match(/id="pvt-references">([\s\S]*?)<\/div>/) || ['', ''])[1];
+  const listed = [...refs.matchAll(/href="https:\/\/doi\.org\/([^"]+)"/g)].map(m => m[1]);
+  const stored = Object.values(S).filter(s => s.doi).map(s => s.doi);
+  stored.forEach(d => { if (!listed.includes(d)) bad.push('reference list lacks ' + d); });
+  listed.forEach(d => { if (!stored.includes(d)) bad.push('reference list DOI ' + d + ' is not in PVT_SOURCES'); });
+  const refPs = (refs.match(/<p>/g) || []).length, manuals = Object.values(S).filter(s => !s.doi).length;
+  if (refPs !== listed.length + manuals) bad.push(refPs + ' references but ' + listed.length + ' DOIs and ' + manuals + ' manuals');
+  /* The panel line is built by the shipped function, not restated. */
+  const fn = extractFn(APP_SRC, 'pvtPapersHtml');
+  if (!/https:\/\/doi\.org\//.test(fn) || !/rel="noopener noreferrer"/.test(fn)) bad.push('pvtPapersHtml no longer links to doi.org in a new tab');
+  if (!/pvtPapersHtml\(i\.sources\)/.test(extractFn(APP_SRC, 'pvtInstrumentLineHtml'))) bad.push('the measure panels no longer render their papers');
   return bad.length === 0 || bad.join('; ');
 });
 
