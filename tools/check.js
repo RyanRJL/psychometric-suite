@@ -7517,7 +7517,7 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
   if (!/'pvt':\s*ctx\s*=>/.test(APP_SRC)) bad.push('APA_NOTES has no pvt entry');
   /* The load-bearing sentences of the note. */
   if (!/not a determination of invalidity/.test(APP_SRC)) bad.push('the note no longer defines Fail as a cut-off comparison');
-  if (!/at least two independent indicators \(Larrabee, 2014\)/.test(APP_SRC)) bad.push('the note lost the aggregation rule');
+  if (!/at least two independent indicators \(Larrabee, 2014a\)/.test(APP_SRC)) bad.push('the note lost the aggregation rule');
   if (!/Specificity falls in dementia and severe impairment/.test(APP_SRC)) bad.push('the note lost the dementia caveat');
   /* Every clause is conditional on what the table holds, so a one-measure
      export does not carry six citations. */
@@ -7575,11 +7575,11 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
      figure the statement reports from Loring et al. (2016). */
   {
     const sum = extractFn(APP_SRC, 'renderPvtSummary');
-    if (!/up to 7 to 9 measures are given \(Larrabee, 2014; Sweet et al\., 2021\)/.test(sum)) bad.push('the verdict lost the AACN range for the two-failure rule');
+    if (!/up to 7 to 9 measures are given \(Larrabee, 2014a; Sweet et al\., 2021\)/.test(sum)) bad.push('the verdict lost the AACN range for the two-failure rule');
     if (!/dementia[\s\S]*severe TBI with prolonged coma[\s\S]*24-hour supervision \(Sweet et al\., 2021\)/.test(sum)) bad.push('the verdict lost the groups in which credible patients fail two');
     /* The threshold is the consensus statement's as well as Larrabee's, so
        every place that states it names both (owner correction, 2026-09). */
-    if (!/pvt-verdict-rule[^\n]*\(Larrabee, 2014; Sweet et al\., 2021\)/.test(sum)) bad.push('the threshold beside the count no longer cites the AACN consensus statement');
+    if (!/pvt-verdict-rule[^\n]*\(Larrabee, 2014a; Sweet et al\., 2021\)/.test(sum)) bad.push('the threshold beside the count no longer cites the AACN consensus statement');
     if (!/AACN consensus statement supports the same threshold when up to 7 to 9 measures are given \(Sweet et al\., 2021\)/.test(HTML_SRC)) bad.push('the Larrabee card no longer names the AACN consensus statement');
     if (!/RDS &le; 6 gave a 13% false-positive rate \(Loring et al\., 2016, as reported by Sweet et al\., 2021\)/.test(HTML_SRC)) bad.push('the RDS caution lost the early-AD false-positive rate');
     if ((HTML_SRC.match(/Sweet, J\. J\., Heilbronner, R\. L\.[^<]*\(2021\)/g) || []).length < 2) bad.push('Sweet et al. (2021) is cited but missing from a references list');
@@ -8018,7 +8018,7 @@ check('the page layout: no restated menu, explainers full width, references list
   if (!/PVT_INDICATOR_GROUPS\.map\(g =>[\s\S]*pvt-group-row/.test(sum)) bad.push('the scores table is no longer grouped by independent indicator');
   if (!/wrap\.hidden = rows\.length === 0/.test(sum)) bad.push('the empty scores card is shown again before anything is scored');
   const refs = (vHtml.match(/<div class="references" id="pvt-references">([\s\S]*?)<\/div>/) || [])[1] || '';
-  const heads = [...refs.matchAll(/<p>([^<(]+)\(/g)].map(m => m[1].trim());
+  const heads = [...refs.matchAll(/<p>([^<(]+\(\d{4}[a-z]?\))/g)].map(m => m[1].trim());
   if (heads.length < 10) bad.push('the reference list could not be read');
   const seen = new Set();
   heads.forEach(h => { if (seen.has(h)) bad.push('reference listed twice: ' + h); seen.add(h); });
@@ -11187,7 +11187,7 @@ check('every measure links its source papers, and the reference list carries the
   if (refPs !== listed.length + manuals) bad.push(refPs + ' references but ' + listed.length + ' DOIs and ' + manuals + ' manuals');
   /* The Summary's aggregation panel links its sources the same way. */
   const aggKeys = ((HTML_SRC.match(/data-pvt-papers="([^"]+)"/) || ['', ''])[1]).split(' ').filter(Boolean);
-  ['larrabee2014', 'sweet2021', 'slick1999', 'bilder2014'].forEach(k => { if (!aggKeys.includes(k)) bad.push('the Summary no longer links ' + k); });
+  ['larrabee2014', 'sweet2021', 'slick1999', 'bilder2014', 'larrabee2014reply'].forEach(k => { if (!aggKeys.includes(k)) bad.push('the Summary no longer links ' + k); });
   aggKeys.forEach(k => { if (!S[k]) bad.push('the Summary names unknown source ' + k); });
   if (!/data-pvt-papers[\s\S]{0,200}pvtPapersHtml/.test(extractFn(APP_SRC, 'renderPvtInstruments'))) bad.push('renderPvtInstruments no longer fills the Summary papers line');
   /* The panel line is built by the shipped function, not restated. */

@@ -3663,7 +3663,7 @@ const APA_NOTES = {
          on-page references state every measure and source in full. The exported
          note keeps them — the licensed onScreen difference. */
       (ctx.onScreen || !sources.length) ? '' : `Sources: ${sources.join('; ')}.`,
-      '"Fail" = score beyond the published cut-off, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent indicators (Larrabee, 2014).',
+      '"Fail" = score beyond the published cut-off, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent indicators (Larrabee, 2014a).',
       ctx.hasDashes
         ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks a source that publishes a base rate or AUC instead.'
         : 'Sensitivity and specificity are the published values at the applied cut-off.',
@@ -8421,8 +8421,8 @@ function renderPvtSummary(){
          failures when up to 7 to 9 measures are administered" (p. 1091), and
          the credible groups in which multiple failures do occur (pp. 1069,
          1091-1092). This page counts at most six indicators, inside that range. */
-      body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity when up to 7 to 9 measures are given (Larrabee, 2014; Sweet et al., 2021). Credible patients can fail two in dementia (more often as it worsens), severe TBI with prolonged coma, schizophrenia with significant cognitive impairment, sometimes amnestic MCI, and when living with 24-hour supervision (Sweet et al., 2021). Weigh the count against the clinical and neurological picture.'
-        : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).'
+      body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity when up to 7 to 9 measures are given (Larrabee, 2014a; Sweet et al., 2021). Credible patients can fail two in dementia (more often as it worsens), severe TBI with prolonged coma, schizophrenia with significant cognitive impairment, sometimes amnestic MCI, and when living with 24-hour supervision (Sweet et al., 2021). Weigh the count against the clinical and neurological picture.'
+        : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014a).'
         : 'Nothing beyond its cut-off so far.';
     }
     verdict.innerHTML = `<div class="pvt-verdict is-${kind}">
@@ -8436,7 +8436,7 @@ function renderPvtSummary(){
         <div class="pvt-verdict-meta">${c.total} of ${PVT_INDICATOR_GROUPS.length} indicators scored${
           unscored.length && c.total > 0 ? ` &middot; not yet scored: ${unscored.join(', ')}` : ''}</div>
       </div>
-      <div class="pvt-verdict-rule"><strong>≥ 2 independent failures</strong> support probable invalidity (Larrabee, 2014; Sweet et al., 2021)</div>
+      <div class="pvt-verdict-rule"><strong>≥ 2 independent failures</strong> support probable invalidity (Larrabee, 2014a; Sweet et al., 2021)</div>
     </div>`;
   }
 
