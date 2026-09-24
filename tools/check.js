@@ -11143,6 +11143,19 @@ check('the Trails indicator is decided by the chosen threshold, on all five cond
   /* Found in the browser: the select was read but never re-rendered, so the
      accuracy line under it kept the old threshold's figures. */
   if (!/'pvt-trails-threshold'\][\s\S]{0,80}addEventListener\('change', renderPvtAll\)/.test(extractFn(APP_SRC, 'setupPvtPage'))) bad.push('changing the threshold no longer re-renders the panel');
+  /* The threshold table: one row per published threshold, drawn from the
+     stored cells, the selected one marked. Driven over a stub table. */
+  {
+    const tbl = { innerHTML: '' };
+    const c = { PVT_DKEFS_TRAILS: T, document: { getElementById: id => id === 'pvt-trails-thresholds' ? tbl : id === 'pvt-trails-threshold' ? { value: '4' } : null } };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtTrailsRange') + ';' + extractFn(APP_SRC, 'renderPvtTrailsThresholds') + ';renderPvtTrailsThresholds();', c);
+    const body = tbl.innerHTML;
+    if ((body.match(/<tr/g) || []).length !== 4) bad.push('the threshold table should hold a header and three rows');
+    ['.27–.65', '.88–.95', '.09–.60', '.92–.97', '.10–.25', '.95–.98'].forEach(v => { if (!body.includes(v)) bad.push('the threshold table lost ' + v); });
+    if ((body.match(/pvt-row-selected"/g) || []).length !== 1 || !/pvt-row-selected"[^>]*><td>≥ 4 of 5/.test(body)) bad.push('the threshold table does not mark the selected row');
+    if (!/renderPvtTrailsThresholds()/.test(extractFn(APP_SRC, 'renderPvtTrails'))) bad.push('the threshold table is not redrawn with the panel');
+  }
   /* No summary row, so nothing counted or exported, until all five are in. */
   const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
   if (!/!tr\.partial[\s\S]{0,300}group: 'trails'/.test(rowsFn)) bad.push('the summary row is no longer withheld until all five are entered');

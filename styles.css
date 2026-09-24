@@ -10171,6 +10171,9 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-table th:first-child,.pvt-table td:first-child{padding-left:0}
 .pvt-table th:last-child,.pvt-table td:last-child{padding-right:0}
 .pvt-cell-fail{color:var(--ds-primary)!important;font-weight:600}
+/* The threshold in force, in a table of the options (D-KEFS Trails). */
+.pvt-table tr.pvt-row-selected td{background:var(--ds-primary-tint);font-weight:600}
+.pvt-row-selected-tag{margin-left:6px;font-size:11px;font-weight:600;color:var(--ds-primary)}
 /* One row per independent indicator, so "counts as one" shows where the
    results are read. */
 .pvt-table tr.pvt-group-row td{

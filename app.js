@@ -8052,7 +8052,24 @@ function renderPvtDs(){
     : '');
 }
 
+/* The three thresholds side by side, so the choice is read as a trade-off
+   rather than found by switching. Drawn from the same cells the result and
+   the accuracy line use; the selected row is marked. Rendered whatever the
+   scores, since the choice is made before or without them. */
+function renderPvtTrailsThresholds(){
+  const t = document.getElementById('pvt-trails-thresholds');
+  if (!t) return;
+  const P = PVT_DKEFS_TRAILS;
+  const sel = Number(document.getElementById('pvt-trails-threshold')?.value);
+  const cur = P.combined[sel] ? sel : P.defaultThreshold;
+  const n = P.conditions.length;
+  t.innerHTML = '<thead><tr><th>Indicator fails when</th><th class="num">Sensitivity</th><th class="num">Specificity</th></tr></thead><tbody>'
+    + Object.keys(P.combined).map(k => `<tr${Number(k) === cur ? ' class="pvt-row-selected" aria-current="true"' : ''}><td>${Number(k) === n ? `all ${n}` : `≥ ${k} of ${n}`}${Number(k) === cur ? ' <span class="pvt-row-selected-tag">selected</span>' : ''}</td><td class="num">${pvtTrailsRange(P.combined[k].sens)}</td><td class="num">${pvtTrailsRange(P.combined[k].spec)}</td></tr>`).join('')
+    + '</tbody>';
+}
+
 function renderPvtTrails(){
+  renderPvtTrailsThresholds();
   const out = document.getElementById('pvt-trails-result');
   if (!out) return;
   const s = getPvtTrails();
