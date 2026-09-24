@@ -6121,8 +6121,7 @@ const PRE_TAB_LABELS = {
 };
 
 function switchPreTab(tabId){
-  // Scope to the pre-tabs strip — the topnav dropdown shares data-pre-tab
-  // attribute names and would otherwise steal the .active class.
+  // Scope to the pre-tabs strip.
   document.querySelectorAll('#premorbid .pre-tabs .tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.pre-tab-content').forEach(c => c.classList.remove('active'));
   const tabBtn = document.querySelector(`#premorbid .pre-tabs .tab[data-pre-tab="${tabId}"]`);
@@ -6192,8 +6191,7 @@ function setupPreTabs(){
   // Initialise on "estimates" — Inputs is now an always-visible aside in the
   // restructured layout, so its tab is hidden and shouldn't be the default.
   // Set active classes directly (avoiding switchPreTab's scroll behaviour
-  // which can fire before the section is visible). Scope to .pre-tabs because
-  // the topnav dropdown shares the data-pre-tab attribute.
+  // which can fire before the section is visible).
   document.querySelectorAll('#premorbid .pre-tabs .tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.pre-tab-content').forEach(c => c.classList.remove('active'));
   const initBtn = document.querySelector('#premorbid .pre-tabs .tab[data-pre-tab="estimates"]');

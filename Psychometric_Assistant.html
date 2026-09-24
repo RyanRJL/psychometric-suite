@@ -17473,17 +17473,9 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
       <div class="topbar-page-title" id="topbar-page-title" aria-live="polite">Home</div>
 
       <nav class="topnav" aria-label="Primary navigation">
-        <div class="topnav-group" data-bucket="premorbid">
-          <button type="button" class="topnav-item nav-item" data-target="premorbid" data-bucket="premorbid">
-            <span>Premorbid Estimate</span>
-            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
-          </button>
-          <div class="topnav-dropdown" role="menu">
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="estimates" role="menuitem">Premorbid Estimates</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="predict" role="menuitem">ToPF vs WAIS-IV</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="premorbid" data-pre-tab="opiepredict" role="menuitem">OPIE-4 vs WAIS-IV</button>
-          </div>
-        </div>
+        <button type="button" class="topnav-item nav-item" data-target="premorbid" data-bucket="premorbid">
+          <span>Premorbid Estimate</span>
+        </button>
         <button type="button" class="topnav-item nav-item" data-target="battery" data-bucket="battery">
           <span>Score Tables</span>
         </button>
@@ -29304,8 +29296,7 @@ const PRE_TAB_LABELS = {
 };
 
 function switchPreTab(tabId){
-  // Scope to the pre-tabs strip — the topnav dropdown shares data-pre-tab
-  // attribute names and would otherwise steal the .active class.
+  // Scope to the pre-tabs strip.
   document.querySelectorAll('#premorbid .pre-tabs .tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.pre-tab-content').forEach(c => c.classList.remove('active'));
   const tabBtn = document.querySelector(`#premorbid .pre-tabs .tab[data-pre-tab="${tabId}"]`);
@@ -29375,8 +29366,7 @@ function setupPreTabs(){
   // Initialise on "estimates" — Inputs is now an always-visible aside in the
   // restructured layout, so its tab is hidden and shouldn't be the default.
   // Set active classes directly (avoiding switchPreTab's scroll behaviour
-  // which can fire before the section is visible). Scope to .pre-tabs because
-  // the topnav dropdown shares the data-pre-tab attribute.
+  // which can fire before the section is visible).
   document.querySelectorAll('#premorbid .pre-tabs .tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.pre-tab-content').forEach(c => c.classList.remove('active'));
   const initBtn = document.querySelector('#premorbid .pre-tabs .tab[data-pre-tab="estimates"]');
@@ -40534,20 +40524,6 @@ if (document.readyState === 'loading'){
     document.querySelectorAll('.combo-list.show').forEach(clampComboList);
   });
 
-  // Topnav dropdown shortcuts: items with data-pre-tab="..." should activate
-  // the matching tab inside the Premorbid section after navigation.
-  document.addEventListener('click', e => {
-    const item = e.target.closest('[data-pre-tab][data-target="premorbid"]');
-    if (!item) return;
-    const want = item.dataset.preTab;
-    // Defer so the SPA's section-switch logic has run.
-    setTimeout(() => {
-      const tabBtn = document.querySelector(
-        '#premorbid .pre-tabs [data-pre-tab="' + want + '"]'
-      );
-      if (tabBtn) tabBtn.click();
-    }, 0);
-  }, true);
   if (document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', initPremorbidLayout);
   } else {

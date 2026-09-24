@@ -1117,20 +1117,6 @@
     document.querySelectorAll('.combo-list.show').forEach(clampComboList);
   });
 
-  // Topnav dropdown shortcuts: items with data-pre-tab="..." should activate
-  // the matching tab inside the Premorbid section after navigation.
-  document.addEventListener('click', e => {
-    const item = e.target.closest('[data-pre-tab][data-target="premorbid"]');
-    if (!item) return;
-    const want = item.dataset.preTab;
-    // Defer so the SPA's section-switch logic has run.
-    setTimeout(() => {
-      const tabBtn = document.querySelector(
-        '#premorbid .pre-tabs [data-pre-tab="' + want + '"]'
-      );
-      if (tabBtn) tabBtn.click();
-    }, 0);
-  }, true);
   if (document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', initPremorbidLayout);
   } else {
