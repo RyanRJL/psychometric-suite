@@ -3568,7 +3568,7 @@ const APA_NOTES = {
       : 'A difference or deviation is abnormal when it is larger than the same percentage of healthy people show, in either direction.',
     /* MODELLED RATHER THAN OBSERVED, AND FROM WHICH TABLE. Three matrices are
        reachable (WAIS-IV Table 5.1, WMS-IV Tables 4.1 and 4.2, and the joint
-       5.1 + 4.1 + 4.12, RBANS Update Table 4.1) and the two
+       5.1 + 4.1 + 4.12, RBANS Update Table 4.1, WISC-V Table 5.1) and the two
        WMS-IV batteries share every measure name against different normative
        samples, so a note naming one table unconditionally would misstate the
        source on two profiles in three. The trial count stays because it is

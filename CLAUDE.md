@@ -1673,6 +1673,24 @@ are local (`VSC`, not `VC`, which reads as Vocabulary); index chips use `short`.
   mixes them. §57 pins the gap: **do not "fix" either block to close it.** It was first
   read as a misread subtest block; the owner confirmed the sheet matches the page.
 
+#### WISC-V: Table 5.1 (2026-09)
+
+`WISC5_INTERCORR` (`data.js`) holds WISC-V Technical and Interpretive Manual Table 5.1, all
+ages: 16 subtests, 7 process scores, 11 composites, the full 561-cell lower triangle. The
+tab offers **Primary indices** (5), **Subtests** (16) and **Process scores** (BDn, DSf, DSb,
+DSs, CAr, CAs). FSIQ and the five ancillary indices are kept out: each overlaps the primary
+indices or one another. Block Design Partial is aliased to Block Design, as is No Time Bonus,
+so only one rescoring can be profiled. The footer says each of these.
+
+- **Same Excel layout as RBANS**: lower cells in place, then the row's shaded cells. Each
+  subtest carries exactly one shaded value per composite it belongs to, so they are placed
+  by membership in column order, and all 14 two-subtest checks confirm it (corrected =
+  partner r).
+- **Transcription proof (§58):** composites are sums of scaled scores (Mean row 20 / 70 /
+  60 / 50 / 40), so all 363 composite cells are rebuilt from subtest cells within .01, and
+  all 11 composite SDs within .05. Mutation-tested. Not covered: the 55 cells among IN,
+  CO, PC, CA and the process scores.
+
 #### The note is written for whoever receives the report
 
 **Not for the clinician, and certainly not for the developer.** The exported table may be
@@ -2306,7 +2324,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 430 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 433 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -2319,7 +2337,7 @@ family dropdowns (§33), consent gating on the Change Analysis methods (§34), t
 empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
 tab-close prompt and AACN default (§52), Save / Open session (§53), and the app frame,
 the docked report and the motion scale (§55), and the WAIS-IV/WMS-IV joint profile on
-WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57).
+WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57), and WISC-V Table 5.1 (§58).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

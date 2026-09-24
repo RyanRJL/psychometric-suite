@@ -45,7 +45,7 @@ vm.runInContext(
   fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8') +
     ';globalThis.__EXPORTS = { TOPF_TO_FSIQ, WAIS_COEF, WMS_COEF,' +
     ' OPIE_PRORATED_FSIQ, OPIE_PRORATED_GAI, OPIE_PRORATED_INDEX,' +
-    ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB, WAIS4_INTERCORR, WMS4_INTERCORR, WMS4_WAIS4_CROSS, WAIS4_WMS4_JOINT, RBANS_INTERCORR,' +
+    ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB, WAIS4_INTERCORR, WMS4_INTERCORR, WMS4_WAIS4_CROSS, WAIS4_WMS4_JOINT, RBANS_INTERCORR, WISC5_INTERCORR,' +
     ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_EI_SCREENING_CAUTION, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
@@ -9193,7 +9193,7 @@ function driveProfRules() {
     const i = PROF_SRC.indexOf(marker);
     return PROF_SRC.slice(i, PROF_SRC.indexOf(close, i) + close.length);
   };
-  const mod = new Function('WAIS4_INTERCORR', 'WMS4_INTERCORR', 'WAIS4_WMS4_JOINT', 'RBANS_INTERCORR',
+  const mod = new Function('WAIS4_INTERCORR', 'WMS4_INTERCORR', 'WAIS4_WMS4_JOINT', 'RBANS_INTERCORR', 'WISC5_INTERCORR',
     'const profState = { instrument: null };\n'
     + grab('const PROF_COMPOSED_OF = {', '\n  };') + '\n'
     + grab('const PROF_ALIAS = {', '};') + '\n'
@@ -9204,7 +9204,7 @@ function driveProfRules() {
     + extractFn(PROF_SRC, 'profConflicts') + '\n'
     + 'return { PROF_INSTRUMENTS, PROF_COMPOSED_OF, conflicts: profConflicts,'
     + '         use: id => { profState.instrument = id; } };'
-  )(D.WAIS4_INTERCORR, D.WMS4_INTERCORR, D.WAIS4_WMS4_JOINT, D.RBANS_INTERCORR);
+  )(D.WAIS4_INTERCORR, D.WMS4_INTERCORR, D.WAIS4_WMS4_JOINT, D.RBANS_INTERCORR, D.WISC5_INTERCORR);
   /* Every instrument, its measures and its matrix, in one shape the checks
      below can loop over. */
   mod.each = () => mod.PROF_INSTRUMENTS.map(inst => {
@@ -9268,6 +9268,13 @@ check('no two measures that overlap can be profiled together', () => {
       ['IM', 'LL', 'an index and its own subtest'],
       ['DM', 'FR', 'an index and its own subtest'],
       ['TS', 'CD', 'the Total Scale and a subtest two levels down']
+    ],
+    wisc5: [
+      ['VCI', 'SI', 'an index and its own subtest'],
+      ['FRI', 'QRI', 'two indices sharing Figure Weights'],
+      ['WMI', 'DSb', 'an index and a process score two levels down'],
+      ['BDn', 'BDp', 'two rescorings of one administration'],
+      ['CA', 'CAr', 'a subtest and its own process score']
     ]
   };
   const MAY = {
@@ -9283,7 +9290,8 @@ check('no two measures that overlap can be profiled together', () => {
        are both "working memory" and share nothing, which is the case most
        likely to be blocked by someone reading names rather than members. */
     w4wm4: [['WMI', 'VWMI'], ['VCI', 'AMI'], ['PRI', 'VMI'], ['PSI', 'IMI'], ['DS', 'SA'], ['VC', 'LM1']],
-    rbans: [['IM', 'DM'], ['VSC', 'ATT'], ['LAN', 'DM'], ['LL', 'SR'], ['SM', 'SR'], ['IM', 'SR']]
+    rbans: [['IM', 'DM'], ['VSC', 'ATT'], ['LAN', 'DM'], ['LL', 'SR'], ['SM', 'SR'], ['IM', 'SR']],
+    wisc5: [['VCI', 'VSI'], ['WMI', 'PSI'], ['FRI', 'WMI'], ['IN', 'CO'], ['DSf', 'CAr'], ['PC', 'AR']]
   };
 
   for (const { inst, keys, M } of mod.each()) {
@@ -9362,7 +9370,8 @@ check('every permitted selection is positive definite over the shipped matrix', 
     ['wms4/wm-mod', 'wms4/wm-sub', 'three WMS-IV indices against ten subtests'],
     ['wms4o/wo-mod', 'wms4o/wo-sub', 'two Older Adult indices against seven subtests'],
     ['wais4/w4-indices', 'w4wm4/wj-mod', 'four WAIS-IV Indices against those four plus three WMS-IV'],
-    ['w4wm4/wj-mod', 'w4wm4/wj-sub', 'seven joint indices against twenty-five joint subtests']
+    ['w4wm4/wj-mod', 'w4wm4/wj-sub', 'seven joint indices against twenty-five joint subtests'],
+    ['wisc5/wc-indices', 'wisc5/wc-subtests', 'five WISC-V primary indices against sixteen subtests']
   ];
   for (const [small, big, why] of ORDER) {
     if (one[small] === undefined || one[big] === undefined) { bad.push('a level is missing for ' + why); continue; }
@@ -9395,7 +9404,8 @@ check('each measure is converted on its own metric', () => {
     const MUST = { wais4: ['VCI', 'PRI', 'WMI', 'PSI'], wms4: ['AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
                    wms4o: ['AMI', 'VMI', 'IMI', 'DMI'],
                    w4wm4: ['VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
-                   rbans: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'] };
+                   rbans: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'],
+                   wisc5: ['VCI', 'VSI', 'FRI', 'WMI', 'PSI', 'FSIQ', 'QRI', 'AWMI', 'NVI', 'GAI', 'CPI'] };
     for (const { inst, keys } of mod.each()) {
       for (const c of (MUST[inst.id] || [])) {
         if (!inst.composites.includes(c)) bad.push(inst.id + ': ' + c + ' is not treated as a composite');
@@ -10843,6 +10853,80 @@ check('RBANS admits Form A only, with readable chip labels', () => {
   if (!/M\.short/.test(extractFn(PROF_SRC, 'profShortLabel'))) bad.push('the chip does not use the short labels');
   return bad.length === 0 || bad.join('; ');
 });
+
+heading('58. WISC-V Table 5.1 — the intercorrelations');
+
+/* Every composite is a sum of scaled scores (the Mean row counts them), so
+   every composite cell follows from the subtest cells and every composite SD
+   is 3 x sqrt(sum of r). As received: all 363 cells within .01, all 11 SDs
+   within .05. A misread subtest cell moves a whole row of predictions; a
+   misread composite cell stands alone. Both land far outside .015. */
+const WISC5_MEMBERS = { VCI: ['SI', 'VC'], VSI: ['BD', 'VP'], FRI: ['MR', 'FW'], WMI: ['DS', 'PS'], PSI: ['CD', 'SS'],
+  FSIQ: ['SI', 'VC', 'BD', 'MR', 'FW', 'DS', 'CD'], QRI: ['FW', 'AR'], AWMI: ['DS', 'LN'],
+  NVI: ['BD', 'VP', 'MR', 'FW', 'PS', 'CD'], GAI: ['SI', 'VC', 'BD', 'MR', 'FW'], CPI: ['DS', 'PS', 'CD', 'SS'] };
+check('every WISC-V composite cell and SD is reproduced from the subtest cells', () => {
+  const M = D.WISC5_INTERCORR; if (!M) return 'WISC5_INTERCORR is not defined';
+  const g = (a, b) => (a === b ? 1 : (M.order.indexOf(a) > M.order.indexOf(b) ? M.r[a + '|' + b] : M.r[b + '|' + a]));
+  const cov = (A, B) => { let s = 0; for (const a of A) for (const b of B) s += g(a, b); return s; };
+  const bad = []; let n = 0;
+  for (const k in WISC5_MEMBERS) {
+    const B = WISC5_MEMBERS[k];
+    const sd = 3 * Math.sqrt(cov(B, B));
+    if (Math.abs(sd - M.sd[k]) > 0.05) bad.push(k + ' SD ' + sd.toFixed(2) + ' against printed ' + M.sd[k]);
+    if (M.mean[k] !== 10 * B.length) bad.push(k + ' mean ' + M.mean[k] + ' does not count ' + B.length + ' subtests');
+    for (const x of M.order) {
+      if (x === k) continue;
+      const A = WISC5_MEMBERS[x] || [x];
+      const p = cov(A, B) / Math.sqrt(cov(A, A) * cov(B, B)); n++;
+      if (Math.abs(p - g(x, k)) > 0.015) bad.push(x + ' x ' + k + ' predicts ' + p.toFixed(3) + ', stored ' + g(x, k));
+    }
+  }
+  if (n !== 363) bad.push('expected 363 composite cells, checked ' + n);
+  const k = M.order.length;
+  if (Object.keys(M.r).length !== k * (k - 1) / 2) bad.push('the lower triangle is not complete');
+  for (const c in M.r) if (!(M.r[c] > 0 && M.r[c] < 1)) bad.push(c + ' is not a correlation');
+  return bad.length === 0 || bad.slice(0, 6).join('; ');
+});
+
+/* The shaded cells are placed by membership, and every two-subtest composite
+   proves the placement: removing one member leaves only its partner. And one
+   shaded cell per membership, no more. */
+check('the WISC-V shaded cells are placed by membership and prove it', () => {
+  const M = D.WISC5_INTERCORR; if (!M) return 'WISC5_INTERCORR is not defined';
+  const C = M.rCorrectedToComposite || {}; const bad = [];
+  const g = (a, b) => (M.order.indexOf(a) > M.order.indexOf(b) ? M.r[a + '|' + b] : M.r[b + '|' + a]);
+  let pairs = 0;
+  for (const k in WISC5_MEMBERS) {
+    const B = WISC5_MEMBERS[k];
+    for (const s of B) if (!(s + '|' + k in C)) bad.push(s + ' has no shaded cell against ' + k);
+    if (B.length === 2) for (const [s, o] of [[B[0], B[1]], [B[1], B[0]]]) {
+      pairs++;
+      if (C[s + '|' + k] !== g(s, o)) bad.push(s + ' against ' + k + ' corrected is ' + C[s + '|' + k] + ', partner r is ' + g(s, o));
+    }
+  }
+  const members = Object.values(WISC5_MEMBERS).reduce((t, B) => t + B.length, 0);
+  if (Object.keys(C).length !== members) bad.push(Object.keys(C).length + ' shaded cells for ' + members + ' memberships');
+  if (pairs !== 14) bad.push('expected 14 two-subtest checks, ran ' + pairs);
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The page's composition must be the manual's, pinned above, and the
+   registry must join on normDB's names. */
+check('the WISC-V profile uses the manual composition and Score Tables names', () => {
+  const M = D.WISC5_INTERCORR; if (!M) return 'WISC5_INTERCORR is not defined';
+  let mod; try { mod = driveProfRules(); } catch (e) { return 'could not drive the registry: ' + e.message; }
+  const bad = [];
+  const comp = mod.PROF_COMPOSED_OF.wisc5 || {};
+  for (const k in WISC5_MEMBERS) if (JSON.stringify(comp[k]) !== JSON.stringify(WISC5_MEMBERS[k])) bad.push(k + ' is composed differently on the page');
+  const names = new Set();
+  for (const g of Object.keys(D.normDB)) if (/^WISC-V (Indices|Subtests|Process Scores) · All Ages$/.test(g)) Object.keys(D.normDB[g]).forEach(n => names.add(n));
+  for (const k of M.order) if (!names.has(M.labels[k])) bad.push(k + ' label "' + M.labels[k] + '" is not a Score Tables name');
+  const inst = mod.PROF_INSTRUMENTS.find(x => x.id === 'wisc5');
+  const offered = inst ? inst.levels.flatMap(l => l.keys) : [];
+  for (const k of ['FSIQ', 'QRI', 'AWMI', 'NVI', 'GAI', 'CPI', 'BDp']) if (offered.includes(k)) bad.push(k + ' is offered but overlaps another offered measure');
+  return bad.length === 0 || bad.join('; ');
+});
+
 
 // ---------------------------------------------------------------------------
 // Summary

@@ -572,6 +572,84 @@ const RBANS_INTERCORR = {
   sd:   {'LL':3, 'SM':2.9, 'FC':2.9, 'SF':3, 'DS':3, 'CD':3, 'SR':2.9, 'FR':3, 'IM':15, 'VSC':15, 'ATT':15, 'LAN':15, 'DM':15, 'TS':15}
 };
 
+
+/* ============================================================
+   WISC5_INTERCORR — WISC-V Technical and Interpretive Manual, Table 5.1,
+   "Intercorrelations of Subtest, Process, and Composite Scores for All
+   Ages": 16 subtests, 7 process scores, 11 composites (34 x 34).
+
+   Same note as the other publishers' tables: "uncorrected coefficients
+   appear below the diagonal, and corrected coefficients appear in the
+   shaded area above the diagonal." `r` holds the full lower triangle,
+   561 cells, and only it enters the simulation.
+
+   HOW THE SHEET WAS READ. The Excel extraction puts each row's lower-
+   triangle cells in their own columns, then its shaded cells after them,
+   not in their columns. The count settles the layout: every subtest
+   carries exactly as many shaded values as the composites it belongs to
+   (SI 3, BD 4, FW 5, AR 1, DS 4 ...), and subtests in no composite (IN,
+   CO, PC, CA) carry none. Taken in column order they are placed by
+   membership, and every two-subtest composite confirms it: the corrected
+   value must equal the partner correlation, and it does on all 14 (e.g.
+   FW against QRI .50 = r(FW, AR)). None is used.
+
+   TRANSCRIPTION PROOF. Each composite is a sum of scaled scores (the Mean
+   row says so: VCI 20.0 is two subtests, FSIQ 70.0 seven), so every
+   composite cell follows from the subtest cells: all 363 reproduce within
+   .01, and all 11 composite SDs (3 x sqrt(sum of r)) match the printed row
+   to within .05. check.js §58 re-runs it. What it cannot see: the 55 cells
+   among IN, CO, PC, CA and the seven process scores, none of which is a
+   member of any composite.
+
+   `labels` are normDB's own names, which is the join to Score Tables.
+   Means and SDs are the manual's own row and are unused.
+   ============================================================ */
+const WISC5_INTERCORR = {
+  source: 'WISC-V Technical and Interpretive Manual, Table 5.1: Intercorrelations of Subtest, Process, and Composite Scores for All Ages',
+  citation: 'WISC-V Technical and Interpretive Manual, Table 5.1',
+  order: ['SI', 'VC', 'IN', 'CO', 'BD', 'VP', 'MR', 'FW', 'PC', 'AR', 'DS', 'PS', 'LN', 'CD', 'SS', 'CA', 'BDn', 'BDp', 'DSf', 'DSb', 'DSs', 'CAr', 'CAs', 'VCI', 'VSI', 'FRI', 'WMI', 'PSI', 'FSIQ', 'QRI', 'AWMI', 'NVI', 'GAI', 'CPI'],
+  labels: {'SI': 'Similarities', 'VC': 'Vocabulary', 'IN': 'Information', 'CO': 'Comprehension', 'BD': 'Block Design', 'VP': 'Visual Puzzles', 'MR': 'Matrix Reasoning', 'FW': 'Figure Weights', 'PC': 'Picture Concepts', 'AR': 'Arithmetic', 'DS': 'Digit Span', 'PS': 'Picture Span', 'LN': 'Letter-Number Sequencing', 'CD': 'Coding', 'SS': 'Symbol Search', 'CA': 'Cancellation', 'BDn': 'Block Design No Time Bonus', 'BDp': 'Block Design Partial', 'DSf': 'Digit Span Forward', 'DSb': 'Digit Span Backward', 'DSs': 'Digit Span Sequencing', 'CAr': 'Cancellation Random', 'CAs': 'Cancellation Structured', 'VCI': 'Verbal Comprehension Index', 'VSI': 'Visuospatial Index', 'FRI': 'Fluid Reasoning Index', 'WMI': 'Working Memory Index', 'PSI': 'Processing Speed Index', 'FSIQ': 'Full Scale IQ', 'QRI': 'Quantitative Reasoning Index', 'AWMI': 'Auditory Working Memory Index', 'NVI': 'Nonverbal Index', 'GAI': 'General Ability Index', 'CPI': 'Cognitive Proficiency Index'},
+  restrictedTo16_69: [],
+  r: {
+    'VC|SI':0.68,
+    'IN|SI':0.65, 'IN|VC':0.71,
+    'CO|SI':0.59, 'CO|VC':0.6, 'CO|IN':0.56,
+    'BD|SI':0.46, 'BD|VC':0.47, 'BD|IN':0.47, 'BD|CO':0.38,
+    'VP|SI':0.48, 'VP|VC':0.51, 'VP|IN':0.48, 'VP|CO':0.4, 'VP|BD':0.6,
+    'MR|SI':0.45, 'MR|VC':0.45, 'MR|IN':0.45, 'MR|CO':0.39, 'MR|BD':0.47, 'MR|VP':0.47,
+    'FW|SI':0.46, 'FW|VC':0.49, 'FW|IN':0.48, 'FW|CO':0.38, 'FW|BD':0.47, 'FW|VP':0.5, 'FW|MR':0.47,
+    'PC|SI':0.39, 'PC|VC':0.42, 'PC|IN':0.4, 'PC|CO':0.35, 'PC|BD':0.34, 'PC|VP':0.39, 'PC|MR':0.35, 'PC|FW':0.33,
+    'AR|SI':0.54, 'AR|VC':0.53, 'AR|IN':0.55, 'AR|CO':0.46, 'AR|BD':0.46, 'AR|VP':0.46, 'AR|MR':0.45, 'AR|FW':0.5, 'AR|PC':0.37,
+    'DS|SI':0.47, 'DS|VC':0.46, 'DS|IN':0.46, 'DS|CO':0.42, 'DS|BD':0.42, 'DS|VP':0.42, 'DS|MR':0.44, 'DS|FW':0.43, 'DS|PC':0.34, 'DS|AR':0.55,
+    'PS|SI':0.39, 'PS|VC':0.38, 'PS|IN':0.36, 'PS|CO':0.36, 'PS|BD':0.35, 'PS|VP':0.36, 'PS|MR':0.38, 'PS|FW':0.35, 'PS|PC':0.3, 'PS|AR':0.43, 'PS|DS':0.51,
+    'LN|SI':0.48, 'LN|VC':0.49, 'LN|IN':0.47, 'LN|CO':0.43, 'LN|BD':0.38, 'LN|VP':0.39, 'LN|MR':0.43, 'LN|FW':0.4, 'LN|PC':0.33, 'LN|AR':0.54, 'LN|DS':0.65, 'LN|PS':0.49,
+    'CD|SI':0.23, 'CD|VC':0.21, 'CD|IN':0.2, 'CD|CO':0.24, 'CD|BD':0.31, 'CD|VP':0.2, 'CD|MR':0.24, 'CD|FW':0.19, 'CD|PC':0.19, 'CD|AR':0.31, 'CD|DS':0.28, 'CD|PS':0.25, 'CD|LN':0.29,
+    'SS|SI':0.28, 'SS|VC':0.25, 'SS|IN':0.29, 'SS|CO':0.26, 'SS|BD':0.34, 'SS|VP':0.28, 'SS|MR':0.29, 'SS|FW':0.23, 'SS|PC':0.23, 'SS|AR':0.32, 'SS|DS':0.32, 'SS|PS':0.27, 'SS|LN':0.28, 'SS|CD':0.58,
+    'CA|SI':0.11, 'CA|VC':0.1, 'CA|IN':0.13, 'CA|CO':0.14, 'CA|BD':0.19, 'CA|VP':0.13, 'CA|MR':0.13, 'CA|FW':0.11, 'CA|PC':0.11, 'CA|AR':0.15, 'CA|DS':0.11, 'CA|PS':0.09, 'CA|LN':0.11, 'CA|CD':0.3, 'CA|SS':0.33,
+    'BDn|SI':0.46, 'BDn|VC':0.46, 'BDn|IN':0.46, 'BDn|CO':0.37, 'BDn|BD':0.98, 'BDn|VP':0.58, 'BDn|MR':0.46, 'BDn|FW':0.45, 'BDn|PC':0.34, 'BDn|AR':0.45, 'BDn|DS':0.41, 'BDn|PS':0.34, 'BDn|LN':0.37, 'BDn|CD':0.29, 'BDn|SS':0.33, 'BDn|CA':0.19,
+    'BDp|SI':0.43, 'BDp|VC':0.45, 'BDp|IN':0.44, 'BDp|CO':0.36, 'BDp|BD':0.91, 'BDp|VP':0.59, 'BDp|MR':0.45, 'BDp|FW':0.46, 'BDp|PC':0.33, 'BDp|AR':0.45, 'BDp|DS':0.4, 'BDp|PS':0.33, 'BDp|LN':0.37, 'BDp|CD':0.3, 'BDp|SS':0.33, 'BDp|CA':0.19, 'BDp|BDn':0.91,
+    'DSf|SI':0.34, 'DSf|VC':0.34, 'DSf|IN':0.34, 'DSf|CO':0.29, 'DSf|BD':0.31, 'DSf|VP':0.27, 'DSf|MR':0.31, 'DSf|FW':0.28, 'DSf|PC':0.2, 'DSf|AR':0.39, 'DSf|DS':0.75, 'DSf|PS':0.36, 'DSf|LN':0.44, 'DSf|CD':0.18, 'DSf|SS':0.21, 'DSf|CA':0.08, 'DSf|BDn':0.3, 'DSf|BDp':0.3,
+    'DSb|SI':0.36, 'DSb|VC':0.34, 'DSb|IN':0.32, 'DSb|CO':0.31, 'DSb|BD':0.32, 'DSb|VP':0.33, 'DSb|MR':0.36, 'DSb|FW':0.34, 'DSb|PC':0.28, 'DSb|AR':0.43, 'DSb|DS':0.8, 'DSb|PS':0.42, 'DSb|LN':0.5, 'DSb|CD':0.23, 'DSb|SS':0.24, 'DSb|CA':0.07, 'DSb|BDn':0.31, 'DSb|BDp':0.31, 'DSb|DSf':0.42,
+    'DSs|SI':0.42, 'DSs|VC':0.44, 'DSs|IN':0.42, 'DSs|CO':0.4, 'DSs|BD':0.38, 'DSs|VP':0.4, 'DSs|MR':0.39, 'DSs|FW':0.4, 'DSs|PC':0.31, 'DSs|AR':0.49, 'DSs|DS':0.8, 'DSs|PS':0.44, 'DSs|LN':0.6, 'DSs|CD':0.26, 'DSs|SS':0.3, 'DSs|CA':0.12, 'DSs|BDn':0.37, 'DSs|BDp':0.36, 'DSs|DSf':0.43, 'DSs|DSb':0.48,
+    'CAr|SI':0.1, 'CAr|VC':0.09, 'CAr|IN':0.11, 'CAr|CO':0.11, 'CAr|BD':0.16, 'CAr|VP':0.1, 'CAr|MR':0.11, 'CAr|FW':0.09, 'CAr|PC':0.09, 'CAr|AR':0.14, 'CAr|DS':0.1, 'CAr|PS':0.07, 'CAr|LN':0.08, 'CAr|CD':0.27, 'CAr|SS':0.28, 'CAr|CA':0.93, 'CAr|BDn':0.15, 'CAr|BDp':0.15, 'CAr|DSf':0.08, 'CAr|DSb':0.06, 'CAr|DSs':0.09,
+    'CAs|SI':0.11, 'CAs|VC':0.11, 'CAs|IN':0.14, 'CAs|CO':0.15, 'CAs|BD':0.21, 'CAs|VP':0.14, 'CAs|MR':0.15, 'CAs|FW':0.12, 'CAs|PC':0.12, 'CAs|AR':0.15, 'CAs|DS':0.12, 'CAs|PS':0.11, 'CAs|LN':0.14, 'CAs|CD':0.3, 'CAs|SS':0.34, 'CAs|CA':0.92, 'CAs|BDn':0.2, 'CAs|BDp':0.2, 'CAs|DSf':0.08, 'CAs|DSb':0.08, 'CAs|DSs':0.12, 'CAs|CAr':0.72,
+    'VCI|SI':0.92, 'VCI|VC':0.92, 'VCI|IN':0.74, 'VCI|CO':0.65, 'VCI|BD':0.51, 'VCI|VP':0.54, 'VCI|MR':0.49, 'VCI|FW':0.52, 'VCI|PC':0.44, 'VCI|AR':0.58, 'VCI|DS':0.51, 'VCI|PS':0.42, 'VCI|LN':0.53, 'VCI|CD':0.24, 'VCI|SS':0.29, 'VCI|CA':0.12, 'VCI|BDn':0.5, 'VCI|BDp':0.48, 'VCI|DSf':0.37, 'VCI|DSb':0.38, 'VCI|DSs':0.46, 'VCI|CAr':0.1, 'VCI|CAs':0.12,
+    'VSI|SI':0.52, 'VSI|VC':0.55, 'VSI|IN':0.53, 'VSI|CO':0.44, 'VSI|BD':0.89, 'VSI|VP':0.89, 'VSI|MR':0.53, 'VSI|FW':0.54, 'VSI|PC':0.41, 'VSI|AR':0.51, 'VSI|DS':0.47, 'VSI|PS':0.4, 'VSI|LN':0.43, 'VSI|CD':0.28, 'VSI|SS':0.35, 'VSI|CA':0.18, 'VSI|BDn':0.87, 'VSI|BDp':0.84, 'VSI|DSf':0.32, 'VSI|DSb':0.36, 'VSI|DSs':0.44, 'VSI|CAr':0.14, 'VSI|CAs':0.19, 'VSI|VCI':0.59,
+    'FRI|SI':0.53, 'FRI|VC':0.55, 'FRI|IN':0.54, 'FRI|CO':0.45, 'FRI|BD':0.55, 'FRI|VP':0.57, 'FRI|MR':0.86, 'FRI|FW':0.86, 'FRI|PC':0.4, 'FRI|AR':0.55, 'FRI|DS':0.51, 'FRI|PS':0.42, 'FRI|LN':0.48, 'FRI|CD':0.25, 'FRI|SS':0.3, 'FRI|CA':0.14, 'FRI|BDn':0.54, 'FRI|BDp':0.53, 'FRI|DSf':0.34, 'FRI|DSb':0.41, 'FRI|DSs':0.46, 'FRI|CAr':0.12, 'FRI|CAs':0.16, 'FRI|VCI':0.59, 'FRI|VSI':0.62,
+    'WMI|SI':0.49, 'WMI|VC':0.49, 'WMI|IN':0.47, 'WMI|CO':0.45, 'WMI|BD':0.44, 'WMI|VP':0.45, 'WMI|MR':0.47, 'WMI|FW':0.45, 'WMI|PC':0.37, 'WMI|AR':0.57, 'WMI|DS':0.87, 'WMI|PS':0.87, 'WMI|LN':0.66, 'WMI|CD':0.31, 'WMI|SS':0.34, 'WMI|CA':0.12, 'WMI|BDn':0.44, 'WMI|BDp':0.43, 'WMI|DSf':0.64, 'WMI|DSb':0.7, 'WMI|DSs':0.72, 'WMI|CAr':0.09, 'WMI|CAs':0.13, 'WMI|VCI':0.53, 'WMI|VSI':0.5, 'WMI|FRI':0.54,
+    'PSI|SI':0.29, 'PSI|VC':0.26, 'PSI|IN':0.27, 'PSI|CO':0.28, 'PSI|BD':0.36, 'PSI|VP':0.27, 'PSI|MR':0.3, 'PSI|FW':0.23, 'PSI|PC':0.23, 'PSI|AR':0.35, 'PSI|DS':0.34, 'PSI|PS':0.3, 'PSI|LN':0.32, 'PSI|CD':0.89, 'PSI|SS':0.89, 'PSI|CA':0.36, 'PSI|BDn':0.35, 'PSI|BDp':0.35, 'PSI|DSf':0.21, 'PSI|DSb':0.27, 'PSI|DSs':0.32, 'PSI|CAr':0.31, 'PSI|CAs':0.36, 'PSI|VCI':0.3, 'PSI|VSI':0.36, 'PSI|FRI':0.31, 'PSI|WMI':0.36,
+    'FSIQ|SI':0.76, 'FSIQ|VC':0.77, 'FSIQ|IN':0.69, 'FSIQ|CO':0.61, 'FSIQ|BD':0.73, 'FSIQ|VP':0.65, 'FSIQ|MR':0.72, 'FSIQ|FW':0.71, 'FSIQ|PC':0.48, 'FSIQ|AR':0.68, 'FSIQ|DS':0.71, 'FSIQ|PS':0.53, 'FSIQ|LN':0.63, 'FSIQ|CD':0.5, 'FSIQ|SS':0.46, 'FSIQ|CA':0.22, 'FSIQ|BDn':0.72, 'FSIQ|BDp':0.69, 'FSIQ|DSf':0.51, 'FSIQ|DSb':0.56, 'FSIQ|DSs':0.63, 'FSIQ|CAr':0.19, 'FSIQ|CAs':0.23, 'FSIQ|VCI':0.83, 'FSIQ|VSI':0.77, 'FSIQ|FRI':0.84, 'FSIQ|WMI':0.72, 'FSIQ|PSI':0.54,
+    'QRI|SI':0.58, 'QRI|VC':0.59, 'QRI|IN':0.59, 'QRI|CO':0.49, 'QRI|BD':0.54, 'QRI|VP':0.55, 'QRI|MR':0.53, 'QRI|FW':0.87, 'QRI|PC':0.41, 'QRI|AR':0.86, 'QRI|DS':0.57, 'QRI|PS':0.45, 'QRI|LN':0.54, 'QRI|CD':0.29, 'QRI|SS':0.31, 'QRI|CA':0.15, 'QRI|BDn':0.52, 'QRI|BDp':0.53, 'QRI|DSf':0.38, 'QRI|DSb':0.45, 'QRI|DSs':0.52, 'QRI|CAr':0.13, 'QRI|CAs':0.16, 'QRI|VCI':0.63, 'QRI|VSI':0.61, 'QRI|FRI':0.82, 'QRI|WMI':0.59, 'QRI|PSI':0.34, 'QRI|FSIQ':0.81,
+    'AWMI|SI':0.52, 'AWMI|VC':0.52, 'AWMI|IN':0.51, 'AWMI|CO':0.47, 'AWMI|BD':0.44, 'AWMI|VP':0.45, 'AWMI|MR':0.48, 'AWMI|FW':0.46, 'AWMI|PC':0.37, 'AWMI|AR':0.6, 'AWMI|DS':0.91, 'AWMI|PS':0.55, 'AWMI|LN':0.91, 'AWMI|CD':0.31, 'AWMI|SS':0.33, 'AWMI|CA':0.12, 'AWMI|BDn':0.43, 'AWMI|BDp':0.43, 'AWMI|DSf':0.65, 'AWMI|DSb':0.72, 'AWMI|DSs':0.77, 'AWMI|CAr':0.1, 'AWMI|CAs':0.14, 'AWMI|VCI':0.57, 'AWMI|VSI':0.5, 'AWMI|FRI':0.55, 'AWMI|WMI':0.84, 'AWMI|PSI':0.36, 'AWMI|FSIQ':0.74, 'AWMI|QRI':0.61,
+    'NVI|SI':0.59, 'NVI|VC':0.61, 'NVI|IN':0.59, 'NVI|CO':0.52, 'NVI|BD':0.77, 'NVI|VP':0.75, 'NVI|MR':0.73, 'NVI|FW':0.72, 'NVI|PC':0.46, 'NVI|AR':0.63, 'NVI|DS':0.6, 'NVI|PS':0.65, 'NVI|LN':0.58, 'NVI|CD':0.53, 'NVI|SS':0.48, 'NVI|CA':0.23, 'NVI|BDn':0.75, 'NVI|BDp':0.73, 'NVI|DSf':0.41, 'NVI|DSb':0.48, 'NVI|DSs':0.55, 'NVI|CAr':0.19, 'NVI|CAs':0.25, 'NVI|VCI':0.65, 'NVI|VSI':0.85, 'NVI|FRI':0.85, 'NVI|WMI':0.72, 'NVI|PSI':0.57, 'NVI|FSIQ':0.93, 'NVI|QRI':0.78, 'NVI|AWMI':0.65,
+    'GAI|SI':0.8, 'GAI|VC':0.8, 'GAI|IN':0.72, 'GAI|CO':0.61, 'GAI|BD':0.75, 'GAI|VP':0.67, 'GAI|MR':0.74, 'GAI|FW':0.75, 'GAI|PC':0.48, 'GAI|AR':0.65, 'GAI|DS':0.58, 'GAI|PS':0.48, 'GAI|LN':0.57, 'GAI|CD':0.31, 'GAI|SS':0.36, 'GAI|CA':0.17, 'GAI|BDn':0.73, 'GAI|BDp':0.71, 'GAI|DSf':0.41, 'GAI|DSb':0.45, 'GAI|DSs':0.53, 'GAI|CAr':0.14, 'GAI|CAs':0.18, 'GAI|VCI':0.87, 'GAI|VSI':0.79, 'GAI|FRI':0.87, 'GAI|WMI':0.61, 'GAI|PSI':0.38, 'GAI|FSIQ':0.96, 'GAI|QRI':0.81, 'GAI|AWMI':0.63, 'GAI|NVI':0.89,
+    'CPI|SI':0.47, 'CPI|VC':0.45, 'CPI|IN':0.45, 'CPI|CO':0.44, 'CPI|BD':0.49, 'CPI|VP':0.44, 'CPI|MR':0.47, 'CPI|FW':0.41, 'CPI|PC':0.36, 'CPI|AR':0.56, 'CPI|DS':0.73, 'CPI|PS':0.7, 'CPI|LN':0.59, 'CPI|CD':0.73, 'CPI|SS':0.75, 'CPI|CA':0.29, 'CPI|BDn':0.47, 'CPI|BDp':0.47, 'CPI|DSf':0.51, 'CPI|DSb':0.58, 'CPI|DSs':0.62, 'CPI|CAr':0.24, 'CPI|CAs':0.3, 'CPI|VCI':0.5, 'CPI|VSI':0.52, 'CPI|FRI':0.51, 'CPI|WMI':0.82, 'CPI|PSI':0.83, 'CPI|FSIQ':0.76, 'CPI|QRI':0.56, 'CPI|AWMI':0.73, 'CPI|NVI':0.78, 'CPI|GAI':0.6,
+  },
+  rCorrectedToComposite: {'SI|VCI':0.68, 'SI|FSIQ':0.66, 'SI|GAI':0.66, 'VC|VCI':0.68, 'VC|FSIQ':0.66, 'VC|GAI':0.67, 'BD|VSI':0.6, 'BD|FSIQ':0.61, 'BD|NVI':0.64, 'BD|GAI':0.59, 'VP|VSI':0.6, 'VP|NVI':0.62, 'MR|FRI':0.47, 'MR|FSIQ':0.59, 'MR|NVI':0.58, 'MR|GAI':0.58, 'FW|FRI':0.47, 'FW|FSIQ':0.59, 'FW|QRI':0.5, 'FW|NVI':0.56, 'FW|GAI':0.6, 'AR|QRI':0.5, 'DS|WMI':0.51, 'DS|FSIQ':0.59, 'DS|AWMI':0.65, 'DS|CPI':0.48, 'PS|WMI':0.51, 'PS|NVI':0.47, 'PS|CPI':0.45, 'LN|AWMI':0.65, 'CD|PSI':0.58, 'CD|FSIQ':0.33, 'CD|NVI':0.32, 'CD|CPI':0.49, 'SS|PSI':0.58, 'SS|CPI':0.52},
+  mean: {'SI':10, 'VC':10, 'IN':10, 'CO':10, 'BD':10, 'VP':10, 'MR':10, 'FW':10, 'PC':10, 'AR':10, 'DS':10, 'PS':10, 'LN':10, 'CD':10, 'SS':10, 'CA':10, 'BDn':10, 'BDp':10, 'DSf':10, 'DSb':10, 'DSs':10, 'CAr':10, 'CAs':10, 'VCI':20, 'VSI':20, 'FRI':20, 'WMI':20, 'PSI':20, 'FSIQ':70, 'QRI':20, 'AWMI':20, 'NVI':60, 'GAI':50, 'CPI':40},
+  sd:   {'SI':3, 'VC':3, 'IN':3, 'CO':3, 'BD':3, 'VP':3, 'MR':3, 'FW':3, 'PC':3, 'AR':3, 'DS':3, 'PS':3, 'LN':3, 'CD':3, 'SS':3, 'CA':3, 'BDn':3, 'BDp':3, 'DSf':3, 'DSb':3, 'DSs':3, 'CAr':3, 'CAs':3, 'VCI':5.5, 'VSI':5.4, 'FRI':5.1, 'WMI':5.2, 'PSI':5.3, 'FSIQ':14.7, 'QRI':5.2, 'AWMI':5.4, 'NVI':12.4, 'GAI':11.5, 'CPI':8.7}
+};
+
 // ToPF Raw (0-70) → estimated FSIQ
 const TOPF_TO_FSIQ = [
   42,45,48,51,54,57,59,62,64,66,

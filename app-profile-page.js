@@ -29,7 +29,8 @@
    (Table 4.1) and WMS-IV Older Adult (Table 4.2), plus a fourth tab
    profiling WAIS-IV with the WMS-IV Adult battery on WMS-IV Table 4.12
    (see WMS4_WAIS4_CROSS in data.js), and RBANS Update indices on its
-   Table 4.1 (see RBANS_INTERCORR). The two WMS-IV
+   Table 4.1 (see RBANS_INTERCORR), and WISC-V on its Table 5.1 (see
+   WISC5_INTERCORR). The two WMS-IV
    batteries are separate entries rather than one instrument with an age
    switch: they are different normative samples with different measure
    lists and different coefficients, ages 65-69 are normed in both, and
@@ -151,13 +152,33 @@
       LAN: ['PN', 'SF'],
       DM:  ['LR', 'LRG', 'SR', 'FR'],
       TS:  ['IM', 'VSC', 'ATT', 'LAN', 'DM']
+    },
+    /* WISC-V. Membership is the manual's, and Table 5.1 states it twice
+       over: the Mean row counts the subtests in each composite, and each
+       subtest carries one shaded (corrected) cell per composite it is in. */
+    wisc5: {
+      VCI:  ['SI', 'VC'],
+      VSI:  ['BD', 'VP'],
+      FRI:  ['MR', 'FW'],
+      WMI:  ['DS', 'PS'],
+      PSI:  ['CD', 'SS'],
+      FSIQ: ['SI', 'VC', 'BD', 'MR', 'FW', 'DS', 'CD'],
+      QRI:  ['FW', 'AR'],
+      AWMI: ['DS', 'LN'],
+      NVI:  ['BD', 'VP', 'MR', 'FW', 'PS', 'CD'],
+      GAI:  ['SI', 'VC', 'BD', 'MR', 'FW'],
+      CPI:  ['DS', 'PS', 'CD', 'SS'],
+      DS:   ['DSf', 'DSb', 'DSs'],
+      CA:   ['CAr', 'CAs']
     }
   };
   /* Block Design No Time Bonus is the SAME administration rescored - the
      matrix puts them at r = .97 - so they are one measure for this
      purpose even though neither contains the other. WMS-IV has no such
      pair: every process score there is a part, not a rescoring. */
-  const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {}, rbans: {} };
+  /* WISC-V has two rescorings of Block Design: No Time Bonus and Partial. */
+  const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {}, rbans: {},
+                       wisc5: { BDn: 'BD', BDp: 'BD' } };
 
   /* A JOINT instrument has no composition of its own: it is the union of its
      parts', which share no keys, so nothing is restated and the two cannot
@@ -288,6 +309,22 @@
       levels: [
         { id:'rb-indices', label:'Indices', keys:['IM', 'VSC', 'ATT', 'LAN', 'DM'] },
         { id:'rb-sub', label:'Subtests', keys:['LL', 'SM', 'FC', 'SF', 'DS', 'CD', 'SR', 'FR'] }
+      ] },
+    /* WISC-V, Table 5.1, all ages. Primary indices, subtests and process
+       scores. The ancillary indices (QRI, AWMI, NVI, GAI, CPI) are left out
+       for the reason FSIQ is: each shares subtests with the primary indices
+       and with one another, so they have no conflict-free level of their
+       own. Block Design Partial is the same administration as Block Design
+       No Time Bonus, so the process level carries one of the two. */
+    { id:'wisc5', label:'WISC-V', name:'WISC-V',
+      groupRe: /^WISC-V (Indices|Subtests|Process Scores) · /,
+      composites: ['VCI', 'VSI', 'FRI', 'WMI', 'PSI', 'FSIQ', 'QRI', 'AWMI', 'NVI', 'GAI', 'CPI'],
+      matrix: () => (typeof WISC5_INTERCORR !== 'undefined') ? WISC5_INTERCORR : null,
+      levels: [
+        { id:'wc-indices',  label:'Primary indices', keys:['VCI', 'VSI', 'FRI', 'WMI', 'PSI'] },
+        { id:'wc-subtests', label:'Subtests',
+          keys:['SI', 'VC', 'IN', 'CO', 'BD', 'VP', 'MR', 'FW', 'PC', 'AR', 'DS', 'PS', 'LN', 'CD', 'SS', 'CA'] },
+        { id:'wc-process',  label:'Process scores', keys:['BDn', 'DSf', 'DSb', 'DSs', 'CAr', 'CAs'] }
       ] },
     { id:'w4wm4', label:'WAIS-IV + WMS-IV', name:'WAIS-IV and WMS-IV',
       joint: ['wais4', 'wms4'],
@@ -864,8 +901,14 @@
     /* An absence with no stated reason reads as missing data, so each
        measure the instrument deliberately withholds says why, and only
        while Score Tables actually holds it. */
-    if ((profState.instrument === 'wais4' || profState.instrument === 'w4wm4') && found.FSIQ !== undefined){
+    if ((profState.instrument === 'wais4' || profState.instrument === 'w4wm4' || profState.instrument === 'wisc5') && found.FSIQ !== undefined){
       bits.push('Full Scale IQ contains every other measure, so it cannot join a profile');
+    }
+    if (profState.instrument === 'wisc5' && ['QRI', 'AWMI', 'NVI', 'GAI', 'CPI'].some(k => found[k] !== undefined)){
+      bits.push('the ancillary indices share subtests with the primary indices, so they cannot join a profile');
+    }
+    if (profState.instrument === 'wisc5' && found.BDp !== undefined){
+      bits.push('Block Design Partial rescores the same administration as No Time Bonus, so only one is profiled');
     }
     if (profState.instrument === 'rbans' && found.TS !== undefined){
       bits.push('the Total Scale is the five indices summed, so it cannot join a profile');
