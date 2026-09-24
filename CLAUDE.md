@@ -242,8 +242,8 @@ touching layout:
   Because the lift is a `calc()`, **JavaScript must read the chip's rect, not the
   property**: `getPropertyValue` returns a custom property's text, not a number
   (`chipEdges()` in the pill code).
-- **Three widths, not eight.** Workspaces are full width (Profile, Charts, Validity,
-  Change Analysis, Data); single-panel tools take `--page-max` (1320); the two reading
+- **Three widths, not eight.** Workspaces are full width (Score Tables, Profile, Charts,
+  Validity, Change Analysis, Data); single-panel tools take `--page-max` (1320); the two reading
   pages keep 1100. Every page shares `--page-pad-*`. The deep 80 to 100 px bottom paddings
   existed only to clear the old floating chip and are gone. **A new page must join the
   list** or it brings its own width back.
