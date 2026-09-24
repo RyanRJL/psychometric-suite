@@ -3657,8 +3657,8 @@ const APA_NOTES = {
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
     if (ctx.bothDigitSpan) shared.push('the digit-span indices');
     return [
-      /* The mirror drops the citations: the tab strip and the on-page
-         references state every measure and source in full. The exported
+      /* The mirror drops the citations: each measure's own panel and the
+         on-page references state every measure and source in full. The exported
          note keeps them — the licensed onScreen difference. */
       (ctx.onScreen || !sources.length) ? '' : `Sources: ${sources.join('; ')}.`,
       '"Fail" = score beyond the published cut-off, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent indicators (Larrabee, 2014).',
@@ -8185,24 +8185,124 @@ function renderPvtCvlt3(){
   out.innerHTML = pvtReadoutHtml(rows, note);
 }
 
+/* ---------- the Summary: the page's landing panel ----------
+   Grouped by INDEPENDENT INDICATOR, not by measure, because the count is
+   over indicators: the two RBANS indices are one, and the two digit-span
+   measures are one. Listing measures flat beside a "3 of 4" count invites
+   exactly the arithmetic the page warns against, so the grouping shows on
+   screen what the note says in words. `id` is the same key getPvtSummaryRows
+   writes as `group`; `ids` are its row ids. The left-hand menu in the markup
+   lists the same measures under the same independence rule. */
+const PVT_INDICATOR_GROUPS = [
+  { id: 'rbans', label: 'RBANS', sub: 'Two measures, counts as one', members: [
+    { tab: 'ei',    label: 'Effort Index', ids: ['ei'] },
+    { tab: 'es',    label: 'Effort Scale', ids: ['es'] }
+  ]},
+  { id: 'rds', label: 'Digit span', sub: 'Two measures, counts as one', members: [
+    { tab: 'rds',   label: 'Reliable Digit Span', ids: ['rds'] },
+    { tab: 'ds',    label: 'Digit Span indices',  ids: ['ds', 'ds-vocab', 'ds-lsf', 'ds-lsb'] }
+  ]},
+  { id: 'rey15', label: 'Rey 15-Item', sub: 'Stand-alone', members: [
+    { tab: 'rey15', label: 'Recall and recognition', ids: ['rey-recall', 'rey-combo'] }
+  ]},
+  { id: 'cvlt3', label: 'CVLT-3 Forced Choice', sub: 'Embedded', members: [
+    { tab: 'cvlt3', label: 'Hits and critical items', ids: ['cvlt3', 'cvlt3-crit-recall', 'cvlt3-crit-recog'] }
+  ]},
+  { id: 'tomm', label: 'TOMM', sub: 'Stand-alone', members: [
+    { tab: 'tomm',  label: 'Forced choice', ids: ['tomm'] }
+  ]}
+];
+
+/* One state per measure and per indicator, read off the summary rows so a
+   card can never disagree with the table under it. A gated row is not an
+   indicator (pvtIndicatorCounts drops it), so an indicator holding only
+   gated rows reads "gated", not "pass". */
+function pvtMemberState(rows, m){
+  const mine = rows.filter(r => m.ids.includes(r.id));
+  if (!mine.length) return { state: 'idle', value: 'not scored' };
+  if (mine.every(r => r.gated)) return { state: 'gated', value: 'gate not met' };
+  const flagged = mine.filter(r => r.fail).length;
+  return flagged ? { state: 'flag', value: `${flagged} flagged` }
+                 : { state: 'pass', value: mine.length > 1 ? 'within cut-offs' : 'within cut-off' };
+}
+function pvtGroupState(rows, g){
+  const mine = rows.filter(r => r.group === g.id);
+  if (!mine.length) return 'idle';
+  const live = mine.filter(r => !r.gated);
+  if (!live.length) return 'gated';
+  return live.some(r => r.fail) ? 'fail' : 'pass';
+}
+
 function renderPvtSummary(){
+  const rows = getPvtSummaryRows();
+  const c = pvtIndicatorCounts(rows);
+  const states = PVT_INDICATOR_GROUPS.map(g => pvtGroupState(rows, g));
+
+  /* The verdict. Its wording is the count rule and nothing more; the
+     external-incentive context and the accuracy figures sit in the
+     Larrabee card below, and the note under the exported table. */
+  const verdict = document.getElementById('pvt-summary-verdict');
+  if (verdict){
+    const unscored = PVT_INDICATOR_GROUPS.filter((g, i) => states[i] === 'idle' || states[i] === 'gated').map(g => g.label);
+    const pips = PVT_INDICATOR_GROUPS.map((g, i) =>
+      `<span class="pvt-verdict-pip is-${states[i]}" title="${g.label}"></span>`).join('');
+    let head, body, kind;
+    if (c.total === 0){
+      kind = 'idle';
+      head = 'Nothing scored yet';
+      body = 'Choose a measure from the list on the left, or from the indicators below. Each result joins this summary as it is entered.';
+    } else {
+      kind = c.failed >= 2 ? 'fail' : c.failed === 1 ? 'warn' : 'pass';
+      head = `${c.failed} of ${c.total} independent indicator${c.total === 1 ? '' : 's'} failed`;
+      body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014). Weigh the count against the clinical and neurological picture before concluding.'
+        : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).'
+        : 'Nothing beyond its cut-off so far.';
+    }
+    verdict.innerHTML = `<div class="pvt-verdict is-${kind}">
+      <div class="pvt-verdict-count">
+        <span class="pvt-verdict-num">${c.total === 0 ? '&ndash;' : `${c.failed}<span class="pvt-verdict-of">/${c.total}</span>`}</span>
+        <span class="pvt-verdict-pips" aria-hidden="true">${pips}</span>
+      </div>
+      <div class="pvt-verdict-text">
+        <div class="pvt-verdict-head">${head}</div>
+        <p class="pvt-verdict-body">${body}</p>
+        <div class="pvt-verdict-meta">${c.total} of ${PVT_INDICATOR_GROUPS.length} indicators scored${
+          unscored.length && c.total > 0 ? ` &middot; not yet scored: ${unscored.join(', ')}` : ''} &middot; results are cut-off comparisons only</div>
+      </div>
+    </div>`;
+  }
+
+  /* The indicators: the page's menu, restated with each one's state. */
+  const cards = document.getElementById('pvt-summary-cards');
+  if (cards){
+    cards.innerHTML = `<div class="pvt-ind-grid">${PVT_INDICATOR_GROUPS.map((g, i) => {
+      const st = states[i];
+      const chip = st === 'idle' ? ''
+        : `<span class="pvt-status is-${st === 'gated' ? 'na' : st}">${PVT_STATE_ICON[st === 'fail' ? 'flag' : st === 'gated' ? 'na' : 'pass']}${st === 'fail' ? 'Fail' : st === 'gated' ? 'Gated' : 'Pass'}</span>`;
+      const members = g.members.map(m => {
+        const ms = pvtMemberState(rows, m);
+        return `<button type="button" class="pvt-ind-row is-${ms.state}" data-pvt-go="${m.tab}">
+          <span class="pvt-ind-label">${m.label}</span>
+          <span class="pvt-ind-value">${ms.state === 'idle' ? 'Score &rarr;' : ms.value}</span>
+        </button>`;
+      }).join('');
+      return `<div class="pvt-ind is-${st}">
+        <div class="pvt-ind-head"><span class="pvt-ind-name">${g.label}</span>${chip}</div>
+        <div class="pvt-ind-sub">${g.sub}</div>
+        ${members}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
   const host = document.getElementById('pvt-summary-body');
   if (!host) return;
-  const rows = getPvtSummaryRows();
   if (rows.length === 0){
-    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet. Score at least one measure on the other tabs and the summary builds itself. The tab strip above tracks each measure as you go.') + '</div>';
+    host.innerHTML = '<div class="pvt-card"><div class="pvt-card-kicker">Scores table</div><p class="pvt-agg-copy" style="margin:0">Every scored measure is listed here with its cut-off, published accuracy and result, as it will appear in the report.</p></div>';
     return;
   }
-  const c = pvtIndicatorCounts(rows);
-  const countStat = c.total === 0 ? '' :
-    `<div class="pvt-count">
-      <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
-      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'}. The two RBANS indices count as one, the digit-span indices as one, the CVLT-3 forced-choice scores as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
-    </div>`;
   host.innerHTML = `
     <div class="pvt-card">
-      <div class="pvt-card-kicker">Indicators scored this session</div>
-      ${countStat}
+      <div class="pvt-card-kicker">Scores table</div>
       <table class="pvt-table">
         <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Sens.</th><th>Spec.</th><th>Result</th></tr></thead>
         <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td>${r.sens}</td><td>${r.spec}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
@@ -8260,10 +8360,10 @@ function renderPvtApa(){
   `;
 }
 
-/* The tab strip's live status chips. One chip per measure, restated from
-   the same getPvt* state the result cards render, so strip and card cannot
-   disagree. The summary chip carries the independent-indicator count. */
-/* An unscored tab shows NO chip at all: a dash in a pill reads as seven
+/* The menu's live status chips. One chip per measure, restated from the
+   same getPvt* state the result cards render, so menu and card cannot
+   disagree. The Summary entry carries the independent-indicator count. */
+/* An unscored measure shows NO chip at all: a dash in a pill reads as seven
    pieces of dead chrome before anything is entered, so the pill appears
    only once it has a state to report. Scored chips carry the same glyphs
    as the readout rows (shape + word + colour, never colour alone). */
@@ -8319,10 +8419,20 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-tomm'),
     tommHas ? (tomm.anyFail ? 'Fail' : 'Pass') : '—',
     tommHas ? (tomm.anyFail ? 'fail' : 'pass') : null);
+  /* The Summary entry at the top of the menu carries the count itself,
+     large, rather than a chip: it is the page's answer. */
   const c = pvtIndicatorCounts(getPvtSummaryRows());
-  pvtChip(document.getElementById('pvt-status-summary'),
-    c.total > 0 ? `${c.failed}/${c.total}` : '—',
-    c.total > 0 ? (c.failed > 0 ? 'fail' : 'pass') : null);
+  const cnt = document.getElementById('pvt-nav-count');
+  if (cnt) cnt.innerHTML = c.total > 0 ? `${c.failed}<span class="pvt-nav-count-of">/${c.total}</span>` : '&ndash;';
+  const meta = document.getElementById('pvt-nav-summary-meta');
+  if (meta) meta.textContent = c.total > 0
+    ? `independent indicator${c.total === 1 ? '' : 's'} failed`
+    : 'Nothing scored yet';
+  const sumBtn = document.querySelector('#validity .pvt-nav-summary');
+  if (sumBtn){
+    sumBtn.classList.toggle('is-fail', c.total > 0 && c.failed > 0);
+    sumBtn.classList.toggle('is-pass', c.total > 0 && c.failed === 0);
+  }
   pvtCautionFlag('ei', ei.ei !== undefined && ei.fail);
   pvtCautionFlag('es', es.es !== undefined && !es.gated && es.fail);
   pvtCautionFlag('rds', rds.rds !== undefined && rds.fail);
@@ -8375,117 +8485,6 @@ function renderPvtAccuracy(){
   }
 }
 
-/* ---------- the running rail ----------
-   A single element beside every method panel, so the aggregate picture is
-   in view while the clinician is still entering scores rather than one
-   tab away. It reads the SAME getPvtSummaryRows/pvtIndicatorCounts the
-   Summary tab and the APA export read — three surfaces, one derivation,
-   which is why a measure can never appear scored here and unscored there. */
-/* The rail is grouped by INDEPENDENT INDICATOR, not by measure, because
-   the count above it is over indicators: the two RBANS indices are one,
-   and the two digit-span measures are one. Listing six flat rows beside a
-   "3 of 4" count invited exactly the arithmetic the page keeps warning
-   against, so the grouping now shows on screen what the note says in
-   words. Rows are buttons: the rail doubles as navigation. */
-const PVT_RAIL_GROUPS = [
-  { id: 'rbans', label: 'RBANS', members: [
-    { tab: 'ei',    label: 'Effort Index', ids: ['ei'] },
-    { tab: 'es',    label: 'Effort Scale', ids: ['es'] }
-  ]},
-  { id: 'rds', label: 'Digit span', members: [
-    { tab: 'rds',   label: 'Reliable Digit Span', ids: ['rds'] },
-    { tab: 'ds',    label: 'Digit Span indices',  ids: ['ds', 'ds-vocab', 'ds-lsf', 'ds-lsb'] }
-  ]},
-  { id: 'rey15', label: 'Rey 15-Item', members: [
-    { tab: 'rey15', label: 'Recall & recognition', ids: ['rey-recall', 'rey-combo'] }
-  ]},
-  { id: 'cvlt3', label: 'CVLT-3', members: [
-    { tab: 'cvlt3', label: 'Forced choice', ids: ['cvlt3', 'cvlt3-crit-recall', 'cvlt3-crit-recog'] }
-  ]},
-  { id: 'tomm', label: 'TOMM', members: [
-    { tab: 'tomm',  label: 'Forced choice', ids: ['tomm'] }
-  ]}
-];
-const PVT_RAIL_ICON = {
-  flag: PVT_STATE_ICON.flag,
-  pass: PVT_STATE_ICON.pass,
-  gated: PVT_STATE_ICON.na,
-  idle: '<svg class="pvt-flag-icon" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6" cy="6" r="3.4"/></svg>'
-};
-function renderPvtRail(){
-  const rail = document.getElementById('pvt-rail');
-  if (!rail) return;
-  const rows = getPvtSummaryRows();
-  const c = pvtIndicatorCounts(rows);
-  const current = document.querySelector('#validity .pvt-method-tab.active')?.dataset.pvtTab;
-
-  /* Status reads as words in a right-hand column, the way a progress panel
-     states a value against its label — colour marks a flag rather than
-     carrying the meaning on its own. */
-  let scored = 0, total = 0;
-  const groups = PVT_RAIL_GROUPS.map(g => {
-    const members = g.members.map(m => {
-      total++;
-      const mine = rows.filter(r => m.ids.includes(r.id));
-      const gated = mine.some(r => r.gated);
-      if (mine.length) scored++;
-      const flagged = mine.filter(r => r.fail).length;
-      const state = gated ? 'gated' : !mine.length ? 'idle' : flagged ? 'flag' : 'pass';
-      const value = gated ? 'gate not met'
-        : !mine.length ? 'not scored'
-        : flagged ? `${flagged} flagged`
-        : 'within cut-offs';
-      return `<button type="button" class="pvt-rail-row is-${state}${m.tab === current ? ' is-current' : ''}" data-rail-tab="${m.tab}">
-        <span class="pvt-rail-label">${m.label}</span>
-        <span class="pvt-rail-value">${value}</span>
-      </button>`;
-    }).join('');
-    return `<div class="pvt-rail-group">
-      <div class="pvt-rail-group-head">
-        <span class="pvt-rail-group-name">${g.label}</span>
-        ${g.members.length > 1 ? '<span class="pvt-rail-group-tag">counts as one</span>' : ''}
-      </div>${members}</div>`;
-  }).join('');
-
-  /* With nothing scored the section shows the bare 0/6 count alone — the
-     workspace card already carries the "enter scores" instruction, and the
-     Flagged stat is withheld rather than printed as 0/0. */
-  const hint = c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
-    : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion.'
-    : 'Nothing beyond its cut-off so far.';
-
-  /* The collapse state lives on the rail, which survives this re-render;
-     the card is rebuilt from it so screen and ARIA cannot drift. */
-  const collapsed = rail.classList.contains('is-collapsed');
-  rail.innerHTML = `<div class="pvt-rail-card${collapsed ? ' is-collapsed' : ''}">
-    <div class="pvt-rail-head">
-      <span class="pvt-rail-title">Progress</span>
-      <button type="button" class="pvt-rail-toggle" data-rail-toggle aria-label="${collapsed ? 'Expand' : 'Collapse'} summary" aria-expanded="${collapsed ? 'false' : 'true'}">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg>
-      </button>
-    </div>
-    <div class="pvt-rail-body">
-      <div class="pvt-rail-section">
-        <div class="pvt-rail-kicker">Indicators</div>
-        ${c.total > 0 ? `<div class="pvt-rail-stat${c.failed ? ' is-flagged' : ''}">
-          <span class="pvt-rail-stat-label">Flagged</span>
-          <span class="pvt-rail-stat-value">${c.failed}<span class="pvt-rail-sep">/</span>${c.total}</span>
-        </div>` : ''}
-        <div class="pvt-rail-stat">
-          <span class="pvt-rail-stat-label">Measures scored</span>
-          <span class="pvt-rail-stat-value">${scored}<span class="pvt-rail-sep">/</span>${total}</span>
-        </div>
-        ${c.total > 0 ? `<p class="pvt-rail-hint">${hint}</p>` : ''}
-      </div>
-      <div class="pvt-rail-section">
-        <div class="pvt-rail-kicker">By indicator</div>
-        ${groups}
-      </div>
-      <button type="button" class="pvt-rail-cta" data-rail-tab="summary">Full summary &amp; APA table →</button>
-    </div>
-  </div>`;
-}
-
 function renderPvtAll(){
   renderPvtEi();
   renderPvtEs();
@@ -8497,42 +8496,34 @@ function renderPvtAll(){
   renderPvtAccuracy();
   renderPvtInstruments();
   renderPvtNav();
-  renderPvtRail();
   renderPvtSummary();
   renderPvtApa();
 }
 
 function switchPvtTab(name){
-  document.querySelectorAll('#validity .pvt-method-tab').forEach(t => {
+  document.querySelectorAll('#validity .pvt-nav [data-pvt-tab]').forEach(t => {
     const on = t.dataset.pvtTab === name;
     t.classList.toggle('active', on);
     t.setAttribute('aria-selected', on ? 'true' : 'false');
   });
   document.querySelectorAll('#validity .pvt-tab-content').forEach(c =>
     c.classList.toggle('active', c.id === 'pvt-' + name));
-  /* The rail would restate the Summary tab's own table beside it. */
-  document.querySelector('#validity .pvt-sheet')?.classList.toggle('is-summary', name === 'summary');
-  /* Same on About: the rail would list the same seven measures the About
-     table already lists, saying "not scored" against each, and take 260px
-     off a table that is the whole tab. */
-  document.querySelector('#validity .pvt-sheet')?.classList.toggle('is-about', name === 'about');
   pvtSyncDesc(name);
-  renderPvtRail();
 }
-/* About carries no description, as the Change Analysis overview does not;
-   the full one shows on every measure tab. Its "no single index is a
-   verdict" is carried on About by the table's footer. An inline display
-   rather than [hidden], so no stylesheet display rule can outrank it.
+/* The Summary carries no description: its verdict states the count rule
+   and "cut-off comparisons only" itself. The full line shows on every
+   measure. An inline display rather than [hidden], so no stylesheet
+   display rule can outrank it.
 
    It sits at the top of the sheet, inside the card, rather than as a loose
-   line above the tab strip: the only text on any tool page outside a card,
-   as Change Analysis's formula line also was (UI audit, 2026-09). */
+   line above it: the only text on any tool page outside a card, as Change
+   Analysis's formula line also was (UI audit, 2026-09). */
 function pvtSyncDesc(name){
   const desc = document.getElementById('pvt-desc');
   if (!desc) return;
   const main = document.querySelector('#validity .pvt-sheet-main');
   if (main && desc.parentElement !== main) main.prepend(desc);
-  desc.style.display = name === 'about' ? 'none' : '';
+  desc.style.display = name === 'summary' ? 'none' : '';
 }
 
 function clearPvt(){
@@ -8545,114 +8536,19 @@ function clearPvt(){
   renderPvtAll();
 }
 
-/* ---------- the About landing tab ----------
-   The page lands here rather than on the Effort Index, which was only
-   ever first by markup order. Same idiom as the Change Analysis overview,
-   and deliberately as sparse: it is a chooser, so it carries what picks a
-   measure (what it is, what it was derived on, what it cuts at) and no
-   more. One row per measure, click to jump.
-
-   Sensitivity and specificity are NOT here, on purpose. They are printed
-   beside every cut-off selector (renderPvtAccuracy) and in the Summary,
-   both from the PVT_*_ACCURACY constants; a third copy made this a data
-   table and was most of why it read busier than the Change Analysis one.
-
-   Independence grouping - which the >= 2-failure rule depends on - is a
-   heading over each group of measures that share an instrument, rather
-   than a column: a column restated the instrument on every row. */
-function renderPvtAboutPanel(){
-  const el = document.getElementById('pvt-about-body');
-  if (!el) return;
-  const rows = [
-    { tab: 'ei', title: 'Effort Index', cite: 'Silverberg et al. (2007); Shura et al. (2018)',
-      source: 'RBANS embedded', group: 'RBANS', cut: 'EI &gt; 3',
-      desc: 'Weighted sum of the Digit Span and List Recognition raw scores (0–12); higher = less credible.' },
-    { tab: 'es', title: 'Effort Scale', cite: 'Novitski et al. (2012)',
-      source: 'RBANS embedded', group: 'RBANS', cut: 'ES &lt; 12',
-      desc: 'List Recognition minus the three recall scores, plus Digit Span, all raw; computed only where its gate is met, because an ungated ES over-flags intact examinees.' },
-    { tab: 'rds', title: 'Reliable Digit Span', cite: 'Greiffenstein et al. (1994); Schroeder et al. (2012)',
-      source: 'WAIS embedded', group: 'Digit span', cut: 'RDS ≤ 6',
-      desc: 'Longest forward span plus longest backward span passed on both trials.' },
-    { tab: 'ds', title: 'Digit Span indices', cite: 'Iverson &amp; Tulsky (2003); Axelrod et al. (2006)',
-      source: 'WAIS embedded', group: 'Digit span', cut: 'ACSS ≤ 5',
-      desc: 'Age-corrected scaled-score cut-off, with Vocabulary − Digit Span and longest-span base rates alongside.' },
-    { tab: 'rey15', title: 'Rey 15-Item', cite: 'Boone et al. (2002)',
-      source: 'Stand-alone', group: 'Rey 15-Item', cut: 'Recall + recognition',
-      desc: 'Free recall of fifteen over-learned items, with a recognition trial that raises sensitivity.' },
-    { tab: 'cvlt3', title: 'CVLT-3 Forced Choice', cite: 'Delis et al. (2017); Erdodi et al. (2018)',
-      source: 'Embedded', group: 'CVLT-3', cut: 'Base rate by age',
-      desc: 'Total hits on the Forced Choice trial, read against the CVLT-3 manual’s age-banded base rates, with the CVLT-II cut-offs selectable alongside.' },
-    { tab: 'tomm', title: 'TOMM', cite: 'Tombaugh (1996); Martin et al. (2020)',
-      source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
-      desc: 'Fifty-item forced-choice picture recognition; robust to most genuine impairment, though specificity falls in dementia.' }
-  ];
-  const esc = s => String(s).replace(/&(?!(?:[a-z]+|#\d+);)/gi, '&amp;').replace(/"/g, '&quot;');
-  /* The instrument alone, with a "!" where a
-     version caveat applies; its tooltip carries PVT_INSTRUMENTS' own text. */
-  function derivedCell(r){
-    const i = PVT_INSTRUMENTS[r.tab] || {};
-    const notes = [];
-    if (i.mismatch) notes.push(i.mismatch);
-    const flag = notes.length
-      ? ` <button type="button" class="pvt-overview-flag" data-pvtip="${esc(notes.join(' '))}" aria-label="Version note for ${r.title}" tabindex="0">!</button>`
-      : '';
-    return `${i.derived || r.source}${flag}`;
-  }
-  const COUNT_WORDS = ['', 'one', 'two', 'three', 'four', 'five'];
-  const row = r => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
-    <td class="pvt-overview-measure">
-      <div class="pvt-overview-titlerow">
-        <span class="pvt-overview-title">${r.title}</span>
-        <button type="button" class="pvt-overview-info" data-pvtip="${esc(((PVT_INSTRUMENTS[r.tab] || {}).kind || r.source) + '. ' + r.desc)}" aria-label="More about ${r.title}" tabindex="0">?</button>
-      </div>
-      <span class="pvt-overview-cite">${r.cite}</span>
-    </td>
-    <td class="pvt-overview-cell pvt-overview-derived">${derivedCell(r)}</td>
-    <td class="pvt-overview-cell pvt-overview-cutcell">${r.cut}</td>
-    <td class="pvt-overview-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></td>
-  </tr>`;
-  /* Groups in first-appearance order; only a group of two or more gets a
-     heading, since a heading over one measure would just repeat its name. */
-  const groups = [];
-  rows.forEach(r => {
-    const g = groups.find(x => x.name === r.group);
-    if (g) g.rows.push(r); else groups.push({ name: r.group, rows: [r] });
-  });
-  const body = groups.map(g => g.rows.length > 1
-    ? `<tbody class="pvt-overview-group">
-        <tr class="pvt-overview-grouphead"><td colspan="4">${g.name} <span class="pvt-overview-groupnote">· ${COUNT_WORDS[g.rows.length] || g.rows.length} measures, one indicator</span></td></tr>
-        ${g.rows.map(row).join('')}
-      </tbody>`
-    : `<tbody class="pvt-overview-single">${g.rows.map(row).join('')}</tbody>`).join('');
-  el.innerHTML = `<div class="pvt-overview-wrap">
-    <table class="pvt-overview-table">
-      <thead><tr>
-        <th class="pvt-overview-th is-measure">Measure</th>
-        <th class="pvt-overview-th is-left"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The instrument and edition each cut-off was calibrated on. Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity. A cut-off derived on one edition does not automatically transfer to another; a ! marks where that matters.">Derived on</span></th>
-        <th class="pvt-overview-th is-left"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="The cut-off each measure applies when its tab is first opened. Its published sensitivity and specificity are printed beside the cut-off selector on that tab.">Default cut-off</span></th>
-        <th class="pvt-overview-th" aria-hidden="true"></th>
-      </tr></thead>
-      ${body}
-    </table>
-    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014). Measures grouped under one heading share an instrument and count as one. No single index is a verdict.</p>
-  </div>`;
-  el.querySelectorAll('[data-about-tab]').forEach(row => {
-    const go = () => switchPvtTab(row.dataset.aboutTab);
-    row.addEventListener('click', e => { if (e.target.closest('.pvt-overview-info, .pvt-overview-flag')) return; go(); });
-    row.addEventListener('keydown', e => {
-      if (e.target.closest('.pvt-overview-info, .pvt-overview-flag')) return;
-      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); }
-    });
-  });
-}
-
 function setupPvtPage(){
   const root = document.getElementById('validity');
   if (!root) return;
-  renderPvtAboutPanel();
-  pvtSyncDesc('about');
-  root.querySelectorAll('.pvt-method-tab').forEach(tab => {
+  pvtSyncDesc('summary');
+  root.querySelectorAll('.pvt-nav [data-pvt-tab]').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
+  });
+  /* The Summary's indicator cards double as the menu. Delegated, because
+     they are rebuilt on every keystroke and bound handlers would not
+     survive. */
+  document.getElementById('pvt-summary-cards')?.addEventListener('click', e => {
+    const row = e.target.closest('[data-pvt-go]');
+    if (row) switchPvtTab(row.dataset.pvtGo);
   });
   /* The shared RBANS fields appear on both the EI and ES tabs; pvtState is
      the master and every input with the same data-pvt-field mirrors it. */
@@ -8677,23 +8573,6 @@ function setupPvtPage(){
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   document.getElementById('pvt-rey-administer')?.addEventListener('click', reyAdminOpen);
-  /* The rail doubles as navigation — delegated, because it re-renders on
-     every keystroke and bound handlers would not survive. */
-  document.getElementById('pvt-rail')?.addEventListener('click', e => {
-    if (e.target.closest('[data-rail-toggle]')){
-      const card = document.querySelector('#pvt-rail .pvt-rail-card');
-      const btn = e.target.closest('[data-rail-toggle]');
-      const collapsed = card?.classList.toggle('is-collapsed');
-      btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-      btn.setAttribute('aria-label', collapsed ? 'Expand summary' : 'Collapse summary');
-      /* The state must survive the next re-render, which happens on every
-         keystroke — so it lives on the rail, not only on the card. */
-      document.getElementById('pvt-rail')?.classList.toggle('is-collapsed', !!collapsed);
-      return;
-    }
-    const row = e.target.closest('[data-rail-tab]');
-    if (row) switchPvtTab(row.dataset.railTab);
-  });
   ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion','pvt-cvlt3-basis'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });

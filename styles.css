@@ -9706,14 +9706,11 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* =============================================================
    PERFORMANCE VALIDITY PAGE
-   Standalone pvt-* classes throughout, per the cascade rule — but the
-   VISUAL SYSTEM is copied from the modern Change Analysis treatment
-   (styles.css "BOLDER TAB-TO-PANEL CONNECTION" + overview layers):
-   hidden hero (the topbar names the page), a white rounded tab strip
-   with centred labels, an active tab in the warm cream (#F0E8D6)
-   joined to the panel by a 3px accent rail, and the panel itself as a
-   cream-to-white gradient sheet holding white rounded cards. If that
-   treatment changes there, change it here to match.
+   Standalone pvt-* classes throughout, per the cascade rule. Hidden hero
+   (the topbar names the page); a left-hand menu with the Summary at its
+   top, which is the landing panel; and each measure on a cream-to-white
+   sheet holding white rounded cards (owner decision, 2026-09, chosen from
+   a mock-up of this against a summary-first page with a tab strip).
    ============================================================= */
 #validity.section{max-width:none;width:100%;padding:24px 40px 80px}
 #validity > .eyebrow,
@@ -9727,81 +9724,112 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#5A5A5A!important;
 }
 
-/* ---- Tab strip: white rounded-top sheet ---- */
-.pvt-method-tabs{
+/* ---- Layout: the menu on the left, the panel on the right ---- */
+.pvt-layout{
   display:grid;
-  /* Narrow leftmost About column + one column per measure tab. THE COUNT
-     MUST MATCH the markup: an extra tab with the count left at 7 does not
-     overflow or scroll, it silently wraps onto an implicit second row and
-     the strip reads as broken. check.js §39 pins the two together. */
-  grid-template-columns:minmax(72px,auto) repeat(8,minmax(104px,1fr));
-  gap:0;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.08);
-  border-bottom:none;
-  border-radius:var(--r-lg) var(--r-lg) 0 0;
-  box-shadow:0 1px 2px rgba(20,15,5,0.04);
-  overflow:visible;
+  grid-template-columns:252px minmax(0,1fr);
+  gap:18px;
+  align-items:start;
 }
-.pvt-method-tab{
-  width:100%;
-  border:none;
-  border-right:1px solid rgba(20,15,5,0.04);
-  background:#FFFFFF;
-  font-family:var(--sans);
-  padding:16px 10px 14px;
-  cursor:pointer;
-  text-align:center;
+.pvt-main-col{min-width:0}
+
+/* ---- The menu ----
+   Sticky, so it stays beside a long measure panel. Its buttons carry
+   data-pvt-tab and .active; nothing else in either stylesheet targets these
+   class names, so nothing here needs !important. */
+.pvt-nav{
+  position:sticky;
+  top:12px;
   display:flex;
   flex-direction:column;
+  gap:2px;
+  padding:8px;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-lg);
+  box-shadow:0 1px 2px rgba(20,15,5,0.04);
+}
+.pvt-nav-summary{
+  display:flex;
   align-items:center;
-  justify-content:center;
+  gap:12px;
+  width:100%;
+  padding:12px 12px;
+  margin-bottom:4px;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
+  background:#F7F2E6;
+  font-family:var(--sans);
+  text-align:left;
+  cursor:pointer;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.pvt-nav-summary:hover{background:#F0E8D6}
+.pvt-nav-summary.is-fail{background:rgba(156,61,42,0.07);border-color:rgba(156,61,42,0.28)}
+.pvt-nav-summary.is-fail:hover{background:rgba(156,61,42,0.11)}
+.pvt-nav-summary.is-pass{background:rgba(46,125,79,0.06);border-color:rgba(46,125,79,0.25)}
+.pvt-nav-summary.active{box-shadow:inset 3px 0 0 #9C3D2A}
+.pvt-nav-summary:focus{outline:none}
+.pvt-nav-summary:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.3)}
+.pvt-nav-count{
+  font-family:var(--serif);
+  font-size:30px;
+  font-weight:700;
+  line-height:1;
+  color:#1A1A1A;
+  font-variant-numeric:tabular-nums;
+  min-width:44px;
+}
+.pvt-nav-summary.is-fail .pvt-nav-count{color:#9C3D2A}
+.pvt-nav-summary.is-pass .pvt-nav-count{color:#2E7D4F}
+.pvt-nav-count-of{font-size:18px;color:#A8A29A;font-weight:600}
+.pvt-nav-summary-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pvt-nav-summary-label{font-size:14px;font-weight:600;color:#1A1A1A}
+.pvt-nav-summary-meta{font-size:11.5px;color:#6E6860;line-height:1.3}
+
+.pvt-nav-group{padding-top:6px}
+.pvt-nav-group-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
   gap:6px;
-  position:relative;
-  box-shadow:inset 0 -1px 0 rgba(20,15,5,0.08);
-  transition:background var(--t-slow) var(--ease,var(--ease)), color var(--t-slow) var(--ease,var(--ease));
-}
-.pvt-method-tab:first-child{border-radius:var(--r-lg) 0 0 0}
-.pvt-method-tab:last-child{border-right:none;border-radius:0 var(--r-lg) 0 0}
-.pvt-method-tab:focus{outline:none}
-.pvt-method-tab:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.22)}
-.pvt-method-tab:hover:not(.active){background:#F8F5ED}
-.pvt-method-tab.active{
-  background:#F0E8D6;
-  position:relative;
-  z-index:2;
-}
-.pvt-method-tab.active::after{
-  /* 3px accent rail along the bottom edge, extending 1px below the strip
-     so tab and panel read as one shared coloured seam — same device as
-     the Change Analysis tabs. */
-  content:"";
-  position:absolute;
-  left:0;right:0;bottom:-1px;
-  height:3px;
-  background:#9C3D2A;
-  z-index:3;
-}
-.pvt-method-num{display:none}
-.pvt-method-main{display:flex;flex-direction:column;gap:1px;min-width:0}
-.pvt-method-label{
+  padding:6px 10px 3px;
   font-family:var(--sans);
-  font-size:13px;
-  font-weight:500;
-  color:#3F3F3F;
-  line-height:1.25;
+  font-size:9.5px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#A29D95;
 }
-.pvt-method-tab.active .pvt-method-label{color:#1A1A1A;font-weight:600}
-.pvt-method-meta{
+.pvt-nav-group-note{font-size:9px;letter-spacing:0.05em;color:#BCB6AD;font-weight:500}
+.pvt-nav-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  width:100%;
+  padding:7px 10px;
+  border:0;
+  border-radius:var(--r-sm, 6px);
+  background:transparent;
   font-family:var(--sans);
-  font-size:11px;
-  color:#5A5A5A;
-  line-height:1.3;
+  text-align:left;
+  cursor:pointer;
+  transition:background var(--t-fast) var(--ease);
 }
+.pvt-nav-item:hover{background:#F8F5ED}
+.pvt-nav-item.active{background:#F0E8D6;box-shadow:inset 3px 0 0 #9C3D2A}
+.pvt-nav-item:focus{outline:none}
+.pvt-nav-item:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+.pvt-nav-main{display:flex;flex-direction:column;gap:1px;min-width:0}
+.pvt-nav-label{font-size:13px;font-weight:500;color:#2F2B26;line-height:1.25}
+.pvt-nav-item.active .pvt-nav-label{color:#1A1A1A;font-weight:600}
+.pvt-nav-meta{font-size:11px;color:#8A847B;line-height:1.3}
 
 /* Live status chip - state colours match the result card's bands.
-   Unscored tabs render NO chip (.is-idle): an empty pill is dead chrome,
-   and seven of them made the strip read as broken before first entry. */
+   Unscored measures render NO chip (.is-idle): an empty pill is dead
+   chrome, and seven of them made the menu read as broken before first
+   entry. */
 .pvt-status{
   display:inline-flex;
   align-items:center;
@@ -9818,6 +9846,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   text-transform:uppercase;
   line-height:1;
   white-space:nowrap;
+  flex:none;
   transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);
 }
 .pvt-status.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.4);background:rgba(46,125,79,0.07)}
@@ -9826,254 +9855,26 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-status.is-idle{display:none}
 .pvt-status .pvt-flag-icon{width:9px;height:9px;flex:none}
 
-/* ---- About landing tab + overview table ----
-   Deliberately the same visual vocabulary as the Change Analysis About
-   tab (its .change-overview-* rules above): filled terracotta "?" bubble
-   with the entry pulse, serif row titles with italic cites, a shaded
-   uppercase header band, cream row hover, dark hover popovers for the
-   per-row and per-column explainers. Standalone .pvt-* class names
-   throughout (the cascade rule in CLAUDE.md), and a private data-pvtip
-   attribute so the global [data-tooltip] rules cannot restyle these. */
-.pvt-method-tab-about{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:4px;
-}
-.pvt-about-bubble{
-  width:20px;height:20px;
-  border-radius:50%;
-  background:#A85544;
-  color:#FFFFFF;
-  font-family:var(--sans);
-  font-size:12px;
-  font-weight:700;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 1px 2px rgba(168,85,68,0.25), 0 0 0 2px rgba(168,85,68,0.15);
-  transition:transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
-}
-.pvt-method-tab-about:hover .pvt-about-bubble{
-  transform:scale(1.08);
-  box-shadow:0 2px 4px rgba(168,85,68,0.35), 0 0 0 3px rgba(168,85,68,0.18);
-}
-.pvt-method-tab-about.active .pvt-about-bubble{
-  background:#7A2E1F;
-  box-shadow:0 2px 6px rgba(122,46,31,0.45), 0 0 0 3px rgba(168,85,68,0.20);
-}
-/* Same once-on-entry pulse the Change Analysis bubble runs (keyframes above). */
-#validity.section.active .pvt-about-bubble{
-  animation:about-bubble-pulse 2.4s var(--ease) 0.4s 2;
-}
-.pvt-about-tab-label{
-  font-family:var(--sans);
-  font-size:13px;
-  font-weight:600;
-  color:#A85544;
-}
-
-.pvt-overview-wrap{min-width:0}
-.pvt-overview-table{
-  width:100%;
-  border-collapse:separate;
-  border-spacing:0;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.08);
-  border-radius:var(--r-lg);
-  /* overflow:visible so the hover popovers can escape the table box;
-     corner rounding is reapplied to the thead cells below. */
-  overflow:visible;
-}
-.pvt-overview-table thead tr th:first-child{border-top-left-radius:var(--r-lg)}
-.pvt-overview-table thead tr th:last-child{border-top-right-radius:var(--r-lg)}
-.pvt-overview-th{
-  font-family:var(--sans);
-  font-size:10px;
-  font-weight:600;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:#7A766E;
-  text-align:center;
-  padding:14px 12px 12px;
-  background:rgba(20,15,5,0.025);
-  border-bottom:1px solid rgba(20,15,5,0.08);
-  white-space:nowrap;
-}
-.pvt-overview-th.is-measure{text-align:left;padding-left:24px}
-/* A heading centred over a left-aligned column floats free of it. */
-.pvt-overview-th.is-left{text-align:left}
-.pvt-overview-colh{
-  position:relative;
-  display:inline-block;
-  cursor:help;
-  text-decoration:underline dotted rgba(20,15,5,0.28);
-  text-underline-offset:3px;
-  outline:none;
-}
-.pvt-overview-colh:hover,
-.pvt-overview-colh:focus-visible{
-  color:#9C3D2A;
-  text-decoration-color:rgba(156,61,42,0.55);
-}
-.pvt-overview-colh::before{
-  content:attr(data-pvtip);
-  position:absolute;
-  top:calc(100% + 10px);
-  left:50%;
-  transform:translateX(-50%) translateY(-4px);
-  width:320px;
-  padding:12px 14px;
-  background:rgba(15,18,24,0.96);
-  color:#FFFFFF;
-  border:1px solid rgba(15,18,24,0.96);
-  border-radius:8px;
-  font-family:var(--sans);
-  font-size:12.5px;
-  font-weight:400;
-  letter-spacing:0;
-  text-transform:none;
-  line-height:1.55;
-  text-align:left;
-  white-space:normal;
-  z-index:60;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
-}
-.pvt-overview-colh.is-end::before{left:auto;right:0;transform:translateY(-4px)}
-.pvt-overview-colh:hover::before,
-.pvt-overview-colh:focus-visible::before{opacity:1;transform:translateX(-50%) translateY(0)}
-.pvt-overview-colh.is-end:hover::before,
-.pvt-overview-colh.is-end:focus-visible::before{transform:translateY(0)}
-.pvt-overview-row{cursor:pointer;transition:background var(--t-fast) var(--ease)}
-.pvt-overview-row:hover,
-.pvt-overview-row:focus-visible{background:#F7F2E6;outline:none}
-.pvt-overview-row:focus-visible{box-shadow:inset 3px 0 0 #9C3D2A}
-.pvt-overview-row + .pvt-overview-row > td{border-top:1px solid rgba(20,15,5,0.05)}
-.pvt-overview-row td{padding:14px 12px;vertical-align:middle}
-.pvt-overview-measure{padding-left:24px;min-width:240px}
-.pvt-overview-titlerow{
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  gap:8px;
-}
-.pvt-overview-title{
-  font-family:var(--serif);
-  font-size:15px;
-  font-weight:600;
-  color:#1A1A1A;
-  letter-spacing:-0.005em;
-}
-.pvt-overview-info{
-  width:18px;
-  height:18px;
-  border-radius:50%;
-  background:rgba(20,15,5,0.08);
-  border:none;
-  color:#6B6B6B;
-  font-family:var(--sans);
-  font-size:11px;
-  font-weight:700;
-  cursor:help;
-  position:relative;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  line-height:1;
-  flex:0 0 auto;
-  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
-}
-.pvt-overview-info:hover,
-.pvt-overview-info:focus-visible{
-  background:#9C3D2A;
-  color:#FFFFFF;
-  outline:none;
-}
-.pvt-overview-info::before{
-  content:attr(data-pvtip);
-  position:absolute;
-  bottom:calc(100% + 8px);
-  left:-8px;
-  width:340px;
-  padding:12px 14px;
-  background:rgba(15,18,24,0.96);
-  color:#FFFFFF;
-  border:1px solid rgba(15,18,24,0.96);
-  border-radius:8px;
-  font-family:var(--sans);
-  font-size:12.5px;
-  font-weight:400;
-  line-height:1.55;
-  text-align:left;
-  white-space:normal;
-  z-index:60;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
-  transform:translateY(4px);
-}
-.pvt-overview-info:hover::before,
-.pvt-overview-info:focus-visible::before{opacity:1;transform:translateY(0)}
-.pvt-overview-cite{
-  display:block;
-  margin-top:2px;
-  font-family:var(--sans);
-  font-size:11.5px;
-  font-style:italic;
-  color:#7A766E;
-  line-height:1.35;
-}
-.pvt-overview-cell{
-  font-family:var(--sans);
-  font-size:12px;
-  color:#4D4840;
-  text-align:center;
-  white-space:nowrap;
-}
-/* Text columns read left-aligned; only single glyphs are centred, as on
-   the Change Analysis overview. */
-.pvt-overview-derived{text-align:left;white-space:normal;min-width:190px;font-size:12.5px;color:#3F3B35}
-.pvt-overview-arrow{width:34px;color:#BCB6AD;text-align:center}
-.pvt-overview-arrow svg{width:14px;height:14px;display:inline-block;vertical-align:middle}
-.pvt-overview-foot{
-  margin:12px 2px 0;
-  font-family:var(--sans);
-  font-size:11.5px;
-  color:#6E6860;
-  line-height:1.55;
+/* Below 1000px the menu goes above the panel and its entries wrap, rather
+   than taking a third of a narrow window. */
+@media (max-width:1000px){
+  .pvt-layout{grid-template-columns:minmax(0,1fr)}
+  .pvt-nav{position:static;flex-direction:row;flex-wrap:wrap;gap:4px}
+  .pvt-nav-summary{width:100%}
+  .pvt-nav-group{display:flex;flex-wrap:wrap;gap:2px;padding-top:0;width:100%}
+  .pvt-nav-group-head{width:100%}
+  .pvt-nav-item{width:auto}
 }
 
 /* ---- Content panel: the cream-to-white gradient sheet ---- */
-/* The sheet holds every method panel AND the running rail, so the rail is
-   ONE element that persists across tab switches rather than a copy per
-   panel — a running total that re-rendered per tab would be four copies
-   of one truth. */
 .pvt-sheet{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 260px;
-  gap:22px;
   background:linear-gradient(180deg, #F0E8D6 0%, #F7F2E6 80px, #FFFFFF 100%);
   border:1px solid rgba(20,15,5,0.08);
-  border-top:none;
-  border-radius:0 0 var(--r-lg) var(--r-lg);
+  border-radius:var(--r-lg);
   box-shadow:0 6px 18px rgba(20,15,5,0.05);
-  padding:24px;
+  padding:18px 22px;
 }
-/* On the Summary tab the rail would restate the table beside it, and on
-   About it would list the same seven measures the About table lists. */
-.pvt-sheet.is-summary,
-.pvt-sheet.is-about{grid-template-columns:minmax(0,1fr)}
-.pvt-sheet.is-summary .pvt-rail,
-.pvt-sheet.is-about .pvt-rail{display:none}
 .pvt-sheet-main{min-width:0}
-@media (max-width:1180px){
-  .pvt-sheet{grid-template-columns:minmax(0,1fr)}
-  .pvt-rail{display:none}
-}
 
 .pvt-tab-content{display:none}
 .pvt-tab-content.active{
@@ -10081,182 +9882,113 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   animation:pvt-panel-in 180ms var(--ease,ease) both;
 }
 
-/* ---- running summary rail ----
-   A docked progress panel: hairline-divided sections, small-caps kickers,
-   and a label on the left against its value on the right. Colour marks a
-   flag; it never carries the meaning on its own. Sticky, so it stays in
-   view while a long method panel scrolls. */
-.pvt-rail{min-width:0}
-.pvt-rail-card{
-  position:sticky;
-  top:16px;
-  border:1px solid rgba(20,15,5,0.07);
-  border-radius:var(--r-md);
+/* ---- The Summary: verdict band ----
+   The count is the page's answer, so it is the largest thing on it. One
+   pip per independent indicator, in the menu's order; colour is backed by
+   the count and the sentence beside it, never the only carrier. */
+.pvt-verdict{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:26px;
+  align-items:center;
+  padding:12px 18px;
   background:#FFFFFF;
-  overflow:hidden;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
 }
-.pvt-rail-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  padding:12px 14px;
-  border-bottom:1px solid rgba(20,15,5,0.07);
-}
-.pvt-rail-title{
-  font-family:var(--sans);
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:0.11em;
-  text-transform:uppercase;
-  color:var(--ink);
-}
-.pvt-rail-toggle{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:22px;
-  height:22px;
-  padding:0;
-  border:0;
-  border-radius:5px;
-  background:transparent;
-  color:#9E9A93;
-  cursor:pointer;
-  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-base) var(--ease);
-}
-.pvt-rail-toggle svg{width:13px;height:13px}
-.pvt-rail-toggle:hover{background:rgba(20,15,5,0.04);color:var(--ink)}
-.pvt-rail-toggle:focus{outline:none}
-.pvt-rail-toggle:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.25)}
-/* Chevron points down when open, right when collapsed. */
-.pvt-rail-card .pvt-rail-toggle{transform:rotate(90deg)}
-.pvt-rail-card.is-collapsed .pvt-rail-toggle{transform:rotate(0deg)}
-.pvt-rail-card.is-collapsed .pvt-rail-body{display:none}
-.pvt-rail-card.is-collapsed .pvt-rail-head{border-bottom:none}
-
-.pvt-rail-section{
-  padding:12px 14px 13px;
-  border-bottom:1px solid rgba(20,15,5,0.07);
-}
-.pvt-rail-kicker{
-  font-family:var(--sans);
-  font-size:9px;
-  font-weight:600;
-  letter-spacing:0.13em;
-  text-transform:uppercase;
-  color:#A29D95;
-  margin-bottom:8px;
-}
-.pvt-rail-stat{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:10px;
-  padding:3px 0;
-}
-.pvt-rail-stat-label{font-family:var(--sans);font-size:11.5px;color:var(--ink);line-height:1.3}
-.pvt-rail-stat-value{
-  font-family:var(--mono);
-  font-size:12.5px;
-  font-weight:600;
-  color:var(--ink);
+.pvt-verdict.is-fail{border-color:rgba(156,61,42,0.30);box-shadow:inset 4px 0 0 #9C3D2A}
+.pvt-verdict.is-warn{border-color:rgba(183,121,31,0.35);box-shadow:inset 4px 0 0 #B7791F}
+.pvt-verdict.is-pass{border-color:rgba(46,125,79,0.28);box-shadow:inset 4px 0 0 #2E7D4F}
+.pvt-verdict-count{display:flex;flex-direction:column;gap:8px;min-width:84px}
+.pvt-verdict-num{
+  font-family:var(--serif);
+  font-size:40px;
+  font-weight:700;
+  line-height:0.95;
+  letter-spacing:-0.02em;
+  color:#1A1A1A;
   font-variant-numeric:tabular-nums;
-  white-space:nowrap;
 }
-.pvt-rail-stat.is-flagged .pvt-rail-stat-value{color:#9c3d2a}
-.pvt-rail-sep{color:var(--faint);margin:0 1px;font-weight:400}
-.pvt-rail-hint{
-  font-family:var(--sans);
-  font-size:10.5px;
-  color:#918C84;
-  line-height:1.5;
-  margin:7px 0 0;
+.pvt-verdict.is-fail .pvt-verdict-num{color:#9C3D2A}
+.pvt-verdict.is-warn .pvt-verdict-num{color:#9A6414}
+.pvt-verdict.is-pass .pvt-verdict-num{color:#2E7D4F}
+.pvt-verdict.is-idle .pvt-verdict-num{color:#BCB6AD}
+.pvt-verdict-of{font-size:24px;color:#A8A29A;font-weight:600}
+.pvt-verdict-pips{display:flex;gap:4px}
+.pvt-verdict-pip{width:16px;height:6px;border-radius:3px;background:#E8E2D5}
+.pvt-verdict-pip.is-fail{background:#9C3D2A}
+.pvt-verdict-pip.is-pass{background:#2E7D4F}
+.pvt-verdict-pip.is-gated{background:#C9BE8A}
+.pvt-verdict-head{
+  font-family:var(--serif);
+  font-size:21px;
+  font-weight:700;
+  color:#1A1A1A;
+  line-height:1.2;
+  margin-bottom:4px;
 }
+.pvt-verdict-body{margin:0;font-size:13px;line-height:1.45;color:#4D4840;max-width:720px}
+.pvt-verdict-meta{margin-top:4px;font-size:11.5px;color:#7A766E}
 
-/* Grouped by independent indicator; a two-measure group is labelled, so
-   "counts as one" is visible rather than only stated in the note. */
-.pvt-rail-group{margin-bottom:9px}
-.pvt-rail-group:last-child{margin-bottom:0}
-.pvt-rail-group-head{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:6px;
-  margin-bottom:1px;
-}
-.pvt-rail-group-name{
-  font-family:var(--sans);
-  font-size:9px;
-  font-weight:600;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:#A29D95;
-}
-.pvt-rail-group-tag{
-  font-family:var(--sans);
-  font-size:8.5px;
-  letter-spacing:0.05em;
-  text-transform:uppercase;
-  color:#BCB6AD;
-}
-.pvt-rail-row{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
+/* ---- The Summary: one card per independent indicator ----
+   The menu again, with each indicator's state; a row opens its measure. */
+.pvt-ind-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
   gap:10px;
-  width:100%;
-  padding:4px 6px;
-  margin:0 -6px;
-  border:0;
-  border-radius:5px;
-  background:transparent;
-  text-align:left;
-  cursor:pointer;
-  transition:background var(--t-fast) var(--ease);
+  margin-top:10px;
 }
-.pvt-rail-row:hover{background:rgba(20,15,5,0.035)}
-.pvt-rail-row:focus{outline:none}
-.pvt-rail-row:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
-.pvt-rail-row.is-current{background:rgba(156,61,42,0.06)}
-.pvt-rail-label{
-  font-family:var(--sans);
-  font-size:11.5px;
-  color:var(--ink);
-  line-height:1.35;
+@media (max-width:1280px){ .pvt-ind-grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:760px){ .pvt-ind-grid{grid-template-columns:minmax(0,1fr)} }
+.pvt-ind{
+  display:flex;
+  flex-direction:column;
+  padding:9px 12px 4px;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
   min-width:0;
 }
-.pvt-rail-row.is-idle .pvt-rail-label{color:#A8A29A}
-.pvt-rail-value{
-  font-family:var(--sans);
-  font-size:10.5px;
-  color:#918C84;
-  line-height:1.4;
-  white-space:nowrap;
-  flex:0 0 auto;
-}
-.pvt-rail-row.is-flag .pvt-rail-value{color:#9c3d2a;font-weight:600}
-.pvt-rail-row.is-pass .pvt-rail-value{color:#2e7d4f}
-.pvt-rail-row.is-gated .pvt-rail-value{color:#8a7a2c}
-
-.pvt-rail-cta{
-  display:block;
-  width:100%;
-  padding:11px 14px;
+.pvt-ind.is-fail{border-color:rgba(156,61,42,0.30);box-shadow:inset 3px 0 0 #9C3D2A}
+.pvt-ind.is-idle{background:transparent;border-style:dashed;border-color:rgba(20,15,5,0.16)}
+.pvt-ind-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pvt-ind-name{font-family:var(--serif);font-size:15px;font-weight:700;color:#1A1A1A;line-height:1.25}
+.pvt-ind-sub{font-size:11px;color:#8A847B;margin:1px 0 4px}
+.pvt-ind-row{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:8px;
+  padding:4px 6px;
+  margin:0 -6px;
+  width:calc(100% + 12px);
   border:0;
+  border-top:1px solid rgba(20,15,5,0.06);
+  border-radius:0;
   background:transparent;
   font-family:var(--sans);
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:0.02em;
-  color:var(--ink);
   text-align:left;
   cursor:pointer;
   transition:background var(--t-fast) var(--ease);
 }
-.pvt-rail-cta:hover{background:rgba(20,15,5,0.04)}
-.pvt-rail-cta:focus{outline:none}
-.pvt-rail-cta:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+.pvt-ind-row:hover{background:#F8F5ED}
+.pvt-ind-row:focus{outline:none}
+.pvt-ind-row:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+.pvt-ind-label{font-size:12.5px;color:#2F2B26;min-width:0}
+.pvt-ind-value{font-size:11.5px;color:#8A847B;white-space:nowrap;flex:none}
+.pvt-ind-row.is-flag .pvt-ind-value{color:#9c3d2a;font-weight:600}
+.pvt-ind-row.is-pass .pvt-ind-value{color:#2e7d4f}
+.pvt-ind-row.is-gated .pvt-ind-value{color:#8a7a2c}
+.pvt-ind-row.is-idle .pvt-ind-value{color:#4D4840;font-weight:500}
+
+/* The scores table is the wider column: at the measure panels' own split
+   its Cut-off and Result cells wrapped to three lines a row. Two classes,
+   because .pvt-workspace is declared further down and would win a tie. */
+.pvt-workspace.pvt-summary-lower{margin-top:10px;grid-template-columns:minmax(0,1.2fr) minmax(400px,1fr)}
+@media (max-width:1100px){ .pvt-workspace.pvt-summary-lower{grid-template-columns:1fr} }
+.pvt-summary-lower .pvt-card{padding:12px 16px}
+.pvt-summary-lower .pvt-card-kicker{margin-bottom:8px}
+
 @keyframes pvt-panel-in{
   from{ opacity:0; transform:translateY(-4px); }
   to  { opacity:1; transform:translateY(0); }
@@ -10308,7 +10040,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 .pvt-outcome{display:flex;flex-direction:column;gap:14px;min-width:0}
 .pvt-outcome .panel{margin-bottom:0}
-.pvt-summary-left{min-width:0}
+.pvt-summary-left{min-width:0;display:flex;flex-direction:column;gap:14px}
 
 .pvt-result{margin:0}
 /* The message card - empty, invalid and partial states only. A SCORED
@@ -10527,73 +10259,6 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#7A5148;
   line-height:1.5;
 }
-.pvt-overview-derived{line-height:1.35}
-
-/* The About table is a chooser: measure, instrument, cut-off. Measures
-   sharing an instrument sit in their own <tbody> under a small heading,
-   with a faint bar down the left binding the group; single measures need
-   neither. */
-.pvt-overview-cutcell{text-align:left;font-size:12.5px;color:#1A1A1A;font-weight:500}
-.pvt-overview-table tbody + tbody > tr:first-child > td{border-top:1px solid rgba(20,15,5,0.08)}
-.pvt-overview-grouphead > td{
-  padding:10px 12px 2px 24px;
-  font-family:var(--sans);
-  font-size:10px;
-  font-weight:600;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:#7A766E;
-}
-.pvt-overview-groupnote{letter-spacing:0;text-transform:none;font-weight:400;font-size:11px}
-.pvt-overview-group > tr > td:first-child{box-shadow:inset 3px 0 0 rgba(156,61,42,0.22)}
-/* The version note beside an instrument: same geometry as the "?" but in
-   the caveat colour, so it reads as a warning rather than as help. */
-.pvt-overview-flag{
-  width:16px;
-  height:16px;
-  margin-left:4px;
-  border-radius:50%;
-  background:rgba(156,61,42,0.10);
-  border:none;
-  color:#9C3D2A;
-  font-family:var(--sans);
-  font-size:10px;
-  font-weight:700;
-  cursor:help;
-  position:relative;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  line-height:1;
-  vertical-align:1px;
-}
-.pvt-overview-flag:hover,
-.pvt-overview-flag:focus-visible{background:#9C3D2A;color:#FFFFFF;outline:none}
-.pvt-overview-flag::before{
-  content:attr(data-pvtip);
-  position:absolute;
-  bottom:calc(100% + 8px);
-  left:-8px;
-  width:340px;
-  padding:12px 14px;
-  background:rgba(15,18,24,0.96);
-  color:#FFFFFF;
-  border-radius:8px;
-  font-size:12.5px;
-  font-weight:400;
-  line-height:1.55;
-  text-align:left;
-  white-space:normal;
-  z-index:60;
-  opacity:0;
-  pointer-events:none;
-  transform:translateY(4px);
-  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
-}
-.pvt-overview-flag:hover::before,
-.pvt-overview-flag:focus-visible::before{opacity:1;transform:translateY(0)}
-
 /* ---------- Rey 15-Item administration overlay ----------
    Mounted on <body> (position:fixed against a transformed ancestor is the
    trap that moved the old age popover), full-viewport, above the drawer. */

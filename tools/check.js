@@ -7572,13 +7572,13 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
      render; a chip updating without the card (or vice versa) would show two
      different verdicts for one score. renderPvtAll is the single caller. */
   const all = extractFn(APP_SRC, 'renderPvtAll');
-  if (!/renderPvtNav\(\);/.test(all)) bad.push('renderPvtAll no longer refreshes the tab-strip status chips');
+  if (!/renderPvtNav\(\);/.test(all)) bad.push('renderPvtAll no longer refreshes the menu status chips');
   const nav = extractFn(APP_SRC, 'renderPvtNav');
   ['getPvtEi', 'getPvtEs', 'getPvtRds', 'getPvtTomm', 'pvtIndicatorCounts'].forEach(fn => {
     if (!nav.includes(fn + '(')) bad.push('renderPvtNav no longer reads ' + fn + ' — a chip could disagree with its result card');
   });
-  ['pvt-status-ei', 'pvt-status-es', 'pvt-status-rds', 'pvt-status-tomm', 'pvt-status-summary'].forEach(id => {
-    if (!HTML_SRC.includes('id="' + id + '"')) bad.push('the ' + id + ' chip is gone from the tab strip');
+  ['pvt-status-ei', 'pvt-status-es', 'pvt-status-rds', 'pvt-status-tomm', 'pvt-nav-count'].forEach(id => {
+    if (!HTML_SRC.includes('id="' + id + '"')) bad.push('the ' + id + ' status is gone from the menu');
   });
   /* The ES gate must be enforced in code, not just described in copy. */
   const es = extractFn(APP_SRC, 'getPvtEs');
@@ -7787,23 +7787,9 @@ check('CVLT-3 is one independent indicator, published with dashes, and wired to 
   if (!/renderPvtCvlt3\(\);/.test(extractFn(APP_SRC, 'renderPvtAll'))) bad.push('renderPvtAll no longer draws the CVLT-3 card');
   if (!extractFn(APP_SRC, 'renderPvtNav').includes('getPvtCvlt3')) bad.push('the tab chip no longer reads getPvtCvlt3 — chip and card could disagree');
   if (!/id="pvt-cvlt3"/.test(HTML_SRC)) bad.push('the CVLT-3 panel is gone');
-  if (!/id="pvt-status-cvlt3"/.test(HTML_SRC)) bad.push('the CVLT-3 chip is gone from the tab strip');
+  if (!/id="pvt-status-cvlt3"/.test(HTML_SRC)) bad.push('the CVLT-3 chip is gone from the menu');
   if (!/id="pvt-cvlt3-hits"/.test(HTML_SRC)) bad.push('the hits input is gone');
-  /* The tab strip is a CSS grid with a HARD-CODED column count. A tab added
-     without bumping it does not overflow or scroll — it wraps onto an
-     implicit second row, which reads as a broken strip rather than as a
-     missing rule. Found exactly that way when this tab was added. */
-  (() => {
-    const tabs = (HTML_SRC.match(/data-pvt-tab="/g) || []).length;
-    const m = CSS_SRC.match(/\.pvt-method-tabs\{[\s\S]*?grid-template-columns:minmax\(\d+px,auto\) repeat\((\d+),/);
-    if (!m){ bad.push('the tab strip grid template is gone or reshaped — the column count can no longer be checked'); return; }
-    /* One About column plus one per measure, and the markup carries a
-       data-pvt-tab per tab INCLUDING About. */
-    if (Number(m[1]) !== tabs - 1){
-      bad.push('the tab strip declares ' + m[1] + ' measure columns for ' + (tabs - 1) + ' measure tabs — the strip will wrap');
-    }
-  })();
-  if (!/'cvlt3'/.test(APP_SRC.slice(APP_SRC.indexOf('const PVT_RAIL_GROUPS')))) bad.push('the rail no longer carries a CVLT-3 group');
+  if (!/'cvlt3'/.test(APP_SRC.slice(APP_SRC.indexOf('const PVT_INDICATOR_GROUPS')))) bad.push('the Summary no longer carries a CVLT-3 indicator');
   /* The page must say the Brief Form is out of scope: Appendix D tabulates
      the Standard and Alternate Forms only. */
   if (!/Brief Form/.test(HTML_SRC)) bad.push('the Brief Form exclusion is no longer stated on the page');
@@ -7890,7 +7876,7 @@ check('the roster covers every method tab, and every method tab is in the roster
      fails rather than silently saying nothing. */
   const bad = [];
   const tabs = [...HTML_SRC.matchAll(/data-pvt-tab="([a-z0-9]+)"/g)].map(m => m[1])
-    .filter(t => t !== 'about' && t !== 'summary');
+    .filter(t => t !== 'summary');
   const roster = Object.keys(D.PVT_INSTRUMENTS);
   tabs.forEach(t => { if (!roster.includes(t)) bad.push('method tab "' + t + '" has no entry in PVT_INSTRUMENTS'); });
   roster.forEach(t => { if (!tabs.includes(t)) bad.push('PVT_INSTRUMENTS names "' + t + '", which is not a method tab'); });
@@ -7906,6 +7892,72 @@ check('the roster covers every method tab, and every method tab is in the roster
     if (!HTML_SRC.includes('data-pvt-derived="' + t + '"')) bad.push('the ' + t + ' card has no "Derived on" line');
   });
   if (!/renderPvtInstruments\(\);/.test(extractFn(APP_SRC, 'renderPvtAll'))) bad.push('renderPvtAll never writes the Derived on lines');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the menu, the panels and the Summary cards list the same measures, grouped the same way', () => {
+  /* The page lists its measures in three places: the left-hand menu
+     (markup), the method panels (markup) and the Summary's indicator cards
+     (PVT_INDICATOR_GROUPS). This replaced a tab strip whose hard-coded grid
+     column count had to be kept in step by hand. Nothing is restated here:
+     each list is read from where it lives and compared with the others.
+
+     The grouping matters more than the list. The count on the Summary is
+     over INDEPENDENT indicators, so a menu heading marked "counts as one"
+     must hold exactly the measures of one shared indicator, and a heading
+     over single measures must not carry that note, or the menu tells the
+     clinician two measures are one when the count treats them as two. */
+  const bad = [];
+  const vStart = HTML_SRC.indexOf('<section class="section" id="validity">');
+  const vHtml = HTML_SRC.slice(vStart, HTML_SRC.indexOf('</section>', vStart));
+  const nav = vHtml.slice(vHtml.indexOf('<nav class="pvt-nav"'), vHtml.indexOf('</nav>', vHtml.indexOf('<nav class="pvt-nav"')));
+  if (!nav) return 'the PVT menu is gone';
+  const menuTabs = [...nav.matchAll(/data-pvt-tab="([a-z0-9]+)"/g)].map(m => m[1]);
+  const panels = [...vHtml.matchAll(/class="pvt-tab-content[^"]*" id="pvt-([a-z0-9]+)"/g)].map(m => m[1]);
+  menuTabs.forEach(t => { if (!panels.includes(t)) bad.push('menu entry "' + t + '" opens no panel'); });
+  panels.forEach(t => { if (!menuTabs.includes(t)) bad.push('panel "' + t + '" has no menu entry'); });
+  if (new Set(menuTabs).size !== menuTabs.length) bad.push('a measure is listed twice in the menu');
+  /* The Summary is the landing panel: active in the markup, first in the menu. */
+  if (menuTabs[0] !== 'summary') bad.push('the Summary is no longer first in the menu');
+  if (!/class="pvt-tab-content active" id="pvt-summary"/.test(vHtml)) bad.push('the page no longer opens on the Summary');
+  if ((vHtml.match(/class="pvt-tab-content active"/g) || []).length !== 1) bad.push('more than one panel is active on load');
+  if (/data-pvt-tab="about"|renderPvtAboutPanel|renderPvtRail/.test(HTML_SRC + APP_SRC)) bad.push('the About tab or the rail is back, restating the menu');
+
+  const src = APP_SRC.slice(APP_SRC.indexOf('const PVT_INDICATOR_GROUPS'));
+  const lit = src.slice(src.indexOf('['), src.indexOf('];') + 1);
+  let groups;
+  try { groups = Function('return ' + lit)(); } catch (e) { return 'PVT_INDICATOR_GROUPS could not be read: ' + e.message; }
+  const cardTabs = groups.flatMap(g => g.members.map(m => m.tab));
+  menuTabs.filter(t => t !== 'summary').forEach(t => { if (!cardTabs.includes(t)) bad.push('"' + t + '" is in the menu but has no Summary card row'); });
+  cardTabs.forEach(t => { if (!menuTabs.includes(t)) bad.push('Summary card row "' + t + '" is not in the menu'); });
+  /* Card groups are the same keys the rows are counted by. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  const rowGroups = [...new Set([...rowsFn.matchAll(/group: '([a-z0-9]+)'/g)].map(m => m[1]))];
+  const cardGroups = groups.map(g => g.id);
+  rowGroups.forEach(g => { if (!cardGroups.includes(g)) bad.push('rows are counted under "' + g + '", which has no Summary card'); });
+  cardGroups.forEach(g => { if (!rowGroups.includes(g)) bad.push('Summary card "' + g + '" matches no counted rows'); });
+  const cardIds = groups.flatMap(g => g.members.flatMap(m => m.ids));
+  [...rowsFn.matchAll(/id: '([a-z0-9-]+)',/g)].map(m => m[1]).forEach(id => {
+    if (!cardIds.includes(id)) bad.push('row "' + id + '" is counted but shown on no Summary card');
+  });
+  /* Menu headings against independence. */
+  const navGroups = nav.split('<div class="pvt-nav-group">').slice(1).map(chunk => ({
+    shared: /counts as one/.test(chunk),
+    tabs: [...chunk.matchAll(/data-pvt-tab="([a-z0-9]+)"/g)].map(m => m[1])
+  }));
+  const groupOf = t => groups.find(g => g.members.some(m => m.tab === t));
+  navGroups.forEach(ng => {
+    if (ng.shared){
+      const g = groupOf(ng.tabs[0]);
+      const want = g ? g.members.map(m => m.tab).sort().join(',') : '';
+      if (ng.tabs.slice().sort().join(',') !== want) bad.push('the menu heading over ' + ng.tabs.join(', ') + ' says "counts as one" but they are not one indicator');
+    } else {
+      ng.tabs.forEach(t => {
+        const g = groupOf(t);
+        if (g && g.members.length > 1) bad.push('"' + t + '" shares an indicator but sits under a heading that does not say so');
+      });
+    }
+  });
   return bad.length === 0 || bad.join('; ');
 });
 

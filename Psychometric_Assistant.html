@@ -9738,14 +9738,11 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 /* =============================================================
    PERFORMANCE VALIDITY PAGE
-   Standalone pvt-* classes throughout, per the cascade rule — but the
-   VISUAL SYSTEM is copied from the modern Change Analysis treatment
-   (styles.css "BOLDER TAB-TO-PANEL CONNECTION" + overview layers):
-   hidden hero (the topbar names the page), a white rounded tab strip
-   with centred labels, an active tab in the warm cream (#F0E8D6)
-   joined to the panel by a 3px accent rail, and the panel itself as a
-   cream-to-white gradient sheet holding white rounded cards. If that
-   treatment changes there, change it here to match.
+   Standalone pvt-* classes throughout, per the cascade rule. Hidden hero
+   (the topbar names the page); a left-hand menu with the Summary at its
+   top, which is the landing panel; and each measure on a cream-to-white
+   sheet holding white rounded cards (owner decision, 2026-09, chosen from
+   a mock-up of this against a summary-first page with a tab strip).
    ============================================================= */
 #validity.section{max-width:none;width:100%;padding:24px 40px 80px}
 #validity > .eyebrow,
@@ -9759,81 +9756,112 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#5A5A5A!important;
 }
 
-/* ---- Tab strip: white rounded-top sheet ---- */
-.pvt-method-tabs{
+/* ---- Layout: the menu on the left, the panel on the right ---- */
+.pvt-layout{
   display:grid;
-  /* Narrow leftmost About column + one column per measure tab. THE COUNT
-     MUST MATCH the markup: an extra tab with the count left at 7 does not
-     overflow or scroll, it silently wraps onto an implicit second row and
-     the strip reads as broken. check.js §39 pins the two together. */
-  grid-template-columns:minmax(72px,auto) repeat(8,minmax(104px,1fr));
-  gap:0;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.08);
-  border-bottom:none;
-  border-radius:var(--r-lg) var(--r-lg) 0 0;
-  box-shadow:0 1px 2px rgba(20,15,5,0.04);
-  overflow:visible;
+  grid-template-columns:252px minmax(0,1fr);
+  gap:18px;
+  align-items:start;
 }
-.pvt-method-tab{
-  width:100%;
-  border:none;
-  border-right:1px solid rgba(20,15,5,0.04);
-  background:#FFFFFF;
-  font-family:var(--sans);
-  padding:16px 10px 14px;
-  cursor:pointer;
-  text-align:center;
+.pvt-main-col{min-width:0}
+
+/* ---- The menu ----
+   Sticky, so it stays beside a long measure panel. Its buttons carry
+   data-pvt-tab and .active; nothing else in either stylesheet targets these
+   class names, so nothing here needs !important. */
+.pvt-nav{
+  position:sticky;
+  top:12px;
   display:flex;
   flex-direction:column;
+  gap:2px;
+  padding:8px;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-lg);
+  box-shadow:0 1px 2px rgba(20,15,5,0.04);
+}
+.pvt-nav-summary{
+  display:flex;
   align-items:center;
-  justify-content:center;
+  gap:12px;
+  width:100%;
+  padding:12px 12px;
+  margin-bottom:4px;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
+  background:#F7F2E6;
+  font-family:var(--sans);
+  text-align:left;
+  cursor:pointer;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.pvt-nav-summary:hover{background:#F0E8D6}
+.pvt-nav-summary.is-fail{background:rgba(156,61,42,0.07);border-color:rgba(156,61,42,0.28)}
+.pvt-nav-summary.is-fail:hover{background:rgba(156,61,42,0.11)}
+.pvt-nav-summary.is-pass{background:rgba(46,125,79,0.06);border-color:rgba(46,125,79,0.25)}
+.pvt-nav-summary.active{box-shadow:inset 3px 0 0 #9C3D2A}
+.pvt-nav-summary:focus{outline:none}
+.pvt-nav-summary:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.3)}
+.pvt-nav-count{
+  font-family:var(--serif);
+  font-size:30px;
+  font-weight:700;
+  line-height:1;
+  color:#1A1A1A;
+  font-variant-numeric:tabular-nums;
+  min-width:44px;
+}
+.pvt-nav-summary.is-fail .pvt-nav-count{color:#9C3D2A}
+.pvt-nav-summary.is-pass .pvt-nav-count{color:#2E7D4F}
+.pvt-nav-count-of{font-size:18px;color:#A8A29A;font-weight:600}
+.pvt-nav-summary-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pvt-nav-summary-label{font-size:14px;font-weight:600;color:#1A1A1A}
+.pvt-nav-summary-meta{font-size:11.5px;color:#6E6860;line-height:1.3}
+
+.pvt-nav-group{padding-top:6px}
+.pvt-nav-group-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
   gap:6px;
-  position:relative;
-  box-shadow:inset 0 -1px 0 rgba(20,15,5,0.08);
-  transition:background var(--t-slow) var(--ease,var(--ease)), color var(--t-slow) var(--ease,var(--ease));
-}
-.pvt-method-tab:first-child{border-radius:var(--r-lg) 0 0 0}
-.pvt-method-tab:last-child{border-right:none;border-radius:0 var(--r-lg) 0 0}
-.pvt-method-tab:focus{outline:none}
-.pvt-method-tab:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.22)}
-.pvt-method-tab:hover:not(.active){background:#F8F5ED}
-.pvt-method-tab.active{
-  background:#F0E8D6;
-  position:relative;
-  z-index:2;
-}
-.pvt-method-tab.active::after{
-  /* 3px accent rail along the bottom edge, extending 1px below the strip
-     so tab and panel read as one shared coloured seam — same device as
-     the Change Analysis tabs. */
-  content:"";
-  position:absolute;
-  left:0;right:0;bottom:-1px;
-  height:3px;
-  background:#9C3D2A;
-  z-index:3;
-}
-.pvt-method-num{display:none}
-.pvt-method-main{display:flex;flex-direction:column;gap:1px;min-width:0}
-.pvt-method-label{
+  padding:6px 10px 3px;
   font-family:var(--sans);
-  font-size:13px;
-  font-weight:500;
-  color:#3F3F3F;
-  line-height:1.25;
+  font-size:9.5px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#A29D95;
 }
-.pvt-method-tab.active .pvt-method-label{color:#1A1A1A;font-weight:600}
-.pvt-method-meta{
+.pvt-nav-group-note{font-size:9px;letter-spacing:0.05em;color:#BCB6AD;font-weight:500}
+.pvt-nav-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  width:100%;
+  padding:7px 10px;
+  border:0;
+  border-radius:var(--r-sm, 6px);
+  background:transparent;
   font-family:var(--sans);
-  font-size:11px;
-  color:#5A5A5A;
-  line-height:1.3;
+  text-align:left;
+  cursor:pointer;
+  transition:background var(--t-fast) var(--ease);
 }
+.pvt-nav-item:hover{background:#F8F5ED}
+.pvt-nav-item.active{background:#F0E8D6;box-shadow:inset 3px 0 0 #9C3D2A}
+.pvt-nav-item:focus{outline:none}
+.pvt-nav-item:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+.pvt-nav-main{display:flex;flex-direction:column;gap:1px;min-width:0}
+.pvt-nav-label{font-size:13px;font-weight:500;color:#2F2B26;line-height:1.25}
+.pvt-nav-item.active .pvt-nav-label{color:#1A1A1A;font-weight:600}
+.pvt-nav-meta{font-size:11px;color:#8A847B;line-height:1.3}
 
 /* Live status chip - state colours match the result card's bands.
-   Unscored tabs render NO chip (.is-idle): an empty pill is dead chrome,
-   and seven of them made the strip read as broken before first entry. */
+   Unscored measures render NO chip (.is-idle): an empty pill is dead
+   chrome, and seven of them made the menu read as broken before first
+   entry. */
 .pvt-status{
   display:inline-flex;
   align-items:center;
@@ -9850,6 +9878,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   text-transform:uppercase;
   line-height:1;
   white-space:nowrap;
+  flex:none;
   transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);
 }
 .pvt-status.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.4);background:rgba(46,125,79,0.07)}
@@ -9858,254 +9887,26 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-status.is-idle{display:none}
 .pvt-status .pvt-flag-icon{width:9px;height:9px;flex:none}
 
-/* ---- About landing tab + overview table ----
-   Deliberately the same visual vocabulary as the Change Analysis About
-   tab (its .change-overview-* rules above): filled terracotta "?" bubble
-   with the entry pulse, serif row titles with italic cites, a shaded
-   uppercase header band, cream row hover, dark hover popovers for the
-   per-row and per-column explainers. Standalone .pvt-* class names
-   throughout (the cascade rule in CLAUDE.md), and a private data-pvtip
-   attribute so the global [data-tooltip] rules cannot restyle these. */
-.pvt-method-tab-about{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:4px;
-}
-.pvt-about-bubble{
-  width:20px;height:20px;
-  border-radius:50%;
-  background:#A85544;
-  color:#FFFFFF;
-  font-family:var(--sans);
-  font-size:12px;
-  font-weight:700;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 1px 2px rgba(168,85,68,0.25), 0 0 0 2px rgba(168,85,68,0.15);
-  transition:transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
-}
-.pvt-method-tab-about:hover .pvt-about-bubble{
-  transform:scale(1.08);
-  box-shadow:0 2px 4px rgba(168,85,68,0.35), 0 0 0 3px rgba(168,85,68,0.18);
-}
-.pvt-method-tab-about.active .pvt-about-bubble{
-  background:#7A2E1F;
-  box-shadow:0 2px 6px rgba(122,46,31,0.45), 0 0 0 3px rgba(168,85,68,0.20);
-}
-/* Same once-on-entry pulse the Change Analysis bubble runs (keyframes above). */
-#validity.section.active .pvt-about-bubble{
-  animation:about-bubble-pulse 2.4s var(--ease) 0.4s 2;
-}
-.pvt-about-tab-label{
-  font-family:var(--sans);
-  font-size:13px;
-  font-weight:600;
-  color:#A85544;
-}
-
-.pvt-overview-wrap{min-width:0}
-.pvt-overview-table{
-  width:100%;
-  border-collapse:separate;
-  border-spacing:0;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.08);
-  border-radius:var(--r-lg);
-  /* overflow:visible so the hover popovers can escape the table box;
-     corner rounding is reapplied to the thead cells below. */
-  overflow:visible;
-}
-.pvt-overview-table thead tr th:first-child{border-top-left-radius:var(--r-lg)}
-.pvt-overview-table thead tr th:last-child{border-top-right-radius:var(--r-lg)}
-.pvt-overview-th{
-  font-family:var(--sans);
-  font-size:10px;
-  font-weight:600;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:#7A766E;
-  text-align:center;
-  padding:14px 12px 12px;
-  background:rgba(20,15,5,0.025);
-  border-bottom:1px solid rgba(20,15,5,0.08);
-  white-space:nowrap;
-}
-.pvt-overview-th.is-measure{text-align:left;padding-left:24px}
-/* A heading centred over a left-aligned column floats free of it. */
-.pvt-overview-th.is-left{text-align:left}
-.pvt-overview-colh{
-  position:relative;
-  display:inline-block;
-  cursor:help;
-  text-decoration:underline dotted rgba(20,15,5,0.28);
-  text-underline-offset:3px;
-  outline:none;
-}
-.pvt-overview-colh:hover,
-.pvt-overview-colh:focus-visible{
-  color:#9C3D2A;
-  text-decoration-color:rgba(156,61,42,0.55);
-}
-.pvt-overview-colh::before{
-  content:attr(data-pvtip);
-  position:absolute;
-  top:calc(100% + 10px);
-  left:50%;
-  transform:translateX(-50%) translateY(-4px);
-  width:320px;
-  padding:12px 14px;
-  background:rgba(15,18,24,0.96);
-  color:#FFFFFF;
-  border:1px solid rgba(15,18,24,0.96);
-  border-radius:8px;
-  font-family:var(--sans);
-  font-size:12.5px;
-  font-weight:400;
-  letter-spacing:0;
-  text-transform:none;
-  line-height:1.55;
-  text-align:left;
-  white-space:normal;
-  z-index:60;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
-}
-.pvt-overview-colh.is-end::before{left:auto;right:0;transform:translateY(-4px)}
-.pvt-overview-colh:hover::before,
-.pvt-overview-colh:focus-visible::before{opacity:1;transform:translateX(-50%) translateY(0)}
-.pvt-overview-colh.is-end:hover::before,
-.pvt-overview-colh.is-end:focus-visible::before{transform:translateY(0)}
-.pvt-overview-row{cursor:pointer;transition:background var(--t-fast) var(--ease)}
-.pvt-overview-row:hover,
-.pvt-overview-row:focus-visible{background:#F7F2E6;outline:none}
-.pvt-overview-row:focus-visible{box-shadow:inset 3px 0 0 #9C3D2A}
-.pvt-overview-row + .pvt-overview-row > td{border-top:1px solid rgba(20,15,5,0.05)}
-.pvt-overview-row td{padding:14px 12px;vertical-align:middle}
-.pvt-overview-measure{padding-left:24px;min-width:240px}
-.pvt-overview-titlerow{
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  gap:8px;
-}
-.pvt-overview-title{
-  font-family:var(--serif);
-  font-size:15px;
-  font-weight:600;
-  color:#1A1A1A;
-  letter-spacing:-0.005em;
-}
-.pvt-overview-info{
-  width:18px;
-  height:18px;
-  border-radius:50%;
-  background:rgba(20,15,5,0.08);
-  border:none;
-  color:#6B6B6B;
-  font-family:var(--sans);
-  font-size:11px;
-  font-weight:700;
-  cursor:help;
-  position:relative;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  line-height:1;
-  flex:0 0 auto;
-  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
-}
-.pvt-overview-info:hover,
-.pvt-overview-info:focus-visible{
-  background:#9C3D2A;
-  color:#FFFFFF;
-  outline:none;
-}
-.pvt-overview-info::before{
-  content:attr(data-pvtip);
-  position:absolute;
-  bottom:calc(100% + 8px);
-  left:-8px;
-  width:340px;
-  padding:12px 14px;
-  background:rgba(15,18,24,0.96);
-  color:#FFFFFF;
-  border:1px solid rgba(15,18,24,0.96);
-  border-radius:8px;
-  font-family:var(--sans);
-  font-size:12.5px;
-  font-weight:400;
-  line-height:1.55;
-  text-align:left;
-  white-space:normal;
-  z-index:60;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
-  transform:translateY(4px);
-}
-.pvt-overview-info:hover::before,
-.pvt-overview-info:focus-visible::before{opacity:1;transform:translateY(0)}
-.pvt-overview-cite{
-  display:block;
-  margin-top:2px;
-  font-family:var(--sans);
-  font-size:11.5px;
-  font-style:italic;
-  color:#7A766E;
-  line-height:1.35;
-}
-.pvt-overview-cell{
-  font-family:var(--sans);
-  font-size:12px;
-  color:#4D4840;
-  text-align:center;
-  white-space:nowrap;
-}
-/* Text columns read left-aligned; only single glyphs are centred, as on
-   the Change Analysis overview. */
-.pvt-overview-derived{text-align:left;white-space:normal;min-width:190px;font-size:12.5px;color:#3F3B35}
-.pvt-overview-arrow{width:34px;color:#BCB6AD;text-align:center}
-.pvt-overview-arrow svg{width:14px;height:14px;display:inline-block;vertical-align:middle}
-.pvt-overview-foot{
-  margin:12px 2px 0;
-  font-family:var(--sans);
-  font-size:11.5px;
-  color:#6E6860;
-  line-height:1.55;
+/* Below 1000px the menu goes above the panel and its entries wrap, rather
+   than taking a third of a narrow window. */
+@media (max-width:1000px){
+  .pvt-layout{grid-template-columns:minmax(0,1fr)}
+  .pvt-nav{position:static;flex-direction:row;flex-wrap:wrap;gap:4px}
+  .pvt-nav-summary{width:100%}
+  .pvt-nav-group{display:flex;flex-wrap:wrap;gap:2px;padding-top:0;width:100%}
+  .pvt-nav-group-head{width:100%}
+  .pvt-nav-item{width:auto}
 }
 
 /* ---- Content panel: the cream-to-white gradient sheet ---- */
-/* The sheet holds every method panel AND the running rail, so the rail is
-   ONE element that persists across tab switches rather than a copy per
-   panel — a running total that re-rendered per tab would be four copies
-   of one truth. */
 .pvt-sheet{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 260px;
-  gap:22px;
   background:linear-gradient(180deg, #F0E8D6 0%, #F7F2E6 80px, #FFFFFF 100%);
   border:1px solid rgba(20,15,5,0.08);
-  border-top:none;
-  border-radius:0 0 var(--r-lg) var(--r-lg);
+  border-radius:var(--r-lg);
   box-shadow:0 6px 18px rgba(20,15,5,0.05);
-  padding:24px;
+  padding:18px 22px;
 }
-/* On the Summary tab the rail would restate the table beside it, and on
-   About it would list the same seven measures the About table lists. */
-.pvt-sheet.is-summary,
-.pvt-sheet.is-about{grid-template-columns:minmax(0,1fr)}
-.pvt-sheet.is-summary .pvt-rail,
-.pvt-sheet.is-about .pvt-rail{display:none}
 .pvt-sheet-main{min-width:0}
-@media (max-width:1180px){
-  .pvt-sheet{grid-template-columns:minmax(0,1fr)}
-  .pvt-rail{display:none}
-}
 
 .pvt-tab-content{display:none}
 .pvt-tab-content.active{
@@ -10113,182 +9914,113 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   animation:pvt-panel-in 180ms var(--ease,ease) both;
 }
 
-/* ---- running summary rail ----
-   A docked progress panel: hairline-divided sections, small-caps kickers,
-   and a label on the left against its value on the right. Colour marks a
-   flag; it never carries the meaning on its own. Sticky, so it stays in
-   view while a long method panel scrolls. */
-.pvt-rail{min-width:0}
-.pvt-rail-card{
-  position:sticky;
-  top:16px;
-  border:1px solid rgba(20,15,5,0.07);
-  border-radius:var(--r-md);
+/* ---- The Summary: verdict band ----
+   The count is the page's answer, so it is the largest thing on it. One
+   pip per independent indicator, in the menu's order; colour is backed by
+   the count and the sentence beside it, never the only carrier. */
+.pvt-verdict{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:26px;
+  align-items:center;
+  padding:12px 18px;
   background:#FFFFFF;
-  overflow:hidden;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
 }
-.pvt-rail-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  padding:12px 14px;
-  border-bottom:1px solid rgba(20,15,5,0.07);
-}
-.pvt-rail-title{
-  font-family:var(--sans);
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:0.11em;
-  text-transform:uppercase;
-  color:var(--ink);
-}
-.pvt-rail-toggle{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:22px;
-  height:22px;
-  padding:0;
-  border:0;
-  border-radius:5px;
-  background:transparent;
-  color:#9E9A93;
-  cursor:pointer;
-  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-base) var(--ease);
-}
-.pvt-rail-toggle svg{width:13px;height:13px}
-.pvt-rail-toggle:hover{background:rgba(20,15,5,0.04);color:var(--ink)}
-.pvt-rail-toggle:focus{outline:none}
-.pvt-rail-toggle:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.25)}
-/* Chevron points down when open, right when collapsed. */
-.pvt-rail-card .pvt-rail-toggle{transform:rotate(90deg)}
-.pvt-rail-card.is-collapsed .pvt-rail-toggle{transform:rotate(0deg)}
-.pvt-rail-card.is-collapsed .pvt-rail-body{display:none}
-.pvt-rail-card.is-collapsed .pvt-rail-head{border-bottom:none}
-
-.pvt-rail-section{
-  padding:12px 14px 13px;
-  border-bottom:1px solid rgba(20,15,5,0.07);
-}
-.pvt-rail-kicker{
-  font-family:var(--sans);
-  font-size:9px;
-  font-weight:600;
-  letter-spacing:0.13em;
-  text-transform:uppercase;
-  color:#A29D95;
-  margin-bottom:8px;
-}
-.pvt-rail-stat{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:10px;
-  padding:3px 0;
-}
-.pvt-rail-stat-label{font-family:var(--sans);font-size:11.5px;color:var(--ink);line-height:1.3}
-.pvt-rail-stat-value{
-  font-family:var(--mono);
-  font-size:12.5px;
-  font-weight:600;
-  color:var(--ink);
+.pvt-verdict.is-fail{border-color:rgba(156,61,42,0.30);box-shadow:inset 4px 0 0 #9C3D2A}
+.pvt-verdict.is-warn{border-color:rgba(183,121,31,0.35);box-shadow:inset 4px 0 0 #B7791F}
+.pvt-verdict.is-pass{border-color:rgba(46,125,79,0.28);box-shadow:inset 4px 0 0 #2E7D4F}
+.pvt-verdict-count{display:flex;flex-direction:column;gap:8px;min-width:84px}
+.pvt-verdict-num{
+  font-family:var(--serif);
+  font-size:40px;
+  font-weight:700;
+  line-height:0.95;
+  letter-spacing:-0.02em;
+  color:#1A1A1A;
   font-variant-numeric:tabular-nums;
-  white-space:nowrap;
 }
-.pvt-rail-stat.is-flagged .pvt-rail-stat-value{color:#9c3d2a}
-.pvt-rail-sep{color:var(--faint);margin:0 1px;font-weight:400}
-.pvt-rail-hint{
-  font-family:var(--sans);
-  font-size:10.5px;
-  color:#918C84;
-  line-height:1.5;
-  margin:7px 0 0;
+.pvt-verdict.is-fail .pvt-verdict-num{color:#9C3D2A}
+.pvt-verdict.is-warn .pvt-verdict-num{color:#9A6414}
+.pvt-verdict.is-pass .pvt-verdict-num{color:#2E7D4F}
+.pvt-verdict.is-idle .pvt-verdict-num{color:#BCB6AD}
+.pvt-verdict-of{font-size:24px;color:#A8A29A;font-weight:600}
+.pvt-verdict-pips{display:flex;gap:4px}
+.pvt-verdict-pip{width:16px;height:6px;border-radius:3px;background:#E8E2D5}
+.pvt-verdict-pip.is-fail{background:#9C3D2A}
+.pvt-verdict-pip.is-pass{background:#2E7D4F}
+.pvt-verdict-pip.is-gated{background:#C9BE8A}
+.pvt-verdict-head{
+  font-family:var(--serif);
+  font-size:21px;
+  font-weight:700;
+  color:#1A1A1A;
+  line-height:1.2;
+  margin-bottom:4px;
 }
+.pvt-verdict-body{margin:0;font-size:13px;line-height:1.45;color:#4D4840;max-width:720px}
+.pvt-verdict-meta{margin-top:4px;font-size:11.5px;color:#7A766E}
 
-/* Grouped by independent indicator; a two-measure group is labelled, so
-   "counts as one" is visible rather than only stated in the note. */
-.pvt-rail-group{margin-bottom:9px}
-.pvt-rail-group:last-child{margin-bottom:0}
-.pvt-rail-group-head{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:6px;
-  margin-bottom:1px;
-}
-.pvt-rail-group-name{
-  font-family:var(--sans);
-  font-size:9px;
-  font-weight:600;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:#A29D95;
-}
-.pvt-rail-group-tag{
-  font-family:var(--sans);
-  font-size:8.5px;
-  letter-spacing:0.05em;
-  text-transform:uppercase;
-  color:#BCB6AD;
-}
-.pvt-rail-row{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
+/* ---- The Summary: one card per independent indicator ----
+   The menu again, with each indicator's state; a row opens its measure. */
+.pvt-ind-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
   gap:10px;
-  width:100%;
-  padding:4px 6px;
-  margin:0 -6px;
-  border:0;
-  border-radius:5px;
-  background:transparent;
-  text-align:left;
-  cursor:pointer;
-  transition:background var(--t-fast) var(--ease);
+  margin-top:10px;
 }
-.pvt-rail-row:hover{background:rgba(20,15,5,0.035)}
-.pvt-rail-row:focus{outline:none}
-.pvt-rail-row:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
-.pvt-rail-row.is-current{background:rgba(156,61,42,0.06)}
-.pvt-rail-label{
-  font-family:var(--sans);
-  font-size:11.5px;
-  color:var(--ink);
-  line-height:1.35;
+@media (max-width:1280px){ .pvt-ind-grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:760px){ .pvt-ind-grid{grid-template-columns:minmax(0,1fr)} }
+.pvt-ind{
+  display:flex;
+  flex-direction:column;
+  padding:9px 12px 4px;
+  background:#FFFFFF;
+  border:1px solid rgba(20,15,5,0.08);
+  border-radius:var(--r-md);
   min-width:0;
 }
-.pvt-rail-row.is-idle .pvt-rail-label{color:#A8A29A}
-.pvt-rail-value{
-  font-family:var(--sans);
-  font-size:10.5px;
-  color:#918C84;
-  line-height:1.4;
-  white-space:nowrap;
-  flex:0 0 auto;
-}
-.pvt-rail-row.is-flag .pvt-rail-value{color:#9c3d2a;font-weight:600}
-.pvt-rail-row.is-pass .pvt-rail-value{color:#2e7d4f}
-.pvt-rail-row.is-gated .pvt-rail-value{color:#8a7a2c}
-
-.pvt-rail-cta{
-  display:block;
-  width:100%;
-  padding:11px 14px;
+.pvt-ind.is-fail{border-color:rgba(156,61,42,0.30);box-shadow:inset 3px 0 0 #9C3D2A}
+.pvt-ind.is-idle{background:transparent;border-style:dashed;border-color:rgba(20,15,5,0.16)}
+.pvt-ind-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pvt-ind-name{font-family:var(--serif);font-size:15px;font-weight:700;color:#1A1A1A;line-height:1.25}
+.pvt-ind-sub{font-size:11px;color:#8A847B;margin:1px 0 4px}
+.pvt-ind-row{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:8px;
+  padding:4px 6px;
+  margin:0 -6px;
+  width:calc(100% + 12px);
   border:0;
+  border-top:1px solid rgba(20,15,5,0.06);
+  border-radius:0;
   background:transparent;
   font-family:var(--sans);
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:0.02em;
-  color:var(--ink);
   text-align:left;
   cursor:pointer;
   transition:background var(--t-fast) var(--ease);
 }
-.pvt-rail-cta:hover{background:rgba(20,15,5,0.04)}
-.pvt-rail-cta:focus{outline:none}
-.pvt-rail-cta:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+.pvt-ind-row:hover{background:#F8F5ED}
+.pvt-ind-row:focus{outline:none}
+.pvt-ind-row:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+.pvt-ind-label{font-size:12.5px;color:#2F2B26;min-width:0}
+.pvt-ind-value{font-size:11.5px;color:#8A847B;white-space:nowrap;flex:none}
+.pvt-ind-row.is-flag .pvt-ind-value{color:#9c3d2a;font-weight:600}
+.pvt-ind-row.is-pass .pvt-ind-value{color:#2e7d4f}
+.pvt-ind-row.is-gated .pvt-ind-value{color:#8a7a2c}
+.pvt-ind-row.is-idle .pvt-ind-value{color:#4D4840;font-weight:500}
+
+/* The scores table is the wider column: at the measure panels' own split
+   its Cut-off and Result cells wrapped to three lines a row. Two classes,
+   because .pvt-workspace is declared further down and would win a tie. */
+.pvt-workspace.pvt-summary-lower{margin-top:10px;grid-template-columns:minmax(0,1.2fr) minmax(400px,1fr)}
+@media (max-width:1100px){ .pvt-workspace.pvt-summary-lower{grid-template-columns:1fr} }
+.pvt-summary-lower .pvt-card{padding:12px 16px}
+.pvt-summary-lower .pvt-card-kicker{margin-bottom:8px}
+
 @keyframes pvt-panel-in{
   from{ opacity:0; transform:translateY(-4px); }
   to  { opacity:1; transform:translateY(0); }
@@ -10340,7 +10072,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 
 .pvt-outcome{display:flex;flex-direction:column;gap:14px;min-width:0}
 .pvt-outcome .panel{margin-bottom:0}
-.pvt-summary-left{min-width:0}
+.pvt-summary-left{min-width:0;display:flex;flex-direction:column;gap:14px}
 
 .pvt-result{margin:0}
 /* The message card - empty, invalid and partial states only. A SCORED
@@ -10559,73 +10291,6 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:#7A5148;
   line-height:1.5;
 }
-.pvt-overview-derived{line-height:1.35}
-
-/* The About table is a chooser: measure, instrument, cut-off. Measures
-   sharing an instrument sit in their own <tbody> under a small heading,
-   with a faint bar down the left binding the group; single measures need
-   neither. */
-.pvt-overview-cutcell{text-align:left;font-size:12.5px;color:#1A1A1A;font-weight:500}
-.pvt-overview-table tbody + tbody > tr:first-child > td{border-top:1px solid rgba(20,15,5,0.08)}
-.pvt-overview-grouphead > td{
-  padding:10px 12px 2px 24px;
-  font-family:var(--sans);
-  font-size:10px;
-  font-weight:600;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:#7A766E;
-}
-.pvt-overview-groupnote{letter-spacing:0;text-transform:none;font-weight:400;font-size:11px}
-.pvt-overview-group > tr > td:first-child{box-shadow:inset 3px 0 0 rgba(156,61,42,0.22)}
-/* The version note beside an instrument: same geometry as the "?" but in
-   the caveat colour, so it reads as a warning rather than as help. */
-.pvt-overview-flag{
-  width:16px;
-  height:16px;
-  margin-left:4px;
-  border-radius:50%;
-  background:rgba(156,61,42,0.10);
-  border:none;
-  color:#9C3D2A;
-  font-family:var(--sans);
-  font-size:10px;
-  font-weight:700;
-  cursor:help;
-  position:relative;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  line-height:1;
-  vertical-align:1px;
-}
-.pvt-overview-flag:hover,
-.pvt-overview-flag:focus-visible{background:#9C3D2A;color:#FFFFFF;outline:none}
-.pvt-overview-flag::before{
-  content:attr(data-pvtip);
-  position:absolute;
-  bottom:calc(100% + 8px);
-  left:-8px;
-  width:340px;
-  padding:12px 14px;
-  background:rgba(15,18,24,0.96);
-  color:#FFFFFF;
-  border-radius:8px;
-  font-size:12.5px;
-  font-weight:400;
-  line-height:1.55;
-  text-align:left;
-  white-space:normal;
-  z-index:60;
-  opacity:0;
-  pointer-events:none;
-  transform:translateY(4px);
-  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
-}
-.pvt-overview-flag:hover::before,
-.pvt-overview-flag:focus-visible::before{opacity:1;transform:translateY(0)}
-
 /* ---------- Rey 15-Item administration overlay ----------
    Mounted on <body> (position:fixed against a transformed ancestor is the
    trap that moved the old age popover), full-viewport, above the drawer. */
@@ -16077,7 +15742,7 @@ input[type="number"].ds-patient-field-input{
   #bat-table,#sdi-table,#rci-basic-table,#rci-practice-table,
   #rci-srb-table,#rci-crawford-table,#pre-predict-table,
   #pre-opiepredict-table,#change-analysis .change-overview-table,
-  #validity .pvt-table,#validity .pvt-overview-table,
+  #validity .pvt-table,
   .db-table,.methods-table,.es-examples-table{
     display:block !important;
     width:100% !important;
@@ -16085,49 +15750,20 @@ input[type="number"].ds-patient-field-input{
     -webkit-overflow-scrolling:touch;
   }
 
-  /* The overview table on the Validity About tab carries `overflow:visible`
-     so its two hover tooltips (`.pvt-overview-colh::before` at 320px and
-     `.pvt-overview-info::before` at 340px, both absolutely positioned inside
-     the table) can escape the table box. Making the table a scroll box takes
-     that away: `overflow-x:auto` forces the y axis to `auto` as well, so a
-     tooltip is clipped at the box edge.
-
-     That is accepted here rather than worked around. Below 900px the table
-     is 845 layout px against a 417px column, and the whole document used to
-     slide sideways with it; a hover affordance is pointer-only and is not
-     reachable on the touch devices this width mostly means. What is done for
-     it is the two rules below: the tooltip is narrowed to the viewport so it
-     cannot sit off-screen, and the row tooltip is flipped to open DOWNWARD,
-     because opening upward put it above the first row and hard against the
-     top edge of the new scroll box, where nothing can scroll it back. */
-  #validity .pvt-overview-colh::before,
-  #validity .pvt-overview-info::before,
-  #validity .pvt-overview-flag::before{
-    width:min(320px, calc(100vw - 64px)) !important;
-  }
-  #validity .pvt-overview-info::before,
-  #validity .pvt-overview-flag::before{
-    bottom:auto !important;
-    top:calc(100% + 8px) !important;
-  }
-
   /* --- Horizontal control strips scroll rather than overflow -------- */
   /* Scrolling, not wrapping: --topbar-h must stay constant, because the
      toast and both popovers position against it. */
   .topnav,
-  #change-analysis .change-method-tabs,
-  #validity .pvt-method-tabs{
+  #change-analysis .change-method-tabs{
     overflow-x:auto !important;
     overflow-y:hidden !important;
     scrollbar-width:none;
     -ms-overflow-style:none;
   }
   .topnav::-webkit-scrollbar,
-  #change-analysis .change-method-tabs::-webkit-scrollbar,
-  #validity .pvt-method-tabs::-webkit-scrollbar{display:none}
+  #change-analysis .change-method-tabs::-webkit-scrollbar{display:none}
   .topnav-item,
-  #change-analysis .change-method-tab,
-  #validity .pvt-method-tab{flex-shrink:0 !important}
+  #change-analysis .change-method-tab{flex-shrink:0 !important}
 
   /* --- Segmented control bars wrap --------------------------------- */
   #battery .ds-prem-card,
@@ -16829,17 +16465,15 @@ body #converter .conv-unified-panel{
   padding-bottom: 14px !important;
 }
 
-/* Performance Validity: the About overview's seven rows were 62px each
-   (14px cell padding around a two-line title and citation), which alone
-   took the page 82px past the fold. The Change Analysis About table uses
-   the same row design, so it takes the same padding and the two stay alike. */
-body #validity .pvt-overview-row td,
+/* The Change Analysis About table's rows were 62px each (14px cell
+   padding around a two-line title and citation), which alone took the page
+   past the fold. (Performance Validity's About table shared this rule until
+   the page lost that tab, 2026-09.) */
 body #change-analysis .change-overview-table td{
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
 body #validity .pvt-refs{ margin-top: 8px !important; padding-top: 4px !important; }
-body #validity .pvt-sheet.is-about{ padding-top: 16px !important; padding-bottom: 16px !important; }
 
 /* Premorbid, ToPF and OPIE-4 tabs: the model / index column was squeezed
    by six numeric columns with room to spare, so "Verbal Comprehension Index"
@@ -18728,88 +18362,87 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
     <h1 class="section-title">Performance <span class="ink">Validity</span></h1>
     <p class="pvt-desc-line" id="pvt-desc">Score embedded and stand-alone validity indicators against their published cut-offs, then weigh them together. No single index is a verdict. Results are cut-off comparisons only.</p>
 
-    <div class="pvt-method-tabs" role="tablist" aria-label="Performance validity measures">
-      <button type="button" class="pvt-method-tab pvt-method-tab-about active" data-pvt-tab="about" role="tab" aria-selected="true">
-        <span class="pvt-about-bubble" aria-hidden="true">?</span>
-        <span class="pvt-about-tab-label">About</span>
-      </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="ei" role="tab" aria-selected="false">
-        <span class="pvt-method-num">01</span>
-        <span class="pvt-method-main">
-          <span class="pvt-method-label">Effort Index</span>
-          <span class="pvt-method-meta">RBANS · weighted sum</span>
+    <!-- The page's menu (2026-09, owner decision): a left column with the
+         Summary at its top, which is where the page opens, and the measures
+         below it grouped by INDEPENDENT INDICATOR, so "counts as one" is
+         visible where the count is read. Only a shared instrument gets a
+         heading of its own; the single measures sit under "One indicator
+         each", because a heading over two of them would read as one
+         indicator. It replaced a tab strip, an About tab and a running rail,
+         which listed the same measures three times. switchPvtTab keys on
+         data-pvt-tab, not on a class. -->
+    <div class="pvt-layout">
+    <nav class="pvt-nav" role="tablist" aria-orientation="vertical" aria-label="Performance validity measures">
+      <button type="button" class="pvt-nav-summary active" data-pvt-tab="summary" role="tab" aria-selected="true">
+        <span class="pvt-nav-count" id="pvt-nav-count">&mdash;</span>
+        <span class="pvt-nav-summary-main">
+          <span class="pvt-nav-summary-label">Summary</span>
+          <span class="pvt-nav-summary-meta" id="pvt-nav-summary-meta">Nothing scored yet</span>
         </span>
-        <span class="pvt-status" id="pvt-status-ei">—</span>
       </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="es" role="tab">
-        <span class="pvt-method-num">02</span>
-        <span class="pvt-method-main">
-          <span class="pvt-method-label">Effort Scale</span>
-          <span class="pvt-method-meta">RBANS · gated</span>
-        </span>
-        <span class="pvt-status" id="pvt-status-es">—</span>
-      </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="rds" role="tab">
-        <span class="pvt-method-num">03</span>
-        <span class="pvt-method-main">
-          <span class="pvt-method-label">Reliable Digit Span</span>
-          <span class="pvt-method-meta">WAIS · both trials</span>
-        </span>
-        <span class="pvt-status" id="pvt-status-rds">—</span>
-      </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="ds" role="tab">
-        <span class="pvt-method-num">04</span>
-        <span class="pvt-method-main">
-          <span class="pvt-method-label">Digit Span</span>
-          <span class="pvt-method-meta">WAIS · Iverson indices</span>
-        </span>
-        <span class="pvt-status" id="pvt-status-ds">—</span>
-      </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="rey15" role="tab">
-        <span class="pvt-method-num">05</span>
-        <span class="pvt-method-main">
-          <span class="pvt-method-label">Rey 15-Item</span>
-          <span class="pvt-method-meta">Stand-alone · two trials</span>
-        </span>
-        <span class="pvt-status" id="pvt-status-rey15">—</span>
-      </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="cvlt3" role="tab">
-        <span class="pvt-method-num">06</span>
-        <span class="pvt-method-main">
-          <span class="pvt-method-label">CVLT-3 Forced Choice</span>
-          <span class="pvt-method-meta">Embedded &middot; base rates</span>
-        </span>
-        <span class="pvt-status" id="pvt-status-cvlt3">&mdash;</span>
-      </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="tomm" role="tab">
-        <span class="pvt-method-num">07</span>
-        <span class="pvt-method-main">
-          <span class="pvt-method-label">TOMM</span>
-          <span class="pvt-method-meta">Stand-alone · forced choice</span>
-        </span>
-        <span class="pvt-status" id="pvt-status-tomm">—</span>
-      </button>
-      <button type="button" class="pvt-method-tab" data-pvt-tab="summary" role="tab">
-        <span class="pvt-method-num">08</span>
-        <span class="pvt-method-main">
-          <span class="pvt-method-label">Summary</span>
-          <span class="pvt-method-meta">Larrabee (2014)</span>
-        </span>
-        <span class="pvt-status" id="pvt-status-summary">—</span>
-      </button>
-    </div>
+      <div class="pvt-nav-group">
+        <div class="pvt-nav-group-head"><span>RBANS</span><span class="pvt-nav-group-note">counts as one</span></div>
+        <button type="button" class="pvt-nav-item" data-pvt-tab="ei" role="tab" aria-selected="false">
+          <span class="pvt-nav-main">
+            <span class="pvt-nav-label">Effort Index</span>
+            <span class="pvt-nav-meta">Weighted sum</span>
+          </span>
+          <span class="pvt-status" id="pvt-status-ei">&mdash;</span>
+        </button>
+        <button type="button" class="pvt-nav-item" data-pvt-tab="es" role="tab" aria-selected="false">
+          <span class="pvt-nav-main">
+            <span class="pvt-nav-label">Effort Scale</span>
+            <span class="pvt-nav-meta">Gated</span>
+          </span>
+          <span class="pvt-status" id="pvt-status-es">&mdash;</span>
+        </button>
+      </div>
+      <div class="pvt-nav-group">
+        <div class="pvt-nav-group-head"><span>Digit span</span><span class="pvt-nav-group-note">counts as one</span></div>
+        <button type="button" class="pvt-nav-item" data-pvt-tab="rds" role="tab" aria-selected="false">
+          <span class="pvt-nav-main">
+            <span class="pvt-nav-label">Reliable Digit Span</span>
+            <span class="pvt-nav-meta">WAIS · both trials</span>
+          </span>
+          <span class="pvt-status" id="pvt-status-rds">&mdash;</span>
+        </button>
+        <button type="button" class="pvt-nav-item" data-pvt-tab="ds" role="tab" aria-selected="false">
+          <span class="pvt-nav-main">
+            <span class="pvt-nav-label">Digit Span indices</span>
+            <span class="pvt-nav-meta">WAIS · Iverson indices</span>
+          </span>
+          <span class="pvt-status" id="pvt-status-ds">&mdash;</span>
+        </button>
+      </div>
+      <div class="pvt-nav-group">
+        <div class="pvt-nav-group-head"><span>One indicator each</span></div>
+        <button type="button" class="pvt-nav-item" data-pvt-tab="rey15" role="tab" aria-selected="false">
+          <span class="pvt-nav-main">
+            <span class="pvt-nav-label">Rey 15-Item</span>
+            <span class="pvt-nav-meta">Stand-alone · two trials</span>
+          </span>
+          <span class="pvt-status" id="pvt-status-rey15">&mdash;</span>
+        </button>
+        <button type="button" class="pvt-nav-item" data-pvt-tab="cvlt3" role="tab" aria-selected="false">
+          <span class="pvt-nav-main">
+            <span class="pvt-nav-label">CVLT-3 Forced Choice</span>
+            <span class="pvt-nav-meta">Embedded · base rates</span>
+          </span>
+          <span class="pvt-status" id="pvt-status-cvlt3">&mdash;</span>
+        </button>
+        <button type="button" class="pvt-nav-item" data-pvt-tab="tomm" role="tab" aria-selected="false">
+          <span class="pvt-nav-main">
+            <span class="pvt-nav-label">TOMM</span>
+            <span class="pvt-nav-meta">Stand-alone · forced choice</span>
+          </span>
+          <span class="pvt-status" id="pvt-status-tomm">&mdash;</span>
+        </button>
+      </div>
+    </nav>
 
-    <!-- is-about: the page lands on the About tab, which runs full width
-         (the rail is hidden there); switchPvtTab keeps the class in step. -->
-    <div class="pvt-sheet is-about">
+    <div class="pvt-main-col">
+    <div class="pvt-sheet">
       <div class="pvt-sheet-main">
-    <!-- ===== About / orientation (landing tab; body rendered by
-         renderPvtAboutPanel, a chooser in the Change Analysis overview's
-         idiom; accuracy figures live on each measure's tab) ===== -->
-    <div class="pvt-tab-content active" id="pvt-about">
-      <div id="pvt-about-body"></div>
-    </div>
-
     <!-- ===== Effort Index ===== -->
     <div class="pvt-tab-content" id="pvt-ei">
       <div class="pvt-workspace">
@@ -19184,10 +18817,18 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
     </div>
 
     <!-- ===== Summary & Aggregation ===== -->
-    <div class="pvt-tab-content" id="pvt-summary">
-      <div class="pvt-workspace">
+    <!-- The landing panel. The verdict and the indicator cards are drawn by
+         renderPvtSummary from the same getPvtSummaryRows the table and the
+         APA export read, so no surface can disagree with another. -->
+    <div class="pvt-tab-content active" id="pvt-summary">
+      <div id="pvt-summary-verdict"></div>
+      <div id="pvt-summary-cards"></div>
+      <div class="pvt-workspace pvt-summary-lower">
         <div class="pvt-summary-left">
           <div id="pvt-summary-body"></div>
+          <!-- The note sits under the table it annotates, which also balances
+               the two columns against the taller Larrabee card. -->
+          <div class="info-box pvt-note" data-apa-note="pvt"></div>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-card">
@@ -19209,7 +18850,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
               </div>
             </details>
           </div>
-          <div class="info-box pvt-note" data-apa-note="pvt"></div>
         </div>
       </div>
 
@@ -19226,7 +18866,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
       </div>
     </div>
       </div>
-      <aside class="pvt-rail" id="pvt-rail" aria-label="Running validity summary"></aside>
     </div>
 
     <details class="pvt-refs">
@@ -19253,6 +18892,8 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
       </div>
     </details>
+    </div>
+    </div>
   </section>
 
 
@@ -26809,8 +26450,8 @@ const APA_NOTES = {
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
     if (ctx.bothDigitSpan) shared.push('the digit-span indices');
     return [
-      /* The mirror drops the citations: the tab strip and the on-page
-         references state every measure and source in full. The exported
+      /* The mirror drops the citations: each measure's own panel and the
+         on-page references state every measure and source in full. The exported
          note keeps them — the licensed onScreen difference. */
       (ctx.onScreen || !sources.length) ? '' : `Sources: ${sources.join('; ')}.`,
       '"Fail" = score beyond the published cut-off, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent indicators (Larrabee, 2014).',
@@ -31337,24 +30978,124 @@ function renderPvtCvlt3(){
   out.innerHTML = pvtReadoutHtml(rows, note);
 }
 
+/* ---------- the Summary: the page's landing panel ----------
+   Grouped by INDEPENDENT INDICATOR, not by measure, because the count is
+   over indicators: the two RBANS indices are one, and the two digit-span
+   measures are one. Listing measures flat beside a "3 of 4" count invites
+   exactly the arithmetic the page warns against, so the grouping shows on
+   screen what the note says in words. `id` is the same key getPvtSummaryRows
+   writes as `group`; `ids` are its row ids. The left-hand menu in the markup
+   lists the same measures under the same independence rule. */
+const PVT_INDICATOR_GROUPS = [
+  { id: 'rbans', label: 'RBANS', sub: 'Two measures, counts as one', members: [
+    { tab: 'ei',    label: 'Effort Index', ids: ['ei'] },
+    { tab: 'es',    label: 'Effort Scale', ids: ['es'] }
+  ]},
+  { id: 'rds', label: 'Digit span', sub: 'Two measures, counts as one', members: [
+    { tab: 'rds',   label: 'Reliable Digit Span', ids: ['rds'] },
+    { tab: 'ds',    label: 'Digit Span indices',  ids: ['ds', 'ds-vocab', 'ds-lsf', 'ds-lsb'] }
+  ]},
+  { id: 'rey15', label: 'Rey 15-Item', sub: 'Stand-alone', members: [
+    { tab: 'rey15', label: 'Recall and recognition', ids: ['rey-recall', 'rey-combo'] }
+  ]},
+  { id: 'cvlt3', label: 'CVLT-3 Forced Choice', sub: 'Embedded', members: [
+    { tab: 'cvlt3', label: 'Hits and critical items', ids: ['cvlt3', 'cvlt3-crit-recall', 'cvlt3-crit-recog'] }
+  ]},
+  { id: 'tomm', label: 'TOMM', sub: 'Stand-alone', members: [
+    { tab: 'tomm',  label: 'Forced choice', ids: ['tomm'] }
+  ]}
+];
+
+/* One state per measure and per indicator, read off the summary rows so a
+   card can never disagree with the table under it. A gated row is not an
+   indicator (pvtIndicatorCounts drops it), so an indicator holding only
+   gated rows reads "gated", not "pass". */
+function pvtMemberState(rows, m){
+  const mine = rows.filter(r => m.ids.includes(r.id));
+  if (!mine.length) return { state: 'idle', value: 'not scored' };
+  if (mine.every(r => r.gated)) return { state: 'gated', value: 'gate not met' };
+  const flagged = mine.filter(r => r.fail).length;
+  return flagged ? { state: 'flag', value: `${flagged} flagged` }
+                 : { state: 'pass', value: mine.length > 1 ? 'within cut-offs' : 'within cut-off' };
+}
+function pvtGroupState(rows, g){
+  const mine = rows.filter(r => r.group === g.id);
+  if (!mine.length) return 'idle';
+  const live = mine.filter(r => !r.gated);
+  if (!live.length) return 'gated';
+  return live.some(r => r.fail) ? 'fail' : 'pass';
+}
+
 function renderPvtSummary(){
+  const rows = getPvtSummaryRows();
+  const c = pvtIndicatorCounts(rows);
+  const states = PVT_INDICATOR_GROUPS.map(g => pvtGroupState(rows, g));
+
+  /* The verdict. Its wording is the count rule and nothing more; the
+     external-incentive context and the accuracy figures sit in the
+     Larrabee card below, and the note under the exported table. */
+  const verdict = document.getElementById('pvt-summary-verdict');
+  if (verdict){
+    const unscored = PVT_INDICATOR_GROUPS.filter((g, i) => states[i] === 'idle' || states[i] === 'gated').map(g => g.label);
+    const pips = PVT_INDICATOR_GROUPS.map((g, i) =>
+      `<span class="pvt-verdict-pip is-${states[i]}" title="${g.label}"></span>`).join('');
+    let head, body, kind;
+    if (c.total === 0){
+      kind = 'idle';
+      head = 'Nothing scored yet';
+      body = 'Choose a measure from the list on the left, or from the indicators below. Each result joins this summary as it is entered.';
+    } else {
+      kind = c.failed >= 2 ? 'fail' : c.failed === 1 ? 'warn' : 'pass';
+      head = `${c.failed} of ${c.total} independent indicator${c.total === 1 ? '' : 's'} failed`;
+      body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014). Weigh the count against the clinical and neurological picture before concluding.'
+        : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).'
+        : 'Nothing beyond its cut-off so far.';
+    }
+    verdict.innerHTML = `<div class="pvt-verdict is-${kind}">
+      <div class="pvt-verdict-count">
+        <span class="pvt-verdict-num">${c.total === 0 ? '&ndash;' : `${c.failed}<span class="pvt-verdict-of">/${c.total}</span>`}</span>
+        <span class="pvt-verdict-pips" aria-hidden="true">${pips}</span>
+      </div>
+      <div class="pvt-verdict-text">
+        <div class="pvt-verdict-head">${head}</div>
+        <p class="pvt-verdict-body">${body}</p>
+        <div class="pvt-verdict-meta">${c.total} of ${PVT_INDICATOR_GROUPS.length} indicators scored${
+          unscored.length && c.total > 0 ? ` &middot; not yet scored: ${unscored.join(', ')}` : ''} &middot; results are cut-off comparisons only</div>
+      </div>
+    </div>`;
+  }
+
+  /* The indicators: the page's menu, restated with each one's state. */
+  const cards = document.getElementById('pvt-summary-cards');
+  if (cards){
+    cards.innerHTML = `<div class="pvt-ind-grid">${PVT_INDICATOR_GROUPS.map((g, i) => {
+      const st = states[i];
+      const chip = st === 'idle' ? ''
+        : `<span class="pvt-status is-${st === 'gated' ? 'na' : st}">${PVT_STATE_ICON[st === 'fail' ? 'flag' : st === 'gated' ? 'na' : 'pass']}${st === 'fail' ? 'Fail' : st === 'gated' ? 'Gated' : 'Pass'}</span>`;
+      const members = g.members.map(m => {
+        const ms = pvtMemberState(rows, m);
+        return `<button type="button" class="pvt-ind-row is-${ms.state}" data-pvt-go="${m.tab}">
+          <span class="pvt-ind-label">${m.label}</span>
+          <span class="pvt-ind-value">${ms.state === 'idle' ? 'Score &rarr;' : ms.value}</span>
+        </button>`;
+      }).join('');
+      return `<div class="pvt-ind is-${st}">
+        <div class="pvt-ind-head"><span class="pvt-ind-name">${g.label}</span>${chip}</div>
+        <div class="pvt-ind-sub">${g.sub}</div>
+        ${members}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
   const host = document.getElementById('pvt-summary-body');
   if (!host) return;
-  const rows = getPvtSummaryRows();
   if (rows.length === 0){
-    host.innerHTML = '<div class="pvt-result">' + pvtResultHtml('empty', 'Nothing entered yet. Score at least one measure on the other tabs and the summary builds itself. The tab strip above tracks each measure as you go.') + '</div>';
+    host.innerHTML = '<div class="pvt-card"><div class="pvt-card-kicker">Scores table</div><p class="pvt-agg-copy" style="margin:0">Every scored measure is listed here with its cut-off, published accuracy and result, as it will appear in the report.</p></div>';
     return;
   }
-  const c = pvtIndicatorCounts(rows);
-  const countStat = c.total === 0 ? '' :
-    `<div class="pvt-count">
-      <span class="pvt-count-num${c.failed > 0 ? ' is-fail' : ''}">${c.failed}<span style="color:var(--faint)">/</span>${c.total}</span>
-      <span class="pvt-count-label">independent indicator${c.total === 1 ? '' : 's'} beyond the selected cut-off${c.failed === 1 ? '' : 's'}. The two RBANS indices count as one, the digit-span indices as one, the CVLT-3 forced-choice scores as one, and the TOMM trials as one. A single failure is a hypothesis, not a conclusion (Larrabee, 2014).</span>
-    </div>`;
   host.innerHTML = `
     <div class="pvt-card">
-      <div class="pvt-card-kicker">Indicators scored this session</div>
-      ${countStat}
+      <div class="pvt-card-kicker">Scores table</div>
       <table class="pvt-table">
         <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Sens.</th><th>Spec.</th><th>Result</th></tr></thead>
         <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td>${r.sens}</td><td>${r.spec}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
@@ -31412,10 +31153,10 @@ function renderPvtApa(){
   `;
 }
 
-/* The tab strip's live status chips. One chip per measure, restated from
-   the same getPvt* state the result cards render, so strip and card cannot
-   disagree. The summary chip carries the independent-indicator count. */
-/* An unscored tab shows NO chip at all: a dash in a pill reads as seven
+/* The menu's live status chips. One chip per measure, restated from the
+   same getPvt* state the result cards render, so menu and card cannot
+   disagree. The Summary entry carries the independent-indicator count. */
+/* An unscored measure shows NO chip at all: a dash in a pill reads as seven
    pieces of dead chrome before anything is entered, so the pill appears
    only once it has a state to report. Scored chips carry the same glyphs
    as the readout rows (shape + word + colour, never colour alone). */
@@ -31471,10 +31212,20 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-tomm'),
     tommHas ? (tomm.anyFail ? 'Fail' : 'Pass') : '—',
     tommHas ? (tomm.anyFail ? 'fail' : 'pass') : null);
+  /* The Summary entry at the top of the menu carries the count itself,
+     large, rather than a chip: it is the page's answer. */
   const c = pvtIndicatorCounts(getPvtSummaryRows());
-  pvtChip(document.getElementById('pvt-status-summary'),
-    c.total > 0 ? `${c.failed}/${c.total}` : '—',
-    c.total > 0 ? (c.failed > 0 ? 'fail' : 'pass') : null);
+  const cnt = document.getElementById('pvt-nav-count');
+  if (cnt) cnt.innerHTML = c.total > 0 ? `${c.failed}<span class="pvt-nav-count-of">/${c.total}</span>` : '&ndash;';
+  const meta = document.getElementById('pvt-nav-summary-meta');
+  if (meta) meta.textContent = c.total > 0
+    ? `independent indicator${c.total === 1 ? '' : 's'} failed`
+    : 'Nothing scored yet';
+  const sumBtn = document.querySelector('#validity .pvt-nav-summary');
+  if (sumBtn){
+    sumBtn.classList.toggle('is-fail', c.total > 0 && c.failed > 0);
+    sumBtn.classList.toggle('is-pass', c.total > 0 && c.failed === 0);
+  }
   pvtCautionFlag('ei', ei.ei !== undefined && ei.fail);
   pvtCautionFlag('es', es.es !== undefined && !es.gated && es.fail);
   pvtCautionFlag('rds', rds.rds !== undefined && rds.fail);
@@ -31527,117 +31278,6 @@ function renderPvtAccuracy(){
   }
 }
 
-/* ---------- the running rail ----------
-   A single element beside every method panel, so the aggregate picture is
-   in view while the clinician is still entering scores rather than one
-   tab away. It reads the SAME getPvtSummaryRows/pvtIndicatorCounts the
-   Summary tab and the APA export read — three surfaces, one derivation,
-   which is why a measure can never appear scored here and unscored there. */
-/* The rail is grouped by INDEPENDENT INDICATOR, not by measure, because
-   the count above it is over indicators: the two RBANS indices are one,
-   and the two digit-span measures are one. Listing six flat rows beside a
-   "3 of 4" count invited exactly the arithmetic the page keeps warning
-   against, so the grouping now shows on screen what the note says in
-   words. Rows are buttons: the rail doubles as navigation. */
-const PVT_RAIL_GROUPS = [
-  { id: 'rbans', label: 'RBANS', members: [
-    { tab: 'ei',    label: 'Effort Index', ids: ['ei'] },
-    { tab: 'es',    label: 'Effort Scale', ids: ['es'] }
-  ]},
-  { id: 'rds', label: 'Digit span', members: [
-    { tab: 'rds',   label: 'Reliable Digit Span', ids: ['rds'] },
-    { tab: 'ds',    label: 'Digit Span indices',  ids: ['ds', 'ds-vocab', 'ds-lsf', 'ds-lsb'] }
-  ]},
-  { id: 'rey15', label: 'Rey 15-Item', members: [
-    { tab: 'rey15', label: 'Recall & recognition', ids: ['rey-recall', 'rey-combo'] }
-  ]},
-  { id: 'cvlt3', label: 'CVLT-3', members: [
-    { tab: 'cvlt3', label: 'Forced choice', ids: ['cvlt3', 'cvlt3-crit-recall', 'cvlt3-crit-recog'] }
-  ]},
-  { id: 'tomm', label: 'TOMM', members: [
-    { tab: 'tomm',  label: 'Forced choice', ids: ['tomm'] }
-  ]}
-];
-const PVT_RAIL_ICON = {
-  flag: PVT_STATE_ICON.flag,
-  pass: PVT_STATE_ICON.pass,
-  gated: PVT_STATE_ICON.na,
-  idle: '<svg class="pvt-flag-icon" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6" cy="6" r="3.4"/></svg>'
-};
-function renderPvtRail(){
-  const rail = document.getElementById('pvt-rail');
-  if (!rail) return;
-  const rows = getPvtSummaryRows();
-  const c = pvtIndicatorCounts(rows);
-  const current = document.querySelector('#validity .pvt-method-tab.active')?.dataset.pvtTab;
-
-  /* Status reads as words in a right-hand column, the way a progress panel
-     states a value against its label — colour marks a flag rather than
-     carrying the meaning on its own. */
-  let scored = 0, total = 0;
-  const groups = PVT_RAIL_GROUPS.map(g => {
-    const members = g.members.map(m => {
-      total++;
-      const mine = rows.filter(r => m.ids.includes(r.id));
-      const gated = mine.some(r => r.gated);
-      if (mine.length) scored++;
-      const flagged = mine.filter(r => r.fail).length;
-      const state = gated ? 'gated' : !mine.length ? 'idle' : flagged ? 'flag' : 'pass';
-      const value = gated ? 'gate not met'
-        : !mine.length ? 'not scored'
-        : flagged ? `${flagged} flagged`
-        : 'within cut-offs';
-      return `<button type="button" class="pvt-rail-row is-${state}${m.tab === current ? ' is-current' : ''}" data-rail-tab="${m.tab}">
-        <span class="pvt-rail-label">${m.label}</span>
-        <span class="pvt-rail-value">${value}</span>
-      </button>`;
-    }).join('');
-    return `<div class="pvt-rail-group">
-      <div class="pvt-rail-group-head">
-        <span class="pvt-rail-group-name">${g.label}</span>
-        ${g.members.length > 1 ? '<span class="pvt-rail-group-tag">counts as one</span>' : ''}
-      </div>${members}</div>`;
-  }).join('');
-
-  /* With nothing scored the section shows the bare 0/6 count alone — the
-     workspace card already carries the "enter scores" instruction, and the
-     Flagged stat is withheld rather than printed as 0/0. */
-  const hint = c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014).'
-    : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion.'
-    : 'Nothing beyond its cut-off so far.';
-
-  /* The collapse state lives on the rail, which survives this re-render;
-     the card is rebuilt from it so screen and ARIA cannot drift. */
-  const collapsed = rail.classList.contains('is-collapsed');
-  rail.innerHTML = `<div class="pvt-rail-card${collapsed ? ' is-collapsed' : ''}">
-    <div class="pvt-rail-head">
-      <span class="pvt-rail-title">Progress</span>
-      <button type="button" class="pvt-rail-toggle" data-rail-toggle aria-label="${collapsed ? 'Expand' : 'Collapse'} summary" aria-expanded="${collapsed ? 'false' : 'true'}">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg>
-      </button>
-    </div>
-    <div class="pvt-rail-body">
-      <div class="pvt-rail-section">
-        <div class="pvt-rail-kicker">Indicators</div>
-        ${c.total > 0 ? `<div class="pvt-rail-stat${c.failed ? ' is-flagged' : ''}">
-          <span class="pvt-rail-stat-label">Flagged</span>
-          <span class="pvt-rail-stat-value">${c.failed}<span class="pvt-rail-sep">/</span>${c.total}</span>
-        </div>` : ''}
-        <div class="pvt-rail-stat">
-          <span class="pvt-rail-stat-label">Measures scored</span>
-          <span class="pvt-rail-stat-value">${scored}<span class="pvt-rail-sep">/</span>${total}</span>
-        </div>
-        ${c.total > 0 ? `<p class="pvt-rail-hint">${hint}</p>` : ''}
-      </div>
-      <div class="pvt-rail-section">
-        <div class="pvt-rail-kicker">By indicator</div>
-        ${groups}
-      </div>
-      <button type="button" class="pvt-rail-cta" data-rail-tab="summary">Full summary &amp; APA table →</button>
-    </div>
-  </div>`;
-}
-
 function renderPvtAll(){
   renderPvtEi();
   renderPvtEs();
@@ -31649,42 +31289,34 @@ function renderPvtAll(){
   renderPvtAccuracy();
   renderPvtInstruments();
   renderPvtNav();
-  renderPvtRail();
   renderPvtSummary();
   renderPvtApa();
 }
 
 function switchPvtTab(name){
-  document.querySelectorAll('#validity .pvt-method-tab').forEach(t => {
+  document.querySelectorAll('#validity .pvt-nav [data-pvt-tab]').forEach(t => {
     const on = t.dataset.pvtTab === name;
     t.classList.toggle('active', on);
     t.setAttribute('aria-selected', on ? 'true' : 'false');
   });
   document.querySelectorAll('#validity .pvt-tab-content').forEach(c =>
     c.classList.toggle('active', c.id === 'pvt-' + name));
-  /* The rail would restate the Summary tab's own table beside it. */
-  document.querySelector('#validity .pvt-sheet')?.classList.toggle('is-summary', name === 'summary');
-  /* Same on About: the rail would list the same seven measures the About
-     table already lists, saying "not scored" against each, and take 260px
-     off a table that is the whole tab. */
-  document.querySelector('#validity .pvt-sheet')?.classList.toggle('is-about', name === 'about');
   pvtSyncDesc(name);
-  renderPvtRail();
 }
-/* About carries no description, as the Change Analysis overview does not;
-   the full one shows on every measure tab. Its "no single index is a
-   verdict" is carried on About by the table's footer. An inline display
-   rather than [hidden], so no stylesheet display rule can outrank it.
+/* The Summary carries no description: its verdict states the count rule
+   and "cut-off comparisons only" itself. The full line shows on every
+   measure. An inline display rather than [hidden], so no stylesheet
+   display rule can outrank it.
 
    It sits at the top of the sheet, inside the card, rather than as a loose
-   line above the tab strip: the only text on any tool page outside a card,
-   as Change Analysis's formula line also was (UI audit, 2026-09). */
+   line above it: the only text on any tool page outside a card, as Change
+   Analysis's formula line also was (UI audit, 2026-09). */
 function pvtSyncDesc(name){
   const desc = document.getElementById('pvt-desc');
   if (!desc) return;
   const main = document.querySelector('#validity .pvt-sheet-main');
   if (main && desc.parentElement !== main) main.prepend(desc);
-  desc.style.display = name === 'about' ? 'none' : '';
+  desc.style.display = name === 'summary' ? 'none' : '';
 }
 
 function clearPvt(){
@@ -31697,114 +31329,19 @@ function clearPvt(){
   renderPvtAll();
 }
 
-/* ---------- the About landing tab ----------
-   The page lands here rather than on the Effort Index, which was only
-   ever first by markup order. Same idiom as the Change Analysis overview,
-   and deliberately as sparse: it is a chooser, so it carries what picks a
-   measure (what it is, what it was derived on, what it cuts at) and no
-   more. One row per measure, click to jump.
-
-   Sensitivity and specificity are NOT here, on purpose. They are printed
-   beside every cut-off selector (renderPvtAccuracy) and in the Summary,
-   both from the PVT_*_ACCURACY constants; a third copy made this a data
-   table and was most of why it read busier than the Change Analysis one.
-
-   Independence grouping - which the >= 2-failure rule depends on - is a
-   heading over each group of measures that share an instrument, rather
-   than a column: a column restated the instrument on every row. */
-function renderPvtAboutPanel(){
-  const el = document.getElementById('pvt-about-body');
-  if (!el) return;
-  const rows = [
-    { tab: 'ei', title: 'Effort Index', cite: 'Silverberg et al. (2007); Shura et al. (2018)',
-      source: 'RBANS embedded', group: 'RBANS', cut: 'EI &gt; 3',
-      desc: 'Weighted sum of the Digit Span and List Recognition raw scores (0–12); higher = less credible.' },
-    { tab: 'es', title: 'Effort Scale', cite: 'Novitski et al. (2012)',
-      source: 'RBANS embedded', group: 'RBANS', cut: 'ES &lt; 12',
-      desc: 'List Recognition minus the three recall scores, plus Digit Span, all raw; computed only where its gate is met, because an ungated ES over-flags intact examinees.' },
-    { tab: 'rds', title: 'Reliable Digit Span', cite: 'Greiffenstein et al. (1994); Schroeder et al. (2012)',
-      source: 'WAIS embedded', group: 'Digit span', cut: 'RDS ≤ 6',
-      desc: 'Longest forward span plus longest backward span passed on both trials.' },
-    { tab: 'ds', title: 'Digit Span indices', cite: 'Iverson &amp; Tulsky (2003); Axelrod et al. (2006)',
-      source: 'WAIS embedded', group: 'Digit span', cut: 'ACSS ≤ 5',
-      desc: 'Age-corrected scaled-score cut-off, with Vocabulary − Digit Span and longest-span base rates alongside.' },
-    { tab: 'rey15', title: 'Rey 15-Item', cite: 'Boone et al. (2002)',
-      source: 'Stand-alone', group: 'Rey 15-Item', cut: 'Recall + recognition',
-      desc: 'Free recall of fifteen over-learned items, with a recognition trial that raises sensitivity.' },
-    { tab: 'cvlt3', title: 'CVLT-3 Forced Choice', cite: 'Delis et al. (2017); Erdodi et al. (2018)',
-      source: 'Embedded', group: 'CVLT-3', cut: 'Base rate by age',
-      desc: 'Total hits on the Forced Choice trial, read against the CVLT-3 manual’s age-banded base rates, with the CVLT-II cut-offs selectable alongside.' },
-    { tab: 'tomm', title: 'TOMM', cite: 'Tombaugh (1996); Martin et al. (2020)',
-      source: 'Stand-alone', group: 'TOMM', cut: 'Trial 2 &lt; 45',
-      desc: 'Fifty-item forced-choice picture recognition; robust to most genuine impairment, though specificity falls in dementia.' }
-  ];
-  const esc = s => String(s).replace(/&(?!(?:[a-z]+|#\d+);)/gi, '&amp;').replace(/"/g, '&quot;');
-  /* The instrument alone, with a "!" where a
-     version caveat applies; its tooltip carries PVT_INSTRUMENTS' own text. */
-  function derivedCell(r){
-    const i = PVT_INSTRUMENTS[r.tab] || {};
-    const notes = [];
-    if (i.mismatch) notes.push(i.mismatch);
-    const flag = notes.length
-      ? ` <button type="button" class="pvt-overview-flag" data-pvtip="${esc(notes.join(' '))}" aria-label="Version note for ${r.title}" tabindex="0">!</button>`
-      : '';
-    return `${i.derived || r.source}${flag}`;
-  }
-  const COUNT_WORDS = ['', 'one', 'two', 'three', 'four', 'five'];
-  const row = r => `<tr class="pvt-overview-row" data-about-tab="${r.tab}" tabindex="0" role="button" aria-label="Open ${r.title}">
-    <td class="pvt-overview-measure">
-      <div class="pvt-overview-titlerow">
-        <span class="pvt-overview-title">${r.title}</span>
-        <button type="button" class="pvt-overview-info" data-pvtip="${esc(((PVT_INSTRUMENTS[r.tab] || {}).kind || r.source) + '. ' + r.desc)}" aria-label="More about ${r.title}" tabindex="0">?</button>
-      </div>
-      <span class="pvt-overview-cite">${r.cite}</span>
-    </td>
-    <td class="pvt-overview-cell pvt-overview-derived">${derivedCell(r)}</td>
-    <td class="pvt-overview-cell pvt-overview-cutcell">${r.cut}</td>
-    <td class="pvt-overview-arrow" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></td>
-  </tr>`;
-  /* Groups in first-appearance order; only a group of two or more gets a
-     heading, since a heading over one measure would just repeat its name. */
-  const groups = [];
-  rows.forEach(r => {
-    const g = groups.find(x => x.name === r.group);
-    if (g) g.rows.push(r); else groups.push({ name: r.group, rows: [r] });
-  });
-  const body = groups.map(g => g.rows.length > 1
-    ? `<tbody class="pvt-overview-group">
-        <tr class="pvt-overview-grouphead"><td colspan="4">${g.name} <span class="pvt-overview-groupnote">· ${COUNT_WORDS[g.rows.length] || g.rows.length} measures, one indicator</span></td></tr>
-        ${g.rows.map(row).join('')}
-      </tbody>`
-    : `<tbody class="pvt-overview-single">${g.rows.map(row).join('')}</tbody>`).join('');
-  el.innerHTML = `<div class="pvt-overview-wrap">
-    <table class="pvt-overview-table">
-      <thead><tr>
-        <th class="pvt-overview-th is-measure">Measure</th>
-        <th class="pvt-overview-th is-left"><span class="pvt-overview-colh" tabindex="0" data-pvtip="The instrument and edition each cut-off was calibrated on. Embedded indices are computed from subtests that also measure genuine ability; stand-alone tests are administered solely to assess performance validity. A cut-off derived on one edition does not automatically transfer to another; a ! marks where that matters.">Derived on</span></th>
-        <th class="pvt-overview-th is-left"><span class="pvt-overview-colh is-end" tabindex="0" data-pvtip="The cut-off each measure applies when its tab is first opened. Its published sensitivity and specificity are printed beside the cut-off selector on that tab.">Default cut-off</span></th>
-        <th class="pvt-overview-th" aria-hidden="true"></th>
-      </tr></thead>
-      ${body}
-    </table>
-    <p class="pvt-overview-foot">Failing <strong>two or more independent</strong> indicators supports probable invalidity (Larrabee, 2014). Measures grouped under one heading share an instrument and count as one. No single index is a verdict.</p>
-  </div>`;
-  el.querySelectorAll('[data-about-tab]').forEach(row => {
-    const go = () => switchPvtTab(row.dataset.aboutTab);
-    row.addEventListener('click', e => { if (e.target.closest('.pvt-overview-info, .pvt-overview-flag')) return; go(); });
-    row.addEventListener('keydown', e => {
-      if (e.target.closest('.pvt-overview-info, .pvt-overview-flag')) return;
-      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); }
-    });
-  });
-}
-
 function setupPvtPage(){
   const root = document.getElementById('validity');
   if (!root) return;
-  renderPvtAboutPanel();
-  pvtSyncDesc('about');
-  root.querySelectorAll('.pvt-method-tab').forEach(tab => {
+  pvtSyncDesc('summary');
+  root.querySelectorAll('.pvt-nav [data-pvt-tab]').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
+  });
+  /* The Summary's indicator cards double as the menu. Delegated, because
+     they are rebuilt on every keystroke and bound handlers would not
+     survive. */
+  document.getElementById('pvt-summary-cards')?.addEventListener('click', e => {
+    const row = e.target.closest('[data-pvt-go]');
+    if (row) switchPvtTab(row.dataset.pvtGo);
   });
   /* The shared RBANS fields appear on both the EI and ES tabs; pvtState is
      the master and every input with the same data-pvt-field mirrors it. */
@@ -31829,23 +31366,6 @@ function setupPvtPage(){
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   document.getElementById('pvt-rey-administer')?.addEventListener('click', reyAdminOpen);
-  /* The rail doubles as navigation — delegated, because it re-renders on
-     every keystroke and bound handlers would not survive. */
-  document.getElementById('pvt-rail')?.addEventListener('click', e => {
-    if (e.target.closest('[data-rail-toggle]')){
-      const card = document.querySelector('#pvt-rail .pvt-rail-card');
-      const btn = e.target.closest('[data-rail-toggle]');
-      const collapsed = card?.classList.toggle('is-collapsed');
-      btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-      btn.setAttribute('aria-label', collapsed ? 'Expand summary' : 'Collapse summary');
-      /* The state must survive the next re-render, which happens on every
-         keystroke — so it lives on the rail, not only on the card. */
-      document.getElementById('pvt-rail')?.classList.toggle('is-collapsed', !!collapsed);
-      return;
-    }
-    const row = e.target.closest('[data-rail-tab]');
-    if (row) switchPvtTab(row.dataset.railTab);
-  });
   ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion','pvt-cvlt3-basis'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });

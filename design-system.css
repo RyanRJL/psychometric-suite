@@ -5119,7 +5119,7 @@ input[type="number"].ds-patient-field-input{
   #bat-table,#sdi-table,#rci-basic-table,#rci-practice-table,
   #rci-srb-table,#rci-crawford-table,#pre-predict-table,
   #pre-opiepredict-table,#change-analysis .change-overview-table,
-  #validity .pvt-table,#validity .pvt-overview-table,
+  #validity .pvt-table,
   .db-table,.methods-table,.es-examples-table{
     display:block !important;
     width:100% !important;
@@ -5127,49 +5127,20 @@ input[type="number"].ds-patient-field-input{
     -webkit-overflow-scrolling:touch;
   }
 
-  /* The overview table on the Validity About tab carries `overflow:visible`
-     so its two hover tooltips (`.pvt-overview-colh::before` at 320px and
-     `.pvt-overview-info::before` at 340px, both absolutely positioned inside
-     the table) can escape the table box. Making the table a scroll box takes
-     that away: `overflow-x:auto` forces the y axis to `auto` as well, so a
-     tooltip is clipped at the box edge.
-
-     That is accepted here rather than worked around. Below 900px the table
-     is 845 layout px against a 417px column, and the whole document used to
-     slide sideways with it; a hover affordance is pointer-only and is not
-     reachable on the touch devices this width mostly means. What is done for
-     it is the two rules below: the tooltip is narrowed to the viewport so it
-     cannot sit off-screen, and the row tooltip is flipped to open DOWNWARD,
-     because opening upward put it above the first row and hard against the
-     top edge of the new scroll box, where nothing can scroll it back. */
-  #validity .pvt-overview-colh::before,
-  #validity .pvt-overview-info::before,
-  #validity .pvt-overview-flag::before{
-    width:min(320px, calc(100vw - 64px)) !important;
-  }
-  #validity .pvt-overview-info::before,
-  #validity .pvt-overview-flag::before{
-    bottom:auto !important;
-    top:calc(100% + 8px) !important;
-  }
-
   /* --- Horizontal control strips scroll rather than overflow -------- */
   /* Scrolling, not wrapping: --topbar-h must stay constant, because the
      toast and both popovers position against it. */
   .topnav,
-  #change-analysis .change-method-tabs,
-  #validity .pvt-method-tabs{
+  #change-analysis .change-method-tabs{
     overflow-x:auto !important;
     overflow-y:hidden !important;
     scrollbar-width:none;
     -ms-overflow-style:none;
   }
   .topnav::-webkit-scrollbar,
-  #change-analysis .change-method-tabs::-webkit-scrollbar,
-  #validity .pvt-method-tabs::-webkit-scrollbar{display:none}
+  #change-analysis .change-method-tabs::-webkit-scrollbar{display:none}
   .topnav-item,
-  #change-analysis .change-method-tab,
-  #validity .pvt-method-tab{flex-shrink:0 !important}
+  #change-analysis .change-method-tab{flex-shrink:0 !important}
 
   /* --- Segmented control bars wrap --------------------------------- */
   #battery .ds-prem-card,
@@ -5871,17 +5842,15 @@ body #converter .conv-unified-panel{
   padding-bottom: 14px !important;
 }
 
-/* Performance Validity: the About overview's seven rows were 62px each
-   (14px cell padding around a two-line title and citation), which alone
-   took the page 82px past the fold. The Change Analysis About table uses
-   the same row design, so it takes the same padding and the two stay alike. */
-body #validity .pvt-overview-row td,
+/* The Change Analysis About table's rows were 62px each (14px cell
+   padding around a two-line title and citation), which alone took the page
+   past the fold. (Performance Validity's About table shared this rule until
+   the page lost that tab, 2026-09.) */
 body #change-analysis .change-overview-table td{
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
 body #validity .pvt-refs{ margin-top: 8px !important; padding-top: 4px !important; }
-body #validity .pvt-sheet.is-about{ padding-top: 16px !important; padding-bottom: 16px !important; }
 
 /* Premorbid, ToPF and OPIE-4 tabs: the model / index column was squeezed
    by six numeric columns with room to spare, so "Verbal Comprehension Index"

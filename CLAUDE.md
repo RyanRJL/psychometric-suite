@@ -204,9 +204,12 @@ Three things that bit while wiring it, all found by driving the real page:
 ### The app frame: a fixed status bar, three widths, nothing scrolls
 
 UI audit, 2026-09. The app is meant to read as one window. At **1366 x 768, 1440 x 900 and
-1920 x 1080, all 27 views** (every page, every Validity / Premorbid / Change Analysis tab,
+1920 x 1080, all 26 views** (every page, every Validity / Premorbid / Change Analysis tab,
 both Effect Sizes modes) fit with no page scroll, report open or closed, and nothing is
-painted under the floating chip. §55 pins what made that true. Things to know before
+painted under the floating chip. The one known exception is the Validity Summary once most
+of its measures are scored: fourteen rows run past the fold at 1366 (380 px; the tab-strip
+version it replaced ran 224 px over with the same fourteen). Empty, and with five rows, it
+fits. §55 pins what made that true. Things to know before
 touching layout:
 
 - **The footer is a fixed status bar** (`APP FRAME`, end of `design-system.css`).
@@ -300,6 +303,24 @@ being opened. The arc turns its gradient angle via `@property --rb-arc`, not the
 rotating the element would swing a pill-shaped ring round its centre. Off while the drawer
 is open; a still, faint ring under reduced motion. Spin chosen over a pulse, and accent
 over the old rainbow, by the owner. §55 pins all of it.
+
+### The Performance Validity page: a menu, and the Summary as the landing panel
+
+Owner decision, 2026-09, chosen from two mock-ups. A left-hand menu (`.pvt-nav`, static
+markup) lists the Summary first and the measures under it; the Summary panel is where the
+page opens, with a verdict band (the count of independent indicators failed, one pip per
+indicator) and one card per indicator (`PVT_INDICATOR_GROUPS`), then the scores table and
+the Larrabee card. It replaced a tab strip, an About tab and a running rail, which listed
+the same seven measures three times. Every surface reads `getPvtSummaryRows` /
+`pvtIndicatorCounts`, so the menu, the cards, the table and the export cannot disagree.
+
+- **A menu heading means "counts as one" or it means nothing.** The single measures sit
+  under "One indicator each": the first draft grouped TOMM and Rey under "Stand-alone",
+  which reads as one indicator when the count treats them as two. §40 derives each
+  heading's claim and compares it with `PVT_INDICATOR_GROUPS` and the rows' `group` keys.
+- **`.pvt-workspace.pvt-summary-lower` carries two classes on purpose.** `.pvt-workspace`
+  is declared later in `styles.css`, so a one-class rule lost the tie and the scores table
+  kept the measure panels' narrow split, wrapping every row to three lines.
 
 ### `display:flex` on a table cell inflates the row
 
@@ -2137,8 +2158,8 @@ that mirrors it (`renderStaticApaNotes`, via `data-apa-note`). `ctx.onScreen` �
 by the mirror — is the **one licensed difference** between the two. A note may use it to
 **drop** a sentence the surrounding page already states in full; it may not add, soften or
 reword one, so the exported note stays the superset. One note uses it: `pvt` drops its
-Sources line on screen, because the tab strip and the on-page references state every source
-in full. (`pre-opiepredict` used to drop its UK caveat on screen; since 2026-08 the note is
+Sources line on screen, because each measure's panel and the on-page references state every
+source in full. (`pre-opiepredict` used to drop its UK caveat on screen; since 2026-08 the note is
 the caveat, sits above the table, and both copies are identical. `check.js` §15 asserts
 that identity.)
 
