@@ -6938,7 +6938,8 @@ check('the Larrabee table states it is for seven indicators, and the page count 
   const bad = [];
   const groups = new Set([...extractFn(APP_SRC, 'getPvtSummaryRows').matchAll(/group: '([a-z0-9]+)'/g)].map(m => m[1]));
   const words = { 4:'four', 5:'five', 6:'six', 7:'seven' };
-  const m = /These figures are for seven indicators administered\. They do not transfer directly to a different number, and this page counts at most (\w+) independent indicators\./.exec(HTML_SRC);
+  const m = /The page counts at most (\w+) independent indicators, which is within that range\./.exec(HTML_SRC);
+  if (!/each given seven indicators \(6 PVTs and 1 SVT\)/.test(HTML_SRC)) bad.push('the Larrabee table no longer says it is for seven indicators');
   if (!m) bad.push('the caveat under the Larrabee table is missing');
   else if (m[1] !== words[groups.size]) bad.push(`caveat says "${m[1]}" but the summary has ${groups.size} indicator groups`);
   return bad.length === 0 || bad.join('; ');
@@ -7580,7 +7581,7 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
     /* The threshold is the consensus statement's as well as Larrabee's, so
        every place that states it names both (owner correction, 2026-09). */
     if (!/pvt-verdict-rule[^\n]*\(Larrabee, 2014a; Sweet et al\., 2021\)/.test(sum)) bad.push('the threshold beside the count no longer cites the AACN consensus statement');
-    if (!/AACN consensus statement supports the same threshold when up to 7 to 9 measures are given \(Sweet et al\., 2021\)/.test(HTML_SRC)) bad.push('the Larrabee card no longer names the AACN consensus statement');
+    if (!/rule from the AACN consensus statement \(Sweet et al\., 2021\), which supports it when up to 7 to 9 validity measures are given/.test(HTML_SRC)) bad.push('the Larrabee card no longer names the AACN consensus statement');
     if (!/RDS &le; 6 gave a 13% false-positive rate \(Loring et al\., 2016, as reported by Sweet et al\., 2021\)/.test(HTML_SRC)) bad.push('the RDS caution lost the early-AD false-positive rate');
     if ((HTML_SRC.match(/Sweet, J\. J\., Heilbronner, R\. L\.[^<]*\(2021\)/g) || []).length < 2) bad.push('Sweet et al. (2021) is cited but missing from a references list');
   }
@@ -10662,8 +10663,9 @@ check('one name per page: top bar, brand row, tab title and home dial agree', ()
   /* Premorbid was "Estimate" in the top bar and "Estimation" in the brand
      row and on the dial; Effect Sizes was "Effect Size Tools" in two of them.
      A page's top-bar name is its tab, or its entry in a menu that holds whole
-     pages (Calculators: Score Converter, Effect Sizes). Menus that open a tab
-     WITHIN one page (Premorbid, Change Analysis) are not page names. */
+     pages (there are none since 2026-09, when Calculators was split into two
+     tabs; the loop stays so a new one is read). A menu that opens a tab
+     WITHIN one page is not a page name. */
   const bad = [];
   const DSJS = fs.readFileSync(path.join(ROOT, 'design-system.js'), 'utf8');
   const slice = (src, start) => { const i = src.indexOf(start); return i < 0 ? '' : src.slice(i, src.indexOf('};', i)); };

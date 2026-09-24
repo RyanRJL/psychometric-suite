@@ -17508,18 +17508,12 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <button type="button" class="topnav-item nav-item" data-target="validity" data-bucket="validity">
           <span>Performance Validity</span>
         </button>
-        <!-- A menu, not a page: the button has no data-target, so it opens the
-             list (hover or focus) rather than navigating anywhere. -->
-        <div class="topnav-group" data-bucket="calculators">
-          <button type="button" class="topnav-item" data-bucket="calculators" aria-haspopup="true">
-            <span>Calculators</span>
-            <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
-          </button>
-          <div class="topnav-dropdown" role="menu">
-            <button type="button" class="topnav-drop-item nav-item" data-target="converter" role="menuitem">Score Converter</button>
-            <button type="button" class="topnav-drop-item nav-item" data-target="effectsize" role="menuitem">Effect Sizes</button>
-          </div>
-        </div>
+        <button type="button" class="topnav-item nav-item" data-target="converter" data-bucket="converter">
+          <span>Score Converter</span>
+        </button>
+        <button type="button" class="topnav-item nav-item" data-target="effectsize" data-bucket="effectsize">
+          <span>Effect Sizes</span>
+        </button>
         <button type="button" class="topnav-item nav-item" data-target="charts" data-bucket="charts">
           <span>Score Charts</span>
         </button>
@@ -18972,8 +18966,8 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <div class="pvt-larrabee-grid">
           <div>
             <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014a)</h3>
-            <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity, within Slick et al.'s (1999) criteria, which also require a substantial external incentive. The AACN consensus statement supports the same threshold when up to 7 to 9 measures are given (Sweet et al., 2021). The table gives classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT).</p>
-            <p class="pvt-agg-copy">These figures are for seven indicators administered. They do not transfer directly to a different number, and this page counts at most six independent indicators. Bilder, Sugar &amp; Hellemann (2014) argue that such rates hold only for combinations of PVTs studied together.</p>
+            <p class="pvt-agg-copy">This page applies the <strong>≥ 2 independent failures</strong> rule from the AACN consensus statement (Sweet et al., 2021), which supports it when up to 7 to 9 validity measures are given. The page counts at most six independent indicators, which is within that range. Under Slick et al.'s (1999) criteria, probable invalidity also requires a substantial external incentive.</p>
+            <p class="pvt-agg-copy">The table shows how the rule performed in one study: Larrabee's (2014a) 54 clinical and 41 malingering cases, each given seven indicators (6 PVTs and 1 SVT). It shows the trade-off between thresholds. It is not a false-positive rate for this page's measures, which Bilder, Sugar &amp; Hellemann (2014) argue can be known only for combinations studied together.</p>
             <p class="pvt-agg-papers" data-pvt-papers="larrabee2014 sweet2021 slick1999 bilder2014 larrabee2014reply"></p>
           </div>
           <table class="pvt-table">
@@ -32921,11 +32915,9 @@ function renderTermsStatus(){
 (function(){
   const TOPNAV_BUCKETS = {
     home: 'home',
-    /* Both calculators live in the one Calculators menu (2026-09), so either
-       page lights that tab. */
-    converter: 'calculators',
+    converter: 'converter',
     battery: 'battery',
-    effectsize: 'calculators',
+    effectsize: 'effectsize',
     // All change-analysis methods map to the "change" bucket
     sdi: 'change',
     'rci-basic': 'change',
@@ -32967,13 +32959,9 @@ function renderTermsStatus(){
     const active = document.querySelector('.section.active');
     const id = active ? active.id : 'home';
     const bucket = TOPNAV_BUCKETS[id] || 'home';
-    // Highlight the matching topnav button (and its parent group, if dropdown)
+    // Highlight the matching topnav button
     document.querySelectorAll('.topnav-item').forEach(b => {
       b.classList.toggle('active', b.dataset.bucket === bucket);
-    });
-    // Also mark the active dropdown item so it shows highlighted on hover
-    document.querySelectorAll('.topnav-drop-item').forEach(b => {
-      b.classList.toggle('active', b.dataset.target === id);
     });
     // Mark active footer link (Norms / Methods & References)
     document.querySelectorAll('.site-footer-link').forEach(b => {
