@@ -471,6 +471,71 @@ const WAIS4_WMS4_JOINT = (function(){
   };
 })();
 
+
+/* ============================================================
+   RBANS_INTERCORR — RBANS Update Manual (Randolph, 2012), Table 4.1,
+   "Intercorrelations of RBANS Subtest and Index Scores, Ages 12-89"
+
+   ONLY THE INDEX BLOCK IS STORED, and that is deliberate. Same note as the
+   Wechsler tables: uncorrected below the diagonal, corrected (shaded)
+   above. The six index rows (five indices and the Total Scale) are stored
+   from the lower triangle.
+
+   THE SUBTEST BLOCK AS RECEIVED CONTRADICTS ITSELF, so none of it is here.
+   The table was supplied as an Excel sheet extracted from the page. Its
+   subtest rows carry a value on the diagonal (a cell a correlation table
+   cannot have), and its subtest-subtest values are far too high for the
+   index cells beside them. Immediate Memory is List Learning + Story
+   Memory and Attention is Digit Span + Coding, so the four cross cells as
+   received (LL-DS .67, LL-CD .52, SM-DS .68, SM-CD .55, with LL-SM .73 and
+   DS-CD .53) force r(IM, AT) to be at least .74. The index block prints
+   .37. One of the two blocks is misread, and the index block is the one
+   that checks out (below). No subtest cell may be stored until the page is
+   read again.
+
+   TRANSCRIPTION PROOF FOR WHAT IS STORED. The Total Scale is built from
+   the five indices, so its correlation with each index follows from the
+   ten index-index cells alone: corr(I, sum) = sum_j r(I,j) / sqrt(sum_jk
+   r(j,k)), all SDs being 15. All five predictions land on the printed
+   value at 2 dp (.78 .63 .66 .72 .76). check.js §57 re-runs it.
+
+   FORM A ONLY. The table is the Form A normative sample. normDB also holds
+   Forms B, C and D; the Profile page's pattern does not admit them, as no
+   published intercorrelation exists for them here.
+
+   Ages 12-89 pooled, so one matrix serves every RBANS patient; there is no
+   battery choice to make, unlike WMS-IV.
+
+   Keys are this file's own: the manual has no abbreviations, and 'VC'
+   would read as WAIS-IV Vocabulary on a chip. `short` is the chip text.
+   ============================================================ */
+const RBANS_INTERCORR = {
+  source: 'RBANS Update Manual (Randolph, 2012), Table 4.1: Intercorrelations of RBANS Subtest and Index Scores, Ages 12-89',
+  citation: 'RBANS Update Manual (Randolph, 2012), Table 4.1',
+  order: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'],
+  labels: {
+    'IM':  'Immediate Memory',
+    'VSC': 'Visuospatial/Constructional',
+    'ATT': 'Attention',
+    'LAN': 'Language',
+    'DM':  'Delayed Memory',
+    'TS':  'Total Scale',
+  },
+  short: { 'IM':'Immediate', 'VSC':'Visuospatial', 'ATT':'Attention', 'LAN':'Language', 'DM':'Delayed', 'TS':'Total' },
+  restrictedTo16_69: [],
+  r: {
+    'VSC|IM':0.29,
+    'ATT|IM':0.37, 'ATT|VSC':0.29,
+    'LAN|IM':0.47, 'LAN|VSC':0.31, 'LAN|ATT':0.38,
+    'DM|IM':0.64,  'DM|VSC':0.34,  'DM|ATT':0.32,  'DM|LAN':0.40,
+    'TS|IM':0.78,  'TS|VSC':0.63,  'TS|ATT':0.66,  'TS|LAN':0.72, 'TS|DM':0.76,
+  },
+  /* The manual's own row. Unlike the Wechsler tables these are index
+     scores on 100/15, not sums of scaled scores. */
+  mean: {'IM':100, 'VSC':100, 'ATT':100, 'LAN':100, 'DM':100, 'TS':100},
+  sd:   {'IM':15, 'VSC':15, 'ATT':15, 'LAN':15, 'DM':15, 'TS':15}
+};
+
 // ToPF Raw (0-70) → estimated FSIQ
 const TOPF_TO_FSIQ = [
   42,45,48,51,54,57,59,62,64,66,

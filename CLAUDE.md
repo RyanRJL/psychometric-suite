@@ -1652,6 +1652,21 @@ Manual **Table 4.12** (20 WMS-IV rows x 21 WAIS-IV columns). §56 asserts every 
   any composite (the five WMS-IV process scores against CO, FW, PCm, LN, CA), and a
   misread of .01 to .02 anywhere. The index block is pinned verbatim as a second reading.
 
+#### RBANS: indices only, Table 4.1 (2026-09)
+
+`RBANS_INTERCORR` (`data.js`) holds RBANS Update Manual (Randolph, 2012) Table 4.1, **index
+block only**: five indices and the Total Scale, lower triangle. The tab offers the five
+indices; the Total Scale is kept out as FSIQ is. Form A only (`/^RBANS Indices · /`), the
+table being the Form A sample. Keys are local (`VSC`, not `VC`, which reads as Vocabulary)
+and chips use `short`. §57 pins it: the Total Scale column is reproduced at 2 dp from the
+ten index cells, and the block is pinned verbatim.
+
+**The subtest block was not stored, because as received it contradicts the index block.**
+The Excel extraction put a value on the diagonal of each subtest row, and its
+subtest-subtest cells (.5 to .8) force r(Immediate Memory, Attention) to at least .74,
+against a printed .37. Re-read the page before adding a subtest level. Even then only the
+8 scaled subtests are in the table; the 4 raw ones are not.
+
 #### The note is written for whoever receives the report
 
 **Not for the clinician, and certainly not for the developer.** The exported table may be
@@ -2285,7 +2300,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 425 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 428 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -2298,7 +2313,7 @@ family dropdowns (§33), consent gating on the Change Analysis methods (§34), t
 empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
 tab-close prompt and AACN default (§52), Save / Open session (§53), and the app frame,
 the docked report and the motion scale (§55), and the WAIS-IV/WMS-IV joint profile on
-WMS-IV Table 4.12 (§56).
+WMS-IV Table 4.12 (§56), and the RBANS index intercorrelations (§57).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

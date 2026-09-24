@@ -28,7 +28,8 @@
    THREE INSTRUMENTS, ONE PER TAB. WAIS-IV (Table 5.1), WMS-IV Adult
    (Table 4.1) and WMS-IV Older Adult (Table 4.2), plus a fourth tab
    profiling WAIS-IV with the WMS-IV Adult battery on WMS-IV Table 4.12
-   (see WMS4_WAIS4_CROSS in data.js). The two WMS-IV
+   (see WMS4_WAIS4_CROSS in data.js), and RBANS Update indices on its
+   Table 4.1 (see RBANS_INTERCORR). The two WMS-IV
    batteries are separate entries rather than one instrument with an age
    switch: they are different normative samples with different measure
    lists and different coefficients, ages 65-69 are normed in both, and
@@ -139,13 +140,19 @@
       IMI:  ['LM1', 'VPA1', 'VR1'],
       DMI:  ['LM2', 'VPA2', 'VR2'],
       VPA2: ['VPAWR']
+    },
+    /* RBANS: the Total Scale is the five indices. Only the indices are
+       offered (see RBANS_INTERCORR for why no subtests), so this rule has
+       only the Total to keep out, and the Total is not offered either. */
+    rbans: {
+      TS: ['IM', 'VSC', 'ATT', 'LAN', 'DM']
     }
   };
   /* Block Design No Time Bonus is the SAME administration rescored - the
      matrix puts them at r = .97 - so they are one measure for this
      purpose even though neither contains the other. WMS-IV has no such
      pair: every process score there is a part, not a rescoring. */
-  const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {} };
+  const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {}, rbans: {} };
 
   /* A JOINT instrument has no composition of its own: it is the union of its
      parts', which share no keys, so nothing is restated and the two cannot
@@ -264,6 +271,18 @@
 
        No process-score level: Table 4.12 has no WAIS-IV process scores, and
        WMS-IV process scores alone are the WMS-IV tab's own level. */
+    /* RBANS Update, Form A, Table 4.1. INDICES ONLY: the subtest block of
+       the table as supplied contradicts its own index block, so it is not
+       stored and no subtest level exists. The Total Scale is left out for
+       the reason FSIQ is: it is the five indices summed. Forms B-D have no
+       published intercorrelations here, so the pattern does not admit them. */
+    { id:'rbans', label:'RBANS', name:'RBANS',
+      groupRe: /^RBANS Indices · /,
+      composites: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'],
+      matrix: () => (typeof RBANS_INTERCORR !== 'undefined') ? RBANS_INTERCORR : null,
+      levels: [
+        { id:'rb-indices', label:'Indices', keys:['IM', 'VSC', 'ATT', 'LAN', 'DM'] }
+      ] },
     { id:'w4wm4', label:'WAIS-IV + WMS-IV', name:'WAIS-IV and WMS-IV',
       joint: ['wais4', 'wms4'],
       composites: ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
@@ -370,6 +389,8 @@
   /* An Index is universally known by its acronym and its full name is
      three words long, so the chip carries whichever reads shorter. */
   function profShortLabel(key){
+    const M = profMatrixObj();
+    if (M && M.short && M.short[key]) return M.short[key];
     return profIsComposite(key) ? key : profLabel(key);
   }
   function profGroup(id){
@@ -837,8 +858,11 @@
     /* An absence with no stated reason reads as missing data, so each
        measure the instrument deliberately withholds says why, and only
        while Score Tables actually holds it. */
-    if (profState.instrument === 'wais4' && found.FSIQ !== undefined){
+    if ((profState.instrument === 'wais4' || profState.instrument === 'w4wm4') && found.FSIQ !== undefined){
       bits.push('Full Scale IQ contains every other measure, so it cannot join a profile');
+    }
+    if (profState.instrument === 'rbans' && found.TS !== undefined){
+      bits.push('the Total Scale is the five indices summed, so it cannot join a profile');
     }
     return '<div class="prof-foot"><span>' + escapeHtml(bits.join(' · ')) + '</span>'
       + '<a class="prof-foot-link" data-prof-goto="battery">Edit on Score Tables →</a></div>';

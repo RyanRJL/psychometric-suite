@@ -45,7 +45,7 @@ vm.runInContext(
   fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8') +
     ';globalThis.__EXPORTS = { TOPF_TO_FSIQ, WAIS_COEF, WMS_COEF,' +
     ' OPIE_PRORATED_FSIQ, OPIE_PRORATED_GAI, OPIE_PRORATED_INDEX,' +
-    ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB, WAIS4_INTERCORR, WMS4_INTERCORR, WMS4_WAIS4_CROSS, WAIS4_WMS4_JOINT,' +
+    ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB, WAIS4_INTERCORR, WMS4_INTERCORR, WMS4_WAIS4_CROSS, WAIS4_WMS4_JOINT, RBANS_INTERCORR,' +
     ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_EI_SCREENING_CAUTION, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
@@ -9193,7 +9193,7 @@ function driveProfRules() {
     const i = PROF_SRC.indexOf(marker);
     return PROF_SRC.slice(i, PROF_SRC.indexOf(close, i) + close.length);
   };
-  const mod = new Function('WAIS4_INTERCORR', 'WMS4_INTERCORR', 'WAIS4_WMS4_JOINT',
+  const mod = new Function('WAIS4_INTERCORR', 'WMS4_INTERCORR', 'WAIS4_WMS4_JOINT', 'RBANS_INTERCORR',
     'const profState = { instrument: null };\n'
     + grab('const PROF_COMPOSED_OF = {', '\n  };') + '\n'
     + grab('const PROF_ALIAS = {', '};') + '\n'
@@ -9204,7 +9204,7 @@ function driveProfRules() {
     + extractFn(PROF_SRC, 'profConflicts') + '\n'
     + 'return { PROF_INSTRUMENTS, PROF_COMPOSED_OF, conflicts: profConflicts,'
     + '         use: id => { profState.instrument = id; } };'
-  )(D.WAIS4_INTERCORR, D.WMS4_INTERCORR, D.WAIS4_WMS4_JOINT);
+  )(D.WAIS4_INTERCORR, D.WMS4_INTERCORR, D.WAIS4_WMS4_JOINT, D.RBANS_INTERCORR);
   /* Every instrument, its measures and its matrix, in one shape the checks
      below can loop over. */
   mod.each = () => mod.PROF_INSTRUMENTS.map(inst => {
@@ -9261,6 +9261,10 @@ check('no two measures that overlap can be profiled together', () => {
       ['AMI', 'IMI', 'two WMS-IV indices sharing subtests'],
       ['VMI', 'DE1S', 'a WMS-IV index and a process score two levels down'],
       ['WMI', 'DSF', 'a WAIS-IV composite and a process score two levels down']
+    ],
+    rbans: [
+      ['TS', 'IM', 'the Total Scale and an index it is built from'],
+      ['TS', 'DM', 'the Total Scale and an index it is built from']
     ]
   };
   const MAY = {
@@ -9275,7 +9279,8 @@ check('no two measures that overlap can be profiled together', () => {
     /* WMI (Digit Span, Arithmetic) and VWMI (Spatial Addition, Symbol Span)
        are both "working memory" and share nothing, which is the case most
        likely to be blocked by someone reading names rather than members. */
-    w4wm4: [['WMI', 'VWMI'], ['VCI', 'AMI'], ['PRI', 'VMI'], ['PSI', 'IMI'], ['DS', 'SA'], ['VC', 'LM1']]
+    w4wm4: [['WMI', 'VWMI'], ['VCI', 'AMI'], ['PRI', 'VMI'], ['PSI', 'IMI'], ['DS', 'SA'], ['VC', 'LM1']],
+    rbans: [['IM', 'DM'], ['VSC', 'ATT'], ['LAN', 'DM']]
   };
 
   for (const { inst, keys, M } of mod.each()) {
@@ -9386,7 +9391,8 @@ check('each measure is converted on its own metric', () => {
   if (mod) {
     const MUST = { wais4: ['VCI', 'PRI', 'WMI', 'PSI'], wms4: ['AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
                    wms4o: ['AMI', 'VMI', 'IMI', 'DMI'],
-                   w4wm4: ['VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'] };
+                   w4wm4: ['VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
+                   rbans: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'] };
     for (const { inst, keys } of mod.each()) {
       for (const c of (MUST[inst.id] || [])) {
         if (!inst.composites.includes(c)) bad.push(inst.id + ': ' + c + ' is not treated as a composite');
@@ -10731,6 +10737,61 @@ check('the joint profile admits the WMS-IV Adult battery only', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
+
+heading('57. RBANS Update Table 4.1 — the index intercorrelations');
+
+/* The Total Scale is the five indices summed, all on SD 15, so its
+   correlation with each index is fixed by the ten index-index cells:
+   corr(I, T) = sum_j r(I,j) / sqrt(sum_jk r(j,k)). All five land on the
+   printed value at 2 dp, which pins the ten cells as a set. */
+check('the Total Scale column is reproduced from the index block', () => {
+  const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
+  const idx = ['IM', 'VSC', 'ATT', 'LAN', 'DM'];
+  const g = (a, b) => (a === b ? 1 : (R.order.indexOf(a) > R.order.indexOf(b) ? R.r[a + '|' + b] : R.r[b + '|' + a]));
+  let den = 0; for (const a of idx) for (const b of idx) den += g(a, b);
+  const bad = [];
+  for (const a of idx) {
+    const pred = idx.reduce((t, b) => t + g(a, b), 0) / Math.sqrt(den);
+    if (Math.abs(pred - R.r['TS|' + a]) > 0.005) bad.push(a + ': predicts ' + pred.toFixed(3) + ', printed ' + R.r['TS|' + a]);
+  }
+  const n = R.order.length;
+  if (Object.keys(R.r).length !== n * (n - 1) / 2) bad.push('the block is not complete');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Verbatim against the page, a second reading, as for every other matrix. */
+check('the RBANS index block matches the printed page', () => {
+  const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
+  const PAGE = { 'VSC|IM': .29, 'ATT|IM': .37, 'ATT|VSC': .29, 'LAN|IM': .47, 'LAN|VSC': .31, 'LAN|ATT': .38,
+                 'DM|IM': .64, 'DM|VSC': .34, 'DM|ATT': .32, 'DM|LAN': .40,
+                 'TS|IM': .78, 'TS|VSC': .63, 'TS|ATT': .66, 'TS|LAN': .72, 'TS|DM': .76 };
+  const bad = [];
+  for (const k in PAGE) if (R.r[k] !== PAGE[k]) bad.push(k + ' is ' + R.r[k] + ', printed ' + PAGE[k]);
+  if (!/Table 4\.1/.test(R.source) || !/Randolph, 2012/.test(R.citation)) bad.push('the table is not named');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* NO SUBTEST CELL UNTIL THE PAGE IS RE-READ. The subtest block as supplied
+   forces r(Immediate Memory, Attention) to at least .74 against a printed
+   .37, so it cannot be right. And only Form A is admitted: Table 4.1 is the
+   Form A sample. And the chip labels must be names: 'VC' would read as WAIS-IV
+   Vocabulary. */
+check('RBANS is profiled on Form A indices only, with readable labels', () => {
+  const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
+  const bad = [];
+  if (R.order.join() !== 'IM,VSC,ATT,LAN,DM,TS') bad.push('the matrix holds more than the index block: ' + R.order.join());
+  let mod; try { mod = driveProfRules(); } catch (e) { return 'could not drive the registry: ' + e.message; }
+  const inst = mod.PROF_INSTRUMENTS.find(x => x.id === 'rbans');
+  if (!inst) return 'RBANS is not in the registry';
+  const groups = Object.keys(D.normDB).filter(g => inst.groupRe.test(g));
+  if (!groups.includes('RBANS Indices · All Ages')) bad.push('the Score Tables RBANS group is not admitted');
+  for (const g of groups) if (/Form [B-D]/.test(g) || !/^RBANS Indices/.test(g)) bad.push(g + ' is admitted');
+  const offered = inst.levels.flatMap(l => l.keys);
+  if (offered.includes('TS')) bad.push('the Total Scale is offered beside the indices it sums');
+  for (const k of offered) if (!R.short || !R.short[k] || R.short[k].length < 5) bad.push(k + ' has no readable chip label');
+  if (!/M\.short/.test(extractFn(PROF_SRC, 'profShortLabel'))) bad.push('the chip does not use the short labels');
+  return bad.length === 0 || bad.join('; ');
+});
 
 // ---------------------------------------------------------------------------
 // Summary

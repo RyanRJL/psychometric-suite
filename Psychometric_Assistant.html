@@ -19957,7 +19957,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
       Three questions are answered from one simulation: how many scores are abnormally low, how many pairwise differences between measures are abnormally large, and how many measures deviate abnormally from the patient&rsquo;s own mean across the battery. The criterion is chosen by the clinician from the five the paper tabulates (below 1 SD, or below the 10th, 5th, 2nd or 1st percentile) and governs all three. A difference or deviation is abnormal when larger than the same percentage of the population shows, in either direction. Simulations are seeded, so a figure quoted in a report does not change when the page is reopened, and the sampling error of each percentage is stated beside it.
     </p>
     <p class="section-body-text">
-      The only input is the correlation matrix over the measures administered, taken from the publisher&rsquo;s normative sample: WAIS-IV Technical and Interpretive Manual (GB) Table 5.1, or WMS-IV Technical and Interpretive Manual (GB) Table 4.1 (Adult battery) or 4.2 (Older Adult battery). WAIS-IV and the WMS-IV Adult battery can also be profiled together, on WMS-IV Table 4.12, which correlates the two batteries in their co-normed sample (corrected to the WMS-IV normative sample&rsquo;s variability); the Older Adult battery cannot, as that table pools both batteries under one Visual Memory Index. Scores are read from Score Tables rather than entered here, so the two cannot disagree. A profile may not hold both a measure and a part of itself (an index and its own subtest, two indices sharing subtests, or a subtest and its own process scores), so each instrument is profiled one level at a time. Where a publisher&rsquo;s indices cross, as WMS-IV&rsquo;s do (auditory and visual against immediate and delayed), the two readings are offered separately. Index scores give the more accurate estimate: the authors note that scaled scores are coarse, one point being a third of a standard deviation, so a subtest-level profile is the rougher reading and says so on screen and in the exported note.
+      The only input is the correlation matrix over the measures administered, taken from the publisher&rsquo;s normative sample: WAIS-IV Technical and Interpretive Manual (GB) Table 5.1, or WMS-IV Technical and Interpretive Manual (GB) Table 4.1 (Adult battery) or 4.2 (Older Adult battery). WAIS-IV and the WMS-IV Adult battery can also be profiled together, on WMS-IV Table 4.12, which correlates the two batteries in their co-normed sample (corrected to the WMS-IV normative sample&rsquo;s variability); the Older Adult battery cannot, as that table pools both batteries under one Visual Memory Index. RBANS Update (Form A) index scores are profiled on RBANS Update Manual Table 4.1 (Randolph, 2012). Scores are read from Score Tables rather than entered here, so the two cannot disagree. A profile may not hold both a measure and a part of itself (an index and its own subtest, two indices sharing subtests, or a subtest and its own process scores), so each instrument is profiled one level at a time. Where a publisher&rsquo;s indices cross, as WMS-IV&rsquo;s do (auditory and visual against immediate and delayed), the two readings are offered separately. Index scores give the more accurate estimate: the authors note that scaled scores are coarse, one point being a third of a standard deviation, so a subtest-level profile is the rougher reading and says so on screen and in the exported note.
     </p>
 
     <h3 class="methods-h3">Performance validity</h3>
@@ -20658,6 +20658,71 @@ const WAIS4_WMS4_JOINT = (function(){
     sd: Object.assign(pick(W.sd, wais), pick(M.sd, wms))
   };
 })();
+
+
+/* ============================================================
+   RBANS_INTERCORR — RBANS Update Manual (Randolph, 2012), Table 4.1,
+   "Intercorrelations of RBANS Subtest and Index Scores, Ages 12-89"
+
+   ONLY THE INDEX BLOCK IS STORED, and that is deliberate. Same note as the
+   Wechsler tables: uncorrected below the diagonal, corrected (shaded)
+   above. The six index rows (five indices and the Total Scale) are stored
+   from the lower triangle.
+
+   THE SUBTEST BLOCK AS RECEIVED CONTRADICTS ITSELF, so none of it is here.
+   The table was supplied as an Excel sheet extracted from the page. Its
+   subtest rows carry a value on the diagonal (a cell a correlation table
+   cannot have), and its subtest-subtest values are far too high for the
+   index cells beside them. Immediate Memory is List Learning + Story
+   Memory and Attention is Digit Span + Coding, so the four cross cells as
+   received (LL-DS .67, LL-CD .52, SM-DS .68, SM-CD .55, with LL-SM .73 and
+   DS-CD .53) force r(IM, AT) to be at least .74. The index block prints
+   .37. One of the two blocks is misread, and the index block is the one
+   that checks out (below). No subtest cell may be stored until the page is
+   read again.
+
+   TRANSCRIPTION PROOF FOR WHAT IS STORED. The Total Scale is built from
+   the five indices, so its correlation with each index follows from the
+   ten index-index cells alone: corr(I, sum) = sum_j r(I,j) / sqrt(sum_jk
+   r(j,k)), all SDs being 15. All five predictions land on the printed
+   value at 2 dp (.78 .63 .66 .72 .76). check.js §57 re-runs it.
+
+   FORM A ONLY. The table is the Form A normative sample. normDB also holds
+   Forms B, C and D; the Profile page's pattern does not admit them, as no
+   published intercorrelation exists for them here.
+
+   Ages 12-89 pooled, so one matrix serves every RBANS patient; there is no
+   battery choice to make, unlike WMS-IV.
+
+   Keys are this file's own: the manual has no abbreviations, and 'VC'
+   would read as WAIS-IV Vocabulary on a chip. `short` is the chip text.
+   ============================================================ */
+const RBANS_INTERCORR = {
+  source: 'RBANS Update Manual (Randolph, 2012), Table 4.1: Intercorrelations of RBANS Subtest and Index Scores, Ages 12-89',
+  citation: 'RBANS Update Manual (Randolph, 2012), Table 4.1',
+  order: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'],
+  labels: {
+    'IM':  'Immediate Memory',
+    'VSC': 'Visuospatial/Constructional',
+    'ATT': 'Attention',
+    'LAN': 'Language',
+    'DM':  'Delayed Memory',
+    'TS':  'Total Scale',
+  },
+  short: { 'IM':'Immediate', 'VSC':'Visuospatial', 'ATT':'Attention', 'LAN':'Language', 'DM':'Delayed', 'TS':'Total' },
+  restrictedTo16_69: [],
+  r: {
+    'VSC|IM':0.29,
+    'ATT|IM':0.37, 'ATT|VSC':0.29,
+    'LAN|IM':0.47, 'LAN|VSC':0.31, 'LAN|ATT':0.38,
+    'DM|IM':0.64,  'DM|VSC':0.34,  'DM|ATT':0.32,  'DM|LAN':0.40,
+    'TS|IM':0.78,  'TS|VSC':0.63,  'TS|ATT':0.66,  'TS|LAN':0.72, 'TS|DM':0.76,
+  },
+  /* The manual's own row. Unlike the Wechsler tables these are index
+     scores on 100/15, not sums of scaled scores. */
+  mean: {'IM':100, 'VSC':100, 'ATT':100, 'LAN':100, 'DM':100, 'TS':100},
+  sd:   {'IM':15, 'VSC':15, 'ATT':15, 'LAN':15, 'DM':15, 'TS':15}
+};
 
 // ToPF Raw (0-70) → estimated FSIQ
 const TOPF_TO_FSIQ = [
@@ -26528,7 +26593,7 @@ const APA_NOTES = {
       : 'A difference or deviation is abnormal when it is larger than the same percentage of healthy people show, in either direction.',
     /* MODELLED RATHER THAN OBSERVED, AND FROM WHICH TABLE. Three matrices are
        reachable (WAIS-IV Table 5.1, WMS-IV Tables 4.1 and 4.2, and the joint
-       5.1 + 4.1 + 4.12) and the two
+       5.1 + 4.1 + 4.12, RBANS Update Table 4.1) and the two
        WMS-IV batteries share every measure name against different normative
        samples, so a note naming one table unconditionally would misstate the
        source on two profiles in three. The trial count stays because it is
@@ -37543,7 +37608,8 @@ if (document.readyState === 'loading'){
    THREE INSTRUMENTS, ONE PER TAB. WAIS-IV (Table 5.1), WMS-IV Adult
    (Table 4.1) and WMS-IV Older Adult (Table 4.2), plus a fourth tab
    profiling WAIS-IV with the WMS-IV Adult battery on WMS-IV Table 4.12
-   (see WMS4_WAIS4_CROSS in data.js). The two WMS-IV
+   (see WMS4_WAIS4_CROSS in data.js), and RBANS Update indices on its
+   Table 4.1 (see RBANS_INTERCORR). The two WMS-IV
    batteries are separate entries rather than one instrument with an age
    switch: they are different normative samples with different measure
    lists and different coefficients, ages 65-69 are normed in both, and
@@ -37654,13 +37720,19 @@ if (document.readyState === 'loading'){
       IMI:  ['LM1', 'VPA1', 'VR1'],
       DMI:  ['LM2', 'VPA2', 'VR2'],
       VPA2: ['VPAWR']
+    },
+    /* RBANS: the Total Scale is the five indices. Only the indices are
+       offered (see RBANS_INTERCORR for why no subtests), so this rule has
+       only the Total to keep out, and the Total is not offered either. */
+    rbans: {
+      TS: ['IM', 'VSC', 'ATT', 'LAN', 'DM']
     }
   };
   /* Block Design No Time Bonus is the SAME administration rescored - the
      matrix puts them at r = .97 - so they are one measure for this
      purpose even though neither contains the other. WMS-IV has no such
      pair: every process score there is a part, not a rescoring. */
-  const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {} };
+  const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {}, rbans: {} };
 
   /* A JOINT instrument has no composition of its own: it is the union of its
      parts', which share no keys, so nothing is restated and the two cannot
@@ -37779,6 +37851,18 @@ if (document.readyState === 'loading'){
 
        No process-score level: Table 4.12 has no WAIS-IV process scores, and
        WMS-IV process scores alone are the WMS-IV tab's own level. */
+    /* RBANS Update, Form A, Table 4.1. INDICES ONLY: the subtest block of
+       the table as supplied contradicts its own index block, so it is not
+       stored and no subtest level exists. The Total Scale is left out for
+       the reason FSIQ is: it is the five indices summed. Forms B-D have no
+       published intercorrelations here, so the pattern does not admit them. */
+    { id:'rbans', label:'RBANS', name:'RBANS',
+      groupRe: /^RBANS Indices · /,
+      composites: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'],
+      matrix: () => (typeof RBANS_INTERCORR !== 'undefined') ? RBANS_INTERCORR : null,
+      levels: [
+        { id:'rb-indices', label:'Indices', keys:['IM', 'VSC', 'ATT', 'LAN', 'DM'] }
+      ] },
     { id:'w4wm4', label:'WAIS-IV + WMS-IV', name:'WAIS-IV and WMS-IV',
       joint: ['wais4', 'wms4'],
       composites: ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
@@ -37885,6 +37969,8 @@ if (document.readyState === 'loading'){
   /* An Index is universally known by its acronym and its full name is
      three words long, so the chip carries whichever reads shorter. */
   function profShortLabel(key){
+    const M = profMatrixObj();
+    if (M && M.short && M.short[key]) return M.short[key];
     return profIsComposite(key) ? key : profLabel(key);
   }
   function profGroup(id){
@@ -38352,8 +38438,11 @@ if (document.readyState === 'loading'){
     /* An absence with no stated reason reads as missing data, so each
        measure the instrument deliberately withholds says why, and only
        while Score Tables actually holds it. */
-    if (profState.instrument === 'wais4' && found.FSIQ !== undefined){
+    if ((profState.instrument === 'wais4' || profState.instrument === 'w4wm4') && found.FSIQ !== undefined){
       bits.push('Full Scale IQ contains every other measure, so it cannot join a profile');
+    }
+    if (profState.instrument === 'rbans' && found.TS !== undefined){
+      bits.push('the Total Scale is the five indices summed, so it cannot join a profile');
     }
     return '<div class="prof-foot"><span>' + escapeHtml(bits.join(' · ')) + '</span>'
       + '<a class="prof-foot-link" data-prof-goto="battery">Edit on Score Tables →</a></div>';
