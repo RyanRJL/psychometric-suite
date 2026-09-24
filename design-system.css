@@ -5500,6 +5500,10 @@ input[type="number"].ds-patient-field-input{
   font-size: var(--ds-text-sm); color: var(--ds-text-subtle);
   max-width: 44ch; margin: 0 auto var(--ds-space-4); line-height: var(--ds-leading-normal);
 }
+.prof-empty-purpose{
+  font-size: var(--ds-text-base); color: var(--ds-text);
+  max-width: 52ch; margin: 0 auto var(--ds-space-5); line-height: var(--ds-leading-normal);
+}
 .prof-empty-inline{ padding: 30px 20px; font-size: var(--ds-text-sm); color: var(--ds-text-subtle); }
 
 @media (max-width: 1000px){

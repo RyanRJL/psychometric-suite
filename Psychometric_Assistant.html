@@ -16146,6 +16146,10 @@ input[type="number"].ds-patient-field-input{
   font-size: var(--ds-text-sm); color: var(--ds-text-subtle);
   max-width: 44ch; margin: 0 auto var(--ds-space-4); line-height: var(--ds-leading-normal);
 }
+.prof-empty-purpose{
+  font-size: var(--ds-text-base); color: var(--ds-text);
+  max-width: 52ch; margin: 0 auto var(--ds-space-5); line-height: var(--ds-leading-normal);
+}
 .prof-empty-inline{ padding: 30px 20px; font-size: var(--ds-text-sm); color: var(--ds-text-subtle); }
 
 @media (max-width: 1000px){
@@ -38195,7 +38199,11 @@ if (document.readyState === 'loading'){
        live, not an empty set of cards. */
     if (!Object.keys(found).length){
       const names = [...new Set(PROF_INSTRUMENTS.map(x => x.name))].join(' or ');
+      /* The purpose line leads: this is the first thing a clinician new to the
+         page reads, and "no scores yet" alone does not say what the page is for. */
       out.innerHTML = '<div class="prof-empty">'
+        + '<p class="prof-empty-purpose">Profile Analysis counts how many of a patient\'s scores are abnormally low '
+        + 'or abnormally far apart, and how many healthy people would show as many.</p>'
         + '<div class="prof-empty-h">No ' + escapeHtml(names) + ' scores yet</div>'
         + '<p class="prof-empty-p">A profile is built from scores already entered on Score Tables. '
         + 'Add a ' + escapeHtml(names) + ' measure there and it appears here.</p>'

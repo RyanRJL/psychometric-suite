@@ -816,7 +816,11 @@
        live, not an empty set of cards. */
     if (!Object.keys(found).length){
       const names = [...new Set(PROF_INSTRUMENTS.map(x => x.name))].join(' or ');
+      /* The purpose line leads: this is the first thing a clinician new to the
+         page reads, and "no scores yet" alone does not say what the page is for. */
       out.innerHTML = '<div class="prof-empty">'
+        + '<p class="prof-empty-purpose">Profile Analysis counts how many of a patient\'s scores are abnormally low '
+        + 'or abnormally far apart, and how many healthy people would show as many.</p>'
         + '<div class="prof-empty-h">No ' + escapeHtml(names) + ' scores yet</div>'
         + '<p class="prof-empty-p">A profile is built from scores already entered on Score Tables. '
         + 'Add a ' + escapeHtml(names) + ' measure there and it appears here.</p>'
