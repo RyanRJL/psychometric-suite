@@ -11292,6 +11292,17 @@ check('invalidity and malingering are kept apart, on the current criteria, and s
   return bad.length === 0 || bad.join('; ');
 });
 
+check('the page does not call invalid performance "poor effort"', () => {
+  /* Sweet et al. (2021, pp. 1060-1061): "effort" misdescribes what a PVT
+     measures, and in a forensic setting can excuse noncredible performance.
+     Test names (Effort Index, Effort Scale) and published titles are exempt:
+     only the page's own prose is read, with the reference list removed. */
+  const v = HTML_SRC.slice(HTML_SRC.indexOf('<section class="section" id="validity">'));
+  const prose = v.slice(0, v.indexOf('</section>')).replace(/<div class="references" id="pvt-references">[\s\S]*?<\/div>/, '');
+  const hits = prose.match(/\b(poor|low|suboptimal|incomplete|suspect)[ -]effort\b|\beffort test(ing|s)?\b/gi) || [];
+  return hits.length === 0 || 'effort wording on the page: ' + hits.join(', ');
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
