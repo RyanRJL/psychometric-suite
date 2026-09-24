@@ -1644,7 +1644,8 @@ Manual **Table 4.12** (20 WMS-IV rows x 21 WAIS-IV columns). §56 asserts every 
   `profScoreTableRowsFor` read each part through the part's own pattern, so the group-key
   rule still decides every row, and the composition rules are the union of the parts'
   (`profRuleTable`), never restated.
-- **Transcription proof.** The page came in as an OCR'd photo. Each composite cell is
+- **Transcription proof.** The table came in as an Excel sheet extracted
+  from the manual page, with two header cells misread ("19" for VCI, "25" for Mean). Each composite cell is
   predictable from its row's (or column's) subtest cells and the within-battery
   correlations: all 225 reproduce within .03. Mutation-tested: a single misread subtest or
   composite cell fails §56. **What it cannot see:** the 25 cells where neither side is in

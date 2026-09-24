@@ -10626,8 +10626,8 @@ check('the chip arc runs exactly while there is unexported work, or the report w
 
 heading('56. WMS-IV Table 4.12 — WAIS-IV and WMS-IV profiled together');
 
-/* THE PAGE WAS READ BY OCR, so it is checked against itself rather than
-   trusted. Each composite is a sum of subtests, so its correlation with any
+/* THE TABLE CAME FROM AN EXCEL EXTRACTION OF THE PAGE, whose headers held
+   two misreads, so it is checked against itself rather than trusted. Each composite is a sum of subtests, so its correlation with any
    outside measure X is fixed by X's correlations with the members:
      corr(X, sum S) = sum_i sd_i r(X,S_i) / sqrt(sum_ij sd_i sd_j r(S_i,S_j))
    with the within-battery r and SDs from Tables 5.1 and 4.1. Table 4.12 is a
