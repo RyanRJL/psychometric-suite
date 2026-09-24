@@ -52,7 +52,7 @@ vm.runInContext(
     ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
     ' REY15_RECALL_ROWS, REY15_RECOGNITION_ROWS, REY15_SHAPES,' +
     ' PVT_CVLT3_BANDS, PVT_CVLT3_FC_HITS, PVT_CVLT3_CRITICAL, PVT_CVLT3_CRITERIA,' +
-    ' PVT_CVLT3_FC_CUTOFFS, PVT_CVLT3_ERDODI_T6, PVT_INSTRUMENTS,' +
+    ' PVT_CVLT3_FC_CUTOFFS, PVT_CVLT3_ERDODI_T6, PVT_INSTRUMENTS, PVT_DKEFS_TRAILS,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -790,7 +790,7 @@ check('the dead per-method formula blocks are gone from the Change Analysis page
   /* Profile Analysis and Score Charts left the roster in 2026-09: its method is an always-visible
      panel (.prof-method) rather than a fold-out, by owner decision, so that the
      method is never one click away from the result it produced. */
-  const OWNS_A_DISCLOSURE = { validity: 8 };
+  const OWNS_A_DISCLOSURE = { validity: 9 };
   const secs = [...html.matchAll(/<section class="section[^"]*" id="([^"]+)"/g)]
     .map(m => ({ id: m[1], at: m.index }));
   secs.push({ id: '<end>', at: html.length });
@@ -7522,7 +7522,7 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
   /* Every clause is conditional on what the table holds, so a one-measure
      export does not carry six citations. */
   const note = APP_SRC.slice(APP_SRC.indexOf("  'pvt': ctx => {"), APP_SRC.indexOf("  'pre-opiepredict'"));
-  ['hasEi', 'hasEs', 'hasRds', 'hasDs', 'hasRey', 'hasTomm'].forEach(f => {
+  ['hasEi', 'hasEs', 'hasRds', 'hasDs', 'hasRey', 'hasTomm', 'hasTrails'].forEach(f => {
     if (!note.includes('ctx.' + f)) bad.push('the note cites unconditionally — ' + f + ' no longer gates its source');
   });
   if (/EI = RBANS Effort Index/.test(APP_SRC)) bad.push('the abbreviation roster is back, expanding abbreviations the table never uses');
@@ -7769,7 +7769,7 @@ check('CVLT-3 is one independent indicator, published with dashes, and wired to 
      EI/ES and the digit-span indices, and Larrabee (2014)'s whole argument. */
   const rows = extractFn(APP_SRC, 'getPvtSummaryRows');
   const cvBlockStart = rows.indexOf('const cv = getPvtCvlt3();');
-  const cvBlock = cvBlockStart === -1 ? '' : rows.slice(cvBlockStart, rows.indexOf('const tomm = getPvtTomm();', cvBlockStart));
+  const cvBlock = cvBlockStart === -1 ? '' : rows.slice(cvBlockStart, rows.indexOf('const tr = getPvtTrails();', cvBlockStart));
   if (!cvBlock) bad.push('the summary no longer emits any CVLT-3 rows');
   const pushes = (cvBlock.match(/rows\.push\(/g) || []).length;
   if (pushes < 2) bad.push('the summary emits fewer than the hits row and its critical items, got ' + pushes + ' pushes');
@@ -10339,7 +10339,7 @@ check('every APA note, with every condition on, is within its word ceiling', () 
     hasHigherIsWorse: 1, ciLevel: '95', ageBandNotSelected: 1, blankCiBaseRate: 1, blankCiNonePublished: 1,
     blankCiManual: 1, hasDerivedR: 1, ciAge: 45, premorbid: '102', premorbidMode: 'see', metricMarks: ['a', 'b'] };
   const PVT = { hasEi: 1, hasEs: 1, hasRds: 1, hasDs: 1, hasRey: 1, hasCvlt3: 1, cvlt3Borrowed: 1,
-    cvlt3Cite: 'Schwartz et al., 2016', hasTomm: 1, bothRbans: 1, bothDigitSpan: 1, hasDashes: 1,
+    cvlt3Cite: 'Schwartz et al., 2016', hasTomm: 1, hasTrails: 1, bothRbans: 1, bothDigitSpan: 1, hasDashes: 1,
     eiScreening: 1, eiOlder: 1, versionCaveats: caveats, esGated: 1 };
   const CASES = {
     'bat': [BAT, { ...BAT, premorbidMode: 'sd' }],
@@ -10356,7 +10356,7 @@ check('every APA note, with every condition on, is within its word ceiling', () 
     'pre-predict': [{}],
     'pre-opiepredict': [{}]
   };
-  const CEILING = { 'bat': 250, 'pvt': 280, 'prof': 140, 'sdi': 40, 'rci': 60, 'pre-estimates': 25, 'pre-predict': 35, 'pre-opiepredict': 85 };
+  const CEILING = { 'bat': 250, 'pvt': 285, 'prof': 140, 'sdi': 40, 'rci': 60, 'pre-estimates': 25, 'pre-predict': 35, 'pre-opiepredict': 85 };
   const words = s => s.replace(/<[^>]+>/g, '').split(/\s+/).filter(Boolean).length;
   const bad = [];
   for (const id of Object.keys(notes)) {
@@ -11017,7 +11017,7 @@ heading('59. Validity cut-offs on the Data page');
    require every stored accuracy figure to come through untouched. */
 check('the Data page validity view carries every stored accuracy figure, unaltered', () => {
   const c = {}; vm.createContext(c);
-  vm.runInContext(DATA_SRC + ';' + extractFn(APP_SRC, 'pvtAccuracyRows') + ';globalThis.__R = pvtAccuracyRows();', c);
+  vm.runInContext(DATA_SRC + ';' + extractFn(APP_SRC, 'pvtTrailsRange') + ';' + extractFn(APP_SRC, 'pvtAccuracyRows') + ';globalThis.__R = pvtAccuracyRows();', c);
   const rows = c.__R, E = sandbox.__EXPORTS, bad = [];
   const has = (sens, spec, why) => { if (!rows.some(r => r.sens === sens && r.spec === spec)) bad.push(why + ' ' + sens + '/' + spec + ' missing'); };
   Object.entries(E.PVT_EI_ACCURACY).forEach(([k, v]) => has(v.sens, v.spec, 'EI ' + k));
@@ -11032,9 +11032,120 @@ check('the Data page validity view carries every stored accuracy figure, unalter
     if (!r || Math.abs(parseFloat(r.sens) * 100 - a.sens) > 1e-9 || Math.abs(parseFloat(r.spec) * 100 - a.spec) > 1e-9) bad.push('aggregation ' + a.threshold); });
   const es = rows.find(r => /Effort Scale/.test(r.measure));
   if (!es || es.sens !== null || !es.source.includes(E.PVT_ES_ACCURACY.auc)) bad.push('the Effort Scale must show no pair and name its AUC');
-  const want = 3 + 1 + 2 + 2 + 2 + E.PVT_TOMM_CUTOFFS.length + 2 + E.PVT_AGGREGATION.length;
+  /* D-KEFS Trails is stored as per-criterion cells; the view shows the range,
+     so its rows are compared against a range computed here independently. */
+  const rng = a => { const v = a.filter(x => x !== null); const f = x => x.toFixed(2).replace(/^0/, '');
+    const lo = Math.min(...v), hi = Math.max(...v); return lo === hi ? f(lo) : f(lo) + '–' + f(hi); };
+  E.PVT_DKEFS_TRAILS.conditions.forEach(t => has(rng(t.sens), rng(t.spec), 'Trails ' + t.key));
+  Object.entries(E.PVT_DKEFS_TRAILS.combined).forEach(([k, v]) => has(rng(v.sens), rng(v.spec), 'Trails >= ' + k));
+  const want = 3 + 1 + 2 + 2 + 2 + E.PVT_TOMM_CUTOFFS.length + 2
+    + E.PVT_DKEFS_TRAILS.conditions.length + Object.keys(E.PVT_DKEFS_TRAILS.combined).length + E.PVT_AGGREGATION.length;
   if (rows.length !== want) bad.push('expected ' + want + ' rows, got ' + rows.length);
   if (rows.some(r => !r.source)) bad.push('a row names no source');
+  return bad.length === 0 || bad.join('; ');
+});
+
+heading('60. D-KEFS Trail Making as a PVT (Erdodi et al., 2018)');
+
+/* The cut-offs and every accuracy cell are pinned verbatim against the
+   paper, a deliberate second reading of Tables 5 and 6. The ranges the page
+   prints are derived from the cells, so the check also asserts that the
+   derivation reproduces every range the paper's prose states, and pins the
+   two places the prose and the tables disagree. */
+check('the D-KEFS Trails cut-offs and Table 5/6 cells are the paper\'s', () => {
+  const T = sandbox.__EXPORTS.PVT_DKEFS_TRAILS, bad = [];
+  if (!T) return 'PVT_DKEFS_TRAILS is not exported';
+  const want = {
+    t1: [5, [.36, .27, .39, .52], [.88, .92, .84, .84]],
+    t2: [5, [.36, .27, .43, .57], [.77, .78, .85, .88]],
+    t3: [5, [.29, .36, .45, .70], [.77, .84, .85, .89]],
+    t4: [4, [.29, .18, .45, .57], [.88, .92, .86, .86]],
+    t5: [8, [.29, .27, .48, .71], [.86, .92, .87, .91]]
+  };
+  T.conditions.forEach(c => {
+    const w = want[c.key];
+    if (!w) { bad.push('unexpected condition ' + c.key); return; }
+    if (c.cut !== w[0]) bad.push(c.key + ' cut-off ' + c.cut + ', paper ' + w[0]);
+    if (JSON.stringify(c.sens) !== JSON.stringify(w[1])) bad.push(c.key + ' sensitivity cells differ from Table 5');
+    if (JSON.stringify(c.spec) !== JSON.stringify(w[2])) bad.push(c.key + ' specificity cells differ from Table 5');
+  });
+  if (T.conditions.length !== 5) bad.push('there are five conditions');
+  const t6 = {
+    3: [[.29, .27, .33, .65], [.88, .95, .90, .95]],
+    4: [[.21, .09, .24, .60], [.93, .97, .92, .97]],
+    5: [[.14, null, .10, .25], [.98, null, .95, .97]]
+  };
+  if (Object.keys(T.combined).join() !== '3,4,5') bad.push('only thresholds with a published combined accuracy may be offered: 3, 4, 5');
+  Object.entries(t6).forEach(([k, [se, sp]]) => {
+    const got = T.combined[k] || {};
+    if (JSON.stringify(got.sens) !== JSON.stringify(se) || JSON.stringify(got.spec) !== JSON.stringify(sp)) bad.push('>= ' + k + ' cells differ from Table 6');
+  });
+  if (T.defaultThreshold !== 3) bad.push('the default is >= 3, the combination the authors call a good balance');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the printed ranges reproduce the paper\'s prose, and its two discrepancies are pinned', () => {
+  const T = sandbox.__EXPORTS.PVT_DKEFS_TRAILS, bad = [];
+  const c = {}; vm.createContext(c);
+  vm.runInContext(extractFn(APP_SRC, 'pvtTrailsRange') + ';globalThis.__F = pvtTrailsRange;', c);
+  const r = c.__F, cond = k => T.conditions.find(x => x.key === k);
+  const eq = (got, want, why) => { if (got !== want) bad.push(why + ': derived ' + got + ', paper states ' + want); };
+  eq(r(cond('t1').sens), '.27–.52', 'Condition 1 sensitivity');
+  eq(r(cond('t1').spec), '.84–.92', 'Condition 1 specificity');
+  eq(r(cond('t5').sens), '.27–.71', 'Condition 5 sensitivity');
+  eq(r(cond('t5').spec), '.86–.92', 'Condition 5 specificity');
+  eq(r(T.combined[3].sens), '.27–.65', '>= 3 sensitivity');
+  eq(r(T.combined[3].spec), '.88–.95', '>= 3 specificity');
+  eq(r(T.combined[4].sens), '.09–.60', '>= 4 sensitivity');
+  eq(r(T.combined[4].spec), '.92–.97', '>= 4 specificity');
+  /* The prose says all five: .09–.25 / .95–.97, and Condition 4 specificity
+     .86–.88. Tables 6 and 5 print otherwise, and the tables are stored. If a
+     corrected printing makes them agree, this fails: re-read data.js. */
+  if (r(T.combined[5].sens) !== '.10–.25' || r(T.combined[5].spec) !== '.95–.98') bad.push('all-five range no longer reads the Table 6 cells');
+  if (r(cond('t4').spec) !== '.86–.92') bad.push('Condition 4 specificity no longer reads the Table 5 cells');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the Trails indicator is decided by the chosen threshold, on all five conditions', () => {
+  const T = sandbox.__EXPORTS.PVT_DKEFS_TRAILS, bad = [];
+  const run = (vals, thr) => {
+    const st = {};
+    ['t1', 't2', 't3', 't4', 't5'].forEach((k, i) => { st['pvt-trails-' + k] = vals[i]; });
+    if (thr !== undefined) st['pvt-trails-threshold'] = thr;
+    const c = { PVT_DKEFS_TRAILS: T, document: { getElementById: id => (id in st ? { value: String(st[id]) } : null) } };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'getPvtTrails') + ';globalThis.__S = getPvtTrails();', c);
+    return c.__S;
+  };
+  /* Cut-offs are inclusive: 5 fails Conditions 1-3, 4 fails 4, 8 fails 5;
+     one point above each passes. */
+  let s = run([5, 5, 5, 4, 8]);
+  if (s.failed !== 5 || !s.fail) bad.push('scores at every cut-off should fail all five');
+  s = run([6, 6, 6, 5, 9]);
+  if (s.failed !== 0 || s.fail) bad.push('scores one above every cut-off should pass all five');
+  s = run([5, 5, 9, 9, 9]);
+  if (s.failed !== 2 || s.fail) bad.push('two failures pass at the default >= 3');
+  s = run([5, 5, 5, 9, 9]);
+  if (!s.fail) bad.push('three failures fail at the default >= 3');
+  s = run([5, 5, 5, 9, 9], 4);
+  if (s.fail) bad.push('three failures pass at >= 4');
+  s = run([5, 5, 5, 9, 9], 2);
+  if (s.threshold !== 3) bad.push('an unpublished threshold must fall back to the default');
+  s = run([5, 5, 5, '', '']);
+  if (!s.partial || 'fail' in s) bad.push('fewer than five conditions must not decide the indicator');
+  s = run([20, 5, 5, 5, 5]);
+  if (!s.invalid) bad.push('a scaled score above 19 is invalid');
+  /* The page offers exactly the published thresholds, >= 3 selected. */
+  const sel = (HTML_SRC.match(/<select id="pvt-trails-threshold">([\s\S]*?)<\/select>/) || ['', ''])[1];
+  const opts = [...sel.matchAll(/value="(\d)"/g)].map(m => m[1]).join();
+  if (opts !== '3,4,5') bad.push('the threshold selector offers ' + opts);
+  if (!/<option value="3" selected>/.test(sel)) bad.push('>= 3 is not the selected default');
+  /* Found in the browser: the select was read but never re-rendered, so the
+     accuracy line under it kept the old threshold's figures. */
+  if (!/'pvt-trails-threshold'\][\s\S]{0,80}addEventListener\('change', renderPvtAll\)/.test(extractFn(APP_SRC, 'setupPvtPage'))) bad.push('changing the threshold no longer re-renders the panel');
+  /* No summary row, so nothing counted or exported, until all five are in. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  if (!/!tr\.partial[\s\S]{0,300}group: 'trails'/.test(rowsFn)) bad.push('the summary row is no longer withheld until all five are entered');
   return bad.length === 0 || bad.join('; ');
 });
 

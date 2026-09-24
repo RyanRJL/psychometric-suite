@@ -325,6 +325,19 @@ the same seven measures three times. Every surface reads `getPvtSummaryRows` /
   scores card and note stay hidden until something is scored. The page now uses the
   design-system tokens and Inter only, on flat `--ds-surface` panels like Profile Analysis;
   it had been the one tool page with serif headings and a cream-to-white sheet.
+- **D-KEFS Trail Making is the sixth indicator (2026-09)**, from Erdodi et al. (2018),
+  *Psychological Assessment 30*(8). Five age-corrected scaled scores against per-condition
+  cut-offs (1 to 3 ≤ 5, 4 ≤ 4, 5 ≤ 8), and the indicator fails when at least N conditions
+  fail. **N is the clinician's choice** (owner decision), limited to the three with a
+  published combined accuracy: 3 (default), 4, 5. The paper names no single rule. Accuracy
+  is stored as Table 5/6 cells per criterion and the printed range is derived from them;
+  §60 pins the cells, the prose ranges they reproduce, and two prose/table discrepancies
+  (all five, Condition 4 specificity), where the tables are stored. No row until all five
+  are entered. The classic Reitan TMT (Iverson et al., 2002) was reviewed and **declined by
+  the owner**: sensitivity 7 to 19%, raw seconds with no age correction, and the authors'
+  own conclusion that it does not support use. WAIS-IV processing speed (Erdodi, Abeare et
+  al., 2017) is the next candidate, and whether it and Trails count as one speed indicator
+  is still to be decided.
 - **Explainers never open inside half a column.** Opening one there left a block of empty
   page beside it. Each measure's `formula-disclosure` sits in a full-width `.pvt-explain`
   row under its workspace, and the workspace stretches so the input card matches the
@@ -2354,7 +2367,7 @@ family dropdowns (§33), consent gating on the Change Analysis methods (§34), t
 empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
 tab-close prompt and AACN default (§52), Save / Open session (§53), and the app frame,
 the docked report and the motion scale (§55), and the WAIS-IV/WMS-IV joint profile on
-WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57), and WISC-V Table 5.1 (§58).
+WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57), and WISC-V Table 5.1 (§58), and D-KEFS Trail Making as a PVT (§60).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

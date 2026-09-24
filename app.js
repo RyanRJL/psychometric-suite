@@ -3653,6 +3653,7 @@ const APA_NOTES = {
     if (ctx.hasCvlt3) sources.push(ctx.cvlt3Borrowed
       ? `CVLT-3 Forced Choice (base rates Delis et al., 2017, Tables D.13–D.15; cut-off and accuracy ${ctx.cvlt3Cite}, CVLT-II)`
       : 'CVLT-3 Forced Choice (Delis et al., 2017, Tables D.13–D.15)');
+    if (ctx.hasTrails) sources.push('D-KEFS Trail Making (Erdodi et al., 2018)');
     if (ctx.hasTomm) sources.push('TOMM (Tombaugh, 1996; cut-offs Martin et al., 2020)');
     const shared = [];
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
@@ -5929,6 +5930,14 @@ function pvtAccuracyRows(){
   PVT_CVLT3_FC_CUTOFFS.filter(c => c.cut !== null).forEach(c => rows.push({
     measure:'CVLT Forced Choice, total hits', cut:'≤ ' + c.cut,
     sens:c.sens, spec:c.spec, source:c.cite }));
+  PVT_DKEFS_TRAILS.conditions.forEach(c => rows.push({
+    measure:'D-KEFS Trail Making, ' + c.label.replace(' · ', ', '), cut:'≤ ' + c.cut,
+    sens:pvtTrailsRange(c.sens), spec:pvtTrailsRange(c.spec),
+    source:'Erdodi et al. (2018), Table 5, range across four criteria.' }));
+  Object.keys(PVT_DKEFS_TRAILS.combined).forEach(k => rows.push({
+    measure:'D-KEFS Trail Making, conditions failed', cut:'≥ ' + k + ' of 5',
+    sens:pvtTrailsRange(PVT_DKEFS_TRAILS.combined[k].sens), spec:pvtTrailsRange(PVT_DKEFS_TRAILS.combined[k].spec),
+    source:'Erdodi et al. (2018), Table 6, range across four criteria.' }));
   PVT_AGGREGATION.forEach(a => rows.push({
     measure:'Aggregate, 6 PVTs + 1 SVT', cut:a.threshold, sens:prop(a.sens), spec:prop(a.spec),
     source:'Larrabee (2014), Table 4, combined clinical sample.' }));
@@ -7517,6 +7526,37 @@ function getPvtRey(){
   return s;
 }
 
+/* ---------- D-KEFS Trail Making (Erdodi et al., 2018) ----------
+   Five age-corrected scaled scores, each read against its own cut-off, and
+   the indicator failing when at least N conditions fail, N the clinician's
+   choice among the three the paper publishes a combined accuracy for. The
+   paper's sample had a full administration, so the indicator is decided
+   only once all five are entered; per-condition flags show as they come. */
+function getPvtTrails(){
+  const P = PVT_DKEFS_TRAILS;
+  const vals = P.conditions.map(c => pvtInt(document.getElementById('pvt-trails-' + c.key)?.value, 1, 19));
+  if (vals.every(v => v === undefined)) return { empty: true };
+  if (vals.some(v => v === null)) return { invalid: true };
+  const sel = Number(document.getElementById('pvt-trails-threshold')?.value);
+  const threshold = P.combined[sel] ? sel : P.defaultThreshold;
+  const conds = P.conditions.map((c, i) => ({ ...c, score: vals[i], fail: vals[i] !== undefined && vals[i] <= c.cut }));
+  const entered = conds.filter(c => c.score !== undefined).length;
+  const failed = conds.filter(c => c.fail).length;
+  const s = { conds, entered, failed, threshold };
+  if (entered < P.conditions.length){ s.partial = true; return s; }
+  s.fail = failed >= threshold;
+  return s;
+}
+/* The range across the paper's criterion columns, as the paper states its
+   ranges: lowest to highest, two decimals, no leading zero. A dash cell in
+   the table is not a value and is skipped. */
+function pvtTrailsRange(cells){
+  const v = cells.filter(x => x !== null && x !== undefined);
+  const f = x => x.toFixed(2).replace(/^0/, '');
+  const lo = Math.min(...v), hi = Math.max(...v);
+  return lo === hi ? f(lo) : `${f(lo)}–${f(hi)}`;
+}
+
 /* ---------- Rey 15-Item administration ----------
    Displays the stimulus for the protocol's 10 seconds, then the
    recognition page, and writes the two recognition scores back into the
@@ -8012,6 +8052,36 @@ function renderPvtDs(){
     : '');
 }
 
+function renderPvtTrails(){
+  const out = document.getElementById('pvt-trails-result');
+  if (!out) return;
+  const s = getPvtTrails();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the five age-corrected scaled scores.', 'The result appears here and the outcome joins the Summary.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', 'Check the entered values: a scaled score runs from 1 to 19.'); return; }
+  const rows = s.conds.map(c => ({
+    label: c.label, value: c.score,
+    state: c.score === undefined ? 'na' : c.fail ? 'fail' : 'pass',
+    word: c.score === undefined ? 'Not entered' : undefined,
+    meta: `Cut-off ≤ ${c.cut} · sens. ${pvtTrailsRange(c.sens)} · spec. ${pvtTrailsRange(c.spec)}`
+  }));
+  const acc = PVT_DKEFS_TRAILS.combined[s.threshold];
+  /* The count that decides the indicator leads, above the five it counts.
+     It is kept out of the rows pvtReadoutHtml tallies, or the head would
+     count it as a sixth index. */
+  const combined = pvtIndexRowHtml({
+    label: 'Conditions failed', value: `${s.failed} of 5`,
+    state: s.partial ? 'na' : s.fail ? 'fail' : 'pass',
+    word: s.partial ? 'Incomplete' : undefined,
+    meta: `The indicator fails at ≥ ${s.threshold} · sens. ${pvtTrailsRange(acc.sens)} · spec. ${pvtTrailsRange(acc.spec)}`
+  });
+  const note = s.partial
+    ? 'Enter all five conditions to decide the indicator; the combined accuracy was derived on complete administrations.'
+    : 'Ranges run across the four criteria the paper tested against (Erdodi et al., 2018, Tables 5 and 6).';
+  const html = pvtReadoutHtml(rows, note);
+  const at = html.indexOf('<div class="pvt-index">');
+  out.innerHTML = html.slice(0, at) + combined + html.slice(at);
+}
+
 function renderPvtRey(){
   const out = document.getElementById('pvt-rey15-result');
   if (!out) return;
@@ -8185,6 +8255,19 @@ function getPvtSummaryRows(){
       });
     });
   }
+  /* D-KEFS Trail Making: one row, the count of conditions failed, decided
+     only once all five are entered. A speed measure, sharing no subtest
+     with anything above, so its own group. */
+  const tr = getPvtTrails();
+  if (!tr.empty && !tr.invalid && !tr.partial){
+    const acc = PVT_DKEFS_TRAILS.combined[tr.threshold];
+    rows.push({
+      id: 'trails', group: 'trails', measure: 'D-KEFS Trail Making, conditions failed',
+      score: `${tr.failed} of 5`, cutoff: `≥ ${tr.threshold} conditions`,
+      sens: pvtTrailsRange(acc.sens), spec: pvtTrailsRange(acc.spec),
+      result: pvtStatusWord(tr.fail), fail: tr.fail
+    });
+  }
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
@@ -8276,6 +8359,9 @@ const PVT_INDICATOR_GROUPS = [
   { id: 'cvlt3', label: 'CVLT-3 Forced Choice', sub: 'Embedded', members: [
     { tab: 'cvlt3', label: 'Hits and critical items', ids: ['cvlt3', 'cvlt3-crit-recall', 'cvlt3-crit-recog'] }
   ]},
+  { id: 'trails', label: 'D-KEFS Trail Making', sub: 'Embedded', members: [
+    { tab: 'trails', label: 'Five conditions', ids: ['trails'] }
+  ]},
   { id: 'tomm', label: 'TOMM', sub: 'Stand-alone', members: [
     { tab: 'tomm',  label: 'Forced choice', ids: ['tomm'] }
   ]}
@@ -8317,7 +8403,7 @@ function renderPvtSummary(){
       /* Sweet et al. (2021), AACN consensus, TCN 35(6): ">= 2 PVT or SVT
          failures when up to 7 to 9 measures are administered" (p. 1091), and
          the credible groups in which multiple failures do occur (pp. 1069,
-         1091-1092). This page counts at most five indicators, inside that range. */
+         1091-1092). This page counts at most six indicators, inside that range. */
       body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity when up to 7 to 9 measures are given (Larrabee, 2014; Sweet et al., 2021). Credible patients can fail two in dementia (more often as it worsens), severe TBI with prolonged coma, schizophrenia with significant cognitive impairment, sometimes amnestic MCI, and when living with 24-hour supervision (Sweet et al., 2021). Weigh the count against the clinical and neurological picture.'
         : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).'
         : 'Nothing beyond its cut-off so far.';
@@ -8402,6 +8488,7 @@ function renderPvtApa(){
         .filter(tab => rows.some(r => r.id === tab || r.id.startsWith(tab + '-') || (tab === 'ds' && r.id.startsWith('ds'))))
         .map(tab => PVT_INSTRUMENTS[tab].noteMismatch || PVT_INSTRUMENTS[tab].mismatch),
       hasTomm: rows.some(r => r.group === 'tomm'),
+      hasTrails: rows.some(r => r.group === 'trails'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
       bothDigitSpan: rows.some(r => r.id === 'rds') && rows.some(r => r.id.startsWith('ds')),
@@ -8467,6 +8554,11 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-cvlt3'),
     cvAny ? (cvS.anyFail ? 'Fail' : 'Pass') : '—',
     cvAny ? (cvS.anyFail ? 'fail' : 'pass') : null);
+  const trS = getPvtTrails();
+  const trHas = !trS.empty && !trS.invalid && !trS.partial;
+  pvtChip(document.getElementById('pvt-status-trails'),
+    trHas ? (trS.fail ? 'Fail' : 'Pass') : '—',
+    trHas ? (trS.fail ? 'fail' : 'pass') : null);
   const tomm = getPvtTomm();
   const tommHas = !!(tomm.rows && tomm.rows.length);
   pvtChip(document.getElementById('pvt-status-tomm'),
@@ -8493,6 +8585,7 @@ function renderPvtNav(){
   pvtCautionFlag('rey15', reyFail);
   pvtCautionFlag('cvlt3', cvAny && cvS.anyFail);
   pvtCautionFlag('tomm', tommHas && tomm.anyFail);
+  pvtCautionFlag('trails', trHas && trS.fail);
 }
 
 /* The published-accuracy line beside each cut-off select — same strings the
@@ -8531,6 +8624,12 @@ function renderPvtAccuracy(){
   }
   const cvEl = document.getElementById('pvt-cvlt3-accuracy');
   if (cvEl) cvEl.textContent = pvtCvlt3Basis().cite;
+  const trEl = document.getElementById('pvt-trails-accuracy');
+  if (trEl){
+    const k = Number(document.getElementById('pvt-trails-threshold')?.value);
+    const a = PVT_DKEFS_TRAILS.combined[k] || PVT_DKEFS_TRAILS.combined[PVT_DKEFS_TRAILS.defaultThreshold];
+    trEl.textContent = `Published accuracy at this threshold: sens. ${pvtTrailsRange(a.sens)} · spec. ${pvtTrailsRange(a.spec)} (Erdodi et al., 2018, Table 6)`;
+  }
   const rdsEl = document.getElementById('pvt-rds-accuracy');
   if (rdsEl){
     const key = document.getElementById('pvt-rds-cutoff')?.value === 'traditional' ? 'traditional' : 'conservative';
@@ -8546,6 +8645,7 @@ function renderPvtAll(){
   renderPvtRey();
   renderPvtTomm();
   renderPvtCvlt3();
+  renderPvtTrails();
   renderPvtAccuracy();
   renderPvtInstruments();
   renderPvtNav();
@@ -8583,7 +8683,7 @@ function pvtSyncDesc(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog','pvt-trails-t1','pvt-trails-t2','pvt-trails-t3','pvt-trails-t4','pvt-trails-t5'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -8613,7 +8713,7 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog','pvt-trails-t1','pvt-trails-t2','pvt-trails-t3','pvt-trails-t4','pvt-trails-t5'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   /* The forward-span index reads the shared top-bar age, so an age typed
@@ -8624,7 +8724,7 @@ function setupPvtPage(){
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   document.getElementById('pvt-rey-administer')?.addEventListener('click', reyAdminOpen);
-  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion','pvt-cvlt3-basis'].forEach(id => {
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion','pvt-cvlt3-basis','pvt-trails-threshold'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
   renderPvtAll();

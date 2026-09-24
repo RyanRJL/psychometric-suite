@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260924s">
-<link rel="stylesheet" href="design-system.css?v=20260924s">
+<link rel="stylesheet" href="styles.css?v=20260924t">
+<link rel="stylesheet" href="design-system.css?v=20260924t">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1516,6 +1516,13 @@
           </span>
           <span class="pvt-status" id="pvt-status-cvlt3">&mdash;</span>
         </button>
+        <button type="button" class="pvt-nav-item" data-pvt-tab="trails" role="tab" aria-selected="false">
+          <span class="pvt-nav-main">
+            <span class="pvt-nav-label">D-KEFS Trail Making</span>
+            <span class="pvt-nav-meta">Embedded · five conditions</span>
+          </span>
+          <span class="pvt-status" id="pvt-status-trails">&mdash;</span>
+        </button>
         <button type="button" class="pvt-nav-item" data-pvt-tab="tomm" role="tab" aria-selected="false">
           <span class="pvt-nav-main">
             <span class="pvt-nav-label">TOMM</span>
@@ -1859,6 +1866,66 @@
       </div>
     </div>
 
+    <!-- ===== D-KEFS Trail Making (Erdodi et al., 2018) ===== -->
+    <div class="pvt-tab-content" id="pvt-trails">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Condition 1 · Visual Scanning <span class="hint">(scaled, 1–19)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-trails-t1" placeholder="e.g. 10">
+            </div>
+            <div class="field">
+              <label>Condition 2 · Number Sequencing <span class="hint">(scaled)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-trails-t2" placeholder="e.g. 10">
+            </div>
+            <div class="field">
+              <label>Condition 3 · Letter Sequencing <span class="hint">(scaled)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-trails-t3" placeholder="e.g. 10">
+            </div>
+            <div class="field">
+              <label>Condition 4 · Number-Letter Switching <span class="hint">(scaled)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-trails-t4" placeholder="e.g. 10">
+            </div>
+            <div class="field">
+              <label>Condition 5 · Motor Speed <span class="hint">(scaled)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-trails-t5" placeholder="e.g. 10">
+            </div>
+            <div class="field">
+              <label>Indicator fails when</label>
+              <select id="pvt-trails-threshold">
+                <option value="3" selected>≥ 3 of 5 · default</option>
+                <option value="4">≥ 4 of 5</option>
+                <option value="5">all 5</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-trails-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> One study of 157 outpatients, excluding dementia and intellectual disability; corroborate before concluding.</summary>
+            <div class="pvt-caution-body">The authors call the findings preliminary and ask for replication. Accuracy varied with the criterion it was measured against, and was lowest against a word-recognition test (the Word Choice Test). At ≤ 5, Conditions 2 and 3 fell below .84 specificity against its accuracy score (.77 to .78). The Condition 5 cut-off (≤ 8) lies in the average range; the authors argue for it from the score distribution and from the D-KEFS norms not screening for invalid performance. The authors note that on this task genuine impairment and invalid performance may be hard to separate (Erdodi et al., 2018).</div>
+          </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Cut-offs &amp; accuracy: Erdodi, Hurtubise, Charron, Dunn, Enache, McDermott &amp; Hirst (2018), <i>Psychological Assessment, 30</i>(8), 1082–1095, Tables 5 and 6.</span>
+            <span class="pvt-source-accuracy" id="pvt-trails-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="trails"></span>
+          </div>
+        </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>How the flag is set</summary>
+          <div class="formula-body">
+            <p>Each condition's age-corrected scaled score is compared with the cut-off the paper found best for that condition: ≤ 5 on Conditions 1 to 3, ≤ 4 on Condition 4 and ≤ 8 on Condition 5. The cut-offs differ because the conditions differ in difficulty; a single cut-off across them, as on the Wechsler subtests, does not hold here. The indicator fails when at least the chosen number of conditions fail. The paper favours combining the conditions over any single one, and publishes combined accuracy for three, four and all five; three is the default, the combination the authors describe as a good balance of sensitivity and specificity.</p>
+            <p>The paper tested every cut-off against four criteria: the Word Choice Test's accuracy and completion time, and two composites of five embedded indicators each, one verbal and one processing-speed based. Sensitivity and specificity are therefore shown as the range across the four. The Condition 4 to Condition 2 time ratio is not used: its sensitivity was .00 to .09 at the ≤ 1.5 cut-off.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
     <div class="pvt-tab-content" id="pvt-tomm">
       <div class="pvt-workspace">
         <div class="pvt-card">
@@ -1947,7 +2014,7 @@
           <div>
             <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014)</h3>
             <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity, within Slick et al.'s (1999) criteria, which also require a substantial external incentive. The AACN consensus statement supports the same threshold when up to 7 to 9 measures are given (Sweet et al., 2021). The table gives classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT).</p>
-            <p class="pvt-agg-copy">These figures are for seven indicators administered. They do not transfer directly to a different number, and this page counts at most five independent indicators.</p>
+            <p class="pvt-agg-copy">These figures are for seven indicators administered. They do not transfer directly to a different number, and this page counts at most six independent indicators.</p>
           </div>
           <table class="pvt-table">
             <thead><tr><th>Threshold</th><th class="num">Specificity</th><th class="num">Sensitivity</th><th class="num">Total correct</th></tr></thead>
@@ -1989,6 +2056,7 @@
         <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson. [Forced Choice Recognition base rates by age band, Appendix D Tables D.13-D.15; the manual publishes no cut-off for this trial.]</p>
         <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859. [The CVLT-II <span style="white-space:nowrap">&le; 15</span> cut-off and its accuracy across seven reference PVTs.]</p>
+        <p>Erdodi, L. A., Hurtubise, J. L., Charron, C., Dunn, A., Enache, A., McDermott, A., &amp; Hirst, R. B. (2018). The D-KEFS Trails as performance validity tests. <i>Psychological Assessment, 30</i>(8), 1082–1095.</p>
       <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
@@ -3276,12 +3344,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260924s"></script>
-<script src="app.js?v=20260924s"></script>
-<script src="design-system.js?v=20260924s" defer></script>
-<script src="app-effectsize-page.js?v=20260924s"></script>
-<script src="app-viz-page.js?v=20260924s"></script>
-<script src="app-profile-page.js?v=20260924s"></script>
+<script src="data.js?v=20260924t"></script>
+<script src="app.js?v=20260924t"></script>
+<script src="design-system.js?v=20260924t" defer></script>
+<script src="app-effectsize-page.js?v=20260924t"></script>
+<script src="app-viz-page.js?v=20260924t"></script>
+<script src="app-profile-page.js?v=20260924t"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

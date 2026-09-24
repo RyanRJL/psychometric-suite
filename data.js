@@ -2889,6 +2889,70 @@ const PVT_CVLT3_ERDODI_T6 = {
 };
 
 /* =========================================================================
+   D-KEFS TRAIL MAKING AS AN EMBEDDED PVT — Erdodi, Hurtubise, Charron, Dunn,
+   Enache, McDermott & Hirst (2018), The D-KEFS Trails as performance validity
+   tests, Psychological Assessment, 30(8), 1082–1095.
+
+   157 consecutive outpatients, mixed clinical (psychiatric 32.5%, TBI 31.8%,
+   epilepsy 15.3%), mean age 47.1. Dementia and intellectual disability were
+   EXCLUDED, which the page states. Inputs are age-corrected scaled scores.
+
+   Per-condition cut-offs are the paper's "optimal cutoffs" (Discussion):
+   Conditions 1–3 ≤ 5, Condition 4 ≤ 4, Condition 5 ≤ 8. The Condition 5
+   cut-off sits in the average range; the authors defend it at length and
+   the page's caution says so.
+
+   THE ACCURACY FIGURES ARE DERIVED, NOT TYPED. Each cut-off was tested
+   against four criteria, so the paper reports RANGES. The cells are stored
+   here verbatim, one per criterion, and the range printed on screen is the
+   minimum to maximum of the stored cells (pvtTrailsRange, app.js). Column
+   order, as Tables 5 and 6 print it: Word Choice Test accuracy, Word Choice
+   Test time, EI-5 VER, EI-5 PSP. For the two EI-5 columns Table 5 gives two
+   sensitivities; the stored one is "A" (Fail = EI-5 ≥ 4), the paper's
+   primary definition, which Table 6 uses throughout.
+
+   Where the paper's prose states a range it reproduces from these cells
+   (Condition 1, Condition 5, ≥ 3 and ≥ 4 conditions), and check.js §60
+   asserts it. Two places the prose and the table differ, both pinned so a
+   "correction" fails: all five conditions, where the prose says sensitivity
+   .09–.25 and specificity .95–.97 but Table 6 prints .14/.98, —, .10/.95 and
+   .25/.97; and Condition 4, where the prose gives specificity .86–.88 but
+   Table 5's Word Choice time column prints .92. The table is stored.
+
+   THE THRESHOLD IS THE CLINICIAN'S (owner decision, 2026-09). The paper
+   favours combining the conditions but names no single decision rule, so
+   the indicator fails when at least N conditions fail, N chosen on the
+   page. Only the N with a published combined accuracy are offered: 3, 4 and
+   5 (Table 6, "SUM LIB-F"). ≥ 3 is the default, being the one the authors
+   call "a good combination of sensitivity (.27–.65) and specificity
+   (.88–.95)". The Trails 4/2 ratio is not used: the paper reports trivial
+   sensitivity (.00–.09 at ≤ 1.5).
+   ========================================================================= */
+const PVT_DKEFS_TRAILS = {
+  criteria: ['WCT accuracy', 'WCT time', 'EI-5 VER', 'EI-5 PSP'],
+  conditions: [
+    { key: 't1', label: 'Condition 1 · Visual Scanning',          cut: 5,
+      sens: [0.36, 0.27, 0.39, 0.52], spec: [0.88, 0.92, 0.84, 0.84] },
+    { key: 't2', label: 'Condition 2 · Number Sequencing',        cut: 5,
+      sens: [0.36, 0.27, 0.43, 0.57], spec: [0.77, 0.78, 0.85, 0.88] },
+    { key: 't3', label: 'Condition 3 · Letter Sequencing',        cut: 5,
+      sens: [0.29, 0.36, 0.45, 0.70], spec: [0.77, 0.84, 0.85, 0.89] },
+    { key: 't4', label: 'Condition 4 · Number-Letter Switching',  cut: 4,
+      sens: [0.29, 0.18, 0.45, 0.57], spec: [0.88, 0.92, 0.86, 0.86] },
+    { key: 't5', label: 'Condition 5 · Motor Speed',              cut: 8,
+      sens: [0.29, 0.27, 0.48, 0.71], spec: [0.86, 0.92, 0.87, 0.91] }
+  ],
+  /* Table 6, SUM LIB-F: conditions failed at the cut-offs above. `null` is
+     the table's own dash (no failures of all five in that criterion group). */
+  combined: {
+    3: { sens: [0.29, 0.27, 0.33, 0.65], spec: [0.88, 0.95, 0.90, 0.95] },
+    4: { sens: [0.21, 0.09, 0.24, 0.60], spec: [0.93, 0.97, 0.92, 0.97] },
+    5: { sens: [0.14, null, 0.10, 0.25], spec: [0.98, null, 0.95, 0.97] }
+  },
+  defaultThreshold: 3
+};
+
+/* =========================================================================
    WHICH INSTRUMENT, AND WHICH EDITION, EACH PVT CUT-OFF WAS DERIVED ON
 
    A validity cut-off belongs to the version of the test it was calibrated
@@ -2940,6 +3004,10 @@ const PVT_INSTRUMENTS = {
   tomm: {
     kind: 'Stand-alone', derived: 'TOMM',
     detail: 'Trial 1, Trial 2 and Retention, 50 items each.'
+  },
+  trails: {
+    kind: 'Embedded', derived: 'D-KEFS Trail Making Test',
+    detail: 'Age-corrected scaled scores on the five conditions.'
   },
   cvlt3: {
     kind: 'Embedded', derived: 'CVLT-3 (base rates) · CVLT-II (cut-offs)',

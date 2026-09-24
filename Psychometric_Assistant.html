@@ -18461,6 +18461,13 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
           </span>
           <span class="pvt-status" id="pvt-status-cvlt3">&mdash;</span>
         </button>
+        <button type="button" class="pvt-nav-item" data-pvt-tab="trails" role="tab" aria-selected="false">
+          <span class="pvt-nav-main">
+            <span class="pvt-nav-label">D-KEFS Trail Making</span>
+            <span class="pvt-nav-meta">Embedded · five conditions</span>
+          </span>
+          <span class="pvt-status" id="pvt-status-trails">&mdash;</span>
+        </button>
         <button type="button" class="pvt-nav-item" data-pvt-tab="tomm" role="tab" aria-selected="false">
           <span class="pvt-nav-main">
             <span class="pvt-nav-label">TOMM</span>
@@ -18804,6 +18811,66 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
       </div>
     </div>
 
+    <!-- ===== D-KEFS Trail Making (Erdodi et al., 2018) ===== -->
+    <div class="pvt-tab-content" id="pvt-trails">
+      <div class="pvt-workspace">
+        <div class="pvt-card">
+          <div class="pvt-card-kicker">Scores &amp; settings</div>
+          <div class="pvt-field-grid">
+            <div class="field">
+              <label>Condition 1 · Visual Scanning <span class="hint">(scaled, 1–19)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-trails-t1" placeholder="e.g. 10">
+            </div>
+            <div class="field">
+              <label>Condition 2 · Number Sequencing <span class="hint">(scaled)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-trails-t2" placeholder="e.g. 10">
+            </div>
+            <div class="field">
+              <label>Condition 3 · Letter Sequencing <span class="hint">(scaled)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-trails-t3" placeholder="e.g. 10">
+            </div>
+            <div class="field">
+              <label>Condition 4 · Number-Letter Switching <span class="hint">(scaled)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-trails-t4" placeholder="e.g. 10">
+            </div>
+            <div class="field">
+              <label>Condition 5 · Motor Speed <span class="hint">(scaled)</span></label>
+              <input type="number" min="1" max="19" step="1" id="pvt-trails-t5" placeholder="e.g. 10">
+            </div>
+            <div class="field">
+              <label>Indicator fails when</label>
+              <select id="pvt-trails-threshold">
+                <option value="3" selected>≥ 3 of 5 · default</option>
+                <option value="4">≥ 4 of 5</option>
+                <option value="5">all 5</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="pvt-outcome">
+          <div class="pvt-result" id="pvt-trails-result"></div>
+          <details class="pvt-caution">
+            <summary><strong>Caution.</strong> One study of 157 outpatients, excluding dementia and intellectual disability; corroborate before concluding.</summary>
+            <div class="pvt-caution-body">The authors call the findings preliminary and ask for replication. Accuracy varied with the criterion it was measured against, and was lowest against a word-recognition test (the Word Choice Test). At ≤ 5, Conditions 2 and 3 fell below .84 specificity against its accuracy score (.77 to .78). The Condition 5 cut-off (≤ 8) lies in the average range; the authors argue for it from the score distribution and from the D-KEFS norms not screening for invalid performance. The authors note that on this task genuine impairment and invalid performance may be hard to separate (Erdodi et al., 2018).</div>
+          </details>
+          <div class="pvt-source">
+            <span class="pvt-source-cite">Cut-offs &amp; accuracy: Erdodi, Hurtubise, Charron, Dunn, Enache, McDermott &amp; Hirst (2018), <i>Psychological Assessment, 30</i>(8), 1082–1095, Tables 5 and 6.</span>
+            <span class="pvt-source-accuracy" id="pvt-trails-accuracy"></span>
+            <span class="pvt-derived-line" data-pvt-derived="trails"></span>
+          </div>
+        </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>How the flag is set</summary>
+          <div class="formula-body">
+            <p>Each condition's age-corrected scaled score is compared with the cut-off the paper found best for that condition: ≤ 5 on Conditions 1 to 3, ≤ 4 on Condition 4 and ≤ 8 on Condition 5. The cut-offs differ because the conditions differ in difficulty; a single cut-off across them, as on the Wechsler subtests, does not hold here. The indicator fails when at least the chosen number of conditions fail. The paper favours combining the conditions over any single one, and publishes combined accuracy for three, four and all five; three is the default, the combination the authors describe as a good balance of sensitivity and specificity.</p>
+            <p>The paper tested every cut-off against four criteria: the Word Choice Test's accuracy and completion time, and two composites of five embedded indicators each, one verbal and one processing-speed based. Sensitivity and specificity are therefore shown as the range across the four. The Condition 4 to Condition 2 time ratio is not used: its sensitivity was .00 to .09 at the ≤ 1.5 cut-off.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
     <div class="pvt-tab-content" id="pvt-tomm">
       <div class="pvt-workspace">
         <div class="pvt-card">
@@ -18892,7 +18959,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
           <div>
             <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014)</h3>
             <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity, within Slick et al.'s (1999) criteria, which also require a substantial external incentive. The AACN consensus statement supports the same threshold when up to 7 to 9 measures are given (Sweet et al., 2021). The table gives classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT).</p>
-            <p class="pvt-agg-copy">These figures are for seven indicators administered. They do not transfer directly to a different number, and this page counts at most five independent indicators.</p>
+            <p class="pvt-agg-copy">These figures are for seven indicators administered. They do not transfer directly to a different number, and this page counts at most six independent indicators.</p>
           </div>
           <table class="pvt-table">
             <thead><tr><th>Threshold</th><th class="num">Specificity</th><th class="num">Sensitivity</th><th class="num">Total correct</th></tr></thead>
@@ -18934,6 +19001,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson. [Forced Choice Recognition base rates by age band, Appendix D Tables D.13-D.15; the manual publishes no cut-off for this trial.]</p>
         <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859. [The CVLT-II <span style="white-space:nowrap">&le; 15</span> cut-off and its accuracy across seven reference PVTs.]</p>
+        <p>Erdodi, L. A., Hurtubise, J. L., Charron, C., Dunn, A., Enache, A., McDermott, A., &amp; Hirst, R. B. (2018). The D-KEFS Trails as performance validity tests. <i>Psychological Assessment, 30</i>(8), 1082–1095.</p>
       <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
@@ -23113,6 +23181,70 @@ const PVT_CVLT3_ERDODI_T6 = {
 };
 
 /* =========================================================================
+   D-KEFS TRAIL MAKING AS AN EMBEDDED PVT — Erdodi, Hurtubise, Charron, Dunn,
+   Enache, McDermott & Hirst (2018), The D-KEFS Trails as performance validity
+   tests, Psychological Assessment, 30(8), 1082–1095.
+
+   157 consecutive outpatients, mixed clinical (psychiatric 32.5%, TBI 31.8%,
+   epilepsy 15.3%), mean age 47.1. Dementia and intellectual disability were
+   EXCLUDED, which the page states. Inputs are age-corrected scaled scores.
+
+   Per-condition cut-offs are the paper's "optimal cutoffs" (Discussion):
+   Conditions 1–3 ≤ 5, Condition 4 ≤ 4, Condition 5 ≤ 8. The Condition 5
+   cut-off sits in the average range; the authors defend it at length and
+   the page's caution says so.
+
+   THE ACCURACY FIGURES ARE DERIVED, NOT TYPED. Each cut-off was tested
+   against four criteria, so the paper reports RANGES. The cells are stored
+   here verbatim, one per criterion, and the range printed on screen is the
+   minimum to maximum of the stored cells (pvtTrailsRange, app.js). Column
+   order, as Tables 5 and 6 print it: Word Choice Test accuracy, Word Choice
+   Test time, EI-5 VER, EI-5 PSP. For the two EI-5 columns Table 5 gives two
+   sensitivities; the stored one is "A" (Fail = EI-5 ≥ 4), the paper's
+   primary definition, which Table 6 uses throughout.
+
+   Where the paper's prose states a range it reproduces from these cells
+   (Condition 1, Condition 5, ≥ 3 and ≥ 4 conditions), and check.js §60
+   asserts it. Two places the prose and the table differ, both pinned so a
+   "correction" fails: all five conditions, where the prose says sensitivity
+   .09–.25 and specificity .95–.97 but Table 6 prints .14/.98, —, .10/.95 and
+   .25/.97; and Condition 4, where the prose gives specificity .86–.88 but
+   Table 5's Word Choice time column prints .92. The table is stored.
+
+   THE THRESHOLD IS THE CLINICIAN'S (owner decision, 2026-09). The paper
+   favours combining the conditions but names no single decision rule, so
+   the indicator fails when at least N conditions fail, N chosen on the
+   page. Only the N with a published combined accuracy are offered: 3, 4 and
+   5 (Table 6, "SUM LIB-F"). ≥ 3 is the default, being the one the authors
+   call "a good combination of sensitivity (.27–.65) and specificity
+   (.88–.95)". The Trails 4/2 ratio is not used: the paper reports trivial
+   sensitivity (.00–.09 at ≤ 1.5).
+   ========================================================================= */
+const PVT_DKEFS_TRAILS = {
+  criteria: ['WCT accuracy', 'WCT time', 'EI-5 VER', 'EI-5 PSP'],
+  conditions: [
+    { key: 't1', label: 'Condition 1 · Visual Scanning',          cut: 5,
+      sens: [0.36, 0.27, 0.39, 0.52], spec: [0.88, 0.92, 0.84, 0.84] },
+    { key: 't2', label: 'Condition 2 · Number Sequencing',        cut: 5,
+      sens: [0.36, 0.27, 0.43, 0.57], spec: [0.77, 0.78, 0.85, 0.88] },
+    { key: 't3', label: 'Condition 3 · Letter Sequencing',        cut: 5,
+      sens: [0.29, 0.36, 0.45, 0.70], spec: [0.77, 0.84, 0.85, 0.89] },
+    { key: 't4', label: 'Condition 4 · Number-Letter Switching',  cut: 4,
+      sens: [0.29, 0.18, 0.45, 0.57], spec: [0.88, 0.92, 0.86, 0.86] },
+    { key: 't5', label: 'Condition 5 · Motor Speed',              cut: 8,
+      sens: [0.29, 0.27, 0.48, 0.71], spec: [0.86, 0.92, 0.87, 0.91] }
+  ],
+  /* Table 6, SUM LIB-F: conditions failed at the cut-offs above. `null` is
+     the table's own dash (no failures of all five in that criterion group). */
+  combined: {
+    3: { sens: [0.29, 0.27, 0.33, 0.65], spec: [0.88, 0.95, 0.90, 0.95] },
+    4: { sens: [0.21, 0.09, 0.24, 0.60], spec: [0.93, 0.97, 0.92, 0.97] },
+    5: { sens: [0.14, null, 0.10, 0.25], spec: [0.98, null, 0.95, 0.97] }
+  },
+  defaultThreshold: 3
+};
+
+/* =========================================================================
    WHICH INSTRUMENT, AND WHICH EDITION, EACH PVT CUT-OFF WAS DERIVED ON
 
    A validity cut-off belongs to the version of the test it was calibrated
@@ -23164,6 +23296,10 @@ const PVT_INSTRUMENTS = {
   tomm: {
     kind: 'Stand-alone', derived: 'TOMM',
     detail: 'Trial 1, Trial 2 and Retention, 50 items each.'
+  },
+  trails: {
+    kind: 'Embedded', derived: 'D-KEFS Trail Making Test',
+    detail: 'Age-corrected scaled scores on the five conditions.'
   },
   cvlt3: {
     kind: 'Embedded', derived: 'CVLT-3 (base rates) · CVLT-II (cut-offs)',
@@ -26828,6 +26964,7 @@ const APA_NOTES = {
     if (ctx.hasCvlt3) sources.push(ctx.cvlt3Borrowed
       ? `CVLT-3 Forced Choice (base rates Delis et al., 2017, Tables D.13–D.15; cut-off and accuracy ${ctx.cvlt3Cite}, CVLT-II)`
       : 'CVLT-3 Forced Choice (Delis et al., 2017, Tables D.13–D.15)');
+    if (ctx.hasTrails) sources.push('D-KEFS Trail Making (Erdodi et al., 2018)');
     if (ctx.hasTomm) sources.push('TOMM (Tombaugh, 1996; cut-offs Martin et al., 2020)');
     const shared = [];
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
@@ -29104,6 +29241,14 @@ function pvtAccuracyRows(){
   PVT_CVLT3_FC_CUTOFFS.filter(c => c.cut !== null).forEach(c => rows.push({
     measure:'CVLT Forced Choice, total hits', cut:'≤ ' + c.cut,
     sens:c.sens, spec:c.spec, source:c.cite }));
+  PVT_DKEFS_TRAILS.conditions.forEach(c => rows.push({
+    measure:'D-KEFS Trail Making, ' + c.label.replace(' · ', ', '), cut:'≤ ' + c.cut,
+    sens:pvtTrailsRange(c.sens), spec:pvtTrailsRange(c.spec),
+    source:'Erdodi et al. (2018), Table 5, range across four criteria.' }));
+  Object.keys(PVT_DKEFS_TRAILS.combined).forEach(k => rows.push({
+    measure:'D-KEFS Trail Making, conditions failed', cut:'≥ ' + k + ' of 5',
+    sens:pvtTrailsRange(PVT_DKEFS_TRAILS.combined[k].sens), spec:pvtTrailsRange(PVT_DKEFS_TRAILS.combined[k].spec),
+    source:'Erdodi et al. (2018), Table 6, range across four criteria.' }));
   PVT_AGGREGATION.forEach(a => rows.push({
     measure:'Aggregate, 6 PVTs + 1 SVT', cut:a.threshold, sens:prop(a.sens), spec:prop(a.spec),
     source:'Larrabee (2014), Table 4, combined clinical sample.' }));
@@ -30692,6 +30837,37 @@ function getPvtRey(){
   return s;
 }
 
+/* ---------- D-KEFS Trail Making (Erdodi et al., 2018) ----------
+   Five age-corrected scaled scores, each read against its own cut-off, and
+   the indicator failing when at least N conditions fail, N the clinician's
+   choice among the three the paper publishes a combined accuracy for. The
+   paper's sample had a full administration, so the indicator is decided
+   only once all five are entered; per-condition flags show as they come. */
+function getPvtTrails(){
+  const P = PVT_DKEFS_TRAILS;
+  const vals = P.conditions.map(c => pvtInt(document.getElementById('pvt-trails-' + c.key)?.value, 1, 19));
+  if (vals.every(v => v === undefined)) return { empty: true };
+  if (vals.some(v => v === null)) return { invalid: true };
+  const sel = Number(document.getElementById('pvt-trails-threshold')?.value);
+  const threshold = P.combined[sel] ? sel : P.defaultThreshold;
+  const conds = P.conditions.map((c, i) => ({ ...c, score: vals[i], fail: vals[i] !== undefined && vals[i] <= c.cut }));
+  const entered = conds.filter(c => c.score !== undefined).length;
+  const failed = conds.filter(c => c.fail).length;
+  const s = { conds, entered, failed, threshold };
+  if (entered < P.conditions.length){ s.partial = true; return s; }
+  s.fail = failed >= threshold;
+  return s;
+}
+/* The range across the paper's criterion columns, as the paper states its
+   ranges: lowest to highest, two decimals, no leading zero. A dash cell in
+   the table is not a value and is skipped. */
+function pvtTrailsRange(cells){
+  const v = cells.filter(x => x !== null && x !== undefined);
+  const f = x => x.toFixed(2).replace(/^0/, '');
+  const lo = Math.min(...v), hi = Math.max(...v);
+  return lo === hi ? f(lo) : `${f(lo)}–${f(hi)}`;
+}
+
 /* ---------- Rey 15-Item administration ----------
    Displays the stimulus for the protocol's 10 seconds, then the
    recognition page, and writes the two recognition scores back into the
@@ -31187,6 +31363,36 @@ function renderPvtDs(){
     : '');
 }
 
+function renderPvtTrails(){
+  const out = document.getElementById('pvt-trails-result');
+  if (!out) return;
+  const s = getPvtTrails();
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the five age-corrected scaled scores.', 'The result appears here and the outcome joins the Summary.'); return; }
+  if (s.invalid){ out.innerHTML = pvtResultHtml('empty', 'Check the entered values: a scaled score runs from 1 to 19.'); return; }
+  const rows = s.conds.map(c => ({
+    label: c.label, value: c.score,
+    state: c.score === undefined ? 'na' : c.fail ? 'fail' : 'pass',
+    word: c.score === undefined ? 'Not entered' : undefined,
+    meta: `Cut-off ≤ ${c.cut} · sens. ${pvtTrailsRange(c.sens)} · spec. ${pvtTrailsRange(c.spec)}`
+  }));
+  const acc = PVT_DKEFS_TRAILS.combined[s.threshold];
+  /* The count that decides the indicator leads, above the five it counts.
+     It is kept out of the rows pvtReadoutHtml tallies, or the head would
+     count it as a sixth index. */
+  const combined = pvtIndexRowHtml({
+    label: 'Conditions failed', value: `${s.failed} of 5`,
+    state: s.partial ? 'na' : s.fail ? 'fail' : 'pass',
+    word: s.partial ? 'Incomplete' : undefined,
+    meta: `The indicator fails at ≥ ${s.threshold} · sens. ${pvtTrailsRange(acc.sens)} · spec. ${pvtTrailsRange(acc.spec)}`
+  });
+  const note = s.partial
+    ? 'Enter all five conditions to decide the indicator; the combined accuracy was derived on complete administrations.'
+    : 'Ranges run across the four criteria the paper tested against (Erdodi et al., 2018, Tables 5 and 6).';
+  const html = pvtReadoutHtml(rows, note);
+  const at = html.indexOf('<div class="pvt-index">');
+  out.innerHTML = html.slice(0, at) + combined + html.slice(at);
+}
+
 function renderPvtRey(){
   const out = document.getElementById('pvt-rey15-result');
   if (!out) return;
@@ -31360,6 +31566,19 @@ function getPvtSummaryRows(){
       });
     });
   }
+  /* D-KEFS Trail Making: one row, the count of conditions failed, decided
+     only once all five are entered. A speed measure, sharing no subtest
+     with anything above, so its own group. */
+  const tr = getPvtTrails();
+  if (!tr.empty && !tr.invalid && !tr.partial){
+    const acc = PVT_DKEFS_TRAILS.combined[tr.threshold];
+    rows.push({
+      id: 'trails', group: 'trails', measure: 'D-KEFS Trail Making, conditions failed',
+      score: `${tr.failed} of 5`, cutoff: `≥ ${tr.threshold} conditions`,
+      sens: pvtTrailsRange(acc.sens), spec: pvtTrailsRange(acc.spec),
+      result: pvtStatusWord(tr.fail), fail: tr.fail
+    });
+  }
   const tomm = getPvtTomm();
   if (tomm.rows) tomm.rows.forEach(r => rows.push({
     id: 'tomm', group: 'tomm', measure: `TOMM ${r.label}`,
@@ -31451,6 +31670,9 @@ const PVT_INDICATOR_GROUPS = [
   { id: 'cvlt3', label: 'CVLT-3 Forced Choice', sub: 'Embedded', members: [
     { tab: 'cvlt3', label: 'Hits and critical items', ids: ['cvlt3', 'cvlt3-crit-recall', 'cvlt3-crit-recog'] }
   ]},
+  { id: 'trails', label: 'D-KEFS Trail Making', sub: 'Embedded', members: [
+    { tab: 'trails', label: 'Five conditions', ids: ['trails'] }
+  ]},
   { id: 'tomm', label: 'TOMM', sub: 'Stand-alone', members: [
     { tab: 'tomm',  label: 'Forced choice', ids: ['tomm'] }
   ]}
@@ -31492,7 +31714,7 @@ function renderPvtSummary(){
       /* Sweet et al. (2021), AACN consensus, TCN 35(6): ">= 2 PVT or SVT
          failures when up to 7 to 9 measures are administered" (p. 1091), and
          the credible groups in which multiple failures do occur (pp. 1069,
-         1091-1092). This page counts at most five indicators, inside that range. */
+         1091-1092). This page counts at most six indicators, inside that range. */
       body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity when up to 7 to 9 measures are given (Larrabee, 2014; Sweet et al., 2021). Credible patients can fail two in dementia (more often as it worsens), severe TBI with prolonged coma, schizophrenia with significant cognitive impairment, sometimes amnestic MCI, and when living with 24-hour supervision (Sweet et al., 2021). Weigh the count against the clinical and neurological picture.'
         : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).'
         : 'Nothing beyond its cut-off so far.';
@@ -31577,6 +31799,7 @@ function renderPvtApa(){
         .filter(tab => rows.some(r => r.id === tab || r.id.startsWith(tab + '-') || (tab === 'ds' && r.id.startsWith('ds'))))
         .map(tab => PVT_INSTRUMENTS[tab].noteMismatch || PVT_INSTRUMENTS[tab].mismatch),
       hasTomm: rows.some(r => r.group === 'tomm'),
+      hasTrails: rows.some(r => r.group === 'trails'),
       esGated: !!es.gated,
       bothRbans:     rows.some(r => r.id === 'ei')  && rows.some(r => r.id === 'es'),
       bothDigitSpan: rows.some(r => r.id === 'rds') && rows.some(r => r.id.startsWith('ds')),
@@ -31642,6 +31865,11 @@ function renderPvtNav(){
   pvtChip(document.getElementById('pvt-status-cvlt3'),
     cvAny ? (cvS.anyFail ? 'Fail' : 'Pass') : '—',
     cvAny ? (cvS.anyFail ? 'fail' : 'pass') : null);
+  const trS = getPvtTrails();
+  const trHas = !trS.empty && !trS.invalid && !trS.partial;
+  pvtChip(document.getElementById('pvt-status-trails'),
+    trHas ? (trS.fail ? 'Fail' : 'Pass') : '—',
+    trHas ? (trS.fail ? 'fail' : 'pass') : null);
   const tomm = getPvtTomm();
   const tommHas = !!(tomm.rows && tomm.rows.length);
   pvtChip(document.getElementById('pvt-status-tomm'),
@@ -31668,6 +31896,7 @@ function renderPvtNav(){
   pvtCautionFlag('rey15', reyFail);
   pvtCautionFlag('cvlt3', cvAny && cvS.anyFail);
   pvtCautionFlag('tomm', tommHas && tomm.anyFail);
+  pvtCautionFlag('trails', trHas && trS.fail);
 }
 
 /* The published-accuracy line beside each cut-off select — same strings the
@@ -31706,6 +31935,12 @@ function renderPvtAccuracy(){
   }
   const cvEl = document.getElementById('pvt-cvlt3-accuracy');
   if (cvEl) cvEl.textContent = pvtCvlt3Basis().cite;
+  const trEl = document.getElementById('pvt-trails-accuracy');
+  if (trEl){
+    const k = Number(document.getElementById('pvt-trails-threshold')?.value);
+    const a = PVT_DKEFS_TRAILS.combined[k] || PVT_DKEFS_TRAILS.combined[PVT_DKEFS_TRAILS.defaultThreshold];
+    trEl.textContent = `Published accuracy at this threshold: sens. ${pvtTrailsRange(a.sens)} · spec. ${pvtTrailsRange(a.spec)} (Erdodi et al., 2018, Table 6)`;
+  }
   const rdsEl = document.getElementById('pvt-rds-accuracy');
   if (rdsEl){
     const key = document.getElementById('pvt-rds-cutoff')?.value === 'traditional' ? 'traditional' : 'conservative';
@@ -31721,6 +31956,7 @@ function renderPvtAll(){
   renderPvtRey();
   renderPvtTomm();
   renderPvtCvlt3();
+  renderPvtTrails();
   renderPvtAccuracy();
   renderPvtInstruments();
   renderPvtNav();
@@ -31758,7 +31994,7 @@ function pvtSyncDesc(name){
 function clearPvt(){
   Object.keys(pvtState).forEach(k => { pvtState[k] = ''; });
   document.querySelectorAll('#validity [data-pvt-field]').forEach(inp => { inp.value = ''; });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog','pvt-trails-t1','pvt-trails-t2','pvt-trails-t3','pvt-trails-t4','pvt-trails-t5'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -31788,7 +32024,7 @@ function setupPvtPage(){
       renderPvtAll();
     });
   });
-  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog'].forEach(id => {
+  ['pvt-rds-f','pvt-rds-b','pvt-ds-acss','pvt-ds-vocab','pvt-ds-lsf','pvt-ds-lsb','pvt-rey-recall','pvt-rey-recog','pvt-rey-fp','pvt-tomm-t1','pvt-tomm-t2','pvt-tomm-ret','pvt-cvlt3-hits','pvt-cvlt3-crit-recall','pvt-cvlt3-crit-recog','pvt-trails-t1','pvt-trails-t2','pvt-trails-t3','pvt-trails-t4','pvt-trails-t5'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   /* The forward-span index reads the shared top-bar age, so an age typed
@@ -31799,7 +32035,7 @@ function setupPvtPage(){
     document.getElementById(id)?.addEventListener('input', renderPvtAll);
   });
   document.getElementById('pvt-rey-administer')?.addEventListener('click', reyAdminOpen);
-  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion','pvt-cvlt3-basis'].forEach(id => {
+  ['pvt-ei-cutoff','pvt-rds-cutoff','pvt-ds-cutoff','pvt-tomm-t1cut','pvt-tomm-t2cut','pvt-tomm-br','pvt-cvlt3-criterion','pvt-cvlt3-basis','pvt-trails-threshold'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderPvtAll);
   });
   renderPvtAll();
