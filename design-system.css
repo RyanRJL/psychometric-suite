@@ -6294,27 +6294,31 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
 @media print{ .topbar-menu{ display: none; } }
 
 /* Narrower windows, in steps that keep every tab on screen. */
-@media (max-width: 1279px){
+@media (max-width: 1339px){
   body .topbar-row-main .topbar-brand-title{ display: none; }
   body .topbar-row-main .topbar-brand{ padding-right: 12px; }
 }
-@media (max-width: 1099px){
+@media (max-width: 1169px){
   body .topbar-row-main .topnav-item{ padding: 0 7px !important; }
   body .topbar-row-main .topnav-item::after{ left: 7px; right: 7px; }
 }
 /* Then the two labels on the right give way to what they label: the age box
    keeps its "years" placeholder and the Session button its icon (its name
    stays for screen readers via aria-label and the visually hidden label). */
-@media (max-width: 1059px){
+@media (max-width: 1109px){
   body .topbar .ds-patient-field-label{
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
   }
   body .topbar-menu-btn > span{ display: none; }
 }
-/* Last resort, below the ~955px window where everything above still fits:
-   the tabs scroll sideways rather than any of them disappearing. A scrolling
-   box clips what pops out of it, so the three tab menus cannot open here;
-   this is not a supported width (see NARROW-VIEWPORT CONTAINMENT). */
-@media (max-width: 959px){
+/* Last resort, below the ~1036px window where everything above still fits:
+   the tabs scroll sideways rather than any of them disappearing. Not a
+   supported width (see NARROW-VIEWPORT CONTAINMENT).
+   Measured on the live bar (2026-09) after Calculators became two tabs: the
+   full row clips below a 1335px window and the last step below 1036. Each
+   breakpoint sits a few px above where the state before it clips, and the
+   bar was checked unclipped at 1340, 1170, 1110 and 1040, the narrowest
+   width of each state. Re-measure if anything joins the row. */
+@media (max-width: 1039px){
   body .topbar-row-main .topnav{ overflow-x: auto; scrollbar-width: none; }
 }

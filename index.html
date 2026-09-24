@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260925d">
-<link rel="stylesheet" href="design-system.css?v=20260925d">
+<link rel="stylesheet" href="styles.css?v=20260925e">
+<link rel="stylesheet" href="design-system.css?v=20260925e">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -515,10 +515,11 @@
   <!-- ONE ROW (owner decision, 2026-09; mock-ups compared the old two rows,
        this, and a tidied two-row bar). The logo is the way Home. The page's
        name is carried by the highlighted tab, so the old label beside the logo
-       is kept only for screen readers. Score Converter and Effect Sizes share
-       the Calculators menu; New patient, Open and Save share the Session menu,
-       New patient set apart because it clears everything. Measured at 1366px:
-       the row needs 1369 of 1518 layout px. -->
+       is kept only for screen readers. Every tab is a page; none opens a menu
+       (Premorbid and Change Analysis have their own tab strips, and
+       Calculators became two tabs, 2026-09). New patient, Open and Save share
+       the Session menu, New patient set apart because it clears everything.
+       Measured at 1366px: 47 layout px to spare. -->
   <div class="topbar-row topbar-row-main">
     <div class="topbar-inner">
       <button type="button" class="topbar-brand topbar-brand-home nav-item" data-target="home" aria-label="Home">
@@ -3332,12 +3333,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260925d"></script>
-<script src="app.js?v=20260925d"></script>
-<script src="design-system.js?v=20260925d" defer></script>
-<script src="app-effectsize-page.js?v=20260925d"></script>
-<script src="app-viz-page.js?v=20260925d"></script>
-<script src="app-profile-page.js?v=20260925d"></script>
+<script src="data.js?v=20260925e"></script>
+<script src="app.js?v=20260925e"></script>
+<script src="design-system.js?v=20260925e" defer></script>
+<script src="app-effectsize-page.js?v=20260925e"></script>
+<script src="app-viz-page.js?v=20260925e"></script>
+<script src="app-profile-page.js?v=20260925e"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

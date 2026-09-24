@@ -1461,7 +1461,7 @@ top bar and absent from the ring every other tool sits on.
 | Registration | Where | Symptom if missed |
 |---|---|---|
 | `<section class="section" id="…">` | `index.html` | `isNavigableSection` refuses to navigate |
-| a **top-level** `.topnav-item` with `data-bucket`, or an entry in a page menu (Calculators) | `index.html` | reachable only by opening a menu, or not at all |
+| a **top-level** `.topnav-item` with `data-bucket` (a Change Analysis method is reached through the Change Analysis tab) | `index.html` | not reachable from the top bar |
 | `TOPNAV_BUCKETS[id]` | `app.js` | the top bar highlights Home instead |
 | `PAGE_TITLES[id]` | `app.js` | the brand row is blank |
 | `#id > .eyebrow, #id > .section-title{display:none}` | a stylesheet | the page wears a hero no other page has |
@@ -1490,27 +1490,28 @@ leaves `05, 10, 06, 07` — which reads as missing pages. §46 asserts the seque
 
 Chosen from mock-ups of the old two rows (108 px), a tidied two rows (92 px) and this
 (56 px), which gives 52 px back to every page. Logo (the way Home; the Home tab went), then
-seven tabs without icons, then the age field and a **Session** menu. **Score Converter and
-Effect Sizes share a Calculators menu**, whose own button navigates nowhere
-(`data-bucket="calculators"`, no `data-target`), so `TOPNAV_BUCKETS` maps both pages to
-`calculators`. The current tab takes the accent underline the page tabs use. The page name
+eight tabs without icons, then the age field and a **Session** menu. **No tab opens a
+menu** (owner decision, 2026-09): Premorbid and Change Analysis lost theirs because each
+page has its own tab strip listing the same choices, and the Calculators menu became two
+tabs, Score Converter and Effect Sizes, as they are separate pages. §46 lets the five
+Change Analysis methods count as reached through that tab, reading them from the page's
+own `methods` roster. The current tab takes the accent underline the page tabs use. The page name
 beside the logo is **screen-reader only** now (`#topbar-page-title` is still written by
 `syncTopnav`); the highlighted tab says it on screen.
 
 - **Session holds Save, Open and New patient**, New patient set apart in red. It opens on
-  **click**, not hover like the tab menus, because it holds an action that clears
+  **click**, not hover, because it holds an action that clears
   everything. Escape and a click elsewhere close it; arrow keys move within it. The three
   items keep their ids, so the handlers are unchanged. **Ctrl+S (Cmd+S) saves the session**
   (`wireSessionMenu`), which puts Save back at one action after it moved into a menu.
 - **The age field is a plain label and box.** The grey uppercase chip read as disabled. Its
   state classes are unchanged (§26); `.is-wanted` now dashes the box itself.
 - **It fits by steps, measured on the live bar, not the mock-up** (which ran 36 px light,
-  missing the age field's "in use" pip). At 1366 the row needs 1405 of 1518 layout px.
-  Below a 1279 px window the wordmark text goes (the mark stays); below 1099 the tab padding
-  tightens to 7 px; below 1059 the "Age" and "Session" words go (the box and icon stay,
-  names kept for screen readers). That fits to about 955 px. Below 959 the tabs scroll
-  sideways, and **the three tab menus cannot open there**, because a scrolling box clips
-  what pops out of it; it is not a supported width. A breakpoint set from an estimate
+  missing the age field's "in use" pip). Re-measured after the split into eight tabs: at
+  1366 there are 47 layout px to spare. Below a 1339 px window the wordmark text goes (the
+  mark stays); below 1169 the tab padding tightens to 7 px; below 1109 the "Age" and
+  "Session" words go (the box and icon stay, names kept for screen readers). That fits to
+  1036 px. Below 1039 the tabs scroll sideways; it is not a supported width. A breakpoint set from an estimate
   clipped a tab by 1 px at 1262 before these were measured, so **re-measure if anything
   joins the row.**
 

@@ -9555,11 +9555,9 @@ function renderTermsStatus(){
 (function(){
   const TOPNAV_BUCKETS = {
     home: 'home',
-    /* Both calculators live in the one Calculators menu (2026-09), so either
-       page lights that tab. */
-    converter: 'calculators',
+    converter: 'converter',
     battery: 'battery',
-    effectsize: 'calculators',
+    effectsize: 'effectsize',
     // All change-analysis methods map to the "change" bucket
     sdi: 'change',
     'rci-basic': 'change',
@@ -9601,13 +9599,9 @@ function renderTermsStatus(){
     const active = document.querySelector('.section.active');
     const id = active ? active.id : 'home';
     const bucket = TOPNAV_BUCKETS[id] || 'home';
-    // Highlight the matching topnav button (and its parent group, if dropdown)
+    // Highlight the matching topnav button
     document.querySelectorAll('.topnav-item').forEach(b => {
       b.classList.toggle('active', b.dataset.bucket === bucket);
-    });
-    // Also mark the active dropdown item so it shows highlighted on hover
-    document.querySelectorAll('.topnav-drop-item').forEach(b => {
-      b.classList.toggle('active', b.dataset.target === id);
     });
     // Mark active footer link (Norms / Methods & References)
     document.querySelectorAll('.site-footer-link').forEach(b => {
