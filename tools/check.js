@@ -9264,7 +9264,10 @@ check('no two measures that overlap can be profiled together', () => {
     ],
     rbans: [
       ['TS', 'IM', 'the Total Scale and an index it is built from'],
-      ['TS', 'DM', 'the Total Scale and an index it is built from']
+      ['TS', 'DM', 'the Total Scale and an index it is built from'],
+      ['IM', 'LL', 'an index and its own subtest'],
+      ['DM', 'FR', 'an index and its own subtest'],
+      ['TS', 'CD', 'the Total Scale and a subtest two levels down']
     ]
   };
   const MAY = {
@@ -9280,7 +9283,7 @@ check('no two measures that overlap can be profiled together', () => {
        are both "working memory" and share nothing, which is the case most
        likely to be blocked by someone reading names rather than members. */
     w4wm4: [['WMI', 'VWMI'], ['VCI', 'AMI'], ['PRI', 'VMI'], ['PSI', 'IMI'], ['DS', 'SA'], ['VC', 'LM1']],
-    rbans: [['IM', 'DM'], ['VSC', 'ATT'], ['LAN', 'DM']]
+    rbans: [['IM', 'DM'], ['VSC', 'ATT'], ['LAN', 'DM'], ['LL', 'SR'], ['SM', 'SR'], ['IM', 'SR']]
   };
 
   for (const { inst, keys, M } of mod.each()) {
@@ -10738,7 +10741,7 @@ check('the joint profile admits the WMS-IV Adult battery only', () => {
 });
 
 
-heading('57. RBANS Update Table 4.1 — the index intercorrelations');
+heading('57. RBANS Update Table 4.1 — the intercorrelations');
 
 /* The Total Scale is the five indices summed, all on SD 15, so its
    correlation with each index is fixed by the ten index-index cells:
@@ -10771,24 +10774,72 @@ check('the RBANS index block matches the printed page', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
-/* NO SUBTEST CELL UNTIL THE PAGE IS RE-READ. The subtest block as supplied
-   forces r(Immediate Memory, Attention) to at least .74 against a printed
-   .37, so it cannot be right. And only Form A is admitted: Table 4.1 is the
-   Form A sample. And the chip labels must be names: 'VC' would read as WAIS-IV
-   Vocabulary. */
-check('RBANS is profiled on Form A indices only, with readable labels', () => {
+/* THE SUBTEST BLOCK, verbatim, and the arithmetic that places the shaded
+   cells. A two-subtest index corrected for overlap is the other subtest, so
+   its shaded cell must equal the partner correlation; and each index's
+   shaded cell against the Total Scale follows from the index block. */
+check('the RBANS subtest block matches the page, and the shaded cells are placed by arithmetic', () => {
   const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
   const bad = [];
-  if (R.order.join() !== 'IM,VSC,ATT,LAN,DM,TS') bad.push('the matrix holds more than the index block: ' + R.order.join());
+  const PAGE = {
+    SM: [.73], FC: [.56, .64], SF: [.71, .71, .62], DS: [.67, .68, .57, .70], CD: [.52, .55, .49, .55, .53],
+    SR: [.73, .80, .69, .74, .71, .56], FR: [.67, .69, .72, .71, .68, .53, .75]
+  };
+  const S = ['LL', 'SM', 'FC', 'SF', 'DS', 'CD', 'SR', 'FR'];
+  for (const a in PAGE) PAGE[a].forEach((v, j) => {
+    if (R.r[a + '|' + S[j]] !== v) bad.push(a + '|' + S[j] + ' is ' + R.r[a + '|' + S[j]] + ', printed ' + v);
+  });
+  const C = R.rCorrectedToComposite || {};
+  for (const [a, b, pair] of [['LL', 'IM', 'SM|LL'], ['SM', 'IM', 'SM|LL'], ['DS', 'ATT', 'CD|DS'], ['CD', 'ATT', 'CD|DS']]) {
+    if (C[a + '|' + b] !== R.r[pair]) bad.push(a + ' against ' + b + ' corrected should equal ' + pair + ' (' + R.r[pair] + '), is ' + C[a + '|' + b]);
+  }
+  const idx = ['IM', 'VSC', 'ATT', 'LAN', 'DM'];
+  const g = (a, b) => (a === b ? 1 : (R.order.indexOf(a) > R.order.indexOf(b) ? R.r[a + '|' + b] : R.r[b + '|' + a]));
+  for (const a of idx) {
+    const o = idx.filter(x => x !== a);
+    let num = 0, den = 0; for (const b of o) { num += g(a, b); for (const c of o) den += g(b, c); }
+    if (Math.abs(num / Math.sqrt(den) - C[a + '|TS']) > 0.01) bad.push(a + ' against TS corrected is ' + C[a + '|TS'] + ', the index block gives ' + (num / Math.sqrt(den)).toFixed(3));
+  }
+  const n = R.order.length;
+  if (Object.keys(R.r).length !== n * (n - 1) / 2) bad.push('the lower triangle is not complete');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE TWO BLOCKS DO NOT RECONCILE, as printed. Every Immediate Memory x
+   Attention subtest cell is .52 or more, which forces r(IM, AT) to at least
+   .52 under any positive weighting; the index block prints .37. Pinned so a
+   later edit to either block cannot hide it, and so a level can never mix
+   them: each level must lie wholly inside one block. */
+check('the RBANS subtest and index blocks are never mixed, and their gap is pinned', () => {
+  const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
+  const bad = [];
+  const cross = ['DS|LL', 'DS|SM', 'CD|LL', 'CD|SM'].map(k => R.r[k]);
+  if (!(Math.min(...cross) >= 0.52 && R.r['ATT|IM'] === 0.37)) bad.push('the documented gap between the blocks has changed: re-read RBANS_INTERCORR before editing either block');
   let mod; try { mod = driveProfRules(); } catch (e) { return 'could not drive the registry: ' + e.message; }
   const inst = mod.PROF_INSTRUMENTS.find(x => x.id === 'rbans');
   if (!inst) return 'RBANS is not in the registry';
+  const subs = ['LL', 'SM', 'FC', 'SF', 'DS', 'CD', 'SR', 'FR'];
+  for (const l of inst.levels) {
+    const s = l.keys.filter(k => subs.includes(k)).length;
+    if (s && s !== l.keys.length) bad.push(l.id + ' mixes subtests and indices');
+  }
+  if (inst.levels.flatMap(l => l.keys).includes('TS')) bad.push('the Total Scale is offered beside the indices it sums');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Form A only, and chips that read as names. */
+check('RBANS admits Form A only, with readable chip labels', () => {
+  const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
+  let mod; try { mod = driveProfRules(); } catch (e) { return 'could not drive the registry: ' + e.message; }
+  const inst = mod.PROF_INSTRUMENTS.find(x => x.id === 'rbans');
+  const bad = [];
   const groups = Object.keys(D.normDB).filter(g => inst.groupRe.test(g));
-  if (!groups.includes('RBANS Indices · All Ages')) bad.push('the Score Tables RBANS group is not admitted');
-  for (const g of groups) if (/Form [B-D]/.test(g) || !/^RBANS Indices/.test(g)) bad.push(g + ' is admitted');
-  const offered = inst.levels.flatMap(l => l.keys);
-  if (offered.includes('TS')) bad.push('the Total Scale is offered beside the indices it sums');
-  for (const k of offered) if (!R.short || !R.short[k] || R.short[k].length < 5) bad.push(k + ' has no readable chip label');
+  for (const want of ['RBANS Indices · All Ages', 'RBANS Subtests · All Ages']) if (!groups.includes(want)) bad.push(want + ' is not admitted');
+  for (const g of groups) if (/Form [B-D]/.test(g)) bad.push(g + ' is admitted');
+  for (const k of ['IM', 'VSC', 'ATT', 'LAN', 'DM']) if (!R.short || !R.short[k] || R.short[k].length < 5) bad.push(k + ' has no readable chip label');
+  /* Subtest chips show the label, which is the normDB name the score is joined on. */
+  const names = Object.keys(D.normDB['RBANS Subtests · All Ages']);
+  for (const k of ['LL', 'SM', 'FC', 'SF', 'DS', 'CD', 'SR', 'FR']) if (!names.includes(R.labels[k])) bad.push(k + ' is not a Score Tables name');
   if (!/M\.short/.test(extractFn(PROF_SRC, 'profShortLabel'))) bad.push('the chip does not use the short labels');
   return bad.length === 0 || bad.join('; ');
 });

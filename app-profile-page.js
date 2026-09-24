@@ -141,11 +141,16 @@
       DMI:  ['LM2', 'VPA2', 'VR2'],
       VPA2: ['VPAWR']
     },
-    /* RBANS: the Total Scale is the five indices. Only the indices are
-       offered (see RBANS_INTERCORR for why no subtests), so this rule has
-       only the Total to keep out, and the Total is not offered either. */
+    /* RBANS. Line Orientation, Picture Naming, List Recall and List
+       Recognition are named so each index holds its real members, though
+       those four are not in Table 4.1 and cannot be profiled. */
     rbans: {
-      TS: ['IM', 'VSC', 'ATT', 'LAN', 'DM']
+      IM:  ['LL', 'SM'],
+      VSC: ['FC', 'LO'],
+      ATT: ['DS', 'CD'],
+      LAN: ['PN', 'SF'],
+      DM:  ['LR', 'LRG', 'SR', 'FR'],
+      TS:  ['IM', 'VSC', 'ATT', 'LAN', 'DM']
     }
   };
   /* Block Design No Time Bonus is the SAME administration rescored - the
@@ -271,17 +276,18 @@
 
        No process-score level: Table 4.12 has no WAIS-IV process scores, and
        WMS-IV process scores alone are the WMS-IV tab's own level. */
-    /* RBANS Update, Form A, Table 4.1. INDICES ONLY: the subtest block of
-       the table as supplied contradicts its own index block, so it is not
-       stored and no subtest level exists. The Total Scale is left out for
-       the reason FSIQ is: it is the five indices summed. Forms B-D have no
-       published intercorrelations here, so the pattern does not admit them. */
+    /* RBANS Update, Form A, Table 4.1. The Total Scale is left out for the
+       reason FSIQ is: it is the five indices summed. Forms B-D have no
+       published intercorrelations here, so the pattern does not admit them.
+       The two levels read two blocks of the table that do not reconcile
+       with each other (see RBANS_INTERCORR); a level never mixes them. */
     { id:'rbans', label:'RBANS', name:'RBANS',
-      groupRe: /^RBANS Indices · /,
+      groupRe: /^RBANS (Indices|Subtests) · /,
       composites: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'],
       matrix: () => (typeof RBANS_INTERCORR !== 'undefined') ? RBANS_INTERCORR : null,
       levels: [
-        { id:'rb-indices', label:'Indices', keys:['IM', 'VSC', 'ATT', 'LAN', 'DM'] }
+        { id:'rb-indices', label:'Indices', keys:['IM', 'VSC', 'ATT', 'LAN', 'DM'] },
+        { id:'rb-sub', label:'Subtests', keys:['LL', 'SM', 'FC', 'SF', 'DS', 'CD', 'SR', 'FR'] }
       ] },
     { id:'w4wm4', label:'WAIS-IV + WMS-IV', name:'WAIS-IV and WMS-IV',
       joint: ['wais4', 'wms4'],

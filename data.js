@@ -476,44 +476,64 @@ const WAIS4_WMS4_JOINT = (function(){
    RBANS_INTERCORR — RBANS Update Manual (Randolph, 2012), Table 4.1,
    "Intercorrelations of RBANS Subtest and Index Scores, Ages 12-89"
 
-   ONLY THE INDEX BLOCK IS STORED, and that is deliberate. Same note as the
-   Wechsler tables: uncorrected below the diagonal, corrected (shaded)
-   above. The six index rows (five indices and the Total Scale) are stored
-   from the lower triangle.
+   Same note as the Wechsler tables: "Uncorrected coefficients appear below
+   diagonal and corrected coefficients appear above the diagonal in the
+   shaded area." The lower triangle is stored in `r`, and it alone enters
+   the simulation. The table covers the 8 subtests that yield scaled scores;
+   Line Orientation, Picture Naming, List Recall and List Recognition are
+   not in it, so they cannot be profiled.
 
-   THE SUBTEST BLOCK AS RECEIVED CONTRADICTS ITSELF, so none of it is here.
-   The table was supplied as an Excel sheet extracted from the page. Its
-   subtest rows carry a value on the diagonal (a cell a correlation table
-   cannot have), and its subtest-subtest values are far too high for the
-   index cells beside them. Immediate Memory is List Learning + Story
-   Memory and Attention is Digit Span + Coding, so the four cross cells as
-   received (LL-DS .67, LL-CD .52, SM-DS .68, SM-CD .55, with LL-SM .73 and
-   DS-CD .53) force r(IM, AT) to be at least .74. The index block prints
-   .37. One of the two blocks is misread, and the index block is the one
-   that checks out (below). No subtest cell may be stored until the page is
-   read again.
+   THE SHADED CELLS. The Excel extraction this came from put one shaded value
+   at the end of eleven rows. Their columns are fixed by arithmetic, not by
+   position:
+     - Index rows: the value is the index against the Total Scale, corrected
+       for overlap. r(index, TS minus that index), computed from the index
+       block alone, gives .623 .406 .456 .535 .593 against printed .63 .40
+       .46 .54 .59.
+     - List Learning, Story Memory, Digit Span, Coding: the value is the
+       subtest against its own two-subtest index, corrected. Removing the
+       subtest leaves only its partner, so the corrected value must equal
+       the partner correlation, and it does: .73 = r(LL,SM), .53 = r(DS,CD).
+     - Figure Copy .74 and Semantic Fluency .59 cannot be placed this way:
+       their partners (Line Orientation, Picture Naming) are not in the table.
+       They are kept below with their column marked unverified.
+   The shaded cells are stored, never used, exactly as for the Wechsler
+   tables.
 
-   TRANSCRIPTION PROOF FOR WHAT IS STORED. The Total Scale is built from
-   the five indices, so its correlation with each index follows from the
-   ten index-index cells alone: corr(I, sum) = sum_j r(I,j) / sqrt(sum_jk
-   r(j,k)), all SDs being 15. All five predictions land on the printed
-   value at 2 dp (.78 .63 .66 .72 .76). check.js §57 re-runs it.
+   TWO CHECKS, ONE PER BLOCK. The index block: the Total Scale is the five
+   indices summed, all on SD 15, so its column follows from the ten index
+   cells, and all five land on the printed value at 2 dp. The subtest block:
+   the four shaded equalities above. check.js §57 runs both.
 
-   FORM A ONLY. The table is the Form A normative sample. normDB also holds
-   Forms B, C and D; the Profile page's pattern does not admit them, as no
-   published intercorrelation exists for them here.
+   THE TWO BLOCKS DO NOT RECONCILE WITH EACH OTHER, and that is a property of
+   the table as printed, not of this file. Every Immediate Memory x Attention
+   subtest cell is .52 or more, which forces r(IM, AT) to at least .52 under
+   any positive weighting, and the index block prints .37. Likewise List
+   Learning correlates .73 with Story Memory but .55 with the index made of
+   the two. The page never mixes them: an Indices profile reads only index
+   cells and a Subtests profile only subtest cells, and each block passes its
+   own check. §57 pins the gap so a later edit to either block cannot hide it.
 
-   Ages 12-89 pooled, so one matrix serves every RBANS patient; there is no
-   battery choice to make, unlike WMS-IV.
+   FORM A ONLY: the table is the Form A sample, and the Profile page's
+   pattern admits no Form B-D group. Ages 12-89 pooled, so one matrix serves
+   every RBANS patient.
 
-   Keys are this file's own: the manual has no abbreviations, and 'VC'
-   would read as WAIS-IV Vocabulary on a chip. `short` is the chip text.
+   Keys are this file's own (the manual has no abbreviations; 'VC' would read
+   as WAIS-IV Vocabulary on a chip). `short` is the chip text for an index.
    ============================================================ */
 const RBANS_INTERCORR = {
   source: 'RBANS Update Manual (Randolph, 2012), Table 4.1: Intercorrelations of RBANS Subtest and Index Scores, Ages 12-89',
   citation: 'RBANS Update Manual (Randolph, 2012), Table 4.1',
-  order: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'],
+  order: ['LL', 'SM', 'FC', 'SF', 'DS', 'CD', 'SR', 'FR', 'IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'],
   labels: {
+    'LL':  'List Learning',
+    'SM':  'Story Memory',
+    'FC':  'Figure Copy',
+    'SF':  'Semantic Fluency',
+    'DS':  'Digit Span',
+    'CD':  'Coding',
+    'SR':  'Story Recall',
+    'FR':  'Figure Recall',
     'IM':  'Immediate Memory',
     'VSC': 'Visuospatial/Constructional',
     'ATT': 'Attention',
@@ -524,16 +544,32 @@ const RBANS_INTERCORR = {
   short: { 'IM':'Immediate', 'VSC':'Visuospatial', 'ATT':'Attention', 'LAN':'Language', 'DM':'Delayed', 'TS':'Total' },
   restrictedTo16_69: [],
   r: {
-    'VSC|IM':0.29,
-    'ATT|IM':0.37, 'ATT|VSC':0.29,
-    'LAN|IM':0.47, 'LAN|VSC':0.31, 'LAN|ATT':0.38,
-    'DM|IM':0.64,  'DM|VSC':0.34,  'DM|ATT':0.32,  'DM|LAN':0.40,
-    'TS|IM':0.78,  'TS|VSC':0.63,  'TS|ATT':0.66,  'TS|LAN':0.72, 'TS|DM':0.76,
+    'SM|LL':0.73,
+    'FC|LL':0.56, 'FC|SM':0.64,
+    'SF|LL':0.71, 'SF|SM':0.71, 'SF|FC':0.62,
+    'DS|LL':0.67, 'DS|SM':0.68, 'DS|FC':0.57, 'DS|SF':0.70,
+    'CD|LL':0.52, 'CD|SM':0.55, 'CD|FC':0.49, 'CD|SF':0.55, 'CD|DS':0.53,
+    'SR|LL':0.73, 'SR|SM':0.80, 'SR|FC':0.69, 'SR|SF':0.74, 'SR|DS':0.71, 'SR|CD':0.56,
+    'FR|LL':0.67, 'FR|SM':0.69, 'FR|FC':0.72, 'FR|SF':0.71, 'FR|DS':0.68, 'FR|CD':0.53, 'FR|SR':0.75,
+    'IM|LL':0.55, 'IM|SM':0.53, 'IM|FC':0.21, 'IM|SF':0.30, 'IM|DS':0.23, 'IM|CD':0.21, 'IM|SR':0.44, 'IM|FR':0.26,
+    'VSC|LL':0.23, 'VSC|SM':0.24, 'VSC|FC':0.48, 'VSC|SF':0.23, 'VSC|DS':0.15, 'VSC|CD':0.20, 'VSC|SR':0.26, 'VSC|FR':0.31, 'VSC|IM':0.29,
+    'ATT|LL':0.29, 'ATT|SM':0.30, 'ATT|FC':0.22, 'ATT|SF':0.28, 'ATT|DS':0.50, 'ATT|CD':0.42, 'ATT|SR':0.31, 'ATT|FR':0.26, 'ATT|IM':0.37, 'ATT|VSC':0.29,
+    'LAN|LL':0.35, 'LAN|SM':0.30, 'LAN|FC':0.21, 'LAN|SF':0.50, 'LAN|DS':0.25, 'LAN|CD':0.24, 'LAN|SR':0.31, 'LAN|FR':0.24, 'LAN|IM':0.47, 'LAN|VSC':0.31, 'LAN|ATT':0.38,
+    'DM|LL':0.35, 'DM|SM':0.29, 'DM|FC':0.23, 'DM|SF':0.24, 'DM|DS':0.16, 'DM|CD':0.20, 'DM|SR':0.34, 'DM|FR':0.39, 'DM|IM':0.64, 'DM|VSC':0.34, 'DM|ATT':0.32, 'DM|LAN':0.40,
+    'TS|LL':0.50, 'TS|SM':0.47, 'TS|FC':0.36, 'TS|SF':0.43, 'TS|DS':0.35, 'TS|CD':0.35, 'TS|SR':0.47, 'TS|FR':0.41, 'TS|IM':0.78, 'TS|VSC':0.63, 'TS|ATT':0.66, 'TS|LAN':0.72, 'TS|DM':0.76,
   },
-  /* The manual's own row. Unlike the Wechsler tables these are index
-     scores on 100/15, not sums of scaled scores. */
-  mean: {'IM':100, 'VSC':100, 'ATT':100, 'LAN':100, 'DM':100, 'TS':100},
-  sd:   {'IM':15, 'VSC':15, 'ATT':15, 'LAN':15, 'DM':15, 'TS':15}
+  /* The shaded (corrected) cells, placed by the arithmetic above. Never
+     used by the simulation. */
+  rCorrectedToComposite: {
+    'LL|IM':0.73, 'SM|IM':0.73, 'DS|ATT':0.53, 'CD|ATT':0.53,
+    'IM|TS':0.63, 'VSC|TS':0.40, 'ATT|TS':0.46, 'LAN|TS':0.54, 'DM|TS':0.59,
+  },
+  /* Shaded values whose column the arithmetic cannot confirm: own index or
+     Total Scale. Stored as received so nothing on the page is dropped. */
+  rCorrectedColumnUnverified: { 'FC':0.74, 'SF':0.59 },
+  /* The manual's own rows. Subtests are scaled (10/3), indices 100/15. */
+  mean: {'LL':10, 'SM':10, 'FC':10, 'SF':10, 'DS':10, 'CD':10, 'SR':9.9, 'FR':10, 'IM':100, 'VSC':100, 'ATT':100, 'LAN':100, 'DM':100, 'TS':100},
+  sd:   {'LL':3, 'SM':2.9, 'FC':2.9, 'SF':3, 'DS':3, 'CD':3, 'SR':2.9, 'FR':3, 'IM':15, 'VSC':15, 'ATT':15, 'LAN':15, 'DM':15, 'TS':15}
 };
 
 // ToPF Raw (0-70) → estimated FSIQ
