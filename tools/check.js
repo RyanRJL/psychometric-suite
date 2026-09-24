@@ -7577,6 +7577,10 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
     const sum = extractFn(APP_SRC, 'renderPvtSummary');
     if (!/up to 7 to 9 measures are given \(Larrabee, 2014; Sweet et al\., 2021\)/.test(sum)) bad.push('the verdict lost the AACN range for the two-failure rule');
     if (!/dementia[\s\S]*severe TBI with prolonged coma[\s\S]*24-hour supervision \(Sweet et al\., 2021\)/.test(sum)) bad.push('the verdict lost the groups in which credible patients fail two');
+    /* The threshold is the consensus statement's as well as Larrabee's, so
+       every place that states it names both (owner correction, 2026-09). */
+    if (!/pvt-verdict-rule[^\n]*\(Larrabee, 2014; Sweet et al\., 2021\)/.test(sum)) bad.push('the threshold beside the count no longer cites the AACN consensus statement');
+    if (!/AACN consensus statement supports the same threshold when up to 7 to 9 measures are given \(Sweet et al\., 2021\)/.test(HTML_SRC)) bad.push('the Larrabee card no longer names the AACN consensus statement');
     if (!/RDS &le; 6 gave a 13% false-positive rate \(Loring et al\., 2016, as reported by Sweet et al\., 2021\)/.test(HTML_SRC)) bad.push('the RDS caution lost the early-AD false-positive rate');
     if ((HTML_SRC.match(/Sweet, J\. J\., Heilbronner, R\. L\.[^<]*\(2021\)/g) || []).length < 2) bad.push('Sweet et al. (2021) is cited but missing from a references list');
   }

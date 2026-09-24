@@ -8335,7 +8335,7 @@ function renderPvtSummary(){
         <div class="pvt-verdict-meta">${c.total} of ${PVT_INDICATOR_GROUPS.length} indicators scored${
           unscored.length && c.total > 0 ? ` &middot; not yet scored: ${unscored.join(', ')}` : ''}</div>
       </div>
-      <div class="pvt-verdict-rule"><strong>≥ 2 independent failures</strong> support probable invalidity (Larrabee, 2014)</div>
+      <div class="pvt-verdict-rule"><strong>≥ 2 independent failures</strong> support probable invalidity (Larrabee, 2014; Sweet et al., 2021)</div>
     </div>`;
   }
 
