@@ -8255,7 +8255,11 @@ function renderPvtSummary(){
     } else {
       kind = c.failed >= 2 ? 'fail' : c.failed === 1 ? 'warn' : 'pass';
       head = `${c.failed} of ${c.total} independent indicator${c.total === 1 ? '' : 's'} failed`;
-      body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014). Weigh the count against the clinical and neurological picture before concluding.'
+      /* Sweet et al. (2021), AACN consensus, TCN 35(6): ">= 2 PVT or SVT
+         failures when up to 7 to 9 measures are administered" (p. 1091), and
+         the credible groups in which multiple failures do occur (pp. 1069,
+         1091-1092). This page counts at most five indicators, inside that range. */
+      body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity when up to 7 to 9 measures are given (Larrabee, 2014; Sweet et al., 2021). Credible patients can fail two in dementia (more often as it worsens), severe TBI with prolonged coma, schizophrenia with significant cognitive impairment, sometimes amnestic MCI, and when living with 24-hour supervision (Sweet et al., 2021). Weigh the count against the clinical and neurological picture.'
         : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).'
         : 'Nothing beyond its cut-off so far.';
     }

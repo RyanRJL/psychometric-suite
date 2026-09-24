@@ -7568,6 +7568,18 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
      without that context overstates what two failures mean. */
   /* Checked against the paper's text, 2026-09: it never advises leaning on
      forced-choice measures, so that advice may not carry this citation. */
+  /* Sweet et al. (2021), checked against the statement, 2026-09: >= 2 failures
+     is supported "when up to 7 to 9 measures are administered" (p. 1091), and
+     the groups in which credible patients fail several are listed (pp. 1069,
+     1091-1092). The verdict states both; the RDS caution carries the early-AD
+     figure the statement reports from Loring et al. (2016). */
+  {
+    const sum = extractFn(APP_SRC, 'renderPvtSummary');
+    if (!/up to 7 to 9 measures are given \(Larrabee, 2014; Sweet et al\., 2021\)/.test(sum)) bad.push('the verdict lost the AACN range for the two-failure rule');
+    if (!/dementia[\s\S]*severe TBI with prolonged coma[\s\S]*24-hour supervision \(Sweet et al\., 2021\)/.test(sum)) bad.push('the verdict lost the groups in which credible patients fail two');
+    if (!/RDS &le; 6 gave a 13% false-positive rate \(Loring et al\., 2016, as reported by Sweet et al\., 2021\)/.test(HTML_SRC)) bad.push('the RDS caution lost the early-AD false-positive rate');
+    if ((HTML_SRC.match(/Sweet, J\. J\., Heilbronner, R\. L\.[^<]*\(2021\)/g) || []).length < 2) bad.push('Sweet et al. (2021) is cited but missing from a references list');
+  }
   if (/lean on high-specificity forced-choice/.test(HTML_SRC)) bad.push('the aggregation card again attributes forced-choice advice to Larrabee (2014), which the paper does not give');
   if (!/substantial external incentive/.test(HTML_SRC)) bad.push('the aggregation card no longer names the external-incentive requirement');
   if (!/Slick, D\. J\., Sherman/.test(HTML_SRC)) bad.push('Slick et al. (1999) is cited on the page but missing from the references');
