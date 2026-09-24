@@ -8894,9 +8894,23 @@ check('every navigable section has a top-bar entry that is visible without a men
   /* Two live in the footer by design, and the top bar says so in a comment
      beside TOPNAV_BUCKETS. Anything else must be in the top bar proper. */
   const FOOTER_PAGES = new Set(['custom-tests', 'about', 'privacy-use']);
+  /* The five Change Analysis methods are tabs inside #change-analysis (the
+     inline script moves each panel in), so the Change Analysis tab is their
+     entry: the top-bar menu that repeated the page's own tab strip went
+     (owner decision, 2026-09). Read from the roster the script loops over,
+     not restated, so only a real method is let through. */
+  const methodSrc = HTML_SRC.slice(HTML_SRC.indexOf('const methods = ['));
+  const METHOD_IDS = new Set(
+    [...methodSrc.slice(0, methodSrc.indexOf('\n  ];')).matchAll(/id:'([a-z-]+)'/g)].map(m => m[1]));
+  if (METHOD_IDS.size < 5) return 'the Change Analysis method roster could not be read';
+  const changeTab = /<button[^>]*class="topnav-item[^"]*"[^>]*data-target="change-analysis"/.test(HTML_SRC);
   const bad = [];
   for (const id of ids) {
     if (FOOTER_PAGES.has(id)) continue;
+    if (METHOD_IDS.has(id)){
+      if (!changeTab) bad.push('#' + id + ' is a Change Analysis method and the top bar has no Change Analysis tab');
+      continue;
+    }
     /* Home's entry is the logo (one-row top bar, 2026-09): the Home tab was
        dropped because the logo already went there. */
     if (id === 'home'){
