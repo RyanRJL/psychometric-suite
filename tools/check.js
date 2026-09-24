@@ -7922,6 +7922,12 @@ check('the menu, the panels and the Summary cards list the same measures, groupe
   if (!/class="pvt-tab-content active" id="pvt-summary"/.test(vHtml)) bad.push('the page no longer opens on the Summary');
   if ((vHtml.match(/class="pvt-tab-content active"/g) || []).length !== 1) bad.push('more than one panel is active on load');
   if (/data-pvt-tab="about"|renderPvtAboutPanel|renderPvtRail/.test(HTML_SRC + APP_SRC)) bad.push('the About tab or the rail is back, restating the menu');
+  /* Every measure carries a way back to the Summary (owner request): one
+     button above the panels, hidden on the Summary itself. */
+  if (!/data-pvt-back/.test(vHtml)) bad.push('the Back to summary button is gone');
+  const setup = extractFn(APP_SRC, 'setupPvtPage');
+  if (!/\[data-pvt-back\][\s\S]{0,120}switchPvtTab\('summary'\)/.test(setup)) bad.push('Back to summary no longer returns to the Summary');
+  if (!/name === 'summary' \? 'none'/.test(extractFn(APP_SRC, 'pvtSyncDesc'))) bad.push('Back to summary is no longer hidden on the Summary');
 
   const src = APP_SRC.slice(APP_SRC.indexOf('const PVT_INDICATOR_GROUPS'));
   const lit = src.slice(src.indexOf('['), src.indexOf('];') + 1);

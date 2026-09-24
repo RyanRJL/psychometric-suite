@@ -9875,6 +9875,29 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   padding:18px 22px;
 }
 .pvt-sheet-main{min-width:0}
+/* Back to summary, with the page description beside it. */
+.pvt-sheet-head{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.pvt-sheet-head .pvt-desc-line{margin:0;flex:1;min-width:0}
+.pvt-back{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  flex:none;
+  padding:6px 12px 6px 9px;
+  border:1px solid rgba(156,61,42,0.30);
+  border-radius:var(--r-md);
+  background:#FFFFFF;
+  color:#9C3D2A;
+  font-family:var(--sans);
+  font-size:12.5px;
+  font-weight:600;
+  cursor:pointer;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.pvt-back svg{width:14px;height:14px}
+.pvt-back:hover{background:rgba(156,61,42,0.07);border-color:rgba(156,61,42,0.5)}
+.pvt-back:focus{outline:none}
+.pvt-back:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.3)}
 
 .pvt-tab-content{display:none}
 .pvt-tab-content.active{

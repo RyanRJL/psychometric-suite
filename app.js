@@ -7852,7 +7852,7 @@ function renderPvtEi(){
   const out = document.getElementById('pvt-ei-result');
   if (!out) return;
   const s = getPvtEi();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.', 'The result appears here and the outcome joins the running summary.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both raw scores to compute the Effort Index.', 'The result appears here and the outcome joins the Summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   const acc = PVT_EI_ACCURACY[s.cutKey];
@@ -7868,7 +7868,7 @@ function renderPvtEs(){
   const out = document.getElementById('pvt-es-result');
   if (!out) return;
   const s = getPvtEs();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.', 'The result appears here and the outcome joins the running summary.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter all five raw scores to evaluate the Effort Scale.', 'The result appears here and the outcome joins the Summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   if (s.gated){
@@ -7891,7 +7891,7 @@ function renderPvtRds(){
   const out = document.getElementById('pvt-rds-result');
   if (!out) return;
   const s = getPvtRds();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.', 'The result appears here and the outcome joins the running summary.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter both span lengths to compute Reliable Digit Span.', 'The result appears here and the outcome joins the Summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.partial); return; }
   const racc = PVT_RDS_ACCURACY[s.conservative ? 'conservative' : 'traditional'];
@@ -7906,7 +7906,7 @@ function renderPvtDs(){
   const out = document.getElementById('pvt-ds-result');
   if (!out) return;
   const s = getPvtDs();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.', 'The result appears here and the outcome joins the running summary.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score to evaluate this index.', 'The result appears here and the outcome joins the Summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Digit Span scaled score. Vocabulary alone computes nothing.'); return; }
   const dacc = PVT_DS_ACCURACY[s.conservative ? 'conservative' : 'sensitive'];
@@ -7948,7 +7948,7 @@ function renderPvtRey(){
   const out = document.getElementById('pvt-rey15-result');
   if (!out) return;
   const s = getPvtRey();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.', 'The result appears here and the outcome joins the running summary.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score to evaluate this test.', 'The result appears here and the outcome joins the Summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the free-recall score. The recognition trial alone computes nothing.'); return; }
   const rows = [{
@@ -7977,7 +7977,7 @@ function renderPvtTomm(){
   const power = document.getElementById('pvt-tomm-power');
   if (!out || !power) return;
   const s = getPvtTomm();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.', 'The result appears here and the outcome joins the running summary.'); power.innerHTML = ''; return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter at least one trial score to evaluate the TOMM.', 'The result appears here and the outcome joins the Summary.'); power.innerHTML = ''; return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
   out.innerHTML = pvtReadoutHtml(s.rows.map(r => ({
     label: `TOMM ${r.label}`, value: r.score, state: r.fail ? 'fail' : 'pass',
@@ -8148,7 +8148,7 @@ function renderPvtCvlt3(){
   const out = document.getElementById('pvt-cvlt3-result');
   if (!out) return;
   const s = getPvtCvlt3();
-  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits to look up its published base rate.', 'The result appears here and the outcome joins the running summary.'); return; }
+  if (s.empty){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits to look up its published base rate.', 'The result appears here and the outcome joins the Summary.'); return; }
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); return; }
   if (s.partial){ out.innerHTML = pvtResultHtml('empty', 'Enter the Forced Choice total hits. The critical-item counts are read against it.'); return; }
   const derived = s.basis.cut === null;
@@ -8512,18 +8512,19 @@ function switchPvtTab(name){
 }
 /* The Summary carries no description: its verdict states the count rule
    and "cut-off comparisons only" itself. The full line shows on every
-   measure. An inline display rather than [hidden], so no stylesheet
-   display rule can outrank it.
+   measure, beside the way back. An inline display rather than [hidden], so
+   no stylesheet display rule can outrank it.
 
    It sits at the top of the sheet, inside the card, rather than as a loose
    line above it: the only text on any tool page outside a card, as Change
    Analysis's formula line also was (UI audit, 2026-09). */
 function pvtSyncDesc(name){
+  /* The description shares a row with the Back to summary button, and
+     both belong to the measures only. */
+  const head = document.getElementById('pvt-sheet-head');
   const desc = document.getElementById('pvt-desc');
-  if (!desc) return;
-  const main = document.querySelector('#validity .pvt-sheet-main');
-  if (main && desc.parentElement !== main) main.prepend(desc);
-  desc.style.display = name === 'summary' ? 'none' : '';
+  if (head && desc && desc.parentElement !== head) head.append(desc);
+  if (head) head.style.display = name === 'summary' ? 'none' : '';
 }
 
 function clearPvt(){
@@ -8546,6 +8547,10 @@ function setupPvtPage(){
   /* The Summary's indicator cards double as the menu. Delegated, because
      they are rebuilt on every keystroke and bound handlers would not
      survive. */
+  root.querySelector('[data-pvt-back]')?.addEventListener('click', () => {
+    switchPvtTab('summary');
+    root.querySelector('.pvt-nav-summary')?.focus({ preventScroll: true });
+  });
   document.getElementById('pvt-summary-cards')?.addEventListener('click', e => {
     const row = e.target.closest('[data-pvt-go]');
     if (row) switchPvtTab(row.dataset.pvtGo);

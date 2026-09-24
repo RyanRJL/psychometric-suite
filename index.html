@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260924d">
-<link rel="stylesheet" href="design-system.css?v=20260924d">
+<link rel="stylesheet" href="styles.css?v=20260924e">
+<link rel="stylesheet" href="design-system.css?v=20260924e">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1537,6 +1537,15 @@
     <div class="pvt-main-col">
     <div class="pvt-sheet">
       <div class="pvt-sheet-main">
+        <!-- Above every measure, hidden on the Summary (pvtSyncDesc). The menu
+             already leads back, but a clinician deep in a measure should not
+             have to work out that its top entry is the way home. -->
+        <div class="pvt-sheet-head" id="pvt-sheet-head">
+          <button type="button" class="pvt-back" data-pvt-back>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>
+            Back to summary
+          </button>
+        </div>
     <!-- ===== Effort Index ===== -->
     <div class="pvt-tab-content" id="pvt-ei">
       <div class="pvt-workspace">
@@ -3241,12 +3250,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260924d"></script>
-<script src="app.js?v=20260924d"></script>
-<script src="design-system.js?v=20260924d" defer></script>
-<script src="app-effectsize-page.js?v=20260924d"></script>
-<script src="app-viz-page.js?v=20260924d"></script>
-<script src="app-profile-page.js?v=20260924d"></script>
+<script src="data.js?v=20260924e"></script>
+<script src="app.js?v=20260924e"></script>
+<script src="design-system.js?v=20260924e" defer></script>
+<script src="app-effectsize-page.js?v=20260924e"></script>
+<script src="app-viz-page.js?v=20260924e"></script>
+<script src="app-profile-page.js?v=20260924e"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
