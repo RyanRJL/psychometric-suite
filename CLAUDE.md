@@ -318,9 +318,19 @@ the same seven measures three times. Every surface reads `getPvtSummaryRows` /
   under "One indicator each": the first draft grouped TOMM and Rey under "Stand-alone",
   which reads as one indicator when the count treats them as two. §40 derives each
   heading's claim and compares it with `PVT_INDICATOR_GROUPS` and the rows' `group` keys.
-- **`.pvt-workspace.pvt-summary-lower` carries two classes on purpose.** `.pvt-workspace`
-  is declared later in `styles.css`, so a one-class rule lost the tie and the scores table
-  kept the measure panels' narrow split, wrapping every row to three lines.
+- **Restyled 2026-09 (UI audit, owner approved from a mock-up).** The per-indicator cards
+  under the verdict are gone: they restated the menu, whose chips already carry each
+  measure's state. The Summary is one column (verdict, scores once any exist, the Larrabee
+  card), the scores table carries the indicator grouping as group rows, and the empty
+  scores card and note stay hidden until something is scored. The page now uses the
+  design-system tokens and Inter only, on flat `--ds-surface` panels like Profile Analysis;
+  it had been the one tool page with serif headings and a cream-to-white sheet.
+- **Explainers never open inside half a column.** Opening one there left a block of empty
+  page beside it. Each measure's `formula-disclosure` sits in a full-width `.pvt-explain`
+  row under its workspace, and the workspace stretches so the input card matches the
+  result column however long the caution grows. §40 pins this, the removed cards, the
+  grouped table, and the reference list (it held Delis 2017 and Erdodi 2018 twice each,
+  and was out of order).
 
 ### `display:flex` on a table cell inflates the row
 

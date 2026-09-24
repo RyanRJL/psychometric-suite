@@ -5856,7 +5856,6 @@ body #change-analysis .change-overview-table td{
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
-body #validity .pvt-refs{ margin-top: 8px !important; padding-top: 4px !important; }
 
 /* Premorbid, ToPF and OPIE-4 tabs: the model / index column was squeezed
    by six numeric columns with room to spare, so "Verbal Comprehension Index"

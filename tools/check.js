@@ -7910,11 +7910,12 @@ check('the roster covers every method tab, and every method tab is in the roster
   return bad.length === 0 || bad.join('; ');
 });
 
-check('the menu, the panels and the Summary cards list the same measures, grouped the same way', () => {
+check('the menu, the panels and the Summary table list the same measures, grouped the same way', () => {
   /* The page lists its measures in three places: the left-hand menu
-     (markup), the method panels (markup) and the Summary's indicator cards
-     (PVT_INDICATOR_GROUPS). This replaced a tab strip whose hard-coded grid
-     column count had to be kept in step by hand. Nothing is restated here:
+     (markup), the method panels (markup) and PVT_INDICATOR_GROUPS, which
+     groups the Summary's scores table and orders the verdict pips. (It
+     also drew a card per indicator under the verdict until 2026-09, when
+     those were removed for restating the menu.) Nothing is restated here:
      each list is read from where it lives and compared with the others.
 
      The grouping matters more than the list. The count on the Summary is
@@ -7979,6 +7980,47 @@ check('the menu, the panels and the Summary cards list the same measures, groupe
       });
     }
   });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the page layout: no restated menu, explainers full width, references listed once and in order', () => {
+  /* UI audit, 2026-09. Four things made the page cluttered and uneven, each
+     pinned so it cannot come back unnoticed:
+     1. Indicator cards under the verdict restated the menu (same measures,
+        same grouping, eight "Score" links). The menu's chips carry state.
+     2. Every explainer opened inside half a column, so opening one left a
+        block of empty page beside it. On a measure panel it now sits in a
+        full-width .pvt-explain row under the workspace; on the Summary the
+        page is one column.
+     3. The scores table carries the indicator grouping the cards used to,
+        as group rows, so "counts as one" shows where results are read.
+     4. The reference list held Delis et al. (2017) and Erdodi et al. (2018)
+        twice each, and was out of alphabetical order (Martin after Sweet,
+        Denning between the two Delis entries). */
+  const bad = [];
+  const vStart = HTML_SRC.indexOf('<section class="section" id="validity">');
+  const vHtml = HTML_SRC.slice(vStart, HTML_SRC.indexOf('</section>', vStart));
+  if (/pvt-summary-cards|class="pvt-ind[ "-]/.test(vHtml) || /pvt-ind-grid|pvt-ind-row/.test(APP_SRC)) bad.push('the per-indicator Summary cards are back, restating the menu');
+  const tabs = [...vHtml.matchAll(/class="pvt-tab-content[^"]*" id="pvt-([a-z0-9]+)"/g)].map(m => m[1]).filter(t => t !== 'summary');
+  tabs.forEach(t => {
+    const s = vHtml.indexOf(`id="pvt-${t}"`);
+    const next = vHtml.indexOf('class="pvt-tab-content', s + 1);
+    const block = vHtml.slice(s, next < 0 ? undefined : next);
+    const card = block.slice(block.indexOf('<div class="pvt-card">'), block.indexOf('<div class="pvt-outcome">'));
+    if (/formula-disclosure/.test(card)) bad.push('the ' + t + ' explainer is back inside the input card, where it opens beside a shorter column');
+    if (!/<div class="pvt-explain">\s*<details class="formula-disclosure">/.test(block)) bad.push('the ' + t + ' panel has no full-width explainer row');
+  });
+  const sum = extractFn(APP_SRC, 'renderPvtSummary');
+  if (!/PVT_INDICATOR_GROUPS\.map\(g =>[\s\S]*pvt-group-row/.test(sum)) bad.push('the scores table is no longer grouped by independent indicator');
+  if (!/wrap\.hidden = rows\.length === 0/.test(sum)) bad.push('the empty scores card is shown again before anything is scored');
+  const refs = (vHtml.match(/<div class="references" id="pvt-references">([\s\S]*?)<\/div>/) || [])[1] || '';
+  const heads = [...refs.matchAll(/<p>([^<(]+)\(/g)].map(m => m[1].trim());
+  if (heads.length < 10) bad.push('the reference list could not be read');
+  const seen = new Set();
+  heads.forEach(h => { if (seen.has(h)) bad.push('reference listed twice: ' + h); seen.add(h); });
+  for (let i = 1; i < heads.length; i++) {
+    if (heads[i - 1].localeCompare(heads[i], 'en') > 0) bad.push('references out of order: ' + heads[i - 1].slice(0, 20) + ' before ' + heads[i].slice(0, 20));
+  }
   return bad.length === 0 || bad.join('; ');
 });
 

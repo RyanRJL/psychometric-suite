@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260924p">
-<link rel="stylesheet" href="design-system.css?v=20260924p">
+<link rel="stylesheet" href="styles.css?v=20260924q">
+<link rel="stylesheet" href="design-system.css?v=20260924q">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1569,24 +1569,6 @@
               </select>
             </div>
           </div>
-          <details class="formula-disclosure">
-            <summary>Formula &amp; weighting table</summary>
-            <div class="formula-body">
-              <p>Each raw score converts to a weighted score (Silverberg, Wertheimer &amp; Fichtenberg, 2007, Table 2); EI = weighted Digit Span + weighted List Recognition (range 0–12). Higher EI = less credible performance. Some weights are unreachable for a given subtest (Digit Span never yields 1 or 4).</p>
-              <table class="pvt-table">
-                <thead><tr><th>Digit Span (raw)</th><th>List Recognition (raw)</th><th>Weighted score</th></tr></thead>
-                <tbody>
-                  <tr><td>8–16</td><td>18–20</td><td>0</td></tr>
-                  <tr><td>—</td><td>17</td><td>1</td></tr>
-                  <tr><td>7</td><td>15–16</td><td>2</td></tr>
-                  <tr><td>6</td><td>13–14</td><td>3</td></tr>
-                  <tr><td>—</td><td>11–12</td><td>4</td></tr>
-                  <tr><td>5</td><td>10</td><td>5</td></tr>
-                  <tr><td>0–4</td><td>0–9</td><td>6</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-ei-result"></div>
@@ -1600,6 +1582,26 @@
             <span class="pvt-derived-line" data-pvt-derived="ei"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Formula &amp; weighting table</summary>
+          <div class="formula-body">
+            <p>Each raw score converts to a weighted score (Silverberg, Wertheimer &amp; Fichtenberg, 2007, Table 2); EI = weighted Digit Span + weighted List Recognition (range 0–12). Higher EI = less credible performance. Some weights are unreachable for a given subtest (Digit Span never yields 1 or 4).</p>
+            <table class="pvt-table">
+              <thead><tr><th>Digit Span (raw)</th><th>List Recognition (raw)</th><th>Weighted score</th></tr></thead>
+              <tbody>
+                <tr><td>8–16</td><td>18–20</td><td>0</td></tr>
+                <tr><td>—</td><td>17</td><td>1</td></tr>
+                <tr><td>7</td><td>15–16</td><td>2</td></tr>
+                <tr><td>6</td><td>13–14</td><td>3</td></tr>
+                <tr><td>—</td><td>11–12</td><td>4</td></tr>
+                <tr><td>5</td><td>10</td><td>5</td></tr>
+                <tr><td>0–4</td><td>0–9</td><td>6</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -1631,12 +1633,6 @@
             </div>
           </div>
           <div class="info-box pvt-note"><strong>Mandatory gate.</strong> Computed only where Digit Span &lt; 9, List Recognition &lt; 19, or their sum &lt; 28 (Novitski et al., 2012).</div>
-          <details class="formula-disclosure">
-            <summary>Formula</summary>
-            <div class="formula-body">
-              <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. The gate exists because in cognitively intact examinees free recall normally far exceeds the ceiling-limited recognition score, so an ungated ES over-flags; only 17% of the normal standardisation sample fall below the combined &lt; 28 screen. But 15.1% of that sample meet the screen and also score ES &lt; 12, so even with the gate roughly one healthy adult in seven would be flagged; Novitski et al. note the ES &ldquo;will produce high false positive rates in the normal population&rdquo;.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-es-result"></div>
@@ -1650,6 +1646,14 @@
             <span class="pvt-derived-line" data-pvt-derived="es"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Formula</summary>
+          <div class="formula-body">
+            <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. The gate exists because in cognitively intact examinees free recall normally far exceeds the ceiling-limited recognition score, so an ungated ES over-flags; only 17% of the normal standardisation sample fall below the combined &lt; 28 screen. But 15.1% of that sample meet the screen and also score ES &lt; 12, so even with the gate roughly one healthy adult in seven would be flagged; Novitski et al. note the ES &ldquo;will produce high false positive rates in the normal population&rdquo;.</p>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -1676,12 +1680,6 @@
             </div>
           </div>
           <div class="info-box pvt-note"><strong>Classic variant.</strong> Forward + Backward only; the WAIS-IV Sequencing variants use different cut-offs and are not scored here.</div>
-          <details class="formula-disclosure">
-            <summary>Scoring &amp; worked example</summary>
-            <div class="formula-body">
-              <p>RDS = (longest forward span passed on both trials) + (longest backward span passed on both trials) (Greiffenstein, Baker &amp; Gola, 1994; cross-validated by Meyers &amp; Volbrecht, 1998). The classic Forward + Backward variant is what the validation literature uses. Document which variant you administered. Floor rule: failing at least one trial each of 3 forward and 2 backward is recorded as RDS = 3. Worked example from the original paper: passes both trials of 3 forward but fails one 4-forward trial → forward = 3; passes both trials of 2 backward but fails one 3-backward trial → backward = 2; RDS = 3 + 2 = 5. Reference values: mean RDS ~8.8 in non-malingering TBI vs ~6.7 in probable malingerers.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-rds-result"></div>
@@ -1695,6 +1693,14 @@
             <span class="pvt-derived-line" data-pvt-derived="rds"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Scoring &amp; worked example</summary>
+          <div class="formula-body">
+            <p>RDS = (longest forward span passed on both trials) + (longest backward span passed on both trials) (Greiffenstein, Baker &amp; Gola, 1994; cross-validated by Meyers &amp; Volbrecht, 1998). The classic Forward + Backward variant is what the validation literature uses. Document which variant you administered. Floor rule: failing at least one trial each of 3 forward and 2 backward is recorded as RDS = 3. Worked example from the original paper: passes both trials of 3 forward but fails one 4-forward trial → forward = 3; passes both trials of 2 backward but fails one 3-backward trial → backward = 2; RDS = 3 + 2 = 5. Reference values: mean RDS ~8.8 in non-malingering TBI vs ~6.7 in probable malingerers.</p>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -1728,12 +1734,6 @@
               </select>
             </div>
           </div>
-          <details class="formula-disclosure">
-            <summary>Indices &amp; base rates</summary>
-            <div class="formula-body">
-              <p>The Digit Span age-corrected scaled score is entered as scored on the record form. The age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease (Iverson &amp; Tulsky's suspicion guideline). Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from TBI patients in neurorehabilitation (sens. .75, spec. .69, with .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Iverson &amp; Tulsky give three further suspicion indices, each evaluated against base rates: a Vocabulary − Digit Span difference ≥ 5 (7.1% of the standardisation sample, 2.8% of the combined clinical sample), a longest span forward ≤ 4 applicable only under age 55 (base rates 2.5–5.5% in the under-55 bands, rising to 9.5–12.7% from age 55, which is why the index is age-limited; the app reads the top-bar patient age and withholds it without one), and a longest span backward ≤ 2 (2.0–6.0% across all bands, 3.4% clinical). The longest spans here are the longest passed on <em>either</em> trial, as the standardisation data tabulate them, not the RDS both-trials span. Both papers derive from the WAIS-III. Document the edition administered.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-ds-result"></div>
@@ -1747,6 +1747,14 @@
             <span class="pvt-derived-line" data-pvt-derived="ds"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Indices &amp; base rates</summary>
+          <div class="formula-body">
+            <p>The Digit Span age-corrected scaled score is entered as scored on the record form. The age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease (Iverson &amp; Tulsky's suspicion guideline). Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from TBI patients in neurorehabilitation (sens. .75, spec. .69, with .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Iverson &amp; Tulsky give three further suspicion indices, each evaluated against base rates: a Vocabulary − Digit Span difference ≥ 5 (7.1% of the standardisation sample, 2.8% of the combined clinical sample), a longest span forward ≤ 4 applicable only under age 55 (base rates 2.5–5.5% in the under-55 bands, rising to 9.5–12.7% from age 55, which is why the index is age-limited; the app reads the top-bar patient age and withholds it without one), and a longest span backward ≤ 2 (2.0–6.0% across all bands, 3.4% clinical). The longest spans here are the longest passed on <em>either</em> trial, as the standardisation data tabulate them, not the RDS both-trials span. Both papers derive from the WAIS-III. Document the edition administered.</p>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -1773,12 +1781,6 @@
             <button type="button" class="btn" id="pvt-rey-administer">Administer on screen</button>
             <span class="rey-admin-hint">Times the 10-second exposure and scores the recognition trial. Displays test stimuli: start only with the examinee present.</span>
           </div>
-          <details class="formula-disclosure">
-            <summary>Scoring &amp; administration</summary>
-            <div class="formula-body">
-              <p>Combination score = free recall + (recognition correct − false positives), cut-off &lt; 20; the classic free-recall cut-off is &lt; 9 (Boone et al., 2002, Table 6; the combination raises sensitivity from .47 to .71 at comparable specificity). Administration: expose the stimulus page for 10 seconds ("there are 15 different things so you will have to learn them very quickly"), remove it and have the examinee draw what they remember; then present the recognition page ("on this page are the 15 things I showed you as well as 15 items that were not on the page, circle the things you remember"). The stimulus and recognition pages are deliberately not reproduced here.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-rey15-result"></div>
@@ -1792,6 +1794,14 @@
             <span class="pvt-derived-line" data-pvt-derived="rey15"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Scoring &amp; administration</summary>
+          <div class="formula-body">
+            <p>Combination score = free recall + (recognition correct − false positives), cut-off &lt; 20; the classic free-recall cut-off is &lt; 9 (Boone et al., 2002, Table 6; the combination raises sensitivity from .47 to .71 at comparable specificity). Administration: expose the stimulus page for 10 seconds ("there are 15 different things so you will have to learn them very quickly"), remove it and have the examinee draw what they remember; then present the recognition page ("on this page are the 15 things I showed you as well as 15 items that were not on the page, circle the things you remember"). The stimulus and recognition pages are deliberately not reproduced here.</p>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -1829,16 +1839,6 @@
               <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-crit-recog" placeholder="e.g. 0">
             </div>
           </div>
-          <details class="formula-disclosure">
-            <summary>How the cut-off is set, and why it changes with age</summary>
-            <div class="formula-body">
-              <p><strong>No published cut-off.</strong> The CVLT-3 manual gives no cut score for Forced Choice. Table D.13 gives, by age band, the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>. By default a score is flagged when that percentage is at or below the false-positive rate set under <em>Base-rate criterion</em>: 10% by default, the consensus specificity of .90 per test (Sweet et al., 2021), or 5%. With no age entered, the manual's All Ages column is used.</p>
-              <p><strong>Age matters.</strong> 15 of 16 hits is the 8.6th percentile across all ages but the <strong>26th</strong> at ages 80&ndash;90. So the flag is &le; 15 in every band except 80&ndash;90, where it is &le; 14. A score of 15 is a 3&ndash;6% event in a working-age adult and an unremarkable one in an 85-year-old.</p>
-              <p><strong>Published cut-offs (CVLT-II).</strong> Two published cut-offs can be chosen instead, under <em>Flag basis</em>. Both come from the CVLT-II; the trial is the same in both editions (16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition). <strong>&le; 14</strong> is the standard: across 17 studies and 4,432 patients it gives sensitivity .50 at specificity .93, and no healthy control in the review scored at or below it (Schwartz et al., 2016). <strong>&le; 15</strong> counts a single error as a failure: in 104 adults with TBI it gave sensitivity .56 at specificity .92 against seven reference PVTs, identifying about 6% more invalid response sets (Erdodi et al., 2018). For every patient under 80, the age-based flag is already &le; 15.</p>
-              <p><strong>A fail is informative; a pass is not.</strong> Examinees who failed a reference PVT were about eight times more likely to fail Forced Choice, but roughly half of invalid response sets pass it, because a sophisticated simulator recognises how easy the task is (Schwartz et al., 2016).</p>
-              <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on Forced Choice. Tables D.14 and D.15 give the percentage scoring that many <em>or more</em>, by age band, and the critical-item flag always uses those tables, whichever cut-off is set for hits. Hits and both critical-item scores come from one administration, so together they count as <strong>one</strong> indicator.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-cvlt3-result"></div>
@@ -1852,6 +1852,18 @@
             <span class="pvt-derived-line" data-pvt-derived="cvlt3"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>How the cut-off is set, and why it changes with age</summary>
+          <div class="formula-body">
+            <p><strong>No published cut-off.</strong> The CVLT-3 manual gives no cut score for Forced Choice. Table D.13 gives, by age band, the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>. By default a score is flagged when that percentage is at or below the false-positive rate set under <em>Base-rate criterion</em>: 10% by default, the consensus specificity of .90 per test (Sweet et al., 2021), or 5%. With no age entered, the manual's All Ages column is used.</p>
+            <p><strong>Age matters.</strong> 15 of 16 hits is the 8.6th percentile across all ages but the <strong>26th</strong> at ages 80&ndash;90. So the flag is &le; 15 in every band except 80&ndash;90, where it is &le; 14. A score of 15 is a 3&ndash;6% event in a working-age adult and an unremarkable one in an 85-year-old.</p>
+            <p><strong>Published cut-offs (CVLT-II).</strong> Two published cut-offs can be chosen instead, under <em>Flag basis</em>. Both come from the CVLT-II; the trial is the same in both editions (16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition). <strong>&le; 14</strong> is the standard: across 17 studies and 4,432 patients it gives sensitivity .50 at specificity .93, and no healthy control in the review scored at or below it (Schwartz et al., 2016). <strong>&le; 15</strong> counts a single error as a failure: in 104 adults with TBI it gave sensitivity .56 at specificity .92 against seven reference PVTs, identifying about 6% more invalid response sets (Erdodi et al., 2018). For every patient under 80, the age-based flag is already &le; 15.</p>
+            <p><strong>A fail is informative; a pass is not.</strong> Examinees who failed a reference PVT were about eight times more likely to fail Forced Choice, but roughly half of invalid response sets pass it, because a sophisticated simulator recognises how easy the task is (Schwartz et al., 2016).</p>
+            <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on Forced Choice. Tables D.14 and D.15 give the percentage scoring that many <em>or more</em>, by age band, and the critical-item flag always uses those tables, whichever cut-off is set for hits. Hits and both critical-item scores come from one administration, so together they count as <strong>one</strong> indicator.</p>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -1897,12 +1909,6 @@
               </select>
             </div>
           </div>
-          <details class="formula-disclosure">
-            <summary>Cut-offs &amp; classification accuracy</summary>
-            <div class="formula-body">
-              <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45: spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49: spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42: spec. .91, sens. .67–.69; Trial 1 &lt; 41: spec. .93, sens. .66. All are Martin et al.'s weighted-mean values for neurocognitive/psychiatric samples; an earlier aggregation of Trial 1 (Denning, 2012) reported .92/.77 averaged across cut-offs 34–44, which is why the meta-analysis examined each cut-off individually. Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-tomm-result"></div>
@@ -1917,43 +1923,55 @@
           </div>
         </div>
       </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Cut-offs &amp; classification accuracy</summary>
+          <div class="formula-body">
+            <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45: spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49: spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42: spec. .91, sens. .67–.69; Trial 1 &lt; 41: spec. .93, sens. .66. All are Martin et al.'s weighted-mean values for neurocognitive/psychiatric samples; an earlier aggregation of Trial 1 (Denning, 2012) reported .92/.77 averaged across cut-offs 34–44, which is why the meta-analysis examined each cut-off individually. Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17.</p>
+          </div>
+        </details>
+      </div>
     </div>
 
     <!-- ===== Summary & Aggregation ===== -->
-    <!-- The landing panel. The verdict and the indicator cards are drawn by
-         renderPvtSummary from the same getPvtSummaryRows the table and the
-         APA export read, so no surface can disagree with another. -->
+    <!-- The landing panel, one column (2026-09): the verdict, the scores once
+         there are any, then the Larrabee evidence. The verdict and the table
+         are drawn by renderPvtSummary from the same getPvtSummaryRows the APA
+         export reads, so no surface can disagree with another. The per-
+         indicator cards that used to sit under the verdict are gone: they
+         restated the menu, whose chips already carry each measure's state.
+         One column, so an explainer opened anywhere lengthens the page evenly
+         instead of leaving a gap beside a shorter neighbour. -->
     <div class="pvt-tab-content active" id="pvt-summary">
       <div id="pvt-summary-verdict"></div>
-      <div id="pvt-summary-cards"></div>
-      <div class="pvt-workspace pvt-summary-lower">
-        <div class="pvt-summary-left">
-          <div id="pvt-summary-body"></div>
-          <!-- The note sits under the table it annotates, which also balances
-               the two columns against the taller Larrabee card. -->
-          <div class="info-box pvt-note" data-apa-note="pvt"></div>
-        </div>
-        <div class="pvt-outcome">
-          <div class="pvt-card">
-            <div class="pvt-card-kicker">Aggregating multiple PVTs (Larrabee, 2014)</div>
-            <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity, within Slick et al.'s (1999) criteria, which also require a substantial external incentive. Classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT):</p>
-            <table class="pvt-table">
-              <thead><tr><th>Threshold</th><th>Specificity</th><th>Sensitivity</th><th>Total correct</th></tr></thead>
-              <tbody>
-                <tr><td>≥ 2 of 7 failures</td><td>88.9%</td><td>97.6%</td><td>92.6%</td></tr>
-                <tr><td>≥ 3 of 7 failures</td><td>96.3%</td><td>87.8%</td><td>92.6%</td></tr>
-                <tr><td>≥ 4 of 7 failures</td><td>100%</td><td>63.4%</td><td>84.2%</td></tr>
-              </tbody>
-            </table>
+      <!-- Hidden until something is scored: an empty scores card and a note
+           about "Fail" were two boxes explaining nothing. -->
+      <div class="pvt-summary-scores" id="pvt-summary-scores" hidden>
+        <div id="pvt-summary-body"></div>
+        <div class="info-box pvt-note" data-apa-note="pvt"></div>
+      </div>
+      <div class="pvt-panel pvt-larrabee">
+        <div class="pvt-larrabee-grid">
+          <div>
+            <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014)</h3>
+            <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity, within Slick et al.'s (1999) criteria, which also require a substantial external incentive. The table gives classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT).</p>
             <p class="pvt-agg-copy">These figures are for seven indicators administered. They do not transfer directly to a different number, and this page counts at most five independent indicators.</p>
-            <details class="formula-disclosure">
-              <summary>Why ≥ 2, and when to demand more</summary>
-              <div class="formula-body">
-                <p>Monte Carlo estimates overstate how often genuine patients fail two or more PVTs: their PVT scores sit at ceiling and are skewed, not normally distributed (Larrabee, 2014). The count holds only for <em>independent</em> indicators; measures built from the same subtest raise each other&rsquo;s failure rate (Larrabee, 2014). On this page, the Effort Index and Effort Scale share RBANS subtests and count as <strong>one</strong>, and RDS also draws on Digit Span. In Larrabee&rsquo;s sample, the six non-malingering patients who failed two or more had severe TBI with prolonged coma, complicated mild TBI, or stroke with a lesion on CT, and many failed only just inside the invalid range (RDS 7, WCST failure-to-maintain-set 2). Before reading two failures as probable invalidity in a genuinely impaired patient, check whether the patient&rsquo;s other scores make the failures unlikely to be false positives (Larrabee, 2014).</p>
-              </div>
-            </details>
           </div>
+          <table class="pvt-table">
+            <thead><tr><th>Threshold</th><th class="num">Specificity</th><th class="num">Sensitivity</th><th class="num">Total correct</th></tr></thead>
+            <tbody>
+              <tr><td>≥ 2 of 7 failures</td><td class="num">88.9%</td><td class="num">97.6%</td><td class="num">92.6%</td></tr>
+              <tr><td>≥ 3 of 7 failures</td><td class="num">96.3%</td><td class="num">87.8%</td><td class="num">92.6%</td></tr>
+              <tr><td>≥ 4 of 7 failures</td><td class="num">100%</td><td class="num">63.4%</td><td class="num">84.2%</td></tr>
+            </tbody>
+          </table>
         </div>
+        <details class="formula-disclosure">
+          <summary>Why ≥ 2, and when to demand more</summary>
+          <div class="formula-body">
+            <p>Monte Carlo estimates overstate how often genuine patients fail two or more PVTs: their PVT scores sit at ceiling and are skewed, not normally distributed (Larrabee, 2014). The count holds only for <em>independent</em> indicators; measures built from the same subtest raise each other&rsquo;s failure rate (Larrabee, 2014). On this page, the Effort Index and Effort Scale share RBANS subtests and count as <strong>one</strong>, and RDS also draws on Digit Span. In Larrabee&rsquo;s sample, the six non-malingering patients who failed two or more had severe TBI with prolonged coma, complicated mild TBI, or stroke with a lesion on CT, and many failed only just inside the invalid range (RDS 7, WCST failure-to-maintain-set 2). Before reading two failures as probable invalidity in a genuinely impaired patient, check whether the patient&rsquo;s other scores make the failures unlikely to be false positives (Larrabee, 2014).</p>
+          </div>
+        </details>
       </div>
 
       <div class="apa-wrap">
@@ -1977,14 +1995,11 @@
         <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale–Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
         <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
         <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson. [Forced Choice Recognition base rates by age band, Appendix D Tables D.13-D.15; the manual publishes no cut-off for this trial.]</p>
-      <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
-        <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson.</p>
-        <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859.</p>
+        <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859. [The CVLT-II <span style="white-space:nowrap">&le; 15</span> cut-off and its accuracy across seven reference PVTs.]</p>
       <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
-        <p>Sweet, J. J., Heilbronner, R. L., Morgan, J. E., Larrabee, G. J., Rohling, M. L., Boone, K. B., Kirkwood, M. W., Schroeder, R. W., Suhr, J. A., &amp; Conference Participants. (2021). American Academy of Clinical Neuropsychology (AACN) 2021 consensus statement on validity assessment: Update of the 2009 AACN consensus conference statement on neuropsychological assessment of effort, response bias, and malingering. <i>The Clinical Neuropsychologist, 35</i>(6), 1053–1106.</p>
         <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
         <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
         <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</p>
@@ -1993,6 +2008,7 @@
         <p>Shura, R. D., Brearly, T. W., Rowland, J. A., Martindale, S. L., Miskey, H. M., &amp; Duff, K. (2018). RBANS validity indices: A systematic review and meta-analysis. <i>Neuropsychology Review, 28</i>(3), 269–284.</p>
         <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
         <p>Slick, D. J., Sherman, E. M. S., &amp; Iverson, G. L. (1999). Diagnostic criteria for malingered neurocognitive dysfunction: Proposed standards for clinical practice and research. <i>The Clinical Neuropsychologist, 13</i>(4), 545–561.</p>
+        <p>Sweet, J. J., Heilbronner, R. L., Morgan, J. E., Larrabee, G. J., Rohling, M. L., Boone, K. B., Kirkwood, M. W., Schroeder, R. W., Suhr, J. A., &amp; Conference Participants. (2021). American Academy of Clinical Neuropsychology (AACN) 2021 consensus statement on validity assessment: Update of the 2009 AACN consensus conference statement on neuropsychological assessment of effort, response bias, and malingering. <i>The Clinical Neuropsychologist, 35</i>(6), 1053–1106.</p>
         <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
       </div>
     </details>
@@ -3268,12 +3284,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260924p"></script>
-<script src="app.js?v=20260924p"></script>
-<script src="design-system.js?v=20260924p" defer></script>
-<script src="app-effectsize-page.js?v=20260924p"></script>
-<script src="app-viz-page.js?v=20260924p"></script>
-<script src="app-profile-page.js?v=20260924p"></script>
+<script src="data.js?v=20260924q"></script>
+<script src="app.js?v=20260924q"></script>
+<script src="design-system.js?v=20260924q" defer></script>
+<script src="app-effectsize-page.js?v=20260924q"></script>
+<script src="app-viz-page.js?v=20260924q"></script>
+<script src="app-profile-page.js?v=20260924q"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

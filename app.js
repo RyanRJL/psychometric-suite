@@ -8283,18 +8283,10 @@ const PVT_INDICATOR_GROUPS = [
   ]}
 ];
 
-/* One state per measure and per indicator, read off the summary rows so a
-   card can never disagree with the table under it. A gated row is not an
-   indicator (pvtIndicatorCounts drops it), so an indicator holding only
-   gated rows reads "gated", not "pass". */
-function pvtMemberState(rows, m){
-  const mine = rows.filter(r => m.ids.includes(r.id));
-  if (!mine.length) return { state: 'idle', value: 'not scored' };
-  if (mine.every(r => r.gated)) return { state: 'gated', value: 'gate not met' };
-  const flagged = mine.filter(r => r.fail).length;
-  return flagged ? { state: 'flag', value: `${flagged} flagged` }
-                 : { state: 'pass', value: mine.length > 1 ? 'within cut-offs' : 'within cut-off' };
-}
+/* One state per indicator, read off the summary rows so a verdict pip can
+   never disagree with the table under it. A gated row is not an indicator
+   (pvtIndicatorCounts drops it), so an indicator holding only gated rows
+   reads "gated", not "pass". */
 function pvtGroupState(rows, g){
   const mine = rows.filter(r => r.group === g.id);
   if (!mine.length) return 'idle';
@@ -8320,7 +8312,7 @@ function renderPvtSummary(){
     if (c.total === 0){
       kind = 'idle';
       head = 'Nothing scored yet';
-      body = 'Choose a measure from the list on the left, or from the indicators below. Each result joins this summary as it is entered.';
+      body = 'Choose a measure from the list on the left. Each result joins this summary as it is entered.';
     } else {
       kind = c.failed >= 2 ? 'fail' : c.failed === 1 ? 'warn' : 'pass';
       head = `${c.failed} of ${c.total} independent indicator${c.total === 1 ? '' : 's'} failed`;
@@ -8341,45 +8333,34 @@ function renderPvtSummary(){
         <div class="pvt-verdict-head">${head}</div>
         <p class="pvt-verdict-body">${body}</p>
         <div class="pvt-verdict-meta">${c.total} of ${PVT_INDICATOR_GROUPS.length} indicators scored${
-          unscored.length && c.total > 0 ? ` &middot; not yet scored: ${unscored.join(', ')}` : ''} &middot; results are cut-off comparisons only</div>
+          unscored.length && c.total > 0 ? ` &middot; not yet scored: ${unscored.join(', ')}` : ''}</div>
       </div>
+      <div class="pvt-verdict-rule"><strong>≥ 2 independent failures</strong> support probable invalidity (Larrabee, 2014)</div>
     </div>`;
   }
 
-  /* The indicators: the page's menu, restated with each one's state. */
-  const cards = document.getElementById('pvt-summary-cards');
-  if (cards){
-    cards.innerHTML = `<div class="pvt-ind-grid">${PVT_INDICATOR_GROUPS.map((g, i) => {
-      const st = states[i];
-      const chip = st === 'idle' ? ''
-        : `<span class="pvt-status is-${st === 'gated' ? 'na' : st}">${PVT_STATE_ICON[st === 'fail' ? 'flag' : st === 'gated' ? 'na' : 'pass']}${st === 'fail' ? 'Fail' : st === 'gated' ? 'Gated' : 'Pass'}</span>`;
-      const members = g.members.map(m => {
-        const ms = pvtMemberState(rows, m);
-        return `<button type="button" class="pvt-ind-row is-${ms.state}" data-pvt-go="${m.tab}">
-          <span class="pvt-ind-label">${m.label}</span>
-          <span class="pvt-ind-value">${ms.state === 'idle' ? 'Score &rarr;' : ms.value}</span>
-        </button>`;
-      }).join('');
-      return `<div class="pvt-ind is-${st}">
-        <div class="pvt-ind-head"><span class="pvt-ind-name">${g.label}</span>${chip}</div>
-        <div class="pvt-ind-sub">${g.sub}</div>
-        ${members}
-      </div>`;
-    }).join('')}</div>`;
-  }
-
+  /* The scores table, grouped by independent indicator so "counts as one"
+     is visible where the results are read. The per-indicator cards that
+     used to sit here restated the menu and were removed (2026-09); the
+     grouping they carried lives on in these group rows. Rows are drawn in
+     PVT_INDICATOR_GROUPS order, the order getPvtSummaryRows writes them. */
+  const wrap = document.getElementById('pvt-summary-scores');
   const host = document.getElementById('pvt-summary-body');
+  if (wrap) wrap.hidden = rows.length === 0;
   if (!host) return;
-  if (rows.length === 0){
-    host.innerHTML = '<div class="pvt-card"><div class="pvt-card-kicker">Scores table</div><p class="pvt-agg-copy" style="margin:0">Every scored measure is listed here with its cut-off, published accuracy and result, as it will appear in the report.</p></div>';
-    return;
-  }
+  if (rows.length === 0){ host.innerHTML = ''; return; }
+  const body = PVT_INDICATOR_GROUPS.map(g => {
+    const mine = rows.filter(r => r.group === g.id);
+    if (!mine.length) return '';
+    return `<tr class="pvt-group-row"><td colspan="6">${g.label}${g.members.length > 1 ? ' <span class="pvt-group-note">counts as one</span>' : ''}</td></tr>`
+      + mine.map(r => `<tr><td>${r.measure}</td><td class="num">${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td class="num">${r.sens}</td><td class="num">${r.spec}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('');
+  }).join('');
   host.innerHTML = `
-    <div class="pvt-card">
-      <div class="pvt-card-kicker">Scores table</div>
+    <div class="pvt-panel">
+      <h3 class="pvt-panel-title">Scores</h3>
       <table class="pvt-table">
-        <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Sens.</th><th>Spec.</th><th>Result</th></tr></thead>
-        <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td>${r.sens}</td><td>${r.spec}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>Measure</th><th class="num">Score</th><th>Cut-off</th><th class="num">Sens.</th><th class="num">Spec.</th><th>Result</th></tr></thead>
+        <tbody>${body}</tbody>
       </table>
     </div>`;
 }
@@ -8618,16 +8599,9 @@ function setupPvtPage(){
   root.querySelectorAll('.pvt-nav [data-pvt-tab]').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
   });
-  /* The Summary's indicator cards double as the menu. Delegated, because
-     they are rebuilt on every keystroke and bound handlers would not
-     survive. */
   root.querySelector('[data-pvt-back]')?.addEventListener('click', () => {
     switchPvtTab('summary');
     root.querySelector('.pvt-nav-summary')?.focus({ preventScroll: true });
-  });
-  document.getElementById('pvt-summary-cards')?.addEventListener('click', e => {
-    const row = e.target.closest('[data-pvt-go]');
-    if (row) switchPvtTab(row.dataset.pvtGo);
   });
   /* The shared RBANS fields appear on both the EI and ES tabs; pvtState is
      the master and every input with the same data-pvt-field mirrors it. */

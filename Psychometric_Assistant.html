@@ -9765,9 +9765,21 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
    PERFORMANCE VALIDITY PAGE
    Standalone pvt-* classes throughout, per the cascade rule. Hidden hero
    (the topbar names the page); a left-hand menu with the Summary at its
-   top, which is the landing panel; and each measure on a cream-to-white
-   sheet holding white rounded cards (owner decision, 2026-09, chosen from
-   a mock-up of this against a summary-first page with a tab strip).
+   top, which is the landing panel (owner decision, 2026-09).
+
+   Restyled 2026-09 to sit with the rest of the app: flat --ds-surface
+   panels straight on the page, as Profile Analysis and Score Charts have,
+   in place of a cream-to-white sheet holding white cards; Inter only (the
+   serif headings and counts were the one place on a tool page that used
+   it); and one scale, drawn from the design-system tokens:
+     11px  labels and chips (uppercase, as every other page's labels)
+     12px  secondary text, tables, citations
+     13px  body and panel titles
+     18px  the verdict        28px  the count
+   Two weights (400, 600) and the three text tokens. Explainers never open
+   inside half a column: on a measure they sit in a full-width row under
+   the workspace, and the Summary is one column, so opening one lengthens
+   the page evenly rather than leaving a gap beside a shorter neighbour.
    ============================================================= */
 #validity.section{max-width:none;width:100%;padding:24px 40px 80px}
 #validity > .eyebrow,
@@ -9778,17 +9790,47 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   font-family:var(--sans)!important;
   font-size:13px!important;
   line-height:1.55!important;
-  color:#5A5A5A!important;
+  color:var(--ds-text-muted)!important;
 }
 
-/* ---- Layout: the menu on the left, the panel on the right ---- */
+/* ---- Layout: the menu on the left, the panels on the right ---- */
 .pvt-layout{
   display:grid;
-  grid-template-columns:252px minmax(0,1fr);
-  gap:18px;
+  grid-template-columns:240px minmax(0,1fr);
+  gap:16px;
   align-items:start;
 }
 .pvt-main-col{min-width:0}
+
+/* ---- Shared panel: the surface every block on this page sits on ---- */
+.pvt-panel,
+.pvt-card,
+.pvt-nav,
+.pvt-verdict,
+.pvt-explain,
+.pvt-sheet-head{
+  background:var(--ds-surface);
+  border:1px solid var(--ds-border);
+  border-radius:var(--ds-radius-lg);
+}
+.pvt-panel,.pvt-card{padding:14px 18px}
+.pvt-panel-title{
+  margin:0 0 10px;
+  font-family:var(--sans);
+  font-size:13px;
+  font-weight:600;
+  color:var(--ds-text);
+  line-height:1.3;
+}
+.pvt-card-kicker{
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ds-text-subtle);
+  margin-bottom:12px;
+}
 
 /* ---- The menu ----
    Sticky, so it stays beside a long measure panel. Its buttons carry
@@ -9799,50 +9841,45 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   top:12px;
   display:flex;
   flex-direction:column;
-  gap:2px;
+  gap:1px;
   padding:8px;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.08);
-  border-radius:var(--r-lg);
-  box-shadow:0 1px 2px rgba(20,15,5,0.04);
 }
 .pvt-nav-summary{
   display:flex;
   align-items:center;
   gap:12px;
   width:100%;
-  padding:12px 12px;
+  padding:10px 12px;
   margin-bottom:4px;
-  border:1px solid rgba(20,15,5,0.08);
-  border-radius:var(--r-md);
-  background:#F7F2E6;
+  border:1px solid var(--ds-border);
+  border-radius:var(--ds-radius-md);
+  background:var(--ds-surface-subtle);
   font-family:var(--sans);
   text-align:left;
   cursor:pointer;
   transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
-.pvt-nav-summary:hover{background:#F0E8D6}
-.pvt-nav-summary.is-fail{background:rgba(156,61,42,0.07);border-color:rgba(156,61,42,0.28)}
-.pvt-nav-summary.is-fail:hover{background:rgba(156,61,42,0.11)}
-.pvt-nav-summary.is-pass{background:rgba(46,125,79,0.06);border-color:rgba(46,125,79,0.25)}
-.pvt-nav-summary.active{box-shadow:inset 3px 0 0 #9C3D2A}
+.pvt-nav-summary:hover{background:var(--ds-surface-emphasis)}
+.pvt-nav-summary.is-fail{background:var(--ds-primary-tint);border-color:rgba(156,61,42,0.28)}
+.pvt-nav-summary.is-pass{background:var(--ds-success-tint);border-color:rgba(31,122,71,0.25)}
+.pvt-nav-summary.active{box-shadow:inset 3px 0 0 var(--ds-primary)}
 .pvt-nav-summary:focus{outline:none}
-.pvt-nav-summary:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.3)}
+.pvt-nav-summary:focus-visible{box-shadow:0 0 0 2px var(--ds-primary-ring)}
 .pvt-nav-count{
-  font-family:var(--serif);
-  font-size:30px;
-  font-weight:700;
+  font-family:var(--sans);
+  font-size:18px;
+  font-weight:600;
   line-height:1;
-  color:#1A1A1A;
+  color:var(--ds-text-faint);
   font-variant-numeric:tabular-nums;
-  min-width:44px;
+  min-width:32px;
 }
-.pvt-nav-summary.is-fail .pvt-nav-count{color:#9C3D2A}
-.pvt-nav-summary.is-pass .pvt-nav-count{color:#2E7D4F}
-.pvt-nav-count-of{font-size:18px;color:#A8A29A;font-weight:600}
+.pvt-nav-summary.is-fail .pvt-nav-count{color:var(--ds-primary)}
+.pvt-nav-summary.is-pass .pvt-nav-count{color:var(--ds-success)}
+.pvt-nav-count-of{font-size:12px;color:var(--ds-text-faint)}
 .pvt-nav-summary-main{display:flex;flex-direction:column;gap:2px;min-width:0}
-.pvt-nav-summary-label{font-size:14px;font-weight:600;color:#1A1A1A}
-.pvt-nav-summary-meta{font-size:11.5px;color:#6E6860;line-height:1.3}
+.pvt-nav-summary-label{font-size:13px;font-weight:600;color:var(--ds-text)}
+.pvt-nav-summary-meta{font-size:11px;color:var(--ds-text-subtle);line-height:1.3}
 
 .pvt-nav-group{padding-top:6px}
 .pvt-nav-group-head{
@@ -9852,65 +9889,65 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   gap:6px;
   padding:6px 10px 3px;
   font-family:var(--sans);
-  font-size:9.5px;
+  font-size:11px;
   font-weight:600;
-  letter-spacing:0.1em;
+  letter-spacing:0.08em;
   text-transform:uppercase;
-  color:#A29D95;
+  color:var(--ds-text-faint);
 }
-.pvt-nav-group-note{font-size:9px;letter-spacing:0.05em;color:#BCB6AD;font-weight:500}
+.pvt-nav-group-note{font-weight:400;letter-spacing:0.04em}
 .pvt-nav-item{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:8px;
   width:100%;
-  padding:7px 10px;
+  padding:6px 10px;
   border:0;
-  border-radius:var(--r-sm, 6px);
+  border-radius:var(--ds-radius-sm);
   background:transparent;
   font-family:var(--sans);
   text-align:left;
   cursor:pointer;
   transition:background var(--t-fast) var(--ease);
 }
-.pvt-nav-item:hover{background:#F8F5ED}
-.pvt-nav-item.active{background:#F0E8D6;box-shadow:inset 3px 0 0 #9C3D2A}
+.pvt-nav-item:hover{background:var(--ds-surface-subtle)}
+.pvt-nav-item.active{background:var(--ds-surface-emphasis);box-shadow:inset 3px 0 0 var(--ds-primary)}
 .pvt-nav-item:focus{outline:none}
-.pvt-nav-item:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
+.pvt-nav-item:focus-visible{box-shadow:inset 0 0 0 2px var(--ds-primary-ring)}
 .pvt-nav-main{display:flex;flex-direction:column;gap:1px;min-width:0}
-.pvt-nav-label{font-size:13px;font-weight:500;color:#2F2B26;line-height:1.25}
-.pvt-nav-item.active .pvt-nav-label{color:#1A1A1A;font-weight:600}
-.pvt-nav-meta{font-size:11px;color:#8A847B;line-height:1.3}
+.pvt-nav-label{font-size:13px;color:var(--ds-text);line-height:1.3}
+.pvt-nav-item.active .pvt-nav-label{font-weight:600}
+.pvt-nav-meta{font-size:11px;color:var(--ds-text-subtle);line-height:1.3}
 
-/* Live status chip - state colours match the result card's bands.
-   Unscored measures render NO chip (.is-idle): an empty pill is dead
-   chrome, and seven of them made the menu read as broken before first
-   entry. */
-.pvt-status{
+/* Live status chip. Unscored measures render NO chip (.is-idle): an empty
+   pill is dead chrome, and seven of them made the menu read as broken
+   before first entry. Glyph + word + colour, never colour alone. */
+.pvt-status,
+.pvt-flag{
   display:inline-flex;
   align-items:center;
   gap:4px;
-  height:17px;
+  height:20px;
   padding:0 8px;
-  border:1px solid rgba(20,15,5,0.12);
-  border-radius:9px;
-  background:#FFFFFF;
-  color:#9E9A93;
-  font-family:var(--mono);
-  font-size:8.5px;
-  letter-spacing:0.06em;
-  text-transform:uppercase;
+  border:1px solid var(--ds-border-strong);
+  border-radius:var(--ds-radius-full);
+  background:var(--ds-surface);
+  color:var(--ds-text-subtle);
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:600;
   line-height:1;
   white-space:nowrap;
   flex:none;
   transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);
 }
-.pvt-status.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.4);background:rgba(46,125,79,0.07)}
-.pvt-status.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.4);background:rgba(156,61,42,0.07)}
-.pvt-status.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.4);background:rgba(138,122,44,0.07)}
+.pvt-status.is-pass,.pvt-flag.is-pass{color:var(--ds-success);border-color:rgba(31,122,71,0.35);background:var(--ds-success-tint)}
+.pvt-status.is-fail,.pvt-flag.is-fail{color:var(--ds-primary);border-color:rgba(156,61,42,0.35);background:var(--ds-primary-tint)}
+.pvt-status.is-na,.pvt-flag.is-na{color:#8a6215;border-color:rgba(183,121,31,0.35);background:var(--ds-warning-tint)}
 .pvt-status.is-idle{display:none}
-.pvt-status .pvt-flag-icon{width:9px;height:9px;flex:none}
+.pvt-flag{align-self:center}
+.pvt-flag-icon{width:10px;height:10px;flex:0 0 10px;display:block}
 
 /* Below 1000px the menu goes above the panel and its entries wrap, rather
    than taking a third of a narrow window. */
@@ -9923,181 +9960,132 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   .pvt-nav-item{width:auto}
 }
 
-/* ---- Content panel: the cream-to-white gradient sheet ---- */
-.pvt-sheet{
-  background:linear-gradient(180deg, #F0E8D6 0%, #F7F2E6 80px, #FFFFFF 100%);
-  border:1px solid rgba(20,15,5,0.08);
-  border-radius:var(--r-lg);
-  box-shadow:0 6px 18px rgba(20,15,5,0.05);
-  padding:18px 22px;
-}
-.pvt-sheet-main{min-width:0}
+/* ---- The panel column ----
+   No wrapping sheet: the blocks sit straight on the page, 12px apart, as
+   they do on every other tool page. */
+.pvt-sheet,.pvt-sheet-main{min-width:0}
 /* Back to summary, with the page description beside it. */
-.pvt-sheet-head{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.pvt-sheet-head{display:flex;align-items:center;gap:16px;margin-bottom:12px;padding:10px 14px}
 .pvt-sheet-head .pvt-desc-line{margin:0;flex:1;min-width:0}
 .pvt-back{
   display:inline-flex;
   align-items:center;
   gap:6px;
   flex:none;
-  padding:6px 12px 6px 9px;
+  padding:5px 12px 5px 9px;
   border:1px solid rgba(156,61,42,0.30);
-  border-radius:var(--r-md);
-  background:#FFFFFF;
-  color:#9C3D2A;
+  border-radius:var(--ds-radius-md);
+  background:var(--ds-surface);
+  color:var(--ds-primary);
   font-family:var(--sans);
-  font-size:12.5px;
+  font-size:12px;
   font-weight:600;
   cursor:pointer;
   transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .pvt-back svg{width:14px;height:14px}
-.pvt-back:hover{background:rgba(156,61,42,0.07);border-color:rgba(156,61,42,0.5)}
+.pvt-back:hover{background:var(--ds-primary-tint);border-color:rgba(156,61,42,0.5)}
 .pvt-back:focus{outline:none}
-.pvt-back:focus-visible{box-shadow:0 0 0 2px rgba(156,61,42,0.3)}
+.pvt-back:focus-visible{box-shadow:0 0 0 2px var(--ds-primary-ring)}
 
 .pvt-tab-content{display:none}
 .pvt-tab-content.active{
-  display:block;
-  animation:pvt-panel-in 180ms var(--ease,ease) both;
-}
-
-/* ---- The Summary: verdict band ----
-   The count is the page's answer, so it is the largest thing on it. One
-   pip per independent indicator, in the menu's order; colour is backed by
-   the count and the sentence beside it, never the only carrier. */
-.pvt-verdict{
-  display:grid;
-  grid-template-columns:auto minmax(0,1fr);
-  gap:26px;
-  align-items:center;
-  padding:12px 18px;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.08);
-  border-radius:var(--r-md);
-}
-.pvt-verdict.is-fail{border-color:rgba(156,61,42,0.30);box-shadow:inset 4px 0 0 #9C3D2A}
-.pvt-verdict.is-warn{border-color:rgba(183,121,31,0.35);box-shadow:inset 4px 0 0 #B7791F}
-.pvt-verdict.is-pass{border-color:rgba(46,125,79,0.28);box-shadow:inset 4px 0 0 #2E7D4F}
-.pvt-verdict-count{display:flex;flex-direction:column;gap:8px;min-width:84px}
-.pvt-verdict-num{
-  font-family:var(--serif);
-  font-size:40px;
-  font-weight:700;
-  line-height:0.95;
-  letter-spacing:-0.02em;
-  color:#1A1A1A;
-  font-variant-numeric:tabular-nums;
-}
-.pvt-verdict.is-fail .pvt-verdict-num{color:#9C3D2A}
-.pvt-verdict.is-warn .pvt-verdict-num{color:#9A6414}
-.pvt-verdict.is-pass .pvt-verdict-num{color:#2E7D4F}
-.pvt-verdict.is-idle .pvt-verdict-num{color:#BCB6AD}
-.pvt-verdict-of{font-size:24px;color:#A8A29A;font-weight:600}
-.pvt-verdict-pips{display:flex;gap:4px}
-.pvt-verdict-pip{width:16px;height:6px;border-radius:3px;background:#E8E2D5}
-.pvt-verdict-pip.is-fail{background:#9C3D2A}
-.pvt-verdict-pip.is-pass{background:#2E7D4F}
-.pvt-verdict-pip.is-gated{background:#C9BE8A}
-.pvt-verdict-head{
-  font-family:var(--serif);
-  font-size:21px;
-  font-weight:700;
-  color:#1A1A1A;
-  line-height:1.2;
-  margin-bottom:4px;
-}
-.pvt-verdict-body{margin:0;font-size:13px;line-height:1.45;color:#4D4840;max-width:720px}
-.pvt-verdict-meta{margin-top:4px;font-size:11.5px;color:#7A766E}
-
-/* ---- The Summary: one card per independent indicator ----
-   The menu again, with each indicator's state; a row opens its measure. */
-.pvt-ind-grid{
-  display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
-  gap:10px;
-  margin-top:10px;
-}
-@media (max-width:1280px){ .pvt-ind-grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
-@media (max-width:760px){ .pvt-ind-grid{grid-template-columns:minmax(0,1fr)} }
-.pvt-ind{
   display:flex;
   flex-direction:column;
-  padding:9px 12px 4px;
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.08);
-  border-radius:var(--r-md);
-  min-width:0;
+  gap:12px;
+  animation:pvt-panel-in var(--t-base) var(--ease) both;
 }
-.pvt-ind.is-fail{border-color:rgba(156,61,42,0.30);box-shadow:inset 3px 0 0 #9C3D2A}
-.pvt-ind.is-idle{background:transparent;border-style:dashed;border-color:rgba(20,15,5,0.16)}
-.pvt-ind-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.pvt-ind-name{font-family:var(--serif);font-size:15px;font-weight:700;color:#1A1A1A;line-height:1.25}
-.pvt-ind-sub{font-size:11px;color:#8A847B;margin:1px 0 4px}
-.pvt-ind-row{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:8px;
-  padding:4px 6px;
-  margin:0 -6px;
-  width:calc(100% + 12px);
-  border:0;
-  border-top:1px solid rgba(20,15,5,0.06);
-  border-radius:0;
-  background:transparent;
-  font-family:var(--sans);
-  text-align:left;
-  cursor:pointer;
-  transition:background var(--t-fast) var(--ease);
-}
-.pvt-ind-row:hover{background:#F8F5ED}
-.pvt-ind-row:focus{outline:none}
-.pvt-ind-row:focus-visible{box-shadow:inset 0 0 0 2px rgba(156,61,42,0.25)}
-.pvt-ind-label{font-size:12.5px;color:#2F2B26;min-width:0}
-.pvt-ind-value{font-size:11.5px;color:#8A847B;white-space:nowrap;flex:none}
-.pvt-ind-row.is-flag .pvt-ind-value{color:#9c3d2a;font-weight:600}
-.pvt-ind-row.is-pass .pvt-ind-value{color:#2e7d4f}
-.pvt-ind-row.is-gated .pvt-ind-value{color:#8a7a2c}
-.pvt-ind-row.is-idle .pvt-ind-value{color:#4D4840;font-weight:500}
-
-/* The scores table is the wider column: at the measure panels' own split
-   its Cut-off and Result cells wrapped to three lines a row. Two classes,
-   because .pvt-workspace is declared further down and would win a tie. */
-.pvt-workspace.pvt-summary-lower{margin-top:10px;grid-template-columns:minmax(0,1.2fr) minmax(400px,1fr)}
-@media (max-width:1100px){ .pvt-workspace.pvt-summary-lower{grid-template-columns:1fr} }
-.pvt-summary-lower .pvt-card{padding:12px 16px}
-.pvt-summary-lower .pvt-card-kicker{margin-bottom:8px}
-
 @keyframes pvt-panel-in{
   from{ opacity:0; transform:translateY(-4px); }
   to  { opacity:1; transform:translateY(0); }
 }
 
-.pvt-workspace{
+/* ---- The Summary: verdict band ----
+   The count is the page's answer, so it is the largest thing on it. One
+   pip per independent indicator, in the menu's order; colour is backed by
+   the count and the sentence beside it, never the only carrier. The rule
+   the count is judged against sits at the right, beside the count. */
+.pvt-verdict{
   display:grid;
-  grid-template-columns:minmax(380px,0.9fr) minmax(430px,1.1fr);
-  gap:16px;
+  grid-template-columns:auto minmax(0,1fr) minmax(180px,240px);
+  gap:24px;
+  align-items:center;
+  padding:14px 18px;
+}
+.pvt-verdict.is-fail{border-color:rgba(156,61,42,0.30);box-shadow:inset 3px 0 0 var(--ds-primary)}
+.pvt-verdict.is-warn{border-color:rgba(183,121,31,0.35);box-shadow:inset 3px 0 0 var(--ds-warning)}
+.pvt-verdict.is-pass{border-color:rgba(31,122,71,0.28);box-shadow:inset 3px 0 0 var(--ds-success)}
+.pvt-verdict-count{display:flex;flex-direction:column;gap:8px;min-width:72px}
+.pvt-verdict-num{
+  font-family:var(--sans);
+  font-size:28px;
+  font-weight:600;
+  line-height:1;
+  letter-spacing:-0.02em;
+  color:var(--ds-text);
+  font-variant-numeric:tabular-nums;
+}
+.pvt-verdict.is-fail .pvt-verdict-num{color:var(--ds-primary)}
+.pvt-verdict.is-warn .pvt-verdict-num{color:#8a6215}
+.pvt-verdict.is-pass .pvt-verdict-num{color:var(--ds-success)}
+.pvt-verdict.is-idle .pvt-verdict-num{color:var(--ds-text-faint)}
+.pvt-verdict-of{font-size:18px;color:var(--ds-text-faint)}
+.pvt-verdict-pips{display:flex;gap:4px}
+.pvt-verdict-pip{width:14px;height:5px;border-radius:3px;background:var(--ds-surface-emphasis)}
+.pvt-verdict-pip.is-fail{background:var(--ds-primary)}
+.pvt-verdict-pip.is-pass{background:var(--ds-success)}
+.pvt-verdict-pip.is-gated{background:var(--ds-warning)}
+.pvt-verdict-head{
+  font-family:var(--sans);
+  font-size:18px;
+  font-weight:600;
+  color:var(--ds-text);
+  line-height:1.3;
+  margin-bottom:4px;
+}
+.pvt-verdict-body{margin:0;font-size:13px;line-height:1.5;color:var(--ds-text-muted);max-width:760px}
+.pvt-verdict-meta{margin-top:6px;font-size:12px;color:var(--ds-text-subtle)}
+.pvt-verdict-rule{
+  padding-left:20px;
+  border-left:1px solid var(--ds-border);
+  font-size:12px;
+  line-height:1.5;
+  color:var(--ds-text-subtle);
+}
+.pvt-verdict-rule strong{display:block;font-size:13px;font-weight:600;color:var(--ds-text)}
+@media (max-width:1100px){
+  .pvt-verdict{grid-template-columns:auto minmax(0,1fr)}
+  .pvt-verdict-rule{grid-column:1 / -1;padding:10px 0 0;border-left:0;border-top:1px solid var(--ds-border)}
+}
+
+/* ---- The Summary: scores and the Larrabee evidence ---- */
+.pvt-summary-scores{display:flex;flex-direction:column;gap:12px}
+.pvt-summary-scores[hidden]{display:none}
+.pvt-larrabee-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:28px;
   align-items:start;
 }
-@media (max-width:1100px){ .pvt-workspace{grid-template-columns:1fr} }
+@media (max-width:1100px){ .pvt-larrabee-grid{grid-template-columns:minmax(0,1fr);gap:12px} }
+.pvt-larrabee .formula-disclosure{margin:12px 0 0}
+.pvt-agg-copy{font-size:13px;color:var(--ds-text-muted);line-height:1.55;margin:0 0 10px}
+.pvt-agg-copy:last-child{margin-bottom:0}
 
-/* ---- White cards on the sheet ---- */
-.pvt-card{
-  border:1px solid rgba(20,15,5,0.06);
-  background:#FFFFFF;
-  border-radius:var(--r-md);
-  padding:16px 18px;
+/* ---- Measure panels: two equal columns, the explainer below both ---- */
+.pvt-workspace{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:12px;
+  /* Stretch, so the input card runs the height of the result column and
+     the pair reads as one row, however long the result or caution grows. */
+  align-items:stretch;
 }
-.pvt-card-kicker{
-  font-family:var(--sans);
-  font-size:10px;
-  font-weight:600;
-  letter-spacing:0.12em;
-  text-transform:uppercase;
-  color:#7A766E;
-  margin-bottom:12px;
-}
+@media (max-width:1100px){ .pvt-workspace{grid-template-columns:minmax(0,1fr)} }
+.pvt-explain{padding:10px 18px}
+.pvt-explain .formula-disclosure{margin:0}
+.pvt-explain .formula-disclosure[open]{padding-bottom:8px}
+
 .pvt-field-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -10105,189 +10093,170 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 .pvt-field-grid .field{margin-bottom:14px}
 .pvt-card .field label{
-  font-size:10.5px!important;
+  font-size:11px!important;
   letter-spacing:0.08em!important;
-  color:#5A5A5A!important;
+  color:var(--ds-text-subtle)!important;
 }
 .pvt-card .field input,
 .pvt-card .field select{
   font-family:var(--sans)!important;
-  font-size:13.5px!important;
+  font-size:13px!important;
 }
 .pvt-field-wide{grid-column:1 / -1}
-.pvt-note{margin-bottom:0;font-size:12.5px;background:#FFFFFF;border-radius:var(--r-md)}
-.pvt-card .formula-disclosure{margin-top:4px}
+.pvt-note{margin-bottom:0;font-size:12px;border-radius:var(--ds-radius-md)}
 
-.pvt-outcome{display:flex;flex-direction:column;gap:14px;min-width:0}
+.pvt-outcome{display:flex;flex-direction:column;gap:12px;min-width:0}
 .pvt-outcome .panel{margin-bottom:0}
-.pvt-summary-left{min-width:0;display:flex;flex-direction:column;gap:14px}
 
 .pvt-result{margin:0}
 /* The message card - empty, invalid and partial states only. A SCORED
    measure never renders through this: it renders as .pvt-readout below,
    one row per index. */
-.pvt-result-inner{display:block;border:1px solid rgba(20,15,5,0.08);border-radius:var(--r-md);padding:14px 16px;background:#FFFFFF}
-/* The blank state is a deliberate card, not a wan italic line: dashed
-   border says "placeholder", the headline carries the one instruction, and
-   the detail says what will appear so the wide column reads as reserved
-   rather than dead. */
-.pvt-result-inner.is-empty{
-  border:1px dashed rgba(20,15,8,0.20);
-  background:rgba(253,250,246,0.65);
-  padding:18px 20px;
+.pvt-result-inner,
+.pvt-readout{
+  display:block;
+  border:1px solid var(--ds-border);
+  border-radius:var(--ds-radius-lg);
+  background:var(--ds-surface);
 }
-.pvt-result-inner.is-empty .pvt-result-headline{font-size:13.5px;font-weight:600;color:var(--ink)}
-.pvt-result-headline{display:block;font-size:13px;color:var(--muted)}
-.pvt-result-detail{display:block;margin-top:4px;font-size:12.5px;color:var(--muted,#555);line-height:1.55}
+.pvt-result-inner{padding:14px 18px}
+.pvt-result-inner.is-empty .pvt-result-headline{font-size:13px;font-weight:600;color:var(--ds-text)}
+.pvt-result-headline{display:block;font-size:13px;color:var(--ds-text-muted)}
+.pvt-result-detail{display:block;margin-top:4px;font-size:12px;color:var(--ds-text-subtle);line-height:1.5}
 
 /* ---------- per-index readout ----------
    Values and labels stay in INK; the chip beside them carries the state.
    A card-level colour cannot express four indices in four states, which
-   is exactly what it got wrong before. Every chip carries its word, so
-   state never rests on colour alone. */
-.pvt-readout{
-  border:1px solid rgba(20,15,5,0.08);
-  border-radius:var(--r-md);
-  background:#FFFFFF;
-  padding:4px 16px;
-}
+   is exactly what it got wrong before. */
+.pvt-readout{padding:2px 18px}
 .pvt-readout-head{
   padding:11px 0 9px;
-  border-bottom:1px solid rgba(20,15,5,0.06);
+  border-bottom:1px solid var(--ds-border-subtle);
   font-family:var(--sans);
-  font-size:11.5px;
-  color:var(--muted);
+  font-size:12px;
+  color:var(--ds-text-subtle);
 }
-.pvt-readout-head strong{color:var(--ink);font-weight:600}
+.pvt-readout-head strong{color:var(--ds-text);font-weight:600}
 .pvt-index{
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
   align-items:start;
   gap:14px;
   padding:12px 0;
-  border-bottom:1px solid rgba(20,15,5,0.06);
+  border-bottom:1px solid var(--ds-border-subtle);
 }
 .pvt-index:last-child{border-bottom:0}
 .pvt-index-main{min-width:0}
-.pvt-index-top{display:flex;align-items:baseline;gap:10px;margin-bottom:7px}
-.pvt-index-label{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.2}
-.pvt-index-value{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
-.pvt-index-value.is-none{color:var(--faint)}
-.pvt-index-meta{margin-top:7px;font-family:var(--sans);font-size:10.5px;color:#7A766E;line-height:1.45}
-
-
-/* Status chip: glyph + word + colour, so the state is carried three ways
-   and never rests on colour alone. */
-.pvt-flag{
-  align-self:center;
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  height:21px;
-  padding:0 9px;
-  border:1px solid rgba(20,15,5,0.12);
-  border-radius:10px;
-  background:#FFFFFF;
-  color:var(--muted);
-  font-family:var(--sans);
-  font-size:9.5px;
-  font-weight:600;
-  letter-spacing:0.07em;
-  text-transform:uppercase;
-  line-height:1;
-  white-space:nowrap;
-}
-.pvt-flag.is-pass{color:#2e7d4f;border-color:rgba(46,125,79,0.38);background:rgba(46,125,79,0.06)}
-.pvt-flag.is-fail{color:#9c3d2a;border-color:rgba(156,61,42,0.38);background:rgba(156,61,42,0.06)}
-.pvt-flag.is-na{color:#8a7a2c;border-color:rgba(138,122,44,0.38);background:rgba(138,122,44,0.06)}
-.pvt-flag-icon{width:11px;height:11px;flex:0 0 11px;display:block}
+.pvt-index-top{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.pvt-index-label{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ds-text);line-height:1.3}
+.pvt-index-value{font-family:var(--sans);font-size:18px;font-weight:600;color:var(--ds-text);line-height:1;font-variant-numeric:tabular-nums}
+.pvt-index-value.is-none{color:var(--ds-text-faint)}
+.pvt-index-meta{margin-top:6px;font-family:var(--sans);font-size:12px;color:var(--ds-text-subtle);line-height:1.5}
 .pvt-readout-note{
   padding:10px 0 12px;
-  border-top:1px solid rgba(20,15,5,0.06);
+  border-top:1px solid var(--ds-border-subtle);
   font-family:var(--sans);
-  font-size:11.5px;
-  color:var(--muted);
+  font-size:12px;
+  color:var(--ds-text-subtle);
   line-height:1.5;
 }
 .pvt-index + .pvt-readout-note{border-top:0;padding-top:0}
 
-.pvt-table{width:100%;border-collapse:collapse;font-size:12px}
+/* ---- Tables: the scores table, the Larrabee table, the weighting table ---- */
+.pvt-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
 .pvt-table th{
   text-align:left;
   font-family:var(--sans);
-  font-size:10.5px;
+  font-size:11px;
   font-weight:600;
   letter-spacing:0.08em;
   text-transform:uppercase;
-  color:#4D4840;
-  padding:8px 12px;
-  border-bottom:2px solid var(--border);
+  color:var(--ds-text-subtle);
+  padding:6px 12px;
+  border-bottom:1px solid var(--ds-border-strong);
   white-space:nowrap;
 }
-.pvt-table td{padding:6px 12px;border-bottom:1px solid rgba(20,15,5,0.06)}
+.pvt-table td{padding:6px 12px;border-bottom:1px solid var(--ds-border-subtle);color:var(--ds-text)}
 .pvt-table tr:last-child td{border-bottom:0}
-.pvt-cell-fail{color:#9c3d2a;font-weight:600}
-.pvt-agg-copy{font-size:12.5px;color:var(--muted,#555);line-height:1.55;margin:0 0 12px}
-
-/* The headline count on the Summary tab. */
-.pvt-count{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
-.pvt-count-num{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--ink);line-height:1}
-.pvt-count-num.is-fail{color:#9c3d2a}
-.pvt-count-label{font-size:12px;color:var(--muted);line-height:1.4;max-width:520px}
+.pvt-table th.num,.pvt-table td.num{text-align:right}
+.pvt-table th:first-child,.pvt-table td:first-child{padding-left:0}
+.pvt-table th:last-child,.pvt-table td:last-child{padding-right:0}
+.pvt-cell-fail{color:var(--ds-primary)!important;font-weight:600}
+/* One row per independent indicator, so "counts as one" shows where the
+   results are read. */
+.pvt-table tr.pvt-group-row td{
+  padding-top:12px;
+  padding-bottom:4px;
+  border-bottom:0;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ds-text-subtle);
+}
+.pvt-table tr.pvt-group-row:first-child td{padding-top:6px}
+.pvt-group-note{margin-left:6px;font-weight:400;letter-spacing:0.04em;color:var(--ds-text-faint)}
 
 /* One-line expandable cautions - headline on screen, full text one click
-   away. White card like everything else on the sheet, caution rail. */
-/* Neutral by default: an always-on red caution beside an empty form is
-   wallpaper, and on this page red is reserved for "an indicator flagged".
-   .is-flagged (set from renderPvtNav, the same states the chips render)
-   restores the emphasis in amber once the method on that tab has a result
-   the caveat is actually about. */
+   away. Neutral by default: an always-on red caution beside an empty form
+   is wallpaper, and on this page red is reserved for "an indicator
+   flagged". .is-flagged (set from renderPvtNav, the same states the chips
+   render) restores the emphasis in amber once the method on that tab has
+   a result the caveat is actually about. */
 .pvt-caution{
-  border:1px solid rgba(20,15,8,0.12);
-  border-left:4px solid rgba(20,15,8,0.22);
-  border-radius:var(--r-md);
-  background:#FFFFFF;
+  border:1px solid var(--ds-border);
+  border-left:3px solid var(--ds-border-strong);
+  border-radius:var(--ds-radius-md);
+  background:var(--ds-surface);
   padding:10px 14px;
-  font-size:12.5px;
-  color:#4D4840;
+  font-size:12px;
+  color:var(--ds-text-muted);
   line-height:1.55;
 }
-.pvt-caution summary{cursor:pointer;list-style:none;color:var(--ink-2)}
+.pvt-caution summary{cursor:pointer;list-style:none;color:var(--ds-text-muted)}
 .pvt-caution summary::-webkit-details-marker{display:none}
 .pvt-caution summary::after{
   content:'more';
   margin-left:8px;
-  font-family:var(--mono);
-  font-size:9px;
-  letter-spacing:0.08em;
-  text-transform:uppercase;
-  color:var(--faint);
+  font-size:11px;
+  font-weight:600;
+  color:var(--ds-primary);
 }
 .pvt-caution[open] summary::after{content:'less'}
-.pvt-caution summary strong{color:var(--ink)}
+.pvt-caution summary strong{color:var(--ds-text);font-weight:600}
 .pvt-caution-body{margin-top:8px}
 .pvt-caution.is-flagged{
   border-color:rgba(183,121,31,0.40);
-  border-left-color:#B7791F;
-  background:rgba(183,121,31,0.05);
+  border-left-color:var(--ds-warning);
+  background:var(--ds-warning-tint);
 }
 .pvt-caution.is-flagged summary strong{color:#8a6215}
 
-/* Collapsed footer references - outside the sheet, quiet. */
-.pvt-refs{margin-top:22px;padding-top:10px}
+/* References: the same pill as every explainer on the page, in a panel
+   like everything else, the list in two columns. */
+.pvt-refs{margin-top:12px;padding:10px 18px;background:var(--ds-surface);border:1px solid var(--ds-border);border-radius:var(--ds-radius-lg)}
 .pvt-refs summary{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
   cursor:pointer;
-  font-family:var(--mono);
-  font-size:9.5px;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:var(--faint);
+  user-select:none;
   list-style:none;
+  font-family:var(--sans);
+  font-size:12px;
+  font-weight:500;
+  color:var(--accent);
+  border:1px solid rgba(156,61,42,0.20);
+  background:var(--accent-tint);
+  border-radius:999px;
+  padding:6px 12px;
+  transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);
 }
+.pvt-refs summary:hover{background:var(--accent-tint-strong);border-color:rgba(156,61,42,0.34)}
 .pvt-refs summary::-webkit-details-marker{display:none}
-.pvt-refs summary::before{content:'+ '}
-.pvt-refs[open] summary::before{content:'\2212\00a0 '}
-.pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
+.pvt-refs .references{margin-top:12px;padding-top:0;border-top:none;columns:2;column-gap:32px}
+.pvt-refs .references p{break-inside:avoid}
+@media (max-width:1100px){ .pvt-refs .references{columns:1} }
 
 /* Per-measure source line - the citation the cut-offs come from, plus the
    published accuracy at the currently selected cut-off (filled by
@@ -10296,18 +10265,18 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   display:flex;
   flex-direction:column;
   gap:3px;
-  margin:2px 0 12px;
-  padding:9px 12px;
-  background:rgba(244,240,232,0.55);
-  border:1px solid rgba(20,15,5,0.05);
-  border-radius:var(--r-md);
+  margin:0;
+  padding:10px 14px;
+  background:var(--ds-surface-subtle);
+  border:1px solid var(--ds-border-subtle);
+  border-radius:var(--ds-radius-md);
   font-family:var(--sans);
-  font-size:10.5px;
-  line-height:1.45;
-  color:#7A766E;
+  font-size:12px;
+  line-height:1.5;
+  color:var(--ds-text-subtle);
 }
 .pvt-source-cite i{font-style:italic}
-.pvt-source-accuracy{color:#5A5A5A;font-weight:500}
+.pvt-source-accuracy{color:var(--ds-text-muted);font-weight:600}
 .pvt-source-accuracy:empty{display:none}
 
 /* "Derived on" — the instrument and edition each cut-off was calibrated on,
@@ -10319,18 +10288,18 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   display:block;
   margin-top:5px;
   padding-top:5px;
-  border-top:1px solid rgba(20,15,5,0.07);
-  color:#4A4A4A;
+  border-top:1px solid var(--ds-border-subtle);
+  color:var(--ds-text-muted);
 }
 .pvt-derived-label{
-  font-size:9px;
+  font-size:11px;
   font-weight:600;
-  letter-spacing:0.11em;
+  letter-spacing:0.08em;
   text-transform:uppercase;
-  color:#918C84;
+  color:var(--ds-text-faint);
   margin-right:5px;
 }
-.pvt-derived-gap{color:#918C84;font-style:italic}
+.pvt-derived-gap{color:var(--ds-text-faint);font-style:italic}
 .pvt-derived-warn{
   display:block;
   margin-top:5px;
@@ -16527,7 +16496,6 @@ body #change-analysis .change-overview-table td{
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
-body #validity .pvt-refs{ margin-top: 8px !important; padding-top: 4px !important; }
 
 /* Premorbid, ToPF and OPIE-4 tabs: the model / index column was squeezed
    by six numeric columns with room to spare, so "Verbal Comprehension Index"
@@ -18529,24 +18497,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
               </select>
             </div>
           </div>
-          <details class="formula-disclosure">
-            <summary>Formula &amp; weighting table</summary>
-            <div class="formula-body">
-              <p>Each raw score converts to a weighted score (Silverberg, Wertheimer &amp; Fichtenberg, 2007, Table 2); EI = weighted Digit Span + weighted List Recognition (range 0–12). Higher EI = less credible performance. Some weights are unreachable for a given subtest (Digit Span never yields 1 or 4).</p>
-              <table class="pvt-table">
-                <thead><tr><th>Digit Span (raw)</th><th>List Recognition (raw)</th><th>Weighted score</th></tr></thead>
-                <tbody>
-                  <tr><td>8–16</td><td>18–20</td><td>0</td></tr>
-                  <tr><td>—</td><td>17</td><td>1</td></tr>
-                  <tr><td>7</td><td>15–16</td><td>2</td></tr>
-                  <tr><td>6</td><td>13–14</td><td>3</td></tr>
-                  <tr><td>—</td><td>11–12</td><td>4</td></tr>
-                  <tr><td>5</td><td>10</td><td>5</td></tr>
-                  <tr><td>0–4</td><td>0–9</td><td>6</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-ei-result"></div>
@@ -18560,6 +18510,26 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
             <span class="pvt-derived-line" data-pvt-derived="ei"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Formula &amp; weighting table</summary>
+          <div class="formula-body">
+            <p>Each raw score converts to a weighted score (Silverberg, Wertheimer &amp; Fichtenberg, 2007, Table 2); EI = weighted Digit Span + weighted List Recognition (range 0–12). Higher EI = less credible performance. Some weights are unreachable for a given subtest (Digit Span never yields 1 or 4).</p>
+            <table class="pvt-table">
+              <thead><tr><th>Digit Span (raw)</th><th>List Recognition (raw)</th><th>Weighted score</th></tr></thead>
+              <tbody>
+                <tr><td>8–16</td><td>18–20</td><td>0</td></tr>
+                <tr><td>—</td><td>17</td><td>1</td></tr>
+                <tr><td>7</td><td>15–16</td><td>2</td></tr>
+                <tr><td>6</td><td>13–14</td><td>3</td></tr>
+                <tr><td>—</td><td>11–12</td><td>4</td></tr>
+                <tr><td>5</td><td>10</td><td>5</td></tr>
+                <tr><td>0–4</td><td>0–9</td><td>6</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -18591,12 +18561,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
             </div>
           </div>
           <div class="info-box pvt-note"><strong>Mandatory gate.</strong> Computed only where Digit Span &lt; 9, List Recognition &lt; 19, or their sum &lt; 28 (Novitski et al., 2012).</div>
-          <details class="formula-disclosure">
-            <summary>Formula</summary>
-            <div class="formula-body">
-              <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. The gate exists because in cognitively intact examinees free recall normally far exceeds the ceiling-limited recognition score, so an ungated ES over-flags; only 17% of the normal standardisation sample fall below the combined &lt; 28 screen. But 15.1% of that sample meet the screen and also score ES &lt; 12, so even with the gate roughly one healthy adult in seven would be flagged; Novitski et al. note the ES &ldquo;will produce high false positive rates in the normal population&rdquo;.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-es-result"></div>
@@ -18610,6 +18574,14 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
             <span class="pvt-derived-line" data-pvt-derived="es"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Formula</summary>
+          <div class="formula-body">
+            <p>ES = ( List Recognition − [ List Recall + Story Recall + Figure Recall ] ) + Digit Span, all raw scores (Novitski et al., 2012). Lower ES = more suspicious of poor effort. Cut-off: ES &lt; 12, applicable only once the gating rule is met. The gate exists because in cognitively intact examinees free recall normally far exceeds the ceiling-limited recognition score, so an ungated ES over-flags; only 17% of the normal standardisation sample fall below the combined &lt; 28 screen. But 15.1% of that sample meet the screen and also score ES &lt; 12, so even with the gate roughly one healthy adult in seven would be flagged; Novitski et al. note the ES &ldquo;will produce high false positive rates in the normal population&rdquo;.</p>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -18636,12 +18608,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
             </div>
           </div>
           <div class="info-box pvt-note"><strong>Classic variant.</strong> Forward + Backward only; the WAIS-IV Sequencing variants use different cut-offs and are not scored here.</div>
-          <details class="formula-disclosure">
-            <summary>Scoring &amp; worked example</summary>
-            <div class="formula-body">
-              <p>RDS = (longest forward span passed on both trials) + (longest backward span passed on both trials) (Greiffenstein, Baker &amp; Gola, 1994; cross-validated by Meyers &amp; Volbrecht, 1998). The classic Forward + Backward variant is what the validation literature uses. Document which variant you administered. Floor rule: failing at least one trial each of 3 forward and 2 backward is recorded as RDS = 3. Worked example from the original paper: passes both trials of 3 forward but fails one 4-forward trial → forward = 3; passes both trials of 2 backward but fails one 3-backward trial → backward = 2; RDS = 3 + 2 = 5. Reference values: mean RDS ~8.8 in non-malingering TBI vs ~6.7 in probable malingerers.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-rds-result"></div>
@@ -18655,6 +18621,14 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
             <span class="pvt-derived-line" data-pvt-derived="rds"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Scoring &amp; worked example</summary>
+          <div class="formula-body">
+            <p>RDS = (longest forward span passed on both trials) + (longest backward span passed on both trials) (Greiffenstein, Baker &amp; Gola, 1994; cross-validated by Meyers &amp; Volbrecht, 1998). The classic Forward + Backward variant is what the validation literature uses. Document which variant you administered. Floor rule: failing at least one trial each of 3 forward and 2 backward is recorded as RDS = 3. Worked example from the original paper: passes both trials of 3 forward but fails one 4-forward trial → forward = 3; passes both trials of 2 backward but fails one 3-backward trial → backward = 2; RDS = 3 + 2 = 5. Reference values: mean RDS ~8.8 in non-malingering TBI vs ~6.7 in probable malingerers.</p>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -18688,12 +18662,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
               </select>
             </div>
           </div>
-          <details class="formula-disclosure">
-            <summary>Indices &amp; base rates</summary>
-            <div class="formula-body">
-              <p>The Digit Span age-corrected scaled score is entered as scored on the record form. The age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease (Iverson &amp; Tulsky's suspicion guideline). Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from TBI patients in neurorehabilitation (sens. .75, spec. .69, with .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Iverson &amp; Tulsky give three further suspicion indices, each evaluated against base rates: a Vocabulary − Digit Span difference ≥ 5 (7.1% of the standardisation sample, 2.8% of the combined clinical sample), a longest span forward ≤ 4 applicable only under age 55 (base rates 2.5–5.5% in the under-55 bands, rising to 9.5–12.7% from age 55, which is why the index is age-limited; the app reads the top-bar patient age and withholds it without one), and a longest span backward ≤ 2 (2.0–6.0% across all bands, 3.4% clinical). The longest spans here are the longest passed on <em>either</em> trial, as the standardisation data tabulate them, not the RDS both-trials span. Both papers derive from the WAIS-III. Document the edition administered.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-ds-result"></div>
@@ -18707,6 +18675,14 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
             <span class="pvt-derived-line" data-pvt-derived="ds"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Indices &amp; base rates</summary>
+          <div class="formula-body">
+            <p>The Digit Span age-corrected scaled score is entered as scored on the record form. The age correction is already applied by the Wechsler norms, so no separate age entry is needed here. ACSS ≤ 5 occurs in 3.8% of the WAIS-III standardisation sample and 3.4% of a combined clinical sample spanning TBI, alcohol abuse, Korsakoff's, temporal lobectomy and Alzheimer's disease (Iverson &amp; Tulsky's suspicion guideline). Axelrod et al. found ≤ 7 the best single discriminator of probable malingering from TBI patients in neurorehabilitation (sens. .75, spec. .69, with .77 on non-litigating mild-TBI cross-validation), and no genuine mild-TBI patient scored below 6. Iverson &amp; Tulsky give three further suspicion indices, each evaluated against base rates: a Vocabulary − Digit Span difference ≥ 5 (7.1% of the standardisation sample, 2.8% of the combined clinical sample), a longest span forward ≤ 4 applicable only under age 55 (base rates 2.5–5.5% in the under-55 bands, rising to 9.5–12.7% from age 55, which is why the index is age-limited; the app reads the top-bar patient age and withholds it without one), and a longest span backward ≤ 2 (2.0–6.0% across all bands, 3.4% clinical). The longest spans here are the longest passed on <em>either</em> trial, as the standardisation data tabulate them, not the RDS both-trials span. Both papers derive from the WAIS-III. Document the edition administered.</p>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -18733,12 +18709,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
             <button type="button" class="btn" id="pvt-rey-administer">Administer on screen</button>
             <span class="rey-admin-hint">Times the 10-second exposure and scores the recognition trial. Displays test stimuli: start only with the examinee present.</span>
           </div>
-          <details class="formula-disclosure">
-            <summary>Scoring &amp; administration</summary>
-            <div class="formula-body">
-              <p>Combination score = free recall + (recognition correct − false positives), cut-off &lt; 20; the classic free-recall cut-off is &lt; 9 (Boone et al., 2002, Table 6; the combination raises sensitivity from .47 to .71 at comparable specificity). Administration: expose the stimulus page for 10 seconds ("there are 15 different things so you will have to learn them very quickly"), remove it and have the examinee draw what they remember; then present the recognition page ("on this page are the 15 things I showed you as well as 15 items that were not on the page, circle the things you remember"). The stimulus and recognition pages are deliberately not reproduced here.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-rey15-result"></div>
@@ -18752,6 +18722,14 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
             <span class="pvt-derived-line" data-pvt-derived="rey15"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Scoring &amp; administration</summary>
+          <div class="formula-body">
+            <p>Combination score = free recall + (recognition correct − false positives), cut-off &lt; 20; the classic free-recall cut-off is &lt; 9 (Boone et al., 2002, Table 6; the combination raises sensitivity from .47 to .71 at comparable specificity). Administration: expose the stimulus page for 10 seconds ("there are 15 different things so you will have to learn them very quickly"), remove it and have the examinee draw what they remember; then present the recognition page ("on this page are the 15 things I showed you as well as 15 items that were not on the page, circle the things you remember"). The stimulus and recognition pages are deliberately not reproduced here.</p>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -18789,16 +18767,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
               <input type="number" min="0" max="16" step="1" id="pvt-cvlt3-crit-recog" placeholder="e.g. 0">
             </div>
           </div>
-          <details class="formula-disclosure">
-            <summary>How the cut-off is set, and why it changes with age</summary>
-            <div class="formula-body">
-              <p><strong>No published cut-off.</strong> The CVLT-3 manual gives no cut score for Forced Choice. Table D.13 gives, by age band, the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>. By default a score is flagged when that percentage is at or below the false-positive rate set under <em>Base-rate criterion</em>: 10% by default, the consensus specificity of .90 per test (Sweet et al., 2021), or 5%. With no age entered, the manual's All Ages column is used.</p>
-              <p><strong>Age matters.</strong> 15 of 16 hits is the 8.6th percentile across all ages but the <strong>26th</strong> at ages 80&ndash;90. So the flag is &le; 15 in every band except 80&ndash;90, where it is &le; 14. A score of 15 is a 3&ndash;6% event in a working-age adult and an unremarkable one in an 85-year-old.</p>
-              <p><strong>Published cut-offs (CVLT-II).</strong> Two published cut-offs can be chosen instead, under <em>Flag basis</em>. Both come from the CVLT-II; the trial is the same in both editions (16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition). <strong>&le; 14</strong> is the standard: across 17 studies and 4,432 patients it gives sensitivity .50 at specificity .93, and no healthy control in the review scored at or below it (Schwartz et al., 2016). <strong>&le; 15</strong> counts a single error as a failure: in 104 adults with TBI it gave sensitivity .56 at specificity .92 against seven reference PVTs, identifying about 6% more invalid response sets (Erdodi et al., 2018). For every patient under 80, the age-based flag is already &le; 15.</p>
-              <p><strong>A fail is informative; a pass is not.</strong> Examinees who failed a reference PVT were about eight times more likely to fail Forced Choice, but roughly half of invalid response sets pass it, because a sophisticated simulator recognises how easy the task is (Schwartz et al., 2016).</p>
-              <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on Forced Choice. Tables D.14 and D.15 give the percentage scoring that many <em>or more</em>, by age band, and the critical-item flag always uses those tables, whichever cut-off is set for hits. Hits and both critical-item scores come from one administration, so together they count as <strong>one</strong> indicator.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-cvlt3-result"></div>
@@ -18812,6 +18780,18 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
             <span class="pvt-derived-line" data-pvt-derived="cvlt3"></span>
           </div>
         </div>
+      </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>How the cut-off is set, and why it changes with age</summary>
+          <div class="formula-body">
+            <p><strong>No published cut-off.</strong> The CVLT-3 manual gives no cut score for Forced Choice. Table D.13 gives, by age band, the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>. By default a score is flagged when that percentage is at or below the false-positive rate set under <em>Base-rate criterion</em>: 10% by default, the consensus specificity of .90 per test (Sweet et al., 2021), or 5%. With no age entered, the manual's All Ages column is used.</p>
+            <p><strong>Age matters.</strong> 15 of 16 hits is the 8.6th percentile across all ages but the <strong>26th</strong> at ages 80&ndash;90. So the flag is &le; 15 in every band except 80&ndash;90, where it is &le; 14. A score of 15 is a 3&ndash;6% event in a working-age adult and an unremarkable one in an 85-year-old.</p>
+            <p><strong>Published cut-offs (CVLT-II).</strong> Two published cut-offs can be chosen instead, under <em>Flag basis</em>. Both come from the CVLT-II; the trial is the same in both editions (16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition). <strong>&le; 14</strong> is the standard: across 17 studies and 4,432 patients it gives sensitivity .50 at specificity .93, and no healthy control in the review scored at or below it (Schwartz et al., 2016). <strong>&le; 15</strong> counts a single error as a failure: in 104 adults with TBI it gave sensitivity .56 at specificity .92 against seven reference PVTs, identifying about 6% more invalid response sets (Erdodi et al., 2018). For every patient under 80, the age-based flag is already &le; 15.</p>
+            <p><strong>A fail is informative; a pass is not.</strong> Examinees who failed a reference PVT were about eight times more likely to fail Forced Choice, but roughly half of invalid response sets pass it, because a sophisticated simulator recognises how easy the task is (Schwartz et al., 2016).</p>
+            <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on Forced Choice. Tables D.14 and D.15 give the percentage scoring that many <em>or more</em>, by age band, and the critical-item flag always uses those tables, whichever cut-off is set for hits. Hits and both critical-item scores come from one administration, so together they count as <strong>one</strong> indicator.</p>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -18857,12 +18837,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
               </select>
             </div>
           </div>
-          <details class="formula-disclosure">
-            <summary>Cut-offs &amp; classification accuracy</summary>
-            <div class="formula-body">
-              <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45: spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49: spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42: spec. .91, sens. .67–.69; Trial 1 &lt; 41: spec. .93, sens. .66. All are Martin et al.'s weighted-mean values for neurocognitive/psychiatric samples; an earlier aggregation of Trial 1 (Denning, 2012) reported .92/.77 averaged across cut-offs 34–44, which is why the meta-analysis examined each cut-off individually. Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17.</p>
-            </div>
-          </details>
         </div>
         <div class="pvt-outcome">
           <div class="pvt-result" id="pvt-tomm-result"></div>
@@ -18877,43 +18851,55 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
           </div>
         </div>
       </div>
+      <div class="pvt-explain">
+        <details class="formula-disclosure">
+          <summary>Cut-offs &amp; classification accuracy</summary>
+          <div class="formula-body">
+            <p>Meta-analytic weighted-mean specificity/sensitivity for neurocognitive and psychiatric samples (Martin et al., 2020): Trial 2 / Retention &lt; 45: spec. .96–.98, sens. .45–.55; Trial 2 / Retention &lt; 49: spec. .91–.97, sens. .59–.70; Trial 1 &lt; 42: spec. .91, sens. .67–.69; Trial 1 &lt; 41: spec. .93, sens. .66. All are Martin et al.'s weighted-mean values for neurocognitive/psychiatric samples; an earlier aggregation of Trial 1 (Denning, 2012) reported .92/.77 averaged across cut-offs 34–44, which is why the meta-analysis examined each cut-off individually. Positive and negative predictive power are derived from these values and the selected base rate by Bayes' theorem, as in Martin et al. Tables 16–17.</p>
+          </div>
+        </details>
+      </div>
     </div>
 
     <!-- ===== Summary & Aggregation ===== -->
-    <!-- The landing panel. The verdict and the indicator cards are drawn by
-         renderPvtSummary from the same getPvtSummaryRows the table and the
-         APA export read, so no surface can disagree with another. -->
+    <!-- The landing panel, one column (2026-09): the verdict, the scores once
+         there are any, then the Larrabee evidence. The verdict and the table
+         are drawn by renderPvtSummary from the same getPvtSummaryRows the APA
+         export reads, so no surface can disagree with another. The per-
+         indicator cards that used to sit under the verdict are gone: they
+         restated the menu, whose chips already carry each measure's state.
+         One column, so an explainer opened anywhere lengthens the page evenly
+         instead of leaving a gap beside a shorter neighbour. -->
     <div class="pvt-tab-content active" id="pvt-summary">
       <div id="pvt-summary-verdict"></div>
-      <div id="pvt-summary-cards"></div>
-      <div class="pvt-workspace pvt-summary-lower">
-        <div class="pvt-summary-left">
-          <div id="pvt-summary-body"></div>
-          <!-- The note sits under the table it annotates, which also balances
-               the two columns against the taller Larrabee card. -->
-          <div class="info-box pvt-note" data-apa-note="pvt"></div>
-        </div>
-        <div class="pvt-outcome">
-          <div class="pvt-card">
-            <div class="pvt-card-kicker">Aggregating multiple PVTs (Larrabee, 2014)</div>
-            <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity, within Slick et al.'s (1999) criteria, which also require a substantial external incentive. Classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT):</p>
-            <table class="pvt-table">
-              <thead><tr><th>Threshold</th><th>Specificity</th><th>Sensitivity</th><th>Total correct</th></tr></thead>
-              <tbody>
-                <tr><td>≥ 2 of 7 failures</td><td>88.9%</td><td>97.6%</td><td>92.6%</td></tr>
-                <tr><td>≥ 3 of 7 failures</td><td>96.3%</td><td>87.8%</td><td>92.6%</td></tr>
-                <tr><td>≥ 4 of 7 failures</td><td>100%</td><td>63.4%</td><td>84.2%</td></tr>
-              </tbody>
-            </table>
+      <!-- Hidden until something is scored: an empty scores card and a note
+           about "Fail" were two boxes explaining nothing. -->
+      <div class="pvt-summary-scores" id="pvt-summary-scores" hidden>
+        <div id="pvt-summary-body"></div>
+        <div class="info-box pvt-note" data-apa-note="pvt"></div>
+      </div>
+      <div class="pvt-panel pvt-larrabee">
+        <div class="pvt-larrabee-grid">
+          <div>
+            <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014)</h3>
+            <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity, within Slick et al.'s (1999) criteria, which also require a substantial external incentive. The table gives classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT).</p>
             <p class="pvt-agg-copy">These figures are for seven indicators administered. They do not transfer directly to a different number, and this page counts at most five independent indicators.</p>
-            <details class="formula-disclosure">
-              <summary>Why ≥ 2, and when to demand more</summary>
-              <div class="formula-body">
-                <p>Monte Carlo estimates overstate how often genuine patients fail two or more PVTs: their PVT scores sit at ceiling and are skewed, not normally distributed (Larrabee, 2014). The count holds only for <em>independent</em> indicators; measures built from the same subtest raise each other&rsquo;s failure rate (Larrabee, 2014). On this page, the Effort Index and Effort Scale share RBANS subtests and count as <strong>one</strong>, and RDS also draws on Digit Span. In Larrabee&rsquo;s sample, the six non-malingering patients who failed two or more had severe TBI with prolonged coma, complicated mild TBI, or stroke with a lesion on CT, and many failed only just inside the invalid range (RDS 7, WCST failure-to-maintain-set 2). Before reading two failures as probable invalidity in a genuinely impaired patient, check whether the patient&rsquo;s other scores make the failures unlikely to be false positives (Larrabee, 2014).</p>
-              </div>
-            </details>
           </div>
+          <table class="pvt-table">
+            <thead><tr><th>Threshold</th><th class="num">Specificity</th><th class="num">Sensitivity</th><th class="num">Total correct</th></tr></thead>
+            <tbody>
+              <tr><td>≥ 2 of 7 failures</td><td class="num">88.9%</td><td class="num">97.6%</td><td class="num">92.6%</td></tr>
+              <tr><td>≥ 3 of 7 failures</td><td class="num">96.3%</td><td class="num">87.8%</td><td class="num">92.6%</td></tr>
+              <tr><td>≥ 4 of 7 failures</td><td class="num">100%</td><td class="num">63.4%</td><td class="num">84.2%</td></tr>
+            </tbody>
+          </table>
         </div>
+        <details class="formula-disclosure">
+          <summary>Why ≥ 2, and when to demand more</summary>
+          <div class="formula-body">
+            <p>Monte Carlo estimates overstate how often genuine patients fail two or more PVTs: their PVT scores sit at ceiling and are skewed, not normally distributed (Larrabee, 2014). The count holds only for <em>independent</em> indicators; measures built from the same subtest raise each other&rsquo;s failure rate (Larrabee, 2014). On this page, the Effort Index and Effort Scale share RBANS subtests and count as <strong>one</strong>, and RDS also draws on Digit Span. In Larrabee&rsquo;s sample, the six non-malingering patients who failed two or more had severe TBI with prolonged coma, complicated mild TBI, or stroke with a lesion on CT, and many failed only just inside the invalid range (RDS 7, WCST failure-to-maintain-set 2). Before reading two failures as probable invalidity in a genuinely impaired patient, check whether the patient&rsquo;s other scores make the failures unlikely to be false positives (Larrabee, 2014).</p>
+          </div>
+        </details>
       </div>
 
       <div class="apa-wrap">
@@ -18937,14 +18923,11 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale–Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523.</p>
         <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573.</p>
         <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson. [Forced Choice Recognition base rates by age band, Appendix D Tables D.13-D.15; the manual publishes no cut-off for this trial.]</p>
-      <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
-        <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson.</p>
-        <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859.</p>
+        <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432.</p>
         <p>Erdodi, L. A., Abeare, C. A., Medoff, B., Seke, K. R., Sagar, S., &amp; Kirsch, N. L. (2018). A single error is one too many: The Forced Choice Recognition trial of the CVLT-II as a measure of performance validity in adults with TBI. <i>Archives of Clinical Neuropsychology, 33</i>(7), 845&ndash;859. [The CVLT-II <span style="white-space:nowrap">&le; 15</span> cut-off and its accuracy across seven reference PVTs.]</p>
       <p>Greiffenstein, M. F., Baker, W. J., &amp; Gola, T. (1994). Validation of malingered amnesia measures with a large clinical sample. <i>Psychological Assessment, 6</i>(3), 218–224.</p>
         <p>Iverson, G. L., &amp; Tulsky, D. S. (2003). Detecting malingering on the WAIS-III: Unusual Digit Span performance patterns in the normal population and in clinical groups. <i>Archives of Clinical Neuropsychology, 18</i>(1), 1–9.</p>
         <p>Larrabee, G. J. (2014). False-positive rates associated with the use of multiple performance and symptom validity tests. <i>Archives of Clinical Neuropsychology, 29</i>(4), 364–373.</p>
-        <p>Sweet, J. J., Heilbronner, R. L., Morgan, J. E., Larrabee, G. J., Rohling, M. L., Boone, K. B., Kirkwood, M. W., Schroeder, R. W., Suhr, J. A., &amp; Conference Participants. (2021). American Academy of Clinical Neuropsychology (AACN) 2021 consensus statement on validity assessment: Update of the 2009 AACN consensus conference statement on neuropsychological assessment of effort, response bias, and malingering. <i>The Clinical Neuropsychologist, 35</i>(6), 1053–1106.</p>
         <p>Martin, P. K., Schroeder, R. W., Olsen, D. H., Maloy, H., Boettcher, A., Ernst, N., &amp; Okut, H. (2020). A systematic review and meta-analysis of the Test of Memory Malingering in adults: Two decades of deception detection. <i>The Clinical Neuropsychologist, 34</i>(1), 88–119.</p>
         <p>Meyers, J. E., &amp; Volbrecht, M. (1998). Validation of reliable digits for detection of malingering. <i>Assessment, 5</i>(3), 303–307.</p>
         <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195.</p>
@@ -18953,6 +18936,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <p>Shura, R. D., Brearly, T. W., Rowland, J. A., Martindale, S. L., Miskey, H. M., &amp; Duff, K. (2018). RBANS validity indices: A systematic review and meta-analysis. <i>Neuropsychology Review, 28</i>(3), 269–284.</p>
         <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854.</p>
         <p>Slick, D. J., Sherman, E. M. S., &amp; Iverson, G. L. (1999). Diagnostic criteria for malingered neurocognitive dysfunction: Proposed standards for clinical practice and research. <i>The Clinical Neuropsychologist, 13</i>(4), 545–561.</p>
+        <p>Sweet, J. J., Heilbronner, R. L., Morgan, J. E., Larrabee, G. J., Rohling, M. L., Boone, K. B., Kirkwood, M. W., Schroeder, R. W., Suhr, J. A., &amp; Conference Participants. (2021). American Academy of Clinical Neuropsychology (AACN) 2021 consensus statement on validity assessment: Update of the 2009 AACN consensus conference statement on neuropsychological assessment of effort, response bias, and malingering. <i>The Clinical Neuropsychologist, 35</i>(6), 1053–1106.</p>
         <p>Tombaugh, T. N. (1996). <i>Test of Memory Malingering (TOMM).</i> North Tonawanda, NY: Multi-Health Systems.</p>
       </div>
     </details>
@@ -31465,18 +31449,10 @@ const PVT_INDICATOR_GROUPS = [
   ]}
 ];
 
-/* One state per measure and per indicator, read off the summary rows so a
-   card can never disagree with the table under it. A gated row is not an
-   indicator (pvtIndicatorCounts drops it), so an indicator holding only
-   gated rows reads "gated", not "pass". */
-function pvtMemberState(rows, m){
-  const mine = rows.filter(r => m.ids.includes(r.id));
-  if (!mine.length) return { state: 'idle', value: 'not scored' };
-  if (mine.every(r => r.gated)) return { state: 'gated', value: 'gate not met' };
-  const flagged = mine.filter(r => r.fail).length;
-  return flagged ? { state: 'flag', value: `${flagged} flagged` }
-                 : { state: 'pass', value: mine.length > 1 ? 'within cut-offs' : 'within cut-off' };
-}
+/* One state per indicator, read off the summary rows so a verdict pip can
+   never disagree with the table under it. A gated row is not an indicator
+   (pvtIndicatorCounts drops it), so an indicator holding only gated rows
+   reads "gated", not "pass". */
 function pvtGroupState(rows, g){
   const mine = rows.filter(r => r.group === g.id);
   if (!mine.length) return 'idle';
@@ -31502,7 +31478,7 @@ function renderPvtSummary(){
     if (c.total === 0){
       kind = 'idle';
       head = 'Nothing scored yet';
-      body = 'Choose a measure from the list on the left, or from the indicators below. Each result joins this summary as it is entered.';
+      body = 'Choose a measure from the list on the left. Each result joins this summary as it is entered.';
     } else {
       kind = c.failed >= 2 ? 'fail' : c.failed === 1 ? 'warn' : 'pass';
       head = `${c.failed} of ${c.total} independent indicator${c.total === 1 ? '' : 's'} failed`;
@@ -31523,45 +31499,34 @@ function renderPvtSummary(){
         <div class="pvt-verdict-head">${head}</div>
         <p class="pvt-verdict-body">${body}</p>
         <div class="pvt-verdict-meta">${c.total} of ${PVT_INDICATOR_GROUPS.length} indicators scored${
-          unscored.length && c.total > 0 ? ` &middot; not yet scored: ${unscored.join(', ')}` : ''} &middot; results are cut-off comparisons only</div>
+          unscored.length && c.total > 0 ? ` &middot; not yet scored: ${unscored.join(', ')}` : ''}</div>
       </div>
+      <div class="pvt-verdict-rule"><strong>≥ 2 independent failures</strong> support probable invalidity (Larrabee, 2014)</div>
     </div>`;
   }
 
-  /* The indicators: the page's menu, restated with each one's state. */
-  const cards = document.getElementById('pvt-summary-cards');
-  if (cards){
-    cards.innerHTML = `<div class="pvt-ind-grid">${PVT_INDICATOR_GROUPS.map((g, i) => {
-      const st = states[i];
-      const chip = st === 'idle' ? ''
-        : `<span class="pvt-status is-${st === 'gated' ? 'na' : st}">${PVT_STATE_ICON[st === 'fail' ? 'flag' : st === 'gated' ? 'na' : 'pass']}${st === 'fail' ? 'Fail' : st === 'gated' ? 'Gated' : 'Pass'}</span>`;
-      const members = g.members.map(m => {
-        const ms = pvtMemberState(rows, m);
-        return `<button type="button" class="pvt-ind-row is-${ms.state}" data-pvt-go="${m.tab}">
-          <span class="pvt-ind-label">${m.label}</span>
-          <span class="pvt-ind-value">${ms.state === 'idle' ? 'Score &rarr;' : ms.value}</span>
-        </button>`;
-      }).join('');
-      return `<div class="pvt-ind is-${st}">
-        <div class="pvt-ind-head"><span class="pvt-ind-name">${g.label}</span>${chip}</div>
-        <div class="pvt-ind-sub">${g.sub}</div>
-        ${members}
-      </div>`;
-    }).join('')}</div>`;
-  }
-
+  /* The scores table, grouped by independent indicator so "counts as one"
+     is visible where the results are read. The per-indicator cards that
+     used to sit here restated the menu and were removed (2026-09); the
+     grouping they carried lives on in these group rows. Rows are drawn in
+     PVT_INDICATOR_GROUPS order, the order getPvtSummaryRows writes them. */
+  const wrap = document.getElementById('pvt-summary-scores');
   const host = document.getElementById('pvt-summary-body');
+  if (wrap) wrap.hidden = rows.length === 0;
   if (!host) return;
-  if (rows.length === 0){
-    host.innerHTML = '<div class="pvt-card"><div class="pvt-card-kicker">Scores table</div><p class="pvt-agg-copy" style="margin:0">Every scored measure is listed here with its cut-off, published accuracy and result, as it will appear in the report.</p></div>';
-    return;
-  }
+  if (rows.length === 0){ host.innerHTML = ''; return; }
+  const body = PVT_INDICATOR_GROUPS.map(g => {
+    const mine = rows.filter(r => r.group === g.id);
+    if (!mine.length) return '';
+    return `<tr class="pvt-group-row"><td colspan="6">${g.label}${g.members.length > 1 ? ' <span class="pvt-group-note">counts as one</span>' : ''}</td></tr>`
+      + mine.map(r => `<tr><td>${r.measure}</td><td class="num">${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td class="num">${r.sens}</td><td class="num">${r.spec}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('');
+  }).join('');
   host.innerHTML = `
-    <div class="pvt-card">
-      <div class="pvt-card-kicker">Scores table</div>
+    <div class="pvt-panel">
+      <h3 class="pvt-panel-title">Scores</h3>
       <table class="pvt-table">
-        <thead><tr><th>Measure</th><th>Score</th><th>Cut-off</th><th>Sens.</th><th>Spec.</th><th>Result</th></tr></thead>
-        <tbody>${rows.map(r => `<tr><td>${r.measure}</td><td>${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td>${r.sens}</td><td>${r.spec}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>Measure</th><th class="num">Score</th><th>Cut-off</th><th class="num">Sens.</th><th class="num">Spec.</th><th>Result</th></tr></thead>
+        <tbody>${body}</tbody>
       </table>
     </div>`;
 }
@@ -31800,16 +31765,9 @@ function setupPvtPage(){
   root.querySelectorAll('.pvt-nav [data-pvt-tab]').forEach(tab => {
     tab.addEventListener('click', () => switchPvtTab(tab.dataset.pvtTab));
   });
-  /* The Summary's indicator cards double as the menu. Delegated, because
-     they are rebuilt on every keystroke and bound handlers would not
-     survive. */
   root.querySelector('[data-pvt-back]')?.addEventListener('click', () => {
     switchPvtTab('summary');
     root.querySelector('.pvt-nav-summary')?.focus({ preventScroll: true });
-  });
-  document.getElementById('pvt-summary-cards')?.addEventListener('click', e => {
-    const row = e.target.closest('[data-pvt-go]');
-    if (row) switchPvtTab(row.dataset.pvtGo);
   });
   /* The shared RBANS fields appear on both the EI and ES tabs; pvtState is
      the master and every input with the same data-pvt-field mirrors it. */
