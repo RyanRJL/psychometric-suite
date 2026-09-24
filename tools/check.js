@@ -52,7 +52,7 @@ vm.runInContext(
     ' PVT_REY15, PVT_REY15_ACCURACY, PVT_DS_SPAN_BASERATES,' +
     ' REY15_RECALL_ROWS, REY15_RECOGNITION_ROWS, REY15_SHAPES,' +
     ' PVT_CVLT3_BANDS, PVT_CVLT3_FC_HITS, PVT_CVLT3_CRITICAL, PVT_CVLT3_CRITERIA,' +
-    ' PVT_CVLT3_FC_CUTOFFS, PVT_CVLT3_ERDODI_T6, PVT_INSTRUMENTS, PVT_DKEFS_TRAILS, PVT_SOURCES,' +
+    ' PVT_CVLT3_FC_CUTOFFS, PVT_CVLT3_ERDODI_T6, PVT_INSTRUMENTS, PVT_DKEFS_TRAILS, PVT_SOURCES, PVT_BELOW_CHANCE,' +
     ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
@@ -7115,12 +7115,13 @@ check('shipped TOMM evaluation: default cut-offs, failure direction, Bayes wirin
   const bad = [];
   const run = vals => {
     const c = {
-      PVT_TOMM_CUTOFFS: D.PVT_TOMM_CUTOFFS,
+      PVT_TOMM_CUTOFFS: D.PVT_TOMM_CUTOFFS, PVT_BELOW_CHANCE: D.PVT_BELOW_CHANCE,
       document: { getElementById: id => (id in vals ? { value: vals[id] } : null) }
     };
     vm.createContext(c);
     vm.runInContext(extractFn(APP_SRC, 'pvtInt') + ';' + extractFn(APP_SRC, 'pvtPPP') + ';'
       + extractFn(APP_SRC, 'pvtNPP') + ';' + extractFn(APP_SRC, 'pvtTommCutoffById') + ';'
+      + extractFn(APP_SRC, 'pvtBelowChanceMax') + ';'
       + extractFn(APP_SRC, 'getPvtTomm') + ';globalThis.__T = getPvtTomm();', c);
     return c.__T;
   };
@@ -7683,7 +7684,7 @@ function cvlt3Context(state, age){
   const c = {
     PVT_CVLT3_BANDS: D.PVT_CVLT3_BANDS, PVT_CVLT3_FC_HITS: D.PVT_CVLT3_FC_HITS,
     PVT_CVLT3_CRITICAL: D.PVT_CVLT3_CRITICAL, PVT_CVLT3_CRITERIA: D.PVT_CVLT3_CRITERIA,
-    PVT_CVLT3_FC_CUTOFFS: D.PVT_CVLT3_FC_CUTOFFS,
+    PVT_CVLT3_FC_CUTOFFS: D.PVT_CVLT3_FC_CUTOFFS, PVT_BELOW_CHANCE: D.PVT_BELOW_CHANCE,
     patientAge: () => (age === undefined ? null : age),
     document: { getElementById: id => (id in state ? { value: String(state[id]) } : null) }
   };
@@ -7691,7 +7692,7 @@ function cvlt3Context(state, age){
   vm.runInContext(
     ['pvtInt', 'pvtCvlt3Band', 'pvtCvlt3HitsRate', 'pvtCvlt3CriticalRate',
      'pvtCvlt3HitsThreshold', 'pvtCvlt3CriticalThreshold', 'pvtCvlt3Criterion',
-     'pvtCvlt3Basis', 'getPvtCvlt3'].map(f => extractFn(APP_SRC, f)).join(';')
+     'pvtCvlt3Basis', 'pvtBelowChanceMax', 'getPvtCvlt3'].map(f => extractFn(APP_SRC, f)).join(';')
     + ';globalThis.__CV = getPvtCvlt3; globalThis.__TH = pvtCvlt3HitsThreshold;', c);
   return c;
 }
@@ -11203,13 +11204,91 @@ check('every measure links its source papers, and the reference list carries the
   if (refPs !== listed.length + manuals) bad.push(refPs + ' references but ' + listed.length + ' DOIs and ' + manuals + ' manuals');
   /* The Summary's aggregation panel links its sources the same way. */
   const aggKeys = ((HTML_SRC.match(/data-pvt-papers="([^"]+)"/) || ['', ''])[1]).split(' ').filter(Boolean);
-  ['larrabee2014', 'sweet2021', 'slick1999', 'bilder2014', 'larrabee2014reply'].forEach(k => { if (!aggKeys.includes(k)) bad.push('the Summary no longer links ' + k); });
+  ['larrabee2014', 'sweet2021', 'sherman2020', 'slick1999', 'bilder2014', 'larrabee2014reply'].forEach(k => { if (!aggKeys.includes(k)) bad.push('the Summary no longer links ' + k); });
   aggKeys.forEach(k => { if (!S[k]) bad.push('the Summary names unknown source ' + k); });
   if (!/data-pvt-papers[\s\S]{0,200}pvtPapersHtml/.test(extractFn(APP_SRC, 'renderPvtInstruments'))) bad.push('renderPvtInstruments no longer fills the Summary papers line');
   /* The panel line is built by the shipped function, not restated. */
   const fn = extractFn(APP_SRC, 'pvtPapersHtml');
   if (!/https:\/\/doi\.org\//.test(fn) || !/rel="noopener noreferrer"/.test(fn)) bad.push('pvtPapersHtml no longer links to doi.org in a new tab');
   if (!/pvtPapersHtml\(i\.sources\)/.test(extractFn(APP_SRC, 'pvtInstrumentLineHtml'))) bad.push('the measure panels no longer render their papers');
+  return bad.length === 0 || bad.join('; ');
+});
+
+heading('62. Validity: in step with the AACN consensus (Sweet et al., 2021)');
+
+/* A significantly below-chance score on a forced-choice PVT is the one
+   single result that supports malingering on its own (Sweet et al., 2021,
+   pp. 1065, 1069). The cut-off is derived here a second way, in exact
+   integer arithmetic (BigInt binomial coefficients over 2^n), and the
+   shipped calculators are driven either side of it. */
+check('below-chance scores are derived exactly, flagged on TOMM and CVLT-3, and named in the verdict', () => {
+  const bad = [];
+  const alpha = D.PVT_BELOW_CHANCE.alpha;
+  if (alpha !== 0.05) bad.push('alpha is ' + alpha + ', not the documented .05 one-tailed');
+  const exactMax = n => {
+    let coef = 1n, cum = 0n, k = -1;
+    const denom = 2n ** BigInt(n);
+    for (let i = 0; i <= n; i++){
+      if (i > 0) coef = coef * BigInt(n - i + 1) / BigInt(i);
+      cum += coef;
+      if (Number(cum * 100000n / denom) / 100000 < alpha) k = i; else break;
+    }
+    return k;
+  };
+  /* P(X <= 18 | n 50) = .0325, P(X <= 19) = .0595; P(X <= 4 | n 16) = .0384, P(X <= 5) = .1051. */
+  if (exactMax(50) !== 18) bad.push('exact binomial gives ' + exactMax(50) + ' for 50 items, expected 18');
+  if (exactMax(16) !== 4) bad.push('exact binomial gives ' + exactMax(16) + ' for 16 items, expected 4');
+  const shipped = (() => {
+    const c = { PVT_BELOW_CHANCE: D.PVT_BELOW_CHANCE };
+    vm.createContext(c);
+    vm.runInContext(extractFn(APP_SRC, 'pvtBelowChanceMax') + ';globalThis.__B = pvtBelowChanceMax;', c);
+    return c.__B;
+  })();
+  [50, 16].forEach(n => { if (shipped(n) !== exactMax(n)) bad.push('shipped pvtBelowChanceMax(' + n + ') = ' + shipped(n)); });
+  /* TOMM at the boundary. */
+  const tomm = vals => {
+    const c = {
+      PVT_TOMM_CUTOFFS: D.PVT_TOMM_CUTOFFS, PVT_BELOW_CHANCE: D.PVT_BELOW_CHANCE,
+      document: { getElementById: id => (id in vals ? { value: vals[id] } : null) }
+    };
+    vm.createContext(c);
+    vm.runInContext(['pvtInt', 'pvtPPP', 'pvtNPP', 'pvtTommCutoffById', 'pvtBelowChanceMax', 'getPvtTomm']
+      .map(f => extractFn(APP_SRC, f)).join(';') + ';globalThis.__T = getPvtTomm();', c);
+    return c.__T;
+  };
+  let t = tomm({ 'pvt-tomm-t2': '18' });
+  if (!t.rows[0].belowChance || !t.rows[0].fail) bad.push('TOMM Trial 2 of 18 is not flagged below chance');
+  t = tomm({ 'pvt-tomm-t2': '19' });
+  if (t.rows[0].belowChance) bad.push('TOMM Trial 2 of 19 is flagged below chance');
+  /* CVLT-3 Forced Choice at the boundary, through the shared harness. */
+  const cv = h => { const c = cvlt3Context({ 'pvt-cvlt3-hits': h }, 40); return c.__CV(); };
+  let s = cv(4);
+  if (!s.belowChance || !s.hitsFail) bad.push('CVLT-3 FC of 4 is not a below-chance failure');
+  s = cv(5);
+  if (s.belowChance) bad.push('CVLT-3 FC of 5 is flagged below chance');
+  /* The Summary carries it and the verdict says what it means. */
+  const rowsFn = extractFn(APP_SRC, 'getPvtSummaryRows');
+  if ((rowsFn.match(/belowChance: (r|cv)\.belowChance/g) || []).length !== 2) bad.push('the summary rows no longer carry the below-chance flag for TOMM and CVLT-3');
+  const sum = extractFn(APP_SRC, 'renderPvtSummary');
+  if (!/rows\.some\(r => r\.belowChance\)/.test(sum)) bad.push('the verdict no longer reads the below-chance flag');
+  if (!/significantly below chance on a forced-choice test, which on its own indicates deliberately wrong answers and supports malingering where there is an external incentive \(Sweet et al\., 2021\)/.test(sum)) bad.push('the single-failure verdict lost the below-chance exception');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('invalidity and malingering are kept apart, on the current criteria, and sub-.90 cut-offs say so', () => {
+  const bad = [];
+  if (/probable invalidity also requires a substantial external incentive/.test(HTML_SRC)) bad.push('the page again says invalidity needs an external incentive; only malingering does (Sweet et al., 2021, p. 1066)');
+  if (!/Probable invalidity rests on the PVTs alone; calling it malingering also needs a substantial external incentive, under Sherman et al.&rsquo;s \(2020\) update of Slick et al.&rsquo;s \(1999\) criteria\./.test(HTML_SRC)) bad.push('the aggregation card lost the invalidity/malingering distinction');
+  if (!/Sherman, E\. M\. S\., Slick, D\. J\., &amp; Iverson, G\. L\. \(2020\)/.test(HTML_SRC)) bad.push('Sherman et al. (2020) is missing from the references');
+  /* Every selectable cut-off whose stored specificity dips below .90 is labelled. */
+  if (!/RDS ≤ 7 · traditional \(specificity below the \.90 consensus\)/.test(HTML_SRC)) bad.push('RDS <= 7 is no longer labelled below .90');
+  if (!/ACSS ≤ 7 · sensitive, Axelrod optimum \(specificity below the \.90 consensus\)/.test(HTML_SRC)) bad.push('ACSS <= 7 is no longer labelled below .90');
+  const lo = s => Math.min(...String(s).split('–').map(Number));
+  if (!(lo(D.PVT_RDS_ACCURACY.traditional.spec) < 0.90 && lo(D.PVT_DS_ACCURACY.sensitive.spec) < 0.90)) bad.push('a labelled option no longer has a sub-.90 specificity; update the label');
+  ['conservative'].forEach(k => {
+    if (lo(D.PVT_RDS_ACCURACY[k].spec) < 0.90 || lo(D.PVT_DS_ACCURACY[k].spec) < 0.90) bad.push('a default cut-off has specificity below .90 without a label');
+  });
+  if (!/\.90 consensus \(Sweet et al\., 2021\)/.test(extractFn(APP_SRC, 'renderPvtAccuracy'))) bad.push('the Trails accuracy line no longer notes a sub-.90 specificity');
   return bad.length === 0 || bad.join('; ');
 });
 

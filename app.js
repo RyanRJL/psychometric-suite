@@ -7756,9 +7756,10 @@ function getPvtTomm(){
   const rows = [];
   const addRow = (label, score, cutoff) => {
     if (score === undefined || !cutoff) return;
+    const belowChance = score <= pvtBelowChanceMax(50);
     rows.push({
-      label, score, cutoff,
-      fail: score < cutoff.cut,
+      label, score, cutoff, belowChance,
+      fail: score < cutoff.cut || belowChance,
       ppp: pvtPPP(cutoff.sens, cutoff.spec, br),
       npp: pvtNPP(cutoff.sens, cutoff.spec, br)
     });
@@ -7859,6 +7860,9 @@ function getPvtCvlt3(){
   s.derivedThreshold = pvtCvlt3HitsThreshold(band, crit.pct);
   s.hitsThreshold = basis.cut === null ? s.derivedThreshold : basis.cut;
   s.hitsFail = s.hitsThreshold !== null && hits <= s.hitsThreshold;
+  /* Below chance is a failure whatever the basis or band says. */
+  s.belowChance = hits <= pvtBelowChanceMax(PVT_CVLT3_FC_HITS.max);
+  if (s.belowChance) s.hitsFail = true;
   [['recall', rc, 'critRecall'], ['recognition', yc, 'critRecog']].forEach(([which, val, key]) => {
     if (val === undefined) return;
     const th = pvtCvlt3CriticalThreshold(band, crit.pct, which);
@@ -7955,6 +7959,21 @@ const PVT_PROMPTS = {
   invalid: 'Check the entered values: one is outside the possible raw-score range.'
 };
 function pvtStatusWord(fail){ return fail ? 'Fail' : 'Pass'; }
+
+/* The highest score significantly below chance on an n-item two-choice
+   test (PVT_BELOW_CHANCE): cumulative binomial at p = .5, exact. */
+function pvtBelowChanceMax(n){
+  let cum = 0, coef = 1, k = -1;
+  for (let i = 0; i <= n; i++){
+    if (i > 0) coef = coef * (n - i + 1) / i;
+    cum += coef / Math.pow(2, n);
+    if (cum < PVT_BELOW_CHANCE.alpha) k = i; else break;
+  }
+  return k;
+}
+function pvtBelowChanceMeta(n){
+  return ' · significantly below chance (≤ ' + pvtBelowChanceMax(n) + ' of ' + n + ', one-tailed p < .05)';
+}
 
 function renderPvtEi(){
   const out = document.getElementById('pvt-ei-result');
@@ -8136,8 +8155,10 @@ function renderPvtTomm(){
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
   out.innerHTML = pvtReadoutHtml(s.rows.map(r => ({
     label: `TOMM ${r.label}`, value: r.score, state: r.fail ? 'fail' : 'pass',
-    meta: `Cut-off &lt; ${r.cutoff.cut} · sens. ${r.cutoff.sens.toFixed(2).replace(/^0/, '')} · spec. ${r.cutoff.spec.toFixed(2).replace(/^0/, '')} · PPP ${r.ppp.toFixed(2).replace(/^0/, '')} at this base rate`
-  })), s.anyFail
+    meta: `Cut-off &lt; ${r.cutoff.cut} · sens. ${r.cutoff.sens.toFixed(2).replace(/^0/, '')} · spec. ${r.cutoff.spec.toFixed(2).replace(/^0/, '')} · PPP ${r.ppp.toFixed(2).replace(/^0/, '')} at this base rate${r.belowChance ? pvtBelowChanceMeta(50) : ''}`
+  })), s.rows.some(r => r.belowChance)
+    ? 'Significantly below chance: answers this far below guessing indicate deliberately wrong answers, so the base-rate caution below does not apply (Sweet et al., 2021).'
+    : s.anyFail
     ? 'At low base rates a single failure has modest positive predictive power. See the table below.'
     : '');
   const brPct = Math.round(s.br * 100);
@@ -8258,7 +8279,7 @@ function getPvtSummaryRows(){
         : cv.basis.cut === null ? `≤ ${cv.hitsThreshold} (base rate, ages ${cv.band})`
         : `≤ ${cv.hitsThreshold} (CVLT-II)`,
       sens: cv.basis.sens, spec: cv.basis.spec,
-      result: pvtStatusWord(cv.hitsFail), fail: cv.hitsFail
+      result: cv.belowChance ? 'Fail, below chance' : pvtStatusWord(cv.hitsFail), fail: cv.hitsFail, belowChance: cv.belowChance
     });
     [cv.critRecall, cv.critRecog].forEach((c, i) => {
       if (!c) return;
@@ -8291,7 +8312,7 @@ function getPvtSummaryRows(){
     score: String(r.score), cutoff: `< ${r.cutoff.cut}`,
     sens: r.cutoff.sens.toFixed(2).replace(/^0/, ''),
     spec: r.cutoff.spec.toFixed(2).replace(/^0/, ''),
-    result: pvtStatusWord(r.fail), fail: r.fail
+    result: r.belowChance ? 'Fail, below chance' : pvtStatusWord(r.fail), fail: r.fail, belowChance: r.belowChance
   }));
   return rows;
 }
@@ -8328,7 +8349,8 @@ function renderPvtCvlt3(){
         ? ' · no score in this band reaches the criterion'
         : derived
           ? ` · flags at ≤ ${s.hitsThreshold}, derived at the ${s.criterion.pct}% criterion`
-          : ` · cut-off ≤ ${s.hitsThreshold} · sens. ${s.basis.sens} · spec. ${s.basis.spec} (CVLT-II)`}`
+          : ` · cut-off ≤ ${s.hitsThreshold} · sens. ${s.basis.sens} · spec. ${s.basis.spec} (CVLT-II)`}${
+      s.belowChance ? pvtBelowChanceMeta(PVT_CVLT3_FC_HITS.max) : ''}`
   }];
   [s.critRecall, s.critRecog].forEach(c => {
     if (!c) return;
@@ -8415,15 +8437,22 @@ function renderPvtSummary(){
       head = 'Nothing scored yet';
       body = 'Choose a measure from the list on the left. Each result joins this summary as it is entered.';
     } else {
-      kind = c.failed >= 2 ? 'fail' : c.failed === 1 ? 'warn' : 'pass';
+      /* Sweet et al. (2021, pp. 1065, 1069): a significantly below-chance
+         forced-choice score is the one single result that supports
+         malingering on its own, given an external incentive. */
+      const belowChance = rows.some(r => r.belowChance);
+      kind = c.failed >= 2 || belowChance ? 'fail' : c.failed === 1 ? 'warn' : 'pass';
       head = `${c.failed} of ${c.total} independent indicator${c.total === 1 ? '' : 's'} failed`;
       /* Sweet et al. (2021), AACN consensus, TCN 35(6): ">= 2 PVT or SVT
          failures when up to 7 to 9 measures are administered" (p. 1091), and
          the credible groups in which multiple failures do occur (pp. 1069,
          1091-1092). This page counts at most six indicators, inside that range. */
       body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity when up to 7 to 9 measures are given (Larrabee, 2014a; Sweet et al., 2021). Credible patients can fail two in dementia (more often as it worsens), severe TBI with prolonged coma, schizophrenia with significant cognitive impairment, sometimes amnestic MCI, and when living with 24-hour supervision (Sweet et al., 2021). Weigh the count against the clinical and neurological picture.'
-        : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014a).'
+        : c.failed === 1 ? (belowChance
+          ? 'This failure is significantly below chance on a forced-choice test, which on its own indicates deliberately wrong answers and supports malingering where there is an external incentive (Sweet et al., 2021).'
+          : 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014a).')
         : 'Nothing beyond its cut-off so far.';
+      if (c.failed >= 2 && belowChance) body += ' One is significantly below chance on a forced-choice test, which on its own supports malingering where there is an external incentive (Sweet et al., 2021).';
     }
     verdict.innerHTML = `<div class="pvt-verdict is-${kind}">
       <div class="pvt-verdict-count">
@@ -8663,7 +8692,8 @@ function renderPvtAccuracy(){
   if (trEl){
     const k = Number(document.getElementById('pvt-trails-threshold')?.value);
     const a = PVT_DKEFS_TRAILS.combined[k] || PVT_DKEFS_TRAILS.combined[PVT_DKEFS_TRAILS.defaultThreshold];
-    trEl.textContent = `Published accuracy at this threshold: sens. ${pvtTrailsRange(a.sens)} · spec. ${pvtTrailsRange(a.spec)} (Erdodi et al., 2018, Table 6)`;
+    trEl.textContent = `Published accuracy at this threshold: sens. ${pvtTrailsRange(a.sens)} · spec. ${pvtTrailsRange(a.spec)} (Erdodi et al., 2018, Table 6)${
+      Math.min(...a.spec.filter(x => x !== null)) < 0.90 ? '. One specificity is below the .90 consensus (Sweet et al., 2021)' : ''}`;
   }
   const rdsEl = document.getElementById('pvt-rds-accuracy');
   if (rdsEl){

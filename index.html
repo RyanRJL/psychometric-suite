@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260925e">
-<link rel="stylesheet" href="design-system.css?v=20260925e">
+<link rel="stylesheet" href="styles.css?v=20260925g">
+<link rel="stylesheet" href="design-system.css?v=20260925g">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1659,7 +1659,7 @@
               <label>Cut-off</label>
               <select id="pvt-rds-cutoff">
                 <option value="conservative" selected>RDS ≤ 6 · conservative (specificity &gt; .90)</option>
-                <option value="traditional">RDS ≤ 7 · traditional</option>
+                <option value="traditional">RDS ≤ 7 · traditional (specificity below the .90 consensus)</option>
               </select>
             </div>
           </div>
@@ -1714,7 +1714,7 @@
               <label>ACSS cut-off</label>
               <select id="pvt-ds-cutoff">
                 <option value="conservative" selected>ACSS ≤ 5 · conservative (base rate &lt; 4%)</option>
-                <option value="sensitive">ACSS ≤ 7 · sensitive (Axelrod optimum)</option>
+                <option value="sensitive">ACSS ≤ 7 · sensitive, Axelrod optimum (specificity below the .90 consensus)</option>
               </select>
             </div>
           </div>
@@ -1999,9 +1999,9 @@
         <div class="pvt-larrabee-grid">
           <div>
             <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014a)</h3>
-            <p class="pvt-agg-copy">This page applies the <strong>≥ 2 independent failures</strong> rule from the AACN consensus statement (Sweet et al., 2021), which supports it when up to 7 to 9 validity measures are given. The page counts at most six independent indicators, which is within that range. Under Slick et al.'s (1999) criteria, probable invalidity also requires a substantial external incentive.</p>
+            <p class="pvt-agg-copy">This page applies the <strong>≥ 2 independent failures</strong> rule from the AACN consensus statement (Sweet et al., 2021), which supports it when up to 7 to 9 validity measures are given. The page counts at most six independent indicators, which is within that range. Probable invalidity rests on the PVTs alone; calling it malingering also needs a substantial external incentive, under Sherman et al.&rsquo;s (2020) update of Slick et al.&rsquo;s (1999) criteria.</p>
             <p class="pvt-agg-copy">The table shows how the rule performed in one study: Larrabee's (2014a) 54 clinical and 41 malingering cases, each given seven indicators (6 PVTs and 1 SVT). It shows the trade-off between thresholds. It is not a false-positive rate for this page's measures, which Bilder, Sugar &amp; Hellemann (2014) argue can be known only for combinations studied together.</p>
-            <p class="pvt-agg-papers" data-pvt-papers="larrabee2014 sweet2021 slick1999 bilder2014 larrabee2014reply"></p>
+            <p class="pvt-agg-papers" data-pvt-papers="larrabee2014 sweet2021 sherman2020 slick1999 bilder2014 larrabee2014reply"></p>
           </div>
           <table class="pvt-table">
             <thead><tr><th>Threshold</th><th class="num">Specificity</th><th class="num">Sensitivity</th><th class="num">Total correct</th></tr></thead>
@@ -2054,6 +2054,7 @@
         <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195. <a class="pvt-ref-doi" href="https://doi.org/10.1093/arclin/acr119" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/arclin/acr119</a></p>
         <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30. <a class="pvt-ref-doi" href="https://doi.org/10.1177/1073191111428764" target="_blank" rel="noopener noreferrer">https://doi.org/10.1177/1073191111428764</a></p>
         <p>Schwartz, E. S., Erdodi, L., Rodriguez, N., Ghosh, J. J., Curtain, J. R., Flashman, L. A., &amp; Roth, R. M. (2016). CVLT-II Forced Choice Recognition trial as an embedded validity indicator: A systematic review of the evidence. <i>Journal of the International Neuropsychological Society, 22</i>(8), 851&ndash;858. <a class="pvt-ref-doi" href="https://doi.org/10.1017/s1355617716000746" target="_blank" rel="noopener noreferrer">https://doi.org/10.1017/s1355617716000746</a> [The CVLT-II <span style="white-space:nowrap">&le; 14</span> cut-off; classification accuracy and the impairment gradient in failure rates.]</p>
+        <p>Sherman, E. M. S., Slick, D. J., &amp; Iverson, G. L. (2020). Multidimensional malingering criteria for neuropsychological assessment: A 20-year update of the malingered neuropsychological dysfunction criteria. <i>Archives of Clinical Neuropsychology, 35</i>(6), 735–764. <a class="pvt-ref-doi" href="https://doi.org/10.1093/arclin/acaa019" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/arclin/acaa019</a></p>
         <p>Shura, R. D., Brearly, T. W., Rowland, J. A., Martindale, S. L., Miskey, H. M., &amp; Duff, K. (2018). RBANS validity indices: A systematic review and meta-analysis. <i>Neuropsychology Review, 28</i>(3), 269–284. <a class="pvt-ref-doi" href="https://doi.org/10.1007/s11065-018-9377-5" target="_blank" rel="noopener noreferrer">https://doi.org/10.1007/s11065-018-9377-5</a></p>
         <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. <a class="pvt-ref-doi" href="https://doi.org/10.1080/13854040600850958" target="_blank" rel="noopener noreferrer">https://doi.org/10.1080/13854040600850958</a></p>
         <p>Slick, D. J., Sherman, E. M. S., &amp; Iverson, G. L. (1999). Diagnostic criteria for malingered neurocognitive dysfunction: Proposed standards for clinical practice and research. <i>The Clinical Neuropsychologist, 13</i>(4), 545–561. <a class="pvt-ref-doi" href="https://doi.org/10.1076/1385-4046(199911)13:04;1-y;ft545" target="_blank" rel="noopener noreferrer">https://doi.org/10.1076/1385-4046(199911)13:04;1-y;ft545</a></p>
@@ -3333,12 +3334,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260925e"></script>
-<script src="app.js?v=20260925e"></script>
-<script src="design-system.js?v=20260925e" defer></script>
-<script src="app-effectsize-page.js?v=20260925e"></script>
-<script src="app-viz-page.js?v=20260925e"></script>
-<script src="app-profile-page.js?v=20260925e"></script>
+<script src="data.js?v=20260925g"></script>
+<script src="app.js?v=20260925g"></script>
+<script src="design-system.js?v=20260925g" defer></script>
+<script src="app-effectsize-page.js?v=20260925g"></script>
+<script src="app-viz-page.js?v=20260925g"></script>
+<script src="app-profile-page.js?v=20260925g"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

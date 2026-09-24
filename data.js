@@ -3047,9 +3047,18 @@ const PVT_SOURCES = {
   novitski2012:      { label: 'Novitski et al. (2012)', doi: '10.1093/arclin/acr119' },
   schroeder2012:     { label: 'Schroeder et al. (2012)', doi: '10.1177/1073191111428764' },
   schwartz2016:      { label: 'Schwartz et al. (2016)', doi: '10.1017/s1355617716000746' },
+  sherman2020:       { label: 'Sherman et al. (2020)', doi: '10.1093/arclin/acaa019' },
   shura2018:         { label: 'Shura et al. (2018)', doi: '10.1007/s11065-018-9377-5' },
   silverberg2007:    { label: 'Silverberg et al. (2007)', doi: '10.1080/13854040600850958' },
   slick1999:         { label: 'Slick et al. (1999)', doi: '10.1076/1385-4046(199911)13:04;1-y;ft545' },
   sweet2021:         { label: 'Sweet et al. (2021)', doi: '10.1080/13854046.2021.1896036' },
   tombaugh1996:      { label: 'Tombaugh (1996), TOMM manual', doi: null }
 };
+
+/* Significantly below chance on a two-choice test: the highest score whose
+   one-tailed binomial probability under pure guessing (p = .5) is below
+   alpha. Sweet et al. (2021, pp. 1065, 1069) make such a score the one
+   single PVT result that supports malingering on its own, given an external
+   incentive. The statement names no alpha; .05 one-tailed is this app's
+   choice. TOMM (50 items) gives <= 18 and CVLT-3 Forced Choice (16) <= 4. */
+const PVT_BELOW_CHANCE = { alpha: 0.05 };

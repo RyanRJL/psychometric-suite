@@ -10090,7 +10090,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 @media (max-width:1100px){ .pvt-larrabee-grid{grid-template-columns:minmax(0,1fr);gap:12px} }
 .pvt-larrabee .formula-disclosure{margin:12px 0 0}
-.pvt-agg-copy{font-size:13px;color:var(--ds-text-muted);line-height:1.55;margin:0 0 10px}
+.pvt-agg-copy{font-size:13px;color:var(--ds-text-muted);line-height:1.55;margin:0 0 10px;text-align:justify}
 .pvt-agg-copy:last-child{margin-bottom:0}
 
 /* ---- Measure panels: two equal columns, the explainer below both ---- */
@@ -10256,31 +10256,23 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 .pvt-caution.is-flagged summary strong{color:#8a6215}
 
-/* References: the same pill as every explainer on the page, in a panel
-   like everything else, the list in two columns. */
-.pvt-refs{margin-top:12px;padding:10px 18px;background:var(--ds-surface);border:1px solid var(--ds-border);border-radius:var(--ds-radius-lg)}
+/* Collapsed footer references - outside the sheet, quiet. A slim text
+   toggle and a single-column list (owner decision, 2026-09: the pill in a
+   panel with two columns, from the 2a0bb87 restyle, was reverted). */
+.pvt-refs{margin-top:22px;padding-top:10px}
 .pvt-refs summary{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
   cursor:pointer;
-  user-select:none;
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--faint);
   list-style:none;
-  font-family:var(--sans);
-  font-size:12px;
-  font-weight:500;
-  color:var(--accent);
-  border:1px solid rgba(156,61,42,0.20);
-  background:var(--accent-tint);
-  border-radius:999px;
-  padding:6px 12px;
-  transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);
 }
-.pvt-refs summary:hover{background:var(--accent-tint-strong);border-color:rgba(156,61,42,0.34)}
 .pvt-refs summary::-webkit-details-marker{display:none}
-.pvt-refs .references{margin-top:12px;padding-top:0;border-top:none;columns:2;column-gap:32px}
-.pvt-refs .references p{break-inside:avoid}
-@media (max-width:1100px){ .pvt-refs .references{columns:1} }
+.pvt-refs summary::before{content:'+ '}
+.pvt-refs[open] summary::before{content:'\2212\00a0 '}
+.pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
 
 /* Per-measure source line - the citation the cut-offs come from, plus the
    published accuracy at the currently selected cut-off (filled by
@@ -16536,6 +16528,7 @@ body #change-analysis .change-overview-table td{
   padding-top: 6px !important;
   padding-bottom: 6px !important;
 }
+body #validity .pvt-refs{ margin-top: 8px !important; padding-top: 4px !important; }
 
 /* Premorbid, ToPF and OPIE-4 tabs: the model / index column was squeezed
    by six numeric columns with room to spare, so "Verbal Comprehension Index"
@@ -18631,7 +18624,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
               <label>Cut-off</label>
               <select id="pvt-rds-cutoff">
                 <option value="conservative" selected>RDS ≤ 6 · conservative (specificity &gt; .90)</option>
-                <option value="traditional">RDS ≤ 7 · traditional</option>
+                <option value="traditional">RDS ≤ 7 · traditional (specificity below the .90 consensus)</option>
               </select>
             </div>
           </div>
@@ -18686,7 +18679,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
               <label>ACSS cut-off</label>
               <select id="pvt-ds-cutoff">
                 <option value="conservative" selected>ACSS ≤ 5 · conservative (base rate &lt; 4%)</option>
-                <option value="sensitive">ACSS ≤ 7 · sensitive (Axelrod optimum)</option>
+                <option value="sensitive">ACSS ≤ 7 · sensitive, Axelrod optimum (specificity below the .90 consensus)</option>
               </select>
             </div>
           </div>
@@ -18971,9 +18964,9 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <div class="pvt-larrabee-grid">
           <div>
             <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014a)</h3>
-            <p class="pvt-agg-copy">This page applies the <strong>≥ 2 independent failures</strong> rule from the AACN consensus statement (Sweet et al., 2021), which supports it when up to 7 to 9 validity measures are given. The page counts at most six independent indicators, which is within that range. Under Slick et al.'s (1999) criteria, probable invalidity also requires a substantial external incentive.</p>
+            <p class="pvt-agg-copy">This page applies the <strong>≥ 2 independent failures</strong> rule from the AACN consensus statement (Sweet et al., 2021), which supports it when up to 7 to 9 validity measures are given. The page counts at most six independent indicators, which is within that range. Probable invalidity rests on the PVTs alone; calling it malingering also needs a substantial external incentive, under Sherman et al.&rsquo;s (2020) update of Slick et al.&rsquo;s (1999) criteria.</p>
             <p class="pvt-agg-copy">The table shows how the rule performed in one study: Larrabee's (2014a) 54 clinical and 41 malingering cases, each given seven indicators (6 PVTs and 1 SVT). It shows the trade-off between thresholds. It is not a false-positive rate for this page's measures, which Bilder, Sugar &amp; Hellemann (2014) argue can be known only for combinations studied together.</p>
-            <p class="pvt-agg-papers" data-pvt-papers="larrabee2014 sweet2021 slick1999 bilder2014 larrabee2014reply"></p>
+            <p class="pvt-agg-papers" data-pvt-papers="larrabee2014 sweet2021 sherman2020 slick1999 bilder2014 larrabee2014reply"></p>
           </div>
           <table class="pvt-table">
             <thead><tr><th>Threshold</th><th class="num">Specificity</th><th class="num">Sensitivity</th><th class="num">Total correct</th></tr></thead>
@@ -19026,6 +19019,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <p>Novitski, J., Steele, S., Karantzoulis, S., &amp; Randolph, C. (2012). The RBANS Effort Scale. <i>Archives of Clinical Neuropsychology, 27</i>(2), 190–195. <a class="pvt-ref-doi" href="https://doi.org/10.1093/arclin/acr119" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/arclin/acr119</a></p>
         <p>Schroeder, R. W., Twumasi-Ankrah, P., Baade, L. E., &amp; Marshall, P. S. (2012). Reliable Digit Span: A systematic review and cross-validation study. <i>Assessment, 19</i>(1), 21–30. <a class="pvt-ref-doi" href="https://doi.org/10.1177/1073191111428764" target="_blank" rel="noopener noreferrer">https://doi.org/10.1177/1073191111428764</a></p>
         <p>Schwartz, E. S., Erdodi, L., Rodriguez, N., Ghosh, J. J., Curtain, J. R., Flashman, L. A., &amp; Roth, R. M. (2016). CVLT-II Forced Choice Recognition trial as an embedded validity indicator: A systematic review of the evidence. <i>Journal of the International Neuropsychological Society, 22</i>(8), 851&ndash;858. <a class="pvt-ref-doi" href="https://doi.org/10.1017/s1355617716000746" target="_blank" rel="noopener noreferrer">https://doi.org/10.1017/s1355617716000746</a> [The CVLT-II <span style="white-space:nowrap">&le; 14</span> cut-off; classification accuracy and the impairment gradient in failure rates.]</p>
+        <p>Sherman, E. M. S., Slick, D. J., &amp; Iverson, G. L. (2020). Multidimensional malingering criteria for neuropsychological assessment: A 20-year update of the malingered neuropsychological dysfunction criteria. <i>Archives of Clinical Neuropsychology, 35</i>(6), 735–764. <a class="pvt-ref-doi" href="https://doi.org/10.1093/arclin/acaa019" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/arclin/acaa019</a></p>
         <p>Shura, R. D., Brearly, T. W., Rowland, J. A., Martindale, S. L., Miskey, H. M., &amp; Duff, K. (2018). RBANS validity indices: A systematic review and meta-analysis. <i>Neuropsychology Review, 28</i>(3), 269–284. <a class="pvt-ref-doi" href="https://doi.org/10.1007/s11065-018-9377-5" target="_blank" rel="noopener noreferrer">https://doi.org/10.1007/s11065-018-9377-5</a></p>
         <p>Silverberg, N. D., Wertheimer, J. C., &amp; Fichtenberg, N. L. (2007). An effort index for the Repeatable Battery for the Assessment of Neuropsychological Status (RBANS). <i>The Clinical Neuropsychologist, 21</i>(5), 841–854. <a class="pvt-ref-doi" href="https://doi.org/10.1080/13854040600850958" target="_blank" rel="noopener noreferrer">https://doi.org/10.1080/13854040600850958</a></p>
         <p>Slick, D. J., Sherman, E. M. S., &amp; Iverson, G. L. (1999). Diagnostic criteria for malingered neurocognitive dysfunction: Proposed standards for clinical practice and research. <i>The Clinical Neuropsychologist, 13</i>(4), 545–561. <a class="pvt-ref-doi" href="https://doi.org/10.1076/1385-4046(199911)13:04;1-y;ft545" target="_blank" rel="noopener noreferrer">https://doi.org/10.1076/1385-4046(199911)13:04;1-y;ft545</a></p>
@@ -23355,12 +23349,21 @@ const PVT_SOURCES = {
   novitski2012:      { label: 'Novitski et al. (2012)', doi: '10.1093/arclin/acr119' },
   schroeder2012:     { label: 'Schroeder et al. (2012)', doi: '10.1177/1073191111428764' },
   schwartz2016:      { label: 'Schwartz et al. (2016)', doi: '10.1017/s1355617716000746' },
+  sherman2020:       { label: 'Sherman et al. (2020)', doi: '10.1093/arclin/acaa019' },
   shura2018:         { label: 'Shura et al. (2018)', doi: '10.1007/s11065-018-9377-5' },
   silverberg2007:    { label: 'Silverberg et al. (2007)', doi: '10.1080/13854040600850958' },
   slick1999:         { label: 'Slick et al. (1999)', doi: '10.1076/1385-4046(199911)13:04;1-y;ft545' },
   sweet2021:         { label: 'Sweet et al. (2021)', doi: '10.1080/13854046.2021.1896036' },
   tombaugh1996:      { label: 'Tombaugh (1996), TOMM manual', doi: null }
 };
+
+/* Significantly below chance on a two-choice test: the highest score whose
+   one-tailed binomial probability under pure guessing (p = .5) is below
+   alpha. Sweet et al. (2021, pp. 1065, 1069) make such a score the one
+   single PVT result that supports malingering on its own, given an external
+   incentive. The statement names no alpha; .05 one-tailed is this app's
+   choice. TOMM (50 items) gives <= 18 and CVLT-3 Forced Choice (16) <= 4. */
+const PVT_BELOW_CHANCE = { alpha: 0.05 };
 </script>
 <script data-inlined-from="app.js">
 ﻿/* ============================================================
@@ -31121,9 +31124,10 @@ function getPvtTomm(){
   const rows = [];
   const addRow = (label, score, cutoff) => {
     if (score === undefined || !cutoff) return;
+    const belowChance = score <= pvtBelowChanceMax(50);
     rows.push({
-      label, score, cutoff,
-      fail: score < cutoff.cut,
+      label, score, cutoff, belowChance,
+      fail: score < cutoff.cut || belowChance,
       ppp: pvtPPP(cutoff.sens, cutoff.spec, br),
       npp: pvtNPP(cutoff.sens, cutoff.spec, br)
     });
@@ -31224,6 +31228,9 @@ function getPvtCvlt3(){
   s.derivedThreshold = pvtCvlt3HitsThreshold(band, crit.pct);
   s.hitsThreshold = basis.cut === null ? s.derivedThreshold : basis.cut;
   s.hitsFail = s.hitsThreshold !== null && hits <= s.hitsThreshold;
+  /* Below chance is a failure whatever the basis or band says. */
+  s.belowChance = hits <= pvtBelowChanceMax(PVT_CVLT3_FC_HITS.max);
+  if (s.belowChance) s.hitsFail = true;
   [['recall', rc, 'critRecall'], ['recognition', yc, 'critRecog']].forEach(([which, val, key]) => {
     if (val === undefined) return;
     const th = pvtCvlt3CriticalThreshold(band, crit.pct, which);
@@ -31320,6 +31327,21 @@ const PVT_PROMPTS = {
   invalid: 'Check the entered values: one is outside the possible raw-score range.'
 };
 function pvtStatusWord(fail){ return fail ? 'Fail' : 'Pass'; }
+
+/* The highest score significantly below chance on an n-item two-choice
+   test (PVT_BELOW_CHANCE): cumulative binomial at p = .5, exact. */
+function pvtBelowChanceMax(n){
+  let cum = 0, coef = 1, k = -1;
+  for (let i = 0; i <= n; i++){
+    if (i > 0) coef = coef * (n - i + 1) / i;
+    cum += coef / Math.pow(2, n);
+    if (cum < PVT_BELOW_CHANCE.alpha) k = i; else break;
+  }
+  return k;
+}
+function pvtBelowChanceMeta(n){
+  return ' · significantly below chance (≤ ' + pvtBelowChanceMax(n) + ' of ' + n + ', one-tailed p < .05)';
+}
 
 function renderPvtEi(){
   const out = document.getElementById('pvt-ei-result');
@@ -31501,8 +31523,10 @@ function renderPvtTomm(){
   if (s.invalid){ out.innerHTML = pvtResultHtml('empty', PVT_PROMPTS.invalid); power.innerHTML = ''; return; }
   out.innerHTML = pvtReadoutHtml(s.rows.map(r => ({
     label: `TOMM ${r.label}`, value: r.score, state: r.fail ? 'fail' : 'pass',
-    meta: `Cut-off &lt; ${r.cutoff.cut} · sens. ${r.cutoff.sens.toFixed(2).replace(/^0/, '')} · spec. ${r.cutoff.spec.toFixed(2).replace(/^0/, '')} · PPP ${r.ppp.toFixed(2).replace(/^0/, '')} at this base rate`
-  })), s.anyFail
+    meta: `Cut-off &lt; ${r.cutoff.cut} · sens. ${r.cutoff.sens.toFixed(2).replace(/^0/, '')} · spec. ${r.cutoff.spec.toFixed(2).replace(/^0/, '')} · PPP ${r.ppp.toFixed(2).replace(/^0/, '')} at this base rate${r.belowChance ? pvtBelowChanceMeta(50) : ''}`
+  })), s.rows.some(r => r.belowChance)
+    ? 'Significantly below chance: answers this far below guessing indicate deliberately wrong answers, so the base-rate caution below does not apply (Sweet et al., 2021).'
+    : s.anyFail
     ? 'At low base rates a single failure has modest positive predictive power. See the table below.'
     : '');
   const brPct = Math.round(s.br * 100);
@@ -31623,7 +31647,7 @@ function getPvtSummaryRows(){
         : cv.basis.cut === null ? `≤ ${cv.hitsThreshold} (base rate, ages ${cv.band})`
         : `≤ ${cv.hitsThreshold} (CVLT-II)`,
       sens: cv.basis.sens, spec: cv.basis.spec,
-      result: pvtStatusWord(cv.hitsFail), fail: cv.hitsFail
+      result: cv.belowChance ? 'Fail, below chance' : pvtStatusWord(cv.hitsFail), fail: cv.hitsFail, belowChance: cv.belowChance
     });
     [cv.critRecall, cv.critRecog].forEach((c, i) => {
       if (!c) return;
@@ -31656,7 +31680,7 @@ function getPvtSummaryRows(){
     score: String(r.score), cutoff: `< ${r.cutoff.cut}`,
     sens: r.cutoff.sens.toFixed(2).replace(/^0/, ''),
     spec: r.cutoff.spec.toFixed(2).replace(/^0/, ''),
-    result: pvtStatusWord(r.fail), fail: r.fail
+    result: r.belowChance ? 'Fail, below chance' : pvtStatusWord(r.fail), fail: r.fail, belowChance: r.belowChance
   }));
   return rows;
 }
@@ -31693,7 +31717,8 @@ function renderPvtCvlt3(){
         ? ' · no score in this band reaches the criterion'
         : derived
           ? ` · flags at ≤ ${s.hitsThreshold}, derived at the ${s.criterion.pct}% criterion`
-          : ` · cut-off ≤ ${s.hitsThreshold} · sens. ${s.basis.sens} · spec. ${s.basis.spec} (CVLT-II)`}`
+          : ` · cut-off ≤ ${s.hitsThreshold} · sens. ${s.basis.sens} · spec. ${s.basis.spec} (CVLT-II)`}${
+      s.belowChance ? pvtBelowChanceMeta(PVT_CVLT3_FC_HITS.max) : ''}`
   }];
   [s.critRecall, s.critRecog].forEach(c => {
     if (!c) return;
@@ -31780,15 +31805,22 @@ function renderPvtSummary(){
       head = 'Nothing scored yet';
       body = 'Choose a measure from the list on the left. Each result joins this summary as it is entered.';
     } else {
-      kind = c.failed >= 2 ? 'fail' : c.failed === 1 ? 'warn' : 'pass';
+      /* Sweet et al. (2021, pp. 1065, 1069): a significantly below-chance
+         forced-choice score is the one single result that supports
+         malingering on its own, given an external incentive. */
+      const belowChance = rows.some(r => r.belowChance);
+      kind = c.failed >= 2 || belowChance ? 'fail' : c.failed === 1 ? 'warn' : 'pass';
       head = `${c.failed} of ${c.total} independent indicator${c.total === 1 ? '' : 's'} failed`;
       /* Sweet et al. (2021), AACN consensus, TCN 35(6): ">= 2 PVT or SVT
          failures when up to 7 to 9 measures are administered" (p. 1091), and
          the credible groups in which multiple failures do occur (pp. 1069,
          1091-1092). This page counts at most six indicators, inside that range. */
       body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity when up to 7 to 9 measures are given (Larrabee, 2014a; Sweet et al., 2021). Credible patients can fail two in dementia (more often as it worsens), severe TBI with prolonged coma, schizophrenia with significant cognitive impairment, sometimes amnestic MCI, and when living with 24-hour supervision (Sweet et al., 2021). Weigh the count against the clinical and neurological picture.'
-        : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014a).'
+        : c.failed === 1 ? (belowChance
+          ? 'This failure is significantly below chance on a forced-choice test, which on its own indicates deliberately wrong answers and supports malingering where there is an external incentive (Sweet et al., 2021).'
+          : 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014a).')
         : 'Nothing beyond its cut-off so far.';
+      if (c.failed >= 2 && belowChance) body += ' One is significantly below chance on a forced-choice test, which on its own supports malingering where there is an external incentive (Sweet et al., 2021).';
     }
     verdict.innerHTML = `<div class="pvt-verdict is-${kind}">
       <div class="pvt-verdict-count">
@@ -32028,7 +32060,8 @@ function renderPvtAccuracy(){
   if (trEl){
     const k = Number(document.getElementById('pvt-trails-threshold')?.value);
     const a = PVT_DKEFS_TRAILS.combined[k] || PVT_DKEFS_TRAILS.combined[PVT_DKEFS_TRAILS.defaultThreshold];
-    trEl.textContent = `Published accuracy at this threshold: sens. ${pvtTrailsRange(a.sens)} · spec. ${pvtTrailsRange(a.spec)} (Erdodi et al., 2018, Table 6)`;
+    trEl.textContent = `Published accuracy at this threshold: sens. ${pvtTrailsRange(a.sens)} · spec. ${pvtTrailsRange(a.spec)} (Erdodi et al., 2018, Table 6)${
+      Math.min(...a.spec.filter(x => x !== null)) < 0.90 ? '. One specificity is below the .90 consensus (Sweet et al., 2021)' : ''}`;
   }
   const rdsEl = document.getElementById('pvt-rds-accuracy');
   if (rdsEl){
