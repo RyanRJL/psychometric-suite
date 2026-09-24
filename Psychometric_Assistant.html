@@ -1073,6 +1073,31 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
    scroll inside the table where the sticky headers work. */
 #custom-tests .db-list{max-height:calc(100vh - 300px);min-height:320px}
 .db-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 8px}
+/* The two views of the Data page. The filters and readout carry display:flex,
+   which beats the browser's own [hidden] rule, so it is re-asserted here. */
+.db-filters[hidden],.db-readout[hidden],.db-list[hidden],.pvt-acc[hidden]{display:none}
+.db-view-switch{display:inline-flex;gap:0;margin-top:14px;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.db-view-btn{
+  border:0;background:var(--paper-card);color:var(--muted);font:inherit;font-size:12px;
+  padding:6px 14px;cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
+}
+.db-view-btn + .db-view-btn{border-left:1px solid var(--border)}
+.db-view-btn[aria-pressed="true"]{background:var(--ink);color:var(--paper-card)}
+.db-view-btn:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+/* Standalone names, not .db-table: that one carries fixed per-column widths
+   for its fourteen columns. */
+.pvt-acc-lede{font-size:12px;color:var(--muted);margin:14px 0 8px;max-width:none}
+.pvt-acc-wrap{border:1px solid var(--border);border-radius:4px;background:var(--paper-card);overflow:auto;max-height:calc(100vh - 300px)}
+.pvt-acc-table{border-collapse:collapse;width:100%;font-size:12.5px}
+.pvt-acc-table th,.pvt-acc-table td{padding:5px 10px;text-align:left;border-bottom:1px solid var(--border-soft);vertical-align:top}
+.pvt-acc-table th{
+  position:sticky;top:0;background:var(--paper-card);font-size:9.5px;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--faint);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;
+}
+.pvt-acc-table th.pvt-acc-num,.pvt-acc-table td.pvt-acc-num{text-align:right;font-family:var(--mono);white-space:nowrap}
+.pvt-acc-table td.pvt-acc-measure{color:var(--ink);white-space:nowrap}
+.pvt-acc-table td.pvt-acc-src{color:var(--muted);font-size:11.5px}
+.pvt-acc-table tbody tr:hover{background:var(--accent-tint)}
 .db-filters select{max-width:200px}
 .db-readout{
   display:flex;justify-content:space-between;align-items:baseline;gap:12px;
@@ -19789,6 +19814,10 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
          on a raw retest coefficient, which are weakest — can be asked by
          sorting rather than by scrolling. Options are built from normDB at
          render time, so a new family cannot be left out. -->
+    <div class="db-view-switch" role="group" aria-label="Which data to show">
+      <button class="db-view-btn" type="button" data-db-view="rel" aria-pressed="true">Reliability</button>
+      <button class="db-view-btn" type="button" data-db-view="pvt" aria-pressed="false">Validity cut-offs</button>
+    </div>
     <div class="db-filters" id="db-filters">
       <select id="db-f-inst" aria-label="Filter by instrument"></select>
       <select id="db-f-cat" aria-label="Filter by category"></select>
@@ -19796,7 +19825,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
       <select id="db-f-basis" aria-label="Filter by reliability basis"></select>
       <button class="btn btn-ghost" id="db-f-clear" type="button">Clear filters</button>
     </div>
-    <div class="db-readout">
+    <div class="db-readout" id="db-readout">
       <span id="db-count"></span>
       <span id="db-sortnote"></span>
     </div>
@@ -19805,6 +19834,18 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <thead id="db-thead"></thead>
         <tbody id="db-tbody"></tbody>
       </table>
+    </div>
+    <!-- Published classification accuracy for every Performance Validity
+         cut-off, built by pvtAccuracyRows() from the same constants that page
+         prints. -->
+    <div class="pvt-acc" id="db-pvt" hidden>
+      <p class="pvt-acc-lede">Sensitivity and specificity as published at each cut-off used on the Performance Validity page. A range spans the samples or methods the source reports; a dash means the source publishes no pair.</p>
+      <div class="pvt-acc-wrap">
+        <table class="pvt-acc-table">
+          <thead><tr><th>Measure</th><th>Cut-off</th><th class="pvt-acc-num">Sensitivity</th><th class="pvt-acc-num">Specificity</th><th>Source</th></tr></thead>
+          <tbody id="db-pvt-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -28719,6 +28760,74 @@ function renderDbList(){
     refreshAll();
   }));
 }
+/* PERFORMANCE VALIDITY CUT-OFFS — the second view on the Data page.
+
+   Every figure is read from the same data.js constants the Performance
+   Validity page prints, so this view cannot disagree with that page or its
+   export. Strings are passed through as stored: several sources publish
+   RANGES across samples or methods, and the app shows what the source prints.
+   Larrabee (2014) is stored as percentages and shown here as proportions, an
+   exact change of unit (88.9% is .889), so the column reads one way.
+   Pure (no DOM), so check.js §56 runs it directly. */
+function pvtAccuracyRows(){
+  const prop = p => p >= 100 ? '1.000' : (p / 100).toFixed(3).replace(/^0/, '');
+  const two = v => v.toFixed(2).replace(/^0/, '');
+  const rows = [];
+  const eiLabel = { standard:'standard', older:'older adults, military or veteran', sensitive:'screening' };
+  Object.keys(PVT_EI_ACCURACY).forEach(k => rows.push({
+    measure:'RBANS Effort Index', cut:'> ' + PVT_EI_CUTOFFS[k] + ' (' + eiLabel[k] + ')',
+    sens:PVT_EI_ACCURACY[k].sens, spec:PVT_EI_ACCURACY[k].spec,
+    source:'Shura et al. (2018), Table 7, pooled meta-analysis. Cut-offs: Silverberg et al. (2007).' }));
+  rows.push({ measure:'RBANS Effort Scale', cut:'< ' + PVT_ES.cutoff, sens:null, spec:null,
+    source:'Novitski et al. (2012). No sensitivity/specificity pair published; ROC AUC ' + PVT_ES_ACCURACY.auc + '.' });
+  [['conservative', PVT_RDS.cutoffConservative], ['traditional', PVT_RDS.cutoffTraditional]].forEach(([k, c]) => rows.push({
+    measure:'Reliable Digit Span', cut:'≤ ' + c + ' (' + k + ')',
+    sens:PVT_RDS_ACCURACY[k].sens, spec:PVT_RDS_ACCURACY[k].spec,
+    source:'Schroeder et al. (2012), weighted average and Bayesian estimates.' }));
+  [['conservative', PVT_DS.cutoffConservative], ['sensitive', PVT_DS.cutoffSensitive]].forEach(([k, c]) => rows.push({
+    measure:'Digit Span ACSS (WAIS-III)', cut:'≤ ' + c + ' (' + k + ')',
+    sens:PVT_DS_ACCURACY[k].sens, spec:PVT_DS_ACCURACY[k].spec,
+    source:'Axelrod et al. (2006), Table 3.' }));
+  rows.push({ measure:'Rey 15-Item, free recall', cut:'< ' + PVT_REY15.recallCutoff,
+    sens:PVT_REY15_ACCURACY.recall.sens, spec:PVT_REY15_ACCURACY.recall.spec,
+    source:'Boone et al. (2002), Table 6.' });
+  rows.push({ measure:'Rey 15-Item, combination score', cut:'< ' + PVT_REY15.comboCutoff,
+    sens:PVT_REY15_ACCURACY.combo.sens, spec:PVT_REY15_ACCURACY.combo.spec,
+    source:'Boone et al. (2002), Table 6.' });
+  PVT_TOMM_CUTOFFS.forEach(t => rows.push({
+    measure:'TOMM', cut:t.label, sens:two(t.sens), spec:two(t.spec),
+    source:'Martin et al. (2020), neurocognitive/psychiatric weighted mean.' + (t.id === 't1-41' ? ' Cf. Denning (2012).' : '') }));
+  PVT_CVLT3_FC_CUTOFFS.filter(c => c.cut !== null).forEach(c => rows.push({
+    measure:'CVLT Forced Choice, total hits', cut:'≤ ' + c.cut,
+    sens:c.sens, spec:c.spec, source:c.cite }));
+  PVT_AGGREGATION.forEach(a => rows.push({
+    measure:'Aggregate, 6 PVTs + 1 SVT', cut:a.threshold, sens:prop(a.sens), spec:prop(a.spec),
+    source:'Larrabee (2014), Table 4, combined clinical sample.' }));
+  return rows;
+}
+
+function renderDbPvt(){
+  const tbody = document.getElementById('db-pvt-tbody');
+  if (!tbody) return;
+  const cell = v => v == null ? '<span class="db-dash">–</span>' : escapeHtml(v);
+  tbody.innerHTML = pvtAccuracyRows().map(r =>
+    '<tr><td class="pvt-acc-measure">' + escapeHtml(r.measure) + '</td>' +
+    '<td>' + escapeHtml(r.cut) + '</td>' +
+    '<td class="pvt-acc-num">' + cell(r.sens) + '</td>' +
+    '<td class="pvt-acc-num">' + cell(r.spec) + '</td>' +
+    '<td class="pvt-acc-src">' + escapeHtml(r.source) + '</td></tr>').join('');
+}
+
+/* Reliability or validity: one of the two views is on screen at a time, so the
+   page keeps its single bounded scroll region. */
+function setDbView(view){
+  const pvt = view === 'pvt';
+  document.querySelectorAll('[data-db-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dbView === view)));
+  ['db-filters', 'db-readout', 'db-list'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = pvt; });
+  const p = document.getElementById('db-pvt'); if (p) p.hidden = !pvt;
+  if (pvt) renderDbPvt();
+}
+
 /* Rebuilds every consumer of the normative database after a custom test is
    added, deleted or imported. Also runs once at top level during boot.
 
@@ -28752,6 +28861,7 @@ function refreshAll(selectedFamily){
    for tests the clinician enters. It also lets any other misclassification be
    corrected by hand rather than argued with. */
 document.getElementById('ct-search').addEventListener('input', renderDbList);
+document.querySelectorAll('[data-db-view]').forEach(b => b.addEventListener('click', () => setDbView(b.dataset.dbView)));
 ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('change', renderDbList);

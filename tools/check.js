@@ -10596,6 +10596,35 @@ check('the chip arc runs exactly while there is unexported work, or the report w
   return bad.length === 0 || bad.join('; ');
 });
 
+heading('56. Validity cut-offs on the Data page');
+
+/* The Data page's second view lists the published sensitivity and specificity
+   at every Performance Validity cut-off. It must be a VIEW of the stored
+   constants, never a second copy: run the shipped builder over data.js and
+   require every stored accuracy figure to come through untouched. */
+check('the Data page validity view carries every stored accuracy figure, unaltered', () => {
+  const c = {}; vm.createContext(c);
+  vm.runInContext(DATA_SRC + ';' + extractFn(APP_SRC, 'pvtAccuracyRows') + ';globalThis.__R = pvtAccuracyRows();', c);
+  const rows = c.__R, E = sandbox.__EXPORTS, bad = [];
+  const has = (sens, spec, why) => { if (!rows.some(r => r.sens === sens && r.spec === spec)) bad.push(why + ' ' + sens + '/' + spec + ' missing'); };
+  Object.entries(E.PVT_EI_ACCURACY).forEach(([k, v]) => has(v.sens, v.spec, 'EI ' + k));
+  Object.entries(E.PVT_RDS_ACCURACY).forEach(([k, v]) => has(v.sens, v.spec, 'RDS ' + k));
+  Object.entries(E.PVT_DS_ACCURACY).forEach(([k, v]) => has(v.sens, v.spec, 'DS ' + k));
+  Object.entries(E.PVT_REY15_ACCURACY).forEach(([k, v]) => has(v.sens, v.spec, 'Rey ' + k));
+  E.PVT_CVLT3_FC_CUTOFFS.filter(x => x.cut !== null).forEach(x => has(x.sens, x.spec, 'CVLT ' + x.key));
+  // Numbers stored as proportions or percentages: the change of unit must be exact.
+  E.PVT_TOMM_CUTOFFS.forEach(t => { const r = rows.find(r => r.cut === t.label);
+    if (!r || parseFloat(r.sens) !== t.sens || parseFloat(r.spec) !== t.spec) bad.push('TOMM ' + t.label); });
+  E.PVT_AGGREGATION.forEach(a => { const r = rows.find(r => r.cut === a.threshold);
+    if (!r || Math.abs(parseFloat(r.sens) * 100 - a.sens) > 1e-9 || Math.abs(parseFloat(r.spec) * 100 - a.spec) > 1e-9) bad.push('aggregation ' + a.threshold); });
+  const es = rows.find(r => /Effort Scale/.test(r.measure));
+  if (!es || es.sens !== null || !es.source.includes(E.PVT_ES_ACCURACY.auc)) bad.push('the Effort Scale must show no pair and name its AUC');
+  const want = 3 + 1 + 2 + 2 + 2 + E.PVT_TOMM_CUTOFFS.length + 2 + E.PVT_AGGREGATION.length;
+  if (rows.length !== want) bad.push('expected ' + want + ' rows, got ' + rows.length);
+  if (rows.some(r => !r.source)) bad.push('a row names no source');
+  return bad.length === 0 || bad.join('; ');
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------

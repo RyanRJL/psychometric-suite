@@ -5888,6 +5888,74 @@ function renderDbList(){
     refreshAll();
   }));
 }
+/* PERFORMANCE VALIDITY CUT-OFFS — the second view on the Data page.
+
+   Every figure is read from the same data.js constants the Performance
+   Validity page prints, so this view cannot disagree with that page or its
+   export. Strings are passed through as stored: several sources publish
+   RANGES across samples or methods, and the app shows what the source prints.
+   Larrabee (2014) is stored as percentages and shown here as proportions, an
+   exact change of unit (88.9% is .889), so the column reads one way.
+   Pure (no DOM), so check.js §56 runs it directly. */
+function pvtAccuracyRows(){
+  const prop = p => p >= 100 ? '1.000' : (p / 100).toFixed(3).replace(/^0/, '');
+  const two = v => v.toFixed(2).replace(/^0/, '');
+  const rows = [];
+  const eiLabel = { standard:'standard', older:'older adults, military or veteran', sensitive:'screening' };
+  Object.keys(PVT_EI_ACCURACY).forEach(k => rows.push({
+    measure:'RBANS Effort Index', cut:'> ' + PVT_EI_CUTOFFS[k] + ' (' + eiLabel[k] + ')',
+    sens:PVT_EI_ACCURACY[k].sens, spec:PVT_EI_ACCURACY[k].spec,
+    source:'Shura et al. (2018), Table 7, pooled meta-analysis. Cut-offs: Silverberg et al. (2007).' }));
+  rows.push({ measure:'RBANS Effort Scale', cut:'< ' + PVT_ES.cutoff, sens:null, spec:null,
+    source:'Novitski et al. (2012). No sensitivity/specificity pair published; ROC AUC ' + PVT_ES_ACCURACY.auc + '.' });
+  [['conservative', PVT_RDS.cutoffConservative], ['traditional', PVT_RDS.cutoffTraditional]].forEach(([k, c]) => rows.push({
+    measure:'Reliable Digit Span', cut:'≤ ' + c + ' (' + k + ')',
+    sens:PVT_RDS_ACCURACY[k].sens, spec:PVT_RDS_ACCURACY[k].spec,
+    source:'Schroeder et al. (2012), weighted average and Bayesian estimates.' }));
+  [['conservative', PVT_DS.cutoffConservative], ['sensitive', PVT_DS.cutoffSensitive]].forEach(([k, c]) => rows.push({
+    measure:'Digit Span ACSS (WAIS-III)', cut:'≤ ' + c + ' (' + k + ')',
+    sens:PVT_DS_ACCURACY[k].sens, spec:PVT_DS_ACCURACY[k].spec,
+    source:'Axelrod et al. (2006), Table 3.' }));
+  rows.push({ measure:'Rey 15-Item, free recall', cut:'< ' + PVT_REY15.recallCutoff,
+    sens:PVT_REY15_ACCURACY.recall.sens, spec:PVT_REY15_ACCURACY.recall.spec,
+    source:'Boone et al. (2002), Table 6.' });
+  rows.push({ measure:'Rey 15-Item, combination score', cut:'< ' + PVT_REY15.comboCutoff,
+    sens:PVT_REY15_ACCURACY.combo.sens, spec:PVT_REY15_ACCURACY.combo.spec,
+    source:'Boone et al. (2002), Table 6.' });
+  PVT_TOMM_CUTOFFS.forEach(t => rows.push({
+    measure:'TOMM', cut:t.label, sens:two(t.sens), spec:two(t.spec),
+    source:'Martin et al. (2020), neurocognitive/psychiatric weighted mean.' + (t.id === 't1-41' ? ' Cf. Denning (2012).' : '') }));
+  PVT_CVLT3_FC_CUTOFFS.filter(c => c.cut !== null).forEach(c => rows.push({
+    measure:'CVLT Forced Choice, total hits', cut:'≤ ' + c.cut,
+    sens:c.sens, spec:c.spec, source:c.cite }));
+  PVT_AGGREGATION.forEach(a => rows.push({
+    measure:'Aggregate, 6 PVTs + 1 SVT', cut:a.threshold, sens:prop(a.sens), spec:prop(a.spec),
+    source:'Larrabee (2014), Table 4, combined clinical sample.' }));
+  return rows;
+}
+
+function renderDbPvt(){
+  const tbody = document.getElementById('db-pvt-tbody');
+  if (!tbody) return;
+  const cell = v => v == null ? '<span class="db-dash">–</span>' : escapeHtml(v);
+  tbody.innerHTML = pvtAccuracyRows().map(r =>
+    '<tr><td class="pvt-acc-measure">' + escapeHtml(r.measure) + '</td>' +
+    '<td>' + escapeHtml(r.cut) + '</td>' +
+    '<td class="pvt-acc-num">' + cell(r.sens) + '</td>' +
+    '<td class="pvt-acc-num">' + cell(r.spec) + '</td>' +
+    '<td class="pvt-acc-src">' + escapeHtml(r.source) + '</td></tr>').join('');
+}
+
+/* Reliability or validity: one of the two views is on screen at a time, so the
+   page keeps its single bounded scroll region. */
+function setDbView(view){
+  const pvt = view === 'pvt';
+  document.querySelectorAll('[data-db-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dbView === view)));
+  ['db-filters', 'db-readout', 'db-list'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = pvt; });
+  const p = document.getElementById('db-pvt'); if (p) p.hidden = !pvt;
+  if (pvt) renderDbPvt();
+}
+
 /* Rebuilds every consumer of the normative database after a custom test is
    added, deleted or imported. Also runs once at top level during boot.
 
@@ -5921,6 +5989,7 @@ function refreshAll(selectedFamily){
    for tests the clinician enters. It also lets any other misclassification be
    corrected by hand rather than argued with. */
 document.getElementById('ct-search').addEventListener('input', renderDbList);
+document.querySelectorAll('[data-db-view]').forEach(b => b.addEventListener('click', () => setDbView(b.dataset.dbView)));
 ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('change', renderDbList);

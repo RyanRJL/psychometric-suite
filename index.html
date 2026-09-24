@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260924g">
-<link rel="stylesheet" href="design-system.css?v=20260924g">
+<link rel="stylesheet" href="styles.css?v=20260924h">
+<link rel="stylesheet" href="design-system.css?v=20260924h">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -2854,6 +2854,10 @@
          on a raw retest coefficient, which are weakest — can be asked by
          sorting rather than by scrolling. Options are built from normDB at
          render time, so a new family cannot be left out. -->
+    <div class="db-view-switch" role="group" aria-label="Which data to show">
+      <button class="db-view-btn" type="button" data-db-view="rel" aria-pressed="true">Reliability</button>
+      <button class="db-view-btn" type="button" data-db-view="pvt" aria-pressed="false">Validity cut-offs</button>
+    </div>
     <div class="db-filters" id="db-filters">
       <select id="db-f-inst" aria-label="Filter by instrument"></select>
       <select id="db-f-cat" aria-label="Filter by category"></select>
@@ -2861,7 +2865,7 @@
       <select id="db-f-basis" aria-label="Filter by reliability basis"></select>
       <button class="btn btn-ghost" id="db-f-clear" type="button">Clear filters</button>
     </div>
-    <div class="db-readout">
+    <div class="db-readout" id="db-readout">
       <span id="db-count"></span>
       <span id="db-sortnote"></span>
     </div>
@@ -2870,6 +2874,18 @@
         <thead id="db-thead"></thead>
         <tbody id="db-tbody"></tbody>
       </table>
+    </div>
+    <!-- Published classification accuracy for every Performance Validity
+         cut-off, built by pvtAccuracyRows() from the same constants that page
+         prints. -->
+    <div class="pvt-acc" id="db-pvt" hidden>
+      <p class="pvt-acc-lede">Sensitivity and specificity as published at each cut-off used on the Performance Validity page. A range spans the samples or methods the source reports; a dash means the source publishes no pair.</p>
+      <div class="pvt-acc-wrap">
+        <table class="pvt-acc-table">
+          <thead><tr><th>Measure</th><th>Cut-off</th><th class="pvt-acc-num">Sensitivity</th><th class="pvt-acc-num">Specificity</th><th>Source</th></tr></thead>
+          <tbody id="db-pvt-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -3250,12 +3266,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260924g"></script>
-<script src="app.js?v=20260924g"></script>
-<script src="design-system.js?v=20260924g" defer></script>
-<script src="app-effectsize-page.js?v=20260924g"></script>
-<script src="app-viz-page.js?v=20260924g"></script>
-<script src="app-profile-page.js?v=20260924g"></script>
+<script src="data.js?v=20260924h"></script>
+<script src="app.js?v=20260924h"></script>
+<script src="design-system.js?v=20260924h" defer></script>
+<script src="app-effectsize-page.js?v=20260924h"></script>
+<script src="app-viz-page.js?v=20260924h"></script>
+<script src="app-profile-page.js?v=20260924h"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
