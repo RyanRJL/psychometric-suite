@@ -7566,6 +7566,9 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
   /* Larrabee frames the two-failure rule inside Slick et al. (1999), which
      also requires a substantial external incentive; stating the count rule
      without that context overstates what two failures mean. */
+  /* Checked against the paper's text, 2026-09: it never advises leaning on
+     forced-choice measures, so that advice may not carry this citation. */
+  if (/lean on high-specificity forced-choice/.test(HTML_SRC)) bad.push('the aggregation card again attributes forced-choice advice to Larrabee (2014), which the paper does not give');
   if (!/substantial external incentive/.test(HTML_SRC)) bad.push('the aggregation card no longer names the external-incentive requirement');
   if (!/Slick, D\. J\., Sherman/.test(HTML_SRC)) bad.push('Slick et al. (1999) is cited on the page but missing from the references');
   /* The live status chips restate the same getPvt* state the result cards
