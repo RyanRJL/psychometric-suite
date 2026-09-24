@@ -9527,6 +9527,14 @@ const ReportBundle = (function(){
     if (parentId && (parentId.startsWith('pre-') || parentId.startsWith('pvt-'))){
       return method || 'APA Table';
     }
+    /* Profile Analysis names its own instrument. Its table text mentions
+       every battery in the profile, so text detection titled a joint
+       WAIS-IV + WMS-IV profile as WAIS-IV alone. */
+    if (parentId === 'prof-apa'){
+      const m = /data-prof-family="([^"]*)"/.exec(html || '');
+      const fam = m ? m[1].replace(/&amp;/g, '&') : '';
+      return fam && method ? `${method}: ${fam}` : (method || 'APA Table');
+    }
 
     const family = explicitFamily || detectTestFamily(html);
     if (method && family) return `${method}: ${family}`;

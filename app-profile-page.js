@@ -405,7 +405,11 @@
      second store: profPull rewrites it wholesale and nothing else ever
      assigns to it. `excluded` is per level and clears when the level
      changes, the levels having no measures in common. */
-  const profState = { criterion:'p5', instrument:'wais4', level:'w4-indices', selected:[], scores:{}, excluded:{} };
+  /* `chosen` is set only by a click on a tab. Until then the page picks the
+     tab itself, and prefers a joint one: when WAIS-IV and WMS-IV were both
+     given, the joint profile is the one to report, and the report has one
+     slot for this page. */
+  const profState = { criterion:'p5', instrument:'wais4', chosen:false, level:'w4-indices', selected:[], scores:{}, excluded:{} };
 
   /* Keyed on the SELECTION and the criterion. Scores do not enter the
      simulation, so a score changing on Score Tables must never re-run it
@@ -599,13 +603,16 @@
      change, and it costs nothing. Nothing here writes back - this page
      is a reader of Score Tables, never an editor of it. */
   function profPull(){
-    /* THE INSTRUMENT FIRST, and only when the current one has nothing:
-       a clinician who has chosen a tab keeps it while it holds a score,
-       exactly as they keep a level. Landing on the page with only WMS-IV
+    /* THE INSTRUMENT FIRST. A clinician who has clicked a tab keeps it
+       while it holds a score, exactly as they keep a level. Otherwise the
+       page chooses: a joint instrument if one is scored (both batteries
+       given), else the first scored. Landing on the page with only WMS-IV
        entered must not show an empty WAIS-IV. */
-    if (!Object.keys(profScoreTableRows()).length){
-      const alt = profInstrumentsFound()[0];
-      if (alt && alt.inst.id !== profState.instrument) profSetInstrument(alt.inst.id);
+    const scored = profInstrumentsFound();
+    if (!scored.some(x => x.inst.id === profState.instrument)) profState.chosen = false;
+    if (!profState.chosen){
+      const pick = scored.find(x => x.inst.joint) || scored[0];
+      if (pick && pick.inst.id !== profState.instrument) profSetInstrument(pick.inst.id);
     }
     const found = profScoreTableRows();
     /* Fall to the first level that can actually form a profile, so
@@ -1008,7 +1015,7 @@
     const res = profSimulate();
     if (!counts || !counts.complete || !res){
       out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">'
-        + 'Score at least two compatible WAIS-IV measures on Score Tables to generate the APA table.</div>';
+        + 'Score at least two compatible measures from one instrument on Score Tables to generate the APA table.</div>';
       return;
     }
     const c = profCriterion();
@@ -1032,7 +1039,10 @@
       .join(', ');
     out.innerHTML =
       '<div class="apa-table-num">Table 1</div>'
-      + '<div class="apa-table-title">Abnormal ' + escapeHtml(inst.name)
+      /* data-prof-family is what the Working Report titles this table by.
+         Reading the family out of the table text found "WAIS-IV" first on a
+         joint profile and headed it as WAIS-IV alone. */
+      + '<div class="apa-table-title" data-prof-family="' + escapeHtml(inst.label) + '">Abnormal ' + escapeHtml(inst.name)
         + ' results and how common they are in the healthy population</div>'
       + '<table class="apa-table"><thead><tr>'
       + '<th>Result</th><th class="num">Number observed</th><th class="num">Base rate</th>'
@@ -1072,6 +1082,7 @@
       if (!t) return;
       if (t.dataset.profInst){
         if (t.dataset.profInst === profState.instrument) return;
+        profState.chosen = true;
         profSetInstrument(t.dataset.profInst);
         renderProfile();
       } else if (t.dataset.profLevel){

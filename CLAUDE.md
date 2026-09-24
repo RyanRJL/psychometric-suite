@@ -1651,6 +1651,13 @@ Manual **Table 4.12** (20 WMS-IV rows x 21 WAIS-IV columns). §56 asserts every 
   composite cell fails §56. **What it cannot see:** the 25 cells where neither side is in
   any composite (the five WMS-IV process scores against CO, FW, PCm, LN, CA), and a
   misread of .01 to .02 anywhere. The index block is pinned verbatim as a second reading.
+- **One report slot, and the joint tab is the default** (owner decision, 2026-09). The page
+  has one APA container, so the report holds whichever profile was on screen last. When
+  both batteries are scored the page opens on the joint tab (`profState.chosen` stays false
+  until a tab is clicked, and a joint instrument is preferred until then). The report
+  heading comes from `data-prof-family` on the table title, not from the table text:
+  `detectTestFamily` found "WAIS-IV" first on a joint table and headed it as WAIS-IV alone.
+  Pinned in §58.
 
 #### RBANS: Table 4.1, two levels (2026-09)
 
@@ -2324,7 +2331,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 433 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 434 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients

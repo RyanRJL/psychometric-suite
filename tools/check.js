@@ -10928,6 +10928,26 @@ check('the WISC-V profile uses the manual composition and Score Tables names', (
 });
 
 
+/* ONE REPORT SLOT, SO THE HEADING MUST NAME THE PROFILE IN IT. The report
+   titled Profile tables by the first family it found in the table text, and a
+   joint WAIS-IV + WMS-IV table mentions WAIS-IV first, so it went out headed
+   as WAIS-IV alone. And when both batteries are scored the page opens on the
+   joint tab, unless the clinician has clicked a tab. */
+check('the Profile report heading names its instrument, and both batteries open on the joint tab', () => {
+  const bad = [];
+  const apa = extractFn(PROF_SRC, 'renderProfileApa');
+  if (!/data-prof-family="' \+ escapeHtml\(inst\.label\)/.test(apa)) bad.push('the table does not carry its instrument for the report heading');
+  const title = extractFn(APP_SRC, 'buildIntelligentTitle');
+  const i = title.indexOf("parentId === 'prof-apa'"), j = title.indexOf('detectTestFamily(html)');
+  if (i === -1 || !/data-prof-family/.test(title)) bad.push('the report heading does not read the instrument the page names');
+  else if (j !== -1 && j < i) bad.push('the heading is read from the table text before the page’s own instrument');
+  const pull = extractFn(PROF_SRC, 'profPull');
+  if (!/if \(!profState\.chosen\)/.test(pull) || !/find\(x => x\.inst\.joint\) \|\| scored\[0\]/.test(pull)) bad.push('the page does not open on the joint tab when both batteries are scored');
+  const writes = (PROF_SRC.match(/profState\.chosen = true/g) || []).length;
+  if (writes !== 1) bad.push('a tab choice is recorded in ' + writes + ' places, not only on a click');
+  return bad.length === 0 || bad.join('; ');
+});
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
