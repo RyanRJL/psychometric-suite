@@ -10345,6 +10345,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-paper-link:hover{text-decoration-thickness:2px}
 .pvt-paper-nolink{color:var(--ds-text-muted)}
 .pvt-paper-sep{color:var(--ds-text-faint)}
+.pvt-agg-papers{margin:8px 0 0;font-family:var(--sans);font-size:12px}
+.pvt-agg-papers:empty{display:none}
 .pvt-ref-doi{color:var(--accent);word-break:break-all}
 /* ---------- Rey 15-Item administration overlay ----------
    Mounted on <body> (position:fixed against a transformed ancestor is the
@@ -18981,7 +18983,8 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
           <div>
             <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014)</h3>
             <p class="pvt-agg-copy">Failing <strong>≥ 2 independent</strong> PVTs supports probable invalidity, within Slick et al.'s (1999) criteria, which also require a substantial external incentive. The AACN consensus statement supports the same threshold when up to 7 to 9 measures are given (Sweet et al., 2021). The table gives classification accuracy in Larrabee's combined sample (6 PVTs + 1 SVT).</p>
-            <p class="pvt-agg-copy">These figures are for seven indicators administered. They do not transfer directly to a different number, and this page counts at most six independent indicators.</p>
+            <p class="pvt-agg-copy">These figures are for seven indicators administered. They do not transfer directly to a different number, and this page counts at most six independent indicators. Bilder, Sugar &amp; Hellemann (2014) argue that such rates hold only for combinations of PVTs studied together.</p>
+            <p class="pvt-agg-papers" data-pvt-papers="larrabee2014 sweet2021 slick1999 bilder2014"></p>
           </div>
           <table class="pvt-table">
             <thead><tr><th>Threshold</th><th class="num">Specificity</th><th class="num">Sensitivity</th><th class="num">Total correct</th></tr></thead>
@@ -19019,6 +19022,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
       <summary>References: Performance Validity</summary>
       <div class="references" id="pvt-references">
         <p>Axelrod, B. N., Fichtenberg, N. L., Millis, S. R., &amp; Wertheimer, J. C. (2006). Detecting incomplete effort with Digit Span from the Wechsler Adult Intelligence Scale–Third Edition. <i>The Clinical Neuropsychologist, 20</i>(3), 513–523. <a class="pvt-ref-doi" href="https://doi.org/10.1080/13854040590967117" target="_blank" rel="noopener noreferrer">https://doi.org/10.1080/13854040590967117</a></p>
+        <p>Bilder, R. M., Sugar, C. A., &amp; Hellemann, G. S. (2014). Cumulative false positive rates given multiple performance validity tests: Commentary on Davis and Millis (2014) and Larrabee (2014). <i>The Clinical Neuropsychologist, 28</i>(8), 1212–1223. <a class="pvt-ref-doi" href="https://doi.org/10.1080/13854046.2014.969774" target="_blank" rel="noopener noreferrer">https://doi.org/10.1080/13854046.2014.969774</a></p>
         <p>Boone, K. B., Salazar, X., Lu, P., Warner-Chacon, K., &amp; Razani, J. (2002). The Rey 15-Item recognition trial: A technique to enhance sensitivity of the Rey 15-Item Memorization Test. <i>Journal of Clinical and Experimental Neuropsychology, 24</i>(5), 561–573. <a class="pvt-ref-doi" href="https://doi.org/10.1076/jcen.24.5.561.1004" target="_blank" rel="noopener noreferrer">https://doi.org/10.1076/jcen.24.5.561.1004</a></p>
         <p>Delis, D. C., Kramer, J. H., Kaplan, E., &amp; Ober, B. A. (2017). <i>California Verbal Learning Test, Third Edition (CVLT-3).</i> Bloomington, MN: NCS Pearson. [Forced Choice Recognition base rates by age band, Appendix D Tables D.13-D.15; the manual publishes no cut-off for this trial.]</p>
         <p>Denning, J. H. (2012). The efficiency and accuracy of the Test of Memory Malingering trial 1, errors on the first 10 items of the Test of Memory Malingering, and five embedded measures in predicting invalid test performance. <i>Archives of Clinical Neuropsychology, 27</i>(4), 417–432. <a class="pvt-ref-doi" href="https://doi.org/10.1093/arclin/acs044" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/arclin/acs044</a></p>
@@ -23346,6 +23350,7 @@ const PVT_INSTRUMENTS = {
    list carries the same DOIs, and check.js holds the two together. */
 const PVT_SOURCES = {
   axelrod2006:       { label: 'Axelrod et al. (2006)', doi: '10.1080/13854040590967117' },
+  bilder2014:        { label: 'Bilder et al. (2014)', doi: '10.1080/13854046.2014.969774' },
   boone2002:         { label: 'Boone et al. (2002)', doi: '10.1076/jcen.24.5.561.1004' },
   delis2017:         { label: 'Delis et al. (2017), CVLT-3 manual', doi: null },
   denning2012:       { label: 'Denning (2012)', doi: '10.1093/arclin/acs044' },
@@ -32002,6 +32007,11 @@ function pvtPapersHtml(keys){
 function renderPvtInstruments(){
   document.querySelectorAll('#validity [data-pvt-derived]').forEach(el => {
     const html = pvtInstrumentLineHtml(el.dataset.pvtDerived);
+    if (el.innerHTML !== html) el.innerHTML = html;
+  });
+  /* The Summary's aggregation rule has sources too, named in the markup. */
+  document.querySelectorAll('#validity [data-pvt-papers]').forEach(el => {
+    const html = pvtPapersHtml(el.dataset.pvtPapers.split(' '));
     if (el.innerHTML !== html) el.innerHTML = html;
   });
 }

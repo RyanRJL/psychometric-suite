@@ -3032,6 +3032,7 @@ const PVT_INSTRUMENTS = {
    list carries the same DOIs, and check.js holds the two together. */
 const PVT_SOURCES = {
   axelrod2006:       { label: 'Axelrod et al. (2006)', doi: '10.1080/13854040590967117' },
+  bilder2014:        { label: 'Bilder et al. (2014)', doi: '10.1080/13854046.2014.969774' },
   boone2002:         { label: 'Boone et al. (2002)', doi: '10.1076/jcen.24.5.561.1004' },
   delis2017:         { label: 'Delis et al. (2017), CVLT-3 manual', doi: null },
   denning2012:       { label: 'Denning (2012)', doi: '10.1093/arclin/acs044' },

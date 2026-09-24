@@ -10313,6 +10313,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-paper-link:hover{text-decoration-thickness:2px}
 .pvt-paper-nolink{color:var(--ds-text-muted)}
 .pvt-paper-sep{color:var(--ds-text-faint)}
+.pvt-agg-papers{margin:8px 0 0;font-family:var(--sans);font-size:12px}
+.pvt-agg-papers:empty{display:none}
 .pvt-ref-doi{color:var(--accent);word-break:break-all}
 /* ---------- Rey 15-Item administration overlay ----------
    Mounted on <body> (position:fixed against a transformed ancestor is the

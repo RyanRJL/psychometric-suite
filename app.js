@@ -8635,6 +8635,11 @@ function renderPvtInstruments(){
     const html = pvtInstrumentLineHtml(el.dataset.pvtDerived);
     if (el.innerHTML !== html) el.innerHTML = html;
   });
+  /* The Summary's aggregation rule has sources too, named in the markup. */
+  document.querySelectorAll('#validity [data-pvt-papers]').forEach(el => {
+    const html = pvtPapersHtml(el.dataset.pvtPapers.split(' '));
+    if (el.innerHTML !== html) el.innerHTML = html;
+  });
 }
 function renderPvtAccuracy(){
   const eiEl = document.getElementById('pvt-ei-accuracy');

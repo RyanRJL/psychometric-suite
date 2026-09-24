@@ -11185,6 +11185,11 @@ check('every measure links its source papers, and the reference list carries the
   listed.forEach(d => { if (!stored.includes(d)) bad.push('reference list DOI ' + d + ' is not in PVT_SOURCES'); });
   const refPs = (refs.match(/<p>/g) || []).length, manuals = Object.values(S).filter(s => !s.doi).length;
   if (refPs !== listed.length + manuals) bad.push(refPs + ' references but ' + listed.length + ' DOIs and ' + manuals + ' manuals');
+  /* The Summary's aggregation panel links its sources the same way. */
+  const aggKeys = ((HTML_SRC.match(/data-pvt-papers="([^"]+)"/) || ['', ''])[1]).split(' ').filter(Boolean);
+  ['larrabee2014', 'sweet2021', 'slick1999', 'bilder2014'].forEach(k => { if (!aggKeys.includes(k)) bad.push('the Summary no longer links ' + k); });
+  aggKeys.forEach(k => { if (!S[k]) bad.push('the Summary names unknown source ' + k); });
+  if (!/data-pvt-papers[\s\S]{0,200}pvtPapersHtml/.test(extractFn(APP_SRC, 'renderPvtInstruments'))) bad.push('renderPvtInstruments no longer fills the Summary papers line');
   /* The panel line is built by the shipped function, not restated. */
   const fn = extractFn(APP_SRC, 'pvtPapersHtml');
   if (!/https:\/\/doi\.org\//.test(fn) || !/rel="noopener noreferrer"/.test(fn)) bad.push('pvtPapersHtml no longer links to doi.org in a new tab');
