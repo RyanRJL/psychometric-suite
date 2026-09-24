@@ -1623,6 +1623,81 @@ reading `data.js`, and the short form the exported note prints (`WMS-IV Technica
 Interpretive Manual (GB), Table 4.1 (Adult Battery)`). The page passes `citation || source`,
 so a matrix without one still names its table.
 
+#### WAIS-IV and WMS-IV together: Table 4.12 (2026-09)
+
+A fourth tab, **WAIS-IV + WMS-IV**, appears only when Score Tables holds scores from
+**both** WAIS-IV and the WMS-IV **Adult** battery. Its matrix, `WAIS4_WMS4_JOINT`
+(`data.js`), is three published blocks laid together by key and nothing else: Table 5.1
+(WAIS-IV within), Table 4.1 (WMS-IV Adult within), and `WMS4_WAIS4_CROSS`, WMS-IV Technical
+Manual **Table 4.12** (20 WMS-IV rows x 21 WAIS-IV columns). §56 asserts every one of the
+780 pairs is the cell its own table prints.
+
+- **Table 4.12 is range-corrected** "for the variability of the WMS-IV normative sample
+  (Guilford & Fruchter, 1978)". That is not the part-whole correction the shaded triangles
+  carry. The within blocks come from the normative samples, and this correction puts the
+  co-norming sample on that same population, so the three may form one matrix. There is no
+  uncorrected version to choose instead.
+- **Adult battery only.** Table 4.12 pools both batteries (n 1,250 for shared measures,
+  ~900 for Adult-only ones) and has one VMI row; the Older Adult VMI is a different sum.
+- **No WAIS-IV process scores**: Table 4.12 does not print them.
+- **The joint instrument has no group pattern.** `joint: ['wais4','wms4']` makes
+  `profScoreTableRowsFor` read each part through the part's own pattern, so the group-key
+  rule still decides every row, and the composition rules are the union of the parts'
+  (`profRuleTable`), never restated.
+- **Transcription proof.** The table came in as an Excel sheet extracted
+  from the manual page, with two header cells misread ("19" for VCI, "25" for Mean). Each composite cell is
+  predictable from its row's (or column's) subtest cells and the within-battery
+  correlations: all 225 reproduce within .03. Mutation-tested: a single misread subtest or
+  composite cell fails §56. **What it cannot see:** the 25 cells where neither side is in
+  any composite (the five WMS-IV process scores against CO, FW, PCm, LN, CA), and a
+  misread of .01 to .02 anywhere. The index block is pinned verbatim as a second reading.
+- **One report slot, and the joint tab is the default** (owner decision, 2026-09). The page
+  has one APA container, so the report holds whichever profile was on screen last. When
+  both batteries are scored the page opens on the joint tab (`profState.chosen` stays false
+  until a tab is clicked, and a joint instrument is preferred until then). The report
+  heading comes from `data-prof-family` on the table title, not from the table text:
+  `detectTestFamily` found "WAIS-IV" first on a joint table and headed it as WAIS-IV alone.
+  Pinned in §58.
+
+#### RBANS: Table 4.1, two levels (2026-09)
+
+`RBANS_INTERCORR` (`data.js`) holds RBANS Update Manual (Randolph, 2012) Table 4.1: the full
+lower triangle over the 8 scaled subtests, 5 indices and the Total Scale. The tab offers
+**Indices** (5) and **Subtests** (8); the Total Scale is kept out as FSIQ is, and the four
+raw subtests are not in the table. Form A only (`/^RBANS (Indices|Subtests) · /`). Keys
+are local (`VSC`, not `VC`, which reads as Vocabulary); index chips use `short`.
+
+- **The shaded cells arrived as one extra value at the end of eleven rows** (an Excel
+  extraction). They are not errors, and their columns are fixed by arithmetic: each index's
+  value is its corrected correlation with the Total Scale (the index block gives .623 .406
+  .456 .535 .593, printed .63 .40 .46 .54 .59), and LL, SM, DS, CD carry their
+  corrected correlation with their own two-subtest index, which must equal the partner
+  correlation and does (.73, .53). FC .74 and SF .59 cannot be placed (their partners are
+  not in the table) and are kept as `rCorrectedColumnUnverified`. None are used.
+- **The two blocks do not reconcile with each other, as printed.** Every IM x Attention
+  subtest cell is .52 or more, which forces r(IM, AT) to at least .52 under any positive
+  weighting, and the index block prints .37. Each block passes its own check, and no level
+  mixes them. §57 pins the gap: **do not "fix" either block to close it.** It was first
+  read as a misread subtest block; the owner confirmed the sheet matches the page.
+
+#### WISC-V: Table 5.1 (2026-09)
+
+`WISC5_INTERCORR` (`data.js`) holds WISC-V Technical and Interpretive Manual Table 5.1, all
+ages: 16 subtests, 7 process scores, 11 composites, the full 561-cell lower triangle. The
+tab offers **Primary indices** (5), **Subtests** (16) and **Process scores** (BDn, DSf, DSb,
+DSs, CAr, CAs). FSIQ and the five ancillary indices are kept out: each overlaps the primary
+indices or one another. Block Design Partial is aliased to Block Design, as is No Time Bonus,
+so only one rescoring can be profiled. The footer says each of these.
+
+- **Same Excel layout as RBANS**: lower cells in place, then the row's shaded cells. Each
+  subtest carries exactly one shaded value per composite it belongs to, so they are placed
+  by membership in column order, and all 14 two-subtest checks confirm it (corrected =
+  partner r).
+- **Transcription proof (§58):** composites are sums of scaled scores (Mean row 20 / 70 /
+  60 / 50 / 40), so all 363 composite cells are rebuilt from subtest cells within .01, and
+  all 11 composite SDs within .05. Mutation-tested. Not covered: the 55 cells among IN,
+  CO, PC, CA and the process scores.
+
 #### The note is written for whoever receives the report
 
 **Not for the clinician, and certainly not for the developer.** The exported table may be
@@ -2256,7 +2331,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 420 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 434 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -2268,7 +2343,8 @@ raw-score metric (§18), the Norms Database view (§32), age-band filtering of t
 family dropdowns (§33), consent gating on the Change Analysis methods (§34), the
 empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
 tab-close prompt and AACN default (§52), Save / Open session (§53), and the app frame,
-the docked report and the motion scale (§55).
+the docked report and the motion scale (§55), and the WAIS-IV/WMS-IV joint profile on
+WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57), and WISC-V Table 5.1 (§58).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

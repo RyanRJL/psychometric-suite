@@ -3567,7 +3567,8 @@ const APA_NOTES = {
       ? `A difference or deviation is abnormal when it is larger than ${ctx.diffPct} of healthy people show, in either direction.`
       : 'A difference or deviation is abnormal when it is larger than the same percentage of healthy people show, in either direction.',
     /* MODELLED RATHER THAN OBSERVED, AND FROM WHICH TABLE. Three matrices are
-       reachable (WAIS-IV Table 5.1, WMS-IV Tables 4.1 and 4.2) and the two
+       reachable (WAIS-IV Table 5.1, WMS-IV Tables 4.1 and 4.2, and the joint
+       5.1 + 4.1 + 4.12, RBANS Update Table 4.1, WISC-V Table 5.1) and the two
        WMS-IV batteries share every measure name against different normative
        samples, so a note naming one table unconditionally would misstate the
        source on two profiles in three. The trial count stays because it is
@@ -8323,7 +8324,11 @@ function renderPvtSummary(){
     } else {
       kind = c.failed >= 2 ? 'fail' : c.failed === 1 ? 'warn' : 'pass';
       head = `${c.failed} of ${c.total} independent indicator${c.total === 1 ? '' : 's'} failed`;
-      body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity (Larrabee, 2014). Weigh the count against the clinical and neurological picture before concluding.'
+      /* Sweet et al. (2021), AACN consensus, TCN 35(6): ">= 2 PVT or SVT
+         failures when up to 7 to 9 measures are administered" (p. 1091), and
+         the credible groups in which multiple failures do occur (pp. 1069,
+         1091-1092). This page counts at most five indicators, inside that range. */
+      body = c.failed >= 2 ? 'Two or more independent failures support probable invalidity when up to 7 to 9 measures are given (Larrabee, 2014; Sweet et al., 2021). Credible patients can fail two in dementia (more often as it worsens), severe TBI with prolonged coma, schizophrenia with significant cognitive impairment, sometimes amnestic MCI, and when living with 24-hour supervision (Sweet et al., 2021). Weigh the count against the clinical and neurological picture.'
         : c.failed === 1 ? 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014).'
         : 'Nothing beyond its cut-off so far.';
     }
@@ -9594,6 +9599,14 @@ const ReportBundle = (function(){
        table "Performance Validity Indicators: RBANS" would misdescribe it. */
     if (parentId && (parentId.startsWith('pre-') || parentId.startsWith('pvt-'))){
       return method || 'APA Table';
+    }
+    /* Profile Analysis names its own instrument. Its table text mentions
+       every battery in the profile, so text detection titled a joint
+       WAIS-IV + WMS-IV profile as WAIS-IV alone. */
+    if (parentId === 'prof-apa'){
+      const m = /data-prof-family="([^"]*)"/.exec(html || '');
+      const fam = m ? m[1].replace(/&amp;/g, '&') : '';
+      return fam && method ? `${method}: ${fam}` : (method || 'APA Table');
     }
 
     const family = explicitFamily || detectTestFamily(html);
