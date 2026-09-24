@@ -45,7 +45,7 @@ vm.runInContext(
   fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8') +
     ';globalThis.__EXPORTS = { TOPF_TO_FSIQ, WAIS_COEF, WMS_COEF,' +
     ' OPIE_PRORATED_FSIQ, OPIE_PRORATED_GAI, OPIE_PRORATED_INDEX,' +
-    ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB, WAIS4_INTERCORR, WMS4_INTERCORR,' +
+    ' BASE_RATES, OPIE_BASE_RATES, OCC_CODE, normDB, WAIS4_INTERCORR, WMS4_INTERCORR, WMS4_WAIS4_CROSS, WAIS4_WMS4_JOINT, RBANS_INTERCORR, WISC5_INTERCORR,' +
     ' PVT_EI_WEIGHTS, PVT_EI_CUTOFFS, PVT_EI_SCREENING_CAUTION, PVT_ES, PVT_RDS, PVT_TOMM_CUTOFFS,' +
     ' PVT_BASE_RATES, PVT_AGGREGATION, PVT_EI_ACCURACY, PVT_RDS_ACCURACY,' +
     ' PVT_ES_ACCURACY, PVT_DS, PVT_DS_ACCURACY, PVT_DS_VOCABDIFF_BASERATES,' +
@@ -7566,6 +7566,9 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
   /* Larrabee frames the two-failure rule inside Slick et al. (1999), which
      also requires a substantial external incentive; stating the count rule
      without that context overstates what two failures mean. */
+  /* Checked against the paper's text, 2026-09: it never advises leaning on
+     forced-choice measures, so that advice may not carry this citation. */
+  if (/lean on high-specificity forced-choice/.test(HTML_SRC)) bad.push('the aggregation card again attributes forced-choice advice to Larrabee (2014), which the paper does not give');
   if (!/substantial external incentive/.test(HTML_SRC)) bad.push('the aggregation card no longer names the external-incentive requirement');
   if (!/Slick, D\. J\., Sherman/.test(HTML_SRC)) bad.push('Slick et al. (1999) is cited on the page but missing from the references');
   /* The live status chips restate the same getPvt* state the result cards
@@ -9193,17 +9196,18 @@ function driveProfRules() {
     const i = PROF_SRC.indexOf(marker);
     return PROF_SRC.slice(i, PROF_SRC.indexOf(close, i) + close.length);
   };
-  const mod = new Function('WAIS4_INTERCORR', 'WMS4_INTERCORR',
+  const mod = new Function('WAIS4_INTERCORR', 'WMS4_INTERCORR', 'WAIS4_WMS4_JOINT', 'RBANS_INTERCORR', 'WISC5_INTERCORR',
     'const profState = { instrument: null };\n'
     + grab('const PROF_COMPOSED_OF = {', '\n  };') + '\n'
     + grab('const PROF_ALIAS = {', '};') + '\n'
     + grab('const PROF_INSTRUMENTS = [', '\n  ];') + '\n'
     + extractFn(PROF_SRC, 'profInstrument') + '\n'
+    + extractFn(PROF_SRC, 'profRuleTable') + '\n'
     + extractFn(PROF_SRC, 'profComponents') + '\n'
     + extractFn(PROF_SRC, 'profConflicts') + '\n'
     + 'return { PROF_INSTRUMENTS, PROF_COMPOSED_OF, conflicts: profConflicts,'
     + '         use: id => { profState.instrument = id; } };'
-  )(D.WAIS4_INTERCORR, D.WMS4_INTERCORR);
+  )(D.WAIS4_INTERCORR, D.WMS4_INTERCORR, D.WAIS4_WMS4_JOINT, D.RBANS_INTERCORR, D.WISC5_INTERCORR);
   /* Every instrument, its measures and its matrix, in one shape the checks
      below can loop over. */
   mod.each = () => mod.PROF_INSTRUMENTS.map(inst => {
@@ -9252,6 +9256,28 @@ check('no two measures that overlap can be profiled together', () => {
       ['AMI', 'IMI', 'two indices sharing subtests'],
       ['VMI', 'IMI', 'two indices sharing Visual Reproduction I'],
       ['VPA2', 'VPAWR', 'a subtest and its own process score']
+    ],
+    /* The joint instrument inherits both parts' rules and adds none: the two
+       batteries share no subtest, so nothing crosses the boundary. */
+    w4wm4: [
+      ['VCI', 'VC', 'a WAIS-IV composite and its own subtest'],
+      ['AMI', 'IMI', 'two WMS-IV indices sharing subtests'],
+      ['VMI', 'DE1S', 'a WMS-IV index and a process score two levels down'],
+      ['WMI', 'DSF', 'a WAIS-IV composite and a process score two levels down']
+    ],
+    rbans: [
+      ['TS', 'IM', 'the Total Scale and an index it is built from'],
+      ['TS', 'DM', 'the Total Scale and an index it is built from'],
+      ['IM', 'LL', 'an index and its own subtest'],
+      ['DM', 'FR', 'an index and its own subtest'],
+      ['TS', 'CD', 'the Total Scale and a subtest two levels down']
+    ],
+    wisc5: [
+      ['VCI', 'SI', 'an index and its own subtest'],
+      ['FRI', 'QRI', 'two indices sharing Figure Weights'],
+      ['WMI', 'DSb', 'an index and a process score two levels down'],
+      ['BDn', 'BDp', 'two rescorings of one administration'],
+      ['CA', 'CAr', 'a subtest and its own process score']
     ]
   };
   const MAY = {
@@ -9262,7 +9288,13 @@ check('no two measures that overlap can be profiled together', () => {
             ['LM1', 'VPA1'], ['DE1C', 'DE1S'], ['SA', 'SSP'], ['LM1', 'DE2']],
     /* Symbol Span belongs to no index in this battery, so it clashes with
        none of them - the manual prints no corrected cell for it. */
-    wms4o: [['AMI', 'VMI'], ['IMI', 'DMI'], ['AMI', 'SSP'], ['VMI', 'SSP'], ['LM1', 'VR2']]
+    wms4o: [['AMI', 'VMI'], ['IMI', 'DMI'], ['AMI', 'SSP'], ['VMI', 'SSP'], ['LM1', 'VR2']],
+    /* WMI (Digit Span, Arithmetic) and VWMI (Spatial Addition, Symbol Span)
+       are both "working memory" and share nothing, which is the case most
+       likely to be blocked by someone reading names rather than members. */
+    w4wm4: [['WMI', 'VWMI'], ['VCI', 'AMI'], ['PRI', 'VMI'], ['PSI', 'IMI'], ['DS', 'SA'], ['VC', 'LM1']],
+    rbans: [['IM', 'DM'], ['VSC', 'ATT'], ['LAN', 'DM'], ['LL', 'SR'], ['SM', 'SR'], ['IM', 'SR']],
+    wisc5: [['VCI', 'VSI'], ['WMI', 'PSI'], ['FRI', 'WMI'], ['IN', 'CO'], ['DSf', 'CAr'], ['PC', 'AR']]
   };
 
   for (const { inst, keys, M } of mod.each()) {
@@ -9339,7 +9371,10 @@ check('every permitted selection is positive definite over the shipped matrix', 
   const ORDER = [
     ['wais4/w4-indices', 'wais4/w4-subtests', 'four Indices against fifteen subtests'],
     ['wms4/wm-mod', 'wms4/wm-sub', 'three WMS-IV indices against ten subtests'],
-    ['wms4o/wo-mod', 'wms4o/wo-sub', 'two Older Adult indices against seven subtests']
+    ['wms4o/wo-mod', 'wms4o/wo-sub', 'two Older Adult indices against seven subtests'],
+    ['wais4/w4-indices', 'w4wm4/wj-mod', 'four WAIS-IV Indices against those four plus three WMS-IV'],
+    ['w4wm4/wj-mod', 'w4wm4/wj-sub', 'seven joint indices against twenty-five joint subtests'],
+    ['wisc5/wc-indices', 'wisc5/wc-subtests', 'five WISC-V primary indices against sixteen subtests']
   ];
   for (const [small, big, why] of ORDER) {
     if (one[small] === undefined || one[big] === undefined) { bad.push('a level is missing for ' + why); continue; }
@@ -9370,7 +9405,10 @@ check('each measure is converted on its own metric', () => {
   try { mod = driveProfRules(); } catch (e) { bad.push('could not drive the registry: ' + e.message); }
   if (mod) {
     const MUST = { wais4: ['VCI', 'PRI', 'WMI', 'PSI'], wms4: ['AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
-                   wms4o: ['AMI', 'VMI', 'IMI', 'DMI'] };
+                   wms4o: ['AMI', 'VMI', 'IMI', 'DMI'],
+                   w4wm4: ['VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
+                   rbans: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'],
+                   wisc5: ['VCI', 'VSI', 'FRI', 'WMI', 'PSI', 'FSIQ', 'QRI', 'AWMI', 'NVI', 'GAI', 'CPI'] };
     for (const { inst, keys } of mod.each()) {
       for (const c of (MUST[inst.id] || [])) {
         if (!inst.composites.includes(c)) bad.push(inst.id + ': ' + c + ' is not treated as a composite');
@@ -9439,12 +9477,24 @@ check('every score is read from Score Tables and none is entered on the page', (
   try {
     const insts = driveProfRules().PROF_INSTRUMENTS;
     const claimed = {};
+    /* A joint instrument has no pattern of its own: it admits each measure
+       through its parts' patterns, so it cannot double-claim a group. Its
+       parts must be real single instruments, or it admits nothing. */
+    for (const x of insts.filter(x => x.joint)) {
+      if (x.groupRe) bad.push(x.id + ' is joint but carries its own group pattern, which bypasses its parts');
+      for (const p of x.joint) {
+        const part = insts.find(y => y.id === p);
+        if (!part || part.joint || !part.groupRe) bad.push(x.id + ': part ' + p + ' is not a single instrument');
+      }
+    }
+    if (!/if \(inst\.joint\)[\s\S]*?profScoreTableRowsFor\(PROF_INSTRUMENTS\.find/.test(rows)) bad.push('a joint instrument does not read its scores through its parts');
+    if (!/parts\.some\(p => !Object\.keys\(p\)\.length\)\) return \{\}/.test(rows)) bad.push('a joint instrument shows with only one of its parts scored');
     for (const g of Object.keys(D.normDB)) {
-      const hits = insts.filter(x => x.groupRe.test(g));
+      const hits = insts.filter(x => !x.joint && x.groupRe.test(g));
       if (hits.length > 1) bad.push('normDB group "' + g + '" is claimed by ' + hits.map(h => h.id).join(' and '));
       if (hits.length === 1) claimed[hits[0].id] = (claimed[hits[0].id] || 0) + 1;
     }
-    for (const x of insts) {
+    for (const x of insts.filter(x => !x.joint)) {
       if (!claimed[x.id]) bad.push(x.id + ' matches no group in normDB, so it can never hold a score');
     }
   } catch (e) { bad.push('could not drive the instrument patterns: ' + e.message); }
@@ -10593,6 +10643,311 @@ check('the chip arc runs exactly while there is unexported work, or the report w
   if (!/is-unopened\.is-open \.rb-chip::after\{\s*display:\s*none/.test(DS)) bad.push('the arc runs with the report open');
   if (!/@keyframes rb-arc-spin/.test(DS)) bad.push('the arc no longer spins');
   if (!/prefers-reduced-motion: reduce\)\{\s*body \.rb-root\.has-unexported \.rb-chip::after,\s*body \.rb-root\.is-unopened \.rb-chip::after\{\s*animation:\s*none/.test(DS)) bad.push('no reduced-motion fallback');
+  return bad.length === 0 || bad.join('; ');
+});
+
+heading('56. WMS-IV Table 4.12 — WAIS-IV and WMS-IV profiled together');
+
+/* THE TABLE CAME FROM AN EXCEL EXTRACTION OF THE PAGE, whose headers held
+   two misreads, so it is checked against itself rather than trusted. Each composite is a sum of subtests, so its correlation with any
+   outside measure X is fixed by X's correlations with the members:
+     corr(X, sum S) = sum_i sd_i r(X,S_i) / sqrt(sum_ij sd_i sd_j r(S_i,S_j))
+   with the within-battery r and SDs from Tables 5.1 and 4.1. Table 4.12 is a
+   different sample, range-corrected, so the identity holds approximately;
+   the observed worst case is .029. A misread digit in a subtest cell shifts
+   five or six predictions together, and a misread composite cell stands
+   alone - both land well outside .035. */
+check('every composite cell in Table 4.12 is reproduced from its own subtests', () => {
+  const W = D.WAIS4_INTERCORR, M = D.WMS4_INTERCORR.adult, X = D.WMS4_WAIS4_CROSS;
+  if (!X) return 'WMS4_WAIS4_CROSS is not defined in data.js';
+  const bad = [];
+  const g = (T, a, b) => (a === b ? 1 : (T.order.indexOf(a) > T.order.indexOf(b) ? T.r[a + '|' + b] : T.r[b + '|' + a]));
+  const x = (w, c) => X.r[w + '|' + c];
+  /* Membership is the same the page and §48 use: core subtests only. */
+  const WAIS = { VCI: ['SI', 'VC', 'IN'], PRI: ['BD', 'MR', 'VP'], WMI: ['DS', 'AR'], PSI: ['SS', 'CD'],
+                 GAI: ['SI', 'VC', 'IN', 'BD', 'MR', 'VP'], FSIQ: ['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD'] };
+  const WMS = { AMI: ['LM1', 'LM2', 'VPA1', 'VPA2'], VMI: ['DE1', 'DE2', 'VR1', 'VR2'], VWMI: ['SA', 'SSP'],
+                IMI: ['LM1', 'VPA1', 'DE1', 'VR1'], DMI: ['LM2', 'VPA2', 'DE2', 'VR2'] };
+  const pred = (T, S, rx) => {
+    let num = 0, den = 0;
+    for (const a of S) { num += rx(a) * T.sd[a]; for (const b of S) den += g(T, a, b) * T.sd[a] * T.sd[b]; }
+    return num / Math.sqrt(den);
+  };
+  let n = 0, worst = 0;
+  for (const w of X.rows) for (const C in WAIS) {
+    const e = Math.abs(pred(W, WAIS[C], s => x(w, s)) - x(w, C)); n++; worst = Math.max(worst, e);
+    if (e > 0.035) bad.push(w + ' x ' + C + ' is off its own subtests by ' + e.toFixed(3));
+  }
+  for (const c of X.cols) for (const C in WMS) {
+    const e = Math.abs(pred(M, WMS[C], s => x(s, c)) - x(C, c)); n++; worst = Math.max(worst, e);
+    if (e > 0.035) bad.push(C + ' x ' + c + ' is off its own subtests by ' + e.toFixed(3));
+  }
+  if (n !== 225) bad.push('expected 225 composite cells, found ' + n);
+  const cells = Object.keys(X.r).length;
+  if (cells !== X.rows.length * X.cols.length || cells !== 420) bad.push('the table should hold 20 x 21 = 420 cells, holds ' + cells);
+  for (const k in X.r) if (!(X.r[k] > 0 && X.r[k] < 1)) bad.push(k + ' is not a correlation');
+  return bad.length === 0 || bad.slice(0, 6).join('; ');
+});
+
+/* The identity above cannot see a digit misread the same way in a composite
+   and its prediction, so a strip of the page is pinned verbatim: the WMS-IV
+   index rows against the WAIS-IV composites, read off the printed page a
+   second time. */
+check('the index block of Table 4.12 matches the printed page', () => {
+  const X = D.WMS4_WAIS4_CROSS; if (!X) return 'WMS4_WAIS4_CROSS is not defined';
+  const cols = ['VCI', 'PRI', 'WMI', 'PSI', 'GAI', 'FSIQ'];
+  const PAGE = {
+    AMI:  [.53, .44, .50, .40, .54, .57],
+    VMI:  [.44, .62, .47, .45, .58, .61],
+    VWMI: [.53, .66, .62, .51, .66, .71],
+    IMI:  [.57, .61, .57, .51, .66, .70],
+    DMI:  [.51, .55, .51, .44, .58, .61]
+  };
+  const bad = [];
+  for (const w in PAGE) cols.forEach((c, i) => {
+    if (X.r[w + '|' + c] !== PAGE[w][i]) bad.push(w + ' x ' + c + ' is ' + X.r[w + '|' + c] + ', printed ' + PAGE[w][i]);
+  });
+  if (!/Table 4\.12/.test(X.source) || !/Table 4\.12/.test(X.citation)) bad.push('the table is not named');
+  if (!/Guilford & Fruchter/.test(X.correctedFor || '')) bad.push('the range correction the table carries is not recorded');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE JOINT MATRIX INVENTS NOTHING. Every cell must be the published cell
+   from the one table that prints that pair, and every pair must be present:
+   a missing pair is a NaN in the Cholesky, a filled one is a made-up number. */
+check('the joint matrix is exactly Tables 5.1, 4.1 and 4.12, cell for cell', () => {
+  const J = D.WAIS4_WMS4_JOINT, W = D.WAIS4_INTERCORR, M = D.WMS4_INTERCORR.adult, X = D.WMS4_WAIS4_CROSS;
+  if (!J) return 'WAIS4_WMS4_JOINT is not defined';
+  const bad = [];
+  const g = (T, a, b) => (T.order.indexOf(a) > T.order.indexOf(b) ? T.r[a + '|' + b] : T.r[b + '|' + a]);
+  const isW = k => W.order.includes(k) && !M.order.includes(k);
+  for (let i = 0; i < J.order.length; i++) for (let j = 0; j < i; j++) {
+    const a = J.order[i], b = J.order[j];
+    const v = J.r[a + '|' + b];
+    const want = isW(a) && isW(b) ? g(W, a, b) : (!isW(a) && !isW(b) ? g(M, a, b) : X.r[a + '|' + b]);
+    if (!Number.isFinite(v)) bad.push(a + '|' + b + ' is missing');
+    else if (v !== want) bad.push(a + '|' + b + ' is ' + v + ', its source prints ' + want);
+    if (J.r[b + '|' + a] !== undefined) bad.push(b + '|' + a + ' is stored the wrong way round');
+  }
+  const n = J.order.length;
+  if (Object.keys(J.r).length !== n * (n - 1) / 2) bad.push('the joint matrix holds cells for pairs outside its order');
+  /* Only measures Table 4.12 covers may join: the WAIS-IV process scores are
+     not in it and must not appear with borrowed correlations. */
+  for (const k of ['BDN', 'DSF', 'DSB', 'DSS']) if (J.order.includes(k)) bad.push(k + ' is in the joint matrix but not in Table 4.12');
+  if (J.restrictedTo16_69.length) bad.push('the joint profile is Adult-battery only (16-69), so an age caveat would state nothing');
+  if (!/Table 5\.1/.test(J.citation) || !/4\.1 \(Adult/.test(J.citation) || !/4\.12/.test(J.citation)) bad.push('the citation does not name all three tables');
+  return bad.length === 0 || bad.slice(0, 6).join('; ');
+});
+
+/* Adult battery only. Table 4.12 pools both batteries and has one VMI row,
+   and the Older Adult VMI is a different sum, so an Older Adult score must
+   never reach the joint matrix. */
+check('the joint profile admits the WMS-IV Adult battery only', () => {
+  let mod; try { mod = driveProfRules(); } catch (e) { return 'could not drive the registry: ' + e.message; }
+  const j = mod.PROF_INSTRUMENTS.find(x => x.id === 'w4wm4');
+  if (!j) return 'the joint instrument is not in the registry';
+  const bad = [];
+  if (JSON.stringify(j.joint) !== JSON.stringify(['wais4', 'wms4'])) bad.push('its parts are ' + JSON.stringify(j.joint) + ', not WAIS-IV and the Adult battery');
+  if (!/WAIS4_WMS4_JOINT/.test(j.matrix.toString())) bad.push('it does not read the joint matrix');
+  if (!/\.filter\(x => !x\.joint\)/.test(extractFn(PROF_SRC, 'renderProfile') || PROF_SRC)) bad.push('the empty state names the joint tab as a third instrument');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+heading('57. RBANS Update Table 4.1 — the intercorrelations');
+
+/* The Total Scale is the five indices summed, all on SD 15, so its
+   correlation with each index is fixed by the ten index-index cells:
+   corr(I, T) = sum_j r(I,j) / sqrt(sum_jk r(j,k)). All five land on the
+   printed value at 2 dp, which pins the ten cells as a set. */
+check('the Total Scale column is reproduced from the index block', () => {
+  const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
+  const idx = ['IM', 'VSC', 'ATT', 'LAN', 'DM'];
+  const g = (a, b) => (a === b ? 1 : (R.order.indexOf(a) > R.order.indexOf(b) ? R.r[a + '|' + b] : R.r[b + '|' + a]));
+  let den = 0; for (const a of idx) for (const b of idx) den += g(a, b);
+  const bad = [];
+  for (const a of idx) {
+    const pred = idx.reduce((t, b) => t + g(a, b), 0) / Math.sqrt(den);
+    if (Math.abs(pred - R.r['TS|' + a]) > 0.005) bad.push(a + ': predicts ' + pred.toFixed(3) + ', printed ' + R.r['TS|' + a]);
+  }
+  const n = R.order.length;
+  if (Object.keys(R.r).length !== n * (n - 1) / 2) bad.push('the block is not complete');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Verbatim against the page, a second reading, as for every other matrix. */
+check('the RBANS index block matches the printed page', () => {
+  const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
+  const PAGE = { 'VSC|IM': .29, 'ATT|IM': .37, 'ATT|VSC': .29, 'LAN|IM': .47, 'LAN|VSC': .31, 'LAN|ATT': .38,
+                 'DM|IM': .64, 'DM|VSC': .34, 'DM|ATT': .32, 'DM|LAN': .40,
+                 'TS|IM': .78, 'TS|VSC': .63, 'TS|ATT': .66, 'TS|LAN': .72, 'TS|DM': .76 };
+  const bad = [];
+  for (const k in PAGE) if (R.r[k] !== PAGE[k]) bad.push(k + ' is ' + R.r[k] + ', printed ' + PAGE[k]);
+  if (!/Table 4\.1/.test(R.source) || !/Randolph, 2012/.test(R.citation)) bad.push('the table is not named');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE SUBTEST BLOCK, verbatim, and the arithmetic that places the shaded
+   cells. A two-subtest index corrected for overlap is the other subtest, so
+   its shaded cell must equal the partner correlation; and each index's
+   shaded cell against the Total Scale follows from the index block. */
+check('the RBANS subtest block matches the page, and the shaded cells are placed by arithmetic', () => {
+  const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
+  const bad = [];
+  const PAGE = {
+    SM: [.73], FC: [.56, .64], SF: [.71, .71, .62], DS: [.67, .68, .57, .70], CD: [.52, .55, .49, .55, .53],
+    SR: [.73, .80, .69, .74, .71, .56], FR: [.67, .69, .72, .71, .68, .53, .75]
+  };
+  const S = ['LL', 'SM', 'FC', 'SF', 'DS', 'CD', 'SR', 'FR'];
+  for (const a in PAGE) PAGE[a].forEach((v, j) => {
+    if (R.r[a + '|' + S[j]] !== v) bad.push(a + '|' + S[j] + ' is ' + R.r[a + '|' + S[j]] + ', printed ' + v);
+  });
+  const C = R.rCorrectedToComposite || {};
+  for (const [a, b, pair] of [['LL', 'IM', 'SM|LL'], ['SM', 'IM', 'SM|LL'], ['DS', 'ATT', 'CD|DS'], ['CD', 'ATT', 'CD|DS']]) {
+    if (C[a + '|' + b] !== R.r[pair]) bad.push(a + ' against ' + b + ' corrected should equal ' + pair + ' (' + R.r[pair] + '), is ' + C[a + '|' + b]);
+  }
+  const idx = ['IM', 'VSC', 'ATT', 'LAN', 'DM'];
+  const g = (a, b) => (a === b ? 1 : (R.order.indexOf(a) > R.order.indexOf(b) ? R.r[a + '|' + b] : R.r[b + '|' + a]));
+  for (const a of idx) {
+    const o = idx.filter(x => x !== a);
+    let num = 0, den = 0; for (const b of o) { num += g(a, b); for (const c of o) den += g(b, c); }
+    if (Math.abs(num / Math.sqrt(den) - C[a + '|TS']) > 0.01) bad.push(a + ' against TS corrected is ' + C[a + '|TS'] + ', the index block gives ' + (num / Math.sqrt(den)).toFixed(3));
+  }
+  const n = R.order.length;
+  if (Object.keys(R.r).length !== n * (n - 1) / 2) bad.push('the lower triangle is not complete');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* THE TWO BLOCKS DO NOT RECONCILE, as printed. Every Immediate Memory x
+   Attention subtest cell is .52 or more, which forces r(IM, AT) to at least
+   .52 under any positive weighting; the index block prints .37. Pinned so a
+   later edit to either block cannot hide it, and so a level can never mix
+   them: each level must lie wholly inside one block. */
+check('the RBANS subtest and index blocks are never mixed, and their gap is pinned', () => {
+  const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
+  const bad = [];
+  const cross = ['DS|LL', 'DS|SM', 'CD|LL', 'CD|SM'].map(k => R.r[k]);
+  if (!(Math.min(...cross) >= 0.52 && R.r['ATT|IM'] === 0.37)) bad.push('the documented gap between the blocks has changed: re-read RBANS_INTERCORR before editing either block');
+  let mod; try { mod = driveProfRules(); } catch (e) { return 'could not drive the registry: ' + e.message; }
+  const inst = mod.PROF_INSTRUMENTS.find(x => x.id === 'rbans');
+  if (!inst) return 'RBANS is not in the registry';
+  const subs = ['LL', 'SM', 'FC', 'SF', 'DS', 'CD', 'SR', 'FR'];
+  for (const l of inst.levels) {
+    const s = l.keys.filter(k => subs.includes(k)).length;
+    if (s && s !== l.keys.length) bad.push(l.id + ' mixes subtests and indices');
+  }
+  if (inst.levels.flatMap(l => l.keys).includes('TS')) bad.push('the Total Scale is offered beside the indices it sums');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* Form A only, and chips that read as names. */
+check('RBANS admits Form A only, with readable chip labels', () => {
+  const R = D.RBANS_INTERCORR; if (!R) return 'RBANS_INTERCORR is not defined';
+  let mod; try { mod = driveProfRules(); } catch (e) { return 'could not drive the registry: ' + e.message; }
+  const inst = mod.PROF_INSTRUMENTS.find(x => x.id === 'rbans');
+  const bad = [];
+  const groups = Object.keys(D.normDB).filter(g => inst.groupRe.test(g));
+  for (const want of ['RBANS Indices · All Ages', 'RBANS Subtests · All Ages']) if (!groups.includes(want)) bad.push(want + ' is not admitted');
+  for (const g of groups) if (/Form [B-D]/.test(g)) bad.push(g + ' is admitted');
+  for (const k of ['IM', 'VSC', 'ATT', 'LAN', 'DM']) if (!R.short || !R.short[k] || R.short[k].length < 5) bad.push(k + ' has no readable chip label');
+  /* Subtest chips show the label, which is the normDB name the score is joined on. */
+  const names = Object.keys(D.normDB['RBANS Subtests · All Ages']);
+  for (const k of ['LL', 'SM', 'FC', 'SF', 'DS', 'CD', 'SR', 'FR']) if (!names.includes(R.labels[k])) bad.push(k + ' is not a Score Tables name');
+  if (!/M\.short/.test(extractFn(PROF_SRC, 'profShortLabel'))) bad.push('the chip does not use the short labels');
+  return bad.length === 0 || bad.join('; ');
+});
+
+heading('58. WISC-V Table 5.1 — the intercorrelations');
+
+/* Every composite is a sum of scaled scores (the Mean row counts them), so
+   every composite cell follows from the subtest cells and every composite SD
+   is 3 x sqrt(sum of r). As received: all 363 cells within .01, all 11 SDs
+   within .05. A misread subtest cell moves a whole row of predictions; a
+   misread composite cell stands alone. Both land far outside .015. */
+const WISC5_MEMBERS = { VCI: ['SI', 'VC'], VSI: ['BD', 'VP'], FRI: ['MR', 'FW'], WMI: ['DS', 'PS'], PSI: ['CD', 'SS'],
+  FSIQ: ['SI', 'VC', 'BD', 'MR', 'FW', 'DS', 'CD'], QRI: ['FW', 'AR'], AWMI: ['DS', 'LN'],
+  NVI: ['BD', 'VP', 'MR', 'FW', 'PS', 'CD'], GAI: ['SI', 'VC', 'BD', 'MR', 'FW'], CPI: ['DS', 'PS', 'CD', 'SS'] };
+check('every WISC-V composite cell and SD is reproduced from the subtest cells', () => {
+  const M = D.WISC5_INTERCORR; if (!M) return 'WISC5_INTERCORR is not defined';
+  const g = (a, b) => (a === b ? 1 : (M.order.indexOf(a) > M.order.indexOf(b) ? M.r[a + '|' + b] : M.r[b + '|' + a]));
+  const cov = (A, B) => { let s = 0; for (const a of A) for (const b of B) s += g(a, b); return s; };
+  const bad = []; let n = 0;
+  for (const k in WISC5_MEMBERS) {
+    const B = WISC5_MEMBERS[k];
+    const sd = 3 * Math.sqrt(cov(B, B));
+    if (Math.abs(sd - M.sd[k]) > 0.05) bad.push(k + ' SD ' + sd.toFixed(2) + ' against printed ' + M.sd[k]);
+    if (M.mean[k] !== 10 * B.length) bad.push(k + ' mean ' + M.mean[k] + ' does not count ' + B.length + ' subtests');
+    for (const x of M.order) {
+      if (x === k) continue;
+      const A = WISC5_MEMBERS[x] || [x];
+      const p = cov(A, B) / Math.sqrt(cov(A, A) * cov(B, B)); n++;
+      if (Math.abs(p - g(x, k)) > 0.015) bad.push(x + ' x ' + k + ' predicts ' + p.toFixed(3) + ', stored ' + g(x, k));
+    }
+  }
+  if (n !== 363) bad.push('expected 363 composite cells, checked ' + n);
+  const k = M.order.length;
+  if (Object.keys(M.r).length !== k * (k - 1) / 2) bad.push('the lower triangle is not complete');
+  for (const c in M.r) if (!(M.r[c] > 0 && M.r[c] < 1)) bad.push(c + ' is not a correlation');
+  return bad.length === 0 || bad.slice(0, 6).join('; ');
+});
+
+/* The shaded cells are placed by membership, and every two-subtest composite
+   proves the placement: removing one member leaves only its partner. And one
+   shaded cell per membership, no more. */
+check('the WISC-V shaded cells are placed by membership and prove it', () => {
+  const M = D.WISC5_INTERCORR; if (!M) return 'WISC5_INTERCORR is not defined';
+  const C = M.rCorrectedToComposite || {}; const bad = [];
+  const g = (a, b) => (M.order.indexOf(a) > M.order.indexOf(b) ? M.r[a + '|' + b] : M.r[b + '|' + a]);
+  let pairs = 0;
+  for (const k in WISC5_MEMBERS) {
+    const B = WISC5_MEMBERS[k];
+    for (const s of B) if (!(s + '|' + k in C)) bad.push(s + ' has no shaded cell against ' + k);
+    if (B.length === 2) for (const [s, o] of [[B[0], B[1]], [B[1], B[0]]]) {
+      pairs++;
+      if (C[s + '|' + k] !== g(s, o)) bad.push(s + ' against ' + k + ' corrected is ' + C[s + '|' + k] + ', partner r is ' + g(s, o));
+    }
+  }
+  const members = Object.values(WISC5_MEMBERS).reduce((t, B) => t + B.length, 0);
+  if (Object.keys(C).length !== members) bad.push(Object.keys(C).length + ' shaded cells for ' + members + ' memberships');
+  if (pairs !== 14) bad.push('expected 14 two-subtest checks, ran ' + pairs);
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The page's composition must be the manual's, pinned above, and the
+   registry must join on normDB's names. */
+check('the WISC-V profile uses the manual composition and Score Tables names', () => {
+  const M = D.WISC5_INTERCORR; if (!M) return 'WISC5_INTERCORR is not defined';
+  let mod; try { mod = driveProfRules(); } catch (e) { return 'could not drive the registry: ' + e.message; }
+  const bad = [];
+  const comp = mod.PROF_COMPOSED_OF.wisc5 || {};
+  for (const k in WISC5_MEMBERS) if (JSON.stringify(comp[k]) !== JSON.stringify(WISC5_MEMBERS[k])) bad.push(k + ' is composed differently on the page');
+  const names = new Set();
+  for (const g of Object.keys(D.normDB)) if (/^WISC-V (Indices|Subtests|Process Scores) · All Ages$/.test(g)) Object.keys(D.normDB[g]).forEach(n => names.add(n));
+  for (const k of M.order) if (!names.has(M.labels[k])) bad.push(k + ' label "' + M.labels[k] + '" is not a Score Tables name');
+  const inst = mod.PROF_INSTRUMENTS.find(x => x.id === 'wisc5');
+  const offered = inst ? inst.levels.flatMap(l => l.keys) : [];
+  for (const k of ['FSIQ', 'QRI', 'AWMI', 'NVI', 'GAI', 'CPI', 'BDp']) if (offered.includes(k)) bad.push(k + ' is offered but overlaps another offered measure');
+  return bad.length === 0 || bad.join('; ');
+});
+
+
+/* ONE REPORT SLOT, SO THE HEADING MUST NAME THE PROFILE IN IT. The report
+   titled Profile tables by the first family it found in the table text, and a
+   joint WAIS-IV + WMS-IV table mentions WAIS-IV first, so it went out headed
+   as WAIS-IV alone. And when both batteries are scored the page opens on the
+   joint tab, unless the clinician has clicked a tab. */
+check('the Profile report heading names its instrument, and both batteries open on the joint tab', () => {
+  const bad = [];
+  const apa = extractFn(PROF_SRC, 'renderProfileApa');
+  if (!/data-prof-family="' \+ escapeHtml\(inst\.label\)/.test(apa)) bad.push('the table does not carry its instrument for the report heading');
+  const title = extractFn(APP_SRC, 'buildIntelligentTitle');
+  const i = title.indexOf("parentId === 'prof-apa'"), j = title.indexOf('detectTestFamily(html)');
+  if (i === -1 || !/data-prof-family/.test(title)) bad.push('the report heading does not read the instrument the page names');
+  else if (j !== -1 && j < i) bad.push('the heading is read from the table text before the page’s own instrument');
+  const pull = extractFn(PROF_SRC, 'profPull');
+  if (!/if \(!profState\.chosen\)/.test(pull) || !/find\(x => x\.inst\.joint\) \|\| scored\[0\]/.test(pull)) bad.push('the page does not open on the joint tab when both batteries are scored');
+  const writes = (PROF_SRC.match(/profState\.chosen = true/g) || []).length;
+  if (writes !== 1) bad.push('a tab choice is recorded in ' + writes + ' places, not only on a click');
   return bad.length === 0 || bad.join('; ');
 });
 

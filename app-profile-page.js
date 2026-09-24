@@ -26,7 +26,11 @@
    to print.
 
    THREE INSTRUMENTS, ONE PER TAB. WAIS-IV (Table 5.1), WMS-IV Adult
-   (Table 4.1) and WMS-IV Older Adult (Table 4.2). The two WMS-IV
+   (Table 4.1) and WMS-IV Older Adult (Table 4.2), plus a fourth tab
+   profiling WAIS-IV with the WMS-IV Adult battery on WMS-IV Table 4.12
+   (see WMS4_WAIS4_CROSS in data.js), and RBANS Update indices on its
+   Table 4.1 (see RBANS_INTERCORR), and WISC-V on its Table 5.1 (see
+   WISC5_INTERCORR). The two WMS-IV
    batteries are separate entries rather than one instrument with an age
    switch: they are different normative samples with different measure
    lists and different coefficients, ages 65-69 are normed in both, and
@@ -137,19 +141,58 @@
       IMI:  ['LM1', 'VPA1', 'VR1'],
       DMI:  ['LM2', 'VPA2', 'VR2'],
       VPA2: ['VPAWR']
+    },
+    /* RBANS. Line Orientation, Picture Naming, List Recall and List
+       Recognition are named so each index holds its real members, though
+       those four are not in Table 4.1 and cannot be profiled. */
+    rbans: {
+      IM:  ['LL', 'SM'],
+      VSC: ['FC', 'LO'],
+      ATT: ['DS', 'CD'],
+      LAN: ['PN', 'SF'],
+      DM:  ['LR', 'LRG', 'SR', 'FR'],
+      TS:  ['IM', 'VSC', 'ATT', 'LAN', 'DM']
+    },
+    /* WISC-V. Membership is the manual's, and Table 5.1 states it twice
+       over: the Mean row counts the subtests in each composite, and each
+       subtest carries one shaded (corrected) cell per composite it is in. */
+    wisc5: {
+      VCI:  ['SI', 'VC'],
+      VSI:  ['BD', 'VP'],
+      FRI:  ['MR', 'FW'],
+      WMI:  ['DS', 'PS'],
+      PSI:  ['CD', 'SS'],
+      FSIQ: ['SI', 'VC', 'BD', 'MR', 'FW', 'DS', 'CD'],
+      QRI:  ['FW', 'AR'],
+      AWMI: ['DS', 'LN'],
+      NVI:  ['BD', 'VP', 'MR', 'FW', 'PS', 'CD'],
+      GAI:  ['SI', 'VC', 'BD', 'MR', 'FW'],
+      CPI:  ['DS', 'PS', 'CD', 'SS'],
+      DS:   ['DSf', 'DSb', 'DSs'],
+      CA:   ['CAr', 'CAs']
     }
   };
   /* Block Design No Time Bonus is the SAME administration rescored - the
      matrix puts them at r = .97 - so they are one measure for this
      purpose even though neither contains the other. WMS-IV has no such
      pair: every process score there is a part, not a rescoring. */
-  const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {} };
+  /* WISC-V has two rescorings of Block Design: No Time Bonus and Partial. */
+  const PROF_ALIAS = { wais4: { BDN: 'BD' }, wms4: {}, wms4o: {}, rbans: {},
+                       wisc5: { BDn: 'BD', BDp: 'BD' } };
 
+  /* A JOINT instrument has no composition of its own: it is the union of its
+     parts', which share no keys, so nothing is restated and the two cannot
+     drift apart. The same for aliases. */
+  function profRuleTable(table, id){
+    const inst = PROF_INSTRUMENTS.find(x => x.id === id);
+    if (inst && inst.joint) return Object.assign({}, ...inst.joint.map(p => profRuleTable(table, p)));
+    return table[id] || {};
+  }
   function profComponents(key, seen){
     const inst = profState.instrument;
-    const k = (PROF_ALIAS[inst] || {})[key] || key;
+    const k = profRuleTable(PROF_ALIAS, inst)[key] || key;
     const out = seen || new Set();
-    const parts = (PROF_COMPOSED_OF[inst] || {})[k];
+    const parts = profRuleTable(PROF_COMPOSED_OF, inst)[k];
     if (!parts){ out.add(k); return out; }
     parts.forEach(p => profComponents(p, out));
     return out;
@@ -239,6 +282,62 @@
            measure, which reads as "one is not a profile" rather than as an
            omission. */
         { id:'wo-proc', label:'Process scores', keys:['VPAWR'] }
+      ] },
+    /* WAIS-IV AND THE WMS-IV ADULT BATTERY TOGETHER, on WMS-IV Table 4.12,
+       which correlates every Adult-battery measure with the WAIS-IV. Offered
+       only when Score Tables holds scores from both: a joint tab over one
+       instrument would repeat that instrument's own tab.
+
+       It has no group pattern of its own. Each measure is still admitted by
+       its OWN instrument's pattern (`joint` names the parts, and
+       profScoreTableRowsFor reads each part), so an Older Adult score can no
+       more reach this matrix than it can reach the Adult one. Older Adult is
+       not offered: Table 4.12 pools both batteries and has one VMI row, and
+       the two batteries' VMI are different sums. See WMS4_WAIS4_CROSS.
+
+       No process-score level: Table 4.12 has no WAIS-IV process scores, and
+       WMS-IV process scores alone are the WMS-IV tab's own level. */
+    /* RBANS Update, Form A, Table 4.1. The Total Scale is left out for the
+       reason FSIQ is: it is the five indices summed. Forms B-D have no
+       published intercorrelations here, so the pattern does not admit them.
+       The two levels read two blocks of the table that do not reconcile
+       with each other (see RBANS_INTERCORR); a level never mixes them. */
+    { id:'rbans', label:'RBANS', name:'RBANS',
+      groupRe: /^RBANS (Indices|Subtests) · /,
+      composites: ['IM', 'VSC', 'ATT', 'LAN', 'DM', 'TS'],
+      matrix: () => (typeof RBANS_INTERCORR !== 'undefined') ? RBANS_INTERCORR : null,
+      levels: [
+        { id:'rb-indices', label:'Indices', keys:['IM', 'VSC', 'ATT', 'LAN', 'DM'] },
+        { id:'rb-sub', label:'Subtests', keys:['LL', 'SM', 'FC', 'SF', 'DS', 'CD', 'SR', 'FR'] }
+      ] },
+    /* WISC-V, Table 5.1, all ages. Primary indices, subtests and process
+       scores. The ancillary indices (QRI, AWMI, NVI, GAI, CPI) are left out
+       for the reason FSIQ is: each shares subtests with the primary indices
+       and with one another, so they have no conflict-free level of their
+       own. Block Design Partial is the same administration as Block Design
+       No Time Bonus, so the process level carries one of the two. */
+    { id:'wisc5', label:'WISC-V', name:'WISC-V',
+      groupRe: /^WISC-V (Indices|Subtests|Process Scores) · /,
+      composites: ['VCI', 'VSI', 'FRI', 'WMI', 'PSI', 'FSIQ', 'QRI', 'AWMI', 'NVI', 'GAI', 'CPI'],
+      matrix: () => (typeof WISC5_INTERCORR !== 'undefined') ? WISC5_INTERCORR : null,
+      levels: [
+        { id:'wc-indices',  label:'Primary indices', keys:['VCI', 'VSI', 'FRI', 'WMI', 'PSI'] },
+        { id:'wc-subtests', label:'Subtests',
+          keys:['SI', 'VC', 'IN', 'CO', 'BD', 'VP', 'MR', 'FW', 'PC', 'AR', 'DS', 'PS', 'LN', 'CD', 'SS', 'CA'] },
+        { id:'wc-process',  label:'Process scores', keys:['BDn', 'DSf', 'DSb', 'DSs', 'CAr', 'CAs'] }
+      ] },
+    { id:'w4wm4', label:'WAIS-IV + WMS-IV', name:'WAIS-IV and WMS-IV',
+      joint: ['wais4', 'wms4'],
+      composites: ['FSIQ', 'VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI', 'IMI', 'DMI'],
+      matrix: () => (typeof WAIS4_WMS4_JOINT !== 'undefined') ? WAIS4_WMS4_JOINT : null,
+      levels: [
+        { id:'wj-mod',  label:'Indices, WMS-IV by modality',
+          keys:['VCI', 'PRI', 'WMI', 'PSI', 'AMI', 'VMI', 'VWMI'] },
+        { id:'wj-time', label:'Indices, WMS-IV by delay',
+          keys:['VCI', 'PRI', 'WMI', 'PSI', 'IMI', 'DMI', 'VWMI'] },
+        { id:'wj-sub',  label:'Subtests',
+          keys:['BD', 'SI', 'DS', 'MR', 'VC', 'AR', 'SS', 'VP', 'IN', 'CD', 'LN', 'FW', 'CO', 'CA', 'PCm',
+                'LM1', 'LM2', 'VPA1', 'VPA2', 'DE1', 'DE2', 'VR1', 'VR2', 'SA', 'SSP'] }
       ] }
   ];
   function profInstrument(){
@@ -306,7 +405,11 @@
      second store: profPull rewrites it wholesale and nothing else ever
      assigns to it. `excluded` is per level and clears when the level
      changes, the levels having no measures in common. */
-  const profState = { criterion:'p5', instrument:'wais4', level:'w4-indices', selected:[], scores:{}, excluded:{} };
+  /* `chosen` is set only by a click on a tab. Until then the page picks the
+     tab itself, and prefers a joint one: when WAIS-IV and WMS-IV were both
+     given, the joint profile is the one to report, and the report has one
+     slot for this page. */
+  const profState = { criterion:'p5', instrument:'wais4', chosen:false, level:'w4-indices', selected:[], scores:{}, excluded:{} };
 
   /* Keyed on the SELECTION and the criterion. Scores do not enter the
      simulation, so a score changing on Score Tables must never re-run it
@@ -333,6 +436,8 @@
   /* An Index is universally known by its acronym and its full name is
      three words long, so the chip carries whichever reads shorter. */
   function profShortLabel(key){
+    const M = profMatrixObj();
+    if (M && M.short && M.short[key]) return M.short[key];
     return profIsComposite(key) ? key : profLabel(key);
   }
   function profGroup(id){
@@ -448,6 +553,13 @@
      "DE I Content") for exactly this reason: the name is the join. */
   function profScoreTableRowsFor(inst){
     if (typeof batteryRows === 'undefined' || !Array.isArray(batteryRows)) return {};
+    /* A joint instrument reads each part through that part's own filter,
+       and holds nothing unless every part holds something. */
+    if (inst.joint){
+      const parts = inst.joint.map(id => profScoreTableRowsFor(PROF_INSTRUMENTS.find(x => x.id === id)));
+      if (parts.some(p => !Object.keys(p).length)) return {};
+      return Object.assign({}, ...parts);
+    }
     const M = inst.matrix ? inst.matrix() : null;
     if (!M) return {};
     const byName = {};
@@ -491,13 +603,16 @@
      change, and it costs nothing. Nothing here writes back - this page
      is a reader of Score Tables, never an editor of it. */
   function profPull(){
-    /* THE INSTRUMENT FIRST, and only when the current one has nothing:
-       a clinician who has chosen a tab keeps it while it holds a score,
-       exactly as they keep a level. Landing on the page with only WMS-IV
+    /* THE INSTRUMENT FIRST. A clinician who has clicked a tab keeps it
+       while it holds a score, exactly as they keep a level. Otherwise the
+       page chooses: a joint instrument if one is scored (both batteries
+       given), else the first scored. Landing on the page with only WMS-IV
        entered must not show an empty WAIS-IV. */
-    if (!Object.keys(profScoreTableRows()).length){
-      const alt = profInstrumentsFound()[0];
-      if (alt && alt.inst.id !== profState.instrument) profSetInstrument(alt.inst.id);
+    const scored = profInstrumentsFound();
+    if (!scored.some(x => x.inst.id === profState.instrument)) profState.chosen = false;
+    if (!profState.chosen){
+      const pick = scored.find(x => x.inst.joint) || scored[0];
+      if (pick && pick.inst.id !== profState.instrument) profSetInstrument(pick.inst.id);
     }
     const found = profScoreTableRows();
     /* Fall to the first level that can actually form a profile, so
@@ -793,8 +908,17 @@
     /* An absence with no stated reason reads as missing data, so each
        measure the instrument deliberately withholds says why, and only
        while Score Tables actually holds it. */
-    if (profState.instrument === 'wais4' && found.FSIQ !== undefined){
+    if ((profState.instrument === 'wais4' || profState.instrument === 'w4wm4' || profState.instrument === 'wisc5') && found.FSIQ !== undefined){
       bits.push('Full Scale IQ contains every other measure, so it cannot join a profile');
+    }
+    if (profState.instrument === 'wisc5' && ['QRI', 'AWMI', 'NVI', 'GAI', 'CPI'].some(k => found[k] !== undefined)){
+      bits.push('the ancillary indices share subtests with the primary indices, so they cannot join a profile');
+    }
+    if (profState.instrument === 'wisc5' && found.BDp !== undefined){
+      bits.push('Block Design Partial rescores the same administration as No Time Bonus, so only one is profiled');
+    }
+    if (profState.instrument === 'rbans' && found.TS !== undefined){
+      bits.push('the Total Scale is the five indices summed, so it cannot join a profile');
     }
     return '<div class="prof-foot"><span>' + escapeHtml(bits.join(' · ')) + '</span>'
       + '<a class="prof-foot-link" data-prof-goto="battery">Edit on Score Tables →</a></div>';
@@ -815,7 +939,7 @@
     /* Nothing to profile: the honest state is a pointer at where scores
        live, not an empty set of cards. */
     if (!Object.keys(found).length){
-      const names = [...new Set(PROF_INSTRUMENTS.map(x => x.name))].join(' or ');
+      const names = [...new Set(PROF_INSTRUMENTS.filter(x => !x.joint).map(x => x.name))].join(' or ');
       /* The purpose line leads: this is the first thing a clinician new to the
          page reads, and "no scores yet" alone does not say what the page is for. */
       out.innerHTML = '<div class="prof-empty">'
@@ -891,7 +1015,7 @@
     const res = profSimulate();
     if (!counts || !counts.complete || !res){
       out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">'
-        + 'Score at least two compatible WAIS-IV measures on Score Tables to generate the APA table.</div>';
+        + 'Score at least two compatible measures from one instrument on Score Tables to generate the APA table.</div>';
       return;
     }
     const c = profCriterion();
@@ -915,7 +1039,10 @@
       .join(', ');
     out.innerHTML =
       '<div class="apa-table-num">Table 1</div>'
-      + '<div class="apa-table-title">Abnormal ' + escapeHtml(inst.name)
+      /* data-prof-family is what the Working Report titles this table by.
+         Reading the family out of the table text found "WAIS-IV" first on a
+         joint profile and headed it as WAIS-IV alone. */
+      + '<div class="apa-table-title" data-prof-family="' + escapeHtml(inst.label) + '">Abnormal ' + escapeHtml(inst.name)
         + ' results and how common they are in the healthy population</div>'
       + '<table class="apa-table"><thead><tr>'
       + '<th>Result</th><th class="num">Number observed</th><th class="num">Base rate</th>'
@@ -955,6 +1082,7 @@
       if (!t) return;
       if (t.dataset.profInst){
         if (t.dataset.profInst === profState.instrument) return;
+        profState.chosen = true;
         profSetInstrument(t.dataset.profInst);
         renderProfile();
       } else if (t.dataset.profLevel){
