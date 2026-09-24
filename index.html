@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260924m">
-<link rel="stylesheet" href="design-system.css?v=20260924m">
+<link rel="stylesheet" href="styles.css?v=20260924n">
+<link rel="stylesheet" href="design-system.css?v=20260924n">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -1830,13 +1830,13 @@
             </div>
           </div>
           <details class="formula-disclosure">
-            <summary>How the threshold is derived, and why it moves with age</summary>
+            <summary>How the cut-off is set, and why it changes with age</summary>
             <div class="formula-body">
-              <p><strong>Base rate by age (the default, and the only reading sourced to the CVLT-3).</strong> Table D.13 gives the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>, by age band. There is no published cut score, so the flag is derived rather than stored: the rarest score whose published base rate is still at or below the selected per-test false-positive criterion. 10% is this page's own convention (PVT cut-offs are conventionally set so specificity is .90 or better), so nothing outside the manual enters the number itself.</p>
-              <p><strong>The age band does real work here.</strong> 15 of 16 hits is the 8.6th percentile across all ages but the <strong>26th</strong> at ages 80&ndash;90, so the derived threshold is &le; 15 in every band except 80&ndash;90, where it is &le; 14. Reading 15 as &ldquo;one off perfect, fine&rdquo; is a 3&ndash;6% event in a working-age adult and an unremarkable one in an 85-year-old. With no age entered the manual's own All ages column is used, and the readout says so.</p>
-              <p><strong>The two published cut-offs are CVLT-II figures, and the page says so wherever one is in force.</strong> The trial is structurally identical across editions (16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition), so the transfer is the ordinary one, but it is a transfer. <strong>&le; 14</strong> is the de facto standard: across 17 studies and 4,432 patients it gives sensitivity .50 at specificity .93, and no healthy control in the review scored at or below it (Schwartz et al., 2016). <strong>&le; 15</strong> treats a single error as a failure: in 104 adults with TBI it raised sensitivity to .56 while holding specificity at .92 across seven reference PVTs, identifying about 6% more invalid response sets (Erdodi et al., 2018). Note the two approaches converge: the derived threshold is already &le; 15 for every patient under 80.</p>
-              <p><strong>Failing rules invalidity in, but passing rules nothing out.</strong> Examinees who failed a reference PVT were about eight times more likely to fail Forced Choice, but roughly half of invalid response sets pass it, because a sophisticated simulator recognises how easy the task is (Schwartz et al., 2016).</p>
-              <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on the easier Forced Choice trial. Tables D.14 and D.15 give their base rates the other way round (that many <em>or more</em>), and their threshold is always derived from those tables, whichever basis the hits use. They come from the same administration as the hits, so all three count as <strong>one</strong> indicator.</p>
+              <p><strong>No published cut-off.</strong> The CVLT-3 manual gives no cut score for Forced Choice. Table D.13 gives, by age band, the percentage of the standardisation sample scoring each number of hits <em>or fewer</em>. By default a score is flagged when that percentage is at or below the false-positive rate set under <em>Base-rate criterion</em>: 10% by default, the usual convention of specificity .90 or better, or 5%. With no age entered, the manual's All Ages column is used.</p>
+              <p><strong>Age matters.</strong> 15 of 16 hits is the 8.6th percentile across all ages but the <strong>26th</strong> at ages 80&ndash;90. So the flag is &le; 15 in every band except 80&ndash;90, where it is &le; 14. A score of 15 is a 3&ndash;6% event in a working-age adult and an unremarkable one in an 85-year-old.</p>
+              <p><strong>Published cut-offs (CVLT-II).</strong> Two published cut-offs can be chosen instead, under <em>Flag basis</em>. Both come from the CVLT-II; the trial is the same in both editions (16 List A targets, one distractor each, about 10 minutes after Yes/No Recognition). <strong>&le; 14</strong> is the standard: across 17 studies and 4,432 patients it gives sensitivity .50 at specificity .93, and no healthy control in the review scored at or below it (Schwartz et al., 2016). <strong>&le; 15</strong> counts a single error as a failure: in 104 adults with TBI it gave sensitivity .56 at specificity .92 against seven reference PVTs, identifying about 6% more invalid response sets (Erdodi et al., 2018). For every patient under 80, the age-based flag is already &le; 15.</p>
+              <p><strong>A fail is informative; a pass is not.</strong> Examinees who failed a reference PVT were about eight times more likely to fail Forced Choice, but roughly half of invalid response sets pass it, because a sophisticated simulator recognises how easy the task is (Schwartz et al., 2016).</p>
+              <p><strong>Critical items</strong> are targets recalled, or recognised on Yes/No, earlier in the test but <em>not</em> chosen on Forced Choice. Tables D.14 and D.15 give the percentage scoring that many <em>or more</em>, by age band, and the critical-item flag always uses those tables, whichever cut-off is set for hits. Hits and both critical-item scores come from one administration, so together they count as <strong>one</strong> indicator.</p>
             </div>
           </details>
         </div>
@@ -3250,12 +3250,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260924m"></script>
-<script src="app.js?v=20260924m"></script>
-<script src="design-system.js?v=20260924m" defer></script>
-<script src="app-effectsize-page.js?v=20260924m"></script>
-<script src="app-viz-page.js?v=20260924m"></script>
-<script src="app-profile-page.js?v=20260924m"></script>
+<script src="data.js?v=20260924n"></script>
+<script src="app.js?v=20260924n"></script>
+<script src="design-system.js?v=20260924n" defer></script>
+<script src="app-effectsize-page.js?v=20260924n"></script>
+<script src="app-viz-page.js?v=20260924n"></script>
+<script src="app-profile-page.js?v=20260924n"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
