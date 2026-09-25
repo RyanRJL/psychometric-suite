@@ -17647,8 +17647,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
     <div class="nav-item" data-target="profile"><span class="nav-item-num">06</span>Profile Analysis</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">07</span>Score Converter</div>
     <div class="nav-item" data-target="effectsize"><span class="nav-item-num">08</span>Effect Sizes</div>
-    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">09</span>Data</div>
-    <div class="nav-item" data-target="about"><span class="nav-item-num">10</span>Methods &amp; References</div>
+    <div class="nav-item" data-target="about"><span class="nav-item-num">09</span>Methods &amp; References</div>
   </nav>
 
   <div class="sidebar-foot">
@@ -20292,7 +20291,9 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
 <footer class="site-footer" role="contentinfo">
   <div class="site-footer-inner">
     <div class="site-footer-links">
-      <button type="button" class="site-footer-link nav-item" data-target="custom-tests">Data</button>
+      <!-- The Data page (#custom-tests) has no link, by owner decision (2026-09):
+           it is a small barrier to browsing the stored tables, not protection,
+           since data.js ships to every browser. Still reachable at #custom-tests. -->
       <button type="button" class="site-footer-link nav-item" data-target="about">Methods &amp; References</button>
       <button type="button" class="site-footer-link nav-item" data-target="privacy-use">Privacy &amp; use</button>
     </div>
