@@ -6147,7 +6147,13 @@ function preModelFormula(tipKey, idx){
     const name = o[0] === 'INDEX' ? o[1] : 'Prorated ' + o[1];
     return 'Equation: ' + preEquation(name, c, PRE_OPIE_TERMS) + '\nVC, MR = Vocabulary and Matrix Reasoning raw scores; Sex: female 0, male 1. ' + tail(c) + '\nSource: Holdnack et al. (2013), Table eA5.8.';
   }
-  if (tipKey === 'opieDefault') return 'Equation: shown once Vocabulary and/or Matrix Reasoning is entered, as it depends on which are available.\nSource: Holdnack et al. (2013), Table eA5.8.';
+  if (tipKey === 'opieDefault'){
+    // All three, before anything is entered (owner, 2026-09).
+    const F = OPIE_PRORATED_FSIQ;
+    return [['Vocabulary + Matrix Reasoning', F.VC_MR], ['Vocabulary only', F.VC], ['Matrix Reasoning only', F.MR]]
+      .map(([n, c]) => n + ': ' + preEquation('Prorated FSIQ', c, PRE_OPIE_TERMS) + ' (SEE ' + c.see + ')').join('\n')
+      + '\nVC, MR = Vocabulary and Matrix Reasoning raw scores; Sex: female 0, male 1. ' + PRE_CI_LINE + '\nSource: Holdnack et al. (2013), Table eA5.8.';
+  }
   return '';
 }
 function preModelTip(tipKey, idx){

@@ -1606,10 +1606,15 @@ check('the field decision is per row, not per column', () => {
    ========================================================================== */
 heading('15. Documentation contracts');
 
-check('every OPIE tooltip warns it is illustrative only in a UK context', () => {
-  const keys = Object.keys(D.PRE_MODEL_TOOLTIPS).filter(k => /^opie/i.test(k));
-  const missing = keys.filter(k => !/ILLUSTRATIVE ONLY/i.test(D.PRE_MODEL_TOOLTIPS[k]));
-  return missing.length === 0 || 'missing the warning: ' + missing.join(', ');
+check('the OPIE-4 UK caveat is stated in the note above both tables that show OPIE-4', () => {
+  /* It used to be repeated in every OPIE tooltip. Since 2026-09 (owner) the
+     tips carry inputs and the equation only, and the caveat lives once, in
+     the note above each table, so it must be there. */
+  const bad = [];
+  if (!/OPIE-4 point estimates are illustrative only in UK contexts/.test(HTML_SRC)) bad.push('the Estimates note lost the caveat');
+  const n = APP_SRC.slice(APP_SRC.indexOf("'pre-opiepredict': () => ["), APP_SRC.indexOf("'pre-opiepredict': () => [") + 600);
+  if (!/Illustrative only in a UK context/.test(n)) bad.push('the OPIE-4 tab note lost the caveat');
+  return bad.length === 0 || bad.join('; ');
 });
 
 check('the OPIE tooltips state that sex and an age range are required', () => {
@@ -11384,6 +11389,17 @@ check('every premorbid tip prints an equation that reproduces the published mode
    ['opiePredVCI', D.OPIE_PRORATED_INDEX.VCI], ['opiePredPRI', D.OPIE_PRORATED_INDEX.PRI],
    ['opieVCMR', D.OPIE_PRORATED_FSIQ.VC_MR], ['opieVC', D.OPIE_PRORATED_FSIQ.VC], ['opieMR', D.OPIE_PRORATED_FSIQ.MR]]
     .forEach(([k, c]) => one(k, f(k), opie(c)));
+  // Before any subtest is entered the OPIE-4 row shows all three FSIQ equations.
+  const def = f('opieDefault').split('\n').filter(l => /Prorated FSIQ = /.test(l));
+  if (def.length !== 3) bad.push('the OPIE-4 default tip shows ' + def.length + ' equations, not 3');
+  [D.OPIE_PRORATED_FSIQ.VC_MR, D.OPIE_PRORATED_FSIQ.VC, D.OPIE_PRORATED_FSIQ.MR].forEach((c, i) => {
+    if (!def[i]) return;
+    const g = preParseEquation('Equation: ' + def[i].slice(def[i].indexOf(': ') + 2).replace(/ \(SEE [^)]*\)$/, ''));
+    inputs.forEach(([T, Edu, Sex, Occ, Age, VC, MR]) => {
+      const got = g(T, Edu, Sex, Occ, Age, VC, MR), want = opie(c)(T, Edu, Sex, Occ, Age, VC, MR);
+      if (!near(got, want)) bad.push('OPIE-4 default equation ' + (i + 1) + ': tip gives ' + got + ', model ' + want);
+    });
+  });
   return bad.length === 0 || bad.join('; ');
 });
 
