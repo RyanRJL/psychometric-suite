@@ -10671,3 +10671,8 @@ svg.rey-glyph{width:56px;height:56px}
 }
 @media print{ .terms-backdrop{ display:none; } }
 
+
+/* The citation opening each Change Analysis formula line, linked to its DOI.
+   A standalone class, so no page-scoped rule can outrank it (see CLAUDE.md). */
+.cite-doi-link{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb, currentColor 35%, transparent);text-underline-offset:2px}
+.cite-doi-link:hover,.cite-doi-link:focus-visible{text-decoration-color:currentColor}

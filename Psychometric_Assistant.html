@@ -10702,6 +10702,12 @@ svg.rey-glyph{width:56px;height:56px}
   text-decoration:underline; cursor:pointer;
 }
 @media print{ .terms-backdrop{ display:none; } }
+
+
+/* The citation opening each Change Analysis formula line, linked to its DOI.
+   A standalone class, so no page-scoped rule can outrank it (see CLAUDE.md). */
+.cite-doi-link{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb, currentColor 35%, transparent);text-underline-offset:2px}
+.cite-doi-link:hover,.cite-doi-link:focus-visible{text-decoration-color:currentColor}
 </style>
 <style data-inlined-from="design-system.css">
 /* =============================================================================
@@ -39449,6 +39455,7 @@ if (document.readyState === 'loading'){
       stack:['SD','ME'],
       badge:'Classic',
       copy:'Jacobson & Truax (1991). Computes whether observed change exceeds measurement error, using the test reliability coefficient and standard deviation.',
+      cite:'Jacobson & Truax (1991)', doi:'10.1037/0022-006X.59.1.12',
       source:'Jacobson & Truax (1991): RCI = (X₂ − X₁) / Sdiff, where Sdiff = √(2 · SEM²) and SEM = SD · √(1 − r).'
     },
     {
@@ -39460,6 +39467,7 @@ if (document.readyState === 'loading'){
       stack:['SD','ME','PE'],
       badge:'Retest',
       copy:'Iverson (2001). Adjusts the standard RCI to control for the average improvement observed between assessments in the normative sample.',
+      cite:'Iverson (2001)', doi:'10.1093/arclin/16.2.183',
       source:'Iverson (2001): RCI = [(X₂ − X₁) − (M₂ − M₁)] / Sdiff, where Sdiff = √(SEM₁² + SEM₂²).'
     },
     {
@@ -39471,6 +39479,7 @@ if (document.readyState === 'loading'){
       stack:['REG','RTM','PE'],
       badge:'Model',
       copy:'McSweeney et al. (1993). Predicts expected retest performance from baseline and standardises the residual against the standard error of estimate.',
+      cite:'McSweeney et al. (1993)', doi:'10.1080/13854049308401901',
       source:'McSweeney et al. (1993): RCI = (X₂ − Ŷ₂) / SEE, where Ŷ₂ = a + b · X₁ and b = r · (SD₂ / SD₁).'
     },
     {
@@ -39482,6 +39491,7 @@ if (document.readyState === 'loading'){
       stack:['REG','RTM','PE','N'],
       badge:'Preferred',
       copy:'Crawford & Garthwaite (2007). Extends the standardised regression-based approach to use a t-distributed test statistic that incorporates the normative sample size (N), correctly accounting for uncertainty in the regression parameters when N is modest. Returns a sample-size-adjusted standard error of prediction.',
+      cite:'Crawford & Garthwaite (2007)', doi:'10.1037/0894-4105.21.5.611',
       source:'Crawford & Garthwaite (2007): t(RB) = (X₂ − Ŷ₂) / SEpred, where SEpred adjusts SEE for normative N and baseline distance from M₁.'
     }
   ];
@@ -39795,7 +39805,15 @@ if (document.readyState === 'loading'){
     } else {
       const method = methods.find(item => item.id === id);
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
-      if (mainDesc && method){ mainDesc.innerHTML = method.source; mainDesc.style.display = ''; }
+      if (mainDesc && method){
+        /* The citation that opens the formula line links to the paper. cite
+           must be the exact start of source, or the line prints unlinked. */
+        const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+        mainDesc.innerHTML = (method.doi && method.source.startsWith(method.cite))
+          ? `<a class="cite-doi-link" href="https://doi.org/${method.doi}" target="_blank" rel="noopener noreferrer" title="Open the paper (doi.org/${method.doi})">${esc(method.cite)}</a>${esc(method.source.slice(method.cite.length))}`
+          : method.source;
+        mainDesc.style.display = '';
+      }
       /* The method's formula is the only one this page prints (none of the
          five panels has a formula disclosure), so it stays on screen. It
          lives at the top of the active method's own card, in the band the
