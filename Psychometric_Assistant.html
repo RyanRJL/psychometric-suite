@@ -10708,6 +10708,9 @@ svg.rey-glyph{width:56px;height:56px}
    A standalone class, so no page-scoped rule can outrank it (see CLAUDE.md). */
 .cite-doi-link{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb, currentColor 35%, transparent);text-underline-offset:2px}
 .cite-doi-link:hover,.cite-doi-link:focus-visible{text-decoration-color:currentColor}
+/* The same superscript arrow the Validity paper links carry, so a link reads as
+   a link and not as underlined text. */
+.cite-doi-link::after{content:'\2197';display:inline-block;margin-left:1px;font-size:0.75em;vertical-align:super;line-height:0;color:var(--ds-primary);text-decoration:none}
 </style>
 <style data-inlined-from="design-system.css">
 /* =============================================================================
@@ -32109,7 +32112,7 @@ function pvtPapersHtml(keys){
       : `<span class="pvt-paper-nolink">${label}</span>`;
   });
   if (!items.length) return '';
-  return `<span class="pvt-papers"><span class="pvt-derived-label">Papers</span> ${items.join('<span class="pvt-paper-sep"> · </span>')}</span>`;
+  return `<span class="pvt-papers"><span class="pvt-derived-label">${items.length === 1 ? 'Source' : 'Sources'}</span> ${items.join('<span class="pvt-paper-sep"> · </span>')}</span>`;
 }
 function renderPvtInstruments(){
   document.querySelectorAll('#validity [data-pvt-derived]').forEach(el => {
@@ -39810,7 +39813,7 @@ if (document.readyState === 'loading'){
            must be the exact start of source, or the line prints unlinked. */
         const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
         mainDesc.innerHTML = (method.doi && method.source.startsWith(method.cite))
-          ? `<a class="cite-doi-link" href="https://doi.org/${method.doi}" target="_blank" rel="noopener noreferrer" title="Open the paper (doi.org/${method.doi})">${esc(method.cite)}</a>${esc(method.source.slice(method.cite.length))}`
+          ? `Source: <a class="cite-doi-link" href="https://doi.org/${method.doi}" target="_blank" rel="noopener noreferrer" title="Open the paper (doi.org/${method.doi})">${esc(method.cite)}</a>${esc(method.source.slice(method.cite.length))}`
           : method.source;
         mainDesc.style.display = '';
       }

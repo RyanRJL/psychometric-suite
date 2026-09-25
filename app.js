@@ -8702,7 +8702,7 @@ function pvtPapersHtml(keys){
       : `<span class="pvt-paper-nolink">${label}</span>`;
   });
   if (!items.length) return '';
-  return `<span class="pvt-papers"><span class="pvt-derived-label">Papers</span> ${items.join('<span class="pvt-paper-sep"> · </span>')}</span>`;
+  return `<span class="pvt-papers"><span class="pvt-derived-label">${items.length === 1 ? 'Source' : 'Sources'}</span> ${items.join('<span class="pvt-paper-sep"> · </span>')}</span>`;
 }
 function renderPvtInstruments(){
   document.querySelectorAll('#validity [data-pvt-derived]').forEach(el => {

@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260925t">
-<link rel="stylesheet" href="design-system.css?v=20260925t">
+<link rel="stylesheet" href="styles.css?v=20260925v">
+<link rel="stylesheet" href="design-system.css?v=20260925v">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -3331,12 +3331,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260925t"></script>
-<script src="app.js?v=20260925t"></script>
-<script src="design-system.js?v=20260925t" defer></script>
-<script src="app-effectsize-page.js?v=20260925t"></script>
-<script src="app-viz-page.js?v=20260925t"></script>
-<script src="app-profile-page.js?v=20260925t"></script>
+<script src="data.js?v=20260925v"></script>
+<script src="app.js?v=20260925v"></script>
+<script src="design-system.js?v=20260925v" defer></script>
+<script src="app-effectsize-page.js?v=20260925v"></script>
+<script src="app-viz-page.js?v=20260925v"></script>
+<script src="app-profile-page.js?v=20260925v"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
@@ -3740,7 +3740,7 @@
            must be the exact start of source, or the line prints unlinked. */
         const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
         mainDesc.innerHTML = (method.doi && method.source.startsWith(method.cite))
-          ? `<a class="cite-doi-link" href="https://doi.org/${method.doi}" target="_blank" rel="noopener noreferrer" title="Open the paper (doi.org/${method.doi})">${esc(method.cite)}</a>${esc(method.source.slice(method.cite.length))}`
+          ? `Source: <a class="cite-doi-link" href="https://doi.org/${method.doi}" target="_blank" rel="noopener noreferrer" title="Open the paper (doi.org/${method.doi})">${esc(method.cite)}</a>${esc(method.source.slice(method.cite.length))}`
           : method.source;
         mainDesc.style.display = '';
       }
