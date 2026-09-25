@@ -6411,7 +6411,8 @@ check('every method sharing RCI_SHARED_ROWS is consent-gated, and nothing else i
     return 'gated [' + gated.join(', ') + '] but the shared row set is [' + expected.join(', ') + ']';
   }
   /* The gate is a cost - a table the clinician must ask for. Anything whose
-     data is its own must stay out of it. */
+     data is its own must stay out of it. (OPIE-4 is opt-in, but by its own
+     switch in the renderer, not this gate; see section 35.) */
   const wrong = ['bat-apa', 'sdi-apa', 'pre-estimates-apa', 'pre-predict-apa', 'pre-opiepredict-apa']
     .filter(id => gated.includes(id));
   if (wrong.length) return wrong.join(' and ') + ' own their own data and must not be gated';
@@ -6694,6 +6695,24 @@ check('the top-bar age still recalculates OPIE-4 from every page, which is why t
     return '#patient-age is no longer in the topbar, so it is not on every page';
   }
   return true;
+});
+
+check('OPIE-4 is opt-in: off by default, no table until on, off again for a new patient', () => {
+  /* Owner decision, 2026-09. OPIE-4 is scored at the US reference category
+     (data.js, above OPIE_PRORATED_FSIQ), so a UK report gets it only on a
+     click. The gate is the renderer's: no .apa-table, nothing to collect. */
+  const bad = [];
+  const box = HTML_SRC.match(/<input[^>]*id="pre-opie-enabled"[^>]*>/);
+  if (!box) bad.push('the #pre-opie-enabled switch is gone');
+  else if (/checked/.test(box[0])) bad.push('the switch starts on');
+  if (!/<div id="pre-opie-body" hidden>/.test(HTML_SRC)) bad.push('the OPIE table is not hidden by default');
+  const fn = extractFn(APP_SRC, 'renderOpiePredictApa');
+  const gate = fn.indexOf('opieEnabled()'), table = fn.indexOf('<table');
+  if (gate === -1) bad.push('renderOpiePredictApa does not test the switch');
+  else if (table !== -1 && gate > table) bad.push('the switch is tested after the table is built');
+  const clear = APP_SRC.slice(APP_SRC.indexOf('(function wireGlobalClear(){'), APP_SRC.indexOf('SAVE / OPEN SESSION'));
+  if (!/pre-opie-enabled[\s\S]{0,120}checked = false/.test(clear)) bad.push('New patient leaves OPIE-4 switched on');
+  return bad.length === 0 || bad.join('; ');
 });
 
 /* ==========================================================================
@@ -9744,7 +9763,7 @@ check('the exported table is emitted only once every chosen measure is scored', 
   const fn = extractFn(PROF_SRC, 'renderProfileApa');
   if (!/counts\.complete/.test(fn)) bad.push('the renderer does not test for a complete selection');
   const guard = fn.indexOf('complete');
-  const table = fn.indexOf('apa-table');
+  const table = fn.indexOf('<table');
   if (guard === -1 || table === -1 || guard > table) bad.push('the guard does not precede the table');
   const counts = extractFn(PROF_SRC, 'profCounts');
   if (!/entered < keys\.length/.test(counts)) bad.push('a partial selection can still report as complete');
