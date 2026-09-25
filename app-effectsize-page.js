@@ -73,6 +73,7 @@
   function applySliderConfig(type){
     const slider = els['es-d-slider'];
     if (!slider) return;
+    esState.sliderType = type;
     const cfg = SLIDER_CONFIGS[type] || SLIDER_CONFIGS.d;
     slider.min = String(cfg.min);
     slider.max = String(cfg.max);
@@ -470,14 +471,19 @@
     drawCurve(d, false);
     computeTarget(grp, d);
     renderCommonLanguage({ d, cles, u3, ovl, r });
+    // On the group tab the slider is in d units and shows the group d, not
+    // whatever is left in the statistic box.
+    const sliderType = esState.source === 'groups' ? 'd' : els['es-stat-type'].value;
+    if (esState.sliderType !== sliderType) applySliderConfig(sliderType);
+    const sliderRaw = esState.source === 'groups' ? d : Number(els['es-stat-value'].value);
     if (els['es-d-slider']){
       // Sync slider position to the CURRENT statistic's value (not d).
       // For log-scaled statistics (OR), the slider position is log10(value).
-      const currentType = els['es-stat-type'].value;
+      const currentType = sliderType;
       const cfg = SLIDER_CONFIGS[currentType];
       let sliderPos;
       if (cfg){
-        const rawVal = Number(els['es-stat-value'].value);
+        const rawVal = sliderRaw;
         const valForSlider = cfg.log
           ? (rawVal > 0 ? Math.log10(rawVal) : cfg.min)
           : rawVal;
@@ -496,10 +502,10 @@
       }
     }
     if (els['es-d-slider-val']){
-      const currentType = els['es-stat-type'].value;
+      const currentType = sliderType;
       const cfg = SLIDER_CONFIGS[currentType];
       if (cfg){
-        const rawVal = Number(els['es-stat-value'].value);
+        const rawVal = sliderRaw;
         if (Number.isFinite(rawVal)){
           const sign = rawVal > 0 ? '+' : (rawVal < 0 ? '−' : '');
           const abs = Math.abs(rawVal);
@@ -746,7 +752,28 @@
     });
   }
   if (els['es-d-slider']){
+    /* On the group tab, dragging sets d by moving Group 1's mean:
+       M1 = M2 + d x pooled SD. The SDs and n's do not change, so the pooled
+       SD does not either. It used to write d into the statistic box and jump
+       to the Statistic tab, dropping the group result. */
+    const onSlideGroups = () => {
+      const grp = readGroupData();
+      if (!(grp.pooledSD > 0) || grp.m2 == null || grp.m1 == null) return false;
+      const d = Number(els['es-d-slider'].value);
+      const newM1 = Number((grp.m2 + d * grp.pooledSD).toFixed(4));
+      const delta = newM1 - grp.m1;
+      els['es-g1-mean'].value = String(newM1);
+      // A CI upper bound moves with the mean, or the SD derived from it changes.
+      if (grp.dt1 === 'ciu' && els['es-g1-disp-val'].value !== ''){
+        els['es-g1-disp-val'].value = String(Number((Number(els['es-g1-disp-val'].value) + delta).toFixed(4)));
+      }
+      compute();
+      return true;
+    };
     const onSlide = () => {
+      // With no usable group data there is nothing to move: snap back rather
+      // than jump tabs.
+      if (esState.source === 'groups'){ if (!onSlideGroups()) compute(); return; }
       const sliderVal = Number(els['es-d-slider'].value);
       const currentType = els['es-stat-type'].value;
       const cfg = SLIDER_CONFIGS[currentType];
