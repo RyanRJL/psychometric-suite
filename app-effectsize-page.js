@@ -73,6 +73,7 @@
   function applySliderConfig(type){
     const slider = els['es-d-slider'];
     if (!slider) return;
+    esState.sliderType = type;
     const cfg = SLIDER_CONFIGS[type] || SLIDER_CONFIGS.d;
     slider.min = String(cfg.min);
     slider.max = String(cfg.max);
@@ -238,7 +239,9 @@
     const sd2 = sdFrom(dt2, dv2, n2, m2);
 
     const out = { n1, n2, m1, m2, sd1, sd2, dt1, dt2 };
-    if (n1 && n2 && sd1 != null && sd2 != null && n1 > 1 && n2 > 1){
+    // An SD must be positive: a CI upper bound below the mean gives a negative
+    // one, which squares away silently in the pooled SD below.
+    if (n1 && n2 && sd1 > 0 && sd2 > 0 && n1 > 1 && n2 > 1){
       out.pooledN  = n1 + n2;
       if (m1 != null && m2 != null){
         out.pooledMean = ((n1 * m1) + (n2 * m2)) / (n1 + n2);
@@ -285,7 +288,7 @@
     // 0.2 ≤ |d| < 0.5 is Small, etc. The previous version treated each anchor
     // as a bin CEILING (|d| <= 0.50 → 'Medium'), which labelled the whole
     // interior of every band one magnitude too strong and contradicted the
-    // other two classifiers in this file (the slider badge and classifyD),
+    // other two classifiers in this file (the slider badge now calls descD itself),
     // as well as descR/descR2/descF just below, which all use floors.
     const a = Math.abs(d);
     if (a < 0.01) return { label: 'Negligible', mag: 0 };
@@ -366,7 +369,7 @@
     const dGroup = grp.dFromGroups != null ? grp.dFromGroups : null;
     const hasGroup = dGroup != null && !isNaN(dGroup) && isFinite(dGroup);
     if (hasGroup && !esState.statTouched){
-      els['es-stat-type'].value = 'd';
+      if (els['es-stat-type'].value !== 'd'){ els['es-stat-type'].value = 'd'; applySliderConfig('d'); }
       els['es-stat-value'].value = dGroup.toFixed(3);
       els['es-stat-aux'].value = '';
       esState.statAutoFilled = true;
@@ -429,11 +432,20 @@
     const nntDenom = 2*cles - 1;
     const nnt = nntDenom !== 0 ? 1 / nntDenom : Infinity;
 
+    /* Hedges' J needs the N behind THIS d. Group N applies only when d came
+       from the groups (directly or auto-filled); a typed statistic uses its
+       own total N. A typed g is printed as typed — correcting it again with
+       an unrelated group N moved g 0.5 to 0.521. */
+    const statType = els['es-stat-type'].value;
+    const fromGroups = esState.source === 'groups' || esState.statAutoFilled;
+    const auxN = Number(els['es-stat-aux'].value);
+    const nForJ = fromGroups ? grp.pooledN
+      : ((statType === 'g' || statType === 't' || statType === 'zstat') && els['es-stat-aux'].value !== '' && auxN >= 4 ? auxN : null);
     let gVal;
-    if (grp.pooledN != null){
-      gVal = d * (1 - 3/(4*grp.pooledN - 9));
-    } else if (els['es-stat-type'].value === 'g'){
+    if (!fromGroups && statType === 'g'){
       gVal = Number(els['es-stat-value'].value);
+    } else if (nForJ != null){
+      gVal = d * (1 - 3/(4*nForJ - 9));
     } else {
       gVal = d;
     }
@@ -455,18 +467,24 @@
     els['es-out-cles'].textContent = (cles*100).toFixed(2) + '%';
     els['es-out-nnt'].textContent = isFinite(nnt) && Math.abs(nnt) < 1e4 ? Math.abs(nnt).toFixed(2) : '-';
     els['es-out-similar'].textContent = similarEffect(d);
+    els['es-out-similar'].title = els['es-out-similar'].textContent;
 
     drawCurve(d, false);
     computeTarget(grp, d);
     renderCommonLanguage({ d, cles, u3, ovl, r });
+    // On the group tab the slider is in d units and shows the group d, not
+    // whatever is left in the statistic box.
+    const sliderType = esState.source === 'groups' ? 'd' : els['es-stat-type'].value;
+    if (esState.sliderType !== sliderType) applySliderConfig(sliderType);
+    const sliderRaw = esState.source === 'groups' ? d : Number(els['es-stat-value'].value);
     if (els['es-d-slider']){
       // Sync slider position to the CURRENT statistic's value (not d).
       // For log-scaled statistics (OR), the slider position is log10(value).
-      const currentType = els['es-stat-type'].value;
+      const currentType = sliderType;
       const cfg = SLIDER_CONFIGS[currentType];
       let sliderPos;
       if (cfg){
-        const rawVal = Number(els['es-stat-value'].value);
+        const rawVal = sliderRaw;
         const valForSlider = cfg.log
           ? (rawVal > 0 ? Math.log10(rawVal) : cfg.min)
           : rawVal;
@@ -485,10 +503,10 @@
       }
     }
     if (els['es-d-slider-val']){
-      const currentType = els['es-stat-type'].value;
+      const currentType = sliderType;
       const cfg = SLIDER_CONFIGS[currentType];
       if (cfg){
-        const rawVal = Number(els['es-stat-value'].value);
+        const rawVal = sliderRaw;
         if (Number.isFinite(rawVal)){
           const sign = rawVal > 0 ? '+' : (rawVal < 0 ? '−' : '');
           const abs = Math.abs(rawVal);
@@ -504,14 +522,10 @@
       }
     }
     if (els['es-d-slider-magnitude']){
-      const a = Math.abs(d);
-      let label = 'Negligible', mag = 'negligible';
-      if (a >= 1.2)      { label = 'Very large'; mag = 'verylarge'; }
-      else if (a >= 0.8) { label = 'Large';      mag = 'large';     }
-      else if (a >= 0.5) { label = 'Medium';     mag = 'medium';    }
-      else if (a >= 0.2) { label = 'Small';      mag = 'small';     }
-      els['es-d-slider-magnitude'].textContent = label;
-      els['es-d-slider-magnitude'].dataset.mag = mag;
+      // Same bands as the results grid, so one d never gets two words.
+      const c = descD(d);
+      els['es-d-slider-magnitude'].textContent = c.label;
+      els['es-d-slider-magnitude'].dataset.mag = String(c.mag);
     }
   }
 
@@ -520,12 +534,25 @@
     const u3LineEl = els['es-cl-u3line'];
     if (!summaryEl || !u3LineEl) return;
 
+    esState.clPayload = payload;
+    // Hold the box at the height of the longest text any d can produce, so
+    // it does not grow and shrink by a line while the slider is dragged.
+    // Digits are tabular, so d = -2.888 with 99.9% is the widest case.
+    const box = summaryEl.closest('.es-cl-box');
+    if (box && box.offsetWidth){
+      box.style.minHeight = '';
+      writeCommonLanguage(summaryEl, u3LineEl, { d: -2.888, cles: 0.999, u3: 0.999 });
+      box.style.minHeight = (box.offsetHeight + 1) + 'px';   // +1: offsetHeight rounds, and a lost fraction was a 1px jump
+    }
     if (!payload){
       summaryEl.textContent = 'Enter a valid effect size to generate a plain-English interpretation.';
       u3LineEl.textContent = 'The average person in Group 1 is above about - of Group 2 (Cohen\'s U₃).';
       return;
     }
 
+    writeCommonLanguage(summaryEl, u3LineEl, payload);
+  }
+  function writeCommonLanguage(summaryEl, u3LineEl, payload){
     const d = payload.d;
     const direction = d >= 0 ? 'Group 1' : 'Group 2';
     const other = d >= 0 ? 'Group 2' : 'Group 1';
@@ -652,6 +679,9 @@
         esState.statTouched = true;
         esState.statAutoFilled = false;
         esState.source = 'stat';
+      } else if (id !== 'es-target'){
+        // Typing group data is a request for the group result.
+        esState.source = 'groups';
       }
       // When the statistic changes, reconfigure the slider for the new
       // statistic's native range + tick marks BEFORE compute() runs (so
@@ -666,6 +696,8 @@
         esState.statTouched = true;
         esState.statAutoFilled = false;
         esState.source = 'stat';
+      } else if (id !== 'es-target'){
+        esState.source = 'groups';
       }
       if (id === 'es-stat-type'){
         applySliderConfig(el.value);
@@ -704,6 +736,8 @@
     els['es-g2-disp'].value = 'sd';
     esState.statTouched = false;
     esState.statAutoFilled = false;
+    esState.source = 'stat';
+    applySliderConfig('d');
     compute();
   }
 
@@ -732,16 +766,28 @@
     });
   }
   if (els['es-d-slider']){
-    // Cohen's d magnitude classifier (uses absolute value; sign is shown separately)
-    function classifyD(d){
-      const a = Math.abs(d);
-      if (a < 0.2)  return { label:'Negligible', mag:'negligible' };
-      if (a < 0.5)  return { label:'Small',      mag:'small'      };
-      if (a < 0.8)  return { label:'Medium',     mag:'medium'     };
-      if (a < 1.2)  return { label:'Large',      mag:'large'      };
-      return         { label:'Very large', mag:'verylarge'  };
-    }
+    /* On the group tab, dragging sets d by moving Group 1's mean:
+       M1 = M2 + d x pooled SD. The SDs and n's do not change, so the pooled
+       SD does not either. It used to write d into the statistic box and jump
+       to the Statistic tab, dropping the group result. */
+    const onSlideGroups = () => {
+      const grp = readGroupData();
+      if (!(grp.pooledSD > 0) || grp.m2 == null || grp.m1 == null) return false;
+      const d = Number(els['es-d-slider'].value);
+      const newM1 = Number((grp.m2 + d * grp.pooledSD).toFixed(4));
+      const delta = newM1 - grp.m1;
+      els['es-g1-mean'].value = String(newM1);
+      // A CI upper bound moves with the mean, or the SD derived from it changes.
+      if (grp.dt1 === 'ciu' && els['es-g1-disp-val'].value !== ''){
+        els['es-g1-disp-val'].value = String(Number((Number(els['es-g1-disp-val'].value) + delta).toFixed(4)));
+      }
+      compute();
+      return true;
+    };
     const onSlide = () => {
+      // With no usable group data there is nothing to move: snap back rather
+      // than jump tabs.
+      if (esState.source === 'groups'){ if (!onSlideGroups()) compute(); return; }
       const sliderVal = Number(els['es-d-slider'].value);
       const currentType = els['es-stat-type'].value;
       const cfg = SLIDER_CONFIGS[currentType];
@@ -796,33 +842,49 @@
         const decs = cfg ? cfg.decimals : 2;
         // OR is positive-only and skips the sign prefix
         els['es-d-slider-val'].textContent = (cfg && cfg.log)
-          ? abs.toFixed(decs)
+          ? formatSliderValue(abs, cfg)
           : (sign + abs.toFixed(decs));
       }
       if (els['es-d-slider-magnitude']){
-        const c = classifyD(dForClassify);
+        const c = descD(dForClassify);
         els['es-d-slider-magnitude'].textContent = c.label;
-        els['es-d-slider-magnitude'].dataset.mag = c.mag;
+        els['es-d-slider-magnitude'].dataset.mag = String(c.mag);
       }
       switchEffectMode('stat');
       compute();
     };
     els['es-d-slider'].addEventListener('input', onSlide);
     els['es-d-slider'].addEventListener('change', onSlide);
-    // Initialise readout + fill on load
-    onSlide();
+    // No onSlide() on load: it wrote the slider's 0 into the value box and
+    // marked the statistic as touched, so group data never auto-filled and
+    // the page reported d = 0 for any two groups. compute() below sets the
+    // readout and fill from the (empty) inputs instead.
   }
 
   // Tab wiring
   document.querySelectorAll('#effectsize .es-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       switchEffectMode(btn.dataset.mode);
+      // The tab on screen decides which result is shown.
+      esState.source = btn.dataset.mode === 'groups' ? 'groups' : 'stat';
       compute();
     });
   });
   document.querySelectorAll('#effectsize .es-view-tab').forEach(btn => {
     btn.addEventListener('click', () => switchWorkspaceView(btn.dataset.view));
   });
+
+  // The held height depends on the box's width, which is 0 until the page is
+  // first shown and changes on resize, so re-measure whenever it changes.
+  const clBox = els['es-cl-summary'] && els['es-cl-summary'].closest('.es-cl-box');
+  if (clBox && typeof ResizeObserver === 'function'){
+    let lastW = -1;
+    new ResizeObserver(() => {
+      if (clBox.offsetWidth === lastW) return;
+      lastW = clBox.offsetWidth;
+      renderCommonLanguage(esState.clPayload || null);
+    }).observe(clBox);
+  }
 
   refreshAuxField();
   compute();

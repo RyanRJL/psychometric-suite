@@ -1222,15 +1222,12 @@ check('descD uses Cohen/Sawilowsky anchors as bin floors', () => {
   }
   return true;
 });
-check('descD agrees with the slider/classifyD bands at the shared anchors', () => {
-  // The other two classifiers are coarser (they collapse <0.2 and >=1.2), but
-  // within 0.2–1.2 all three must give the same word.
-  const slider = (d) => { const a = Math.abs(d);
-    return a >= 1.2 ? 'Very Large' : a >= 0.8 ? 'Large' : a >= 0.5 ? 'Medium' : a >= 0.2 ? 'Small' : 'Negligible'; };
-  for (const d of [0.2, 0.35, 0.5, 0.65, 0.8, 1.0, 1.19]) {
-    if (ES.descD(d).label !== slider(d)) return 'disagree at d=' + d + ': ' + ES.descD(d).label + ' vs ' + slider(d);
-  }
-  return true;
+check('the slider badge uses descD, so one d never gets two labels', () => {
+  // A second classifier used to say "Negligible" where the grid said "Very Small"
+  // (d < 0.2) and "Very large" where it said "Huge" (d >= 2).
+  if (/function classifyD|'Very large'|'verylarge'/.test(ES_SRC)) return 'a second d classifier is back';
+  const uses = (ES_SRC.match(/const c = descD\(/g) || []).length;
+  return uses === 2 || 'expected both slider-badge sites to call descD, found ' + uses;
 });
 check('target shares are weighted by group size (screening scenario)', () => {
   // n1=40 M=70 SD=10 vs n2=400 M=100 SD=10, cut 85 (midpoint, equal densities):
@@ -3725,8 +3722,7 @@ check('"New patient" clears the age, not just the tables', () => {
   if (!/'patient-age'/.test(handler)) bad.push('the master age input is not among the cleared fields');
   if (!/new patient\?/i.test(handler)) bad.push('the confirm text no longer says what it does');
   if (!/patient age/.test(handler)) bad.push('the confirm text does not warn that the age goes too');
-  /* Since 2026-09 it is an item in the Session menu rather than a button of
-     its own; the label is what matters. */
+  /* Since 2026-09 it is an icon button; the label is what matters. */
   if (!/id="topbar-clear-all"[^>]*>\s*New patient/.test(HTML_SRC)) bad.push('the button is still labelled for tables alone');
   return bad.length === 0 || bad.join('; ');
 });
@@ -6414,7 +6410,8 @@ check('every method sharing RCI_SHARED_ROWS is consent-gated, and nothing else i
     return 'gated [' + gated.join(', ') + '] but the shared row set is [' + expected.join(', ') + ']';
   }
   /* The gate is a cost - a table the clinician must ask for. Anything whose
-     data is its own must stay out of it. */
+     data is its own must stay out of it. (OPIE-4 is opt-in, but by its own
+     switch in the renderer, not this gate; see section 35.) */
   const wrong = ['bat-apa', 'sdi-apa', 'pre-estimates-apa', 'pre-predict-apa', 'pre-opiepredict-apa']
     .filter(id => gated.includes(id));
   if (wrong.length) return wrong.join(' and ') + ' own their own data and must not be gated';
@@ -6697,6 +6694,24 @@ check('the top-bar age still recalculates OPIE-4 from every page, which is why t
     return '#patient-age is no longer in the topbar, so it is not on every page';
   }
   return true;
+});
+
+check('OPIE-4 is opt-in: off by default, no table until on, off again for a new patient', () => {
+  /* Owner decision, 2026-09. OPIE-4 is scored at the US reference category
+     (data.js, above OPIE_PRORATED_FSIQ), so a UK report gets it only on a
+     click. The gate is the renderer's: no .apa-table, nothing to collect. */
+  const bad = [];
+  const box = HTML_SRC.match(/<input[^>]*id="pre-opie-enabled"[^>]*>/);
+  if (!box) bad.push('the #pre-opie-enabled switch is gone');
+  else if (/checked/.test(box[0])) bad.push('the switch starts on');
+  if (!/<div id="pre-opie-body" hidden>/.test(HTML_SRC)) bad.push('the OPIE table is not hidden by default');
+  const fn = extractFn(APP_SRC, 'renderOpiePredictApa');
+  const gate = fn.indexOf('opieEnabled()'), table = fn.indexOf('<table');
+  if (gate === -1) bad.push('renderOpiePredictApa does not test the switch');
+  else if (table !== -1 && gate > table) bad.push('the switch is tested after the table is built');
+  const clear = APP_SRC.slice(APP_SRC.indexOf('(function wireGlobalClear(){'), APP_SRC.indexOf('SAVE / OPEN SESSION'));
+  if (!/pre-opie-enabled[\s\S]{0,120}checked = false/.test(clear)) bad.push('New patient leaves OPIE-4 switched on');
+  return bad.length === 0 || bad.join('; ');
 });
 
 /* ==========================================================================
@@ -9747,7 +9762,7 @@ check('the exported table is emitted only once every chosen measure is scored', 
   const fn = extractFn(PROF_SRC, 'renderProfileApa');
   if (!/counts\.complete/.test(fn)) bad.push('the renderer does not test for a complete selection');
   const guard = fn.indexOf('complete');
-  const table = fn.indexOf('apa-table');
+  const table = fn.indexOf('<table');
   if (guard === -1 || table === -1 || guard > table) bad.push('the guard does not precede the table');
   const counts = extractFn(PROF_SRC, 'profCounts');
   if (!/entered < keys\.length/.test(counts)) bad.push('a partial selection can still report as complete');

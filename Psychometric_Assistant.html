@@ -854,6 +854,11 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   margin:14px 0;
 }
 .caution-box strong{color:var(--warn);font-weight:600}
+/* OPIE-4 opt-in switch (Premorbid, OPIE tab). Standalone class, per the
+   cascade rule: nothing else in either stylesheet claims it. */
+.opie-optin{display:flex;align-items:flex-start;gap:8px;margin:0 0 14px;
+  font-family:var(--sans);font-size:13px;color:var(--ink-2);line-height:1.5;cursor:pointer}
+.opie-optin input{margin-top:3px;flex:none}
 .formula{font-family:var(--mono);font-size:12px;background:var(--paper-2);padding:2px 6px;border-radius:2px;color:var(--ink)}
 
 /* CALC SUMMARY */
@@ -9841,16 +9846,21 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   top:12px;
   display:flex;
   flex-direction:column;
-  gap:1px;
-  padding:8px;
+  gap:2px;
+  padding:10px;
 }
+/* Restyled 2026-09 (owner: "cleaner, more modern, still clearly buttons").
+   Rows are borderless; what says "button" is the pointer, a soft fill on
+   hover, the chevron that steps right, and the filled pill with an accent
+   bar on the open one. Boxed rows with shadows read as a stack of cards. */
 .pvt-nav-summary{
+  position:relative;
   display:flex;
   align-items:center;
   gap:12px;
   width:100%;
   padding:10px 12px;
-  margin-bottom:4px;
+  margin-bottom:6px;
   border:1px solid var(--ds-border);
   border-radius:var(--ds-radius-md);
   background:var(--ds-surface-subtle);
@@ -9859,64 +9869,81 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   cursor:pointer;
   transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
-.pvt-nav-summary:hover{background:var(--ds-surface-emphasis)}
+.pvt-nav-summary:hover{background:var(--ds-surface-emphasis);border-color:var(--ds-border-strong)}
 .pvt-nav-summary.is-fail{background:var(--ds-primary-tint);border-color:rgba(156,61,42,0.28)}
 .pvt-nav-summary.is-pass{background:var(--ds-success-tint);border-color:rgba(31,122,71,0.25)}
-.pvt-nav-summary.active{box-shadow:inset 3px 0 0 var(--ds-primary)}
+.pvt-nav-summary.active{border-color:var(--ds-primary);box-shadow:0 0 0 1px var(--ds-primary)}
+.pvt-nav-summary.is-pass.active{border-color:var(--ds-success);box-shadow:0 0 0 1px var(--ds-success)}
 .pvt-nav-summary:focus{outline:none}
-.pvt-nav-summary:focus-visible{box-shadow:0 0 0 2px var(--ds-primary-ring)}
+.pvt-nav-summary:focus-visible{box-shadow:0 0 0 3px var(--ds-primary-ring)}
 .pvt-nav-count{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:34px;
+  flex:none;
+  border-radius:var(--ds-radius-full);
+  background:var(--ds-surface);
+  border:1px solid var(--ds-border);
   font-family:var(--sans);
-  font-size:18px;
+  font-size:15px;
   font-weight:600;
   line-height:1;
   color:var(--ds-text-faint);
   font-variant-numeric:tabular-nums;
-  min-width:32px;
 }
-.pvt-nav-summary.is-fail .pvt-nav-count{color:var(--ds-primary)}
-.pvt-nav-summary.is-pass .pvt-nav-count{color:var(--ds-success)}
-.pvt-nav-count-of{font-size:12px;color:var(--ds-text-faint)}
+.pvt-nav-summary.is-fail .pvt-nav-count{color:var(--ds-primary);border-color:rgba(156,61,42,0.3)}
+.pvt-nav-summary.is-pass .pvt-nav-count{color:var(--ds-success);border-color:rgba(31,122,71,0.3)}
+.pvt-nav-count-of{font-size:10px;color:var(--ds-text-faint)}
 .pvt-nav-summary-main{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pvt-nav-summary-label{font-size:13px;font-weight:600;color:var(--ds-text)}
 .pvt-nav-summary-meta{font-size:11px;color:var(--ds-text-subtle);line-height:1.3}
 
-.pvt-nav-group{display:flex;flex-direction:column;gap:4px;padding-top:6px}
+.pvt-nav-group{display:flex;flex-direction:column;gap:2px;margin-top:6px;padding-top:8px;border-top:1px solid var(--ds-border)}
 .pvt-nav-group-head{
   display:flex;
   align-items:baseline;
   justify-content:space-between;
   gap:6px;
-  padding:6px 10px 3px;
+  padding:2px 12px 4px;
   font-family:var(--sans);
-  font-size:11px;
+  font-size:10.5px;
   font-weight:600;
   letter-spacing:0.08em;
   text-transform:uppercase;
   color:var(--ds-text-faint);
 }
-.pvt-nav-group-note{font-weight:400;letter-spacing:0.04em}
+.pvt-nav-group-note{font-weight:500;letter-spacing:0;text-transform:none;font-size:11px}
 .pvt-nav-item{
+  position:relative;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:8px;
   width:100%;
-  padding:6px 10px;
-  border:1px solid var(--ds-border);
+  padding:7px 12px;
+  border:0;
   border-radius:var(--ds-radius-md);
-  background:var(--ds-surface);
-  box-shadow:0 1px 2px rgba(0,0,0,0.05);
+  background:transparent;
   font-family:var(--sans);
   text-align:left;
   cursor:pointer;
-  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
-/* Each measure is a bordered button, like the Summary card above it (owner
-   report, 2026-09, a second time: the chevrons alone still read as a list of
-   names, not things to click). Hover lifts the border; the open one is tinted. */
-.pvt-nav-item:hover{background:var(--ds-surface-subtle);border-color:var(--ds-text-faint);box-shadow:0 2px 4px rgba(0,0,0,0.08)}
-.pvt-nav-item.active{background:var(--ds-primary-tint);border-color:rgba(156,61,42,0.35);box-shadow:inset 3px 0 0 var(--ds-primary)}
+.pvt-nav-item:hover{background:var(--ds-surface-emphasis)}
+.pvt-nav-item.active{background:var(--ds-primary-tint)}
+/* The open entry's accent bar: a short rounded pill, inset, not a full edge. */
+.pvt-nav-item.active::before{
+  content:'';
+  position:absolute;
+  left:0;
+  top:8px;
+  bottom:8px;
+  width:3px;
+  border-radius:var(--ds-radius-full);
+  background:var(--ds-primary);
+}
 .pvt-nav-item:focus{outline:none}
 .pvt-nav-item:focus-visible{box-shadow:inset 0 0 0 2px var(--ds-primary-ring)}
 /* A chevron on every entry, so a list of names reads as a list of things
@@ -9925,20 +9952,23 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-nav-item::after{
   content:'';
   flex:none;
-  width:6px;
-  height:6px;
-  margin:0 2px 0 2px;
-  border-right:1.5px solid var(--ds-text-faint);
-  border-bottom:1.5px solid var(--ds-text-faint);
+  width:8px;
+  height:8px;
+  margin:0 4px 0 2px;
+  border-right:2px solid var(--ds-primary);
+  border-bottom:2px solid var(--ds-primary);
+  border-radius:1px;
   transform:rotate(-45deg);
-  transition:transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+  opacity:0.75;
+  transition:transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
 }
-.pvt-nav-item:hover::after{border-color:var(--ds-text-muted);transform:translateX(2px) rotate(-45deg)}
-.pvt-nav-item.active::after{border-color:var(--ds-primary)}
-.pvt-nav-item:hover .pvt-nav-label{color:var(--ds-primary)}
+/* Terracotta chevron (owner, 2026-09: the grey one was too faint to say
+   "button"). Full strength and a step right on hover and on the open one. */
+.pvt-nav-item:hover::after{opacity:1;transform:translateX(3px) rotate(-45deg)}
+.pvt-nav-item.active::after{opacity:1}
 .pvt-nav-main{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
-.pvt-nav-label{font-size:13px;color:var(--ds-text);line-height:1.3}
-.pvt-nav-item.active .pvt-nav-label{font-weight:600}
+.pvt-nav-label{font-size:13px;font-weight:500;color:var(--ds-text);line-height:1.3}
+.pvt-nav-item.active .pvt-nav-label{font-weight:600;color:var(--ds-primary)}
 .pvt-nav-meta{font-size:11px;color:var(--ds-text-subtle);line-height:1.3}
 
 /* Live status chip. Unscored measures render NO chip (.is-idle): an empty
@@ -9976,7 +10006,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   .pvt-layout{grid-template-columns:minmax(0,1fr)}
   .pvt-nav{position:static;flex-direction:row;flex-wrap:wrap;gap:4px}
   .pvt-nav-summary{width:100%}
-  .pvt-nav-group{display:flex;flex-wrap:wrap;gap:2px;padding-top:0;width:100%}
+  .pvt-nav-group{display:flex;flex-direction:row;flex-wrap:wrap;gap:2px;width:100%}
   .pvt-nav-group-head{width:100%}
   .pvt-nav-item{width:auto}
 }
@@ -10092,6 +10122,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-larrabee .formula-disclosure{margin:12px 0 0}
 .pvt-agg-copy{font-size:13px;color:var(--ds-text-muted);line-height:1.55;margin:0 0 10px;text-align:justify}
 .pvt-agg-copy:last-child{margin-bottom:0}
+/* The two paragraphs sit in one frame so they read as a block (owner, 2026-09). */
+.pvt-agg-frame{padding:12px 14px;border:1px solid var(--ds-border);border-radius:var(--ds-radius-md);background:var(--ds-surface-subtle)}
 
 /* ---- Measure panels: two equal columns, the explainer below both ---- */
 .pvt-workspace{
@@ -10335,6 +10367,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 .pvt-paper-link{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .pvt-paper-link:hover{text-decoration-thickness:2px}
+/* Superscript arrow: says "opens elsewhere" (owner, 2026-09). Not underlined. */
+.pvt-paper-link::after{content:'\2197';display:inline-block;margin-left:1px;font-size:0.75em;vertical-align:super;line-height:0;color:var(--ds-primary);text-decoration:none}
 .pvt-paper-nolink{color:var(--ds-text-muted)}
 .pvt-paper-sep{color:var(--ds-text-faint)}
 .pvt-agg-papers{margin:8px 0 0;font-family:var(--sans);font-size:12px}
@@ -16925,46 +16959,22 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
   border: 1.5px dashed rgba(156,61,42,0.55) !important;
 }
 
-/* The Session menu. */
-.topbar-menu{ position: relative; align-self: center; margin-left: 10px; }
-.topbar-menu-btn{
-  display: inline-flex; align-items: center; gap: 7px;
-  height: 32px; padding: 0 12px;
-  font: 600 12.5px var(--sans); color: var(--ds-text);
-  background: #FFFFFF; border: 1px solid var(--ds-border-strong); border-radius: 7px;
-  cursor: pointer; white-space: nowrap;
-  transition: background-color var(--t-fast) var(--ease);
+/* Session: three icon buttons, always visible. The text inside
+   #topbar-clear-all is its name for the markup check; font-size 0 hides it
+   and aria-label names each button for screen readers. */
+.topbar-session{ display: inline-flex; align-items: center; gap: 4px; align-self: center; margin-left: 10px; }
+.topbar-icon-btn{
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 0; font-size: 0;
+  color: var(--ds-text); background: #FFFFFF;
+  border: 1px solid var(--ds-border-strong); border-radius: 7px;
+  cursor: pointer; transition: background-color var(--t-fast) var(--ease);
 }
-.topbar-menu-btn svg{ width: 14px; height: 14px; opacity: 0.75; }
-.topbar-menu-btn .topnav-chevron{ width: 10px; height: 10px; opacity: 0.6; transition: transform var(--t-base) var(--ease); }
-.topbar-menu.is-open .topbar-menu-btn .topnav-chevron{ transform: rotate(-180deg); }
-.topbar-menu-btn:hover, .topbar-menu.is-open .topbar-menu-btn{ background: #F7F4EF; }
-.topbar-menu-btn:focus-visible{ outline: 2px solid var(--ds-primary-ring, rgba(156,61,42,0.4)); outline-offset: 2px; }
-.topbar-menu-list{
-  position: absolute; right: 0; top: calc(100% + 6px);
-  min-width: 224px; padding: 6px;
-  background: #FFFFFF; border: 1px solid var(--ds-border-strong); border-radius: 9px;
-  box-shadow: 0 12px 30px rgba(15,18,24,0.14);
-  z-index: 70;
-}
-.topbar-menu-list[hidden]{ display: none; }
-.topbar-menu-head{
-  padding: 6px 10px 4px;
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
-  color: var(--ds-text-subtle);
-}
-.topbar-menu-item{
-  display: flex; align-items: center; gap: 9px; width: 100%;
-  padding: 8px 10px; border: 0; border-radius: 6px; background: transparent;
-  font: 400 13px var(--sans); color: var(--ds-text); text-align: left; cursor: pointer;
-}
-.topbar-menu-item:hover, .topbar-menu-item:focus-visible{ background: #F4F0E9; outline: none; }
-.topbar-menu-item kbd, .topbar-menu-item small{
-  margin-left: auto; font: 400 11px var(--sans); color: var(--ds-text-subtle);
-}
-.topbar-menu-item.is-danger{ color: var(--ds-primary); }
-.topbar-menu-sep{ height: 1px; margin: 5px 4px; background: var(--ds-border); }
-@media print{ .topbar-menu{ display: none; } }
+.topbar-icon-btn svg{ width: 16px; height: 16px; }
+.topbar-icon-btn:hover{ background: #F7F4EF; }
+.topbar-icon-btn:focus-visible{ outline: 2px solid var(--ds-primary-ring, rgba(156,61,42,0.4)); outline-offset: 2px; }
+.topbar-icon-btn.is-danger{ color: var(--ds-primary); margin-left: 6px; }
+@media print{ .topbar-session{ display: none; } }
 
 /* Narrower windows, in steps that keep every tab on screen. */
 @media (max-width: 1339px){
@@ -16982,7 +16992,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
   body .topbar .ds-patient-field-label{
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
   }
-  body .topbar-menu-btn > span{ display: none; }
 }
 /* Last resort, below the ~1036px window where everything above still fits:
    the tabs scroll sideways rather than any of them disappearing. Not a
@@ -16994,6 +17003,33 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
    width of each state. Re-measure if anything joins the row. */
 @media (max-width: 1039px){
   body .topbar-row-main .topnav{ overflow-x: auto; scrollbar-width: none; }
+}
+
+/* EFFECT SIZES: NOTHING MOVES WHILE THE SLIDER IS DRAGGED (2026-09).
+   Three things resized with the text they held, and moved the page:
+   the slider readout (its width sets the track's, so the ticks slid),
+   the "Similar to" value (2 lines to 3 grew its row, and the grid is
+   centred, so all twelve cards jumped), and the plain-English text.
+   Each now has a fixed box; digits are tabular so widths hold. The full
+   "Similar to" label is in the cell's title when it is clipped. */
+#effectsize #es-d-slider-val{
+  flex:none;
+  min-width:7ch;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+#effectsize .es-result-value,
+#effectsize #es-cl-summary,
+#effectsize #es-cl-u3line,
+#effectsize #es-curve-caption{
+  font-variant-numeric:tabular-nums;
+}
+#effectsize #es-out-similar{
+  height:2.5em;
+  overflow:hidden;
+  display:-webkit-box !important;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
 }
 </style>
 
@@ -17557,34 +17593,24 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <span class="ds-patient-field-pad" aria-hidden="true"></span>
       </div>
 
-      <!-- SESSION. Opens on click, not hover as the page menus do: it holds an
-           action that clears everything, which should never be one stray
-           pointer movement away. The three buttons keep their ids, so the
-           handlers in app.js are unchanged; Ctrl+S saves (wireSessionMenu). -->
-      <div class="topbar-menu" id="topbar-session-menu">
-        <button type="button" class="topbar-menu-btn" id="topbar-session-btn" aria-label="Session" aria-haspopup="menu" aria-expanded="false" aria-controls="topbar-session-list">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M5 6h6M5 9h4"/></svg>
-          <span>Session</span>
-          <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
+      <!-- SESSION. Three icon buttons, always visible (owner decision,
+           2026-09; they were a click-to-open menu). The ids are unchanged, so
+           the handlers in app.js are too. New patient still asks to confirm
+           before it clears anything; Ctrl+S saves (wireSessionMenu).
+           Nothing outlives the tab, so a session is carried between sittings
+           as a file (saveSession / openSessionFile in app.js). -->
+      <div class="topbar-session" id="topbar-session-menu" role="group" aria-label="Session">
+        <button type="button" class="topbar-icon-btn" id="topbar-save-session" title="Save session (Ctrl+S). Saves everything entered to a file, to carry on later. The file holds patient data: keep it securely." aria-label="Save session">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2.5h8l2.5 2.5v8a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z"/><path d="M5 2.5v3.5h5V2.5"/><rect x="4.5" y="9" width="7" height="4.5"/></svg>
         </button>
-        <div class="topbar-menu-list" id="topbar-session-list" role="menu" aria-label="Session" hidden>
-          <div class="topbar-menu-head">This patient</div>
-          <!-- Nothing outlives the tab, so a session is carried between sittings
-               as a file (saveSession / openSessionFile in app.js). -->
-          <button type="button" class="topbar-menu-item" id="topbar-save-session" role="menuitem" title="Save everything entered to a file, to carry on later. The file holds patient data: keep it securely.">
-            Save session&hellip;<kbd>Ctrl+S</kbd>
-          </button>
-          <button type="button" class="topbar-menu-item" id="topbar-open-session" role="menuitem" title="Open a session file saved earlier. It replaces what is currently entered.">
-            Open session&hellip;
-          </button>
-          <div class="topbar-menu-sep" role="separator"></div>
-          <!-- Clears the tables AND the age: you are switching patient, not
-               tidying one table. Two controls that each cleared half the patient
-               is how a previous age survives onto the next person's report. -->
-          <button type="button" class="topbar-menu-item is-danger" id="topbar-clear-all" role="menuitem" title="Clear every table you have been working on this session, and the patient age">
-            New patient<small>clears all</small>
-          </button>
-        </div>
+        <button type="button" class="topbar-icon-btn" id="topbar-open-session" title="Open session. Opens a session file saved earlier. It replaces what is currently entered." aria-label="Open session">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12.5V3.5a1 1 0 0 1 1-1h3.5l1.5 1.5h5a1 1 0 0 1 1 1v1.5"/><path d="M1.5 12.5l2-5.5h11l-2 5.5z"/></svg>
+        </button>
+        <!-- Clears the tables AND the age: you are switching patient, not
+             tidying one table. Two controls that each cleared half the patient
+             is how a previous age survives onto the next person's report. -->
+        <button type="button" class="topbar-icon-btn is-danger" id="topbar-clear-all" title="New patient. Clears every table you have been working on this session, and the patient age." aria-label="New patient">New patient<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="5" r="2.5"/><path d="M1.5 14c0-2.8 2.2-4.5 5-4.5s5 1.7 5 4.5"/><path d="M13 4.5v4M11 6.5h4"/></svg>
+        </button>
       </div>
       <input type="file" id="session-file-input" accept=".json,application/json" hidden>
       <!-- DONATION BUTTON — kept for easy re-activation, remove comment tags to restore
@@ -17621,8 +17647,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
     <div class="nav-item" data-target="profile"><span class="nav-item-num">06</span>Profile Analysis</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">07</span>Score Converter</div>
     <div class="nav-item" data-target="effectsize"><span class="nav-item-num">08</span>Effect Sizes</div>
-    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">09</span>Data</div>
-    <div class="nav-item" data-target="about"><span class="nav-item-num">10</span>Methods &amp; References</div>
+    <div class="nav-item" data-target="about"><span class="nav-item-num">09</span>Methods &amp; References</div>
   </nav>
 
   <div class="sidebar-foot">
@@ -18065,7 +18090,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
            bar, the add-row buttons and the report drawer chip stay put. See
            the TABLE VIEWPORT block in styles.css. -->
       <div class="table-viewport">
-      <table class="input-table raw-hidden" id="bat-table">
+      <table class="input-table" id="bat-table">
       <thead>
         <tr>
           <th class="row-num">#</th>
@@ -18327,7 +18352,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
 
         <div class="es-view-pane" data-view-pane="common-language">
           <div class="panel-kicker">Common language description</div>
-          <div class="info-box" style="margin-top:8px">
+          <div class="info-box es-cl-box" style="margin-top:8px">
             <strong>Interpretation summary.</strong>
             <div id="es-cl-summary" style="margin-top:6px">Enter a valid effect size to generate a plain-English interpretation.</div>
             <div id="es-cl-u3line" style="margin-top:8px">The average person in Group 1 is above about - of Group 2 (Cohen's U₃).</div>
@@ -18964,8 +18989,10 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <div class="pvt-larrabee-grid">
           <div>
             <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014a)</h3>
+            <div class="pvt-agg-frame">
             <p class="pvt-agg-copy">This page applies the <strong>≥ 2 independent failures</strong> rule from the AACN consensus statement (Sweet et al., 2021), which supports it when up to 7 to 9 validity measures are given. The page counts at most six independent indicators, which is within that range. Probable invalidity rests on the PVTs alone; calling it malingering also needs a substantial external incentive, under Sherman et al.&rsquo;s (2020) update of Slick et al.&rsquo;s (1999) criteria.</p>
             <p class="pvt-agg-copy">The table shows how the rule performed in one study: Larrabee's (2014a) 54 clinical and 41 malingering cases, each given seven indicators (6 PVTs and 1 SVT). It shows the trade-off between thresholds. It is not a false-positive rate for this page's measures, which Bilder, Sugar &amp; Hellemann (2014) argue can be known only for combinations studied together.</p>
+            </div>
             <p class="pvt-agg-papers" data-pvt-papers="larrabee2014 sweet2021 sherman2020 slick1999 bilder2014 larrabee2014reply"></p>
           </div>
           <table class="pvt-table">
@@ -19824,6 +19851,9 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
 
       <div class="info-box" style="margin-bottom:14px" data-apa-note="pre-opiepredict"></div>
 
+      <label class="opie-optin"><input type="checkbox" id="pre-opie-enabled"> <span>Show OPIE-4 predictions (US norms, illustrative only). Off by default; nothing from this tab goes into the Working Report until this is on.</span></label>
+
+      <div id="pre-opie-body" hidden>
       <table class="pre-results-table pre-predict-table" id="pre-opiepredict-table">
         <thead>
           <tr>
@@ -19851,6 +19881,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
           </button>
         </div>
         <div class="apa-table-container" id="pre-opiepredict-apa"><div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter age plus a subtest to generate predictions, then add an Achieved score.</div></div>
+      </div>
       </div>
     </div>
 
@@ -20260,7 +20291,9 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
 <footer class="site-footer" role="contentinfo">
   <div class="site-footer-inner">
     <div class="site-footer-links">
-      <button type="button" class="site-footer-link nav-item" data-target="custom-tests">Data</button>
+      <!-- The Data page (#custom-tests) has no link, by owner decision (2026-09):
+           it is a small barrier to browsing the stored tables, not protection,
+           since data.js ships to every browser. Still reachable at #custom-tests. -->
       <button type="button" class="site-footer-link nav-item" data-target="about">Methods &amp; References</button>
       <button type="button" class="site-footer-link nav-item" data-target="privacy-use">Privacy &amp; use</button>
     </div>
@@ -30343,6 +30376,11 @@ function calcOpiePredict(){
   renderOpiePredictApa();
 }
 
+function opieEnabled(){
+  const el = preGet('pre-opie-enabled');
+  return !!(el && el.checked);
+}
+
 // === APA Output: OPIE-4 vs WAIS-IV ===
 function renderOpiePredictApa(){
   const out = preGet('pre-opiepredict-apa');
@@ -30369,6 +30407,13 @@ function renderOpiePredictApa(){
      actually run OPIE-4. NOT the presence of an achieved score: unlike the ToPF
      tab, this is the only place OPIE-4 predictions are reported, so requiring one
      would keep the premorbid estimate itself out of the report. */
+  /* OPT-IN. OPIE-4 is a US model scored at the US reference category (see
+     data.js above OPIE_PRORATED_FSIQ), so it stays out of the report until the
+     clinician turns it on: no .apa-table, nothing for the observer to collect. */
+  if (!opieEnabled()){
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">OPIE-4 predictions are off. Turn them on to generate this table.</div>';
+    return;
+  }
   if (!rows.some(r => r.val != null && Number.isFinite(r.val))){
     out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter age, sex and at least one of Vocabulary or Matrix Reasoning to generate OPIE-4 predictions.</div>';
     return;
@@ -30427,6 +30472,14 @@ function setupPremorbidListeners(){
   /* The mirror half of the shared patient age. Separate from the loop above so
      the premorbid recalcs stay exactly as they were; this only adds the mirror
      into #patient-age and the Score Tables re-render. */
+  const opieEl = preGet('pre-opie-enabled');
+  if (opieEl){
+    opieEl.addEventListener('change', () => {
+      const body = preGet('pre-opie-body');
+      if (body) body.hidden = !opieEl.checked;
+      calcOpiePredict();
+    });
+  }
   const ageEl = preGet('pre-age');
   if (ageEl){
     const mirror = () => {
@@ -32500,6 +32553,12 @@ setupTableViewportFit();
         inp.dispatchEvent(new Event('input',  { bubbles:true }));
         inp.dispatchEvent(new Event('change', { bubbles:true }));
       });
+      // OPIE-4 is opt-in per patient: the next one starts with it off.
+      const opieEl = document.getElementById('pre-opie-enabled');
+      if (opieEl && opieEl.checked){
+        opieEl.checked = false;
+        opieEl.dispatchEvent(new Event('change', { bubbles:true }));
+      }
     } catch(e){}
 
     // Working Report bundle - clear after the tools so any pending observer
@@ -32681,43 +32740,16 @@ function openSessionFile(file){
   input?.addEventListener('change', () => { openSessionFile(input.files[0]); input.value = ''; });
 })();
 
-/* ---------- The Session menu (top bar) ----------
-   New patient, Open and Save share one menu. It opens on CLICK, not hover as
-   the page menus do, because it holds an action that clears everything.
-   Any choice closes it, as do a click elsewhere and Escape (which returns
-   focus to the button). The items' own handlers are bound by id elsewhere
-   (wireSessionButtons, wireGlobalClear) and are untouched.
-
-   Ctrl+S (Cmd+S) saves the session: without it, Save is two clicks away
-   where it used to be one. The browser's own "save page" is suppressed only
-   for that chord, and only once this handler exists. */
+/* ---------- Session buttons (top bar) ----------
+   Save, Open and New patient are three icon buttons, always visible. Their
+   handlers are bound by id elsewhere (wireSessionButtons, wireGlobalClear);
+   New patient confirms before it clears. Ctrl+S (Cmd+S) saves the session;
+   the browser's own "save page" is suppressed only for that chord. */
 (function wireSessionMenu(){
-  const wrap = document.getElementById('topbar-session-menu');
-  const btn = document.getElementById('topbar-session-btn');
-  const list = document.getElementById('topbar-session-list');
-  if (!wrap || !btn || !list) return;
-  const setOpen = open => {
-    list.hidden = !open;
-    btn.setAttribute('aria-expanded', String(open));
-    wrap.classList.toggle('is-open', open);
-    if (open) list.querySelector('.topbar-menu-item')?.focus();
-  };
-  btn.addEventListener('click', () => setOpen(list.hidden));
-  list.addEventListener('click', e => { if (e.target.closest('.topbar-menu-item')) setOpen(false); });
-  document.addEventListener('click', e => { if (!list.hidden && !wrap.contains(e.target)) setOpen(false); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !list.hidden){ setOpen(false); btn.focus(); return; }
     if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')){
       e.preventDefault();
       if (typeof saveSession === 'function') saveSession();
-    }
-    /* Arrow keys move between the items while the menu is open. */
-    if (!list.hidden && (e.key === 'ArrowDown' || e.key === 'ArrowUp')){
-      const items = [...list.querySelectorAll('.topbar-menu-item')];
-      const i = items.indexOf(document.activeElement);
-      const next = e.key === 'ArrowDown' ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
-      items[next]?.focus();
-      e.preventDefault();
     }
   });
 })();
@@ -35944,6 +35976,7 @@ if (document.readyState === 'loading'){
   function applySliderConfig(type){
     const slider = els['es-d-slider'];
     if (!slider) return;
+    esState.sliderType = type;
     const cfg = SLIDER_CONFIGS[type] || SLIDER_CONFIGS.d;
     slider.min = String(cfg.min);
     slider.max = String(cfg.max);
@@ -36109,7 +36142,9 @@ if (document.readyState === 'loading'){
     const sd2 = sdFrom(dt2, dv2, n2, m2);
 
     const out = { n1, n2, m1, m2, sd1, sd2, dt1, dt2 };
-    if (n1 && n2 && sd1 != null && sd2 != null && n1 > 1 && n2 > 1){
+    // An SD must be positive: a CI upper bound below the mean gives a negative
+    // one, which squares away silently in the pooled SD below.
+    if (n1 && n2 && sd1 > 0 && sd2 > 0 && n1 > 1 && n2 > 1){
       out.pooledN  = n1 + n2;
       if (m1 != null && m2 != null){
         out.pooledMean = ((n1 * m1) + (n2 * m2)) / (n1 + n2);
@@ -36156,7 +36191,7 @@ if (document.readyState === 'loading'){
     // 0.2 ≤ |d| < 0.5 is Small, etc. The previous version treated each anchor
     // as a bin CEILING (|d| <= 0.50 → 'Medium'), which labelled the whole
     // interior of every band one magnitude too strong and contradicted the
-    // other two classifiers in this file (the slider badge and classifyD),
+    // other two classifiers in this file (the slider badge now calls descD itself),
     // as well as descR/descR2/descF just below, which all use floors.
     const a = Math.abs(d);
     if (a < 0.01) return { label: 'Negligible', mag: 0 };
@@ -36237,7 +36272,7 @@ if (document.readyState === 'loading'){
     const dGroup = grp.dFromGroups != null ? grp.dFromGroups : null;
     const hasGroup = dGroup != null && !isNaN(dGroup) && isFinite(dGroup);
     if (hasGroup && !esState.statTouched){
-      els['es-stat-type'].value = 'd';
+      if (els['es-stat-type'].value !== 'd'){ els['es-stat-type'].value = 'd'; applySliderConfig('d'); }
       els['es-stat-value'].value = dGroup.toFixed(3);
       els['es-stat-aux'].value = '';
       esState.statAutoFilled = true;
@@ -36300,11 +36335,20 @@ if (document.readyState === 'loading'){
     const nntDenom = 2*cles - 1;
     const nnt = nntDenom !== 0 ? 1 / nntDenom : Infinity;
 
+    /* Hedges' J needs the N behind THIS d. Group N applies only when d came
+       from the groups (directly or auto-filled); a typed statistic uses its
+       own total N. A typed g is printed as typed — correcting it again with
+       an unrelated group N moved g 0.5 to 0.521. */
+    const statType = els['es-stat-type'].value;
+    const fromGroups = esState.source === 'groups' || esState.statAutoFilled;
+    const auxN = Number(els['es-stat-aux'].value);
+    const nForJ = fromGroups ? grp.pooledN
+      : ((statType === 'g' || statType === 't' || statType === 'zstat') && els['es-stat-aux'].value !== '' && auxN >= 4 ? auxN : null);
     let gVal;
-    if (grp.pooledN != null){
-      gVal = d * (1 - 3/(4*grp.pooledN - 9));
-    } else if (els['es-stat-type'].value === 'g'){
+    if (!fromGroups && statType === 'g'){
       gVal = Number(els['es-stat-value'].value);
+    } else if (nForJ != null){
+      gVal = d * (1 - 3/(4*nForJ - 9));
     } else {
       gVal = d;
     }
@@ -36326,18 +36370,24 @@ if (document.readyState === 'loading'){
     els['es-out-cles'].textContent = (cles*100).toFixed(2) + '%';
     els['es-out-nnt'].textContent = isFinite(nnt) && Math.abs(nnt) < 1e4 ? Math.abs(nnt).toFixed(2) : '-';
     els['es-out-similar'].textContent = similarEffect(d);
+    els['es-out-similar'].title = els['es-out-similar'].textContent;
 
     drawCurve(d, false);
     computeTarget(grp, d);
     renderCommonLanguage({ d, cles, u3, ovl, r });
+    // On the group tab the slider is in d units and shows the group d, not
+    // whatever is left in the statistic box.
+    const sliderType = esState.source === 'groups' ? 'd' : els['es-stat-type'].value;
+    if (esState.sliderType !== sliderType) applySliderConfig(sliderType);
+    const sliderRaw = esState.source === 'groups' ? d : Number(els['es-stat-value'].value);
     if (els['es-d-slider']){
       // Sync slider position to the CURRENT statistic's value (not d).
       // For log-scaled statistics (OR), the slider position is log10(value).
-      const currentType = els['es-stat-type'].value;
+      const currentType = sliderType;
       const cfg = SLIDER_CONFIGS[currentType];
       let sliderPos;
       if (cfg){
-        const rawVal = Number(els['es-stat-value'].value);
+        const rawVal = sliderRaw;
         const valForSlider = cfg.log
           ? (rawVal > 0 ? Math.log10(rawVal) : cfg.min)
           : rawVal;
@@ -36356,10 +36406,10 @@ if (document.readyState === 'loading'){
       }
     }
     if (els['es-d-slider-val']){
-      const currentType = els['es-stat-type'].value;
+      const currentType = sliderType;
       const cfg = SLIDER_CONFIGS[currentType];
       if (cfg){
-        const rawVal = Number(els['es-stat-value'].value);
+        const rawVal = sliderRaw;
         if (Number.isFinite(rawVal)){
           const sign = rawVal > 0 ? '+' : (rawVal < 0 ? '−' : '');
           const abs = Math.abs(rawVal);
@@ -36375,14 +36425,10 @@ if (document.readyState === 'loading'){
       }
     }
     if (els['es-d-slider-magnitude']){
-      const a = Math.abs(d);
-      let label = 'Negligible', mag = 'negligible';
-      if (a >= 1.2)      { label = 'Very large'; mag = 'verylarge'; }
-      else if (a >= 0.8) { label = 'Large';      mag = 'large';     }
-      else if (a >= 0.5) { label = 'Medium';     mag = 'medium';    }
-      else if (a >= 0.2) { label = 'Small';      mag = 'small';     }
-      els['es-d-slider-magnitude'].textContent = label;
-      els['es-d-slider-magnitude'].dataset.mag = mag;
+      // Same bands as the results grid, so one d never gets two words.
+      const c = descD(d);
+      els['es-d-slider-magnitude'].textContent = c.label;
+      els['es-d-slider-magnitude'].dataset.mag = String(c.mag);
     }
   }
 
@@ -36391,12 +36437,25 @@ if (document.readyState === 'loading'){
     const u3LineEl = els['es-cl-u3line'];
     if (!summaryEl || !u3LineEl) return;
 
+    esState.clPayload = payload;
+    // Hold the box at the height of the longest text any d can produce, so
+    // it does not grow and shrink by a line while the slider is dragged.
+    // Digits are tabular, so d = -2.888 with 99.9% is the widest case.
+    const box = summaryEl.closest('.es-cl-box');
+    if (box && box.offsetWidth){
+      box.style.minHeight = '';
+      writeCommonLanguage(summaryEl, u3LineEl, { d: -2.888, cles: 0.999, u3: 0.999 });
+      box.style.minHeight = (box.offsetHeight + 1) + 'px';   // +1: offsetHeight rounds, and a lost fraction was a 1px jump
+    }
     if (!payload){
       summaryEl.textContent = 'Enter a valid effect size to generate a plain-English interpretation.';
       u3LineEl.textContent = 'The average person in Group 1 is above about - of Group 2 (Cohen\'s U₃).';
       return;
     }
 
+    writeCommonLanguage(summaryEl, u3LineEl, payload);
+  }
+  function writeCommonLanguage(summaryEl, u3LineEl, payload){
     const d = payload.d;
     const direction = d >= 0 ? 'Group 1' : 'Group 2';
     const other = d >= 0 ? 'Group 2' : 'Group 1';
@@ -36523,6 +36582,9 @@ if (document.readyState === 'loading'){
         esState.statTouched = true;
         esState.statAutoFilled = false;
         esState.source = 'stat';
+      } else if (id !== 'es-target'){
+        // Typing group data is a request for the group result.
+        esState.source = 'groups';
       }
       // When the statistic changes, reconfigure the slider for the new
       // statistic's native range + tick marks BEFORE compute() runs (so
@@ -36537,6 +36599,8 @@ if (document.readyState === 'loading'){
         esState.statTouched = true;
         esState.statAutoFilled = false;
         esState.source = 'stat';
+      } else if (id !== 'es-target'){
+        esState.source = 'groups';
       }
       if (id === 'es-stat-type'){
         applySliderConfig(el.value);
@@ -36575,6 +36639,8 @@ if (document.readyState === 'loading'){
     els['es-g2-disp'].value = 'sd';
     esState.statTouched = false;
     esState.statAutoFilled = false;
+    esState.source = 'stat';
+    applySliderConfig('d');
     compute();
   }
 
@@ -36603,16 +36669,28 @@ if (document.readyState === 'loading'){
     });
   }
   if (els['es-d-slider']){
-    // Cohen's d magnitude classifier (uses absolute value; sign is shown separately)
-    function classifyD(d){
-      const a = Math.abs(d);
-      if (a < 0.2)  return { label:'Negligible', mag:'negligible' };
-      if (a < 0.5)  return { label:'Small',      mag:'small'      };
-      if (a < 0.8)  return { label:'Medium',     mag:'medium'     };
-      if (a < 1.2)  return { label:'Large',      mag:'large'      };
-      return         { label:'Very large', mag:'verylarge'  };
-    }
+    /* On the group tab, dragging sets d by moving Group 1's mean:
+       M1 = M2 + d x pooled SD. The SDs and n's do not change, so the pooled
+       SD does not either. It used to write d into the statistic box and jump
+       to the Statistic tab, dropping the group result. */
+    const onSlideGroups = () => {
+      const grp = readGroupData();
+      if (!(grp.pooledSD > 0) || grp.m2 == null || grp.m1 == null) return false;
+      const d = Number(els['es-d-slider'].value);
+      const newM1 = Number((grp.m2 + d * grp.pooledSD).toFixed(4));
+      const delta = newM1 - grp.m1;
+      els['es-g1-mean'].value = String(newM1);
+      // A CI upper bound moves with the mean, or the SD derived from it changes.
+      if (grp.dt1 === 'ciu' && els['es-g1-disp-val'].value !== ''){
+        els['es-g1-disp-val'].value = String(Number((Number(els['es-g1-disp-val'].value) + delta).toFixed(4)));
+      }
+      compute();
+      return true;
+    };
     const onSlide = () => {
+      // With no usable group data there is nothing to move: snap back rather
+      // than jump tabs.
+      if (esState.source === 'groups'){ if (!onSlideGroups()) compute(); return; }
       const sliderVal = Number(els['es-d-slider'].value);
       const currentType = els['es-stat-type'].value;
       const cfg = SLIDER_CONFIGS[currentType];
@@ -36667,33 +36745,49 @@ if (document.readyState === 'loading'){
         const decs = cfg ? cfg.decimals : 2;
         // OR is positive-only and skips the sign prefix
         els['es-d-slider-val'].textContent = (cfg && cfg.log)
-          ? abs.toFixed(decs)
+          ? formatSliderValue(abs, cfg)
           : (sign + abs.toFixed(decs));
       }
       if (els['es-d-slider-magnitude']){
-        const c = classifyD(dForClassify);
+        const c = descD(dForClassify);
         els['es-d-slider-magnitude'].textContent = c.label;
-        els['es-d-slider-magnitude'].dataset.mag = c.mag;
+        els['es-d-slider-magnitude'].dataset.mag = String(c.mag);
       }
       switchEffectMode('stat');
       compute();
     };
     els['es-d-slider'].addEventListener('input', onSlide);
     els['es-d-slider'].addEventListener('change', onSlide);
-    // Initialise readout + fill on load
-    onSlide();
+    // No onSlide() on load: it wrote the slider's 0 into the value box and
+    // marked the statistic as touched, so group data never auto-filled and
+    // the page reported d = 0 for any two groups. compute() below sets the
+    // readout and fill from the (empty) inputs instead.
   }
 
   // Tab wiring
   document.querySelectorAll('#effectsize .es-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       switchEffectMode(btn.dataset.mode);
+      // The tab on screen decides which result is shown.
+      esState.source = btn.dataset.mode === 'groups' ? 'groups' : 'stat';
       compute();
     });
   });
   document.querySelectorAll('#effectsize .es-view-tab').forEach(btn => {
     btn.addEventListener('click', () => switchWorkspaceView(btn.dataset.view));
   });
+
+  // The held height depends on the box's width, which is 0 until the page is
+  // first shown and changes on resize, so re-measure whenever it changes.
+  const clBox = els['es-cl-summary'] && els['es-cl-summary'].closest('.es-cl-box');
+  if (clBox && typeof ResizeObserver === 'function'){
+    let lastW = -1;
+    new ResizeObserver(() => {
+      if (clBox.offsetWidth === lastW) return;
+      lastW = clBox.offsetWidth;
+      renderCommonLanguage(esState.clPayload || null);
+    }).observe(clBox);
+  }
 
   refreshAuxField();
   compute();

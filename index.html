@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260925k">
-<link rel="stylesheet" href="design-system.css?v=20260925k">
+<link rel="stylesheet" href="styles.css?v=20260925r">
+<link rel="stylesheet" href="design-system.css?v=20260925r">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -592,34 +592,24 @@
         <span class="ds-patient-field-pad" aria-hidden="true"></span>
       </div>
 
-      <!-- SESSION. Opens on click, not hover as the page menus do: it holds an
-           action that clears everything, which should never be one stray
-           pointer movement away. The three buttons keep their ids, so the
-           handlers in app.js are unchanged; Ctrl+S saves (wireSessionMenu). -->
-      <div class="topbar-menu" id="topbar-session-menu">
-        <button type="button" class="topbar-menu-btn" id="topbar-session-btn" aria-label="Session" aria-haspopup="menu" aria-expanded="false" aria-controls="topbar-session-list">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M5 6h6M5 9h4"/></svg>
-          <span>Session</span>
-          <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
+      <!-- SESSION. Three icon buttons, always visible (owner decision,
+           2026-09; they were a click-to-open menu). The ids are unchanged, so
+           the handlers in app.js are too. New patient still asks to confirm
+           before it clears anything; Ctrl+S saves (wireSessionMenu).
+           Nothing outlives the tab, so a session is carried between sittings
+           as a file (saveSession / openSessionFile in app.js). -->
+      <div class="topbar-session" id="topbar-session-menu" role="group" aria-label="Session">
+        <button type="button" class="topbar-icon-btn" id="topbar-save-session" title="Save session (Ctrl+S). Saves everything entered to a file, to carry on later. The file holds patient data: keep it securely." aria-label="Save session">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2.5h8l2.5 2.5v8a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z"/><path d="M5 2.5v3.5h5V2.5"/><rect x="4.5" y="9" width="7" height="4.5"/></svg>
         </button>
-        <div class="topbar-menu-list" id="topbar-session-list" role="menu" aria-label="Session" hidden>
-          <div class="topbar-menu-head">This patient</div>
-          <!-- Nothing outlives the tab, so a session is carried between sittings
-               as a file (saveSession / openSessionFile in app.js). -->
-          <button type="button" class="topbar-menu-item" id="topbar-save-session" role="menuitem" title="Save everything entered to a file, to carry on later. The file holds patient data: keep it securely.">
-            Save session&hellip;<kbd>Ctrl+S</kbd>
-          </button>
-          <button type="button" class="topbar-menu-item" id="topbar-open-session" role="menuitem" title="Open a session file saved earlier. It replaces what is currently entered.">
-            Open session&hellip;
-          </button>
-          <div class="topbar-menu-sep" role="separator"></div>
-          <!-- Clears the tables AND the age: you are switching patient, not
-               tidying one table. Two controls that each cleared half the patient
-               is how a previous age survives onto the next person's report. -->
-          <button type="button" class="topbar-menu-item is-danger" id="topbar-clear-all" role="menuitem" title="Clear every table you have been working on this session, and the patient age">
-            New patient<small>clears all</small>
-          </button>
-        </div>
+        <button type="button" class="topbar-icon-btn" id="topbar-open-session" title="Open session. Opens a session file saved earlier. It replaces what is currently entered." aria-label="Open session">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12.5V3.5a1 1 0 0 1 1-1h3.5l1.5 1.5h5a1 1 0 0 1 1 1v1.5"/><path d="M1.5 12.5l2-5.5h11l-2 5.5z"/></svg>
+        </button>
+        <!-- Clears the tables AND the age: you are switching patient, not
+             tidying one table. Two controls that each cleared half the patient
+             is how a previous age survives onto the next person's report. -->
+        <button type="button" class="topbar-icon-btn is-danger" id="topbar-clear-all" title="New patient. Clears every table you have been working on this session, and the patient age." aria-label="New patient">New patient<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="5" r="2.5"/><path d="M1.5 14c0-2.8 2.2-4.5 5-4.5s5 1.7 5 4.5"/><path d="M13 4.5v4M11 6.5h4"/></svg>
+        </button>
       </div>
       <input type="file" id="session-file-input" accept=".json,application/json" hidden>
       <!-- DONATION BUTTON — kept for easy re-activation, remove comment tags to restore
@@ -656,8 +646,7 @@
     <div class="nav-item" data-target="profile"><span class="nav-item-num">06</span>Profile Analysis</div>
     <div class="nav-item" data-target="converter"><span class="nav-item-num">07</span>Score Converter</div>
     <div class="nav-item" data-target="effectsize"><span class="nav-item-num">08</span>Effect Sizes</div>
-    <div class="nav-item" data-target="custom-tests"><span class="nav-item-num">09</span>Data</div>
-    <div class="nav-item" data-target="about"><span class="nav-item-num">10</span>Methods &amp; References</div>
+    <div class="nav-item" data-target="about"><span class="nav-item-num">09</span>Methods &amp; References</div>
   </nav>
 
   <div class="sidebar-foot">
@@ -1100,7 +1089,7 @@
            bar, the add-row buttons and the report drawer chip stay put. See
            the TABLE VIEWPORT block in styles.css. -->
       <div class="table-viewport">
-      <table class="input-table raw-hidden" id="bat-table">
+      <table class="input-table" id="bat-table">
       <thead>
         <tr>
           <th class="row-num">#</th>
@@ -1362,7 +1351,7 @@
 
         <div class="es-view-pane" data-view-pane="common-language">
           <div class="panel-kicker">Common language description</div>
-          <div class="info-box" style="margin-top:8px">
+          <div class="info-box es-cl-box" style="margin-top:8px">
             <strong>Interpretation summary.</strong>
             <div id="es-cl-summary" style="margin-top:6px">Enter a valid effect size to generate a plain-English interpretation.</div>
             <div id="es-cl-u3line" style="margin-top:8px">The average person in Group 1 is above about - of Group 2 (Cohen's U₃).</div>
@@ -1999,8 +1988,10 @@
         <div class="pvt-larrabee-grid">
           <div>
             <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014a)</h3>
+            <div class="pvt-agg-frame">
             <p class="pvt-agg-copy">This page applies the <strong>≥ 2 independent failures</strong> rule from the AACN consensus statement (Sweet et al., 2021), which supports it when up to 7 to 9 validity measures are given. The page counts at most six independent indicators, which is within that range. Probable invalidity rests on the PVTs alone; calling it malingering also needs a substantial external incentive, under Sherman et al.&rsquo;s (2020) update of Slick et al.&rsquo;s (1999) criteria.</p>
             <p class="pvt-agg-copy">The table shows how the rule performed in one study: Larrabee's (2014a) 54 clinical and 41 malingering cases, each given seven indicators (6 PVTs and 1 SVT). It shows the trade-off between thresholds. It is not a false-positive rate for this page's measures, which Bilder, Sugar &amp; Hellemann (2014) argue can be known only for combinations studied together.</p>
+            </div>
             <p class="pvt-agg-papers" data-pvt-papers="larrabee2014 sweet2021 sherman2020 slick1999 bilder2014 larrabee2014reply"></p>
           </div>
           <table class="pvt-table">
@@ -2859,6 +2850,9 @@
 
       <div class="info-box" style="margin-bottom:14px" data-apa-note="pre-opiepredict"></div>
 
+      <label class="opie-optin"><input type="checkbox" id="pre-opie-enabled"> <span>Show OPIE-4 predictions (US norms, illustrative only). Off by default; nothing from this tab goes into the Working Report until this is on.</span></label>
+
+      <div id="pre-opie-body" hidden>
       <table class="pre-results-table pre-predict-table" id="pre-opiepredict-table">
         <thead>
           <tr>
@@ -2886,6 +2880,7 @@
           </button>
         </div>
         <div class="apa-table-container" id="pre-opiepredict-apa"><div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter age plus a subtest to generate predictions, then add an Achieved score.</div></div>
+      </div>
       </div>
     </div>
 
@@ -3295,7 +3290,9 @@
 <footer class="site-footer" role="contentinfo">
   <div class="site-footer-inner">
     <div class="site-footer-links">
-      <button type="button" class="site-footer-link nav-item" data-target="custom-tests">Data</button>
+      <!-- The Data page (#custom-tests) has no link, by owner decision (2026-09):
+           it is a small barrier to browsing the stored tables, not protection,
+           since data.js ships to every browser. Still reachable at #custom-tests. -->
       <button type="button" class="site-footer-link nav-item" data-target="about">Methods &amp; References</button>
       <button type="button" class="site-footer-link nav-item" data-target="privacy-use">Privacy &amp; use</button>
     </div>
@@ -3334,12 +3331,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260925k"></script>
-<script src="app.js?v=20260925k"></script>
-<script src="design-system.js?v=20260925k" defer></script>
-<script src="app-effectsize-page.js?v=20260925k"></script>
-<script src="app-viz-page.js?v=20260925k"></script>
-<script src="app-profile-page.js?v=20260925k"></script>
+<script src="data.js?v=20260925r"></script>
+<script src="app.js?v=20260925r"></script>
+<script src="design-system.js?v=20260925r" defer></script>
+<script src="app-effectsize-page.js?v=20260925r"></script>
+<script src="app-viz-page.js?v=20260925r"></script>
+<script src="app-profile-page.js?v=20260925r"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://

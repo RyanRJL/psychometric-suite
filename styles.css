@@ -822,6 +822,11 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   margin:14px 0;
 }
 .caution-box strong{color:var(--warn);font-weight:600}
+/* OPIE-4 opt-in switch (Premorbid, OPIE tab). Standalone class, per the
+   cascade rule: nothing else in either stylesheet claims it. */
+.opie-optin{display:flex;align-items:flex-start;gap:8px;margin:0 0 14px;
+  font-family:var(--sans);font-size:13px;color:var(--ink-2);line-height:1.5;cursor:pointer}
+.opie-optin input{margin-top:3px;flex:none}
 .formula{font-family:var(--mono);font-size:12px;background:var(--paper-2);padding:2px 6px;border-radius:2px;color:var(--ink)}
 
 /* CALC SUMMARY */
@@ -9809,16 +9814,21 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   top:12px;
   display:flex;
   flex-direction:column;
-  gap:1px;
-  padding:8px;
+  gap:2px;
+  padding:10px;
 }
+/* Restyled 2026-09 (owner: "cleaner, more modern, still clearly buttons").
+   Rows are borderless; what says "button" is the pointer, a soft fill on
+   hover, the chevron that steps right, and the filled pill with an accent
+   bar on the open one. Boxed rows with shadows read as a stack of cards. */
 .pvt-nav-summary{
+  position:relative;
   display:flex;
   align-items:center;
   gap:12px;
   width:100%;
   padding:10px 12px;
-  margin-bottom:4px;
+  margin-bottom:6px;
   border:1px solid var(--ds-border);
   border-radius:var(--ds-radius-md);
   background:var(--ds-surface-subtle);
@@ -9827,64 +9837,81 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   cursor:pointer;
   transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
-.pvt-nav-summary:hover{background:var(--ds-surface-emphasis)}
+.pvt-nav-summary:hover{background:var(--ds-surface-emphasis);border-color:var(--ds-border-strong)}
 .pvt-nav-summary.is-fail{background:var(--ds-primary-tint);border-color:rgba(156,61,42,0.28)}
 .pvt-nav-summary.is-pass{background:var(--ds-success-tint);border-color:rgba(31,122,71,0.25)}
-.pvt-nav-summary.active{box-shadow:inset 3px 0 0 var(--ds-primary)}
+.pvt-nav-summary.active{border-color:var(--ds-primary);box-shadow:0 0 0 1px var(--ds-primary)}
+.pvt-nav-summary.is-pass.active{border-color:var(--ds-success);box-shadow:0 0 0 1px var(--ds-success)}
 .pvt-nav-summary:focus{outline:none}
-.pvt-nav-summary:focus-visible{box-shadow:0 0 0 2px var(--ds-primary-ring)}
+.pvt-nav-summary:focus-visible{box-shadow:0 0 0 3px var(--ds-primary-ring)}
 .pvt-nav-count{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:34px;
+  flex:none;
+  border-radius:var(--ds-radius-full);
+  background:var(--ds-surface);
+  border:1px solid var(--ds-border);
   font-family:var(--sans);
-  font-size:18px;
+  font-size:15px;
   font-weight:600;
   line-height:1;
   color:var(--ds-text-faint);
   font-variant-numeric:tabular-nums;
-  min-width:32px;
 }
-.pvt-nav-summary.is-fail .pvt-nav-count{color:var(--ds-primary)}
-.pvt-nav-summary.is-pass .pvt-nav-count{color:var(--ds-success)}
-.pvt-nav-count-of{font-size:12px;color:var(--ds-text-faint)}
+.pvt-nav-summary.is-fail .pvt-nav-count{color:var(--ds-primary);border-color:rgba(156,61,42,0.3)}
+.pvt-nav-summary.is-pass .pvt-nav-count{color:var(--ds-success);border-color:rgba(31,122,71,0.3)}
+.pvt-nav-count-of{font-size:10px;color:var(--ds-text-faint)}
 .pvt-nav-summary-main{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pvt-nav-summary-label{font-size:13px;font-weight:600;color:var(--ds-text)}
 .pvt-nav-summary-meta{font-size:11px;color:var(--ds-text-subtle);line-height:1.3}
 
-.pvt-nav-group{display:flex;flex-direction:column;gap:4px;padding-top:6px}
+.pvt-nav-group{display:flex;flex-direction:column;gap:2px;margin-top:6px;padding-top:8px;border-top:1px solid var(--ds-border)}
 .pvt-nav-group-head{
   display:flex;
   align-items:baseline;
   justify-content:space-between;
   gap:6px;
-  padding:6px 10px 3px;
+  padding:2px 12px 4px;
   font-family:var(--sans);
-  font-size:11px;
+  font-size:10.5px;
   font-weight:600;
   letter-spacing:0.08em;
   text-transform:uppercase;
   color:var(--ds-text-faint);
 }
-.pvt-nav-group-note{font-weight:400;letter-spacing:0.04em}
+.pvt-nav-group-note{font-weight:500;letter-spacing:0;text-transform:none;font-size:11px}
 .pvt-nav-item{
+  position:relative;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:8px;
   width:100%;
-  padding:6px 10px;
-  border:1px solid var(--ds-border);
+  padding:7px 12px;
+  border:0;
   border-radius:var(--ds-radius-md);
-  background:var(--ds-surface);
-  box-shadow:0 1px 2px rgba(0,0,0,0.05);
+  background:transparent;
   font-family:var(--sans);
   text-align:left;
   cursor:pointer;
-  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
-/* Each measure is a bordered button, like the Summary card above it (owner
-   report, 2026-09, a second time: the chevrons alone still read as a list of
-   names, not things to click). Hover lifts the border; the open one is tinted. */
-.pvt-nav-item:hover{background:var(--ds-surface-subtle);border-color:var(--ds-text-faint);box-shadow:0 2px 4px rgba(0,0,0,0.08)}
-.pvt-nav-item.active{background:var(--ds-primary-tint);border-color:rgba(156,61,42,0.35);box-shadow:inset 3px 0 0 var(--ds-primary)}
+.pvt-nav-item:hover{background:var(--ds-surface-emphasis)}
+.pvt-nav-item.active{background:var(--ds-primary-tint)}
+/* The open entry's accent bar: a short rounded pill, inset, not a full edge. */
+.pvt-nav-item.active::before{
+  content:'';
+  position:absolute;
+  left:0;
+  top:8px;
+  bottom:8px;
+  width:3px;
+  border-radius:var(--ds-radius-full);
+  background:var(--ds-primary);
+}
 .pvt-nav-item:focus{outline:none}
 .pvt-nav-item:focus-visible{box-shadow:inset 0 0 0 2px var(--ds-primary-ring)}
 /* A chevron on every entry, so a list of names reads as a list of things
@@ -9893,20 +9920,23 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-nav-item::after{
   content:'';
   flex:none;
-  width:6px;
-  height:6px;
-  margin:0 2px 0 2px;
-  border-right:1.5px solid var(--ds-text-faint);
-  border-bottom:1.5px solid var(--ds-text-faint);
+  width:8px;
+  height:8px;
+  margin:0 4px 0 2px;
+  border-right:2px solid var(--ds-primary);
+  border-bottom:2px solid var(--ds-primary);
+  border-radius:1px;
   transform:rotate(-45deg);
-  transition:transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+  opacity:0.75;
+  transition:transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
 }
-.pvt-nav-item:hover::after{border-color:var(--ds-text-muted);transform:translateX(2px) rotate(-45deg)}
-.pvt-nav-item.active::after{border-color:var(--ds-primary)}
-.pvt-nav-item:hover .pvt-nav-label{color:var(--ds-primary)}
+/* Terracotta chevron (owner, 2026-09: the grey one was too faint to say
+   "button"). Full strength and a step right on hover and on the open one. */
+.pvt-nav-item:hover::after{opacity:1;transform:translateX(3px) rotate(-45deg)}
+.pvt-nav-item.active::after{opacity:1}
 .pvt-nav-main{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
-.pvt-nav-label{font-size:13px;color:var(--ds-text);line-height:1.3}
-.pvt-nav-item.active .pvt-nav-label{font-weight:600}
+.pvt-nav-label{font-size:13px;font-weight:500;color:var(--ds-text);line-height:1.3}
+.pvt-nav-item.active .pvt-nav-label{font-weight:600;color:var(--ds-primary)}
 .pvt-nav-meta{font-size:11px;color:var(--ds-text-subtle);line-height:1.3}
 
 /* Live status chip. Unscored measures render NO chip (.is-idle): an empty
@@ -9944,7 +9974,7 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   .pvt-layout{grid-template-columns:minmax(0,1fr)}
   .pvt-nav{position:static;flex-direction:row;flex-wrap:wrap;gap:4px}
   .pvt-nav-summary{width:100%}
-  .pvt-nav-group{display:flex;flex-wrap:wrap;gap:2px;padding-top:0;width:100%}
+  .pvt-nav-group{display:flex;flex-direction:row;flex-wrap:wrap;gap:2px;width:100%}
   .pvt-nav-group-head{width:100%}
   .pvt-nav-item{width:auto}
 }
@@ -10060,6 +10090,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-larrabee .formula-disclosure{margin:12px 0 0}
 .pvt-agg-copy{font-size:13px;color:var(--ds-text-muted);line-height:1.55;margin:0 0 10px;text-align:justify}
 .pvt-agg-copy:last-child{margin-bottom:0}
+/* The two paragraphs sit in one frame so they read as a block (owner, 2026-09). */
+.pvt-agg-frame{padding:12px 14px;border:1px solid var(--ds-border);border-radius:var(--ds-radius-md);background:var(--ds-surface-subtle)}
 
 /* ---- Measure panels: two equal columns, the explainer below both ---- */
 .pvt-workspace{
@@ -10303,6 +10335,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 .pvt-paper-link{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .pvt-paper-link:hover{text-decoration-thickness:2px}
+/* Superscript arrow: says "opens elsewhere" (owner, 2026-09). Not underlined. */
+.pvt-paper-link::after{content:'\2197';display:inline-block;margin-left:1px;font-size:0.75em;vertical-align:super;line-height:0;color:var(--ds-primary);text-decoration:none}
 .pvt-paper-nolink{color:var(--ds-text-muted)}
 .pvt-paper-sep{color:var(--ds-text-faint)}
 .pvt-agg-papers{margin:8px 0 0;font-family:var(--sans);font-size:12px}
