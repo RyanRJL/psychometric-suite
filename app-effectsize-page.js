@@ -104,7 +104,7 @@
      between two anchors). Descending order matches the table layout. */
   const SIMILAR_EFFECTS = [
     { label: 'Heavy smokers vs never smokers (lung cancer)',    d: 2.60 }, // Pesch et al., 2012
-    { label: 'UK male vs female adult height',                  d: 2.04 }, // UK Biobank / Lui et al., 2021
+    { label: 'UK male vs female adult height',                  d: 2.15 }, // Ritchie et al., 2018: "males were substantially taller on average: d = −2.15" (UK Biobank imaging sample, n 5216)
     { label: 'Smokers vs never smokers (lung cancer)',          d: 1.75 }, // Pesch et al., 2012
     { label: 'Cognitive therapy for PTSD',                      d: 1.63 }, // Watts et al., 2013
     { label: 'Former vs never smokers (lung cancer)',           d: 1.10 }, // Pesch et al., 2012
