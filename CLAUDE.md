@@ -2312,6 +2312,11 @@ when the value *is* supplied — a guard that silently emptied the export would 
 visible fault for an invisible one. The second also asserts the mirror is a strict
 subset of the export.
 
+**OPIE-4 is opt-in (owner decision, 2026-09).** The OPIE tab's table stays hidden and
+`renderOpiePredictApa` emits no `.apa-table` until `#pre-opie-enabled` is ticked, so nothing
+US-normed goes into a report without a click. New patient turns it off again. It is the
+renderer's own switch, not `CONSENT_SOURCES`. §35 pins it.
+
 **OPIE-4 is labelled illustrative-only for UK use.** The coefficients reproduce
 Holdnack et al. (2013) Table eA5.8 exactly, but the published equations also carry US
 education, ethnicity and region terms that are not applied, so every patient is scored at

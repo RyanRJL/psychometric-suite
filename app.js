@@ -6950,6 +6950,11 @@ function calcOpiePredict(){
   renderOpiePredictApa();
 }
 
+function opieEnabled(){
+  const el = preGet('pre-opie-enabled');
+  return !!(el && el.checked);
+}
+
 // === APA Output: OPIE-4 vs WAIS-IV ===
 function renderOpiePredictApa(){
   const out = preGet('pre-opiepredict-apa');
@@ -6976,6 +6981,13 @@ function renderOpiePredictApa(){
      actually run OPIE-4. NOT the presence of an achieved score: unlike the ToPF
      tab, this is the only place OPIE-4 predictions are reported, so requiring one
      would keep the premorbid estimate itself out of the report. */
+  /* OPT-IN. OPIE-4 is a US model scored at the US reference category (see
+     data.js above OPIE_PRORATED_FSIQ), so it stays out of the report until the
+     clinician turns it on: no .apa-table, nothing for the observer to collect. */
+  if (!opieEnabled()){
+    out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">OPIE-4 predictions are off. Turn them on to generate this table.</div>';
+    return;
+  }
   if (!rows.some(r => r.val != null && Number.isFinite(r.val))){
     out.innerHTML = '<div style="color:var(--faint);font-style:italic;font-family:var(--sans);font-size:13px">Enter age, sex and at least one of Vocabulary or Matrix Reasoning to generate OPIE-4 predictions.</div>';
     return;
@@ -7034,6 +7046,14 @@ function setupPremorbidListeners(){
   /* The mirror half of the shared patient age. Separate from the loop above so
      the premorbid recalcs stay exactly as they were; this only adds the mirror
      into #patient-age and the Score Tables re-render. */
+  const opieEl = preGet('pre-opie-enabled');
+  if (opieEl){
+    opieEl.addEventListener('change', () => {
+      const body = preGet('pre-opie-body');
+      if (body) body.hidden = !opieEl.checked;
+      calcOpiePredict();
+    });
+  }
   const ageEl = preGet('pre-age');
   if (ageEl){
     const mirror = () => {
@@ -9107,6 +9127,12 @@ setupTableViewportFit();
         inp.dispatchEvent(new Event('input',  { bubbles:true }));
         inp.dispatchEvent(new Event('change', { bubbles:true }));
       });
+      // OPIE-4 is opt-in per patient: the next one starts with it off.
+      const opieEl = document.getElementById('pre-opie-enabled');
+      if (opieEl && opieEl.checked){
+        opieEl.checked = false;
+        opieEl.dispatchEvent(new Event('change', { bubbles:true }));
+      }
     } catch(e){}
 
     // Working Report bundle - clear after the tools so any pending observer
