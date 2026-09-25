@@ -1222,15 +1222,12 @@ check('descD uses Cohen/Sawilowsky anchors as bin floors', () => {
   }
   return true;
 });
-check('descD agrees with the slider/classifyD bands at the shared anchors', () => {
-  // The other two classifiers are coarser (they collapse <0.2 and >=1.2), but
-  // within 0.2–1.2 all three must give the same word.
-  const slider = (d) => { const a = Math.abs(d);
-    return a >= 1.2 ? 'Very Large' : a >= 0.8 ? 'Large' : a >= 0.5 ? 'Medium' : a >= 0.2 ? 'Small' : 'Negligible'; };
-  for (const d of [0.2, 0.35, 0.5, 0.65, 0.8, 1.0, 1.19]) {
-    if (ES.descD(d).label !== slider(d)) return 'disagree at d=' + d + ': ' + ES.descD(d).label + ' vs ' + slider(d);
-  }
-  return true;
+check('the slider badge uses descD, so one d never gets two labels', () => {
+  // A second classifier used to say "Negligible" where the grid said "Very Small"
+  // (d < 0.2) and "Very large" where it said "Huge" (d >= 2).
+  if (/function classifyD|'Very large'|'verylarge'/.test(ES_SRC)) return 'a second d classifier is back';
+  const uses = (ES_SRC.match(/const c = descD\(/g) || []).length;
+  return uses === 2 || 'expected both slider-badge sites to call descD, found ' + uses;
 });
 check('target shares are weighted by group size (screening scenario)', () => {
   // n1=40 M=70 SD=10 vs n2=400 M=100 SD=10, cut 85 (midpoint, equal densities):
