@@ -10085,6 +10085,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-larrabee .formula-disclosure{margin:12px 0 0}
 .pvt-agg-copy{font-size:13px;color:var(--ds-text-muted);line-height:1.55;margin:0 0 10px;text-align:justify}
 .pvt-agg-copy:last-child{margin-bottom:0}
+/* The two paragraphs sit in one frame so they read as a block (owner, 2026-09). */
+.pvt-agg-frame{padding:12px 14px;border:1px solid var(--ds-border);border-radius:var(--ds-radius-md);background:var(--ds-surface-subtle)}
 
 /* ---- Measure panels: two equal columns, the explainer below both ---- */
 .pvt-workspace{
@@ -10328,6 +10330,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 .pvt-paper-link{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .pvt-paper-link:hover{text-decoration-thickness:2px}
+/* Superscript arrow: says "opens elsewhere" (owner, 2026-09). Not underlined. */
+.pvt-paper-link::after{content:'\2197';display:inline-block;margin-left:1px;font-size:0.75em;vertical-align:super;line-height:0;color:var(--ds-primary);text-decoration:none}
 .pvt-paper-nolink{color:var(--ds-text-muted)}
 .pvt-paper-sep{color:var(--ds-text-faint)}
 .pvt-agg-papers{margin:8px 0 0;font-family:var(--sans);font-size:12px}

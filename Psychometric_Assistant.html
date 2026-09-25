@@ -10117,6 +10117,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 .pvt-larrabee .formula-disclosure{margin:12px 0 0}
 .pvt-agg-copy{font-size:13px;color:var(--ds-text-muted);line-height:1.55;margin:0 0 10px;text-align:justify}
 .pvt-agg-copy:last-child{margin-bottom:0}
+/* The two paragraphs sit in one frame so they read as a block (owner, 2026-09). */
+.pvt-agg-frame{padding:12px 14px;border:1px solid var(--ds-border);border-radius:var(--ds-radius-md);background:var(--ds-surface-subtle)}
 
 /* ---- Measure panels: two equal columns, the explainer below both ---- */
 .pvt-workspace{
@@ -10360,6 +10362,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 .pvt-paper-link{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .pvt-paper-link:hover{text-decoration-thickness:2px}
+/* Superscript arrow: says "opens elsewhere" (owner, 2026-09). Not underlined. */
+.pvt-paper-link::after{content:'\2197';display:inline-block;margin-left:1px;font-size:0.75em;vertical-align:super;line-height:0;color:var(--ds-primary);text-decoration:none}
 .pvt-paper-nolink{color:var(--ds-text-muted)}
 .pvt-paper-sep{color:var(--ds-text-faint)}
 .pvt-agg-papers{margin:8px 0 0;font-family:var(--sans);font-size:12px}
@@ -18989,8 +18993,10 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <div class="pvt-larrabee-grid">
           <div>
             <h3 class="pvt-panel-title">Aggregating multiple PVTs (Larrabee, 2014a)</h3>
+            <div class="pvt-agg-frame">
             <p class="pvt-agg-copy">This page applies the <strong>≥ 2 independent failures</strong> rule from the AACN consensus statement (Sweet et al., 2021), which supports it when up to 7 to 9 validity measures are given. The page counts at most six independent indicators, which is within that range. Probable invalidity rests on the PVTs alone; calling it malingering also needs a substantial external incentive, under Sherman et al.&rsquo;s (2020) update of Slick et al.&rsquo;s (1999) criteria.</p>
             <p class="pvt-agg-copy">The table shows how the rule performed in one study: Larrabee's (2014a) 54 clinical and 41 malingering cases, each given seven indicators (6 PVTs and 1 SVT). It shows the trade-off between thresholds. It is not a false-positive rate for this page's measures, which Bilder, Sugar &amp; Hellemann (2014) argue can be known only for combinations studied together.</p>
+            </div>
             <p class="pvt-agg-papers" data-pvt-papers="larrabee2014 sweet2021 sherman2020 slick1999 bilder2014 larrabee2014reply"></p>
           </div>
           <table class="pvt-table">
