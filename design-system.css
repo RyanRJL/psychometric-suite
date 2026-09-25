@@ -6323,3 +6323,30 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
 @media (max-width: 1039px){
   body .topbar-row-main .topnav{ overflow-x: auto; scrollbar-width: none; }
 }
+
+/* EFFECT SIZES: NOTHING MOVES WHILE THE SLIDER IS DRAGGED (2026-09).
+   Three things resized with the text they held, and moved the page:
+   the slider readout (its width sets the track's, so the ticks slid),
+   the "Similar to" value (2 lines to 3 grew its row, and the grid is
+   centred, so all twelve cards jumped), and the plain-English text.
+   Each now has a fixed box; digits are tabular so widths hold. The full
+   "Similar to" label is in the cell's title when it is clipped. */
+#effectsize #es-d-slider-val{
+  flex:none;
+  min-width:7ch;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+#effectsize .es-result-value,
+#effectsize #es-cl-summary,
+#effectsize #es-cl-u3line,
+#effectsize #es-curve-caption{
+  font-variant-numeric:tabular-nums;
+}
+#effectsize #es-out-similar{
+  height:2.5em;
+  overflow:hidden;
+  display:-webkit-box !important;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
