@@ -39770,10 +39770,12 @@ if (document.readyState === 'loading'){
       if (mainEyebrow && method) mainEyebrow.textContent = method.title;
       if (mainDesc && method){
         /* The citation that opens the formula line links to the paper. cite
-           must be the exact start of source, or the line prints unlinked. */
+           must be the exact start of source, or the line prints unlinked.
+           No title attribute: the app's [title]::after tooltip rule would
+           paint the link's arrow white. */
         const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
         mainDesc.innerHTML = (method.doi && method.source.startsWith(method.cite))
-          ? `Source: <a class="cite-doi-link" href="https://doi.org/${method.doi}" target="_blank" rel="noopener noreferrer" title="Open the paper (doi.org/${method.doi})">${esc(method.cite)}</a>${esc(method.source.slice(method.cite.length))}`
+          ? `Source: <a class="cite-doi-link" href="https://doi.org/${method.doi}" target="_blank" rel="noopener noreferrer">${esc(method.cite)}</a>${esc(method.source.slice(method.cite.length))}`
           : method.source;
         mainDesc.style.display = '';
       }
