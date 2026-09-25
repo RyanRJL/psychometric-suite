@@ -467,6 +467,7 @@
     els['es-out-cles'].textContent = (cles*100).toFixed(2) + '%';
     els['es-out-nnt'].textContent = isFinite(nnt) && Math.abs(nnt) < 1e4 ? Math.abs(nnt).toFixed(2) : '-';
     els['es-out-similar'].textContent = similarEffect(d);
+    els['es-out-similar'].title = els['es-out-similar'].textContent;
 
     drawCurve(d, false);
     computeTarget(grp, d);
@@ -533,12 +534,25 @@
     const u3LineEl = els['es-cl-u3line'];
     if (!summaryEl || !u3LineEl) return;
 
+    esState.clPayload = payload;
+    // Hold the box at the height of the longest text any d can produce, so
+    // it does not grow and shrink by a line while the slider is dragged.
+    // Digits are tabular, so d = -2.888 with 99.9% is the widest case.
+    const box = summaryEl.closest('.es-cl-box');
+    if (box && box.offsetWidth){
+      box.style.minHeight = '';
+      writeCommonLanguage(summaryEl, u3LineEl, { d: -2.888, cles: 0.999, u3: 0.999 });
+      box.style.minHeight = (box.offsetHeight + 1) + 'px';   // +1: offsetHeight rounds, and a lost fraction was a 1px jump
+    }
     if (!payload){
       summaryEl.textContent = 'Enter a valid effect size to generate a plain-English interpretation.';
       u3LineEl.textContent = 'The average person in Group 1 is above about - of Group 2 (Cohen\'s U₃).';
       return;
     }
 
+    writeCommonLanguage(summaryEl, u3LineEl, payload);
+  }
+  function writeCommonLanguage(summaryEl, u3LineEl, payload){
     const d = payload.d;
     const direction = d >= 0 ? 'Group 1' : 'Group 2';
     const other = d >= 0 ? 'Group 2' : 'Group 1';
@@ -859,6 +873,18 @@
   document.querySelectorAll('#effectsize .es-view-tab').forEach(btn => {
     btn.addEventListener('click', () => switchWorkspaceView(btn.dataset.view));
   });
+
+  // The held height depends on the box's width, which is 0 until the page is
+  // first shown and changes on resize, so re-measure whenever it changes.
+  const clBox = els['es-cl-summary'] && els['es-cl-summary'].closest('.es-cl-box');
+  if (clBox && typeof ResizeObserver === 'function'){
+    let lastW = -1;
+    new ResizeObserver(() => {
+      if (clBox.offsetWidth === lastW) return;
+      lastW = clBox.offsetWidth;
+      renderCommonLanguage(esState.clPayload || null);
+    }).observe(clBox);
+  }
 
   refreshAuxField();
   compute();
