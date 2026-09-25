@@ -287,7 +287,7 @@
     // 0.2 ≤ |d| < 0.5 is Small, etc. The previous version treated each anchor
     // as a bin CEILING (|d| <= 0.50 → 'Medium'), which labelled the whole
     // interior of every band one magnitude too strong and contradicted the
-    // other two classifiers in this file (the slider badge and classifyD),
+    // other two classifiers in this file (the slider badge now calls descD itself),
     // as well as descR/descR2/descF just below, which all use floors.
     const a = Math.abs(d);
     if (a < 0.01) return { label: 'Negligible', mag: 0 };
@@ -515,14 +515,10 @@
       }
     }
     if (els['es-d-slider-magnitude']){
-      const a = Math.abs(d);
-      let label = 'Negligible', mag = 'negligible';
-      if (a >= 1.2)      { label = 'Very large'; mag = 'verylarge'; }
-      else if (a >= 0.8) { label = 'Large';      mag = 'large';     }
-      else if (a >= 0.5) { label = 'Medium';     mag = 'medium';    }
-      else if (a >= 0.2) { label = 'Small';      mag = 'small';     }
-      els['es-d-slider-magnitude'].textContent = label;
-      els['es-d-slider-magnitude'].dataset.mag = mag;
+      // Same bands as the results grid, so one d never gets two words.
+      const c = descD(d);
+      els['es-d-slider-magnitude'].textContent = c.label;
+      els['es-d-slider-magnitude'].dataset.mag = String(c.mag);
     }
   }
 
@@ -750,15 +746,6 @@
     });
   }
   if (els['es-d-slider']){
-    // Cohen's d magnitude classifier (uses absolute value; sign is shown separately)
-    function classifyD(d){
-      const a = Math.abs(d);
-      if (a < 0.2)  return { label:'Negligible', mag:'negligible' };
-      if (a < 0.5)  return { label:'Small',      mag:'small'      };
-      if (a < 0.8)  return { label:'Medium',     mag:'medium'     };
-      if (a < 1.2)  return { label:'Large',      mag:'large'      };
-      return         { label:'Very large', mag:'verylarge'  };
-    }
     const onSlide = () => {
       const sliderVal = Number(els['es-d-slider'].value);
       const currentType = els['es-stat-type'].value;
@@ -818,9 +805,9 @@
           : (sign + abs.toFixed(decs));
       }
       if (els['es-d-slider-magnitude']){
-        const c = classifyD(dForClassify);
+        const c = descD(dForClassify);
         els['es-d-slider-magnitude'].textContent = c.label;
-        els['es-d-slider-magnitude'].dataset.mag = c.mag;
+        els['es-d-slider-magnitude'].dataset.mag = String(c.mag);
       }
       switchEffectMode('stat');
       compute();
