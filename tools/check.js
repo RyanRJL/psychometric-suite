@@ -3722,8 +3722,7 @@ check('"New patient" clears the age, not just the tables', () => {
   if (!/'patient-age'/.test(handler)) bad.push('the master age input is not among the cleared fields');
   if (!/new patient\?/i.test(handler)) bad.push('the confirm text no longer says what it does');
   if (!/patient age/.test(handler)) bad.push('the confirm text does not warn that the age goes too');
-  /* Since 2026-09 it is an item in the Session menu rather than a button of
-     its own; the label is what matters. */
+  /* Since 2026-09 it is an icon button; the label is what matters. */
   if (!/id="topbar-clear-all"[^>]*>\s*New patient/.test(HTML_SRC)) bad.push('the button is still labelled for tables alone');
   return bad.length === 0 || bad.join('; ');
 });
