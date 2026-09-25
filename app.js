@@ -9314,43 +9314,16 @@ function openSessionFile(file){
   input?.addEventListener('change', () => { openSessionFile(input.files[0]); input.value = ''; });
 })();
 
-/* ---------- The Session menu (top bar) ----------
-   New patient, Open and Save share one menu. It opens on CLICK, not hover as
-   the page menus do, because it holds an action that clears everything.
-   Any choice closes it, as do a click elsewhere and Escape (which returns
-   focus to the button). The items' own handlers are bound by id elsewhere
-   (wireSessionButtons, wireGlobalClear) and are untouched.
-
-   Ctrl+S (Cmd+S) saves the session: without it, Save is two clicks away
-   where it used to be one. The browser's own "save page" is suppressed only
-   for that chord, and only once this handler exists. */
+/* ---------- Session buttons (top bar) ----------
+   Save, Open and New patient are three icon buttons, always visible. Their
+   handlers are bound by id elsewhere (wireSessionButtons, wireGlobalClear);
+   New patient confirms before it clears. Ctrl+S (Cmd+S) saves the session;
+   the browser's own "save page" is suppressed only for that chord. */
 (function wireSessionMenu(){
-  const wrap = document.getElementById('topbar-session-menu');
-  const btn = document.getElementById('topbar-session-btn');
-  const list = document.getElementById('topbar-session-list');
-  if (!wrap || !btn || !list) return;
-  const setOpen = open => {
-    list.hidden = !open;
-    btn.setAttribute('aria-expanded', String(open));
-    wrap.classList.toggle('is-open', open);
-    if (open) list.querySelector('.topbar-menu-item')?.focus();
-  };
-  btn.addEventListener('click', () => setOpen(list.hidden));
-  list.addEventListener('click', e => { if (e.target.closest('.topbar-menu-item')) setOpen(false); });
-  document.addEventListener('click', e => { if (!list.hidden && !wrap.contains(e.target)) setOpen(false); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !list.hidden){ setOpen(false); btn.focus(); return; }
     if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')){
       e.preventDefault();
       if (typeof saveSession === 'function') saveSession();
-    }
-    /* Arrow keys move between the items while the menu is open. */
-    if (!list.hidden && (e.key === 'ArrowDown' || e.key === 'ArrowUp')){
-      const items = [...list.querySelectorAll('.topbar-menu-item')];
-      const i = items.indexOf(document.activeElement);
-      const next = e.key === 'ArrowDown' ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
-      items[next]?.focus();
-      e.preventDefault();
     }
   });
 })();

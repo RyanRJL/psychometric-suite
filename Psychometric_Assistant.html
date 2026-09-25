@@ -16959,46 +16959,22 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
   border: 1.5px dashed rgba(156,61,42,0.55) !important;
 }
 
-/* The Session menu. */
-.topbar-menu{ position: relative; align-self: center; margin-left: 10px; }
-.topbar-menu-btn{
-  display: inline-flex; align-items: center; gap: 7px;
-  height: 32px; padding: 0 12px;
-  font: 600 12.5px var(--sans); color: var(--ds-text);
-  background: #FFFFFF; border: 1px solid var(--ds-border-strong); border-radius: 7px;
-  cursor: pointer; white-space: nowrap;
-  transition: background-color var(--t-fast) var(--ease);
+/* Session: three icon buttons, always visible. The text inside
+   #topbar-clear-all is its name for the markup check; font-size 0 hides it
+   and aria-label names each button for screen readers. */
+.topbar-session{ display: inline-flex; align-items: center; gap: 4px; align-self: center; margin-left: 10px; }
+.topbar-icon-btn{
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 0; font-size: 0;
+  color: var(--ds-text); background: #FFFFFF;
+  border: 1px solid var(--ds-border-strong); border-radius: 7px;
+  cursor: pointer; transition: background-color var(--t-fast) var(--ease);
 }
-.topbar-menu-btn svg{ width: 14px; height: 14px; opacity: 0.75; }
-.topbar-menu-btn .topnav-chevron{ width: 10px; height: 10px; opacity: 0.6; transition: transform var(--t-base) var(--ease); }
-.topbar-menu.is-open .topbar-menu-btn .topnav-chevron{ transform: rotate(-180deg); }
-.topbar-menu-btn:hover, .topbar-menu.is-open .topbar-menu-btn{ background: #F7F4EF; }
-.topbar-menu-btn:focus-visible{ outline: 2px solid var(--ds-primary-ring, rgba(156,61,42,0.4)); outline-offset: 2px; }
-.topbar-menu-list{
-  position: absolute; right: 0; top: calc(100% + 6px);
-  min-width: 224px; padding: 6px;
-  background: #FFFFFF; border: 1px solid var(--ds-border-strong); border-radius: 9px;
-  box-shadow: 0 12px 30px rgba(15,18,24,0.14);
-  z-index: 70;
-}
-.topbar-menu-list[hidden]{ display: none; }
-.topbar-menu-head{
-  padding: 6px 10px 4px;
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
-  color: var(--ds-text-subtle);
-}
-.topbar-menu-item{
-  display: flex; align-items: center; gap: 9px; width: 100%;
-  padding: 8px 10px; border: 0; border-radius: 6px; background: transparent;
-  font: 400 13px var(--sans); color: var(--ds-text); text-align: left; cursor: pointer;
-}
-.topbar-menu-item:hover, .topbar-menu-item:focus-visible{ background: #F4F0E9; outline: none; }
-.topbar-menu-item kbd, .topbar-menu-item small{
-  margin-left: auto; font: 400 11px var(--sans); color: var(--ds-text-subtle);
-}
-.topbar-menu-item.is-danger{ color: var(--ds-primary); }
-.topbar-menu-sep{ height: 1px; margin: 5px 4px; background: var(--ds-border); }
-@media print{ .topbar-menu{ display: none; } }
+.topbar-icon-btn svg{ width: 16px; height: 16px; }
+.topbar-icon-btn:hover{ background: #F7F4EF; }
+.topbar-icon-btn:focus-visible{ outline: 2px solid var(--ds-primary-ring, rgba(156,61,42,0.4)); outline-offset: 2px; }
+.topbar-icon-btn.is-danger{ color: var(--ds-primary); margin-left: 6px; }
+@media print{ .topbar-session{ display: none; } }
 
 /* Narrower windows, in steps that keep every tab on screen. */
 @media (max-width: 1339px){
@@ -17016,7 +16992,6 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
   body .topbar .ds-patient-field-label{
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
   }
-  body .topbar-menu-btn > span{ display: none; }
 }
 /* Last resort, below the ~1036px window where everything above still fits:
    the tabs scroll sideways rather than any of them disappearing. Not a
@@ -17618,34 +17593,24 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
         <span class="ds-patient-field-pad" aria-hidden="true"></span>
       </div>
 
-      <!-- SESSION. Opens on click, not hover as the page menus do: it holds an
-           action that clears everything, which should never be one stray
-           pointer movement away. The three buttons keep their ids, so the
-           handlers in app.js are unchanged; Ctrl+S saves (wireSessionMenu). -->
-      <div class="topbar-menu" id="topbar-session-menu">
-        <button type="button" class="topbar-menu-btn" id="topbar-session-btn" aria-label="Session" aria-haspopup="menu" aria-expanded="false" aria-controls="topbar-session-list">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M5 6h6M5 9h4"/></svg>
-          <span>Session</span>
-          <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
+      <!-- SESSION. Three icon buttons, always visible (owner decision,
+           2026-09; they were a click-to-open menu). The ids are unchanged, so
+           the handlers in app.js are too. New patient still asks to confirm
+           before it clears anything; Ctrl+S saves (wireSessionMenu).
+           Nothing outlives the tab, so a session is carried between sittings
+           as a file (saveSession / openSessionFile in app.js). -->
+      <div class="topbar-session" id="topbar-session-menu" role="group" aria-label="Session">
+        <button type="button" class="topbar-icon-btn" id="topbar-save-session" title="Save session (Ctrl+S). Saves everything entered to a file, to carry on later. The file holds patient data: keep it securely." aria-label="Save session">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2.5h8l2.5 2.5v8a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z"/><path d="M5 2.5v3.5h5V2.5"/><rect x="4.5" y="9" width="7" height="4.5"/></svg>
         </button>
-        <div class="topbar-menu-list" id="topbar-session-list" role="menu" aria-label="Session" hidden>
-          <div class="topbar-menu-head">This patient</div>
-          <!-- Nothing outlives the tab, so a session is carried between sittings
-               as a file (saveSession / openSessionFile in app.js). -->
-          <button type="button" class="topbar-menu-item" id="topbar-save-session" role="menuitem" title="Save everything entered to a file, to carry on later. The file holds patient data: keep it securely.">
-            Save session&hellip;<kbd>Ctrl+S</kbd>
-          </button>
-          <button type="button" class="topbar-menu-item" id="topbar-open-session" role="menuitem" title="Open a session file saved earlier. It replaces what is currently entered.">
-            Open session&hellip;
-          </button>
-          <div class="topbar-menu-sep" role="separator"></div>
-          <!-- Clears the tables AND the age: you are switching patient, not
-               tidying one table. Two controls that each cleared half the patient
-               is how a previous age survives onto the next person's report. -->
-          <button type="button" class="topbar-menu-item is-danger" id="topbar-clear-all" role="menuitem" title="Clear every table you have been working on this session, and the patient age">
-            New patient<small>clears all</small>
-          </button>
-        </div>
+        <button type="button" class="topbar-icon-btn" id="topbar-open-session" title="Open session. Opens a session file saved earlier. It replaces what is currently entered." aria-label="Open session">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12.5V3.5a1 1 0 0 1 1-1h3.5l1.5 1.5h5a1 1 0 0 1 1 1v1.5"/><path d="M1.5 12.5l2-5.5h11l-2 5.5z"/></svg>
+        </button>
+        <!-- Clears the tables AND the age: you are switching patient, not
+             tidying one table. Two controls that each cleared half the patient
+             is how a previous age survives onto the next person's report. -->
+        <button type="button" class="topbar-icon-btn is-danger" id="topbar-clear-all" title="New patient. Clears every table you have been working on this session, and the patient age." aria-label="New patient">New patient<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="5" r="2.5"/><path d="M1.5 14c0-2.8 2.2-4.5 5-4.5s5 1.7 5 4.5"/><path d="M13 4.5v4M11 6.5h4"/></svg>
+        </button>
       </div>
       <input type="file" id="session-file-input" accept=".json,application/json" hidden>
       <!-- DONATION BUTTON — kept for easy re-activation, remove comment tags to restore
@@ -32749,43 +32714,16 @@ function openSessionFile(file){
   input?.addEventListener('change', () => { openSessionFile(input.files[0]); input.value = ''; });
 })();
 
-/* ---------- The Session menu (top bar) ----------
-   New patient, Open and Save share one menu. It opens on CLICK, not hover as
-   the page menus do, because it holds an action that clears everything.
-   Any choice closes it, as do a click elsewhere and Escape (which returns
-   focus to the button). The items' own handlers are bound by id elsewhere
-   (wireSessionButtons, wireGlobalClear) and are untouched.
-
-   Ctrl+S (Cmd+S) saves the session: without it, Save is two clicks away
-   where it used to be one. The browser's own "save page" is suppressed only
-   for that chord, and only once this handler exists. */
+/* ---------- Session buttons (top bar) ----------
+   Save, Open and New patient are three icon buttons, always visible. Their
+   handlers are bound by id elsewhere (wireSessionButtons, wireGlobalClear);
+   New patient confirms before it clears. Ctrl+S (Cmd+S) saves the session;
+   the browser's own "save page" is suppressed only for that chord. */
 (function wireSessionMenu(){
-  const wrap = document.getElementById('topbar-session-menu');
-  const btn = document.getElementById('topbar-session-btn');
-  const list = document.getElementById('topbar-session-list');
-  if (!wrap || !btn || !list) return;
-  const setOpen = open => {
-    list.hidden = !open;
-    btn.setAttribute('aria-expanded', String(open));
-    wrap.classList.toggle('is-open', open);
-    if (open) list.querySelector('.topbar-menu-item')?.focus();
-  };
-  btn.addEventListener('click', () => setOpen(list.hidden));
-  list.addEventListener('click', e => { if (e.target.closest('.topbar-menu-item')) setOpen(false); });
-  document.addEventListener('click', e => { if (!list.hidden && !wrap.contains(e.target)) setOpen(false); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !list.hidden){ setOpen(false); btn.focus(); return; }
     if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')){
       e.preventDefault();
       if (typeof saveSession === 'function') saveSession();
-    }
-    /* Arrow keys move between the items while the menu is open. */
-    if (!list.hidden && (e.key === 'ArrowDown' || e.key === 'ArrowUp')){
-      const items = [...list.querySelectorAll('.topbar-menu-item')];
-      const i = items.indexOf(document.activeElement);
-      const next = e.key === 'ArrowDown' ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
-      items[next]?.focus();
-      e.preventDefault();
     }
   });
 })();

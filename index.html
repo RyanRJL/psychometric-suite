@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260925p">
-<link rel="stylesheet" href="design-system.css?v=20260925o">
+<link rel="stylesheet" href="styles.css?v=20260925q">
+<link rel="stylesheet" href="design-system.css?v=20260925p">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -592,34 +592,24 @@
         <span class="ds-patient-field-pad" aria-hidden="true"></span>
       </div>
 
-      <!-- SESSION. Opens on click, not hover as the page menus do: it holds an
-           action that clears everything, which should never be one stray
-           pointer movement away. The three buttons keep their ids, so the
-           handlers in app.js are unchanged; Ctrl+S saves (wireSessionMenu). -->
-      <div class="topbar-menu" id="topbar-session-menu">
-        <button type="button" class="topbar-menu-btn" id="topbar-session-btn" aria-label="Session" aria-haspopup="menu" aria-expanded="false" aria-controls="topbar-session-list">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M5 6h6M5 9h4"/></svg>
-          <span>Session</span>
-          <svg class="topnav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
+      <!-- SESSION. Three icon buttons, always visible (owner decision,
+           2026-09; they were a click-to-open menu). The ids are unchanged, so
+           the handlers in app.js are too. New patient still asks to confirm
+           before it clears anything; Ctrl+S saves (wireSessionMenu).
+           Nothing outlives the tab, so a session is carried between sittings
+           as a file (saveSession / openSessionFile in app.js). -->
+      <div class="topbar-session" id="topbar-session-menu" role="group" aria-label="Session">
+        <button type="button" class="topbar-icon-btn" id="topbar-save-session" title="Save session (Ctrl+S). Saves everything entered to a file, to carry on later. The file holds patient data: keep it securely." aria-label="Save session">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2.5h8l2.5 2.5v8a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z"/><path d="M5 2.5v3.5h5V2.5"/><rect x="4.5" y="9" width="7" height="4.5"/></svg>
         </button>
-        <div class="topbar-menu-list" id="topbar-session-list" role="menu" aria-label="Session" hidden>
-          <div class="topbar-menu-head">This patient</div>
-          <!-- Nothing outlives the tab, so a session is carried between sittings
-               as a file (saveSession / openSessionFile in app.js). -->
-          <button type="button" class="topbar-menu-item" id="topbar-save-session" role="menuitem" title="Save everything entered to a file, to carry on later. The file holds patient data: keep it securely.">
-            Save session&hellip;<kbd>Ctrl+S</kbd>
-          </button>
-          <button type="button" class="topbar-menu-item" id="topbar-open-session" role="menuitem" title="Open a session file saved earlier. It replaces what is currently entered.">
-            Open session&hellip;
-          </button>
-          <div class="topbar-menu-sep" role="separator"></div>
-          <!-- Clears the tables AND the age: you are switching patient, not
-               tidying one table. Two controls that each cleared half the patient
-               is how a previous age survives onto the next person's report. -->
-          <button type="button" class="topbar-menu-item is-danger" id="topbar-clear-all" role="menuitem" title="Clear every table you have been working on this session, and the patient age">
-            New patient<small>clears all</small>
-          </button>
-        </div>
+        <button type="button" class="topbar-icon-btn" id="topbar-open-session" title="Open session. Opens a session file saved earlier. It replaces what is currently entered." aria-label="Open session">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12.5V3.5a1 1 0 0 1 1-1h3.5l1.5 1.5h5a1 1 0 0 1 1 1v1.5"/><path d="M1.5 12.5l2-5.5h11l-2 5.5z"/></svg>
+        </button>
+        <!-- Clears the tables AND the age: you are switching patient, not
+             tidying one table. Two controls that each cleared half the patient
+             is how a previous age survives onto the next person's report. -->
+        <button type="button" class="topbar-icon-btn is-danger" id="topbar-clear-all" title="New patient. Clears every table you have been working on this session, and the patient age." aria-label="New patient">New patient<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6.5" cy="5" r="2.5"/><path d="M1.5 14c0-2.8 2.2-4.5 5-4.5s5 1.7 5 4.5"/><path d="M13 4.5v4M11 6.5h4"/></svg>
+        </button>
       </div>
       <input type="file" id="session-file-input" accept=".json,application/json" hidden>
       <!-- DONATION BUTTON — kept for easy re-activation, remove comment tags to restore
