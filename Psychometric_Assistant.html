@@ -36115,7 +36115,9 @@ if (document.readyState === 'loading'){
     const sd2 = sdFrom(dt2, dv2, n2, m2);
 
     const out = { n1, n2, m1, m2, sd1, sd2, dt1, dt2 };
-    if (n1 && n2 && sd1 != null && sd2 != null && n1 > 1 && n2 > 1){
+    // An SD must be positive: a CI upper bound below the mean gives a negative
+    // one, which squares away silently in the pooled SD below.
+    if (n1 && n2 && sd1 > 0 && sd2 > 0 && n1 > 1 && n2 > 1){
       out.pooledN  = n1 + n2;
       if (m1 != null && m2 != null){
         out.pooledMean = ((n1 * m1) + (n2 * m2)) / (n1 + n2);
@@ -36243,7 +36245,7 @@ if (document.readyState === 'loading'){
     const dGroup = grp.dFromGroups != null ? grp.dFromGroups : null;
     const hasGroup = dGroup != null && !isNaN(dGroup) && isFinite(dGroup);
     if (hasGroup && !esState.statTouched){
-      els['es-stat-type'].value = 'd';
+      if (els['es-stat-type'].value !== 'd'){ els['es-stat-type'].value = 'd'; applySliderConfig('d'); }
       els['es-stat-value'].value = dGroup.toFixed(3);
       els['es-stat-aux'].value = '';
       esState.statAutoFilled = true;
@@ -36306,11 +36308,20 @@ if (document.readyState === 'loading'){
     const nntDenom = 2*cles - 1;
     const nnt = nntDenom !== 0 ? 1 / nntDenom : Infinity;
 
+    /* Hedges' J needs the N behind THIS d. Group N applies only when d came
+       from the groups (directly or auto-filled); a typed statistic uses its
+       own total N. A typed g is printed as typed — correcting it again with
+       an unrelated group N moved g 0.5 to 0.521. */
+    const statType = els['es-stat-type'].value;
+    const fromGroups = esState.source === 'groups' || esState.statAutoFilled;
+    const auxN = Number(els['es-stat-aux'].value);
+    const nForJ = fromGroups ? grp.pooledN
+      : ((statType === 'g' || statType === 't' || statType === 'zstat') && els['es-stat-aux'].value !== '' && auxN >= 4 ? auxN : null);
     let gVal;
-    if (grp.pooledN != null){
-      gVal = d * (1 - 3/(4*grp.pooledN - 9));
-    } else if (els['es-stat-type'].value === 'g'){
+    if (!fromGroups && statType === 'g'){
       gVal = Number(els['es-stat-value'].value);
+    } else if (nForJ != null){
+      gVal = d * (1 - 3/(4*nForJ - 9));
     } else {
       gVal = d;
     }
@@ -36529,6 +36540,9 @@ if (document.readyState === 'loading'){
         esState.statTouched = true;
         esState.statAutoFilled = false;
         esState.source = 'stat';
+      } else if (id !== 'es-target'){
+        // Typing group data is a request for the group result.
+        esState.source = 'groups';
       }
       // When the statistic changes, reconfigure the slider for the new
       // statistic's native range + tick marks BEFORE compute() runs (so
@@ -36543,6 +36557,8 @@ if (document.readyState === 'loading'){
         esState.statTouched = true;
         esState.statAutoFilled = false;
         esState.source = 'stat';
+      } else if (id !== 'es-target'){
+        esState.source = 'groups';
       }
       if (id === 'es-stat-type'){
         applySliderConfig(el.value);
@@ -36581,6 +36597,8 @@ if (document.readyState === 'loading'){
     els['es-g2-disp'].value = 'sd';
     esState.statTouched = false;
     esState.statAutoFilled = false;
+    esState.source = 'stat';
+    applySliderConfig('d');
     compute();
   }
 
@@ -36673,7 +36691,7 @@ if (document.readyState === 'loading'){
         const decs = cfg ? cfg.decimals : 2;
         // OR is positive-only and skips the sign prefix
         els['es-d-slider-val'].textContent = (cfg && cfg.log)
-          ? abs.toFixed(decs)
+          ? formatSliderValue(abs, cfg)
           : (sign + abs.toFixed(decs));
       }
       if (els['es-d-slider-magnitude']){
@@ -36686,14 +36704,18 @@ if (document.readyState === 'loading'){
     };
     els['es-d-slider'].addEventListener('input', onSlide);
     els['es-d-slider'].addEventListener('change', onSlide);
-    // Initialise readout + fill on load
-    onSlide();
+    // No onSlide() on load: it wrote the slider's 0 into the value box and
+    // marked the statistic as touched, so group data never auto-filled and
+    // the page reported d = 0 for any two groups. compute() below sets the
+    // readout and fill from the (empty) inputs instead.
   }
 
   // Tab wiring
   document.querySelectorAll('#effectsize .es-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       switchEffectMode(btn.dataset.mode);
+      // The tab on screen decides which result is shown.
+      esState.source = btn.dataset.mode === 'groups' ? 'groups' : 'stat';
       compute();
     });
   });
