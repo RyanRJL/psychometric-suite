@@ -776,6 +776,12 @@ const TOPF_AGE_MAX = 90;
    refusing (see the range note in calcPremorbid). */
 const CRAWFORD_ALLAN_AGE_MIN = 16;
 
+/* Crawford & Allan (1997) demographic equation, WAIS-R FSIQ. Held here, not
+   as literals in calcPremorbid, so the equation printed in the model's "i"
+   tip is built from the same numbers the estimate is. Occupation is coded by
+   OCC_CODE below (1 Professional ... 5 Unskilled). */
+const CRAWFORD_ALLAN_COEF = { intercept:87.14, occ:-5.21, edu:1.78, age:0.18, r:0.73, see:9.11 };
+
 // OPIE-4 prorated FSIQ regression coefficients (Table eA5.8). Verified against
 // source. See the block above before using these numbers in a UK context.
 const OPIE_PRORATED_FSIQ = {

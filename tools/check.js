@@ -53,7 +53,7 @@ vm.runInContext(
     ' REY15_RECALL_ROWS, REY15_RECOGNITION_ROWS, REY15_SHAPES,' +
     ' PVT_CVLT3_BANDS, PVT_CVLT3_FC_HITS, PVT_CVLT3_CRITICAL, PVT_CVLT3_CRITERIA,' +
     ' PVT_CVLT3_FC_CUTOFFS, PVT_CVLT3_ERDODI_T6, PVT_INSTRUMENTS, PVT_DKEFS_TRAILS, PVT_SOURCES, PVT_BELOW_CHANCE,' +
-    ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, PRE_MODEL_TOOLTIPS };',
+    ' OPIE_AGE_MIN, OPIE_AGE_MAX, CRAWFORD_ALLAN_AGE_MIN, CRAWFORD_ALLAN_COEF, PRE_MODEL_TOOLTIPS };',
   sandbox
 );
 const D = sandbox.__EXPORTS;
@@ -11319,6 +11319,95 @@ check('the page does not call invalid performance "poor effort"', () => {
   const prose = v.slice(0, v.indexOf('</section>')).replace(/<div class="references" id="pvt-references">[\s\S]*?<\/div>/, '');
   const hits = prose.match(/\b(poor|low|suboptimal|incomplete|suspect)[ -]effort\b|\beffort test(ing|s)?\b/gi) || [];
   return hits.length === 0 || 'effort wording on the page: ' + hits.join(', ');
+});
+
+
+heading('63. Premorbid: the equation in each "i" tip is the one computed');
+
+/* Each premorbid model's tip prints its equation, built by preModelFormula
+   from the coefficient objects the calculation reads. These checks run the
+   shipped formatter, parse the printed equation back into arithmetic, and
+   compare it with an independent evaluation of the published coefficients
+   at several inputs. A tip showing a rounded, reordered or stale coefficient
+   fails here, as does the calculation drifting back to literals. */
+function preTipHarness(){
+  const start = APP_SRC.indexOf('function preNumStr(');
+  const end = APP_SRC.indexOf('function preModelTip(');
+  if (start < 0 || end < 0) return null;
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8') + ';' + APP_SRC.slice(start, end)
+    + ';globalThis.__f = preModelFormula;', ctx);
+  return ctx.__f;
+}
+function preParseEquation(tip){
+  const line = (tip.split('\n').find(l => l.startsWith('Equation: ')) || '').slice(10);
+  const rhs = line.slice(line.indexOf(' = ') + 3);
+  const sup = { '\u00B2':'2', '\u00B3':'3', '\u2076':'6' };
+  let js = rhs
+    .replace(/\u00D710([\u207B\u2070\u00B9\u00B2\u00B3\u2074-\u2079]+)/g, (m, e) =>
+      'e' + [...e].map(ch => ch === '\u207B' ? '-' : '\u2070\u00B9\u00B2\u00B3\u2074\u2075\u2076\u2077\u2078\u2079'.indexOf(ch)).join(''))
+    .replace(/\u2212/g, '-')
+    .replace(/\u00B7/g, '*')
+    .replace(/(Age|T)([\u00B2\u00B3\u2076])/g, (m, v, p) => v + '**' + sup[p]);
+  return new Function('T', 'Edu', 'Sex', 'Occ', 'Age', 'VC', 'MR', 'return ' + js + ';');
+}
+
+check('every premorbid tip prints an equation that reproduces the published model', () => {
+  const f = preTipHarness();
+  if (!f) return 'preNumStr / preModelTip not found in app.js';
+  const bad = [];
+  const inputs = [[20, 10, 1, 1, 25, 30, 10], [45, 12, 2, 3, 45, 40, 18], [66, 18, 1, 5, 80, 55, 24]];
+  const near = (a, b) => Math.abs(a - b) < 1e-9 * Math.max(1, Math.abs(b));
+  const one = (label, tip, model) => {
+    if (!tip) { bad.push(label + ': no equation in its tip'); return; }
+    let g;
+    try { g = preParseEquation(tip); } catch (e) { bad.push(label + ': equation does not parse (' + e.message + ')'); return; }
+    inputs.forEach(([T, Edu, Sex, Occ, Age, VC, MR]) => {
+      const got = g(T, Edu, Sex, Occ, Age, VC, MR), want = model(T, Edu, Sex, Occ, Age, VC, MR);
+      if (!near(got, want)) bad.push(label + ': tip gives ' + got + ', model ' + want);
+    });
+  };
+  D.WAIS_COEF.forEach(c => one('WAIS-IV ' + c.idx, f('predictWais', c.idx),
+    (T, Edu, Sex) => c.intercept + c.b1*T + c.b2*T*T + c.b3*T**3 + c.edu*Edu + c.sex*Sex));
+  one('ToPF + demographics', f('topfDemo'),
+    (T, Edu, Sex) => 29.991 + 2.09426*T - 0.0404559*T*T + 0.000340705*T**3 + 1.4617126*Edu + 4.925*Sex);
+  D.WMS_COEF.forEach(c => one('WMS-IV ' + c.idx, f('predictWms', c.idx),
+    (T, Edu, Sex, Occ, Age) => c.intercept + c.b1*T + c.age*Age));
+  // Crawford & Allan (1997): 87.14 - 5.21 occ + 1.78 edu + 0.18 age, restated here.
+  one('Crawford & Allan', f('crawfordAllan'),
+    (T, Edu, Sex, Occ, Age) => 87.14 - 5.21*Occ + 1.78*Edu + 0.18*Age);
+  const opie = (c) => (T, Edu, Sex, Occ, Age, VC, MR) =>
+    c.intercept + (c.vc||0)*VC + (c.mr||0)*MR + (c.age||0)*Age + (c.age3||0)*Age**3 + (c.age6||0)*Age**6 + c.sex*Sex;
+  [['opiePredFSIQ_VCMR', D.OPIE_PRORATED_FSIQ.VC_MR], ['opiePredFSIQ_VC', D.OPIE_PRORATED_FSIQ.VC], ['opiePredFSIQ_MR', D.OPIE_PRORATED_FSIQ.MR],
+   ['opiePredGAI_VCMR', D.OPIE_PRORATED_GAI.VC_MR], ['opiePredGAI_VC', D.OPIE_PRORATED_GAI.VC], ['opiePredGAI_MR', D.OPIE_PRORATED_GAI.MR],
+   ['opiePredVCI', D.OPIE_PRORATED_INDEX.VCI], ['opiePredPRI', D.OPIE_PRORATED_INDEX.PRI],
+   ['opieVCMR', D.OPIE_PRORATED_FSIQ.VC_MR], ['opieVC', D.OPIE_PRORATED_FSIQ.VC], ['opieMR', D.OPIE_PRORATED_FSIQ.MR]]
+    .forEach(([k, c]) => one(k, f(k), opie(c)));
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('each tip states the sex coding its equation uses, and names its source', () => {
+  const f = preTipHarness();
+  if (!f) return 'preModelFormula not found in app.js';
+  const bad = [];
+  ['topfDemo', 'predictWais'].forEach(k => { if (!/Sex: female 1, male 2/.test(f(k, 'FSIQ'))) bad.push(k + ' lost the ToPF sex coding (female 1, male 2)'); });
+  ['opieVCMR', 'opiePredGAI_MR', 'opiePredVCI'].forEach(k => { if (!/Sex: female 0, male 1/.test(f(k))) bad.push(k + ' lost the OPIE-4 sex coding (female 0, male 1)'); });
+  [['topfRaw', /ToPF-UK manual/], ['predictWms', /ToPF-UK manual/, 'IMI'], ['crawfordAllan', /Crawford & Allan \(1997\)/], ['opiePredPRI', /Holdnack et al\. \(2013\), Table eA5\.8/]]
+    .forEach(([k, re, idx]) => { if (!re.test(f(k, idx))) bad.push(k + ' no longer names its source'); });
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('the premorbid estimates read their coefficients from data.js, not literals', () => {
+  const fn = extractFn(APP_SRC, 'calcPremorbid');
+  const bad = [];
+  if (/87\.14|29\.991|2\.09426/.test(fn)) bad.push('calcPremorbid carries a literal coefficient again, which its tip cannot see');
+  if (!/CRAWFORD_ALLAN_COEF/.test(fn)) bad.push('the Crawford & Allan row no longer reads CRAWFORD_ALLAN_COEF');
+  if (!/WAIS_COEF\[0\]/.test(fn)) bad.push('the ToPF + demographics row no longer reads WAIS_COEF[0]');
+  const c = D.CRAWFORD_ALLAN_COEF || {};
+  if (c.intercept !== 87.14 || c.occ !== -5.21 || c.edu !== 1.78 || c.age !== 0.18 || c.see !== 9.11 || c.r !== 0.73) bad.push('CRAWFORD_ALLAN_COEF no longer holds the published equation');
+  if (!/\.pre-fig-info\b/.test(extractFn(APP_SRC, 'renderPremorbidForestPlot'))) bad.push('the forest plot no longer carries its "i" dots');
+  return bad.length === 0 || bad.join('; ');
 });
 
 // ---------------------------------------------------------------------------

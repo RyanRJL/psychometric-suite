@@ -2360,7 +2360,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 434 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 447 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -2373,7 +2373,7 @@ family dropdowns (§33), consent gating on the Change Analysis methods (§34), t
 empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
 tab-close prompt and AACN default (§52), Save / Open session (§53), and the app frame,
 the docked report and the motion scale (§55), and the WAIS-IV/WMS-IV joint profile on
-WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57), and WISC-V Table 5.1 (§58), and D-KEFS Trail Making as a PVT (§60).
+WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57), and WISC-V Table 5.1 (§58), and D-KEFS Trail Making as a PVT (§60), and the premorbid equation tips, parsed back and compared with the models (§63).
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

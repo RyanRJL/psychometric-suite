@@ -6091,9 +6091,73 @@ document.getElementById('ct-import').addEventListener('change', e => {
    from WAIS-IV/WMS-IV manuals + Crawford & Allan (1997) + OPIE-4.
    ============================================================ */
 
-function preModelCell(label, tipKey){
-  const tip = PRE_MODEL_TOOLTIPS[tipKey] || 'Hover information is not available for this model.';
-  return `<td class="model model-has-tip">${escapeHtml(label)}<span class="model-info-dot" data-tooltip="${escapeAttr(tip)}" aria-label="${escapeAttr(label + '. ' + tip)}">?</span></td>`;
+/* The equation behind each premorbid model, printed in its "i" tip. Built
+   from the coefficient objects the calculations read, so a tip cannot show a
+   number the estimate did not use. Coefficients print as stored. */
+function preNumStr(v){
+  const a = Math.abs(v);
+  if (a !== 0 && a < 1e-6){
+    const [m, e] = a.toExponential().split('e');
+    const sup = String(Number(e)).replace(/-/g, '\u207B').replace(/\d/g, d => '\u2070\u00B9\u00B2\u00B3\u2074\u2075\u2076\u2077\u2078\u2079'[d]);
+    return m + '\u00D710' + sup;
+  }
+  return String(a);
+}
+function preEquation(out, c, terms){
+  let eq = out + ' = ' + (c.intercept < 0 ? '\u2212' : '') + preNumStr(c.intercept);
+  terms.forEach(([k, name]) => {
+    const v = c[k];
+    if (v == null || v === 0) return;
+    eq += (v < 0 ? ' \u2212 ' : ' + ') + preNumStr(v) + '\u00B7' + name;
+  });
+  return eq;
+}
+var PRE_TOPF_TERMS = [['b1','T'], ['b2','T\u00B2'], ['b3','T\u00B3'], ['edu','Edu'], ['sex','Sex']];
+var PRE_OPIE_TERMS = [['vc','VC'], ['mr','MR'], ['age','Age'], ['age3','Age\u00B3'], ['age6','Age\u2076'], ['sex','Sex']];
+var PRE_CI_LINE = 'CI = round(estimate) \u00B1 round(z \u00D7 SEE).';
+var PRE_OPIE_OPTS = {
+  opieVCMR: ['FSIQ', 'FSIQ', 'VC_MR'], opieVC: ['FSIQ', 'FSIQ', 'VC'], opieMR: ['FSIQ', 'FSIQ', 'MR'],
+  opiePredFSIQ_VCMR: ['FSIQ', 'FSIQ', 'VC_MR'], opiePredFSIQ_VC: ['FSIQ', 'FSIQ', 'VC'], opiePredFSIQ_MR: ['FSIQ', 'FSIQ', 'MR'],
+  opiePredGAI_VCMR: ['GAI', 'GAI', 'VC_MR'], opiePredGAI_VC: ['GAI', 'GAI', 'VC'], opiePredGAI_MR: ['GAI', 'GAI', 'MR'],
+  opiePredVCI: ['INDEX', 'VCI', 'VCI'], opiePredPRI: ['INDEX', 'PRI', 'PRI']
+};
+function preModelFormula(tipKey, idx){
+  const tail = c => 'SEE ' + c.see + '. ' + PRE_CI_LINE;
+  const topfSrc = '\nSource: ToPF-UK manual (Wechsler, 2011).';
+  if (tipKey === 'topfRaw') return 'Equation: FSIQ read from the ToPF-UK raw-score conversion table (raw 0\u201370). SEE 9.867. ' + PRE_CI_LINE + topfSrc;
+  if (tipKey === 'topfDemo' || tipKey === 'predictWais'){
+    const c = tipKey === 'topfDemo' ? WAIS_COEF[0] : WAIS_COEF.find(x => x.idx === idx);
+    if (!c) return '';
+    return 'Equation: ' + preEquation(c.idx, c, PRE_TOPF_TERMS) + '\nT = ToPF raw score; Edu = years of education; Sex: female 1, male 2. ' + tail(c) + topfSrc;
+  }
+  if (tipKey === 'predictWms'){
+    const c = WMS_COEF.find(x => x.idx === idx);
+    if (!c) return '';
+    return 'Equation: ' + preEquation(c.idx, c, [['b1','T'], ['age','Age']]) + '\nT = ToPF raw score. ' + tail(c) + topfSrc;
+  }
+  if (tipKey === 'crawfordAllan'){
+    const c = CRAWFORD_ALLAN_COEF;
+    const occ = Object.entries(OCC_CODE).map(([k, v]) => v + ' ' + k).join(', ');
+    return 'Equation: ' + preEquation('FSIQ', c, [['occ','Occ'], ['edu','Edu'], ['age','Age']]) + '\nOcc: ' + occ + '; Edu = years of education. ' + tail(c) + '\nSource: Crawford & Allan (1997).';
+  }
+  const o = PRE_OPIE_OPTS[tipKey];
+  if (o){
+    const table = o[0] === 'FSIQ' ? OPIE_PRORATED_FSIQ : o[0] === 'GAI' ? OPIE_PRORATED_GAI : OPIE_PRORATED_INDEX;
+    const c = table[o[2]];
+    const name = o[0] === 'INDEX' ? o[1] : 'Prorated ' + o[1];
+    return 'Equation: ' + preEquation(name, c, PRE_OPIE_TERMS) + '\nVC, MR = Vocabulary and Matrix Reasoning raw scores; Sex: female 0, male 1. ' + tail(c) + '\nSource: Holdnack et al. (2013), Table eA5.8.';
+  }
+  if (tipKey === 'opieDefault') return 'Equation: shown once Vocabulary and/or Matrix Reasoning is entered, as it depends on which are available.\nSource: Holdnack et al. (2013), Table eA5.8.';
+  return '';
+}
+function preModelTip(tipKey, idx){
+  const base = PRE_MODEL_TOOLTIPS[tipKey] || 'Hover information is not available for this model.';
+  const f = preModelFormula(tipKey, idx);
+  return f ? base + '\n\n' + f : base;
+}
+function preModelCell(label, tipKey, idx){
+  const tip = preModelTip(tipKey, idx);
+  return `<td class="model model-has-tip">${escapeHtml(label)}<span class="model-info-dot" data-tooltip="${escapeAttr(tip)}" aria-label="${escapeAttr(label + '. ' + tip)}">i</span></td>`;
 }
 
 // Premorbid state - separate from the input fields so we can re-render APA reliably
@@ -6223,7 +6287,7 @@ function buildPredictTable(){
   WAIS_COEF.forEach(c => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      ${preModelCell(c.label, 'predictWais')}
+      ${preModelCell(c.label, 'predictWais', c.idx)}
       <td class="num" id="pred-${c.idx}">-</td>
       <td class="num" id="pred-${c.idx}-lo">-</td>
       <td class="num" id="pred-${c.idx}-hi">-</td>
@@ -6242,7 +6306,7 @@ function buildPredictTable(){
   WMS_COEF.forEach(c => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      ${preModelCell(c.label, 'predictWms')}
+      ${preModelCell(c.label, 'predictWms', c.idx)}
       <td class="num" id="pred-${c.idx}">-</td>
       <td class="num" id="pred-${c.idx}-lo">-</td>
       <td class="num" id="pred-${c.idx}-hi">-</td>
@@ -6297,10 +6361,13 @@ function calcPremorbid(){
   // 2. ToPF + Demographics  (uses TOPF sex coding F=1, M=2)
   let v2 = null;
   if (topf != null && edu != null && sexC_topf != null){
-    v2 = 29.991 + 2.09426*topf + (-0.0404559)*topf*topf
-       + 0.000340705*Math.pow(topf,3) + 1.4617126*edu + 4.925*sexC_topf;
+    // WAIS_COEF[0] is the FSIQ row: the same equation the ToPF-predicted
+    // WAIS-IV tab uses, read from one place so the "i" tip prints it.
+    const c = WAIS_COEF[0];
+    v2 = c.intercept + c.b1*topf + c.b2*topf*topf
+       + c.b3*Math.pow(topf,3) + c.edu*edu + c.sex*sexC_topf;
   }
-  rows.push({ name:'Demographic Adjusted ToPF', val:v2, see:8.441, r:0.81, tipKey:'topfDemo' });
+  rows.push({ name:'Demographic Adjusted ToPF', val:v2, see:WAIS_COEF[0].see, r:0.81, tipKey:'topfDemo' });
 
   /* 3. Crawford & Allan (1997) — The Clinical Neuropsychologist, 11(2), 192-197
      (the paper is 1997; a 2001 date circulated here previously was a citation
@@ -6316,9 +6383,10 @@ function calcPremorbid(){
   let v3 = null;
   const caAgeOk = age != null && age >= CRAWFORD_ALLAN_AGE_MIN;
   if (occC != null && edu != null && caAgeOk){
-    v3 = 87.14 - 5.21*occC + 1.78*edu + 0.18*age;
+    const c = CRAWFORD_ALLAN_COEF;
+    v3 = c.intercept + c.occ*occC + c.edu*edu + c.age*age;
   }
-  rows.push({ name:'Crawford & Allan (1997) Demographic', val:v3, see:9.11, r:0.73, tipKey:'crawfordAllan' });
+  rows.push({ name:'Crawford & Allan (1997) Demographic', val:v3, see:CRAWFORD_ALLAN_COEF.see, r:CRAWFORD_ALLAN_COEF.r, tipKey:'crawfordAllan' });
 
   // 4. OPIE-4 - prorated FSIQ, uses OPIE sex coding F=0, M=1
   // Label, R and SEE update as soon as subtest inputs are present (branch alone).
@@ -6418,7 +6486,7 @@ function calcPremorbid(){
    grayscale palette, IBM Plex Sans throughout, tabular figures for
    clean column alignment. */
 var preForestLast = null, preForestObserver = null;
-var PRE_FOREST_MIN_W = 640; // var, not const: see the TDZ note in CLAUDE.md
+var PRE_FOREST_MIN_W = 680; // var, not const: see the TDZ note in CLAUDE.md
 function renderPremorbidForestPlot(rows, mult, ciPct){
   const wrap = document.getElementById('pre-forest-plot-wrap');
   const svg  = document.getElementById('pre-forest-plot');
@@ -6466,16 +6534,17 @@ function renderPremorbidForestPlot(rows, mult, ciPct){
   const H = padTop + plotHeight + padBottom;
 
   // Numeric column anchors — right-aligned x positions (except Model).
-  // Real px at 13px text. The longest model name measures 239px.
-  const COL_MODEL_X       = 0;       // left-aligned, max ~240px
-  const COL_R_X           = 280;     // right-aligned
-  const COL_SEE_X         = 336;     // right-aligned (56 from R)
-  const COL_ESTIMATE_X    = 486;     // right-aligned (150 from SEE; the header is 125px wide)
+  // Real px at 13px text. The longest model name measures 239px, and its
+  // "i" dot (8px gap + 15px) must end before the r column's text starts.
+  const COL_MODEL_X       = 0;       // left-aligned, max ~240px + the i dot
+  const COL_R_X           = 306;     // right-aligned
+  const COL_SEE_X         = 362;     // right-aligned (56 from R)
+  const COL_ESTIMATE_X    = 512;     // right-aligned (150 from SEE; the header is 125px wide)
 
   // Plot zone (right side). plotRight is pulled inward from the viewBox
   // edge so the centred "145" tick label has room to render without
   // being clipped by the SVG bounds.
-  const plotLeft  = 516;
+  const plotLeft  = 542;
   const plotRight = W - 22;
   const plotWidth = plotRight - plotLeft;
 
@@ -6604,6 +6673,34 @@ function renderPremorbidForestPlot(rows, mult, ciPct){
 
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.innerHTML = out;
+
+  // "i" dots after each model name, carrying the same tip as the model's
+  // row elsewhere. HTML over the SVG, since an SVG <title> is a slow native
+  // tooltip that cannot be styled. Name width is measured with the SVG's own
+  // font; units are layout px scaled by the drawing's own scale.
+  wrap.querySelectorAll('.pre-fig-info').forEach(n => n.remove());
+  const scale = (svg.clientWidth || W) / W;
+  // SVG elements have no offsetTop/offsetLeft, so the SVG's place in the
+  // figure comes from rects: visual px, divided by the body zoom to layout px.
+  const zf = typeof pageZoomFactor === 'function' ? pageZoomFactor() : 1;
+  const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+  const offL = (sr.left - wr.left) / zf, offT = (sr.top - wr.top) / zf;
+  const ctx = (renderPremorbidForestPlot._c ||= document.createElement('canvas')).getContext('2d');
+  ctx.font = `450 13px ${SANS}`;
+  rows.forEach((row, i) => {
+    const tip = preModelTip(row.tipKey);
+    const dot = document.createElement('span');
+    dot.className = 'pre-fig-info';
+    dot.textContent = 'i';
+    dot.tabIndex = 0;
+    dot.setAttribute('data-tooltip', tip);
+    dot.setAttribute('aria-label', row.name + '. ' + tip);
+    const x = COL_MODEL_X + ctx.measureText(row.name).width + 8;
+    const y = padTop + rowHeight * (i + 0.5);
+    dot.style.left = (offL + x * scale) + 'px';
+    dot.style.top  = (offT + y * scale) + 'px';
+    wrap.appendChild(dot);
+  });
 }
 
 // === Predicted vs Actual calculation (ToPF-based) ===
@@ -6914,8 +7011,8 @@ function calcOpiePredict(){
   const idx  = rows.filter(r => r.key === 'VCI' || r.key === 'PRI');
 
   function modelCell(row){
-    const tip = PRE_MODEL_TOOLTIPS[row.tipKey] || '';
-    return `<td class="model model-has-tip">${escapeHtml(row.label)}<span class="model-info-dot" data-tooltip="${escapeAttr(tip)}" aria-label="${escapeAttr(row.label + '. ' + tip)}">?</span></td>`;
+    const tip = preModelTip(row.tipKey);
+    return `<td class="model model-has-tip">${escapeHtml(row.label)}<span class="model-info-dot" data-tooltip="${escapeAttr(tip)}" aria-label="${escapeAttr(row.label + '. ' + tip)}">i</span></td>`;
   }
 
   function rowHtml(row){
