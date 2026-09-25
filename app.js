@@ -6417,6 +6417,8 @@ function calcPremorbid(){
    vertical reference at the population mean (FSIQ 100). All-charcoal
    grayscale palette, IBM Plex Sans throughout, tabular figures for
    clean column alignment. */
+var preForestLast = null, preForestObserver = null;
+var PRE_FOREST_MIN_W = 640; // var, not const: see the TDZ note in CLAUDE.md
 function renderPremorbidForestPlot(rows, mult, ciPct){
   const wrap = document.getElementById('pre-forest-plot-wrap');
   const svg  = document.getElementById('pre-forest-plot');
@@ -6430,27 +6432,50 @@ function renderPremorbidForestPlot(rows, mult, ciPct){
   const ciLabel = document.getElementById('pre-forest-ci-pct');
   if (ciLabel) ciLabel.textContent = ciPct;
 
+  // Remember the arguments so a resize can redraw without recalculating.
+  preForestLast = [rows, mult, ciPct];
+  if (!preForestObserver && typeof ResizeObserver === 'function'){
+    // Width changes (window resize, tab shown after being hidden at 0 px)
+    // redraw at the new width. Observes the figure, never the SVG, whose
+    // height this function sets.
+    // The window 'resize' listener as well, because ResizeObserver waits
+    // for a rendered frame, which a hidden document never produces.
+    const refit = () => {
+      const w = Math.floor(wrap.clientWidth);
+      const drawn = Number((svg.getAttribute('viewBox') || '').split(' ')[2]);
+      if (w && preForestLast && Math.max(PRE_FOREST_MIN_W, w) !== drawn) renderPremorbidForestPlot(...preForestLast);
+    };
+    preForestObserver = new ResizeObserver(refit);
+    preForestObserver.observe(wrap);
+    window.addEventListener('resize', refit);
+  }
+
   // ── Geometry ──────────────────────────────────────────────────────
   // Modern JAMA-style tabular figure: numeric columns on the LEFT
   // (Model · r · SEE · Estimate (CI)), forest plot zone on the RIGHT.
-  const W = 880;
-  const padTop = 42;            // headers + rule + breath
+  // The viewBox is the figure's REAL rendered width (layout px), so one
+  // unit is one pixel and the text renders at the sizes written here, as
+  // text does elsewhere in the app. Only the plot zone stretches. Below
+  // PRE_FOREST_MIN_W the columns would collide, so the drawing keeps that
+  // width and scales down instead.
+  const W = Math.max(PRE_FOREST_MIN_W, Math.floor(wrap.clientWidth) || PRE_FOREST_MIN_W);
+  const padTop = 46;            // headers + rule + breath
   const padBottom = 52;         // axis ticks, labels, caption
-  const rowHeight = 40;         // generous breathing room
+  const rowHeight = 42;         // generous breathing room
   const plotHeight = rows.length * rowHeight;
   const H = padTop + plotHeight + padBottom;
 
   // Numeric column anchors — right-aligned x positions (except Model).
-  // Spacing balanced for even ~45px gaps between visible header edges.
-  const COL_MODEL_X       = 0;       // left-aligned, max ~270px
-  const COL_R_X           = 312;     // right-aligned
-  const COL_SEE_X         = 384;     // right-aligned (72 from R)
-  const COL_ESTIMATE_X    = 528;     // right-aligned (144 from SEE — wider content)
+  // Real px at 13px text. The longest model name measures 239px.
+  const COL_MODEL_X       = 0;       // left-aligned, max ~240px
+  const COL_R_X           = 280;     // right-aligned
+  const COL_SEE_X         = 336;     // right-aligned (56 from R)
+  const COL_ESTIMATE_X    = 486;     // right-aligned (150 from SEE; the header is 125px wide)
 
   // Plot zone (right side). plotRight is pulled inward from the viewBox
   // edge so the centred "145" tick label has room to render without
   // being clipped by the SVG bounds.
-  const plotLeft  = 564;
+  const plotLeft  = 516;
   const plotRight = W - 22;
   const plotWidth = plotRight - plotLeft;
 
@@ -6492,13 +6517,13 @@ function renderPremorbidForestPlot(rows, mult, ciPct){
   out += `<line x1="0" y1="2" x2="${W}" y2="2" stroke="${RULE}" stroke-width="${RULE_LN}"/>`;
 
   // ── Column headers (uppercase, letterspaced, weight 600, muted) ───
-  const headerY = 22;
+  const headerY = 24;
   const headerAttrs = `letter-spacing='0.10em'`;
-  out += `<text x="${COL_MODEL_X}"            y="${headerY}" ${TXT('9.5', '600', MUTED, null, headerAttrs)}>MODEL</text>`;
-  out += `<text x="${COL_R_X}"                y="${headerY}" ${TXT('9.5', '600', MUTED, 'end', headerAttrs)}>R</text>`;
-  out += `<text x="${COL_SEE_X}"              y="${headerY}" ${TXT('9.5', '600', MUTED, 'end', headerAttrs)}>SEE</text>`;
-  out += `<text x="${COL_ESTIMATE_X}"         y="${headerY}" ${TXT('9.5', '600', MUTED, 'end', headerAttrs)}>ESTIMATE (${ciPct} CI)</text>`;
-  out += `<text x="${plotLeft + plotWidth/2}" y="${headerY}" ${TXT('9.5', '600', MUTED, 'middle', headerAttrs)}>FOREST PLOT</text>`;
+  out += `<text x="${COL_MODEL_X}"            y="${headerY}" ${TXT('11', '600', MUTED, null, headerAttrs)}>MODEL</text>`;
+  out += `<text x="${COL_R_X}"                y="${headerY}" ${TXT('11', '600', MUTED, 'end', headerAttrs)}>R</text>`;
+  out += `<text x="${COL_SEE_X}"              y="${headerY}" ${TXT('11', '600', MUTED, 'end', headerAttrs)}>SEE</text>`;
+  out += `<text x="${COL_ESTIMATE_X}"         y="${headerY}" ${TXT('11', '600', MUTED, 'end', headerAttrs)}>ESTIMATE (${ciPct} CI)</text>`;
+  out += `<text x="${plotLeft + plotWidth/2}" y="${headerY}" ${TXT('11', '600', MUTED, 'middle', headerAttrs)}>FOREST PLOT</text>`;
 
   // Header bottom rule
   out += `<line x1="0" y1="${padTop - 10}" x2="${W}" y2="${padTop - 10}" stroke="${RULE}" stroke-width="${RULE_LN}"/>`;
@@ -6514,20 +6539,20 @@ function renderPremorbidForestPlot(rows, mult, ciPct){
 
     // Model name
     const nameText = row.name.replace(/&/g, '&amp;');
-    out += `<text x="${COL_MODEL_X}" y="${baseline}" ${TXT('12', '450', INK)}>${nameText}</text>`;
+    out += `<text x="${COL_MODEL_X}" y="${baseline}" ${TXT('13', '450', INK)}>${nameText}</text>`;
 
     // r
     if (row.r != null){
-      out += `<text x="${COL_R_X}" y="${baseline}" ${TXT('12', '400', INK_SOFT, 'end')}>${row.r.toFixed(2)}</text>`;
+      out += `<text x="${COL_R_X}" y="${baseline}" ${TXT('13', '400', INK_SOFT, 'end')}>${row.r.toFixed(2)}</text>`;
     } else {
-      out += `<text x="${COL_R_X}" y="${baseline}" ${TXT('12', '400', FAINT, 'end')}>—</text>`;
+      out += `<text x="${COL_R_X}" y="${baseline}" ${TXT('13', '400', FAINT, 'end')}>—</text>`;
     }
 
     // SEE
     if (row.see != null){
-      out += `<text x="${COL_SEE_X}" y="${baseline}" ${TXT('12', '400', INK_SOFT, 'end')}>${row.see.toFixed(2)}</text>`;
+      out += `<text x="${COL_SEE_X}" y="${baseline}" ${TXT('13', '400', INK_SOFT, 'end')}>${row.see.toFixed(2)}</text>`;
     } else {
-      out += `<text x="${COL_SEE_X}" y="${baseline}" ${TXT('12', '400', FAINT, 'end')}>—</text>`;
+      out += `<text x="${COL_SEE_X}" y="${baseline}" ${TXT('13', '400', FAINT, 'end')}>—</text>`;
     }
 
     if (row.val != null && row.see != null){
@@ -6540,8 +6565,8 @@ function renderPremorbidForestPlot(rows, mult, ciPct){
       // Estimate (CI) — point estimate in weight-700 charcoal so it
       // reads as the headline number; CI bounds in light muted grey
       // so the eye locks on the answer first.
-      out += `<text x="${COL_ESTIMATE_X}" y="${baseline}" ${TXT('12.5', '700', INK, 'end')}>${Math.round(row.val)}`
-          +  `<tspan font-weight='400' fill='${MUTED}' font-size='11.5'>  (${Math.round(lo)}–${Math.round(hi)})</tspan></text>`;
+      out += `<text x="${COL_ESTIMATE_X}" y="${baseline}" ${TXT('13.5', '700', INK, 'end')}>${Math.round(row.val)}`
+          +  `<tspan font-weight='400' fill='${MUTED}' font-size='12.5'>  (${Math.round(lo)}–${Math.round(hi)})</tspan></text>`;
 
       // Whisker (charcoal, slightly thicker for cleaner read)
       out += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${INK}" stroke-width="1" stroke-linecap="round"/>`;
@@ -6557,7 +6582,7 @@ function renderPremorbidForestPlot(rows, mult, ciPct){
       out += `<polygon points="${dia}" fill="${INK}" stroke="#FFFFFF" stroke-width="1"/>`;
     } else {
       // Empty state — quiet em-dash. Plot zone stays empty for this row.
-      out += `<text x="${COL_ESTIMATE_X}" y="${baseline}" ${TXT('12', '400', FAINT, 'end')}>—</text>`;
+      out += `<text x="${COL_ESTIMATE_X}" y="${baseline}" ${TXT('13', '400', FAINT, 'end')}>—</text>`;
     }
   });
 
@@ -6572,7 +6597,7 @@ function renderPremorbidForestPlot(rows, mult, ciPct){
     const x = xScale(t);
     const isMean = (t === 100);
     out += `<line x1="${x}" y1="${axisY}" x2="${x}" y2="${axisY + (isMean ? 6 : 3.5)}" stroke="${INK}" stroke-width="0.7"/>`;
-    out += `<text x="${x}" y="${axisY + 18}" ${TXT('10.5', isMean ? '500' : '400', isMean ? INK : MUTED, 'middle')}>${t}</text>`;
+    out += `<text x="${x}" y="${axisY + 18}" ${TXT('12', isMean ? '500' : '400', isMean ? INK : MUTED, 'middle')}>${t}</text>`;
   });
 
   // Axis caption removed per request — the plot's axis labels speak for themselves.
