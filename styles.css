@@ -10660,3 +10660,5 @@ svg.rey-glyph{width:56px;height:56px}
 /* The same superscript arrow the Validity paper links carry, so a link reads as
    a link and not as underlined text. */
 .cite-doi-link::after{content:'\2197';display:inline-block;margin-left:1px;font-size:0.75em;vertical-align:super;line-height:0;color:var(--ds-primary);text-decoration:none}
+/* Source of the Effect Sizes group-data example. Standalone class (see CLAUDE.md). */
+.es-example-source{margin:8px 0 0;font-size:11.5px;line-height:1.45;color:var(--muted)}

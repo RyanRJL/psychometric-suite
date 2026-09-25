@@ -10692,6 +10692,8 @@ svg.rey-glyph{width:56px;height:56px}
 /* The same superscript arrow the Validity paper links carry, so a link reads as
    a link and not as underlined text. */
 .cite-doi-link::after{content:'\2197';display:inline-block;margin-left:1px;font-size:0.75em;vertical-align:super;line-height:0;color:var(--ds-primary);text-decoration:none}
+/* Source of the Effect Sizes group-data example. Standalone class (see CLAUDE.md). */
+.es-example-source{margin:8px 0 0;font-size:11.5px;line-height:1.45;color:var(--muted)}
 </style>
 <style data-inlined-from="design-system.css">
 /* =============================================================================
@@ -18207,36 +18209,37 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
           <div class="es-group">
             <div class="es-group-title">Intervention (Group 1)</div>
             <div class="es-grp-grid">
-              <div class="field"><label>n</label><input type="number" id="es-g1-n" step="1" min="2" placeholder="n" value="2829"></div>
-              <div class="field"><label>Mean</label><input type="number" id="es-g1-mean" step="any" placeholder="M" value="175.9"></div>
+              <div class="field"><label>n</label><input type="number" id="es-g1-n" step="1" min="2" placeholder="n" value="2149"></div>
+              <div class="field"><label>Mean</label><input type="number" id="es-g1-mean" step="any" placeholder="M" value="176.20"></div>
               <div class="field"><label>Dispersion</label>
                 <select id="es-g1-disp">
-                  <option value="sd">Standard Deviation</option>
-                  <option value="se" selected>Standard Error</option>
+                  <option value="sd" selected>Standard Deviation</option>
+                  <option value="se">Standard Error</option>
                   <option value="ciu">95% CI Upper</option>
                 </select>
               </div>
-              <div class="field"><label id="es-g1-disp-label">SE</label><input type="number" id="es-g1-disp-val" step="any" placeholder="value" value="0.22"></div>
+              <div class="field"><label id="es-g1-disp-label">SD</label><input type="number" id="es-g1-disp-val" step="any" placeholder="value" value="7.44"></div>
             </div>
             <div class="es-grp-ci"><span class="es-grp-ci-label">95% CI:</span> <span id="es-g1-ci">-</span></div>
           </div>
           <div class="es-group">
             <div class="es-group-title">Control (Group 2)</div>
             <div class="es-grp-grid">
-              <div class="field"><label>n</label><input type="number" id="es-g2-n" step="1" min="2" placeholder="n" value="3115"></div>
-              <div class="field"><label>Mean</label><input type="number" id="es-g2-mean" step="any" placeholder="M" value="162.4"></div>
+              <div class="field"><label>n</label><input type="number" id="es-g2-n" step="1" min="2" placeholder="n" value="2599"></div>
+              <div class="field"><label>Mean</label><input type="number" id="es-g2-mean" step="any" placeholder="M" value="162.34"></div>
               <div class="field"><label>Dispersion</label>
                 <select id="es-g2-disp">
-                  <option value="sd">Standard Deviation</option>
-                  <option value="se" selected>Standard Error</option>
+                  <option value="sd" selected>Standard Deviation</option>
+                  <option value="se">Standard Error</option>
                   <option value="ciu">95% CI Upper</option>
                 </select>
               </div>
-              <div class="field"><label id="es-g2-disp-label">SE</label><input type="number" id="es-g2-disp-val" step="any" placeholder="value" value="0.14"></div>
+              <div class="field"><label id="es-g2-disp-label">SD</label><input type="number" id="es-g2-disp-val" step="any" placeholder="value" value="7.11"></div>
             </div>
             <div class="es-grp-ci"><span class="es-grp-ci-label">95% CI:</span> <span id="es-g2-ci">-</span></div>
           </div>
         </div>
+        <p class="es-example-source">Example: measured adult height (16+), men vs women, Health Survey for England 2022 (NHS England). Means and n as published in Table 1; SDs weighted, calculated from the survey data (UK Data Service SN 9469).</p>
         <div class="es-pooled">
           <div class="es-pooled-item"><span class="es-pooled-label">Pooled N</span><span class="es-pooled-val" id="es-pooled-n">-</span></div>
           <div class="es-pooled-item"><span class="es-pooled-label">Pooled Mean</span><span class="es-pooled-val" id="es-pooled-mean">-</span></div>
@@ -18297,10 +18300,10 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
               <button class="btn btn-ghost es-target-explain-btn" id="es-target-explain-toggle" type="button" aria-expanded="false" aria-controls="es-target-explain">Explainer</button>
             </div>
             <div class="es-target-explain" id="es-target-explain" hidden>
-              <strong>Preloaded height example.</strong> Use this to compare the two normal distributions at a chosen value. The target is set to <strong>175.9 cm</strong>, approximately the average male height in the example. The readouts show how much of each group is at or above that value, and how likely that exact value is to come from each group under the normal-distribution model. The &ldquo;of people at this value&rdquo; readouts are weighted by the entered group sizes (n), so unequal groups shift them accordingly; if either n is missing, the groups are weighted equally. The likelihood ratio compares the two curves&rsquo; densities alone and ignores group size by design.
+              <strong>Preloaded height example.</strong> Use this to compare the two normal distributions at a chosen value. The target is set to <strong>176.2 cm</strong>, the average male height in the example. The readouts show how much of each group is at or above that value, and how likely that exact value is to come from each group under the normal-distribution model. The &ldquo;of people at this value&rdquo; readouts are weighted by the entered group sizes (n), so unequal groups shift them accordingly; if either n is missing, the groups are weighted equally. The likelihood ratio compares the two curves&rsquo; densities alone and ignores group size by design.
             </div>
             <div class="es-target-grid">
-              <div class="field"><label>Target value</label><input type="number" id="es-target" step="any" placeholder="e.g. 175.9" value="175.9"></div>
+              <div class="field"><label>Target value</label><input type="number" id="es-target" step="any" placeholder="e.g. 176.2" value="176.2"></div>
               <div class="field"><label>Group 1 at or above target</label><div class="es-ci-readout" id="es-tgt-g1-above">-</div></div>
               <div class="field"><label>Group 2 at or above target</label><div class="es-ci-readout" id="es-tgt-g2-above">-</div></div>
               <div class="field"><label>Of people at this value: Group 1</label><div class="es-ci-readout" id="es-tgt-share-g1">-</div></div>
@@ -18318,7 +18321,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
           <table class="es-examples-table">
             <tbody>
               <tr><td>Heavy smokers (30+/day) vs never smokers, lung cancer (Pesch et al., 2012)</td><td>2.60</td></tr>
-              <tr><td>UK male vs female adult height (UK Biobank; Ritchie et al., 2018)</td><td>2.15</td></tr>
+              <tr><td>Male vs female adult height, England (Health Survey for England, 2022)</td><td>1.91</td></tr>
               <tr><td>Smokers (any) vs never smokers, lung cancer (Pesch et al., 2012)</td><td>1.75</td></tr>
               <tr><td>Cognitive therapy vs control for PTSD (Watts et al., 2013)</td><td>1.63</td></tr>
               <tr><td>Former smokers vs never smokers, lung cancer (Pesch et al., 2012)</td><td>1.10</td></tr>
@@ -20148,8 +20151,8 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
       <p>Cuijpers, P., Miguel, C., Harrer, M., Plessen, C. Y., Ciharova, M., Ebert, D., &amp; Karyotaki, E. (2023). Cognitive behavior therapy vs. control conditions, other psychotherapies, pharmacotherapies and combined treatment for depression: A comprehensive meta-analysis including 409 trials with 52,702 patients. <i>World Psychiatry, 22</i>(1), 105–115. <a class="pvt-ref-doi" href="https://doi.org/10.1002/wps.21069" target="_blank" rel="noopener noreferrer">https://doi.org/10.1002/wps.21069</a></p>
       <p>Hofmann, S. G., &amp; Smits, J. A. J. (2008). Cognitive-behavioral therapy for adult anxiety disorders: A meta-analysis of randomized placebo-controlled trials. <i>The Journal of Clinical Psychiatry, 69</i>(4), 621–632. <a class="pvt-ref-doi" href="https://doi.org/10.4088/JCP.v69n0415" target="_blank" rel="noopener noreferrer">https://doi.org/10.4088/JCP.v69n0415</a></p>
       <p>Huhn, M., Nikolakopoulou, A., Schneider-Thoma, J., Krause, M., Samara, M., Peter, N., Arndt, T., Bäckers, L., Rothe, P., Cipriani, A., Davis, J., Salanti, G., &amp; Leucht, S. (2019). Comparative efficacy and tolerability of 32 oral antipsychotics for the acute treatment of adults with multi-episode schizophrenia: A systematic review and network meta-analysis. <i>The Lancet, 394</i>(10202), 939–951. <a class="pvt-ref-doi" href="https://doi.org/10.1016/S0140-6736(19)31135-3" target="_blank" rel="noopener noreferrer">https://doi.org/10.1016/S0140-6736(19)31135-3</a></p>
+      <p>National Centre for Social Research, University College London, Department of Epidemiology and Public Health. (2025). <i>Health Survey for England, 2022</i> [Data collection]. UK Data Service. SN: 9469. <a class="pvt-ref-doi" href="https://doi.org/10.5255/UKDA-SN-9469-1" target="_blank" rel="noopener noreferrer">https://doi.org/10.5255/UKDA-SN-9469-1</a></p>
       <p>Pesch, B., Kendzia, B., Gustavsson, P., Jöckel, K.-H., Johnen, G., Pohlabeln, H., Olsson, A., Ahrens, W., Gross, I. M., Brüske, I., Wichmann, H.-E., Merletti, F., Richiardi, L., Simonato, L., Fortes, C., Siemiatycki, J., Parent, M.-E., Consonni, D., Landi, M. T., … Brüning, T. (2012). Cigarette smoking and lung cancer: Relative risk estimates for the major histological types from a pooled analysis of case–control studies. <i>International Journal of Cancer, 131</i>(5), 1210–1219. <a class="pvt-ref-doi" href="https://doi.org/10.1002/ijc.27339" target="_blank" rel="noopener noreferrer">https://doi.org/10.1002/ijc.27339</a></p>
-      <p>Ritchie, S. J., Cox, S. R., Shen, X., Lombardo, M. V., Reus, L. M., Alloza, C., Harris, M. A., Alderson, H. L., Hunter, S., Neilson, E., Liewald, D. C. M., Auyeung, B., Whalley, H. C., Lawrie, S. M., Gale, C. R., Bastin, M. E., McIntosh, A. M., &amp; Deary, I. J. (2018). Sex differences in the adult human brain: Evidence from 5216 UK Biobank participants. <i>Cerebral Cortex, 28</i>(8), 2959–2975. <a class="pvt-ref-doi" href="https://doi.org/10.1093/cercor/bhy109" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/cercor/bhy109</a></p>
       <p>Storebø, O. J., Storm, M. R. O., Pereira Ribeiro, J., Skoog, M., Groth, C., Callesen, H. E., Schaug, J. P., Darling Rasmussen, P., Huus, C.-M. L., Zwi, M., Kirubakaran, R., Simonsen, E., &amp; Gluud, C. (2023). Methylphenidate for children and adolescents with attention deficit hyperactivity disorder (ADHD). <i>Cochrane Database of Systematic Reviews, 3</i>, CD009885. <a class="pvt-ref-doi" href="https://doi.org/10.1002/14651858.CD009885.pub3" target="_blank" rel="noopener noreferrer">https://doi.org/10.1002/14651858.CD009885.pub3</a></p>
       <p>Watts, B. V., Schnurr, P. P., Mayo, L., Young-Xu, Y., Weeks, W. B., &amp; Friedman, M. J. (2013). Meta-analysis of the efficacy of treatments for posttraumatic stress disorder. <i>The Journal of Clinical Psychiatry, 74</i>(6), e541–e550. <a class="pvt-ref-doi" href="https://doi.org/10.4088/JCP.12r08225" target="_blank" rel="noopener noreferrer">https://doi.org/10.4088/JCP.12r08225</a></p>
       <p>Williams, A. C. de C., Fisher, E., Hearn, L., &amp; Eccleston, C. (2020). Psychological therapies for the management of chronic pain (excluding headache) in adults. <i>Cochrane Database of Systematic Reviews, 8</i>, CD007407. <a class="pvt-ref-doi" href="https://doi.org/10.1002/14651858.CD007407.pub4" target="_blank" rel="noopener noreferrer">https://doi.org/10.1002/14651858.CD007407.pub4</a></p>
@@ -35975,7 +35978,7 @@ if (document.readyState === 'loading'){
      between two anchors). Descending order matches the table layout. */
   const SIMILAR_EFFECTS = [
     { label: 'Heavy smokers vs never smokers (lung cancer)',    d: 2.60 }, // Pesch et al., 2012
-    { label: 'UK male vs female adult height',                  d: 2.15 }, // Ritchie et al., 2018: "males were substantially taller on average: d = −2.15" (UK Biobank imaging sample, n 5216)
+    { label: 'Male vs female adult height, England',            d: 1.91 }, // HSE 2022: weighted means 176.20 / 162.34, SDs 7.44 / 7.11, n 2149 / 2599
     { label: 'Smokers vs never smokers (lung cancer)',          d: 1.75 }, // Pesch et al., 2012
     { label: 'Cognitive therapy for PTSD',                      d: 1.63 }, // Watts et al., 2013
     { label: 'Former vs never smokers (lung cancer)',           d: 1.10 }, // Pesch et al., 2012
