@@ -7193,7 +7193,7 @@ check('published accuracy strings match their sources, and reach screen and expo
   if (!/ctx\.eiScreening/.test(APP_SRC) || !/eiScreening:/.test(extractFn(APP_SRC, 'renderPvtApa'))) bad.push('the APA note no longer carries the screening restriction');
   if (!/EI &gt; 0 · screening, under 65 without severe neurological impairment/.test(HTML_SRC)) bad.push('the cut-off selector no longer names the > 0 screening restriction');
   if (!/Accuracy: Shura et al\. \(2018\)/.test(HTML_SRC)) bad.push('the EI tab no longer cites Shura et al. (2018) for its accuracy');
-  if ((HTML_SRC.match(/<p>Shura, R\. D\./g) || []).length !== 2) bad.push('Shura et al. (2018) is missing from a references list');
+  if ((HTML_SRC.match(/<p>Shura, R\. D\./g) || []).length !== 1) bad.push("Shura et al. (2018) must be listed once, on Methods & References");
   if (!/Shura et al\., 2018/.test(extractFn(APP_SRC, 'renderPvtAccuracy'))) bad.push('the live accuracy line no longer names Shura et al. (2018)');
   /* TOMM rows print their own point values. The abstract's ranges pool
      Trial 2 with Retention, so a range on a Trial 2 row misdescribes it. */
@@ -7553,17 +7553,17 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
   if (!/data-apa-note="pvt"/.test(HTML_SRC)) bad.push('the on-screen note mirror is gone');
   if (!/id="pvt-apa"/.test(HTML_SRC)) bad.push('the APA container is gone');
   if (!/data-target="validity"/.test(HTML_SRC)) bad.push('no nav item points at the validity page');
-  /* Full citations on the page itself, not only in Methods & References —
-     every cut-off here is a published claim. One author-year per source. */
+  /* Every cut-off is a published claim, so each source keeps a full
+     citation: on the page, in each measure's source line; in full, in the
+     Performance validity group on Methods & References, where the page's
+     own list moved (2026-09) once every measure linked its papers. */
   (() => {
-    const vStart = HTML_SRC.indexOf('<section class="section" id="validity">');
-    const vEnd = HTML_SRC.indexOf('</section>', vStart);
-    const vHtml = vStart === -1 ? '' : HTML_SRC.slice(vStart, vEnd);
-    if (!/id="pvt-references"/.test(vHtml)){ bad.push('the on-page references block is gone from #validity'); return; }
+    const vHtml = (HTML_SRC.match(/<div class="references-group">Performance validity sources<\/div>([\s\S]*?)<div class="references-group">/) || ['', ''])[1];
+    if (!vHtml){ bad.push('the Performance validity group is gone from Methods & References'); return; }
     ['Silverberg, N. D.', 'Novitski, J.', 'Greiffenstein, M. F.', 'Meyers, J. E.',
      'Schroeder, R. W., Twumasi-Ankrah', 'Martin, P. K.', 'Denning, J. H.',
      'Larrabee, G. J.', 'Tombaugh, T. N.'].forEach(name => {
-      if (!vHtml.includes(name)) bad.push('#validity references lost ' + name);
+      if (!vHtml.includes(name)) bad.push('the Performance validity references lost ' + name);
     });
   })();
   /* The aggregation card states only what Larrabee (2014) contains. It once
@@ -7599,7 +7599,7 @@ check('PVT page wiring: report source, APA note, empty-state guard, markup', () 
     if (!/pvt-verdict-rule[^\n]*\(Larrabee, 2014a; Sweet et al\., 2021\)/.test(sum)) bad.push('the threshold beside the count no longer cites the AACN consensus statement');
     if (!/rule from the AACN consensus statement \(Sweet et al\., 2021\), which supports it when up to 7 to 9 validity measures are given/.test(HTML_SRC)) bad.push('the Larrabee card no longer names the AACN consensus statement');
     if (!/RDS &le; 6 gave a 13% false-positive rate \(Loring et al\., 2016, as reported by Sweet et al\., 2021\)/.test(HTML_SRC)) bad.push('the RDS caution lost the early-AD false-positive rate');
-    if ((HTML_SRC.match(/Sweet, J\. J\., Heilbronner, R\. L\.[^<]*\(2021\)/g) || []).length < 2) bad.push('Sweet et al. (2021) is cited but missing from a references list');
+    if ((HTML_SRC.match(/Sweet, J\. J\., Heilbronner, R\. L\.[^<]*\(2021\)/g) || []).length !== 1) bad.push('Sweet et al. (2021) must be listed once, on Methods & References');
   }
   if (/lean on high-specificity forced-choice/.test(HTML_SRC)) bad.push('the aggregation card again attributes forced-choice advice to Larrabee (2014), which the paper does not give');
   if (!/substantial external incentive/.test(HTML_SRC)) bad.push('the aggregation card no longer names the external-incentive requirement');
@@ -8034,7 +8034,7 @@ check('the page layout: no restated menu, explainers full width, references list
   const sum = extractFn(APP_SRC, 'renderPvtSummary');
   if (!/PVT_INDICATOR_GROUPS\.map\(g =>[\s\S]*pvt-group-row/.test(sum)) bad.push('the scores table is no longer grouped by independent indicator');
   if (!/wrap\.hidden = rows\.length === 0/.test(sum)) bad.push('the empty scores card is shown again before anything is scored');
-  const refs = (vHtml.match(/<div class="references" id="pvt-references">([\s\S]*?)<\/div>/) || [])[1] || '';
+  const refs = (HTML_SRC.match(/<div class="references-group">Performance validity sources<\/div>([\s\S]*?)<div class="references-group">/) || ['', ''])[1];
   const heads = [...refs.matchAll(/<p>([^<(]+\(\d{4}[a-z]?\))/g)].map(m => m[1].trim());
   if (heads.length < 10) bad.push('the reference list could not be read');
   const seen = new Set();
@@ -11210,12 +11210,15 @@ check('every measure links its source papers, and the reference list carries the
     (i.sources || []).forEach(k => { if (!S[k]) bad.push(t + ' names unknown source ' + k); });
     if (!(i.sources || []).some(k => S[k] && S[k].doi)) bad.push(t + ' has no linked paper');
   });
-  const refs = (HTML_SRC.match(/id="pvt-references">([\s\S]*?)<\/div>/) || ['', ''])[1];
+  /* The list lives on Methods & References. The CVLT-3 manual sits in that
+     page's manuals group, so the validity group holds one manual, the TOMM. */
+  const refs = (HTML_SRC.match(/<div class="references-group">Performance validity sources<\/div>([\s\S]*?)<div class="references-group">/) || ['', ''])[1];
+  if (!/<div class="references-group">Test manuals[\s\S]*?Delis, D\. C\., Kramer, J\. H\., Kaplan, E\., &amp; Ober, B\. A\. \(2017\)[\s\S]*?<div class="references-group">Statistical/.test(HTML_SRC)) bad.push('the CVLT-3 manual is gone from the manuals group');
   const listed = [...refs.matchAll(/href="https:\/\/doi\.org\/([^"]+)"/g)].map(m => m[1]);
   const stored = Object.values(S).filter(s => s.doi).map(s => s.doi);
-  stored.forEach(d => { if (!listed.includes(d)) bad.push('reference list lacks ' + d); });
+  stored.forEach(d => { if (!listed.includes(d)) bad.push('Performance validity references lack ' + d); });
   listed.forEach(d => { if (!stored.includes(d)) bad.push('reference list DOI ' + d + ' is not in PVT_SOURCES'); });
-  const refPs = (refs.match(/<p>/g) || []).length, manuals = Object.values(S).filter(s => !s.doi).length;
+  const refPs = (refs.match(/<p>/g) || []).length, manuals = Object.values(S).filter(s => !s.doi).length - 1;
   if (refPs !== listed.length + manuals) bad.push(refPs + ' references but ' + listed.length + ' DOIs and ' + manuals + ' manuals');
   /* The Summary's aggregation panel links its sources the same way. */
   const aggKeys = ((HTML_SRC.match(/data-pvt-papers="([^"]+)"/) || ['', ''])[1]).split(' ').filter(Boolean);

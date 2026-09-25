@@ -10256,24 +10256,6 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
 }
 .pvt-caution.is-flagged summary strong{color:#8a6215}
 
-/* Collapsed footer references - outside the sheet, quiet. A slim text
-   toggle and a single-column list (owner decision, 2026-09: the pill in a
-   panel with two columns, from the 2a0bb87 restyle, was reverted). */
-.pvt-refs{margin-top:22px;padding-top:10px}
-.pvt-refs summary{
-  cursor:pointer;
-  font-family:var(--mono);
-  font-size:9.5px;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:var(--faint);
-  list-style:none;
-}
-.pvt-refs summary::-webkit-details-marker{display:none}
-.pvt-refs summary::before{content:'+ '}
-.pvt-refs[open] summary::before{content:'\2212\00a0 '}
-.pvt-refs .references{margin-top:12px;padding-top:0;border-top:none}
-
 /* Per-measure source line - the citation the cut-offs come from, plus the
    published accuracy at the currently selected cut-off (filled by
    renderPvtAccuracy from the same strings the APA export prints). */
