@@ -1312,7 +1312,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .references p{margin-bottom:8px;text-indent:-20px;padding-left:20px}
 .references-group{font-family:var(--sans);font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--faint);font-weight:500;margin:18px 0 8px}
 .references-group:first-of-type{margin-top:0}
-.references-note{font-family:var(--sans);font-size:11px;color:var(--faint);font-style:italic;margin-top:16px;text-indent:0;padding-left:0}
 
 /* MOBILE */
 @media (max-width:900px){
