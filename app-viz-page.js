@@ -435,30 +435,6 @@
   function vizTab(attr, value, label, active){
     return `<button type="button" class="viz-tab" role="tab" aria-selected="${active ? 'true' : 'false'}" ${attr}="${escapeAttr(value)}">${escapeHtml(label)}</button>`;
   }
-  /* Controls and the display toggle share one panel. They were two stacked
-     blocks, which cost ~100px of height on a page whose whole point is
-     fitting in one window. */
-  function vizControls(kicker, tabs, note, extra){
-    return `<div class="panel">
-      <div class="viz-controls-body">
-        <div class="viz-controls-main">
-          <div class="panel-kicker">${escapeHtml(kicker)}</div>
-          <div class="viz-tabs" role="tablist" aria-label="${escapeAttr(kicker)}">${tabs}</div>
-        </div>
-        ${extra || ''}
-      </div>
-      ${note ? `<p class="viz-axis-note">${note}</p>` : ''}
-    </div>`;
-  }
-  function vizDisplayToggle(){
-    return `<div class="viz-controls-main viz-controls-right">
-      <div class="panel-kicker">Show</div>
-      <div class="viz-tabs" role="tablist" aria-label="How many charts to show">
-        ${vizTab('data-viz-display', 'single', 'One at a time', vizSingle)}
-        ${vizTab('data-viz-display', 'grid', 'All charts', !vizSingle)}
-      </div>
-    </div>`;
-  }
 
   /* Card shell: the app's own .panel, a head shaped like .apa-toolbar
      (micro-label left, actions right), and the app's .btn for the actions. */

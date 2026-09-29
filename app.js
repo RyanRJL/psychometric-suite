@@ -342,7 +342,7 @@ document.querySelectorAll('.nav-label').forEach(label => {
 
 /* ---------- NAVIGATION ----------
    Single entry point for switching top-level sections. Every path in — sidebar,
-   topnav, home cards, footer links, the auth overlay, and the browser's
+   topnav, home cards, footer links, and the browser's
    back/forward buttons — goes through here, so the active section, the nav
    highlight, the scroll position and the URL can never disagree.
 
@@ -535,9 +535,9 @@ function navigateTo(target, opts){
        own cap can be computed. */
     if (typeof refreshTableViewportFit === 'function') refreshTableViewportFit();
     /* Whether the Working Report can dock beside a page depends on the page.
-       In a try: the auth code can navigate during boot, before the
-       `const ReportBundle` line far below has run, and `typeof` on a const in
-       that state throws rather than returning "undefined". */
+       In a try: anything that navigates during boot, before the
+       `const ReportBundle` line far below has run, would find the const in
+       its dead zone, where `typeof` throws rather than returning "undefined". */
     try { if (ReportBundle.applyDock) ReportBundle.applyDock(); } catch (e) {}
   };
 
@@ -563,9 +563,7 @@ window.addEventListener('popstate', e => {
    Change Analysis section has already added it. */
 document.addEventListener('DOMContentLoaded', () => {
   const target = sectionFromHash();
-  const overlay = document.getElementById('auth-overlay');
-  const gated = overlay && !overlay.hidden && overlay.classList.contains('is-visible');
-  if (target && target !== NAV_DEFAULT_SECTION && !gated){
+  if (target && target !== NAV_DEFAULT_SECTION){
     navigateTo(target, { history: false });
   }
 });
@@ -886,12 +884,6 @@ function renderConverter(){
   // Sync slider and readout
   const slider = document.getElementById('conv-slider');
   if (slider) slider.value = Math.max(-3, Math.min(3, z)).toFixed(2);
-  const pct = normCDF(z) * 100;
-  const pctStr = pct < 0.1 ? '<0.1' : pct > 99.9 ? '>99.9' : pct.toFixed(1);
-  const zEl = document.getElementById('conv-z-display');
-  const pEl = document.getElementById('conv-pct-display');
-  if (zEl) zEl.textContent = z.toFixed(2);
-  if (pEl) pEl.textContent = pctStr;
   const convTypes = [
     { key:'z',          label:'Z-Score',       v: fmt(fromZ(z,'z'),2) },
     { key:'t',          label:'T-Score',        v: fmt(fromZ(z,'t'),1) },
@@ -1665,10 +1657,6 @@ function rowScoreType(r){
   return r.scoreType || document.getElementById('bat-type').value;
 }
 
-function batteryPremorbidThresholdLabel(v){
-  const n = parseFloat(v);
-  return Number.isInteger(n) ? String(n) : String(n).replace(/0+$/,'').replace(/\.$/,'');
-}
 function syncBatteryPremorbidControls(){
   const enabled = document.getElementById('bat-prem-enable')?.checked;
   ['bat-prem-score','bat-prem-threshold','bat-prem-link-btn'].forEach(id => {
@@ -7481,9 +7469,6 @@ function sdiProblem(row){
   }
   return 'Check values';
 }
-function clearOutcomeStatus(td){
-  td.classList.remove('status-awaiting','status-check');
-}
 function setOutcomeStatus(td, label, mode){
   td.textContent = label;
   td.classList.add(mode === 'check' ? 'status-check' : 'status-awaiting');
@@ -7493,9 +7478,6 @@ function insertStepBefore(el, num, title, copy){
   return;
 }
 
-function buildColumnGuide(method){
-  return '';
-}
 function enhanceCalculatorWorkflow(){
   ['sdi','rci-basic','rci-practice','rci-srb','rci-crawford'].forEach((id) => {
     const sec = document.getElementById(id);
@@ -9094,11 +9076,6 @@ setupPvtPage();
    constant would be right at one width only. offsetHeight / offsetWidth are
    layout px, which is what CSS lengths on this zoomed body are, so neither
    value is divided by the zoom. */
-function footerVisualHeight(){
-  const footer = document.querySelector('.site-footer');
-  if (!footer || getComputedStyle(footer).position !== 'fixed') return 0;
-  return footer.getBoundingClientRect().height;   /* visual px, like every rect */
-}
 
 /* `var` for the same init-order reason as tableViewportRO below. */
 var appFrameRO = null;
@@ -9708,152 +9685,6 @@ function renderTermsStatus(){
   if (!termsAcceptance()) showTermsGate();
 })();
 
-/* ============================================================
-   AUTH OVERLAY · prototype-ready login/register behaviour
-   ============================================================ */
-(function(){
-  const overlay = document.getElementById('auth-overlay');
-  if (!overlay) return;
-
-  const SESSION_KEY = 'paAuthPrototypeSession';
-  const USER_KEY = 'paAuthPrototypeUser';
-
-  const loginForm = document.getElementById('auth-login-form');
-  const registerForm = document.getElementById('auth-register-form');
-  const loginFeedback = document.getElementById('auth-login-feedback');
-  const registerFeedback = document.getElementById('auth-register-feedback');
-
-  function isValidEmail(value){
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
-  }
-
-  function setFeedback(el, message, type){
-    if (!el) return;
-    el.textContent = message || '';
-    el.className = 'auth-feedback' + (type ? ' ' + type : '');
-  }
-
-  function hideOverlay(){
-    overlay.classList.add('is-hidden');
-    overlay.setAttribute('aria-hidden', 'true');
-  }
-
-  function showOverlay(){
-    overlay.classList.remove('is-hidden');
-    overlay.removeAttribute('aria-hidden');
-  }
-
-  function getUser(){
-    try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); }
-    catch(e){ return null; }
-  }
-
-  /* Login/logout drops the user back to Home. Routed through navigateTo so this
-     path can't drift from the main one; history is left alone because an auth
-     transition isn't somewhere the back button should return to. */
-  function activateHomePage(){
-    navigateTo('home', { history: false });
-  }
-
-  function setSession(user){
-    localStorage.setItem(SESSION_KEY, 'true');
-    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
-    activateHomePage();
-    hideOverlay();
-    renderAuthChip();
-    if (typeof showToast === 'function') showToast('✓ Prototype access granted');
-  }
-
-  function clearSession(){
-    localStorage.removeItem(SESSION_KEY);
-    activateHomePage();
-    showOverlay();
-    renderAuthChip();
-  }
-
-  function renderAuthChip(){
-    let chip = document.getElementById('auth-user-chip');
-    const sidebar = document.querySelector('.sidebar');
-    if (!sidebar) return;
-
-    if (!chip){
-      chip = document.createElement('div');
-      chip.id = 'auth-user-chip';
-      chip.className = 'auth-user-chip';
-      sidebar.appendChild(chip);
-    }
-
-    const active = localStorage.getItem(SESSION_KEY) === 'true';
-    const user = getUser();
-    if (!active){
-      chip.classList.remove('show');
-      chip.innerHTML = '';
-      return;
-    }
-
-    const label = user && user.email ? user.email : 'Demo mode';
-    chip.classList.add('show');
-    chip.innerHTML = `
-      <span>Signed in as <strong>${escapeHtml(label)}</strong></span>
-      <button class="btn btn-ghost" type="button" id="auth-logout">Log out</button>
-    `;
-    const logout = document.getElementById('auth-logout');
-    if (logout) logout.addEventListener('click', clearSession);
-  }
-
-  document.querySelectorAll('[data-auth-tab]').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const target = tab.dataset.authTab;
-      document.querySelectorAll('[data-auth-tab]').forEach(t => t.classList.toggle('active', t === tab));
-      loginForm.classList.toggle('active', target === 'login');
-      registerForm.classList.toggle('active', target === 'register');
-      setFeedback(loginFeedback, '');
-      setFeedback(registerFeedback, '');
-    });
-  });
-
-  loginForm.addEventListener('submit', e => {
-    e.preventDefault();
-    const email = document.getElementById('auth-login-email').value.trim();
-    const password = document.getElementById('auth-login-password').value;
-    if (!isValidEmail(email)) return setFeedback(loginFeedback, 'Enter a valid email address.', 'error');
-    if (!password) return setFeedback(loginFeedback, 'Enter your password.', 'error');
-
-    // TODO later:
-    // Replace this local prototype action with your provider call, for example:
-    // await supabase.auth.signInWithPassword({ email, password });
-    setSession({ email, name: email.split('@')[0], mode: 'prototype-login' });
-  });
-
-  registerForm.addEventListener('submit', e => {
-    e.preventDefault();
-    const name = document.getElementById('auth-register-name').value.trim();
-    const email = document.getElementById('auth-register-email').value.trim();
-    const password = document.getElementById('auth-register-password').value;
-    if (!name) return setFeedback(registerFeedback, 'Enter your name.', 'error');
-    if (!isValidEmail(email)) return setFeedback(registerFeedback, 'Enter a valid email address.', 'error');
-    if (password.length < 8) return setFeedback(registerFeedback, 'Use at least 8 characters for the password.', 'error');
-
-    // TODO later:
-    // Replace this local prototype action with your provider call, for example:
-    // await supabase.auth.signUp({ email, password, options:{ data:{ full_name:name } } });
-    setSession({ email, name, mode: 'prototype-register' });
-  });
-
-  document.getElementById('auth-demo').addEventListener('click', () => {
-    setSession({ email: 'Demo mode', name: 'Demo user', mode: 'demo' });
-  });
-
-  document.getElementById('auth-forgot').addEventListener('click', () => {
-    setFeedback(loginFeedback, 'Password reset is not connected yet. This link is ready to wire to a real provider later.', 'success');
-  });
-
-  renderAuthChip();
-  activateHomePage();
-  if (localStorage.getItem(SESSION_KEY) === 'true') hideOverlay();
-  else showOverlay();
-})();
-
 /* =====================================================================
    REDESIGN - Top-bar navigation bucket sync
    Each section ID maps to the topnav bucket (data-bucket) that should
@@ -10254,12 +10085,6 @@ const ReportBundle = (function(){
     const hr = Math.round(min / 60);
     if (hr < 24) return `${hr} hr ago`;
     return `${Math.round(hr / 24)}d ago`;
-  }
-  function getTitleFromContainer(container, fallback){
-    // Deliberately no .apa-table-num fallback — the report strips table numbers,
-    // so falling back to one would label the item "Table 1" for no reason.
-    const titleEl = container.querySelector('.apa-table-title');
-    return (titleEl?.textContent || fallback || 'APA Table').trim();
   }
   /* Replace the captured table's title text with an intelligent one of the form
      "Method: Test family" (e.g. "Crawford Regression-Based Change: WAIS-IV"). */
@@ -10753,16 +10578,6 @@ const ReportBundle = (function(){
   let _suppressed = false;
   function setSuppressed(v){ _suppressed = !!v; }
   function isSuppressed(){ return _suppressed; }
-  function moveItem(fromId, toId, dropAfter){
-    const fromIdx = state.items.findIndex(i => i.id === fromId);
-    let toIdx = state.items.findIndex(i => i.id === toId);
-    if (fromIdx < 0 || toIdx < 0 || fromId === toId) return;
-    const [moved] = state.items.splice(fromIdx, 1);
-    if (toIdx > fromIdx) toIdx--;
-    state.items.splice(toIdx + (dropAfter ? 1 : 0), 0, moved);
-    save();
-    render();
-  }
 
   /* ---------- auto-add + auto-update via MutationObserver ----------
      Tables now flow into the working report automatically as you enter data.

@@ -11786,6 +11786,59 @@ check('every non-manual reference is cited outside the reference list', () => {
   return bad.length === 0 || 'cited nowhere: ' + bad.join('; ');
 });
 
+
+heading('70. No dead wiring: every id looked up exists, every function is used');
+
+/* Wiring audit, 2026-09. A login/register overlay whose markup was long gone
+   still shipped ~145 lines that looked it up by id and returned, plus a boot
+   test for it and 75 lines of CSS; eight functions were declared and never
+   called; two lookups targeted ids nothing defines. All inert, which is why
+   nothing noticed: a lookup that finds nothing is guarded and silent. These
+   two checks make the silence visible. Whole-line comments are dropped first
+   (a line-based strip, since a regex block-stripper eats code at any `/*`
+   inside a string); a comment naming a function is not a use of it. */
+function dropCommentLines(src) {
+  const out = []; let inBlock = false;
+  for (const l of src.split('\n')) {
+    const t = l.trim();
+    if (inBlock) { if (t.includes('*/')) inBlock = false; continue; }
+    if (t.startsWith('/*')) { if (!t.includes('*/')) inBlock = true; continue; }
+    if (t.startsWith('//')) continue;
+    out.push(l);
+  }
+  return out.join('\n');
+}
+const WIRE_SRC = Object.fromEntries(PROJECT_SCRIPTS.map(f => [f, dropCommentLines(fs.readFileSync(path.join(ROOT, f), 'utf8'))]));
+const WIRE_ALL = Object.values(WIRE_SRC).join('\n') + '\n' + dropCommentLines(HTML_SRC.replace(/<!--[\s\S]*?-->/g, ' '));
+
+check('every id looked up by a literal is defined somewhere', () => {
+  const defined = new Set();
+  for (const m of WIRE_ALL.matchAll(/\bid\s*=\s*["'`]([A-Za-z][\w-]*)["'`]/g)) defined.add(m[1]);
+  for (const m of WIRE_ALL.matchAll(/\.id\s*=\s*["'`]([A-Za-z][\w-]*)["'`]/g)) defined.add(m[1]);
+  for (const m of WIRE_ALL.matchAll(/\bid:\s*["'`]([A-Za-z][\w-]*)["'`]/g)) defined.add(m[1]);
+  const bad = [];
+  for (const [f, s] of Object.entries(WIRE_SRC)) {
+    const uses = [...s.matchAll(/getElementById\(\s*["']([^"'$]+)["']\s*\)/g),
+                  ...s.matchAll(/querySelector(?:All)?\(\s*["'`]#([A-Za-z][\w-]*)/g)];
+    for (const m of uses) if (!defined.has(m[1]) && !m[1].endsWith('-')) bad.push(`${f}: #${m[1]}`);
+  }
+  return bad.length === 0 || 'looked up but defined nowhere: ' + [...new Set(bad)].join(', ');
+});
+
+/* A named function expression that runs itself, (function wireX(){…})(),
+   is used by definition and is excluded. */
+check('every declared function is referenced somewhere', () => {
+  const bad = [];
+  for (const [f, s] of Object.entries(WIRE_SRC)) {
+    for (const m of s.matchAll(/(?:^|[^(\w$])function\s+([A-Za-z_][\w]*)\s*\(|(?:const|let|var)\s+([A-Za-z_][\w]*)\s*=\s*(?:function\b|\([^)]*\)\s*=>|[A-Za-z_][\w]*\s*=>)/g)) {
+      const n = m[1] || m[2];
+      const refs = (WIRE_ALL.match(new RegExp('\\b' + n + '\\b', 'g')) || []).length;
+      if (refs <= 1) bad.push(`${f}: ${n}`);
+    }
+  }
+  return bad.length === 0 || 'declared and never used: ' + bad.join(', ');
+});
+
 Promise.all(pendingChecks).then(() => {
   if (failures.length === 0) {
     console.log('ALL ' + passed + ' CHECKS PASSED');

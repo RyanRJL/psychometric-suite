@@ -605,7 +605,6 @@ Section banners (`/* ====`) mark the boundaries:
 | ~3797 | Per-method autofill from the normative database |
 | ~4024 | Norms Database (custom-test storage, import, the browser) |
 | ~4453 | Premorbid estimation |
-| ~5771 | Auth overlay |
 | ~5917 | Top-bar navigation bucket sync |
 | ~5991 | Score Converter view-mode tabs |
 | ~6010 | Working report bundle |
