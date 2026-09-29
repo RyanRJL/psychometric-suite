@@ -2495,7 +2495,7 @@ const OPIE_BASE_RATES = {
                           Meyers & Volbrecht (1998); Schroeder et al. (2012).
    - TOMM:                Martin, Schroeder, Olsen, Maloy, Boettcher, Ernst & Okut (2020),
                           TCN 34(1), 88-119 (meta-analysis); Tombaugh (1996).
-   - Aggregation:         Larrabee (2014), ACN 29(4), 364-373.
+   - Aggregation:         Larrabee (2014a), ACN 29(4), 364-373.
 
    These pages take RAW scores directly and never read normDB. Cut-offs and
    weights are stored verbatim from the cited papers; every table below is
@@ -2739,11 +2739,11 @@ const REY15_RECOGNITION_ROWS = [
 /* How each id draws: a glyph is set in type, a shape is stroked. */
 const REY15_SHAPES = ['circle', 'square', 'triangle', 'diamond', 'pentagon', 'parallelogram', 'rule1', 'rule2', 'rule3'];
 
-/* VERIFIED against Larrabee (2014) Table 4, 2026-09: 48/54, 40/41, 88/95;
+/* VERIFIED against Larrabee (2014a) Table 4, 2026-09: 48/54, 40/41, 88/95;
    52/54, 36/41, 88/95; 54/54, 26/41, 80/95. The indicators were six PVTs
    (VFD, Finger Tapping, RDS, CVMT, CRM, WCST FMS) and one SVT (MMPI-2 FBS).
    Schroeder et al.'s textbook calls them "seven PVTs"; the paper does not.
-   Larrabee (2014), combined clinical sample, 6 PVTs + 1 SVT — classification
+   Larrabee (2014a), combined clinical sample, 6 PVTs + 1 SVT — classification
    accuracy by number of failures. Percentages as published. */
 const PVT_AGGREGATION = [
   { threshold: '≥ 2 of 7 failures', spec: 88.9, sens: 97.6, correct: 92.6 },
@@ -2846,7 +2846,7 @@ const PVT_CVLT3_CRITICAL = {
 
 /* The per-test false-positive criterion the derived threshold is read at.
    10% is this page's own stated convention — PVT cut-offs are conventionally
-   set so specificity is .90 or better (Boone, 2007; Larrabee, 2014) — and is
+   set so specificity is .90 or better (Boone, 2007; Larrabee, 2014a) — and is
    the default; 5% is offered for a clinician who wants a stricter reading. */
 const PVT_CVLT3_CRITERIA = [
   { key: 'standard',     pct: 10, label: '10%, conventional (spec. ≥ .90)' },
@@ -2870,9 +2870,9 @@ const PVT_CVLT3_CRITERIA = [
    instrument in front of the clinician, and it is age-corrected, which a
    fixed cut-off is not. Note the two agree almost everywhere -- the derived
    threshold at the 10% criterion is <= 15 in every band below 80, which is
-   exactly Erdodi et al.'s recommendation, reached from a different direction.
+   exactly Erdodi, Abeare, et al.'s recommendation, reached from a different direction.
 
-   TRANSCRIPTION PROOF. Erdodi et al. (2018) Table 6 reports sensitivity and
+   TRANSCRIPTION PROOF. Erdodi, Abeare, et al. (2018) Table 6 reports sensitivity and
    specificity for both cut-offs against seven reference PVTs, and states
    summary values in the text. Those summaries are the ARITHMETIC MEAN of the
    seven columns and reproduce exactly: <= 15 gives .5586 -> .56 sensitivity
@@ -2889,15 +2889,15 @@ const PVT_CVLT3_FC_CUTOFFS = [
   { key: 'baserate', cut: null, label: 'Base rate by age · CVLT-3 manual',
     sens: '—', spec: '—',
     cite: 'Delis et al. (2017), Appendix D: base rates by age band; no cut-off or accuracy pair is published.' },
-  { key: 'e15', cut: 15, label: '≤ 15 · a single error (Erdodi et al., 2018)',
+  { key: 'e15', cut: 15, label: '≤ 15 · a single error (Erdodi, Abeare, et al., 2018)',
     sens: '.56', spec: '.92',
-    cite: 'Erdodi et al. (2018), ACN 33(7), 845–860: mean across seven reference PVTs in 104 adults with TBI. CVLT-II.' },
+    cite: 'Erdodi, Abeare, et al. (2018), ACN 33(7), 845–860: mean across seven reference PVTs in 104 adults with TBI. CVLT-II.' },
   { key: 'e14', cut: 14, label: '≤ 14 · de facto standard (Schwartz et al., 2016)',
     sens: '.50', spec: '.93',
     cite: 'Schwartz et al. (2016), JINS 22(8), 851–858: systematic review, 17 studies, N = 4,432. CVLT-II.' }
 ];
 
-/* Erdodi et al. (2018) Table 6, held so the summary figures above can be
+/* Erdodi, Abeare, et al. (2018) Table 6, held so the summary figures above can be
    DERIVED rather than asserted. Order: WMT, WCT, EI-5REC, EI-5NR, CVLT-II
    Yes/No recognition hits, Wolfe LRE, Digit Span ACSS. */
 const PVT_CVLT3_ERDODI_T6 = {
@@ -3056,8 +3056,8 @@ const PVT_SOURCES = {
   boone2002:         { label: 'Boone et al. (2002)', doi: '10.1076/jcen.24.5.561.1004' },
   delis2017:         { label: 'Delis et al. (2017), CVLT-3 manual', doi: null },
   denning2012:       { label: 'Denning (2012)', doi: '10.1093/arclin/acs044' },
-  erdodi2018fcr:     { label: 'Erdodi, Abeare et al. (2018)', doi: '10.1093/acn/acx110' },
-  erdodi2018trails:  { label: 'Erdodi, Hurtubise et al. (2018)', doi: '10.1037/pas0000561' },
+  erdodi2018fcr:     { label: 'Erdodi, Abeare, et al. (2018)', doi: '10.1093/acn/acx110' },
+  erdodi2018trails:  { label: 'Erdodi, Hurtubise, et al. (2018)', doi: '10.1037/pas0000561' },
   greiffenstein1994: { label: 'Greiffenstein et al. (1994)', doi: '10.1037/1040-3590.6.3.218' },
   iverson2003:       { label: 'Iverson & Tulsky (2003)', doi: '10.1093/arclin/18.1.1' },
   larrabee2014:      { label: 'Larrabee (2014a)', doi: '10.1093/arclin/acu019' },

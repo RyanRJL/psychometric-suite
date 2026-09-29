@@ -30,7 +30,7 @@
     'sdi':            'Standard Deviation Index',
     'rci-basic':      'Simple Reliable Change',
     'rci-practice':   'Practice Effect-Adjusted',
-    'rci-srb':        'McSweeney Regression-Based',
+    'rci-srb':        'McSweeny Regression-Based',
     'rci-crawford':   'Crawford Regression-Based',
     'premorbid':      'Premorbid Estimate',
     'about':          'Methods & References',

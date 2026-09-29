@@ -531,7 +531,7 @@ Except that the four RCI methods do not. They share **one** row set
 across every method — which means a table entered on one is already complete on
 the other three. Anything that made a sibling tab re-render therefore collected
 it: entering scores on Simple Reliable Change, autofilling on Practice-Adjusted,
-then merely **re-selecting the CI level** on McSweeney put a third
+then merely **re-selecting the CI level** on McSweeny put a third
 near-identical table in the report.
 
 So those four collect nothing until **accepted** (`CONSENT_SOURCES`). Acceptance
@@ -2078,7 +2078,7 @@ standard-score points at each end (RBANS Form C Delayed Memory, whose retest sam
 impaired: `sd1` 18.7 against a normative 15).
 
 Note `r` does not play the same role in all four methods. In Jacobson & Truax and
-Iverson it is purely an error term. In McSweeney and Crawford it is a **fitted
+Iverson it is purely an error term. In McSweeny and Crawford it is a **fitted
 regression slope** (`slope = r × sd2/sd1`), so substituting a population-corrected
 value there changes the predicted score, not just the interval — it yields a
 regression line that was never fitted to anything. The corrected-`r` option is

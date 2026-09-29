@@ -746,7 +746,7 @@
   const VIZ_RCI_METHODS = [
     ['rci-basic',    'Basic (Jacobson & Truax)'],
     ['rci-practice', 'Practice-Adjusted (Iverson)'],
-    ['rci-srb',      'SRB (McSweeney)'],
+    ['rci-srb',      'SRB (McSweeny)'],
     ['rci-crawford', 'Crawford & Garthwaite']
   ];
   let vizRciMethod = 'rci-basic';

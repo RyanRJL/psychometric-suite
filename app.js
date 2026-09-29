@@ -2672,7 +2672,7 @@ function rStabilityForAge(entry, age){
      already near .22. They keep the published r even with the toggle on.
 
    NEVER REACHES RELIABLE CHANGE. There r pairs with sd1/sd2, the same sample's
-   SDs, so the pairing is already self-consistent; and in McSweeney and Crawford
+   SDs, so the pairing is already self-consistent; and in McSweeny and Crawford
    r is a fitted regression slope, where a population-corrected value gives a
    line that was never fitted to anything. */
 function derivedCorrectedR(entry, normSD){
@@ -3692,7 +3692,7 @@ const APA_NOTES = {
     if (ctx.hasCvlt3) sources.push(ctx.cvlt3Borrowed
       ? `CVLT-3 Forced Choice (base rates Delis et al., 2017, Tables D.13–D.15; cut-off and accuracy ${ctx.cvlt3Cite}, CVLT-II)`
       : 'CVLT-3 Forced Choice (Delis et al., 2017, Tables D.13–D.15)');
-    if (ctx.hasTrails) sources.push('D-KEFS Trail Making (Erdodi et al., 2018)');
+    if (ctx.hasTrails) sources.push('D-KEFS Trail Making (Erdodi, Hurtubise, et al., 2018)');
     if (ctx.hasTomm) sources.push('TOMM (Tombaugh, 1996; cut-offs Martin et al., 2020)');
     const shared = [];
     if (ctx.bothRbans)     shared.push('the two RBANS indices');
@@ -4696,7 +4696,7 @@ const rciState = {
   //   13.8^2 x (1 - .96) = 7.62   the mix this default used to give   wrong
   // Raw r is also what the source methods specify: Jacobson & Truax take the
   // test-retest correlation and the variance of the initial testing in the
-  // study itself; Iverson, McSweeney and Crawford likewise work from the
+  // study itself; Iverson, McSweeny and Crawford likewise work from the
   // retest sample's own statistics.
   //
   // The user-facing toggle exists on Basic and Practice ONLY. On those two, r
@@ -5148,8 +5148,8 @@ function renderRciApa(method){
   const methodSentence = {
     'rci-basic':    'RCI (z) is computed per Jacobson and Truax (1991).',
     'rci-practice': 'RCI (z) is computed per Iverson (2001), adjusted for practice effects.',
-    'rci-srb':      'RCI (z) is computed per McSweeney et al. (1993); Ŷ₂ = predicted retest score.',
-    'rci-crawford': '<i>t</i>(RB) is the Crawford regression-based reliable-change statistic.'
+    'rci-srb':      'RCI (z) is computed per McSweeny et al. (1993); Ŷ₂ = predicted retest score.',
+    'rci-crawford': '<i>t</i>(RB) is computed per Crawford and Garthwaite (2007).'
   }[method];
   /* Crawford's critical value is a t quantile on df = N − 2, so it varies by
      row and cannot be stated as a single number the way the z-based methods
@@ -5962,7 +5962,7 @@ function renderDbList(){
    Validity page prints, so this view cannot disagree with that page or its
    export. Strings are passed through as stored: several sources publish
    RANGES across samples or methods, and the app shows what the source prints.
-   Larrabee (2014) is stored as percentages and shown here as proportions, an
+   Larrabee (2014a) is stored as percentages and shown here as proportions, an
    exact change of unit (88.9% is .889), so the column reads one way.
    Pure (no DOM), so check.js §56 runs it directly. */
 function pvtAccuracyRows(){
@@ -5999,14 +5999,14 @@ function pvtAccuracyRows(){
   PVT_DKEFS_TRAILS.conditions.forEach(c => rows.push({
     measure:'D-KEFS Trail Making, ' + c.label.replace(' · ', ', '), cut:'≤ ' + c.cut,
     sens:pvtTrailsRange(c.sens), spec:pvtTrailsRange(c.spec),
-    source:'Erdodi et al. (2018), Table 5, range across four criteria.' }));
+    source:'Erdodi, Hurtubise, et al. (2018), Table 5, range across four criteria.' }));
   Object.keys(PVT_DKEFS_TRAILS.combined).forEach(k => rows.push({
     measure:'D-KEFS Trail Making, conditions failed', cut:'≥ ' + k + ' of 5',
     sens:pvtTrailsRange(PVT_DKEFS_TRAILS.combined[k].sens), spec:pvtTrailsRange(PVT_DKEFS_TRAILS.combined[k].spec),
-    source:'Erdodi et al. (2018), Table 6, range across four criteria.' }));
+    source:'Erdodi, Hurtubise, et al. (2018), Table 6, range across four criteria.' }));
   PVT_AGGREGATION.forEach(a => rows.push({
     measure:'Aggregate, 6 PVTs + 1 SVT', cut:a.threshold, sens:prop(a.sens), spec:prop(a.spec),
-    source:'Larrabee (2014), Table 4, combined clinical sample.' }));
+    source:'Larrabee (2014a), Table 4, combined clinical sample.' }));
   return rows;
 }
 
@@ -7785,7 +7785,7 @@ function getPvtRey(){
   return s;
 }
 
-/* ---------- D-KEFS Trail Making (Erdodi et al., 2018) ----------
+/* ---------- D-KEFS Trail Making (Erdodi, Hurtubise, et al., 2018) ----------
    Five age-corrected scaled scores, each read against its own cut-off, and
    the indicator failing when at least N conditions fail, N the clinician's
    choice among the three the paper publishes a combined accuracy for. The
@@ -8371,7 +8371,7 @@ function renderPvtTrails(){
   });
   const note = s.partial
     ? 'Enter all five conditions to decide the indicator; the combined accuracy was derived on complete administrations.'
-    : 'Ranges run across the four criteria the paper tested against (Erdodi et al., 2018, Tables 5 and 6).';
+    : 'Ranges run across the four criteria the paper tested against (Erdodi, Hurtubise, et al., 2018, Tables 5 and 6).';
   const html = pvtReadoutHtml(rows, note);
   const at = html.indexOf('<div class="pvt-index">');
   out.innerHTML = html.slice(0, at) + combined + html.slice(at);
@@ -8442,7 +8442,7 @@ function renderPvtTomm(){
 /* One row per reportable line. TOMM contributes one row per entered trial
    but counts as ONE indicator; EI and ES share their RBANS subtests and
    also count as one. The independence arithmetic is the point of the
-   summary — see Larrabee (2014). */
+   summary — see Larrabee (2014a). */
 function getPvtSummaryRows(){
   const rows = [];
   const ei = getPvtEi();
@@ -8796,7 +8796,7 @@ function renderPvtApa(){
       hasRey:  rows.some(r => r.id.startsWith('rey')),
       hasCvlt3: rows.some(r => r.group === 'cvlt3'),
       cvlt3Borrowed: rows.some(r => r.group === 'cvlt3') && (typeof getPvtCvlt3 === 'function') && getPvtCvlt3().basis?.cut !== null && getPvtCvlt3().basis !== undefined,
-      cvlt3Cite: (getPvtCvlt3().basis?.cut === 15) ? 'Erdodi et al., 2018' : 'Schwartz et al., 2016',
+      cvlt3Cite: (getPvtCvlt3().basis?.cut === 15) ? 'Erdodi, Abeare, et al., 2018' : 'Schwartz et al., 2016',
       /* One sentence per measure present that carries a version mismatch,
          drawn from the same PVT_INSTRUMENTS the cards render. The CVLT-3's
          is stated above in its own clause, so it is not repeated here. */
@@ -8963,7 +8963,7 @@ function renderPvtAccuracy(){
   if (trEl){
     const k = Number(document.getElementById('pvt-trails-threshold')?.value);
     const a = PVT_DKEFS_TRAILS.combined[k] || PVT_DKEFS_TRAILS.combined[PVT_DKEFS_TRAILS.defaultThreshold];
-    trEl.textContent = `Published accuracy at this threshold: sens. ${pvtTrailsRange(a.sens)} · spec. ${pvtTrailsRange(a.spec)} (Erdodi et al., 2018, Table 6)${
+    trEl.textContent = `Published accuracy at this threshold: sens. ${pvtTrailsRange(a.sens)} · spec. ${pvtTrailsRange(a.spec)} (Erdodi, Hurtubise, et al., 2018, Table 6)${
       Math.min(...a.spec.filter(x => x !== null)) < 0.90 ? '. One specificity is below the .90 consensus (Sweet et al., 2021)' : ''}`;
   }
   const rdsEl = document.getElementById('pvt-rds-accuracy');
@@ -9888,7 +9888,7 @@ function renderTermsStatus(){
     sdi: 'Standard Deviation Index',
     'rci-basic': 'Simple Reliable Change',
     'rci-practice': 'Practice Effect-Adjusted',
-    'rci-srb': 'McSweeney Regression-Based',
+    'rci-srb': 'McSweeny Regression-Based',
     'rci-crawford': 'Crawford Regression-Based',
     'change-analysis': 'Change Analysis',
     charts: 'Score Charts',
@@ -9966,7 +9966,7 @@ const ReportBundle = (function(){
     'sdi-apa':           'Standard Deviation Index',
     'rci-basic-apa':     'Simple Reliable Change',
     'rci-practice-apa':  'Practice-Adjusted RCI',
-    'rci-srb-apa':       'McSweeney Regression-Based',
+    'rci-srb-apa':       'McSweeny Regression-Based',
     'rci-crawford-apa':  'Crawford Regression-Based',
     'pre-estimates-apa':    'Premorbid · Estimates',
     'pre-predict-apa':      'Premorbid · ToPF Predicted',
@@ -9981,7 +9981,7 @@ const ReportBundle = (function(){
     'sdi-apa':              'Standard-Deviation Discrepancy',
     'rci-basic-apa':        'Reliable Change (Jacobson & Truax)',
     'rci-practice-apa':     'Practice-Adjusted Reliable Change',
-    'rci-srb-apa':          'McSweeney Regression-Based Change',
+    'rci-srb-apa':          'McSweeny Regression-Based Change',
     'rci-crawford-apa':     'Crawford Regression-Based Change',
     'pre-estimates-apa':    'Premorbid Cognitive Estimate',
     'pre-predict-apa':      'ToPF-Predicted vs Achieved',

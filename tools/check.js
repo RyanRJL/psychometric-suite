@@ -701,7 +701,7 @@ check('the gap the Crawford label hid is real across the shipped norms', () => {
 /* Only retest entries reach the regression methods; the single-administration
    families are filtered out of the Change Analysis dropdowns precisely because
    they have no r to fit a slope from. */
-check('McSweeney SRB slope and SEE are computable for every retest entry', () => {
+check('McSweeny SRB slope and SEE are computable for every retest entry', () => {
   const bad = [];
   eachRetestEntry((e, g, n) => {
     const slope = e.r * (e.sd2 / e.sd1);
@@ -713,7 +713,7 @@ check('McSweeney SRB slope and SEE are computable for every retest entry', () =>
 
 /* Crawford's residual SD and standard error of prediction were pinned by
    nothing at all, which is how the "View formula" block on that page came to
-   print McSweeney's SEE — SD2 sqrt(1 - r^2), with no (N-1)/(N-2) — above a
+   print McSweeny's SEE — SD2 sqrt(1 - r^2), with no (N-1)/(N-2) — above a
    statistic computed with the factor. Nobody saw it, the block having been
    display:none since the five methods were consolidated onto one page, and the
    whole block is now deleted. These two checks make the arithmetic itself
@@ -756,7 +756,7 @@ check('Crawford SEE and SEpred reproduce Crawford & Garthwaite (2007) Eqs. 4-5',
   return bad.length === 0 || bad.length + ' entries differ, first: ' + bad[0];
 });
 
-check('the (N−1)/(N−2) factor is what separates Crawford SEE from McSweeney SEE', () => {
+check('the (N−1)/(N−2) factor is what separates Crawford SEE from McSweeny SEE', () => {
   // Guards the reasoning above: if the factor were negligible, describing the
   // two SEEs with one formula would be harmless and this pinning unmotivated.
   // It is not — it always inflates, and most at the smallest shipped N.
@@ -1817,7 +1817,7 @@ check('the Score Charts page is fully wired: section, nav, script tag, precache'
 });
 
 /* r is an error term in Jacobson & Truax and Iverson, but a fitted regression
-   slope (r x sd2/sd1) in McSweeney/SRB and Crawford & Garthwaite. Offering the
+   slope (r x sd2/sd1) in McSweeny/SRB and Crawford & Garthwaite. Offering the
    population-corrected r on the latter two changes the predicted score and
    produces a regression line that was never fitted — so the checkbox must not
    reappear on those pages. */
@@ -11614,6 +11614,109 @@ check('the Word Proverb 16-19 and All Ages rows carry no n', () => {
     for (const [name, e] of Object.entries(D.normDB[g])) if (e && e.n != null) bad.push(`${g} / ${name} has n ${e.n}`);
   }
   return bad.length === 0 || bad.join('; ');
+});
+
+
+heading('69. Citations: every author-year resolves to one reference, and each reference is cited');
+
+/* Citations audit, 2026-09. Every source below was read against Crossref or
+   the publisher's own citation instruction; see the commit for each. The text
+   under test is what ships and can be read: comments are stripped from the
+   scripts and from index.html, since a comment is not a citation. */
+const CITE_HTML = stripComments(HTML_SRC.replace(/<!--[\s\S]*?-->/g, ' '));
+const CITE_TEXT = CITE_HTML + '\n' + ALL_SRC;
+const REFS_HTML = (HTML_SRC.match(/<div class="references">([\s\S]*?)\n    <\/div>/) || [])[1] || '';
+const REF_ENTRIES = [...REFS_HTML.matchAll(/<div class="references-group">([^<]+)<\/div>|<p>([\s\S]*?)<\/p>/g)]
+  .reduce((acc, m) => { if (m[1]) acc.group = m[1]; else acc.list.push({ group: acc.group, html: m[2] }); return acc; },
+          { group: null, list: [] }).list;
+/* Everything outside the reference list: an entry citing itself is no citation. */
+const CITE_BODY = CITE_TEXT.replace(REFS_HTML, ' ');
+
+check('the reference list was found and parsed', () =>
+  REF_ENTRIES.length >= 40 || `parsed ${REF_ENTRIES.length} reference entries`);
+
+/* Two Erdodi (2018) papers with different co-authors both shorten to
+   "Erdodi et al., 2018", so APA 7 names authors until they differ. */
+check('no Erdodi (2018) citation is ambiguous between the two papers', () => {
+  const hits = CITE_TEXT.match(/Erdodi et al\.?[^\n]{0,20}/g) || [];
+  return hits.length === 0 || hits.join(' | ');
+});
+
+/* Crossref and the publisher give the first author as McSweeny, A. John. */
+check('McSweeny is spelt as the author spells it', () => {
+  const src = [HTML_SRC, ...PROJECT_SCRIPTS.map(f => fs.readFileSync(path.join(ROOT, f), 'utf8'))].join('\n');
+  const bad = (src.match(/McSweeney/g) || []).length;
+  if (bad) return `${bad} occurrence(s) of "McSweeney"`;
+  return REF_ENTRIES.some(e => /^McSweeny, A\. J\., Naugle/.test(e.html)) || 'no McSweeny, A. J. entry in the reference list';
+});
+
+/* The Crawford note used to name no source while the other three did. */
+check('every reliable-change APA note names its method\'s author and year', () => {
+  const src = stripComments(extractFn(APP_SRC, 'renderRciApa'));
+  const obj = (src.match(/const methodSentence = \{([\s\S]*?)\}\[method\]/) || [])[1];
+  if (!obj) return 'could not read methodSentence';
+  const want = { 'rci-basic': 'Jacobson and Truax (1991)', 'rci-practice': 'Iverson (2001)',
+                 'rci-srb': 'McSweeny et al. (1993)', 'rci-crawford': 'Crawford and Garthwaite (2007)' };
+  const bad = [];
+  for (const [k, cite] of Object.entries(want)) {
+    const line = (obj.match(new RegExp(`'${k}':\\s*'([^\\n]*)'`)) || [])[1];
+    if (!line) bad.push(`${k} missing`);
+    else if (!line.includes(cite)) bad.push(`${k} does not cite ${cite}`);
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* The AACN labels are Guilmette et al. (2020); the tooltip once said 2010. */
+check('the AACN descriptor tooltip names Guilmette et al. (2020)', () => {
+  const t = HTML_SRC.match(/<span class="conv-desc-sys" title="([^"]*)">AACN<\/span>/);
+  if (!t) return 'AACN tooltip not found';
+  return /Guilmette et al\., 2020/.test(t[1]) || `tooltip reads "${t[1]}"`;
+});
+
+/* Crossref 10.1093/arclin/acr119. */
+check('Novitski et al. (2012) carries its published title', () =>
+  REF_ENTRIES.some(e => e.html.startsWith('Novitski, J.') &&
+    e.html.includes('The Repeatable Battery for the Assessment of Neuropsychological Status Effort Scale.')) ||
+  'Novitski entry does not carry the Crossref title');
+
+/* Two Larrabee (2014) references, so every citation takes its letter. The
+   one unlettered "Larrabee (2014)" allowed is inside Bilder et al.'s
+   published title, which is quoted as printed. */
+check('every Larrabee (2014) citation carries its a/b letter', () => {
+  const body = CITE_TEXT.replace('Commentary on Davis and Millis (2014) and Larrabee (2014)', ' ');
+  const hits = body.match(/Larrabee(?:'s)?,? \(?2014(?![ab])[^\n]{0,20}/g) || [];
+  return hits.length === 0 || hits.join(' | ');
+});
+
+/* The manual's own citation instruction (owner's copy, 2026-09). Its
+   Table 3.4 supplies the split-half coefficients 26 entries are scored on. */
+check('the D-KEFS Advanced manual is in the reference list as the publisher cites it', () =>
+  REF_ENTRIES.some(e => e.group === 'Test manuals and technical sources' &&
+    e.html.startsWith('Delis, D. C., &amp; Kaplan, E. (2025). <i>Delis-Kaplan Executive Function System Advanced: Manual.</i> NCS Pearson.')) ||
+  'no Delis & Kaplan (2025) manual entry');
+
+/* APA 7: a Cochrane review's volume is its year, then issue, then Article. */
+check('Cochrane reviews are cited as Year(Issue), Article CD…', () => {
+  const coch = REF_ENTRIES.filter(e => e.html.includes('Cochrane Database of Systematic Reviews'));
+  if (coch.length !== 2) return `expected 2 Cochrane entries, found ${coch.length}`;
+  const bad = coch.filter(e => !/Cochrane Database of Systematic Reviews, (\d{4})<\/i>\(\d+\), Article CD\d+\./.test(e.html) ||
+    RegExp.$1 !== (e.html.match(/\((\d{4})\)\./) || [])[1]);
+  return bad.length === 0 || bad.map(e => e.html.slice(0, 40)).join('; ');
+});
+
+/* The reverse direction: every author-year source in the list is cited where a
+   reader can see it. Manuals are exempt, being cited on screen by name and
+   table ("WAIS-IV Technical and Interpretive Manual (GB) Table 5.1"). */
+check('every non-manual reference is cited outside the reference list', () => {
+  const bad = [];
+  for (const e of REF_ENTRIES.filter(r => r.group !== 'Test manuals and technical sources')) {
+    const m = e.html.match(/^([^,.(]+?)[,.][\s\S]*?\((\d{4}[ab]?)\)\./);
+    if (!m) { bad.push('unparsed: ' + e.html.slice(0, 40)); continue; }
+    const name = m[1];
+    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (!new RegExp(`${esc(name)}[^()\\n]{0,80}\\(?${m[2]}(?![ab\\d])`).test(CITE_BODY)) bad.push(`${m[1]} (${m[2]})`);
+  }
+  return bad.length === 0 || 'cited nowhere: ' + bad.join('; ');
 });
 
 if (failures.length === 0) {
