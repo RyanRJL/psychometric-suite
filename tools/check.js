@@ -10490,6 +10490,27 @@ check('a saved session carries everything New patient clears, and nothing render
   return bad.length === 0 || bad.join('; ');
 });
 
+/* The linked premorbid estimate is held in data attributes on the score box,
+   not its value. Writing the box back fires its input handler, which treats the
+   write as a manual edit and wipes the link, so a reopened session flagged
+   against the rounded estimate and SEE mode fell back to SD mode. */
+check('a saved session keeps the linked premorbid estimate, restored after the fields', () => {
+  const bad = [];
+  const apply = extractFn(APP_SRC, 'applySession');
+  const link  = extractFn(APP_SRC, 'applyPremorbidLink');
+  const keysSrc = extractConst(APP_SRC, 'PREM_LINK_KEYS');
+  if (!keysSrc) return 'PREM_LINK_KEYS is missing';
+  const saved = (keysSrc.match(/'(\w+)'/g) || []).map(s => s.slice(1, -1));
+  const set = [...link.matchAll(/scoreEl\.dataset\.(\w+)\s*=/g)].map(m => m[1]).filter(k => k !== 'programmaticUpdate');
+  for (const k of new Set(set)) if (!saved.includes(k)) bad.push('the link sets ' + k + ' but the session does not save it');
+  if (!/premorbidLinkSnapshot\(\)/.test(extractFn(APP_SRC, 'buildSession'))) bad.push('buildSession does not save the link');
+  const fieldsAt = apply.indexOf('Object.entries(s.fields)');
+  const restoreAt = apply.indexOf('restorePremorbidLink(');
+  if (restoreAt < 0) bad.push('applySession does not restore the link');
+  else if (restoreAt < fieldsAt) bad.push('the link is restored before the fields, whose input events wipe it');
+  return bad.length === 0 || bad.join('; ');
+});
+
 check('a session file is refused whole unless it is this app, this version, intact', () => {
   const c = {};
   vm.createContext(c);

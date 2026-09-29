@@ -32725,6 +32725,27 @@ function sessionFieldEls(){
   });
   return [...new Set(els.filter(Boolean))];
 }
+const PREM_LINK_KEYS = ['estimateExact','lowerBound','upperBound','see','modelLabel','ciLabel'];
+function premorbidLinkSnapshot(){
+  const el = document.getElementById('bat-prem-score');
+  const out = {};
+  if (el) PREM_LINK_KEYS.forEach(k => { if (el.dataset[k] != null) out[k] = String(el.dataset[k]); });
+  return out;
+}
+/* Restored AFTER the fields: writing the score box fires its input handler,
+   which treats the write as a manual edit and clears the link. */
+function restorePremorbidLink(link){
+  const el = document.getElementById('bat-prem-score');
+  if (!el) return;
+  PREM_LINK_KEYS.forEach(k => { delete el.dataset[k]; });
+  if (link && typeof link === 'object'){
+    PREM_LINK_KEYS.forEach(k => {
+      if (typeof link[k] === 'string' || typeof link[k] === 'number') el.dataset[k] = String(link[k]);
+    });
+  }
+  if (typeof updatePremorbidLinkStatus === 'function') updatePremorbidLinkStatus();
+  if (typeof syncPremorbidFlagNote === 'function') syncPremorbidFlagNote();
+}
 function buildSession(){
   const fields = {};
   sessionFieldEls().forEach(el => {
@@ -32745,6 +32766,11 @@ function buildSession(){
     sdi: { rows: clone(sdiRows), labels: clone(sdiLabelState) },
     rci: { rows: clone(RCI_SHARED_ROWS), methods },
     pre: clone(preState),
+    /* The linked premorbid estimate lives in data attributes on the score box
+       (applyPremorbidLink), not in its value: the unrounded estimate, the SEE
+       and the CI bounds. Without them a reopened session flags against the
+       rounded estimate, and SEE mode falls back to SD mode. */
+    premLink: premorbidLinkSnapshot(),
     pvt: clone(pvtState),
     consent: (typeof ReportBundle !== 'undefined' && ReportBundle.consentState) ? ReportBundle.consentState() : {}
   };
@@ -32774,6 +32800,7 @@ function applySession(s){
     el.dispatchEvent(new Event('input',  { bubbles:true }));
     el.dispatchEvent(new Event('change', { bubbles:true }));
   });
+  restorePremorbidLink(s.premLink);
   /* In place: RCI_SHARED_ROWS is referenced by all four methods, and
      batteryRows by closures elsewhere. */
   batteryRows.length = 0; s.battery.rows.forEach(r => batteryRows.push(r));
