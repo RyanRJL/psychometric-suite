@@ -6239,7 +6239,40 @@ function preNum(id){
   const el = preGet(id);
   if (!el || el.value === '' || el.value == null) return null;
   const n = parseFloat(el.value);
-  return isNaN(n) ? null : n;
+  if (isNaN(n)) return null;
+  /* A TYPO GUARD. The ToPF lookup refused a raw score above 70, but the
+     ToPF + demographics cubic and the eight predicted indices took it: 75
+     gave FSIQ 130.6, a typed 700 gave 98,562. An out-of-range predictor is
+     now left out of every model, which blanks the rows that need it. The
+     limits are the inputs' own min/max, so the form states them once. Age is
+     not checked here: each model gates its own age range and says so. */
+  if (PRE_RANGE_CHECKED.includes(id) && preOutOfRange(el, n)) return null;
+  return n;
+}
+// var, not const: preNum can run during boot before this line (TDZ; see CLAUDE.md).
+var PRE_RANGE_CHECKED = ['pre-topf', 'pre-vc', 'pre-mr', 'pre-edu'];
+var PRE_RANGE_LABELS ={ 'pre-topf':'ToPF raw score', 'pre-vc':'Vocabulary raw score', 'pre-mr':'Matrix Reasoning raw score', 'pre-edu':'Years of education' };
+function preOutOfRange(el, n){
+  const lo = parseFloat(el.min), hi = parseFloat(el.max);
+  return (Number.isFinite(lo) && n < lo) || (Number.isFinite(hi) && n > hi);
+}
+/* Mark each out-of-range input and say, above the models, what was left out. */
+function refreshPreInputRange(){
+  const msgs = [];
+  PRE_RANGE_CHECKED.forEach(id => {
+    const el = preGet(id);
+    if (!el) return;
+    const n = parseFloat(el.value);
+    const out = el.value !== '' && Number.isFinite(n) && preOutOfRange(el, n);
+    el.classList.toggle('pre-input-out', out);
+    if (out) msgs.push(`${PRE_RANGE_LABELS[id]} ${escapeHtml(el.value)} is outside ${el.min}–${el.max}`);
+  });
+  const note = preGet('pre-input-range-note');
+  if (!note) return;
+  note.hidden = msgs.length === 0;
+  note.innerHTML = msgs.length
+    ? `<strong>${msgs.join('; ')}.</strong> Models that use ${msgs.length === 1 ? 'it are' : 'them are'} left blank until ${msgs.length === 1 ? 'it is' : 'they are'} corrected.`
+    : '';
 }
 function preStr(id){
   const el = preGet(id);
@@ -6415,6 +6448,7 @@ function calcPremorbid(){
   const occC = occ ? OCC_CODE[occ] : null;
   const mult = preCiMult();
   const ciPct = premorbidCi().short;
+  refreshPreInputRange();
 
   preGet('pre-ci-lo-hdr').textContent = `Lower ${ciPct}`;
   preGet('pre-ci-hi-hdr').textContent = `Upper ${ciPct}`;
@@ -6825,9 +6859,13 @@ function updatePredictRow(idx, pred, mult, see){
   const loEl = preGet('pred-'+idx+'-lo');
   const hiEl = preGet('pred-'+idx+'-hi');
   if (!predEl) return;
+  /* round(estimate) ± round(z·SEE), the convention the Estimates tab, its
+     export and the OPIE-4 tab use. Rounding each bound separately printed the
+     same FSIQ model as 35–63 there and 35–62 here on 57% of inputs. */
+  const margin = pred == null ? null : Math.round(mult*see);
   predEl.textContent = pred == null ? '-' : fmtIntOrDash(pred);
-  loEl.textContent = pred == null ? '-' : fmtIntOrDash(pred - mult*see);
-  hiEl.textContent = pred == null ? '-' : fmtIntOrDash(pred + mult*see);
+  loEl.textContent = pred == null ? '-' : String(Math.round(pred) - margin);
+  hiEl.textContent = pred == null ? '-' : String(Math.round(pred) + margin);
 
   const ach = preState.achieved[idx];
   const achNum = (ach != null && ach !== '') ? parseFloat(ach) : null;

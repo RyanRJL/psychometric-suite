@@ -10677,3 +10677,9 @@ svg.rey-glyph{width:56px;height:56px}
    "i" tip names its source, so they carry no line (it also cost the OPIE-4
    tab its fit at 1366 x 768). */
 .pre-sources{margin:10px 0 0;font-size:12px;line-height:1.5;color:var(--ds-text-muted)}
+
+/* A premorbid input outside the range the form declares (refreshPreInputRange).
+   An outline, not a border: input borders on this page are claimed by
+   page-scoped rules, and a standalone class on an unclaimed property needs no
+   !important (see the cascade note in CLAUDE.md). */
+.pre-input-out{outline:2px solid #B3261E;outline-offset:1px}

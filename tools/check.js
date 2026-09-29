@@ -11532,6 +11532,36 @@ check('a fresh load exports every default Score Tables column', () => {
   return bad.length === 0 || bad.join('; ');
 });
 
+
+heading('66. Premorbid: one interval convention, and no extrapolation from typos');
+
+/* The ToPF-predicted tab rounded each bound separately, so the same FSIQ
+   equation printed 35-63 on the Estimates tab and 35-62 there, on 57% of
+   inputs. All four sites must build round(estimate) +/- round(z x SEE). */
+check('every premorbid interval is round(estimate) ± round(z·SEE)', () => {
+  const bad = [];
+  const sites = { updatePredictRow: /Math\.round\(mult\s*\*\s*see\)/, calcPremorbid: /Math\.round\(mult\s*\*\s*row\.see\)/,
+                  renderPreEstimatesApa: /Math\.round\(mult\s*\*\s*r\.see\)/, calcOpiePredict: /Math\.round\(mult\s*\*\s*row\.see\)/ };
+  for (const [fn, re] of Object.entries(sites)) if (!re.test(extractFn(APP_SRC, fn))) bad.push(fn + ' no longer rounds the margin on its own');
+  if (/fmtIntOrDash\(pred\s*[-+]\s*mult/.test(extractFn(APP_SRC, 'updatePredictRow'))) bad.push('updatePredictRow rounds each bound separately again');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* ToPF 75 gave FSIQ 130.6 from the cubic, and a typed 700 gave 98,562. */
+check('an out-of-range premorbid predictor reaches no model', () => {
+  const bad = [];
+  const guard = extractFn(APP_SRC, 'preNum');
+  if (!/PRE_RANGE_CHECKED\.includes\(id\)\s*&&\s*preOutOfRange/.test(guard)) bad.push('preNum no longer refuses an out-of-range value');
+  const m = APP_SRC.match(/var PRE_RANGE_CHECKED = \[([^\]]*)\]/);
+  const ids = m ? m[1].match(/'([\w-]+)'/g).map(s => s.slice(1, -1)) : [];
+  for (const id of ['pre-topf', 'pre-vc', 'pre-mr', 'pre-edu']) {
+    if (!ids.includes(id)) { bad.push(id + ' is not range-checked'); continue; }
+    if (!new RegExp('id="' + id + '" min="\\d+" max="\\d+"').test(HTML_SRC)) bad.push(id + ' has no min/max in the markup to check against');
+  }
+  if (ids.includes('pre-age')) bad.push('age is range-checked here, which would blank Crawford & Allan above 90 without its note');
+  return bad.length === 0 || bad.join('; ');
+});
+
 if (failures.length === 0) {
   console.log('ALL ' + passed + ' CHECKS PASSED');
   process.exit(0);

@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260929c">
-<link rel="stylesheet" href="design-system.css?v=20260929c">
+<link rel="stylesheet" href="styles.css?v=20260929d">
+<link rel="stylesheet" href="design-system.css?v=20260929d">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -2543,6 +2543,10 @@
             <input type="number" id="pre-mr" min="0" max="26" step="1">
           </div>
         </div>
+        <!-- Shown when a predictor or education is outside the range this
+             form declares (the inputs' own min/max). The models then leave
+             that input out rather than extrapolating from a typo. -->
+        <div class="caution-box" id="pre-input-range-note" hidden style="margin-top:12px"></div>
       </div>
 
       <div class="pre-form-section">
@@ -3312,12 +3316,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260929c"></script>
-<script src="app.js?v=20260929c"></script>
-<script src="design-system.js?v=20260929c" defer></script>
-<script src="app-effectsize-page.js?v=20260929c"></script>
-<script src="app-viz-page.js?v=20260929c"></script>
-<script src="app-profile-page.js?v=20260929c"></script>
+<script src="data.js?v=20260929d"></script>
+<script src="app.js?v=20260929d"></script>
+<script src="design-system.js?v=20260929d" defer></script>
+<script src="app-effectsize-page.js?v=20260929d"></script>
+<script src="app-viz-page.js?v=20260929d"></script>
+<script src="app-profile-page.js?v=20260929d"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
