@@ -144,6 +144,29 @@ function fromZ(z, type){
    rather than silently ignored downstream. */
 const SCORE_METRICS = new Set(['z', 't', 'scaled', 'standard', 'raw']);
 
+/* A TYPO GUARD, NOT A NORM. Nothing stopped a scaled score of 71 (meant as 7)
+   printing the 99.99th percentile and "Exceptionally High" into an export. A
+   score outside its metric's scale is left unscored and flagged instead. The
+   limits are the widest the app's instruments print: scaled 1-19 (Wechsler
+   subtests), standard 40-160 (Wechsler index floor and ceiling), T 10-90 and
+   z within 5 SD. Raw has no scale to check. */
+const SCORE_SCALE_LIMITS = {
+  scaled:   { min: 1,  max: 19 },
+  standard: { min: 40, max: 160 },
+  t:        { min: 10, max: 90 },
+  z:        { min: -5, max: 5 }
+};
+function scoreOutOfScale(value, type){
+  const lim = SCORE_SCALE_LIMITS[type];
+  if (!lim || value === '' || value == null) return false;
+  const v = parseFloat(value);
+  return Number.isFinite(v) && (v < lim.min || v > lim.max);
+}
+function scoreScaleText(type){
+  const lim = SCORE_SCALE_LIMITS[type];
+  return lim ? `${String(lim.min).replace('-', '−')}–${lim.max}` : '';
+}
+
 function fmt(n, dp = 2){
   if (n == null || isNaN(n)) return '-';
   /* Every caller is a clinical display column — score conversions, SD Index
@@ -2012,6 +2035,7 @@ function batteryRowPercentile(r){
     if (batteryBaseRateAgeState(r) !== 'ok') return null;
     return baseRatePercentile(entry, batteryBaseRateValue(r));
   }
+  if (batteryScoreOutOfScale(r)) return null;
   const z = toZ(r.score, rowScoreType(r));
   return z == null ? null : normCDF(z) * 100;
 }
@@ -2059,12 +2083,24 @@ function batteryRowPctCell(r){
     const br = baseRateAtOrAbove(entry, v);
     return { value: br, text: fmtBaseRate(br), kind: 'baseRate' };
   }
+  /* Same screen-only hint as the age gate: the export's .text stays empty. */
+  if (batteryScoreOutOfScale(r)) return { value: null, text: '', kind: 'percentile', hint: 'out-of-scale', type: rowScoreType(r) };
   const p = batteryRowPercentile(r);
   return p == null ? null : { value: p, text: fmtPct(p), kind: 'percentile' };
 }
+/* A metric score outside its scale (see SCORE_SCALE_LIMITS). Base-rate rows
+   are entered as raw spans and have no metric scale to check. */
+function batteryScoreOutOfScale(r){
+  if (!r || batteryBaseRateEntry(r)) return false;
+  return scoreOutOfScale(r.score, rowScoreType(r));
+}
 /* The screen text for a gated cell. Short, factual, and pointing at the fix:
    the master age field is in the top bar. */
-function batteryAgeHintHtml(state){
+function batteryAgeHintHtml(state, cell){
+  if (state === 'out-of-scale'){
+    const type = cell && cell.type;
+    return `<span class="bat-age-hint" title="${escapeAttr(scoreTypeLabel(type))}s run ${scoreScaleText(type)}. Check the score was typed correctly.">out of range (${scoreScaleText(type)})</span>`;
+  }
   return state === 'out-of-band'
     ? '<span class="bat-age-hint">age outside this band</span>'
     : '<span class="bat-age-hint">add patient age ↑</span>';
@@ -2087,7 +2123,7 @@ function batteryClassificationDetails(r, cls){
     // the table legitimately reaches both ends.
     z = normInv(Math.min(99.99, Math.max(0.01, pct)) / 100);
   } else {
-    z = toZ(r.score, rowScoreType(r));
+    z = batteryScoreOutOfScale(r) ? null : toZ(r.score, rowScoreType(r));
   }
   if (z == null) return { text:'', html:'', className:'' };
   const ss = fromZ(z, 'standard');
@@ -2834,7 +2870,7 @@ const BATTERY_SCORE_BOUNDS = { scaled: { min: 1, max: 19 } };
 /* `age` is optional and defaults to whatever the age box holds; passing it
    explicitly is what lets the interval be exercised without a DOM. */
 function getBatteryCiHtml(ss, row, level, age){
-  if (!Number.isFinite(ss)) return '';
+  if (!Number.isFinite(ss) || batteryScoreOutOfScale(row)) return '';
   // Resolved first: the displayed metric now decides which SD the SEM uses.
   const type   = rowScoreType(row);
   const effAge = age !== undefined ? age : batteryPatientAge();
@@ -2960,7 +2996,7 @@ function renderBattery(){
     const rowType = rowScoreType(r);
     const z = toZ(r.score, rowType);
     const pctCellVal = batteryRowPctCell(r);
-    const pct = pctCellVal ? (pctCellVal.hint ? batteryAgeHintHtml(pctCellVal.hint) : pctCellVal.text) : '';
+    const pct = pctCellVal ? (pctCellVal.hint ? batteryAgeHintHtml(pctCellVal.hint, pctCellVal) : pctCellVal.text) : '';
     const details = batteryClassificationDetails(r, cls);
     const ss = parseFloat(r.score);
     const ciHtml = ciLevel !== 'off' ? getBatteryCiHtml(ss, r, ciLevel) : '';
@@ -3043,7 +3079,7 @@ function renderBattery(){
          table, so only the edited row needs rewriting — no cross-row refresh,
          and no heading to keep in step. */
       const cellVal = batteryRowPctCell(batteryRows[i]);
-      if (cellVal && cellVal.hint) pctCell.innerHTML = batteryAgeHintHtml(cellVal.hint);
+      if (cellVal && cellVal.hint) pctCell.innerHTML = batteryAgeHintHtml(cellVal.hint, cellVal);
       else pctCell.textContent = cellVal ? cellVal.text : '';
       const details = batteryClassificationDetails(batteryRows[i], cls);
       clsCell.className = `computed ${details.className}`.trim();
@@ -3603,7 +3639,10 @@ const APA_NOTES = {
     ctx.hasRawInIndexMode
       ? 'Raw-score measures are not scored in index mode, which has no metric SD to divide by.'
       : '',
-    ctx.thresholdLabel ? `Significance threshold = ${ctx.thresholdLabel}.` : '',
+    ctx.thresholdLabel
+      ? (ctx.cutoff ? `Cut-off = ${ctx.thresholdLabel}.`
+                    : `Significance threshold = ${ctx.thresholdLabel}.`)
+      : '',
     '<i>p</i>-values are two-tailed.'
   ],
   'rci': ctx => [
@@ -4251,6 +4290,23 @@ function sdiCvHit(change, cv){
   if (cv === 0.95) return Math.abs(change) >= 1.96;
   return Math.abs(change) >= cv;
 }
+/* 90% and 95% are critical values of a significance test; 1.0, 1.5 and 2.0 SD
+   are cut-offs. At a cut-off, "Significant" sat beside p = .32 (1.0 SD), so the
+   outcome says what was tested instead. One wording for screen, chart and
+   export; `apa` keeps the export's existing short form for the two tests. */
+function sdiIsCutoff(cv){ return cv !== 0.90 && cv !== 0.95; }
+function sdiOutcomeText(change, cv, apa){
+  const hit = sdiCvHit(change, cv);
+  if (sdiIsCutoff(cv)) return `${hit ? 'Exceeds' : 'Within'} ${cv.toFixed(1)} SD`;
+  if (apa) return hit ? 'Significant' : 'Not Significant';
+  return hit ? 'Significant change' : 'No significant change';
+}
+/* Index mode only: a raw-mode row carries its own SD and has no metric scale. */
+function sdiRowOutOfScale(r){
+  if (sdiMode() === 'raw') return false;
+  const type = sdiRowScoreType(r);
+  return scoreOutOfScale(r.t1, type) || scoreOutOfScale(r.t2, type);
+}
 function sdiDateLabel(which){
   const fallback = which === 'd1' ? 'Test' : 'Retest';
   return (sdiLabelState[which] || '').trim() || fallback;
@@ -4271,6 +4327,7 @@ function sdiComputeChange(r){
      autofill populates from sd1. */
   const unit = sdiSdUnit(sdiRowScoreType(r));
   if (!Number.isFinite(unit) || unit <= 0) return null;
+  if (sdiRowOutOfScale(r)) return null;
   return (parseFloat(r.t2) - parseFloat(r.t1)) / unit;
 }
 function renderSdiHead(){
@@ -4370,7 +4427,7 @@ function renderSdi(){
       const p = 2 * (1 - normCDF(Math.abs(change)));
       pStr = fmtP(p);
       const sig = sdiCvHit(change, cv);
-      sigStr = sig ? 'Significant change' : 'No significant change';
+      sigStr = sdiOutcomeText(change, cv);
       sigCls = sig ? 'sig-yes' : 'sig-no';
     }
     const tr = document.createElement('tr');
@@ -4436,7 +4493,7 @@ function updateSdiRow(i, tr){
     const sig = sdiCvHit(change, cv);
     cells[0].textContent = fmt(change, 2);
     cells[1].textContent = fmtP(p);
-    cells[2].textContent = sig ? 'Significant change' : 'No significant change';
+    cells[2].textContent = sdiOutcomeText(change, cv);
     cells[2].classList.add(sig ? 'sig-yes' : 'sig-no');
   } else {
     cells.forEach(c => c.textContent = '');
@@ -4451,7 +4508,7 @@ function renderSdiApa(){
   const out = document.getElementById('sdi-apa');
   const named = sdiRows.filter(r => r.name && !r.isExample);
   if (named.length === 0){ out.innerHTML = '<div class="apa-empty"><strong>APA-formatted output</strong>Add or select at least one test to preview the report-ready table.</div>'; return; }
-  const cvDesc = cv === 0.90 ? '90% critical value (1.645)' : cv === 0.95 ? '95% critical value (1.96)' : `${cv} SD threshold`;
+  const cvDesc = cv === 0.90 ? '90% critical value (1.645)' : cv === 0.95 ? '95% critical value (1.96)' : `${cv.toFixed(1)} SD`;
   const colCount = raw ? 7 : 6;
   // Insert apa-group separator rows when the test family changes - gives the
   // table visible grouping AND lets the working-report pill detect the most
@@ -4473,20 +4530,20 @@ function renderSdiApa(){
       return prefix + `<tr${trCls}><td>${escapeHtml(r.name)}</td><td class="num">${escapeHtml(r.t1 || '')}</td><td class="num">${escapeHtml(r.t2 || '')}</td>${raw ? `<td class="num">${escapeHtml(r.sd || '')}</td>` : ''}<td class="num"></td><td class="num"></td><td></td></tr>`;
     }
     const p = 2 * (1 - normCDF(Math.abs(change)));
-    const sig = sdiCvHit(change, cv);
-    return prefix + `<tr${trCls}><td>${escapeHtml(r.name)}</td><td class="num">${escapeHtml(r.t1)}</td><td class="num">${escapeHtml(r.t2)}</td>${raw ? `<td class="num">${escapeHtml(r.sd)}</td>` : ''}<td class="num">${fmt(change, 2)}</td><td class="num">${fmtP(p)}</td><td>${sig ? 'Significant' : 'Not Significant'}</td></tr>`;
+    return prefix + `<tr${trCls}><td>${escapeHtml(r.name)}</td><td class="num">${escapeHtml(r.t1)}</td><td class="num">${escapeHtml(r.t2)}</td>${raw ? `<td class="num">${escapeHtml(r.sd)}</td>` : ''}<td class="num">${fmt(change, 2)}</td><td class="num">${fmtP(p)}</td><td>${sdiOutcomeText(change, cv, true)}</td></tr>`;
   }).join('');
   out.innerHTML = `
     <div class="apa-table-num">Table 1</div>
     <div class="apa-table-title">${escapeHtml(title)}</div>
     <table class="apa-table">
       <thead>
-        <tr><th>Subtest</th><th class="num">${escapeHtml(raw ? `${d1} raw` : d1)}</th><th class="num">${escapeHtml(raw ? `${d2} raw` : d2)}</th>${raw ? '<th class="num">SD</th>' : ''}<th class="num">SD Δ</th><th class="num"><i>p</i></th><th>Significance</th></tr>
+        <tr><th>Subtest</th><th class="num">${escapeHtml(raw ? `${d1} raw` : d1)}</th><th class="num">${escapeHtml(raw ? `${d2} raw` : d2)}</th>${raw ? '<th class="num">SD</th>' : ''}<th class="num">SD Δ</th><th class="num"><i>p</i></th><th>${sdiIsCutoff(cv) ? 'Outcome' : 'Significance'}</th></tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
     ${apaNoteHtml('sdi', {
       thresholdLabel: cvDesc,
+      cutoff: sdiIsCutoff(cv),
       mixedTypes: !raw && new Set(named.map(sdiRowScoreType)).size > 1,
       hasRawInIndexMode: !raw && named.some(r => sdiRowScoreType(r) === 'raw')
     })}
@@ -7368,6 +7425,9 @@ function sdiProblem(row){
     if (!Number.isFinite(v)) return 'Check values';
   }
   if (raw && Number(row.sd) <= 0) return 'SD must be > 0';
+  if (!raw && typeof sdiRowOutOfScale === 'function' && sdiRowOutOfScale(row)){
+    return `Out of range (${scoreScaleText(sdiRowScoreType(row))})`;
+  }
   return 'Check values';
 }
 function clearOutcomeStatus(td){

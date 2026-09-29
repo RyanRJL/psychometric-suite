@@ -571,6 +571,9 @@
       if (!key) return;
       const v = profNum(r.score);
       if (v === null) return;
+      /* A score outside its metric's scale is a typo Score Tables flags and
+         leaves unscored; it cannot enter a profile either. */
+      if (typeof batteryScoreOutOfScale === 'function' && batteryScoreOutOfScale(r)) return;
       /* THE GROUP KEY DECIDES, NOT THE ROW TITLE. A row named "Logical
          Memory I" is a WMS-IV Adult measure only if it was taken from the
          Ages 16-69 group; the Older Adult battery carries the same measure

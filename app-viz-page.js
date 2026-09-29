@@ -1074,7 +1074,7 @@
         const rowY = HEADER_H + i * ROW_H;
         const midY = rowY + ROW_H / 2;
         const sig = sdiCvHit(change, cv);
-        const label = sig ? 'Significant change' : 'No significant change';
+        const label = sdiOutcomeText(change, cv);
         let row = `<title>${escapeHtml(r.name)}: ${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}, SD Δ ${fmt(change, 2)}: ${label}</title>`;
         row += `<text class="viz-row-name" x="${COL_CHANGE.nameEnd}" y="${midY + 4.5}" text-anchor="end">${escapeHtml(vizTruncate(r.name, 24))}</text>`;
         row += `<text class="viz-row-score" x="${COL_CHANGE.scoreMid}" y="${midY + 4.5}" text-anchor="middle">${escapeHtml(String(r.t1))} → ${escapeHtml(String(r.t2))}</text>`;
@@ -1119,7 +1119,8 @@
        score, example rows excluded - a chart of a seeded example could be
        mistaken for patient data. */
     const rows = batteryRows.filter(r =>
-      r.name && !r.isExample && r.score !== '' && !isNaN(parseFloat(r.score)));
+      r.name && !r.isExample && r.score !== '' && !isNaN(parseFloat(r.score))
+      && !(typeof batteryScoreOutOfScale === 'function' && batteryScoreOutOfScale(r)));
     if (!rows.length) return null;
 
     // One card per test family, in table order; ungrouped rows form one card.

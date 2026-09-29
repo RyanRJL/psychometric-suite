@@ -1481,9 +1481,11 @@ const batteryCtx = (() => {
   vm.runInContext(
     boundsSrc[0] + '\n' + metricSdSrc[0] + '\n' +
       (APP_SRC.match(/const PATIENT_AGE_INPUTS = \[[^\]]*\];/) || [''])[0] + '\n' +
+      extractConst(APP_SRC, 'SCORE_SCALE_LIMITS') + '\n' +
       ['patientAge', 'bandedReliabilityForAge', 'rInternalForAge', 'rStabilityForAge',
        'derivedCorrectedR', 'batteryCiCorrectRetest', 'resolveCiReliability',
-       'batteryPatientAge', 'getBatteryRowReliability', 'rowScoreType', 'getBatteryCiHtml']
+       'batteryPatientAge', 'getBatteryRowReliability', 'rowScoreType',
+       'batteryBaseRateEntry', 'scoreOutOfScale', 'batteryScoreOutOfScale', 'getBatteryCiHtml']
         .map((n) => extractFn(APP_SRC, n)).join('\n') +
       '\n;globalThis.__B = getBatteryCiHtml;'
       + '\n;globalThis.__REL = getBatteryRowReliability;'
@@ -10383,7 +10385,7 @@ check('every APA note, with every condition on, is within its word ceiling', () 
     'prof': [{ k: 10, criterion: 'below the 5th percentile', diffPct: '95%', trials: 200000,
                matrixSource: 'WAIS-IV Technical and Interpretive Manual (GB), Table 5.1', coarse: 1,
                restricted: 'Letter-Number Sequencing, Figure Weights', scoreKind: 'Scores', scores: 'x' }],
-    'sdi': [{ mixedTypes: 1, hasRawInIndexMode: 1, thresholdLabel: '1.96 SD' }],
+    'sdi': [{ mixedTypes: 1, hasRawInIndexMode: 1, thresholdLabel: '1.96 SD', cutoff: 1 }],
     'rci': [{ methodSentence: 'RCI (z) is computed per Iverson (2001), adjusted for practice effects.',
               thresholdLabel: '95% (z = 1.96)',
               rSentence: 'Corrected (attenuation-adjusted) test-retest <i>r</i> was used where published; raw <i>r</i> for 5 tests.',
@@ -11451,6 +11453,63 @@ check('the premorbid estimates read their coefficients from data.js, not literal
 // Summary
 // ---------------------------------------------------------------------------
 console.log('\n' + '='.repeat(60));
+
+heading('64. Out-of-range scores and SD Index cut-offs');
+
+/* A typo guard: a scaled 71 (meant as 7) printed the 99.99th percentile and
+   "Exceptionally High" into the export. Out-of-scale scores are left unscored
+   on every surface that derives a number from them. */
+{
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(extractConst(APP_SRC, 'SCORE_SCALE_LIMITS') + ';'
+    + ['scoreOutOfScale', 'scoreScaleText', 'sdiCvHit', 'sdiIsCutoff', 'sdiOutcomeText'].map(n => extractFn(APP_SRC, n)).join('\n')
+    + ';globalThis.__S = { scoreOutOfScale, sdiOutcomeText, SCORE_SCALE_LIMITS };', c);
+  const S = c.__S;
+
+  check('scores at the ends of each scale are scored; one step beyond is refused', () => {
+    const bad = [];
+    const cases = { scaled: [1, 19], standard: [40, 160], t: [10, 90], z: [-5, 5] };
+    for (const [type, [lo, hi]] of Object.entries(cases)) {
+      if (S.scoreOutOfScale(lo, type) || S.scoreOutOfScale(hi, type)) bad.push(type + ' refuses its own limits');
+      if (!S.scoreOutOfScale(lo - 0.5, type) || !S.scoreOutOfScale(hi + 0.5, type)) bad.push(type + ' accepts beyond its limits');
+    }
+    if (!S.scoreOutOfScale('71', 'scaled')) bad.push('scaled 71 is accepted');
+    if (S.scoreOutOfScale('', 'scaled') || S.scoreOutOfScale(500, 'raw')) bad.push('blank or raw is flagged');
+    return bad.length === 0 || bad.join('; ');
+  });
+
+  check('every Score Tables output and both linked pages refuse an out-of-range score', () => {
+    const bad = [];
+    for (const fn of ['batteryRowPercentile', 'batteryRowPctCell', 'batteryClassificationDetails', 'getBatteryCiHtml']) {
+      if (!/batteryScoreOutOfScale\(/.test(extractFn(APP_SRC, fn))) bad.push(fn);
+    }
+    if (!/batteryScoreOutOfScale\(/.test(fs.readFileSync(path.join(ROOT, 'app-viz-page.js'), 'utf8'))) bad.push('Score Charts');
+    if (!/batteryScoreOutOfScale\(/.test(fs.readFileSync(path.join(ROOT, 'app-profile-page.js'), 'utf8'))) bad.push('Profile Analysis');
+    if (!/sdiRowOutOfScale\(/.test(extractFn(APP_SRC, 'sdiComputeChange'))) bad.push('sdiComputeChange');
+    return bad.length === 0 || 'no out-of-range guard in: ' + bad.join(', ');
+  });
+
+  check('an SD Index cut-off never reads as a significance test', () => {
+    const bad = [];
+    for (const cv of [1, 1.5, 2]) {
+      for (const d of [-3, -1.2, 0, 1.2, 3]) {
+        for (const apa of [false, true]) {
+          const t = S.sdiOutcomeText(d, cv, apa);
+          if (/ignific/.test(t)) bad.push(`cv ${cv}, change ${d}: "${t}"`);
+        }
+      }
+    }
+    if (S.sdiOutcomeText(-1.2, 1) !== 'Exceeds 1.0 SD') bad.push('-1.2 at 1.0 SD reads ' + S.sdiOutcomeText(-1.2, 1));
+    if (S.sdiOutcomeText(-1.2, 1.5) !== 'Within 1.5 SD') bad.push('-1.2 at 1.5 SD reads ' + S.sdiOutcomeText(-1.2, 1.5));
+    if (S.sdiOutcomeText(2.1, 0.95, true) !== 'Significant') bad.push('the 95% test lost its wording');
+    for (const re of [/'Significant change' : 'No significant change'/, /'Significant' : 'Not Significant'\}/]) {
+      if (re.test(APP_SRC.replace(extractFn(APP_SRC, 'sdiOutcomeText'), ''))) bad.push('a hard-coded significance label is back outside sdiOutcomeText');
+    }
+    return bad.length === 0 || bad.join('; ');
+  });
+}
+
 if (failures.length === 0) {
   console.log('ALL ' + passed + ' CHECKS PASSED');
   process.exit(0);
