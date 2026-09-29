@@ -11599,6 +11599,23 @@ check('the Methods page names as many validity measures as the page offers', () 
   return m[1].toLowerCase() === words[n] || `Methods says "${m[1]}", the page offers ${n}`;
 });
 
+
+heading('68. D-KEFS Word Proverb: no retest n is stored, because none is published');
+
+/* Table 2.25 prints no n. The 28 and 101 once stored were the retest sample's
+   8-19 band and total, which include under-16s who never take the Proverb
+   Test; the stored means and SDs pool back only with about 11 at 16-19.
+   Crawford's df comes from n, so a stored sample-level n overcalls change. */
+/* The 20-49 and 50-89 rows keep 35 and 38: everyone in those bands is old
+   enough to take the test, so the published band counts apply. */
+check('the Word Proverb 16-19 and All Ages rows carry no n', () => {
+  const bad = [];
+  for (const g of Object.keys(D.normDB).filter(k => /^D-KEFS Word Proverb Test · (Ages 16-19|All Ages)$/.test(k))) {
+    for (const [name, e] of Object.entries(D.normDB[g])) if (e && e.n != null) bad.push(`${g} / ${name} has n ${e.n}`);
+  }
+  return bad.length === 0 || bad.join('; ');
+});
+
 if (failures.length === 0) {
   console.log('ALL ' + passed + ' CHECKS PASSED');
   process.exit(0);

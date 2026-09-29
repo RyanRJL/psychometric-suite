@@ -1565,11 +1565,21 @@ const OPIE_BASE_RATES = {
   "D-KEFS Word Proverb Test · Ages 50-89": {
     "Total Achievement Score: Free Inquiry": { m1:9.46, sd1:3.4, m2:10.38, sd2:3.73, r:0.81, n:38 }
   },
+  /* NO n ON THE 16-19 OR ALL AGES ROWS, deliberately. Table 2.25 prints no n.
+     The 28 and 101 once stored here are the retest SAMPLE's 8-19 band and
+     total (Technical Manual, test-retest section), but the Proverb Test is
+     not given under 16, so the under-16s in those counts have no Proverb
+     score. The stored means and SDs pool back to the All Ages row only with
+     about 11 cases at 16-19 (about 83 in all), so 28 and 101 were wrong, and
+     the true figures are unpublished. Crawford's method takes df from n, so
+     it now asks the clinician for N here rather than assuming one (owner
+     decision, 2026-09). Table 2.25 labels this row "Ages 8-19"; 16-19 is
+     the age range the test is actually normed for. */
   "D-KEFS Word Proverb Test · Ages 16-19": {
-    "Total Achievement Score: Free Inquiry": { m1:9.8, sd1:3.29, m2:11.3, sd2:2.5, r:0.9, n:28 }
+    "Total Achievement Score: Free Inquiry": { m1:9.8, sd1:3.29, m2:11.3, sd2:2.5, r:0.9 }
   },
   "D-KEFS Word Proverb Test · All Ages": {
-    "Total Achievement Score": { m1:9.77, sd1:3.07, m2:10.57, sd2:3.04, r:0.76, n:101, rInternalByAge:{16:0.68, 20:0.71, 30:0.8, 40:0.76, 50:0.77, 60:0.81, 70:0.8, 80:0.78}, rInternalAgeMax:89 }
+    "Total Achievement Score": { m1:9.77, sd1:3.07, m2:10.57, sd2:3.04, r:0.76, rInternalByAge:{16:0.68, 20:0.71, 30:0.8, 40:0.76, 50:0.77, 60:0.81, 70:0.8, 80:0.78}, rInternalAgeMax:89 }
   },
   "D-KEFS Advanced Trail Making · All Ages": {
     "Number Sequencing Mean Correct (With Errors) Connection Time": { m1:10.4, sd1:2.8, m2:10.4, sd2:2.8, r:0.53, n:224 },
