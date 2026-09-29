@@ -11839,6 +11839,29 @@ check('every declared function is referenced somewhere', () => {
   return bad.length === 0 || 'declared and never used: ' + bad.join(', ');
 });
 
+heading('71. Validity menu: the status chip shares the name\'s line');
+
+/* UI audit, 2026-09. Each menu entry was a flex row, [name over description]
+   [chip][chevron], so a scored measure's chip took its width out of the text
+   column and wrapped the description: entries grew from 46 to 77 layout px,
+   and with all eight scored the menu ran 18 visual px past the fold on every
+   Validity tab at 1366x768. As a grid the chip sits on the name's line and
+   the description spans beneath both, so it is laid out at the same width
+   scored or not. Measured after: the menu is 652 layout px scored (was
+   721), and those four tabs no longer scroll. */
+check('the Validity menu entry is a grid with the chip on the name\'s line', () => {
+  const rule = sel => (CSS_SRC.match(new RegExp('(?:^|\\n)' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\{([^}]*)\\}')) || [])[1];
+  const bad = [];
+  const item = rule('.pvt-nav-item') || '';
+  if (!/display:grid/.test(item)) bad.push('.pvt-nav-item is not a grid');
+  if (!/grid-template-columns:minmax\(0,1fr\) auto auto/.test(item)) bad.push('.pvt-nav-item lost its three columns (text, chip, chevron)');
+  if (!/display:contents/.test(rule('.pvt-nav-main') || '')) bad.push('.pvt-nav-main no longer steps aside, so name and description stack beside the chip again');
+  if (!/grid-row:1/.test(rule('.pvt-nav-label') || '')) bad.push('the name is not on row 1');
+  if (!/grid-column:1 \/ 3/.test(rule('.pvt-nav-meta') || '')) bad.push('the description no longer spans beneath the chip');
+  if (!/grid-column:2;grid-row:1/.test(rule('.pvt-nav-item > .pvt-status') || '')) bad.push('the status chip is not on the name\'s line');
+  return bad.length === 0 || bad.join('; ');
+});
+
 Promise.all(pendingChecks).then(() => {
   if (failures.length === 0) {
     console.log('ALL ' + passed + ' CHECKS PASSED');

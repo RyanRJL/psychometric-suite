@@ -206,11 +206,46 @@ Three things that bit while wiring it, all found by driving the real page:
 UI audit, 2026-09. The app is meant to read as one window. At **1366 x 768, 1440 x 900 and
 1920 x 1080, all 26 views** (every page, every Validity / Premorbid / Change Analysis tab,
 both Effect Sizes modes) fit with no page scroll, report open or closed, and nothing is
-painted under the floating chip. The one known exception is the Validity Summary once most
-of its measures are scored: fourteen rows run past the fold at 1366 (380 px; the tab-strip
-version it replaced ran 224 px over with the same fourteen). Empty, and with five rows, it
-fits. §55 pins what made that true. Things to know before
-touching layout:
+painted under the floating chip. §55 pins what made that true.
+
+**The exceptions are all on Performance Validity, all content, and kept by owner decision
+(2026-09).** Re-measured in the layout audit, 2026-09-29, with all eight measures scored
+(visual px of page scroll; empty, every tab fits at every size):
+
+| View | 1366 x 768 | 1440 x 900 | 1920 x 1080 |
+|---|---|---|---|
+| Summary (verdict, scores table, Larrabee card) | 642 | 474 | 242 |
+| D-KEFS Trail Making | 158 | 17 | fits |
+| TOMM | 157 | fits | fits |
+| Digit Span indices | 104 | fits | fits |
+| CVLT-3 Forced Choice | 91 | fits | fits |
+
+Each is the result card, caution and sources being taller than the window; scrolled to the
+bottom, all of them clear the status bar and the chip. The earlier "380 px" for the Summary
+predates D-KEFS Trail Making and the Larrabee card. **Do not "fix" these by collapsing result
+content**: that was weighed and declined. What was fixed is the menu: its entries were flex
+rows, so a scored measure's chip took width from the text and wrapped the description, and
+with all eight scored the menu alone ran 18 px past the fold on every Validity tab. The chip
+now shares the name's line (a grid, `.pvt-nav-item`; `check.js` §71).
+
+**Measuring layout has three traps, each of which produced false findings in that audit:**
+
+- **A hidden Browser pane renders no frames.** No `requestAnimationFrame`, no
+  `ResizeObserver` callback, and view transitions stall, so every fitter is skipped and a
+  page switch can leave the previous page on screen. Confirm a frame fires, and confirm the
+  active section is the one being measured, before trusting a number. Setting
+  `window.prefersReducedMotion = () => true` for the run skips the transition without
+  touching layout.
+- **The window scrolls, not `body`.** `html` is `overflow:visible`, so body's `overflow`
+  propagates to the viewport: scroll with `window.scrollTo`, read
+  `document.scrollingElement`. `body.scrollTop` stays 0.
+- **Content of a closed `<details>` still has a layout box** in current Chrome, though it is
+  not painted. Exclude it (all but its `summary`) or the Converter's full table reads as
+  sitting under the status bar.
+
+Also: the report's **Maximise** is a persisted view preference, and at 800 px it leaves too
+little page to dock at 1366, so the drawer correctly overlays; do not read that as docking
+being broken. Things to know before touching layout:
 
 - **The footer is a fixed status bar** (`APP FRAME`, end of `design-system.css`).
   **`.main`'s** `padding-bottom` reserves `--footer-h` (which `syncAppFrame()` measures
@@ -2359,7 +2394,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 447 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 471 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -2372,7 +2407,7 @@ family dropdowns (§33), consent gating on the Change Analysis methods (§34), t
 empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
 tab-close prompt and AACN default (§52), Save / Open session (§53), and the app frame,
 the docked report and the motion scale (§55), and the WAIS-IV/WMS-IV joint profile on
-WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57), and WISC-V Table 5.1 (§58), and D-KEFS Trail Making as a PVT (§60), and the premorbid equation tips, parsed back and compared with the models (§63).
+WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57), and WISC-V Table 5.1 (§58), and D-KEFS Trail Making as a PVT (§60), and the premorbid equation tips, parsed back and compared with the models (§63), and citations resolving to one reference each way (§69), no dead wiring (§70), and the Validity menu layout (§71). The service worker checks in §47 are asynchronous (`checkAsync`); the summary waits for them.
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

@@ -9838,12 +9838,22 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
   color:var(--ds-text-faint);
 }
 .pvt-nav-group-note{font-weight:500;letter-spacing:0;text-transform:none;font-size:11px}
+/* A grid, not a row: the status chip sits on the NAME's line and the
+   description runs full width beneath both. As a row, the chip took its
+   width out of the text column, so scoring a measure wrapped its
+   description (41 to 69px an item) and, with all eight scored, the menu
+   ran past the fold on every tab at 1366x768 (UI audit, 2026-09). The
+   6px gap is measured: it lets "Reliable Digit Span" (115px) share its
+   line with a Fail chip (50px) inside the 194px item. The two longest
+   names (CVLT-3 Forced Choice, D-KEFS Trail Making) still wrap when
+   scored; the menu fits regardless. */
 .pvt-nav-item{
   position:relative;
-  display:flex;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
   align-items:center;
-  justify-content:space-between;
-  gap:8px;
+  column-gap:6px;
+  row-gap:1px;
   width:100%;
   padding:7px 12px;
   border:0;
@@ -9874,6 +9884,8 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
    darkens and steps right on hover, and takes the accent on the open one. */
 .pvt-nav-item::after{
   content:'';
+  grid-column:3;
+  grid-row:1 / 3;
   flex:none;
   width:8px;
   height:8px;
@@ -9889,10 +9901,12 @@ button, [role="button"], .nav-item, .topnav-item, .topnav-drop-item,
    "button"). Full strength and a step right on hover and on the open one. */
 .pvt-nav-item:hover::after{opacity:1;transform:translateX(3px) rotate(-45deg)}
 .pvt-nav-item.active::after{opacity:1}
-.pvt-nav-main{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
-.pvt-nav-label{font-size:13px;font-weight:500;color:var(--ds-text);line-height:1.3}
+/* The wrapper steps aside so its two lines join the item's grid. */
+.pvt-nav-main{display:contents}
+.pvt-nav-label{grid-column:1;grid-row:1;min-width:0;font-size:13px;font-weight:500;color:var(--ds-text);line-height:1.3}
 .pvt-nav-item.active .pvt-nav-label{font-weight:600;color:var(--ds-primary)}
-.pvt-nav-meta{font-size:11px;color:var(--ds-text-subtle);line-height:1.3}
+.pvt-nav-meta{grid-column:1 / 3;grid-row:2;min-width:0;font-size:11px;color:var(--ds-text-subtle);line-height:1.3}
+.pvt-nav-item > .pvt-status{grid-column:2;grid-row:1}
 
 /* Live status chip. Unscored measures render NO chip (.is-idle): an empty
    pill is dead chrome, and seven of them made the menu read as broken
