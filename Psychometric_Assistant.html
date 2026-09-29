@@ -27219,12 +27219,20 @@ function renderBatteryApa(){
   const mixed    = types.size > 1;
   const headerLabel = types.size === 1 ? scoreTypeLabel([...types][0]) : 'Score';
 
-  /* Sync column visibility with the table's current settings before building */
-  if (!apaColumnState['bat-apa']) apaColumnState['bat-apa'] = new Set();
-  if (rawHidden) apaColumnState['bat-apa'].delete('raw');
-  else           apaColumnState['bat-apa'].add('raw');
-  if (ciLevel === 'off') apaColumnState['bat-apa'].delete('ci');
-  else                   apaColumnState['bat-apa'].add('ci');
+  /* Sync column visibility with the table's current settings before building.
+     ONLY ONCE A SET EXISTS. This used to create an empty set first, so on a
+     fresh load (Raw shown by default) the set became {raw}; that non-empty set
+     then read as the clinician's own column choice, the defaults never loaded,
+     and the export and report held a lone "Raw Score" column. The first build
+     takes its defaults in getApaVisibleColumns, whose Raw and CI defaults
+     already follow these same two settings. */
+  const batCols = apaColumnState['bat-apa'];
+  if (batCols){
+    if (rawHidden) batCols.delete('raw');
+    else           batCols.add('raw');
+    if (ciLevel === 'off') batCols.delete('ci');
+    else                   batCols.add('ci');
+  }
   /* A MIXED TABLE SAYS WHICH METRIC EACH SCORE IS ON. The column header can
      only say "Score" when rows differ, and on screen each row carries its own
      tag, but the export had nothing: a T of 60 and a standard score of 60

@@ -11510,6 +11510,28 @@ heading('64. Out-of-range scores and SD Index cut-offs');
   });
 }
 
+
+heading('65. Score Tables export columns on a fresh load');
+
+/* The export and the Working Report held a lone "Raw Score" column on every
+   fresh load: renderBatteryApa created the column set EMPTY, added 'raw'
+   (Raw is shown by default), and that non-empty set then read as the
+   clinician's own choice, so the defaults never loaded. */
+check('a fresh load exports every default Score Tables column', () => {
+  const bad = [];
+  const apa = extractFn(APP_SRC, 'renderBatteryApa');
+  if (/apaColumnState\['bat-apa'\]\s*=(?!=)/.test(apa)) bad.push('renderBatteryApa creates the column set itself again');
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext('const apaColumnState = {};' + extractFn(APP_SRC, 'getApaVisibleColumns')
+    + ';globalThis.__G = getApaVisibleColumns;', c);
+  const cols = [{ key:'subtest' }, { key:'raw', defaultVisible:true }, { key:'score' },
+                { key:'ci', defaultVisible:false }, { key:'percentile' }, { key:'classification' }];
+  const got = c.__G('bat-apa', cols).map(x => x.key).join(',');
+  if (got !== 'subtest,raw,score,percentile,classification') bad.push('first build gives ' + got);
+  return bad.length === 0 || bad.join('; ');
+});
+
 if (failures.length === 0) {
   console.log('ALL ' + passed + ' CHECKS PASSED');
   process.exit(0);
