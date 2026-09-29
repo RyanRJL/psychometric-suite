@@ -7,7 +7,7 @@
    Bump CACHE_VERSION below whenever you ship changes you want to force-
    refresh — old caches will be deleted on activation. */
 
-const CACHE_VERSION = 'psyassist-0.12.12';
+const CACHE_VERSION = 'psyassist-0.12.13';
 
 /* Bare URLs (no ?v=...) — the SW also caches versioned variants on demand
    via the fetch handler below, so this list is just for first-paint speed. */
@@ -89,7 +89,16 @@ self.addEventListener('fetch', event => {
         if (event.request.mode === 'navigate'){
           return caches.match('./index.html');
         }
-        return new Response('Offline', { status: 503, statusText: 'Offline' });
+        /* OFFLINE ONLY: serve the precached bare copy of a versioned asset.
+           The page asks for app.js?v=…, but install precaches bare app.js,
+           so after a first visit, and after every update (activation
+           deletes the old cache, which held the only versioned copies),
+           an offline load found no script or stylesheet at all and the app
+           opened unstyled and dead. The bare copy was precached in the same
+           install as the cached index.html, so the two are one release.
+           Online this branch never runs, so ?v= keeps busting the cache. */
+        return caches.match(event.request, { ignoreSearch: true })
+          .then(bare => bare || new Response('Offline', { status: 503, statusText: 'Offline' }));
       });
     })
   );

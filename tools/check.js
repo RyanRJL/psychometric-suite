@@ -169,6 +169,21 @@ function check(name, fn) {
   else { failures.push({ section, name, detail }); console.log('  FAIL  ' + name + (detail ? '  -> ' + detail : '')); }
 }
 
+/* For code that only exists as promises (the service worker's fetch handler).
+   Results print when they settle, under the section they were declared in;
+   the summary at the end waits for every one, so none can be dropped. */
+const pendingChecks = [];
+function checkAsync(name, fn) {
+  const sec = section;
+  pendingChecks.push(Promise.resolve().then(fn).then(
+    r => (r === true || r === undefined) ? { ok: true } : { ok: false, detail: String(r) },
+    e => ({ ok: false, detail: e && e.message ? e.message : String(e) })
+  ).then(({ ok, detail }) => {
+    if (ok) { passed++; console.log('  PASS  ' + name + '  [' + sec.split('.')[0] + ', async]'); }
+    else { failures.push({ section: sec, name, detail }); console.log('  FAIL  ' + name + '  [' + sec.split('.')[0] + ', async]  -> ' + detail); }
+  }));
+}
+
 // Floating-point comparison. Default tolerance is 5e-3, loose enough for
 // values quoted to 2dp in a manual, tight enough to catch a real change.
 function checkClose(name, actual, expected, tol, source) {
@@ -9121,17 +9136,69 @@ const SW_SRC = fs.readFileSync(path.join(ROOT, 'service-worker.js'), 'utf8');
    was served whatever the version string said. Only CACHE_VERSION did anything,
    which is why a change could be provably in the file, provably served, and
    still not appear. */
-check('the fetch handler matches on the full URL, so ?v= actually busts', () => {
+/* Run the shipped fetch handler against a fake cache and network, rather than
+   reading its text. The cache holds what install precaches: bare URLs only.
+   `online` decides whether fetch() resolves or rejects. */
+async function swFetch(url, { online, cached, mode = 'no-cors' }) {
+  let handler = null, fetched = 0;
+  const store = new Map(cached.map(u => [u, 'cached:' + u]));
+  const bare = u => u.split('?')[0];
+  const sandbox = {
+    self: { addEventListener: (type, fn) => { if (type === 'fetch') handler = fn; } },
+    location: { origin: 'http://x' },
+    URL,
+    Response: class { constructor(body, init) { this.body = body; this.status = (init || {}).status || 200; this.ok = this.status < 400; } clone() { return this; } },
+    caches: {
+      match: async (req, opts) => {
+        const u = typeof req === 'string' ? 'http://x/' + req.replace(/^\.\//, '') : req.url;
+        const key = opts && opts.ignoreSearch ? bare(u) : u;
+        return store.has(key) ? { body: store.get(key), status: 200 } : undefined;
+      },
+      open: async () => ({ put: async () => {} }),
+      keys: async () => [], delete: async () => true
+    },
+    fetch: async () => { fetched++; if (!online) throw new TypeError('offline'); return new sandbox.Response('network:' + url, { status: 200 }); }
+  };
+  vm.runInNewContext(SW_SRC, sandbox);
+  let result;
+  handler({ request: { method: 'GET', url, mode }, respondWith: p => { result = p; } });
+  const res = await result;
+  return { body: res && res.body, status: res && res.status, fetched };
+}
+
+/* Two halves, and the second exists because the first cost offline use.
+   Online, a versioned asset whose exact URL is not cached must go to the
+   network even though its bare copy is cached, or ?v= changes nothing.
+   Offline, that same request must get the bare copy: install precaches
+   only bare URLs, so after a first visit and after every update (activation
+   deletes the only versioned copies) an offline load had no script or
+   stylesheet and the app opened unstyled and dead. Reproduced in the
+   browser before the fix, 2026-09-29. */
+const SW_CASES = (async () => {
+  const cached = ['http://x/app.js', 'http://x/index.html'];
+  return {
+    online:  await swFetch('http://x/app.js?v=new', { online: true, cached }),
+    offline: await swFetch('http://x/app.js?v=new', { online: false, cached }),
+    missing: await swFetch('http://x/nothing.js?v=1', { online: false, cached }),
+    exact:   await swFetch('http://x/app.js', { online: true, cached })
+  };
+})();
+
+checkAsync('online, ?v= busts the cache: a versioned miss goes to the network', async () => {
+  const c = await SW_CASES;
   const bad = [];
-  /* Test the CALL, not the word — the comment above it in service-worker.js
-     explains the defect and necessarily names the option. */
-  const code = SW_SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-  if (/ignoreSearch/.test(code)) {
-    bad.push('the cache lookup still ignores the query string, so ?v= changes nothing');
+  if (c.online.fetched !== 1 || !String(c.online.body).startsWith('network:')) {
+    bad.push(`online versioned miss served "${c.online.body}" without the network, so ?v= changes nothing`);
   }
-  if (!/caches\.match\(event\.request\)/.test(SW_SRC)) {
-    bad.push('the fetch handler no longer matches on the request itself');
-  }
+  if (c.exact.fetched !== 0) bad.push('an exact cache hit still went to the network, so the worker is not cache-first');
+  return bad.length === 0 || bad.join('; ');
+});
+
+checkAsync('offline, a versioned asset falls back to its precached bare copy', async () => {
+  const c = await SW_CASES;
+  const bad = [];
+  if (c.offline.body !== 'cached:http://x/app.js') bad.push(`offline app.js?v= got "${c.offline.body}" (status ${c.offline.status})`);
+  if (c.missing.status !== 503) bad.push(`an asset cached nowhere got status ${c.missing.status}, not 503`);
   return bad.length === 0 || bad.join('; ');
 });
 
@@ -11719,10 +11786,12 @@ check('every non-manual reference is cited outside the reference list', () => {
   return bad.length === 0 || 'cited nowhere: ' + bad.join('; ');
 });
 
-if (failures.length === 0) {
-  console.log('ALL ' + passed + ' CHECKS PASSED');
-  process.exit(0);
-}
-console.log(failures.length + ' FAILED, ' + passed + ' passed\n');
-failures.forEach(f => console.log('  [' + f.section + '] ' + f.name + '\n      ' + f.detail));
-process.exit(1);
+Promise.all(pendingChecks).then(() => {
+  if (failures.length === 0) {
+    console.log('ALL ' + passed + ' CHECKS PASSED');
+    process.exit(0);
+  }
+  console.log(failures.length + ' FAILED, ' + passed + ' passed\n');
+  failures.forEach(f => console.log('  [' + f.section + '] ' + f.name + '\n      ' + f.detail));
+  process.exit(1);
+});
