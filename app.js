@@ -6739,8 +6739,12 @@ function renderPremorbidForestPlot(rows, mult, ciPct){
       // Estimate (CI) — point estimate in weight-700 charcoal so it
       // reads as the headline number; CI bounds in light muted grey
       // so the eye locks on the answer first.
+      /* The printed interval is the table's: round(estimate) ± round(z·SEE).
+         Rounding lo and hi separately printed 74–107 here beside 74–108 in
+         the results table for the same model. The whisker stays unrounded. */
+      const margin = Math.round(mult * row.see);
       out += `<text x="${COL_ESTIMATE_X}" y="${baseline}" ${TXT('13.5', '700', INK, 'end')}>${Math.round(row.val)}`
-          +  `<tspan font-weight='400' fill='${MUTED}' font-size='12.5'>  (${Math.round(lo)}–${Math.round(hi)})</tspan></text>`;
+          +  `<tspan font-weight='400' fill='${MUTED}' font-size='12.5'>  (${Math.round(row.val) - margin}–${Math.round(row.val) + margin})</tspan></text>`;
 
       // Whisker (charcoal, slightly thicker for cleaner read)
       out += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${INK}" stroke-width="1" stroke-linecap="round"/>`;

@@ -11541,9 +11541,11 @@ heading('66. Premorbid: one interval convention, and no extrapolation from typos
 check('every premorbid interval is round(estimate) ± round(z·SEE)', () => {
   const bad = [];
   const sites = { updatePredictRow: /Math\.round\(mult\s*\*\s*see\)/, calcPremorbid: /Math\.round\(mult\s*\*\s*row\.see\)/,
-                  renderPreEstimatesApa: /Math\.round\(mult\s*\*\s*r\.see\)/, calcOpiePredict: /Math\.round\(mult\s*\*\s*row\.see\)/ };
+                  renderPreEstimatesApa: /Math\.round\(mult\s*\*\s*r\.see\)/, calcOpiePredict: /Math\.round\(mult\s*\*\s*row\.see\)/,
+                  renderPremorbidForestPlot: /Math\.round\(mult\s*\*\s*row\.see\)/ };
   for (const [fn, re] of Object.entries(sites)) if (!re.test(extractFn(APP_SRC, fn))) bad.push(fn + ' no longer rounds the margin on its own');
   if (/fmtIntOrDash\(pred\s*[-+]\s*mult/.test(extractFn(APP_SRC, 'updatePredictRow'))) bad.push('updatePredictRow rounds each bound separately again');
+  if (/Math\.round\((lo|hi)\)/.test(extractFn(APP_SRC, 'renderPremorbidForestPlot'))) bad.push('the forest plot label rounds each bound separately again');
   return bad.length === 0 || bad.join('; ');
 });
 
