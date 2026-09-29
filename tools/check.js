@@ -10378,7 +10378,7 @@ check('every APA note, with every condition on, is within its word ceiling', () 
     blankCiManual: 1, hasDerivedR: 1, ciAge: 45, premorbid: '102', premorbidMode: 'see', metricMarks: ['a', 'b'] };
   const PVT = { hasEi: 1, hasEs: 1, hasRds: 1, hasDs: 1, hasRey: 1, hasCvlt3: 1, cvlt3Borrowed: 1,
     cvlt3Cite: 'Schwartz et al., 2016', hasTomm: 1, hasTrails: 1, bothRbans: 1, bothDigitSpan: 1, hasDashes: 1,
-    eiScreening: 1, eiOlder: 1, versionCaveats: caveats, esGated: 1 };
+    eiScreening: 1, eiOlder: 1, versionCaveats: caveats, esGated: 1, hasFlags: 1 };
   const CASES = {
     'bat': [BAT, { ...BAT, premorbidMode: 'sd' }],
     'pvt': [PVT, { ...PVT, cvlt3Borrowed: 0 }],
@@ -10394,7 +10394,7 @@ check('every APA note, with every condition on, is within its word ceiling', () 
     'pre-predict': [{}],
     'pre-opiepredict': [{}]
   };
-  const CEILING = { 'bat': 250, 'pvt': 285, 'prof': 140, 'sdi': 40, 'rci': 60, 'pre-estimates': 25, 'pre-predict': 35, 'pre-opiepredict': 85 };
+  const CEILING = { 'bat': 250, 'pvt': 300, 'prof': 140, 'sdi': 40, 'rci': 60, 'pre-estimates': 25, 'pre-predict': 35, 'pre-opiepredict': 85 };
   const words = s => s.replace(/<[^>]+>/g, '').split(/\s+/).filter(Boolean).length;
   const bad = [];
   for (const id of Object.keys(notes)) {
@@ -11562,6 +11562,41 @@ check('an out-of-range premorbid predictor reaches no model', () => {
   }
   if (ids.includes('pre-age')) bad.push('age is range-checked here, which would blank Crawford & Allan above 90 without its note');
   return bad.length === 0 || bad.join('; ');
+});
+
+
+heading('67. Validity: a flag is not a failure, and the Methods page counts every measure');
+
+/* Owner decision, 2026-09: a base-rate index with no published accuracy is
+   reported as Flagged but never counted toward the independent-indicator
+   total. The Digit Span indicator used to read "failed" on a Vocabulary -
+   Digit Span difference alone. */
+check('flagged rows never count as a failed indicator', () => {
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(['pvtRowFails', 'pvtIndicatorCounts'].map(n => extractFn(APP_SRC, n)).join('\n')
+    + ';globalThis.__P = { pvtIndicatorCounts };', c);
+  const count = c.__P.pvtIndicatorCounts;
+  const bad = [];
+  const a = count([{ group: 'rds', fail: false }, { group: 'rds', fail: true, flagOnly: true }, { group: 'tomm', fail: true }]);
+  if (a.failed !== 1 || a.flagged !== 1 || a.total !== 2) bad.push('flag-only digit span gives ' + JSON.stringify(a));
+  const b = count([{ group: 'rds', fail: true }, { group: 'rds', fail: true, flagOnly: true }]);
+  if (b.failed !== 1 || b.flagged !== 0) bad.push('a real fail plus a flag in one indicator gives ' + JSON.stringify(b));
+  const rows = extractFn(APP_SRC, 'getPvtSummaryRows');
+  const flaggedRows = (rows.match(/'Flagged'/g) || []).length, marked = (rows.match(/flagOnly: true/g) || []).length;
+  if (flaggedRows !== marked) bad.push(`${flaggedRows} rows can read "Flagged" but ${marked} carry flagOnly`);
+  if (!/live\.some\(pvtRowFails\)/.test(extractFn(APP_SRC, 'pvtGroupState'))) bad.push('the verdict pips count flags as failures again');
+  return bad.length === 0 || bad.join('; ');
+});
+
+/* "Seven measures" survived the eighth (D-KEFS Trail Making, 2026-09). */
+check('the Methods page names as many validity measures as the page offers', () => {
+  const words = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+  const groups = extractConst(APP_SRC, 'PVT_INDICATOR_GROUPS');
+  const n = (groups.match(/\{ tab: '/g) || []).length;
+  const m = HTML_SRC.match(/Performance validity<\/h3>\s*<p class="section-body-text">\s*(\w+) measures/);
+  if (!m) return 'could not read the Methods page count';
+  return m[1].toLowerCase() === words[n] || `Methods says "${m[1]}", the page offers ${n}`;
 });
 
 if (failures.length === 0) {

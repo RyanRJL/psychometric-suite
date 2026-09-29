@@ -3703,6 +3703,7 @@ const APA_NOTES = {
          note keeps them — the licensed onScreen difference. */
       (ctx.onScreen || !sources.length) ? '' : `Sources: ${sources.join('; ')}.`,
       '"Fail" = score beyond the published cut-off, not a determination of invalidity; probable invalidity is conventionally supported by failure of at least two independent indicators (Larrabee, 2014a).',
+      ctx.hasFlags ? '"Flagged" rows have no published accuracy and do not count as failures.' : '',
       ctx.hasDashes
         ? 'Sensitivity and specificity are the published values at the applied cut-off; a dash marks a source that publishes a base rate or AUC instead.'
         : 'Sensitivity and specificity are the published values at the applied cut-off.',
@@ -8489,7 +8490,7 @@ function getPvtSummaryRows(){
       id: 'ds-vocab', group: 'rds', measure: 'Vocabulary − Digit Span',
       score: String(ds.diff), cutoff: `≥ ${PVT_DS.vocabDiffCutoff}`,
       sens: '—', spec: '—',
-      result: ds.diffFail ? 'Flagged' : 'Not flagged', fail: ds.diffFail
+      result: ds.diffFail ? 'Flagged' : 'Not flagged', fail: ds.diffFail, flagOnly: true
     });
     /* A withheld forward-span index (no age, or 55+) exports NO row — an
        unevaluated index in a report table would be a false claim. */
@@ -8497,13 +8498,13 @@ function getPvtSummaryRows(){
       id: 'ds-lsf', group: 'rds', measure: 'Longest span forward',
       score: String(ds.lsf), cutoff: `≤ ${PVT_DS.lsfCutoff} (age < ${PVT_DS.lsfAgeBelow})`,
       sens: '—', spec: '—',
-      result: ds.lsfFail ? 'Flagged' : 'Not flagged', fail: ds.lsfFail
+      result: ds.lsfFail ? 'Flagged' : 'Not flagged', fail: ds.lsfFail, flagOnly: true
     });
     if (ds.lsb !== undefined) rows.push({
       id: 'ds-lsb', group: 'rds', measure: 'Longest span backward',
       score: String(ds.lsb), cutoff: `≤ ${PVT_DS.lsbCutoff}`,
       sens: '—', spec: '—',
-      result: ds.lsbFail ? 'Flagged' : 'Not flagged', fail: ds.lsbFail
+      result: ds.lsbFail ? 'Flagged' : 'Not flagged', fail: ds.lsbFail, flagOnly: true
     });
   }
   /* Stand-alone: shares no subtest with anything above, so its own group. */
@@ -8547,7 +8548,7 @@ function getPvtSummaryRows(){
         score: String(c.count),
         cutoff: c.threshold === null ? '—' : `≥ ${c.threshold} (base rate, ages ${cv.band})`,
         sens: '—', spec: '—',
-        result: c.fail ? 'Flagged' : 'Not flagged', fail: c.fail
+        result: c.fail ? 'Flagged' : 'Not flagged', fail: c.fail, flagOnly: true
       });
     });
   }
@@ -8574,10 +8575,20 @@ function getPvtSummaryRows(){
   }));
   return rows;
 }
+/* A FLAG IS NOT A FAILURE (owner decision, 2026-09). Rows marked flagOnly are
+   base-rate suspicion indices with no published sensitivity/specificity pair
+   (Vocabulary - Digit Span, the longest spans, the CVLT-3 critical items).
+   Counting them made the Digit Span indicator "failed" on a Vocabulary -
+   Digit Span difference that 7.1% of the standardisation sample show, while
+   the row itself read "Flagged". Larrabee's two-or-more rule assumes
+   validated cut-offs, so only a Fail counts; flagged indicators are reported
+   beside the count. */
+function pvtRowFails(r){ return !!(r && r.fail && !r.flagOnly); }
 function pvtIndicatorCounts(rows){
   const groups = [...new Set(rows.filter(r => !r.gated).map(r => r.group))];
-  const failed = groups.filter(g => rows.some(r => r.group === g && r.fail));
-  return { total: groups.length, failed: failed.length };
+  const failed = groups.filter(g => rows.some(r => r.group === g && pvtRowFails(r)));
+  const flagged = groups.filter(g => !failed.includes(g) && rows.some(r => r.group === g && r.fail && r.flagOnly));
+  return { total: groups.length, failed: failed.length, flagged: flagged.length };
 }
 
 function pvtFmtRate(r){
@@ -8673,7 +8684,7 @@ function pvtGroupState(rows, g){
   if (!mine.length) return 'idle';
   const live = mine.filter(r => !r.gated);
   if (!live.length) return 'gated';
-  return live.some(r => r.fail) ? 'fail' : 'pass';
+  return live.some(pvtRowFails) ? 'fail' : live.some(r => r.fail) ? 'flag' : 'pass';
 }
 
 function renderPvtSummary(){
@@ -8710,6 +8721,7 @@ function renderPvtSummary(){
           ? 'This failure is significantly below chance on a forced-choice test, which on its own indicates deliberately wrong answers and supports malingering where there is an external incentive (Sweet et al., 2021).'
           : 'A single failure is a hypothesis to corroborate, not a conclusion (Larrabee, 2014a).')
         : 'Nothing beyond its cut-off so far.';
+      if (c.flagged) body += ` ${c.flagged === 1 ? 'One further indicator is' : `${c.flagged} further indicators are`} flagged on a base-rate index only, which has no published accuracy and is not counted as a failure.`;
       if (c.failed >= 2 && belowChance) body += ' One is significantly below chance on a forced-choice test, which on its own supports malingering where there is an external incentive (Sweet et al., 2021).';
     }
     verdict.innerHTML = `<div class="pvt-verdict is-${kind}">
@@ -8741,7 +8753,7 @@ function renderPvtSummary(){
     const mine = rows.filter(r => r.group === g.id);
     if (!mine.length) return '';
     return `<tr class="pvt-group-row"><td colspan="6">${g.label}${g.members.length > 1 ? ' <span class="pvt-group-note">counts as one</span>' : ''}</td></tr>`
-      + mine.map(r => `<tr><td>${r.measure}</td><td class="num">${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td class="num">${r.sens}</td><td class="num">${r.spec}</td><td class="${r.fail ? 'pvt-cell-fail' : ''}">${r.result}</td></tr>`).join('');
+      + mine.map(r => `<tr><td>${r.measure}</td><td class="num">${r.score}</td><td>${r.cutoff.replace('<', '&lt;')}</td><td class="num">${r.sens}</td><td class="num">${r.spec}</td><td class="${pvtRowFails(r) ? 'pvt-cell-fail' : r.fail ? 'pvt-cell-flag' : ''}">${r.result}</td></tr>`).join('');
   }).join('');
   host.innerHTML = `
     <div class="pvt-panel">
@@ -8780,6 +8792,7 @@ function renderPvtApa(){
       hasEs:   rows.some(r => r.id === 'es'),
       hasRds:  rows.some(r => r.id === 'rds'),
       hasDs:   rows.some(r => r.id.startsWith('ds')),
+      hasFlags: rows.some(r => r.flagOnly),
       hasRey:  rows.some(r => r.id.startsWith('rey')),
       hasCvlt3: rows.some(r => r.group === 'cvlt3'),
       cvlt3Borrowed: rows.some(r => r.group === 'cvlt3') && (typeof getPvtCvlt3 === 'function') && getPvtCvlt3().basis?.cut !== null && getPvtCvlt3().basis !== undefined,

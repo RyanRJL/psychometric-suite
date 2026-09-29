@@ -10683,3 +10683,9 @@ svg.rey-glyph{width:56px;height:56px}
    page-scoped rules, and a standalone class on an unclaimed property needs no
    !important (see the cascade note in CLAUDE.md). */
 .pre-input-out{outline:2px solid #B3261E;outline-offset:1px}
+
+/* A flagged base-rate index (no published accuracy): reported, not counted as
+   a failure (pvtIndicatorCounts). Its pip is outlined rather than filled, and
+   its result cell takes the caution ink the flagged explainers use. */
+.pvt-verdict-pip.is-flag{background:transparent;box-shadow:inset 0 0 0 1.5px var(--ds-primary)}
+.pvt-table td.pvt-cell-flag{color:#8a6215;font-weight:600}  /* outranks `.pvt-table td` (design-system.css) */
