@@ -1038,22 +1038,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   .pre-form-grid-2,.pre-form-grid-3{grid-template-columns:1fr;}
 }
 
-/* CUSTOM TESTS PAGE */
-.db-list{margin-top:18px}
-/* Score-type picker in the custom-test entry table.
-
-   The global `input[type=text], input[type=number], ..., select, textarea`
-   rule sets width:100%, and the entry table is auto-layout, so the column
-   collapsed to whatever the other cells left over — 61px, which renders the
-   select as an unreadable 36px stub. The inline width:170px on the <th> does
-   not survive that.
-
-   min-width on the CONTROL is what forces the column open in auto layout:
-   it wins over the shared width:100% without !important (min-width always
-   beats width), and it is a standalone class, so nothing in
-   design-system.css is competing for it. */
-.ct-metric-select{ min-width:158px; }
-
 /* Norms Database — one flat table over every entry, filtered and sorted.
 
    A real <table>, deliberately, not the CSS grid the grouped list used: that
@@ -1072,16 +1056,29 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
    outranks the three separate .section max-widths (0-1-0) across styles.css
    and design-system.css without needing !important. */
 #custom-tests{max-width:1480px;padding-left:32px;padding-right:32px}
-/* Taller, not unbounded. The header cells are position:sticky inside this
-   container, so removing the cap would make them stick to the viewport instead
-   — and slide under the fixed 108px topbar. Capping to the window keeps the
-   scroll inside the table where the sticky headers work. */
-#custom-tests .db-list{max-height:calc(100vh - 300px);min-height:320px}
-.db-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 8px}
+/* Taller, not unbounded: the header is sticky inside this box, so the scroll
+   has to stay inside it. Both boxes also carry .table-viewport, so
+   fitTableViewports() sizes them to the window, as on Score Tables. These caps
+   are only the no-JS fallback, in px because body{zoom:0.9} scales vh too.
+   The old vh-based cap left 75-100px of empty page under the table at
+   every supported size. */
+#custom-tests .db-list,#custom-tests .pvt-acc-wrap{max-height:560px}
+/* One toolbar row: view switch, search, custom-test actions. */
+.db-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#custom-tests .db-toolbar .db-search{flex:1 1 280px;width:auto;max-width:520px;margin:0}
+.db-custom-actions{display:flex;gap:8px;margin-left:auto}
+.db-custom-actions .btn[disabled]{opacity:.45;cursor:not-allowed}
+.db-lede{font-size:12px;color:var(--muted);margin:12px 0 0;max-width:none;line-height:1.5}
+.db-lede b{color:var(--ink-2);font-weight:600}
+.db-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 8px}
+.db-filters select:disabled{opacity:.55;cursor:not-allowed}
+.db-filters .btn[disabled]{opacity:.4;cursor:default}
+.db-empty{padding:18px 10px !important;color:var(--muted);text-align:left}
+.db-empty .btn{margin-left:6px;padding:3px 10px;font-size:12px}
 /* The two views of the Data page. The filters and readout carry display:flex,
    which beats the browser's own [hidden] rule, so it is re-asserted here. */
-.db-filters[hidden],.db-readout[hidden],.db-list[hidden],.pvt-acc[hidden]{display:none}
-.db-view-switch{display:inline-flex;gap:0;margin-top:14px;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.db-filters[hidden],.db-readout[hidden],.db-list[hidden],.pvt-acc[hidden],.db-lede[hidden]{display:none}
+.db-view-switch{display:inline-flex;flex:0 0 auto;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden}
 .db-view-btn{
   border:0;background:var(--paper-card);color:var(--muted);font:inherit;font-size:12px;
   padding:6px 14px;cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
@@ -1091,8 +1088,8 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .db-view-btn:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 /* Standalone names, not .db-table: that one carries fixed per-column widths
    for its fourteen columns. */
-.pvt-acc-lede{font-size:12px;color:var(--muted);margin:14px 0 8px;max-width:none}
-.pvt-acc-wrap{border:1px solid var(--border);border-radius:4px;background:var(--paper-card);overflow:auto;max-height:calc(100vh - 300px)}
+.pvt-acc .db-lede{margin-bottom:8px}
+.pvt-acc-wrap{border:1px solid var(--border);border-radius:4px;background:var(--paper-card);overflow:auto}
 .pvt-acc-table{border-collapse:collapse;width:100%;font-size:12.5px}
 .pvt-acc-table th,.pvt-acc-table td{padding:5px 10px;text-align:left;border-bottom:1px solid var(--border-soft);vertical-align:top}
 .pvt-acc-table th{
@@ -1110,7 +1107,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .db-readout b{color:var(--ink);font-family:var(--mono);font-weight:600}
 .db-list{
-  margin-top:0;max-height:60vh;overflow:auto;
+  margin-top:0;overflow:auto;
   border:1px solid var(--border);border-radius:4px;background:var(--paper-card);
 }
 .db-table{border-collapse:collapse;width:100%;font-size:12.5px}
@@ -1127,6 +1124,9 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .db-th[aria-sort]{color:var(--ink)}
 .db-th:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 .db-arrow{margin-left:3px;font-size:9px}
+/* Statistical symbols in the headings keep their case and are italic (APA):
+   uppercased, r reads as R, a multiple correlation. */
+.db-th i{text-transform:none;font-size:11px;letter-spacing:0}
 /* Specificity, not preference: ".db-table th, .db-table td" is 0-1-1 and was
    silently beating a bare ".db-td-text" at 0-1-0, so every cell came out
    right-aligned — measure names included. Qualified to 0-2-1 so it wins
@@ -1138,29 +1138,35 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
    trailing (delete-button) column made the flexible one instead, so slack
    collects harmlessly at the right edge rather than in the middle of the data. */
 .db-td-measure{white-space:normal;color:var(--ink)}
-/* FIXED LAYOUT, because auto layout has no good answer here. At width:100% it
-   hands all the spare space to whichever column can grow — that was Measure,
-   which opened a canyon before M1 — and capping Measure only moved the same
-   gap to the right-hand edge. Declaring a share per column fills the width
-   evenly at any window size, and nothing can absorb the slack alone. */
-.db-table{table-layout:fixed}
-.db-table th:nth-child(1),.db-table td:nth-child(1){width:8%}
-.db-table th:nth-child(2),.db-table td:nth-child(2){width:9%}
-.db-table th:nth-child(3),.db-table td:nth-child(3){width:7%}
-.db-table th:nth-child(4),.db-table td:nth-child(4){width:19%}
+/* FIXED LAYOUT, because auto layout has no good answer here: at width:100%
+   it hands all the spare space to whichever column can grow.
+
+   The numeric columns and the basis chip get px widths sized to their
+   content, Category takes 15%, and Measure takes the rest; both wrap. The
+   earlier all-percentage widths truncated content silently: "D-KEFS Advanced"
+   lost its tail on every row at 1366, and with the Working Report docked the
+   numbers themselves ellipsised (an N of 122 read "1…", a mean "97…"). A
+   number on this page must never be cut. min-width is where the table stops
+   shrinking and its box scrolls sideways instead. */
+.db-table{table-layout:fixed;min-width:1180px}
+.db-table th:nth-child(1),.db-table td:nth-child(1){width:122px}
+.db-table th:nth-child(2),.db-table td:nth-child(2){width:15%}
+.db-table th:nth-child(3),.db-table td:nth-child(3){width:94px}
 .db-table th:nth-child(5),.db-table td:nth-child(5),
 .db-table th:nth-child(6),.db-table td:nth-child(6),
 .db-table th:nth-child(7),.db-table td:nth-child(7),
-.db-table th:nth-child(8),.db-table td:nth-child(8),
-.db-table th:nth-child(9),.db-table td:nth-child(9){width:5%}
-.db-table th:nth-child(10),.db-table td:nth-child(10){width:6%}
-.db-table th:nth-child(11),.db-table td:nth-child(11){width:4%}
-.db-table th:nth-child(12),.db-table td:nth-child(12){width:5%}
-.db-table th:nth-child(13),.db-table td:nth-child(13){width:14%}
-.db-table th:nth-child(14),.db-table td:nth-child(14){width:3%}
-/* Long measure names wrap inside their share instead of forcing the table
-   wider; everything else is short enough to stay on one line. */
+.db-table th:nth-child(8),.db-table td:nth-child(8){width:68px}
+.db-table th:nth-child(9),.db-table td:nth-child(9){width:54px}
+.db-table th:nth-child(10),.db-table td:nth-child(10){width:66px}
+.db-table th:nth-child(11),.db-table td:nth-child(11){width:56px}
+.db-table th:nth-child(12),.db-table td:nth-child(12){width:58px}
+.db-table th:nth-child(13),.db-table td:nth-child(13){width:200px}
+.db-table th:nth-child(14),.db-table td:nth-child(14){width:34px}
 .db-table td{overflow:hidden;text-overflow:ellipsis}
+/* Category and Measure wrap. Qualified to 0-2-1: ".db-table td" (0-1-1)
+   carries nowrap and was beating the bare .db-td-measure rule, so 106 measure
+   names were being cut off with an ellipsis at 1366. */
+.db-table td.db-td-measure,.db-table td:nth-child(2){white-space:normal;overflow-wrap:anywhere}
 .db-td-ctx{color:var(--muted);font-size:11.5px}
 .db-td-num{font-family:var(--mono);color:var(--ink-2)}
 .db-td-rel{color:var(--ink);font-weight:600}
@@ -1183,6 +1189,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   margin-left:6px;font-size:9px;font-weight:500;letter-spacing:0.1em;
   text-transform:uppercase;color:var(--accent);
 }
+.db-custom-tag{margin-left:0}
 .db-metric-tag{
   display:inline-block;margin-left:6px;padding:1px 5px;
   font-family:var(--mono);font-size:9px;line-height:1.5;
@@ -1190,11 +1197,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   color:var(--ink-2);background:var(--surface-2,rgba(0,0,0,0.05));
   border:1px solid var(--border-soft);border-radius:3px;vertical-align:middle;
 }
-.ct-entry-table th,.ct-entry-table td{text-align:center}
-.ct-entry-table th:nth-child(2),.ct-entry-table td:nth-child(2){text-align:left}
-.ct-entry-table input{width:100%;min-width:72px}
-.ct-entry-table .ct-subtest-name{min-width:220px}
-.ct-entry-table .ct-row-num{color:var(--muted);font-family:var(--mono)}
 
 /* SEARCHABLE COMBOBOX */
 .combo{position:relative}
@@ -4120,15 +4122,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 #about details summary{
   font-family:var(--sans);font-size:13px;font-weight:600;
   color:#1A1A1A;cursor:pointer;
-}
-
-/* ---------- NORMS DATABASE (custom-tests) ---------- */
-#custom-tests .panel{
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.06)!important;
-  border-radius:var(--r-lg)!important;
-  box-shadow:var(--shadow-1)!important;
-  padding:22px 24px!important;
 }
 
 /* ---------- HOME â€” push hero card hierarchy ---------- */
@@ -19836,26 +19829,30 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
 
   <!-- ========== 09 CUSTOM TESTS ========== -->
   <section class="section" id="custom-tests">
-    <div class="controls-row">
-      <div class="field" style="flex:1">
-        <input type="text" id="ct-search" placeholder="Search instruments and measures…">
+    <!-- One toolbar: the view, the search (which applies to both views) and
+         the custom-test actions. The search used to sit above the view switch
+         and did nothing in the Validity view. Import is a real <button> that
+         opens the hidden file input: a <label> wrapping a display:none input
+         cannot be reached from the keyboard. -->
+    <div class="db-toolbar">
+      <div class="db-view-switch" role="group" aria-label="Which data to show">
+        <button class="db-view-btn" type="button" data-db-view="rel" aria-pressed="true">Reliability</button>
+        <button class="db-view-btn" type="button" data-db-view="pvt" aria-pressed="false">Validity cut-offs</button>
       </div>
-      <button class="btn" id="ct-export">Export custom tests (JSON)</button>
-      <label class="btn" style="cursor:pointer">
-        Import JSON
-        <input type="file" id="ct-import" accept=".json" style="display:none">
-      </label>
+      <input type="text" id="ct-search" class="db-search" placeholder="Search measures…" aria-label="Search">
+      <div class="db-custom-actions">
+        <button class="btn" type="button" id="ct-export" title="Download your custom tests as a JSON file">Export custom tests</button>
+        <button class="btn" type="button" id="ct-import-btn" title='A JSON file shaped { "Family · Age band": { "Measure": { "m1", "sd1", "m2", "sd2", "r" } } }. "rCorrected", "n" and "metric" are optional.'>Import custom tests</button>
+        <input type="file" id="ct-import" accept=".json,application/json" hidden>
+      </div>
     </div>
+    <p class="db-lede" id="db-lede-rel">Published norms and reliability for every measure the app scores. <b>CI <i>r</i></b> is the coefficient each confidence interval on Score Tables is built from; it follows the patient age and the Score Tables reliability setting. Read-only: add your own tests by importing a JSON file.</p>
     <!-- Filters and sort, over one flat table of every entry. Instrument,
          category and age band become real columns rather than group headings,
          so a question that cuts across instruments — which measures are still
          on a raw retest coefficient, which are weakest — can be asked by
          sorting rather than by scrolling. Options are built from normDB at
          render time, so a new family cannot be left out. -->
-    <div class="db-view-switch" role="group" aria-label="Which data to show">
-      <button class="db-view-btn" type="button" data-db-view="rel" aria-pressed="true">Reliability</button>
-      <button class="db-view-btn" type="button" data-db-view="pvt" aria-pressed="false">Validity cut-offs</button>
-    </div>
     <div class="db-filters" id="db-filters">
       <select id="db-f-inst" aria-label="Filter by instrument"></select>
       <select id="db-f-cat" aria-label="Filter by category"></select>
@@ -19867,7 +19864,7 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
       <span id="db-count"></span>
       <span id="db-sortnote"></span>
     </div>
-    <div class="db-list" id="db-list">
+    <div class="db-list table-viewport" id="db-list" data-dock-no-sideways>
       <table class="db-table">
         <thead id="db-thead"></thead>
         <tbody id="db-tbody"></tbody>
@@ -19877,8 +19874,8 @@ body .topbar .ds-patient-field.is-wanted input.ds-patient-field-input{
          cut-off, built by pvtAccuracyRows() from the same constants that page
          prints. -->
     <div class="pvt-acc" id="db-pvt" hidden>
-      <p class="pvt-acc-lede">Sensitivity and specificity as published at each cut-off used on the Performance Validity page. A range spans the samples or methods the source reports; a dash means the source publishes no pair.</p>
-      <div class="pvt-acc-wrap">
+      <p class="db-lede">Sensitivity and specificity as published at each cut-off used on the Performance Validity page. A range spans the samples or methods the source reports; a dash means the source publishes no pair.</p>
+      <div class="pvt-acc-wrap table-viewport" data-dock-no-sideways>
         <table class="pvt-acc-table">
           <thead><tr><th>Measure</th><th>Cut-off</th><th class="pvt-acc-num">Sensitivity</th><th class="pvt-acc-num">Specificity</th><th>Source</th></tr></thead>
           <tbody id="db-pvt-tbody"></tbody>
@@ -29144,25 +29141,74 @@ function dbReliabilityBasis(entry, family, name, correctRetest, age){
 let dbSort = { key: null, dir: 1 };
 
 /* The columns, in order. `get` pulls the value used for BOTH display and
-   sorting, so a column can never sort on something other than what it shows. */
+   sorting, so a column can never sort on something other than what it shows.
+
+   `label` is plain text (the sort note reads it); `html` is the heading. The
+   headings are uppercased by the stylesheet, which turned r into R, the symbol
+   for a MULTIPLE correlation, so the statistical symbols are set in <i>, which
+   the stylesheet exempts. `coef` columns print without a leading zero (APA),
+   as the Validity cut-offs view beside them already does. */
 const DB_COLUMNS = [
   { key:'instrument', label:'Instrument', text:true,  get:r => r.instrument },
   { key:'category',   label:'Category',   text:true,  get:r => r.category },
-  { key:'band',       label:'Band',       text:true,  get:r => r.band },
+  { key:'band',       label:'Band',       text:true,  get:r => r.band,
+    title:'The age band of the retest study, or the normative band where the manual publishes one' },
   { key:'measure',    label:'Measure',    text:true,  get:r => r.name },
-  { key:'m1',         label:'M₁',      dp:2, get:r => r.e.m1 },
-  { key:'sd1',        label:'SD₁',     dp:2, get:r => r.e.sd1 },
-  { key:'m2',         label:'M₂',      dp:2, get:r => r.e.m2 },
-  { key:'sd2',        label:'SD₂',     dp:2, get:r => r.e.sd2 },
-  { key:'r',          label:'r',       dp:2, get:r => r.e.r },
-  { key:'rCorrected', label:'corr. r', dp:2, get:r => r.e.rCorrected,
-    title:'Attenuation-corrected test–retest correlation' },
-  { key:'n',          label:'N',       dp:0, get:r => r.e.n },
-  { key:'ci',         label:'CI r',    dp:2, get:r => r.rel.r, emphasis:true,
-    title:'The reliability this measure\'s confidence interval is built from, with no patient age entered' },
+  { key:'m1',         label:'M₁',   html:'<i>M</i>₁',  dp:2, get:r => r.e.m1,
+    title:'Mean at first testing, retest sample' },
+  { key:'sd1',        label:'SD₁',  html:'<i>SD</i>₁', dp:2, get:r => r.e.sd1,
+    title:'Standard deviation at first testing, retest sample' },
+  { key:'m2',         label:'M₂',   html:'<i>M</i>₂',  dp:2, get:r => r.e.m2,
+    title:'Mean at second testing, retest sample' },
+  { key:'sd2',        label:'SD₂',  html:'<i>SD</i>₂', dp:2, get:r => r.e.sd2,
+    title:'Standard deviation at second testing, retest sample' },
+  { key:'r',          label:'r',    html:'<i>r</i>',   dp:2, coef:true, get:r => r.e.r,
+    title:'Test–retest correlation in the retest sample' },
+  { key:'rCorrected', label:'corr. r', html:'corr. <i>r</i>', dp:2, coef:true, get:r => r.e.rCorrected,
+    title:'Test–retest correlation corrected to the normative sample\'s variability, where the publisher reports one' },
+  { key:'n',          label:'N',    html:'<i>N</i>',   dp:0, get:r => r.e.n,
+    title:'Retest sample size, where published' },
+  { key:'ci',         label:'CI r', html:'CI <i>r</i>', dp:2, coef:true, get:r => r.rel.r, emphasis:true,
+    title:'The reliability this measure\'s confidence interval is built from, at the current patient age and reliability setting' },
   { key:'basis',      label:'Basis',   text:true, get:r => r.rel.basis,
     title:'Where that coefficient comes from' }
 ];
+
+/* Age bands in age order, not string order: "Ages 8-18" sorted after
+   "Ages 70-90" and "Age 8" after "Age 16". All Ages, then anything without a
+   number, go last. */
+function dbBandOrder(a, b){
+  const key = s => {
+    const m = String(s).match(/(\d+)(?:\s*-\s*(\d+))?/);
+    if (m) return [0, +m[1], m[2] ? +m[2] : +m[1]];
+    return [/all ages/i.test(s) ? 1 : 2, 0, 0];
+  };
+  const x = key(a), y = key(b);
+  return (x[0] - y[0]) || (x[1] - y[1]) || (x[2] - y[2]) || String(a).localeCompare(String(b));
+}
+
+/* Text of the search box, lower-cased; shared by both views. */
+function dbSearchText(){
+  const el = document.getElementById('ct-search');
+  return el ? el.value.toLowerCase().trim() : '';
+}
+
+function dbFiltersActive(){
+  return !!(dbSearchText() || dbSort.key ||
+    ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].some(id => {
+      const el = document.getElementById(id); return el && el.value;
+    }));
+}
+
+function dbClearFilters(){
+  ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('ct-search').value = '';
+  dbSort = { key: null, dir: 1 };
+  renderDbList();
+  renderDbPvt();
+}
 
 /* Every entry as a flat row. Instrument, category and age band are derived
    from the group key, which is "<Instrument> <Category> · <Age band>". */
@@ -29193,28 +29239,35 @@ function dbBasisClass(basis){
 }
 
 function dbFillSelect(el, placeholder, values){
+  /* Fewer than one real choice is not a filter: the control stays, so the row
+     does not jump, but it is disabled. */
   const keep = el.value;
   el.innerHTML = '<option value="">' + escapeHtml(placeholder) + '</option>' +
     values.map(v => '<option' + (v === keep ? ' selected' : '') + '>' + escapeHtml(v) + '</option>').join('');
   if (el.value !== keep) el.value = '';
+  el.disabled = values.length < 2 && !el.value;
 }
 
 function renderDbList(){
-  const search = document.getElementById('ct-search').value.toLowerCase().trim();
+  const search = dbSearchText();
   const all = dbFlatRows();
   const fInst  = document.getElementById('db-f-inst');
   const fCat   = document.getElementById('db-f-cat');
   const fBand  = document.getElementById('db-f-band');
   const fBasis = document.getElementById('db-f-basis');
 
-  const uniq = (fn, from) => [...new Set(from.map(fn))].sort();
+  const uniq = (fn, from, order) => [...new Set(from.map(fn))].sort(order);
   dbFillSelect(fInst, 'All instruments', uniq(r => r.instrument, all));
-  /* Category depends on the instrument, so the dropdown only ever offers
-     combinations that exist — otherwise picking one silently empties the
-     table and reads as a fault. */
-  dbFillSelect(fCat, 'All categories', uniq(r => r.category, all.filter(r => !fInst.value || r.instrument === fInst.value)));
-  dbFillSelect(fBand, 'All age bands', uniq(r => r.band, all));
-  dbFillSelect(fBasis, 'Any basis', uniq(r => r.rel.basis.replace(' · by age', ''), all));
+  /* Each filter depends on the ones to its left, so a dropdown only ever
+     offers combinations that exist — otherwise picking one silently empties
+     the table and reads as a fault. Category used to cascade while band and
+     basis did not: WAIS-IV offered CVLT-C's "Age 8". */
+  const byInst = all.filter(r => !fInst.value || r.instrument === fInst.value);
+  dbFillSelect(fCat, 'All categories', uniq(r => r.category, byInst));
+  const byCat = byInst.filter(r => !fCat.value || r.category === fCat.value);
+  dbFillSelect(fBand, 'All age bands', uniq(r => r.band, byCat, dbBandOrder));
+  const byBand = byCat.filter(r => !fBand.value || r.band === fBand.value);
+  dbFillSelect(fBasis, 'Any basis', uniq(r => r.rel.basis.replace(' · by age', ''), byBand));
 
   let rows = all.filter(r => {
     if (fInst.value && r.instrument !== fInst.value) return false;
@@ -29222,7 +29275,7 @@ function renderDbList(){
     if (fBand.value && r.band !== fBand.value) return false;
     if (fBasis.value && r.rel.basis.replace(' · by age', '') !== fBasis.value) return false;
     if (search){
-      const hay = (r.name + ' ' + r.instrument + ' ' + r.category + ' ' + r.band).toLowerCase();
+      const hay = (r.name + ' ' + r.instrument + ' ' + r.category + ' ' + r.band + ' ' + r.rel.basis).toLowerCase();
       if (!hay.includes(search)) return false;
     }
     return true;
@@ -29249,7 +29302,7 @@ function renderDbList(){
     return '<th class="db-th' + (c.text ? ' db-th-text' : '') + '"' +
       (on ? ' aria-sort="' + (dbSort.dir === 1 ? 'ascending' : 'descending') + '"' : '') +
       (c.title ? ' title="' + escapeAttr(c.title) + '"' : '') +
-      ' data-db-sort="' + escapeAttr(c.key) + '" tabindex="0" role="button">' + c.label +
+      ' data-db-sort="' + escapeAttr(c.key) + '" tabindex="0" role="button">' + (c.html || escapeHtml(c.label)) +
       (on ? '<span class="db-arrow">' + (dbSort.dir === 1 ? '▲' : '▼') + '</span>' : '') + '</th>';
   }).join('') + '<th class="db-th"></th></tr>';
 
@@ -29277,17 +29330,39 @@ function renderDbList(){
     if (c.text){
       const tag = c.key === 'measure' && r.e.metric
         ? '<span class="db-metric-tag">' + escapeHtml(scoreTypeAbbr(r.e.metric) || r.e.metric) + '</span>' : '';
-      const cust = c.key === 'instrument' && r.isCustom ? '<span class="custom-tag">Custom</span>' : '';
-      return '<td class="db-td-text' + (c.key === 'measure' ? ' db-td-measure' : ' db-td-ctx') + '">' +
-        escapeHtml(String(v)) + tag + cust + '</td>';
+      /* A custom row's instrument IS "Custom", so the tag replaces the text
+         rather than repeating it ("CustomCustom"). */
+      if (c.key === 'instrument' && r.isCustom){
+        return '<td class="db-td-text db-td-ctx" title="Imported custom test"><span class="custom-tag db-custom-tag">Custom</span></td>';
+      }
+      /* Context cells truncate with an ellipsis, so they carry the full text
+         as a tooltip. */
+      return '<td class="db-td-text' + (c.key === 'measure' ? ' db-td-measure' : ' db-td-ctx') + '"' +
+        (c.key === 'measure' ? '' : ' title="' + escapeAttr(String(v)) + '"') + '>' +
+        escapeHtml(String(v)) + tag + '</td>';
     }
     return '<td class="db-td-num' + (c.emphasis ? ' db-td-rel' : '') + '">' +
-      (v == null ? '<span class="db-dash">–</span>' : escapeHtml(fmt(v, c.dp))) + '</td>';
+      (v == null ? '<span class="db-dash">–</span>'
+        : escapeHtml(c.coef ? fmt(v, c.dp).replace(/^(-?)0\./, '$1.') : fmt(v, c.dp))) + '</td>';
   }).join('') +
     '<td class="db-td-text">' + (r.isCustom
       ? '<button class="btn btn-ghost btn-icon" data-del-sub="' + escapeAttr(r.family) + '::' + escapeAttr(r.name) + '" title="Remove this custom measure">×</button>'
       : '') + '</td></tr>').join('') ||
-    '<tr><td class="db-td-text" colspan="' + (DB_COLUMNS.length + 1) + '"><span class="db-dash">Nothing matches these filters.</span></td></tr>';
+    '<tr><td class="db-td-text db-empty" colspan="' + (DB_COLUMNS.length + 1) + '">No measure matches. ' +
+      '<button class="btn btn-ghost db-empty-clear" type="button">Clear filters</button></td></tr>';
+  const emptyClear = tbody.querySelector('.db-empty-clear');
+  if (emptyClear) emptyClear.addEventListener('click', dbClearFilters);
+
+  const clearBtn = document.getElementById('db-f-clear');
+  if (clearBtn) clearBtn.disabled = !dbFiltersActive();
+  /* Nothing to export is a disabled button with the reason, not a download of
+     an empty {}. */
+  const exp = document.getElementById('ct-export');
+  if (exp){
+    const none = Object.keys(getCustom()).length === 0;
+    exp.disabled = none;
+    exp.title = none ? 'No custom tests yet. Import a JSON file to add some.' : 'Download your custom tests as a JSON file';
+  }
 
   document.getElementById('db-count').innerHTML =
     'Showing <b>' + rows.length + '</b> of <b>' + all.length + '</b> measures';
@@ -29301,6 +29376,9 @@ function renderDbList(){
      flat table has no group header to hang one on. */
   tbody.querySelectorAll('[data-del-sub]').forEach(b => b.addEventListener('click', () => {
     const [family, sub] = b.dataset.delSub.split('::');
+    /* One click used to delete for good, beside a sort header and a row of
+       numbers. Nothing else in the app removes saved data without asking. */
+    if (!confirm('Remove "' + sub + '" from ' + family + '?\n\nThis custom measure is deleted from this browser. It cannot be undone.')) return;
     const c = getCustom();
     if (c[family]){ delete c[family][sub]; if (Object.keys(c[family]).length === 0) delete c[family]; saveCustom(c); }
     refreshAll();
@@ -29364,12 +29442,16 @@ function renderDbPvt(){
   const tbody = document.getElementById('db-pvt-tbody');
   if (!tbody) return;
   const cell = v => v == null ? '<span class="db-dash">–</span>' : escapeHtml(v);
-  tbody.innerHTML = pvtAccuracyRows().map(r =>
+  const search = dbSearchText();
+  const rows = pvtAccuracyRows().filter(r => !search ||
+    (r.measure + ' ' + r.cut + ' ' + r.source).toLowerCase().includes(search));
+  tbody.innerHTML = rows.map(r =>
     '<tr><td class="pvt-acc-measure">' + escapeHtml(r.measure) + '</td>' +
     '<td>' + escapeHtml(r.cut) + '</td>' +
     '<td class="pvt-acc-num">' + cell(r.sens) + '</td>' +
     '<td class="pvt-acc-num">' + cell(r.spec) + '</td>' +
-    '<td class="pvt-acc-src">' + escapeHtml(r.source) + '</td></tr>').join('');
+    '<td class="pvt-acc-src">' + escapeHtml(r.source) + '</td></tr>').join('') ||
+    '<tr><td class="db-empty" colspan="5">No cut-off matches the search.</td></tr>';
 }
 
 /* Reliability or validity: one of the two views is on screen at a time, so the
@@ -29377,9 +29459,13 @@ function renderDbPvt(){
 function setDbView(view){
   const pvt = view === 'pvt';
   document.querySelectorAll('[data-db-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dbView === view)));
-  ['db-filters', 'db-readout', 'db-list'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = pvt; });
+  ['db-lede-rel', 'db-filters', 'db-readout', 'db-list'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = pvt; });
   const p = document.getElementById('db-pvt'); if (p) p.hidden = !pvt;
+  const search = document.getElementById('ct-search');
+  if (search) search.placeholder = pvt ? 'Search measures, cut-offs and sources…' : 'Search measures…';
   if (pvt) renderDbPvt();
+  /* The view's box was hidden at the last fit, so it measured nothing. */
+  if (typeof scheduleTableViewportFit === 'function') scheduleTableViewportFit();
 }
 
 /* Rebuilds every consumer of the normative database after a custom test is
@@ -29403,18 +29489,7 @@ function refreshAll(selectedFamily){
   rebuildBatteryFamilyList();
   rebuildSdiFamilyList();
 }
-/* Score types a custom entry may declare. '' means "work it out from the mean",
-   which is the old behaviour and stays the default so nothing changes for
-   entries already saved.
-
-   This column exists because the mean-based guess has no way to recognise a
-   raw score. A user-created test with raw norms — say a recognition total out
-   of 20, M 19.6, SD 0.8 — was read as a scaled score, and a genuinely
-   below-average 19 printed as the 99.9th percentile, "Very Superior". The
-   built-in raw families are tagged in normDB; this is the same escape hatch
-   for tests the clinician enters. It also lets any other misclassification be
-   corrected by hand rather than argued with. */
-document.getElementById('ct-search').addEventListener('input', renderDbList);
+document.getElementById('ct-search').addEventListener('input', () => { renderDbList(); renderDbPvt(); });
 document.querySelectorAll('[data-db-view]').forEach(b => b.addEventListener('click', () => setDbView(b.dataset.dbView)));
 ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].forEach(id => {
   const el = document.getElementById(id);
@@ -29422,16 +29497,10 @@ document.querySelectorAll('[data-db-view]').forEach(b => b.addEventListener('cli
 });
 {
   const clear = document.getElementById('db-f-clear');
-  if (clear) clear.addEventListener('click', () => {
-    ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
-    });
-    document.getElementById('ct-search').value = '';
-    dbSort = { key: null, dir: 1 };
-    renderDbList();
-  });
+  if (clear) clear.addEventListener('click', dbClearFilters);
 }
 document.getElementById('ct-export').addEventListener('click', () => {
+  if (Object.keys(getCustom()).length === 0){ showToast('No custom tests to export yet', true); return; }
   const blob = new Blob([JSON.stringify(getCustom(), null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -29461,8 +29530,8 @@ document.getElementById('ct-import').addEventListener('change', e => {
       return;
     }
 
-    /* Validate every entry against the same rules the on-screen form enforces,
-       and import only what passes. A partially-bad file imports its good rows
+    /* Validate every entry (ctValidateEntry, the only gate into the database
+       since the typed entry form went) and import only what passes. A partially-bad file imports its good rows
        and names what it dropped, rather than being rejected wholesale or - as
        before - accepted wholesale. */
     const c = getCustom();
@@ -29500,6 +29569,13 @@ document.getElementById('ct-import').addEventListener('change', e => {
   reader.readAsText(file);
   e.target.value = '';
 });
+/* The visible Import button opens the hidden file input. Wired after the
+   handler above, which check.js locates by its own getElementById. */
+{
+  const btn = document.getElementById('ct-import-btn');
+  const input = document.querySelector('#ct-import');
+  if (btn && input) btn.addEventListener('click', () => input.click());
+}
 
 /* ============================================================
    08 · PREMORBID ESTIMATE
@@ -35091,13 +35167,25 @@ ${buildReportHtmlBody()}
     const se = document.scrollingElement || document.documentElement;
     const fit = () => { if (typeof fitTableViewports === 'function') fitTableViewports(); };
     const had = body.classList.contains('rb-docked');
+    /* A table box that scrolls sideways spills too, only inside itself, so
+       section.scrollWidth cannot see it. The Data page's table did exactly
+       that docked (300 px at 1366), and before it had a min-width it
+       ellipsised its numbers instead. Opt-in by attribute: the Change
+       Analysis tables also gain 8 to 20 px of sideways scroll when docked,
+       and whether that page should stop docking is a separate decision.
+       Compared with the undocked layout, so a box that scrolls sideways
+       anyway does not block docking. */
+    const sideways = () => [...sec.querySelectorAll('[data-dock-no-sideways]')]
+      .reduce((m, b) => b.clientHeight ? Math.max(m, b.scrollWidth - b.clientWidth) : m, 0);
     body.classList.add('rb-measuring');
     body.classList.remove('rb-docked');
     fit();
     const baseScroll = Math.max(0, se.scrollHeight - se.clientHeight);
+    const baseSideways = sideways();
     body.classList.add('rb-docked');
     fit();
     const fits = sec.scrollWidth <= sec.clientWidth + 1
+      && sideways() <= baseSideways + 1
       && (se.scrollHeight - se.clientHeight) <= baseScroll + 1;
     body.classList.toggle('rb-docked', had);
     fit();

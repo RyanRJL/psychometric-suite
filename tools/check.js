@@ -11862,6 +11862,84 @@ check('the Validity menu entry is a grid with the chip on the name\'s line', () 
   return bad.length === 0 || bad.join('; ');
 });
 
+heading('72. Data page: nothing cut off, filters cascade, every control reachable');
+
+/* UI audit of the Data page, 2026-10. Each item was found by driving the
+   page at 1366, 1440 and 1920, and each is a fault that showed nothing in
+   the console. */
+check('Data page table: no number or name is ever truncated', () => {
+  const bad = [];
+  /* All-percentage column widths ellipsised "D-KEFS Advanced" on every row
+     and, with the report docked, the numbers themselves (an N of 122 read
+     "1…"). Numeric columns now have px widths and the table a floor. */
+  if (!/\.db-table\{table-layout:fixed;min-width:\d+px\}/.test(CSS_SRC)) bad.push('the table lost its min-width, so its columns can shrink under their numbers again');
+  /* ".db-table td" (0-1-1) carries nowrap and beat the bare .db-td-measure
+     (0-1-0), so 106 measure names were cut at 1366. */
+  if (!/\.db-table td\.db-td-measure[^{]*\{white-space:normal/.test(CSS_SRC)) bad.push('measure names no longer wrap at a specificity that beats ".db-table td"');
+  /* Both boxes are fitted to the window like the Score Tables box, and opt
+     into the docking test that a sideways scroll counts as spilling. */
+  ['id="db-list"', 'class="pvt-acc-wrap'].forEach(tag => {
+    const m = HTML_SRC.match(new RegExp('<div[^>]*' + tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^>]*>'));
+    if (!m) { bad.push(tag + ' is missing'); return; }
+    if (!/table-viewport/.test(m[0])) bad.push(tag + ' is not a .table-viewport, so it is not fitted to the window');
+    if (!/data-dock-no-sideways/.test(m[0])) bad.push(tag + ' does not opt into the sideways-spill docking test');
+  });
+  if (!/querySelectorAll\('\[data-dock-no-sideways\]'\)/.test(APP_SRC)) bad.push('pageFitsDocked no longer reads data-dock-no-sideways');
+  if (/calc\(100vh - 300px\)/.test(CSS_SRC)) bad.push('a vh-derived cap is back; body{zoom:0.9} scales vh too');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('Data page headings set r, M, SD and N as symbols, and coefficients print APA-style', () => {
+  const src = (APP_SRC.match(/const DB_COLUMNS = \[[\s\S]*?\n\];/) || [''])[0];
+  const bad = [];
+  /* The headings are uppercased by the stylesheet, which made r read as R,
+     the symbol for a multiple correlation. */
+  ['r', 'rCorrected', 'ci'].forEach(k => {
+    if (!new RegExp("key:'" + k + "'[^}]*html:'[^']*<i>r</i>").test(src)) bad.push(k + ' heading does not set r in <i>');
+    if (!new RegExp("key:'" + k + "'[^}]*coef:true").test(src)) bad.push(k + ' is not printed without a leading zero');
+  });
+  if (!/\.db-th i\{text-transform:none/.test(CSS_SRC)) bad.push('the stylesheet uppercases the symbols again');
+  /* The old title called the range-restriction correction "attenuation". */
+  if (/Attenuation-corrected/.test(src)) bad.push('corr. r is described as attenuation-corrected; it is corrected for the normative sample\'s variability');
+  if (/with no patient age entered/.test(src)) bad.push('CI r claims to ignore the age, which it has followed since dbReliabilityBasis took it');
+  const missing = [...src.matchAll(/\{ key:'(\w+)'[^}]*\}/g)].filter(m => !/title:/.test(m[0]) && !['instrument','category','measure'].includes(m[1])).map(m => m[1]);
+  if (missing.length) bad.push('columns without a title: ' + missing.join(', '));
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('Data page filters cascade, and age bands sort by age', () => {
+  const bad = [];
+  const fn = (APP_SRC.match(/function dbBandOrder\(a, b\)\{[\s\S]*?\n\}/) || [''])[0];
+  if (!fn) return 'dbBandOrder is gone';
+  const order = new Function(fn + '; return dbBandOrder;')();
+  const got = ['All Ages', 'Ages 70-90', 'Ages 8-18', 'Age 16', 'Age 8', 'Ages 16-29', 'Ages 16-17'].sort(order);
+  const want = ['Age 8', 'Ages 8-18', 'Age 16', 'Ages 16-17', 'Ages 16-29', 'Ages 70-90', 'All Ages'];
+  if (JSON.stringify(got) !== JSON.stringify(want)) bad.push('bands sort as ' + got.join(' / '));
+  /* Band and basis used to list every value in the database whatever the
+     instrument, so WAIS-IV offered CVLT-C's "Age 8". */
+  const body = (APP_SRC.match(/function renderDbList\(\)\{[\s\S]*?\n\}/) || [''])[0];
+  if (!/dbFillSelect\(fBand, 'All age bands', uniq\(r => r\.band, byCat, dbBandOrder\)\)/.test(body)) bad.push('the band filter no longer follows instrument and category');
+  if (!/dbFillSelect\(fBasis, 'Any basis', uniq\([^)]*\), byBand\)\)/.test(body)) bad.push('the basis filter no longer follows the filters to its left');
+  if (!/db-empty-clear/.test(body)) bad.push('an empty result no longer offers to clear the filters');
+  return bad.length === 0 || bad.join('; ');
+});
+
+check('Data page: import reachable by keyboard, search works in both views, deletes ask first', () => {
+  const bad = [];
+  /* A <label> wrapping a display:none file input cannot take focus. */
+  if (!/<button[^>]*id="ct-import-btn"/.test(HTML_SRC)) bad.push('Import is not a <button>');
+  if (/<label class="btn"[^>]*>\s*Import/.test(HTML_SRC)) bad.push('the keyboard-unreachable label is back');
+  if (!/getElementById\('ct-import-btn'\)[\s\S]{0,200}input\.click\(\)/.test(APP_SRC)) bad.push('the Import button does not open the file input');
+  /* The search sat above the view switch and did nothing in the Validity view. */
+  const pvt = (APP_SRC.match(/function renderDbPvt\(\)\{[\s\S]*?\n\}/) || [''])[0];
+  if (!/dbSearchText\(\)/.test(pvt)) bad.push('the Validity view ignores the search');
+  if (!/getElementById\('ct-search'\)\.addEventListener\('input', \(\) => \{ renderDbList\(\); renderDbPvt\(\); \}\)/.test(APP_SRC)) bad.push('typing does not re-render both views');
+  const del = APP_SRC.indexOf("querySelectorAll('[data-del-sub]')");
+  if (del === -1 || !/confirm\(/.test(APP_SRC.slice(del, del + 700))) bad.push('deleting a custom measure no longer asks first');
+  if (!/exp\.disabled = none/.test(APP_SRC)) bad.push('Export is enabled with nothing to export');
+  return bad.length === 0 || bad.join('; ');
+});
+
 Promise.all(pendingChecks).then(() => {
   if (failures.length === 0) {
     console.log('ALL ' + passed + ' CHECKS PASSED');

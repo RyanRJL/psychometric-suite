@@ -304,7 +304,14 @@ off (`rb-measuring`), and docks only if nothing spills sideways (`section.scroll
 and it scrolls no further than undocked. Otherwise it overlays (`.is-overlay`). The
 decision is re-made on resize, on navigation and after any click in the page, since a
 tab or mode switch changes what is on screen without resizing anything. At 1366 Score
-Tables, Change Analysis, Converter, Charts and Data dock; at 1920 everything does.
+Tables, Change Analysis, Converter and Charts dock; at 1920 everything does.
+
+A box that scrolls sideways spills too, only inside itself, where `section.scrollWidth`
+cannot see it. Boxes marked `data-dock-no-sideways` count: the Data page's two tables
+carry it, so that page overlays at 1366 and 1440 (docked, its table needed 300 px of
+sideways scroll, and before it had a `min-width` it ellipsised its numbers instead). The
+Change Analysis tables also gain 8 to 20 px of sideways scroll when docked at 1366 and
+1440; they are **not** marked, so that page still docks. Whether it should is open.
 
 Docked, a click on the page is work, not a dismissal, so the outside-click close applies
 to the overlay only, and Escape closes it only from inside the report. The chip stays
@@ -2237,6 +2244,17 @@ reliability columns to `dbReliabilityBasis` specifically — found by mutation t
 `CI r` at the raw retest `r` otherwise passed everything, because the column then showed
 and sorted on the same wrong number.
 
+**UI audit, 2026-10 (§72).** One toolbar (view switch, search, custom-test actions); the
+search filters both views. The table is a `.table-viewport`, fitted to the window like
+Score Tables. Numeric columns and the basis chip have px widths and the table a
+`min-width`: the old all-percentage widths cut "D-KEFS Advanced" on every row, 106 measure
+names (`.db-table td` nowrap outranked `.db-td-measure`), and docked, the numbers
+themselves. Headings set *r*, *M*, *SD*, *N* in `<i>`, which the uppercase heading style
+exempts (uppercased, r reads as R, a multiple correlation); coefficients print without a
+leading zero, as the Validity view does. Each filter follows those to its left, and bands
+sort by age (`dbBandOrder`). Import is a `<button>` (a label round a hidden input took no
+focus), Export is disabled when empty, and deleting a custom measure asks first.
+
 It is a real `<table>`, deliberately. The grouped list laid each row out as a CSS grid whose
 column count was declared in two places, and a mismatch slid every cell one place left under
 the wrong heading. A table cannot do that, so that whole class of fault is gone rather than
@@ -2394,7 +2412,7 @@ FSIQ only to −32, which is exactly what the manual prints for each.
 
 ## Verifying calculations
 
-`node tools/check.js` runs 471 headless checks: statistical primitives, score-conversion
+`node tools/check.js` runs 475 headless checks: statistical primitives, score-conversion
 round trips, `normDB` structural integrity, WAIS-IV values pinned to Technical Manual
 Tables 4.5 (§4) and 4.1/4.3 (§28), the WMS-IV intercorrelation matrices (§48), RBANS Update Tables 3.6/3.7 (§29), WMS-IV Tables 3.1/3.3 (§30), WISC-V Tables 4.1/4.4 (§31),
 OPIE-4 coefficients
@@ -2407,7 +2425,7 @@ family dropdowns (§33), consent gating on the Change Analysis methods (§34), t
 empty-state guard on every premorbid APA renderer (§35), APA note length (§51), and the
 tab-close prompt and AACN default (§52), Save / Open session (§53), and the app frame,
 the docked report and the motion scale (§55), and the WAIS-IV/WMS-IV joint profile on
-WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57), and WISC-V Table 5.1 (§58), and D-KEFS Trail Making as a PVT (§60), and the premorbid equation tips, parsed back and compared with the models (§63), and citations resolving to one reference each way (§69), no dead wiring (§70), and the Validity menu layout (§71). The service worker checks in §47 are asynchronous (`checkAsync`); the summary waits for them.
+WMS-IV Table 4.12 (§56), and the RBANS intercorrelations (§57), and WISC-V Table 5.1 (§58), and D-KEFS Trail Making as a PVT (§60), and the premorbid equation tips, parsed back and compared with the models (§63), and citations resolving to one reference each way (§69), no dead wiring (§70), the Validity menu layout (§71), and the Data page UI (§72). The service worker checks in §47 are asynchronous (`checkAsync`); the summary waits for them.
 
 It loads `data.js` through Node's `vm` module and **re-implements the formulas
 independently** rather than importing them from `app.js`. That duplication is

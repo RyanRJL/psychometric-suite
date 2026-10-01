@@ -5782,25 +5782,74 @@ function dbReliabilityBasis(entry, family, name, correctRetest, age){
 let dbSort = { key: null, dir: 1 };
 
 /* The columns, in order. `get` pulls the value used for BOTH display and
-   sorting, so a column can never sort on something other than what it shows. */
+   sorting, so a column can never sort on something other than what it shows.
+
+   `label` is plain text (the sort note reads it); `html` is the heading. The
+   headings are uppercased by the stylesheet, which turned r into R, the symbol
+   for a MULTIPLE correlation, so the statistical symbols are set in <i>, which
+   the stylesheet exempts. `coef` columns print without a leading zero (APA),
+   as the Validity cut-offs view beside them already does. */
 const DB_COLUMNS = [
   { key:'instrument', label:'Instrument', text:true,  get:r => r.instrument },
   { key:'category',   label:'Category',   text:true,  get:r => r.category },
-  { key:'band',       label:'Band',       text:true,  get:r => r.band },
+  { key:'band',       label:'Band',       text:true,  get:r => r.band,
+    title:'The age band of the retest study, or the normative band where the manual publishes one' },
   { key:'measure',    label:'Measure',    text:true,  get:r => r.name },
-  { key:'m1',         label:'M₁',      dp:2, get:r => r.e.m1 },
-  { key:'sd1',        label:'SD₁',     dp:2, get:r => r.e.sd1 },
-  { key:'m2',         label:'M₂',      dp:2, get:r => r.e.m2 },
-  { key:'sd2',        label:'SD₂',     dp:2, get:r => r.e.sd2 },
-  { key:'r',          label:'r',       dp:2, get:r => r.e.r },
-  { key:'rCorrected', label:'corr. r', dp:2, get:r => r.e.rCorrected,
-    title:'Attenuation-corrected test–retest correlation' },
-  { key:'n',          label:'N',       dp:0, get:r => r.e.n },
-  { key:'ci',         label:'CI r',    dp:2, get:r => r.rel.r, emphasis:true,
-    title:'The reliability this measure\'s confidence interval is built from, with no patient age entered' },
+  { key:'m1',         label:'M₁',   html:'<i>M</i>₁',  dp:2, get:r => r.e.m1,
+    title:'Mean at first testing, retest sample' },
+  { key:'sd1',        label:'SD₁',  html:'<i>SD</i>₁', dp:2, get:r => r.e.sd1,
+    title:'Standard deviation at first testing, retest sample' },
+  { key:'m2',         label:'M₂',   html:'<i>M</i>₂',  dp:2, get:r => r.e.m2,
+    title:'Mean at second testing, retest sample' },
+  { key:'sd2',        label:'SD₂',  html:'<i>SD</i>₂', dp:2, get:r => r.e.sd2,
+    title:'Standard deviation at second testing, retest sample' },
+  { key:'r',          label:'r',    html:'<i>r</i>',   dp:2, coef:true, get:r => r.e.r,
+    title:'Test–retest correlation in the retest sample' },
+  { key:'rCorrected', label:'corr. r', html:'corr. <i>r</i>', dp:2, coef:true, get:r => r.e.rCorrected,
+    title:'Test–retest correlation corrected to the normative sample\'s variability, where the publisher reports one' },
+  { key:'n',          label:'N',    html:'<i>N</i>',   dp:0, get:r => r.e.n,
+    title:'Retest sample size, where published' },
+  { key:'ci',         label:'CI r', html:'CI <i>r</i>', dp:2, coef:true, get:r => r.rel.r, emphasis:true,
+    title:'The reliability this measure\'s confidence interval is built from, at the current patient age and reliability setting' },
   { key:'basis',      label:'Basis',   text:true, get:r => r.rel.basis,
     title:'Where that coefficient comes from' }
 ];
+
+/* Age bands in age order, not string order: "Ages 8-18" sorted after
+   "Ages 70-90" and "Age 8" after "Age 16". All Ages, then anything without a
+   number, go last. */
+function dbBandOrder(a, b){
+  const key = s => {
+    const m = String(s).match(/(\d+)(?:\s*-\s*(\d+))?/);
+    if (m) return [0, +m[1], m[2] ? +m[2] : +m[1]];
+    return [/all ages/i.test(s) ? 1 : 2, 0, 0];
+  };
+  const x = key(a), y = key(b);
+  return (x[0] - y[0]) || (x[1] - y[1]) || (x[2] - y[2]) || String(a).localeCompare(String(b));
+}
+
+/* Text of the search box, lower-cased; shared by both views. */
+function dbSearchText(){
+  const el = document.getElementById('ct-search');
+  return el ? el.value.toLowerCase().trim() : '';
+}
+
+function dbFiltersActive(){
+  return !!(dbSearchText() || dbSort.key ||
+    ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].some(id => {
+      const el = document.getElementById(id); return el && el.value;
+    }));
+}
+
+function dbClearFilters(){
+  ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('ct-search').value = '';
+  dbSort = { key: null, dir: 1 };
+  renderDbList();
+  renderDbPvt();
+}
 
 /* Every entry as a flat row. Instrument, category and age band are derived
    from the group key, which is "<Instrument> <Category> · <Age band>". */
@@ -5831,28 +5880,35 @@ function dbBasisClass(basis){
 }
 
 function dbFillSelect(el, placeholder, values){
+  /* Fewer than one real choice is not a filter: the control stays, so the row
+     does not jump, but it is disabled. */
   const keep = el.value;
   el.innerHTML = '<option value="">' + escapeHtml(placeholder) + '</option>' +
     values.map(v => '<option' + (v === keep ? ' selected' : '') + '>' + escapeHtml(v) + '</option>').join('');
   if (el.value !== keep) el.value = '';
+  el.disabled = values.length < 2 && !el.value;
 }
 
 function renderDbList(){
-  const search = document.getElementById('ct-search').value.toLowerCase().trim();
+  const search = dbSearchText();
   const all = dbFlatRows();
   const fInst  = document.getElementById('db-f-inst');
   const fCat   = document.getElementById('db-f-cat');
   const fBand  = document.getElementById('db-f-band');
   const fBasis = document.getElementById('db-f-basis');
 
-  const uniq = (fn, from) => [...new Set(from.map(fn))].sort();
+  const uniq = (fn, from, order) => [...new Set(from.map(fn))].sort(order);
   dbFillSelect(fInst, 'All instruments', uniq(r => r.instrument, all));
-  /* Category depends on the instrument, so the dropdown only ever offers
-     combinations that exist — otherwise picking one silently empties the
-     table and reads as a fault. */
-  dbFillSelect(fCat, 'All categories', uniq(r => r.category, all.filter(r => !fInst.value || r.instrument === fInst.value)));
-  dbFillSelect(fBand, 'All age bands', uniq(r => r.band, all));
-  dbFillSelect(fBasis, 'Any basis', uniq(r => r.rel.basis.replace(' · by age', ''), all));
+  /* Each filter depends on the ones to its left, so a dropdown only ever
+     offers combinations that exist — otherwise picking one silently empties
+     the table and reads as a fault. Category used to cascade while band and
+     basis did not: WAIS-IV offered CVLT-C's "Age 8". */
+  const byInst = all.filter(r => !fInst.value || r.instrument === fInst.value);
+  dbFillSelect(fCat, 'All categories', uniq(r => r.category, byInst));
+  const byCat = byInst.filter(r => !fCat.value || r.category === fCat.value);
+  dbFillSelect(fBand, 'All age bands', uniq(r => r.band, byCat, dbBandOrder));
+  const byBand = byCat.filter(r => !fBand.value || r.band === fBand.value);
+  dbFillSelect(fBasis, 'Any basis', uniq(r => r.rel.basis.replace(' · by age', ''), byBand));
 
   let rows = all.filter(r => {
     if (fInst.value && r.instrument !== fInst.value) return false;
@@ -5860,7 +5916,7 @@ function renderDbList(){
     if (fBand.value && r.band !== fBand.value) return false;
     if (fBasis.value && r.rel.basis.replace(' · by age', '') !== fBasis.value) return false;
     if (search){
-      const hay = (r.name + ' ' + r.instrument + ' ' + r.category + ' ' + r.band).toLowerCase();
+      const hay = (r.name + ' ' + r.instrument + ' ' + r.category + ' ' + r.band + ' ' + r.rel.basis).toLowerCase();
       if (!hay.includes(search)) return false;
     }
     return true;
@@ -5887,7 +5943,7 @@ function renderDbList(){
     return '<th class="db-th' + (c.text ? ' db-th-text' : '') + '"' +
       (on ? ' aria-sort="' + (dbSort.dir === 1 ? 'ascending' : 'descending') + '"' : '') +
       (c.title ? ' title="' + escapeAttr(c.title) + '"' : '') +
-      ' data-db-sort="' + escapeAttr(c.key) + '" tabindex="0" role="button">' + c.label +
+      ' data-db-sort="' + escapeAttr(c.key) + '" tabindex="0" role="button">' + (c.html || escapeHtml(c.label)) +
       (on ? '<span class="db-arrow">' + (dbSort.dir === 1 ? '▲' : '▼') + '</span>' : '') + '</th>';
   }).join('') + '<th class="db-th"></th></tr>';
 
@@ -5915,17 +5971,39 @@ function renderDbList(){
     if (c.text){
       const tag = c.key === 'measure' && r.e.metric
         ? '<span class="db-metric-tag">' + escapeHtml(scoreTypeAbbr(r.e.metric) || r.e.metric) + '</span>' : '';
-      const cust = c.key === 'instrument' && r.isCustom ? '<span class="custom-tag">Custom</span>' : '';
-      return '<td class="db-td-text' + (c.key === 'measure' ? ' db-td-measure' : ' db-td-ctx') + '">' +
-        escapeHtml(String(v)) + tag + cust + '</td>';
+      /* A custom row's instrument IS "Custom", so the tag replaces the text
+         rather than repeating it ("CustomCustom"). */
+      if (c.key === 'instrument' && r.isCustom){
+        return '<td class="db-td-text db-td-ctx" title="Imported custom test"><span class="custom-tag db-custom-tag">Custom</span></td>';
+      }
+      /* Context cells truncate with an ellipsis, so they carry the full text
+         as a tooltip. */
+      return '<td class="db-td-text' + (c.key === 'measure' ? ' db-td-measure' : ' db-td-ctx') + '"' +
+        (c.key === 'measure' ? '' : ' title="' + escapeAttr(String(v)) + '"') + '>' +
+        escapeHtml(String(v)) + tag + '</td>';
     }
     return '<td class="db-td-num' + (c.emphasis ? ' db-td-rel' : '') + '">' +
-      (v == null ? '<span class="db-dash">–</span>' : escapeHtml(fmt(v, c.dp))) + '</td>';
+      (v == null ? '<span class="db-dash">–</span>'
+        : escapeHtml(c.coef ? fmt(v, c.dp).replace(/^(-?)0\./, '$1.') : fmt(v, c.dp))) + '</td>';
   }).join('') +
     '<td class="db-td-text">' + (r.isCustom
       ? '<button class="btn btn-ghost btn-icon" data-del-sub="' + escapeAttr(r.family) + '::' + escapeAttr(r.name) + '" title="Remove this custom measure">×</button>'
       : '') + '</td></tr>').join('') ||
-    '<tr><td class="db-td-text" colspan="' + (DB_COLUMNS.length + 1) + '"><span class="db-dash">Nothing matches these filters.</span></td></tr>';
+    '<tr><td class="db-td-text db-empty" colspan="' + (DB_COLUMNS.length + 1) + '">No measure matches. ' +
+      '<button class="btn btn-ghost db-empty-clear" type="button">Clear filters</button></td></tr>';
+  const emptyClear = tbody.querySelector('.db-empty-clear');
+  if (emptyClear) emptyClear.addEventListener('click', dbClearFilters);
+
+  const clearBtn = document.getElementById('db-f-clear');
+  if (clearBtn) clearBtn.disabled = !dbFiltersActive();
+  /* Nothing to export is a disabled button with the reason, not a download of
+     an empty {}. */
+  const exp = document.getElementById('ct-export');
+  if (exp){
+    const none = Object.keys(getCustom()).length === 0;
+    exp.disabled = none;
+    exp.title = none ? 'No custom tests yet. Import a JSON file to add some.' : 'Download your custom tests as a JSON file';
+  }
 
   document.getElementById('db-count').innerHTML =
     'Showing <b>' + rows.length + '</b> of <b>' + all.length + '</b> measures';
@@ -5939,6 +6017,9 @@ function renderDbList(){
      flat table has no group header to hang one on. */
   tbody.querySelectorAll('[data-del-sub]').forEach(b => b.addEventListener('click', () => {
     const [family, sub] = b.dataset.delSub.split('::');
+    /* One click used to delete for good, beside a sort header and a row of
+       numbers. Nothing else in the app removes saved data without asking. */
+    if (!confirm('Remove "' + sub + '" from ' + family + '?\n\nThis custom measure is deleted from this browser. It cannot be undone.')) return;
     const c = getCustom();
     if (c[family]){ delete c[family][sub]; if (Object.keys(c[family]).length === 0) delete c[family]; saveCustom(c); }
     refreshAll();
@@ -6002,12 +6083,16 @@ function renderDbPvt(){
   const tbody = document.getElementById('db-pvt-tbody');
   if (!tbody) return;
   const cell = v => v == null ? '<span class="db-dash">–</span>' : escapeHtml(v);
-  tbody.innerHTML = pvtAccuracyRows().map(r =>
+  const search = dbSearchText();
+  const rows = pvtAccuracyRows().filter(r => !search ||
+    (r.measure + ' ' + r.cut + ' ' + r.source).toLowerCase().includes(search));
+  tbody.innerHTML = rows.map(r =>
     '<tr><td class="pvt-acc-measure">' + escapeHtml(r.measure) + '</td>' +
     '<td>' + escapeHtml(r.cut) + '</td>' +
     '<td class="pvt-acc-num">' + cell(r.sens) + '</td>' +
     '<td class="pvt-acc-num">' + cell(r.spec) + '</td>' +
-    '<td class="pvt-acc-src">' + escapeHtml(r.source) + '</td></tr>').join('');
+    '<td class="pvt-acc-src">' + escapeHtml(r.source) + '</td></tr>').join('') ||
+    '<tr><td class="db-empty" colspan="5">No cut-off matches the search.</td></tr>';
 }
 
 /* Reliability or validity: one of the two views is on screen at a time, so the
@@ -6015,9 +6100,13 @@ function renderDbPvt(){
 function setDbView(view){
   const pvt = view === 'pvt';
   document.querySelectorAll('[data-db-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dbView === view)));
-  ['db-filters', 'db-readout', 'db-list'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = pvt; });
+  ['db-lede-rel', 'db-filters', 'db-readout', 'db-list'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = pvt; });
   const p = document.getElementById('db-pvt'); if (p) p.hidden = !pvt;
+  const search = document.getElementById('ct-search');
+  if (search) search.placeholder = pvt ? 'Search measures, cut-offs and sources…' : 'Search measures…';
   if (pvt) renderDbPvt();
+  /* The view's box was hidden at the last fit, so it measured nothing. */
+  if (typeof scheduleTableViewportFit === 'function') scheduleTableViewportFit();
 }
 
 /* Rebuilds every consumer of the normative database after a custom test is
@@ -6041,18 +6130,7 @@ function refreshAll(selectedFamily){
   rebuildBatteryFamilyList();
   rebuildSdiFamilyList();
 }
-/* Score types a custom entry may declare. '' means "work it out from the mean",
-   which is the old behaviour and stays the default so nothing changes for
-   entries already saved.
-
-   This column exists because the mean-based guess has no way to recognise a
-   raw score. A user-created test with raw norms — say a recognition total out
-   of 20, M 19.6, SD 0.8 — was read as a scaled score, and a genuinely
-   below-average 19 printed as the 99.9th percentile, "Very Superior". The
-   built-in raw families are tagged in normDB; this is the same escape hatch
-   for tests the clinician enters. It also lets any other misclassification be
-   corrected by hand rather than argued with. */
-document.getElementById('ct-search').addEventListener('input', renderDbList);
+document.getElementById('ct-search').addEventListener('input', () => { renderDbList(); renderDbPvt(); });
 document.querySelectorAll('[data-db-view]').forEach(b => b.addEventListener('click', () => setDbView(b.dataset.dbView)));
 ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].forEach(id => {
   const el = document.getElementById(id);
@@ -6060,16 +6138,10 @@ document.querySelectorAll('[data-db-view]').forEach(b => b.addEventListener('cli
 });
 {
   const clear = document.getElementById('db-f-clear');
-  if (clear) clear.addEventListener('click', () => {
-    ['db-f-inst', 'db-f-cat', 'db-f-band', 'db-f-basis'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
-    });
-    document.getElementById('ct-search').value = '';
-    dbSort = { key: null, dir: 1 };
-    renderDbList();
-  });
+  if (clear) clear.addEventListener('click', dbClearFilters);
 }
 document.getElementById('ct-export').addEventListener('click', () => {
+  if (Object.keys(getCustom()).length === 0){ showToast('No custom tests to export yet', true); return; }
   const blob = new Blob([JSON.stringify(getCustom(), null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -6099,8 +6171,8 @@ document.getElementById('ct-import').addEventListener('change', e => {
       return;
     }
 
-    /* Validate every entry against the same rules the on-screen form enforces,
-       and import only what passes. A partially-bad file imports its good rows
+    /* Validate every entry (ctValidateEntry, the only gate into the database
+       since the typed entry form went) and import only what passes. A partially-bad file imports its good rows
        and names what it dropped, rather than being rejected wholesale or - as
        before - accepted wholesale. */
     const c = getCustom();
@@ -6138,6 +6210,13 @@ document.getElementById('ct-import').addEventListener('change', e => {
   reader.readAsText(file);
   e.target.value = '';
 });
+/* The visible Import button opens the hidden file input. Wired after the
+   handler above, which check.js locates by its own getElementById. */
+{
+  const btn = document.getElementById('ct-import-btn');
+  const input = document.querySelector('#ct-import');
+  if (btn && input) btn.addEventListener('click', () => input.click());
+}
 
 /* ============================================================
    08 · PREMORBID ESTIMATE
@@ -11729,13 +11808,25 @@ ${buildReportHtmlBody()}
     const se = document.scrollingElement || document.documentElement;
     const fit = () => { if (typeof fitTableViewports === 'function') fitTableViewports(); };
     const had = body.classList.contains('rb-docked');
+    /* A table box that scrolls sideways spills too, only inside itself, so
+       section.scrollWidth cannot see it. The Data page's table did exactly
+       that docked (300 px at 1366), and before it had a min-width it
+       ellipsised its numbers instead. Opt-in by attribute: the Change
+       Analysis tables also gain 8 to 20 px of sideways scroll when docked,
+       and whether that page should stop docking is a separate decision.
+       Compared with the undocked layout, so a box that scrolls sideways
+       anyway does not block docking. */
+    const sideways = () => [...sec.querySelectorAll('[data-dock-no-sideways]')]
+      .reduce((m, b) => b.clientHeight ? Math.max(m, b.scrollWidth - b.clientWidth) : m, 0);
     body.classList.add('rb-measuring');
     body.classList.remove('rb-docked');
     fit();
     const baseScroll = Math.max(0, se.scrollHeight - se.clientHeight);
+    const baseSideways = sideways();
     body.classList.add('rb-docked');
     fit();
     const fits = sec.scrollWidth <= sec.clientWidth + 1
+      && sideways() <= baseSideways + 1
       && (se.scrollHeight - se.clientHeight) <= baseScroll + 1;
     body.classList.toggle('rb-docked', had);
     fit();

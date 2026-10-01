@@ -1006,22 +1006,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   .pre-form-grid-2,.pre-form-grid-3{grid-template-columns:1fr;}
 }
 
-/* CUSTOM TESTS PAGE */
-.db-list{margin-top:18px}
-/* Score-type picker in the custom-test entry table.
-
-   The global `input[type=text], input[type=number], ..., select, textarea`
-   rule sets width:100%, and the entry table is auto-layout, so the column
-   collapsed to whatever the other cells left over — 61px, which renders the
-   select as an unreadable 36px stub. The inline width:170px on the <th> does
-   not survive that.
-
-   min-width on the CONTROL is what forces the column open in auto layout:
-   it wins over the shared width:100% without !important (min-width always
-   beats width), and it is a standalone class, so nothing in
-   design-system.css is competing for it. */
-.ct-metric-select{ min-width:158px; }
-
 /* Norms Database — one flat table over every entry, filtered and sorted.
 
    A real <table>, deliberately, not the CSS grid the grouped list used: that
@@ -1040,16 +1024,29 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
    outranks the three separate .section max-widths (0-1-0) across styles.css
    and design-system.css without needing !important. */
 #custom-tests{max-width:1480px;padding-left:32px;padding-right:32px}
-/* Taller, not unbounded. The header cells are position:sticky inside this
-   container, so removing the cap would make them stick to the viewport instead
-   — and slide under the fixed 108px topbar. Capping to the window keeps the
-   scroll inside the table where the sticky headers work. */
-#custom-tests .db-list{max-height:calc(100vh - 300px);min-height:320px}
-.db-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 8px}
+/* Taller, not unbounded: the header is sticky inside this box, so the scroll
+   has to stay inside it. Both boxes also carry .table-viewport, so
+   fitTableViewports() sizes them to the window, as on Score Tables. These caps
+   are only the no-JS fallback, in px because body{zoom:0.9} scales vh too.
+   The old vh-based cap left 75-100px of empty page under the table at
+   every supported size. */
+#custom-tests .db-list,#custom-tests .pvt-acc-wrap{max-height:560px}
+/* One toolbar row: view switch, search, custom-test actions. */
+.db-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#custom-tests .db-toolbar .db-search{flex:1 1 280px;width:auto;max-width:520px;margin:0}
+.db-custom-actions{display:flex;gap:8px;margin-left:auto}
+.db-custom-actions .btn[disabled]{opacity:.45;cursor:not-allowed}
+.db-lede{font-size:12px;color:var(--muted);margin:12px 0 0;max-width:none;line-height:1.5}
+.db-lede b{color:var(--ink-2);font-weight:600}
+.db-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 8px}
+.db-filters select:disabled{opacity:.55;cursor:not-allowed}
+.db-filters .btn[disabled]{opacity:.4;cursor:default}
+.db-empty{padding:18px 10px !important;color:var(--muted);text-align:left}
+.db-empty .btn{margin-left:6px;padding:3px 10px;font-size:12px}
 /* The two views of the Data page. The filters and readout carry display:flex,
    which beats the browser's own [hidden] rule, so it is re-asserted here. */
-.db-filters[hidden],.db-readout[hidden],.db-list[hidden],.pvt-acc[hidden]{display:none}
-.db-view-switch{display:inline-flex;gap:0;margin-top:14px;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.db-filters[hidden],.db-readout[hidden],.db-list[hidden],.pvt-acc[hidden],.db-lede[hidden]{display:none}
+.db-view-switch{display:inline-flex;flex:0 0 auto;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden}
 .db-view-btn{
   border:0;background:var(--paper-card);color:var(--muted);font:inherit;font-size:12px;
   padding:6px 14px;cursor:pointer;transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
@@ -1059,8 +1056,8 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .db-view-btn:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 /* Standalone names, not .db-table: that one carries fixed per-column widths
    for its fourteen columns. */
-.pvt-acc-lede{font-size:12px;color:var(--muted);margin:14px 0 8px;max-width:none}
-.pvt-acc-wrap{border:1px solid var(--border);border-radius:4px;background:var(--paper-card);overflow:auto;max-height:calc(100vh - 300px)}
+.pvt-acc .db-lede{margin-bottom:8px}
+.pvt-acc-wrap{border:1px solid var(--border);border-radius:4px;background:var(--paper-card);overflow:auto}
 .pvt-acc-table{border-collapse:collapse;width:100%;font-size:12.5px}
 .pvt-acc-table th,.pvt-acc-table td{padding:5px 10px;text-align:left;border-bottom:1px solid var(--border-soft);vertical-align:top}
 .pvt-acc-table th{
@@ -1078,7 +1075,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 }
 .db-readout b{color:var(--ink);font-family:var(--mono);font-weight:600}
 .db-list{
-  margin-top:0;max-height:60vh;overflow:auto;
+  margin-top:0;overflow:auto;
   border:1px solid var(--border);border-radius:4px;background:var(--paper-card);
 }
 .db-table{border-collapse:collapse;width:100%;font-size:12.5px}
@@ -1095,6 +1092,9 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
 .db-th[aria-sort]{color:var(--ink)}
 .db-th:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 .db-arrow{margin-left:3px;font-size:9px}
+/* Statistical symbols in the headings keep their case and are italic (APA):
+   uppercased, r reads as R, a multiple correlation. */
+.db-th i{text-transform:none;font-size:11px;letter-spacing:0}
 /* Specificity, not preference: ".db-table th, .db-table td" is 0-1-1 and was
    silently beating a bare ".db-td-text" at 0-1-0, so every cell came out
    right-aligned — measure names included. Qualified to 0-2-1 so it wins
@@ -1106,29 +1106,35 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
    trailing (delete-button) column made the flexible one instead, so slack
    collects harmlessly at the right edge rather than in the middle of the data. */
 .db-td-measure{white-space:normal;color:var(--ink)}
-/* FIXED LAYOUT, because auto layout has no good answer here. At width:100% it
-   hands all the spare space to whichever column can grow — that was Measure,
-   which opened a canyon before M1 — and capping Measure only moved the same
-   gap to the right-hand edge. Declaring a share per column fills the width
-   evenly at any window size, and nothing can absorb the slack alone. */
-.db-table{table-layout:fixed}
-.db-table th:nth-child(1),.db-table td:nth-child(1){width:8%}
-.db-table th:nth-child(2),.db-table td:nth-child(2){width:9%}
-.db-table th:nth-child(3),.db-table td:nth-child(3){width:7%}
-.db-table th:nth-child(4),.db-table td:nth-child(4){width:19%}
+/* FIXED LAYOUT, because auto layout has no good answer here: at width:100%
+   it hands all the spare space to whichever column can grow.
+
+   The numeric columns and the basis chip get px widths sized to their
+   content, Category takes 15%, and Measure takes the rest; both wrap. The
+   earlier all-percentage widths truncated content silently: "D-KEFS Advanced"
+   lost its tail on every row at 1366, and with the Working Report docked the
+   numbers themselves ellipsised (an N of 122 read "1…", a mean "97…"). A
+   number on this page must never be cut. min-width is where the table stops
+   shrinking and its box scrolls sideways instead. */
+.db-table{table-layout:fixed;min-width:1180px}
+.db-table th:nth-child(1),.db-table td:nth-child(1){width:122px}
+.db-table th:nth-child(2),.db-table td:nth-child(2){width:15%}
+.db-table th:nth-child(3),.db-table td:nth-child(3){width:94px}
 .db-table th:nth-child(5),.db-table td:nth-child(5),
 .db-table th:nth-child(6),.db-table td:nth-child(6),
 .db-table th:nth-child(7),.db-table td:nth-child(7),
-.db-table th:nth-child(8),.db-table td:nth-child(8),
-.db-table th:nth-child(9),.db-table td:nth-child(9){width:5%}
-.db-table th:nth-child(10),.db-table td:nth-child(10){width:6%}
-.db-table th:nth-child(11),.db-table td:nth-child(11){width:4%}
-.db-table th:nth-child(12),.db-table td:nth-child(12){width:5%}
-.db-table th:nth-child(13),.db-table td:nth-child(13){width:14%}
-.db-table th:nth-child(14),.db-table td:nth-child(14){width:3%}
-/* Long measure names wrap inside their share instead of forcing the table
-   wider; everything else is short enough to stay on one line. */
+.db-table th:nth-child(8),.db-table td:nth-child(8){width:68px}
+.db-table th:nth-child(9),.db-table td:nth-child(9){width:54px}
+.db-table th:nth-child(10),.db-table td:nth-child(10){width:66px}
+.db-table th:nth-child(11),.db-table td:nth-child(11){width:56px}
+.db-table th:nth-child(12),.db-table td:nth-child(12){width:58px}
+.db-table th:nth-child(13),.db-table td:nth-child(13){width:200px}
+.db-table th:nth-child(14),.db-table td:nth-child(14){width:34px}
 .db-table td{overflow:hidden;text-overflow:ellipsis}
+/* Category and Measure wrap. Qualified to 0-2-1: ".db-table td" (0-1-1)
+   carries nowrap and was beating the bare .db-td-measure rule, so 106 measure
+   names were being cut off with an ellipsis at 1366. */
+.db-table td.db-td-measure,.db-table td:nth-child(2){white-space:normal;overflow-wrap:anywhere}
 .db-td-ctx{color:var(--muted);font-size:11.5px}
 .db-td-num{font-family:var(--mono);color:var(--ink-2)}
 .db-td-rel{color:var(--ink);font-weight:600}
@@ -1151,6 +1157,7 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   margin-left:6px;font-size:9px;font-weight:500;letter-spacing:0.1em;
   text-transform:uppercase;color:var(--accent);
 }
+.db-custom-tag{margin-left:0}
 .db-metric-tag{
   display:inline-block;margin-left:6px;padding:1px 5px;
   font-family:var(--mono);font-size:9px;line-height:1.5;
@@ -1158,11 +1165,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{width:14px;height:14px;border-
   color:var(--ink-2);background:var(--surface-2,rgba(0,0,0,0.05));
   border:1px solid var(--border-soft);border-radius:3px;vertical-align:middle;
 }
-.ct-entry-table th,.ct-entry-table td{text-align:center}
-.ct-entry-table th:nth-child(2),.ct-entry-table td:nth-child(2){text-align:left}
-.ct-entry-table input{width:100%;min-width:72px}
-.ct-entry-table .ct-subtest-name{min-width:220px}
-.ct-entry-table .ct-row-num{color:var(--muted);font-family:var(--mono)}
 
 /* SEARCHABLE COMBOBOX */
 .combo{position:relative}
@@ -4088,15 +4090,6 @@ input[type="range"]#conv-slider::-moz-range-thumb{
 #about details summary{
   font-family:var(--sans);font-size:13px;font-weight:600;
   color:#1A1A1A;cursor:pointer;
-}
-
-/* ---------- NORMS DATABASE (custom-tests) ---------- */
-#custom-tests .panel{
-  background:#FFFFFF;
-  border:1px solid rgba(20,15,5,0.06)!important;
-  border-radius:var(--r-lg)!important;
-  box-shadow:var(--shadow-1)!important;
-  padding:22px 24px!important;
 }
 
 /* ---------- HOME â€” push hero card hierarchy ---------- */

@@ -29,8 +29,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260929l">
-<link rel="stylesheet" href="design-system.css?v=20260929l">
+<link rel="stylesheet" href="styles.css?v=20261001a">
+<link rel="stylesheet" href="design-system.css?v=20261001a">
 
 <style>
   /* Consolidated Change Analysis workspace. */
@@ -2879,26 +2879,30 @@
 
   <!-- ========== 09 CUSTOM TESTS ========== -->
   <section class="section" id="custom-tests">
-    <div class="controls-row">
-      <div class="field" style="flex:1">
-        <input type="text" id="ct-search" placeholder="Search instruments and measures…">
+    <!-- One toolbar: the view, the search (which applies to both views) and
+         the custom-test actions. The search used to sit above the view switch
+         and did nothing in the Validity view. Import is a real <button> that
+         opens the hidden file input: a <label> wrapping a display:none input
+         cannot be reached from the keyboard. -->
+    <div class="db-toolbar">
+      <div class="db-view-switch" role="group" aria-label="Which data to show">
+        <button class="db-view-btn" type="button" data-db-view="rel" aria-pressed="true">Reliability</button>
+        <button class="db-view-btn" type="button" data-db-view="pvt" aria-pressed="false">Validity cut-offs</button>
       </div>
-      <button class="btn" id="ct-export">Export custom tests (JSON)</button>
-      <label class="btn" style="cursor:pointer">
-        Import JSON
-        <input type="file" id="ct-import" accept=".json" style="display:none">
-      </label>
+      <input type="text" id="ct-search" class="db-search" placeholder="Search measures…" aria-label="Search">
+      <div class="db-custom-actions">
+        <button class="btn" type="button" id="ct-export" title="Download your custom tests as a JSON file">Export custom tests</button>
+        <button class="btn" type="button" id="ct-import-btn" title='A JSON file shaped { "Family · Age band": { "Measure": { "m1", "sd1", "m2", "sd2", "r" } } }. "rCorrected", "n" and "metric" are optional.'>Import custom tests</button>
+        <input type="file" id="ct-import" accept=".json,application/json" hidden>
+      </div>
     </div>
+    <p class="db-lede" id="db-lede-rel">Published norms and reliability for every measure the app scores. <b>CI <i>r</i></b> is the coefficient each confidence interval on Score Tables is built from; it follows the patient age and the Score Tables reliability setting. Read-only: add your own tests by importing a JSON file.</p>
     <!-- Filters and sort, over one flat table of every entry. Instrument,
          category and age band become real columns rather than group headings,
          so a question that cuts across instruments — which measures are still
          on a raw retest coefficient, which are weakest — can be asked by
          sorting rather than by scrolling. Options are built from normDB at
          render time, so a new family cannot be left out. -->
-    <div class="db-view-switch" role="group" aria-label="Which data to show">
-      <button class="db-view-btn" type="button" data-db-view="rel" aria-pressed="true">Reliability</button>
-      <button class="db-view-btn" type="button" data-db-view="pvt" aria-pressed="false">Validity cut-offs</button>
-    </div>
     <div class="db-filters" id="db-filters">
       <select id="db-f-inst" aria-label="Filter by instrument"></select>
       <select id="db-f-cat" aria-label="Filter by category"></select>
@@ -2910,7 +2914,7 @@
       <span id="db-count"></span>
       <span id="db-sortnote"></span>
     </div>
-    <div class="db-list" id="db-list">
+    <div class="db-list table-viewport" id="db-list" data-dock-no-sideways>
       <table class="db-table">
         <thead id="db-thead"></thead>
         <tbody id="db-tbody"></tbody>
@@ -2920,8 +2924,8 @@
          cut-off, built by pvtAccuracyRows() from the same constants that page
          prints. -->
     <div class="pvt-acc" id="db-pvt" hidden>
-      <p class="pvt-acc-lede">Sensitivity and specificity as published at each cut-off used on the Performance Validity page. A range spans the samples or methods the source reports; a dash means the source publishes no pair.</p>
-      <div class="pvt-acc-wrap">
+      <p class="db-lede">Sensitivity and specificity as published at each cut-off used on the Performance Validity page. A range spans the samples or methods the source reports; a dash means the source publishes no pair.</p>
+      <div class="pvt-acc-wrap table-viewport" data-dock-no-sideways>
         <table class="pvt-acc-table">
           <thead><tr><th>Measure</th><th>Cut-off</th><th class="pvt-acc-num">Sensitivity</th><th class="pvt-acc-num">Specificity</th><th>Source</th></tr></thead>
           <tbody id="db-pvt-tbody"></tbody>
@@ -3316,12 +3320,12 @@
 </div>
 
 <div class="toast" id="toast">✓ Table copied - ready to paste into your report</div>
-<script src="data.js?v=20260929l"></script>
-<script src="app.js?v=20260929l"></script>
-<script src="design-system.js?v=20260929l" defer></script>
-<script src="app-effectsize-page.js?v=20260929l"></script>
-<script src="app-viz-page.js?v=20260929l"></script>
-<script src="app-profile-page.js?v=20260929l"></script>
+<script src="data.js?v=20261001a"></script>
+<script src="app.js?v=20261001a"></script>
+<script src="design-system.js?v=20261001a" defer></script>
+<script src="app-effectsize-page.js?v=20261001a"></script>
+<script src="app-viz-page.js?v=20261001a"></script>
+<script src="app-profile-page.js?v=20261001a"></script>
 
 <!-- PWA: register the service worker for offline support + installability.
      Only runs when served over http(s)://; skipped silently for file://
